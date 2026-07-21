@@ -1,0 +1,30 @@
+# FPMED — repo proprio (clone white-label #2). NUNCA commitar segredos.
+# A ANON key e publica, mas a service_role NAO pode entrar aqui.
+segredos.local.txt
+.env
+.env.*
+*token*.local.txt
+*.key
+*.pem
+
+# scripts gerados com chave embutida
+restore_*.js
+apply_*.js
+carga_*.js
+fix_*.js
+*_local.js
+
+# dados reais / relatorios de preco (repo pode virar publico como o GlobalMed)
+backups/
+scratchpad/
+*.xlsx
+*.xls
+*.pdf
+*.jpg
+*.jpeg
+*.png
+auditoria_*.txt
+varredura_*.txt
+scan_*.txt
+*preco*.txt
+*leads*.json

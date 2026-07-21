@@ -1,0 +1,3044 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GlobalMed — Proposta Comercial</title>
+<script src="gm-auth.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600&display=swap" rel="stylesheet">
+<style>
+:root{--verde:#29b8ff;--verde-escuro:#0e8fcf;--verde-claro:#1a2e40;--bg:#0a0f14;--texto:#e8f0f8;--muted:#8a9ab0;--borda:#1e3048;--vermelho:#e03e3e;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'DM Sans',sans-serif;background:#0a0f14;color:#e8f0f8;min-height:100vh;}
+
+/* HEADER */
+.top-bar{background:#060c12;color:white;padding:12px 24px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #1e3048;}
+.top-bar-logo{font-family:'Syne',sans-serif;font-size:18px;font-weight:800;color:#29b8ff;}
+.top-bar-info{font-size:11px;color:rgba(255,255,255,0.4);}
+.db-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:#888;margin-right:5px;vertical-align:middle;}
+.db-dot.online{background:#29b8ff;animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.5;}}
+
+/* MAIN LAYOUT */
+.main-wrap{max-width:800px;margin:0 auto;padding:28px 16px;}
+.card{background:#111c2a;border-radius:16px;padding:24px;border:1px solid #1e3048;margin-bottom:20px;}
+.card h3{font-family:'Syne',sans-serif;font-size:15px;font-weight:700;margin-bottom:16px;color:#e8f0f8;}
+
+/* FORM */
+.form-group{display:flex;flex-direction:column;gap:5px;margin-bottom:13px;}
+.form-group label{font-size:10.5px;font-weight:600;color:#8a9ab0;text-transform:uppercase;letter-spacing:0.5px;}
+.form-group input,.form-group select,.form-group textarea{padding:9px 12px;border:1px solid #1e3048;border-radius:8px;font-size:13.5px;font-family:'DM Sans',sans-serif;color:#e8f0f8;outline:none;transition:border 0.15s;background:#0d1b2a;}
+.form-group input:focus,.form-group select:focus{border-color:#29b8ff;}
+.form-group input::placeholder{color:#5a6a7a;}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:13px;}
+.form-row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:13px;}
+
+/* BUSCA */
+.busca-wrap{display:flex;gap:10px;margin-bottom:10px;}
+.busca-wrap input{flex:1;padding:10px 14px;border:1px solid #1e3048;border-radius:8px;font-size:13.5px;font-family:'DM Sans',sans-serif;outline:none;background:#0d1b2a;color:#e8f0f8;}
+.busca-wrap input::placeholder{color:#5a6a7a;}
+.busca-wrap input:focus{border-color:#29b8ff;}
+
+/* RESULTADO BUSCA */
+.resultado-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid #1e3048;border-radius:8px;margin-bottom:7px;background:#0d1b2a;}
+.resultado-item .info{flex:1;}
+.resultado-item .nome{font-size:13px;font-weight:500;color:#e8f0f8;}
+.resultado-item .detalhe{font-size:11px;color:#8a9ab0;margin-top:2px;}
+
+/* LISTA ITENS */
+.item-row{background:#0d1b2a;border:1px solid #1e3048;border-radius:10px;padding:11px 13px;margin-bottom:8px;display:flex;align-items:center;gap:10px;}
+.item-row .item-info{flex:1;}
+.item-row .item-nome{font-size:13px;font-weight:500;line-height:1.3;color:#e8f0f8;}
+.item-row .item-det{font-size:11px;color:#8a9ab0;margin-top:2px;}
+.item-row input[type=number]{width:62px;padding:6px 8px;border:1px solid #1e3048;border-radius:7px;text-align:center;font-size:13px;outline:none;background:#111c2a;color:#e8f0f8;}
+.item-row .item-preco{font-weight:700;font-size:14px;color:#29b8ff;min-width:85px;text-align:right;}
+.item-preco-info{font-size:10px;color:#8a9ab0;text-align:right;margin-top:2px;}
+
+/* ITENS NAO ENCONTRADOS */
+.nao-encontrado-row{background:#1a1020;border:1px dashed #3a1a1a;border-radius:8px;padding:9px 12px;margin-bottom:7px;display:flex;align-items:center;gap:8px;}
+
+/* DESCONTO */
+.desc-control{display:flex;align-items:center;gap:8px;flex:1;}
+.desc-control input{width:55px;padding:5px 8px;border:1px solid #1e3048;border-radius:6px;text-align:center;font-size:12px;outline:none;background:#0d1b2a;color:#e8f0f8;}
+.desc-control span{font-size:11px;color:#8a9ab0;}
+
+/* BADGE */
+.badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10.5px;font-weight:500;}
+.badge-green{background:#0d2a3a;color:#29b8ff;}
+.badge-blue{background:#0d2a3a;color:#29b8ff;}
+.badge-yellow{background:#2a2000;color:#f5c842;}
+
+/* TOTAL BOX */
+.total-box{background:#0d1b2a;border-radius:12px;padding:16px 20px;border:1px solid #1e3048;}
+.total-box .total-row{display:flex;justify-content:space-between;align-items:center;font-size:13.5px;padding:4px 0;color:#e8f0f8;}
+.total-final{font-family:'Syne',sans-serif;font-weight:800;font-size:22px;color:#29b8ff;}
+
+/* BUTTONS */
+.btn{padding:9px 18px;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;border:none;transition:all 0.15s;font-family:'DM Sans',sans-serif;display:inline-flex;align-items:center;gap:6px;}
+.btn-primary{background:#29b8ff;color:#060c12;width:100%;padding:14px;font-size:15px;justify-content:center;font-weight:700;}
+.btn-primary:hover{background:#0e8fcf;color:white;}
+.btn-outline{background:#111c2a;color:#e8f0f8;border:1px solid #1e3048;}
+.btn-outline:hover{border-color:#29b8ff;color:#29b8ff;}
+.btn-danger{background:var(--vermelho);color:white;}
+.btn-danger:hover{opacity:0.85;}
+.btn-sm{padding:5px 12px;font-size:11.5px;border-radius:6px;}
+
+/* TOAST */
+.toast{position:fixed;bottom:24px;right:24px;padding:12px 20px;border-radius:10px;font-size:13.5px;font-weight:500;background:#111c2a;color:white;z-index:999;opacity:0;transform:translateY(8px);transition:all 0.2s;pointer-events:none;border:1px solid #1e3048;}
+.toast.show{opacity:1;transform:none;}
+.toast.success{background:#0e3a52;border-color:#29b8ff;}
+.toast.error{background:var(--vermelho);}
+
+/* LOADING */
+.loading{display:flex;align-items:center;justify-content:center;padding:24px;gap:10px;color:#8a9ab0;font-size:13px;}
+.spinner{width:18px;height:18px;border:2px solid #1e3048;border-top-color:#29b8ff;border-radius:50%;animation:spin 0.7s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* EMPTY */
+.empty-state{padding:30px;text-align:center;color:#8a9ab0;}
+.empty-state .icon{font-size:30px;margin-bottom:8px;}
+
+/* DIVIDER */
+.divider{height:1px;background:#1e3048;margin:14px 0;}
+
+/* PRINT */
+.print-only{display:none;}
+@media print{
+  *{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  .top-bar,.no-print{display:none!important;}
+  .main-wrap{display:none!important;}
+  body{background:white;margin:0;padding:0;}
+  .print-only{display:block!important;}
+  .print-doc{display:block!important;}
+}
+
+/* DOCUMENTO DE IMPRESSÃO */
+.print-doc{display:none;font-family:'DM Sans',sans-serif;font-size:11px;color:#000;padding:16px 20px;max-width:210mm;margin:0 auto;}
+.print-doc .doc-header{display:flex;align-items:flex-start;justify-content:space-between;border-bottom:2px solid #000;padding-bottom:10px;margin-bottom:10px;}
+.print-doc .doc-logo{background:#111111;padding:10px 14px;border-radius:4px;display:flex;align-items:center;gap:10px;min-width:160px;}
+.print-doc .doc-logo svg{width:44px;height:44px;}
+.print-doc .doc-logo-text{color:white;}
+.print-doc .doc-logo-text .nome{font-family:'Syne',sans-serif;font-size:18px;font-weight:800;color:white;line-height:1.1;letter-spacing:1px;}
+.print-doc .doc-logo-text .sub{font-size:9px;color:#29b8ff;letter-spacing:3px;text-transform:uppercase;margin-top:2px;}
+.print-doc .doc-empresa{text-align:center;font-size:10px;line-height:1.6;}
+.print-doc .doc-empresa strong{font-size:12px;display:block;}
+.print-doc .doc-pagina{font-size:10px;text-align:right;}
+.print-doc .doc-info{display:grid;grid-template-columns:1fr 1fr;gap:0;margin-bottom:10px;border:1px solid #ccc;}
+.print-doc .doc-info-col{padding:8px 10px;font-size:10px;line-height:1.8;}
+.print-doc .doc-info-col:first-child{border-right:1px solid #ccc;}
+.print-doc .doc-info-col .row{display:flex;gap:4px;}
+.print-doc .doc-info-col .label{color:#555;white-space:nowrap;}
+.print-doc .doc-info-col .val{font-weight:600;}
+.print-doc table.doc-itens{width:100%;border-collapse:collapse;margin-bottom:0;font-size:10px;}
+.print-doc table.doc-itens th{background:#111111;color:white;padding:5px 7px;text-align:left;font-weight:600;font-size:9px;text-transform:uppercase;letter-spacing:0.3px;}
+.print-doc table.doc-itens td{padding:5px 7px;border-bottom:1px solid #eee;}
+.print-doc table.doc-itens tr:nth-child(even) td{background:#f8faf8;}
+.print-doc table.doc-itens .total-row td{border-top:2px solid #000;font-weight:700;background:#f0f4f0!important;font-size:11px;}
+.print-doc .doc-footer{margin-top:20px;font-size:10px;color:#555;}
+.print-doc .doc-footer .assinatura{margin-top:16px;font-size:11px;}
+.print-doc .doc-footer .assinatura strong{font-size:12px;display:block;color:#000;}
+.print-doc .doc-emissao{text-align:right;font-size:9px;color:#888;margin-top:8px;}
+</style>
+</head>
+<body>
+
+<div class="top-bar">
+  <div class="top-bar-logo">GlobalMed</div>
+  <div style="display:flex;align-items:center;gap:10px;">
+    <div style="display:flex;gap:6px;">
+      <input type="text" id="busca-orc-num" placeholder="Nº orçamento..." 
+        style="padding:6px 10px;border:1px solid #1e3048;border-radius:8px;font-size:13px;background:#0d1b2a;color:#e8f0f8;width:140px;outline:none;"
+        onkeydown="if(event.key==='Enter') abrirOrcamento()">
+      <button onclick="abrirOrcamento()" style="padding:6px 12px;background:#1a3a5c;color:#29b8ff;border:1px solid #29b8ff;border-radius:8px;font-size:12px;cursor:pointer;font-weight:600;">📂 Abrir</button>
+      <button onclick="salvarOrcamento()" id="btn-salvar-orc" style="padding:6px 12px;background:#29b8ff;color:#0a0f14;border:none;border-radius:8px;font-size:12px;cursor:pointer;font-weight:700;">💾 Salvar</button>
+    </div>
+    <div class="top-bar-info">
+      <span class="db-dot" id="db-dot"></span>
+      <span id="db-status">Conectando ao banco...</span>
+      &nbsp;·&nbsp; Proposta Comercial · <span id="top-vendedora"></span>
+    </div>
+  </div>
+</div>
+
+<div class="main-wrap">
+
+  <!-- CABEÇALHO DA PROPOSTA -->
+  <div class="card">
+    <h3>📄 Dados da Proposta</h3>
+    <div class="form-row-3">
+      <div class="form-group"><label>Nº Orçamento</label><input type="text" id="num-orc" placeholder="Auto (gerado ao salvar)"></div>
+      <div class="form-group"><label>Data</label><input type="date" id="data-orc"></div>
+      <div class="form-group"><label>Validade (dias)</label>
+        <select id="validade-orc">
+          <option value="7">7 dias</option><option value="15">15 dias</option><option value="30">30 dias</option>
+        </select>
+      </div>
+    </div>
+    <!-- BUSCA DE CLIENTE CADASTRADO (Fase 1) -->
+    <div class="form-group" style="position:relative">
+      <label>🔎 Buscar cliente (nome, CNPJ ou cód. ERP)</label>
+      <input type="text" id="busca-cliente" placeholder="Digite nome, CNPJ ou código ERP do cliente cadastrado..." autocomplete="off"
+        oninput="buscarCliente(this.value)" onkeydown="if(event.key==='Enter'){event.preventDefault();buscarCliente(this.value,true);}">
+      <div id="resultado-cliente" style="position:absolute;z-index:60;left:0;right:0;background:#0d1b2a;border:1px solid #1e3048;border-radius:8px;margin-top:2px;max-height:280px;overflow:auto;display:none"></div>
+    </div>
+    <div id="cliente-selecionado" style="display:none;font-size:12px;color:#16c060;margin:-2px 0 8px;font-weight:600"></div>
+    <div class="form-row">
+      <div class="form-group"><label>Cliente / Hospital</label><input type="text" id="cliente" placeholder="Nome do cliente ou hospital"></div>
+      <div class="form-group"><label>CNPJ do Cliente</label><input type="text" id="cnpj-cliente" placeholder="00.000.000/0001-00"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Cód. Cliente (ERP)</label><input type="text" id="cod-cliente-erp" placeholder="ex: 8"></div>
+      <div class="form-group" style="display:flex;align-items:flex-end">
+        <button class="btn btn-outline btn-sm no-print" type="button" onclick="cadastrarClienteFluxo()" style="width:auto">＋ Cadastrar novo cliente</button>
+      </div>
+    </div>
+    <input type="hidden" id="cliente-codigo"><input type="hidden" id="cliente-id">
+    <div class="form-row">
+      <div class="form-group"><label>Condição de Pagamento</label>
+        <select id="condicao">
+          <option>À VISTA</option><option>BOLETO 30 DIAS</option><option>BOLETO 60 DIAS</option><option>CARTÃO</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Vendedor(a)</label>
+        <input type="text" id="vendedora" placeholder="Nome do vendedor(a)" value="">
+      </div>
+    </div>
+  </div>
+
+  <!-- BUSCA DE PRODUTO -->
+  <div class="card">
+    <h3>🔍 Buscar e Adicionar Produtos</h3>
+
+    <!-- TABS -->
+    <div style="display:flex;gap:0;margin-bottom:14px;border-bottom:1px solid #1e3048">
+      <button id="tab-busca-btn" onclick="gTab('busca')" style="padding:7px 18px;border:none;background:none;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;color:#29b8ff;border-bottom:2px solid #29b8ff;margin-bottom:-1px;cursor:pointer">🔍 Busca individual</button>
+      <button id="tab-lista-btn" onclick="gTab('lista')" style="padding:7px 18px;border:none;background:none;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;color:#8a9ab0;cursor:pointer">📋 Importar lista</button>
+      <button id="tab-ia-btn" onclick="gTab('ia')" style="padding:7px 18px;border:none;background:none;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;color:#8a9ab0;cursor:pointer">🤖 IA — Ler Pedido</button>
+      <button id="tab-impcot-btn" onclick="gTab('impcot')" style="display:none;padding:7px 18px;border:none;background:none;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;color:#8a9ab0;cursor:pointer">📥 Importar Cotação</button>
+    </div>
+
+    <!-- ABA BUSCA -->
+    <div id="tab-busca">
+      <div class="busca-wrap">
+        <input type="text" id="busca-prod" placeholder="Digite o produto, princípio ativo ou marca..." oninput="buscarProduto(this.value)" onkeydown="if(event.key==='Enter'){buscarProduto(this.value,true);}">
+      </div>
+      <div id="resultado-busca"></div>
+      <div class="divider"></div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+        <span style="font-size:11.5px;color:var(--muted);font-weight:500;">Adicionar item não encontrado:</span>
+        <button class="btn btn-outline btn-sm no-print" onclick="adicionarManual()">+ Adicionar Manualmente</button>
+      </div>
+    </div>
+
+    <!-- ABA LISTA -->
+    <div id="tab-lista" style="display:none">
+      <p style="font-size:12px;color:var(--muted);margin-bottom:10px">Cole a lista do cliente — um produto por linha. O sistema busca o menor preço de cada um automaticamente.</p>
+      <textarea id="lista-rapida" rows="8" placeholder="CIPROFLOXACINO 200MG&#10;HIDROCORTISONA 500MG&#10;DEXAMETASONA 4MG&#10;MEROPENEM 1G&#10;..."
+        style="width:100%;padding:10px 12px;border:1px solid #1e3048;border-radius:8px;font-size:13px;font-family:'DM Sans',sans-serif;outline:none;resize:vertical;line-height:1.8;background:#0d1b2a;color:#e8f0f8"></textarea>
+      <div style="display:flex;gap:10px;margin-top:10px;align-items:center">
+        <button class="btn btn-primary" onclick="importarLista()">🚀 Buscar e Adicionar Tudo</button>
+        <span id="lista-status" style="font-size:12px;color:#8a9ab0"></span>
+      </div>
+      <!-- NÃO recriar um id="lista-nao-encontrados" aqui: esse id é da seção "Itens Não Encontrados" do orçamento
+           (mais abaixo). Havia um div duplicado neste ponto e o renderNaoEncontrados() pegava ESTE (o
+           getElementById devolve o primeiro do DOM), então ele exibia a seção de baixo VAZIA e pintava a lista
+           aqui na aba Lista. O processarLista já mostra os não-encontrados dele inline no #lista-status. -->
+    </div>
+  </div>
+
+
+    <!-- ABA IA -->
+    <div id="tab-ia" style="display:none">
+      <p style="font-size:12px;color:var(--muted);margin-bottom:12px">Envie uma foto, imagem ou PDF do pedido do cliente. A IA lê e monta a lista automaticamente.</p>
+
+      <div id="ia-drop-zone" onclick="document.getElementById('ia-file-input').click()"
+        style="border:2px dashed #29b8ff;border-radius:12px;padding:28px;text-align:center;cursor:pointer;transition:background 0.2s;margin-bottom:12px"
+        ondragover="event.preventDefault();this.style.background='#0d2a3d'"
+        ondragleave="this.style.background=''"
+        ondrop="event.preventDefault();this.style.background='';handleIAFile(event.dataTransfer.files[0])">
+        <div style="font-size:28px;margin-bottom:8px">📎</div>
+        <div style="font-size:13px;color:#29b8ff;font-weight:600">Clique ou arraste o arquivo aqui</div>
+        <div style="font-size:11px;color:#8a9ab0;margin-top:4px">JPG, PNG, PDF — foto do pedido, lista escaneada, etc.</div>
+        <input type="file" id="ia-file-input" accept="image/*,application/pdf" style="display:none" onchange="handleIAFile(this.files[0])">
+      </div>
+
+      <div id="ia-preview" style="display:none;margin-bottom:12px">
+        <div style="display:flex;align-items:center;gap:10px;background:#0d2a3d;border:1px solid #1e3048;border-radius:8px;padding:10px 14px">
+          <span style="font-size:20px" id="ia-preview-icon">📄</span>
+          <div style="flex:1">
+            <div style="font-size:13px;color:#e8f0f8;font-weight:500" id="ia-preview-nome">arquivo.pdf</div>
+            <div style="font-size:11px;color:#8a9ab0" id="ia-preview-tipo">PDF</div>
+          </div>
+          <button onclick="limparIAArquivo()" style="background:none;border:none;color:#e03e3e;cursor:pointer;font-size:18px">✕</button>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+        <button class="btn btn-primary" onclick="processarComIA()" id="ia-btn-processar" disabled style="opacity:0.5">
+          🤖 Ler com IA e Montar Lista
+        </button>
+        <span id="ia-status" style="font-size:12px;color:#8a9ab0"></span>
+      </div>
+
+      <div id="ia-resultado" style="display:none;margin-top:14px">
+        <div style="font-size:12px;color:#8a9ab0;margin-bottom:6px;font-weight:500">Lista extraída pela IA — revise se necessário:</div>
+        <textarea id="ia-lista-extraida" rows="8"
+          style="width:100%;padding:10px 12px;border:1px solid #1e3048;border-radius:8px;font-size:13px;font-family:DM Sans,sans-serif;outline:none;resize:vertical;line-height:1.8;background:#0d1b2a;color:#e8f0f8"></textarea>
+        <div style="display:flex;gap:10px;margin-top:10px">
+          <button class="btn btn-primary" onclick="importarListaIA()">🚀 Buscar e Adicionar Tudo</button>
+          <button class="btn btn-outline" onclick="copiarParaLista()">📋 Editar na aba Lista</button>
+        </div>
+        <div id="ia-lista-nao-encontrados" style="margin-top:12px"></div>
+      </div>
+    </div>
+
+    <!-- ABA IMPORTAR COTAÇÃO (portada de sistema_final) -->
+    <div id="tab-impcot" style="display:none">
+
+      <!-- LEITOR POR IA (FOTO/PDF) -->
+      <div class="table-wrap" style="padding:20px;margin-bottom:16px;background:#0d1b2a;border:1px solid #1e3048;border-radius:12px">
+        <h3 style="font-family:'Syne',sans-serif;font-size:15px;font-weight:700;margin-bottom:6px;color:#e8f0f8">🤖 Ler orçamento automaticamente</h3>
+        <p style="font-size:12px;color:var(--muted);margin-bottom:14px">Selecione a <strong>foto</strong> ou o <strong>PDF</strong> do orçamento do fornecedor. A IA lê e preenche a tabela abaixo — você só confere e clica em Importar.</p>
+        <div id="imp-ia-drop" onclick="document.getElementById('imp-ia-file').click()"
+          style="border:2px dashed var(--borda);border-radius:10px;padding:22px;text-align:center;cursor:pointer;color:var(--muted);font-size:13px;transition:.2s">
+          📥 Clique aqui para selecionar foto ou PDF do orçamento
+          <input type="file" id="imp-ia-file" accept="image/*,application/pdf" style="display:none" onchange="impHandleIAFile(this.files[0])">
+        </div>
+        <div id="imp-ia-preview" style="display:none;align-items:center;gap:10px;margin-top:12px;padding:10px 14px;background:#0a0f14;border:1px solid var(--borda);border-radius:8px">
+          <span id="imp-ia-icon" style="font-size:20px">📄</span>
+          <div style="flex:1">
+            <div id="imp-ia-nome" style="font-size:13px;font-weight:600;color:#e8f0f8">arquivo</div>
+            <div id="imp-ia-tipo" style="font-size:11px;color:var(--muted)">—</div>
+          </div>
+          <button onclick="impLimparIA()" style="background:none;border:none;color:var(--vermelho);cursor:pointer;font-size:18px">✕</button>
+        </div>
+        <div style="display:flex;gap:12px;align-items:center;margin-top:14px">
+          <button class="btn btn-primary" id="imp-ia-btn" onclick="impLerOrcamentoIA()" disabled style="width:auto;opacity:.5">🤖 Ler com IA e preencher tabela</button>
+          <span id="imp-ia-status" style="font-size:13px"></span>
+        </div>
+      </div>
+
+      <!-- PASSO 1: DADOS DO PEDIDO -->
+      <div class="table-wrap" style="padding:20px;margin-bottom:16px;background:#0d1b2a;border:1px solid #1e3048;border-radius:12px">
+        <h3 style="font-family:'Syne',sans-serif;font-size:15px;font-weight:700;margin-bottom:16px;color:#e8f0f8">1. Dados do Pedido</h3>
+        <div class="form-row-3">
+          <div class="form-group">
+            <label>Fornecedor</label>
+            <select id="imp-fornecedor">
+              <option value="">Selecione...</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Nº do Pedido</label>
+            <input type="text" id="imp-pedido" placeholder="Ex: 571199">
+          </div>
+          <div class="form-group">
+            <label>Data</label>
+            <input type="date" id="imp-data">
+          </div>
+        </div>
+      </div>
+
+      <!-- PASSO 2: ITENS -->
+      <div class="table-wrap" style="padding:20px;margin-bottom:16px;background:#0d1b2a;border:1px solid #1e3048;border-radius:12px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+          <h3 style="font-family:'Syne',sans-serif;font-size:15px;font-weight:700;color:#e8f0f8">2. Itens da Cotação</h3>
+          <button class="btn btn-outline btn-sm" onclick="addLinhaImport()">+ Adicionar linha</button>
+        </div>
+        <div style="overflow-x:auto">
+          <table style="width:100%;border-collapse:collapse;font-size:13px" id="imp-tabela">
+            <thead>
+              <tr style="background:#0a0f14">
+                <th style="padding:9px 10px;text-align:left;font-size:11px;color:var(--muted);font-weight:600;border-bottom:1px solid var(--borda);min-width:90px">Código</th>
+                <th style="padding:9px 10px;text-align:left;font-size:11px;color:var(--muted);font-weight:600;border-bottom:1px solid var(--borda);min-width:220px">Produto *</th>
+                <th style="padding:9px 10px;text-align:left;font-size:11px;color:var(--muted);font-weight:600;border-bottom:1px solid var(--borda);min-width:140px">Marca</th>
+                <th style="padding:9px 10px;text-align:left;font-size:11px;color:var(--muted);font-weight:600;border-bottom:1px solid var(--borda);min-width:80px">Unid.</th>
+                <th style="padding:9px 10px;text-align:left;font-size:11px;color:var(--muted);font-weight:600;border-bottom:1px solid var(--borda);min-width:60px">Qtd</th>
+                <th style="padding:9px 10px;text-align:left;font-size:11px;color:var(--muted);font-weight:600;border-bottom:1px solid var(--borda);min-width:100px">Vlr Unit (R$)</th>
+                <th style="padding:9px 10px;text-align:left;font-size:11px;color:var(--muted);font-weight:600;border-bottom:1px solid var(--borda);min-width:90px">Vencimento</th>
+                <th style="padding:9px 10px;text-align:left;font-size:11px;color:var(--muted);font-weight:600;border-bottom:1px solid var(--borda);min-width:80px" title="Quantas unidades vem na caixa (ampolas/frascos). Preenchido automatico, corrija se vier errado.">Emb. (un/cx)</th>
+                <th style="padding:9px 10px;border-bottom:1px solid var(--borda);width:36px"></th>
+              </tr>
+            </thead>
+            <tbody id="imp-linhas"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- BOTÃO IMPORTAR -->
+      <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+        <button class="btn btn-primary" style="width:auto;min-width:200px;padding:12px 24px;font-size:14px" id="btn-importar" onclick="executarImport()">
+          📥 Importar para o Banco
+        </button>
+        <button class="btn btn-outline" onclick="limparImport()">🗑 Limpar</button>
+        <span id="imp-status" style="font-size:13px"></span>
+      </div>
+    </div>
+
+  <!-- ITENS ADICIONADOS -->
+  <div class="card" id="card-itens" style="display:none">
+    <h3>📦 Itens do Orçamento</h3>
+    <div id="lista-itens"></div>
+
+    <!-- ITENS NÃO ENCONTRADOS -->
+    <div id="nao-encontrados-section" style="display:none;margin-top:14px;">
+      <div style="font-size:11.5px;font-weight:600;color:var(--vermelho);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px;">❌ Itens Não Encontrados</div>
+      <div id="lista-nao-encontrados"></div>
+    </div>
+  </div>
+
+  <!-- TOTAL -->
+  <div class="card" id="card-total" style="display:none">
+    <h3>💰 Resumo Financeiro</h3>
+    <div class="total-box" id="total-box">
+      <div class="total-row"><span>Subtotal</span><span id="val-subtotal">R$ 0,00</span></div>
+      <div class="total-row"><span>Desconto Geral (%)</span>
+        <div style="display:flex;align-items:center;gap:8px">
+          <input type="number" id="desc-geral" value="0" min="0" max="8" step="0.5" style="width:55px;padding:5px 8px;border:1px solid var(--borda);border-radius:6px;text-align:center;font-size:12px;outline:none;" oninput="calcTotal()">
+          <span style="font-size:12px;color:var(--muted)">% (máx 8%)</span>
+        </div>
+      </div>
+      <div class="total-row"><span style="color:var(--vermelho)">- Desconto</span><span id="val-desconto" style="color:var(--vermelho)">R$ 0,00</span></div>
+      <div class="divider" style="margin:10px 0"></div>
+      <div class="total-row"><span style="font-size:15px;font-weight:600">TOTAL GERAL</span><span class="total-final" id="val-total">R$ 0,00</span></div>
+      <div style="font-size:11px;color:var(--muted);margin-top:6px">Condição: <strong id="cond-display">À VISTA</strong> · Validade: <strong id="valid-display">7 dias</strong></div>
+    </div>
+  </div>
+
+  <!-- AÇÕES -->
+  <div class="card no-print" id="card-acoes" style="display:none">
+    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+      <button class="btn btn-primary" style="flex:1;min-width:200px" onclick="gerarPDF()">🖨 Gerar PDF / Imprimir</button>
+      <button class="btn btn-outline" style="flex:1;min-width:200px;border-color:#00c27a;color:#007a4d" onclick="enviarParaCompras()" id="btn-enviar-compras">📤 Enviar para Compras</button>
+      <button class="btn btn-outline" style="flex:1;min-width:200px;border-color:#e0245e;color:#c81e4f;opacity:0.5" onclick="pedidoFechado()" id="btn-pedido-fechado" title="Selecione o cliente para fechar o pedido">🔴 Pedido Fechado</button>
+      <button class="btn btn-outline btn-sm" onclick="limparTudo()">🗑 Limpar Tudo</button>
+    </div>
+    <p style="font-size:11px;color:var(--muted);margin-top:10px;text-align:center">O PDF seguirá o padrão oficial GlobalMed com logo, CNPJ e formatação de tabela</p>
+  </div>
+
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- DOCUMENTO DE IMPRESSÃO -->
+<div class="print-doc" id="print-doc">
+  <div class="doc-header">
+    <div class="doc-logo">
+      <svg viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect width="60" height="60" fill="#111111" rx="4"/>
+        <!-- Coração -->
+        <path d="M30 48 L10 28 C7 24 7 18 11 15 C15 12 20 13 23 17 L30 24 L37 17 C40 13 45 12 49 15 C53 18 53 24 50 28 Z" stroke="#29b8ff" stroke-width="2.5" fill="none" stroke-linejoin="round"/>
+        <!-- ECG -->
+        <polyline points="16,30 20,30 22,24 26,36 28,30 32,30 34,26 36,34 38,30 44,30" stroke="#29b8ff" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <div class="doc-logo-text">
+        <div class="nome">GLOBALMED</div>
+        <div class="sub">DISTRIBUIÇÃO</div>
+      </div>
+    </div>
+    <div class="doc-empresa">
+      <strong>GLOBALMED DISTRIBUICAO LTDA</strong>
+      54.379.172/0001-47<br>
+      AV CONDE FRANCISCO MATARAZO QD 03 LT 08<br>
+      VILA MARIANA — APARECIDA DE GOIANIA GO 74938-080
+    </div>
+    <div class="doc-pagina">Página: 1 de 1</div>
+  </div>
+
+  <div class="doc-info">
+    <div class="doc-info-col" id="print-col-esq"></div>
+    <div class="doc-info-col" id="print-col-dir"></div>
+  </div>
+
+  <table class="doc-itens">
+    <!-- 🔒 NÃO adicionar coluna de fornecedor aqui — este PDF vai pro CLIENTE. Ver REGRA DE OURO no CONTINUAR_AQUI. -->
+    <thead>
+      <tr>
+        <th style="width:70px">Código</th>
+        <th>Produto</th>
+        <th style="width:90px">Marca</th>
+        <th style="width:75px;text-align:right">Preço UNIT</th>
+        <th style="width:35px;text-align:center">Un</th>
+        <th style="width:40px;text-align:center">Qtd</th>
+        <th style="width:75px;text-align:right">Preço CAIXA</th>
+        <th style="width:75px;text-align:right">Total CX</th>
+      </tr>
+    </thead>
+    <tbody id="print-itens"></tbody>
+    <tfoot>
+      <tr class="total-row">
+        <td colspan="7" style="text-align:right;padding-right:10px">Total Geral:</td>
+        <td style="text-align:right" id="print-total"></td>
+      </tr>
+    </tfoot>
+  </table>
+
+  <div style="font-size:9px;color:#888;margin:4px 0 10px;font-style:italic">* Preço Unit = valor por unidade/comprimido/ampola (informativo). Preço CX = valor da caixa completa.</div>
+  <div class="doc-footer">
+    <p>Prazo para entrega a combinar.</p>
+    <div class="assinatura">
+      ATENCIOSAMENTE;<br>
+      <strong>GLOBALMED DISTRIBUICAO LTDA</strong>
+    </div>
+    <div class="doc-emissao" id="print-emissao"></div>
+  </div>
+</div>
+
+<!-- MODAL MANUAL -->
+<div id="modal-manual" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:200;align-items:center;justify-content:center;">
+  <div style="background:#111c2a;border-radius:16px;padding:24px;width:480px;max-width:95vw;border:1px solid #1e3048;">
+    <h3 style="font-family:'Syne',sans-serif;font-size:16px;font-weight:700;margin-bottom:16px;color:#e8f0f8;">Adicionar Item Manualmente</h3>
+    <div class="form-group"><label>Produto *</label><input type="text" id="man-produto" placeholder="Nome completo do produto"></div>
+    <div class="form-row">
+      <div class="form-group"><label>Marca</label><input type="text" id="man-marca"></div>
+      <div class="form-group"><label>Estoque</label><input type="text" id="man-estoque" placeholder="—"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Preço Unitário (venda) *</label><input type="number" id="man-preco" step="0.01" placeholder="0.00"></div>
+      <div class="form-group"><label>Vencimento</label><input type="date" id="man-vencimento"></div>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:14px;">
+      <button class="btn btn-outline btn-sm" onclick="fecharManual()">Cancelar</button>
+      <button class="btn btn-primary btn-sm" style="width:auto" onclick="salvarManual()">Adicionar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── SUPABASE CONFIG ─────────────────────────────────────────────────────────
+const SUPA_URL = 'https://vikewlbhkrikcalzsbeb.supabase.co';
+const EDGE_URL_G = 'https://vikewlbhkrikcalzsbeb.supabase.co/functions/v1/api';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZpa2V3bGJoa3Jpa2NhbHpzYmViIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgwOTEzMDcsImV4cCI6MjA5MzY2NzMwN30.elMw6mbCoCbFVCnzck-aHQrXGYaZhX-m0RRb1VGYP64';
+const H = { 'Content-Type':'application/json', 'apikey':SUPA_KEY, 'Authorization':'Bearer '+SUPA_KEY };
+
+// ── ACESSO RESTRITO (Nível 1, só esconde na tela) ────────────────────────────
+// role 'giovana_only' (ex.: Sebastião) NÃO vê custo nem fornecedor. Lemuel/Isadora veem tudo.
+// NÃO afeta o cálculo do preço (o custo continua sendo lido por trás).
+function ehRestrito(){ try{ var u = window.gmAuth && window.gmAuth.user;
+  return !!(u && (u.role==='giovana_only' || (u.user_metadata && u.user_metadata.role==='giovana_only'))); }catch(e){ return false; } }
+// Importar lista + IA Ler Pedido: SÓ Lemuel e Isadora (por EMAIL). Guilherme (vendedora) e Sebastião NÃO veem.
+function podeImportar(){
+  try{ var u = window.gmAuth && window.gmAuth.user; var e = ((u && u.email) || '').toLowerCase();
+    return e === 'lemuelempresas7@outlook.com' || e === 'isadoraassiscomercial@outlook.com'; }catch(e){ return false; } }
+// Importar Cotação (grava no banco de cotações): SÓ role 'admin' (Lemuel) ou Isadora (por email).
+function podeImportarCotacao(){ try{ var u=window.gmAuth&&window.gmAuth.user; var e=((u&&u.email)||'').toLowerCase(); var r=(u&&(u.role|| (u.user_metadata&&u.user_metadata.role)))||''; return r==='admin' || e==='isadoraassiscomercial@outlook.com'; }catch(e){ return false; } }
+function gmAplicaRestrito(){ window.GM_RESTRITO = ehRestrito();
+  if(window.GM_RESTRITO){ var b=document.getElementById('btn-enviar-compras'); if(b) b.style.display='none'; }
+  // Pedido Fechado grava histórico de compra (preço de venda do cliente): SÓ Lemuel/Isadora.
+  // Esconde de giovana_only (Sebastião) e vendedora (Guilherme).
+  var _pf=document.getElementById('btn-pedido-fechado'); if(_pf) _pf.style.display = podeImportar() ? '' : 'none';
+  // re-avalia a cada evento: mostra Importar/IA só p/ os emails permitidos, esconde do resto
+  var _imp = podeImportar();
+  var lb=document.getElementById('tab-lista-btn'); if(lb) lb.style.display = _imp ? '' : 'none';
+  var ib=document.getElementById('tab-ia-btn');    if(ib) ib.style.display = _imp ? '' : 'none';
+  // Importar Cotação: gate independente (admin OU Isadora)
+  var _impc = podeImportarCotacao();
+  var tc=document.getElementById('tab-impcot-btn'); if(tc) tc.style.display = _impc ? '' : 'none';
+  var tcP=document.getElementById('tab-impcot');
+  if(!_impc && tcP && tcP.style.display!=='none' && typeof gTab==='function') gTab('busca');  // saiu do impcot
+  if(!_imp && document.getElementById('tab-busca') && typeof gTab==='function') gTab('busca');  // fica só na busca
+}
+document.addEventListener('gm-auth-ready', gmAplicaRestrito);
+document.addEventListener('DOMContentLoaded', gmAplicaRestrito);
+
+// ─── ESTADO ──────────────────────────────────────────────────────────────────
+let cotacoes = [], _cotTs = 0;  // _cotTs = timestamp da última carga (cache 60s p/ estoque/preço fresco na busca)
+let _varMap = {};  // HISTÓRICO DE PREÇOS: chave 'fornecedor||produto_norm' -> {var_pct, preco_atual, preco_anterior, data_anterior}
+let _bmCmed = new Map();   // CMED: marca_norm -> substancia (só não-combo e não-ambíguo)
+let itens = [];      // itens com preço
+let naoEncontrados = []; // itens sem preço
+let numOrc = 1;
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+const EDGE_URL = 'https://vikewlbhkrikcalzsbeb.supabase.co/functions/v1/api';
+const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZpa2V3bGJoa3Jpa2NhbHpzYmViIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgwOTEzMDcsImV4cCI6MjA5MzY2NzMwN30.elMw6mbCoCbFVCnzck-aHQrXGYaZhX-m0RRb1VGYP64';
+
+async function iniciar() {
+  const hoje = new Date();
+  document.getElementById('data-orc').value = hoje.toISOString().split('T')[0];
+  numOrc = Math.floor(Date.now()/1000) % 100000;
+  document.getElementById('num-orc').value = String(numOrc).padStart(5,'0');
+  
+  try {
+    // Busca direta com paginacao completa
+    let allData = [];
+    let from = 0;
+    const pageSize = 500;
+    while(true) {
+      const to = from + pageSize - 1;
+      const r = await fetch(`${SUPA_URL}/rest/v1/cotacoes?select=*&order=id`, {
+        headers: {
+          'apikey': SUPA_KEY,
+          'Authorization': 'Bearer ' + SUPA_KEY,
+          'Range': `${from}-${to}`
+        }
+      });
+      const data = await r.json();
+      if (!Array.isArray(data) || data.length === 0) break;
+      allData = allData.concat(data);
+      if (data.length < pageSize) break;
+      from += pageSize;
+    }
+    cotacoes = allData.filter(incluiNaBusca);   // inclui GLOBAL c/ estoque (antes cortava por compra_unit>0)
+    _cotTs = Date.now();
+    setDbStatus(true);
+    toast(`✓ ${cotacoes.length} produtos carregados`);
+    carregarCmed();  // dicionário CMED (marca->substância) em paralelo; a busca funciona mesmo sem ele
+    carregarVariacoes();  // histórico de preços (selo ↑/↓ no card) em paralelo
+  } catch(e) {
+    setDbStatus(false);
+    toast('Erro: ' + e.message, 'error');
+  }
+}
+// Recarrega cotações (cache 60s) — chamada antes da busca p/ estoque/preço não ficarem velhos.
+async function recarregarCotacoes(force){
+  if(!force && _cotTs && (Date.now()-_cotTs) < 60000) return;
+  try{
+    let allData=[], from=0; const pageSize=500;
+    while(true){ const to=from+pageSize-1;
+      const r=await fetch(`${SUPA_URL}/rest/v1/cotacoes?select=*&order=id`,{headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Range':`${from}-${to}`}});
+      const data=await r.json(); if(!Array.isArray(data)||data.length===0)break; allData=allData.concat(data); if(data.length<pageSize)break; from+=pageSize;
+    }
+    if(allData.length){ cotacoes = allData.filter(incluiNaBusca); _cotTs=Date.now(); }
+  }catch(e){ /* falhou: mantém o cache atual */ }
+}
+// HISTÓRICO DE PREÇOS: carrega só as variações (onde o preço mudou) p/ o selo ↑/↓ no card.
+async function carregarVariacoes(){
+  try{
+    const r = await fetch(`${SUPA_URL}/rest/v1/v_preco_variacao?select=fornecedor,produto_norm,var_pct,preco_atual,preco_anterior,data_anterior&var_pct=not.is.null`, {headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY}});
+    const data = await r.json();
+    if(Array.isArray(data)){ const m={}; data.forEach(v=>{ m[String(v.fornecedor)+'||'+String(v.produto_norm)]=v; }); _varMap=m; }
+  }catch(e){ /* sem selo */ }
+}
+// selo de variação de preço p/ o card (↑ vermelho subiu / ↓ verde caiu), ou '' se não mudou.
+function seloVariacao(c){
+  const k = String(c.fornecedor)+'||'+String(c.produto||'').replace(/^[\s+>*#]+/,'').toLowerCase();
+  const v = _varMap[k];
+  if(!v || v.var_pct==null || Number(v.var_pct)===0) return '';
+  const up = Number(v.var_pct)>0, cor = up?'#e0483d':'#16c060';
+  const tit = `Preço ${up?'subiu':'caiu'} ${Math.abs(v.var_pct)}% — de ${fmtBRL(v.preco_anterior)} p/ ${fmtBRL(v.preco_atual)} (desde ${fmtDate(String(v.data_anterior).slice(0,10))})`;
+  return ` <span class="badge" title="${tit}" style="background:${cor};color:#fff;font-weight:700;cursor:help">${up?'↑':'↓'} ${Math.abs(v.var_pct)}%</span>`;
+}
+// AUTO-REFRESH: a cada 60s puxa o banco em background e re-renderiza a busca ativa (sem atrapalhar).
+async function autoRefreshGiovana(){
+  if (document.hidden) return;      // aba em 2º plano -> pula o ciclo
+  await recarregarCotacoes(true);   // mantém o banco fresco p/ a próxima busca/adição
+  // NÃO re-renderiza os resultados da busca de propósito: evita piscar/sumir enquanto o cotador lê e escolhe.
+  // A busca já puxa dado fresco a cada tecla (recarregarCotacoes no início do buscarProduto).
+}
+setInterval(autoRefreshGiovana, 60000);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) autoRefreshGiovana(); });
+
+// CMED: marca_norm -> substancia (só não-combo e não-ambíguo). Usado p/ resolver marca no pedido.
+async function carregarCmed() {
+  try {
+    let rows = [], from = 0; const page = 2000;
+    while (true) {
+      const r = await fetch(`${SUPA_URL}/rest/v1/cmed_dicionario?select=marca_norm,substancia,is_combo&order=id`, {
+        headers: { 'apikey': SUPA_KEY, 'Authorization': 'Bearer ' + SUPA_KEY, 'Range': `${from}-${from+page-1}` }
+      });
+      const data = await r.json();
+      if (!Array.isArray(data) || !data.length) break;
+      rows = rows.concat(data);
+      if (data.length < page) break;
+      from += page;
+    }
+    const ambig = new Set(); const mapa = new Map();
+    for (const row of rows) {
+      if (row.is_combo) continue;                       // combo não resolve
+      const sub = _bmNorm(row.substancia); if (!sub) continue;
+      const marcaN = _bmNorm(row.marca_norm); if (!marcaN) continue;
+      const keys = new Set([marcaN]);
+      const toks = marcaN.split(/\s+/).filter(t => t.length >= 4 && !_BM_SAIS.has(t) && !_BM_STOP.has(t));
+      if (toks.length) keys.add(toks[0]);               // 1º token significativo da marca
+      for (const k of keys) {
+        if (ambig.has(k)) continue;
+        const prev = mapa.get(k);
+        if (prev && prev !== sub) { mapa.delete(k); ambig.add(k); }   // marca -> 2 substâncias = ambíguo, descarta
+        else if (!prev) mapa.set(k, sub);
+      }
+    }
+    _bmCmed = mapa;
+  } catch (e) { /* dicionário é opcional; sem ele a busca segue por produto/PA direto */ }
+}
+
+function setDbStatus(ok) {
+  document.getElementById('db-dot').className = 'db-dot' + (ok?' online':'');
+  document.getElementById('db-status').textContent = ok ? `Supabase Online · ${cotacoes.length} itens` : 'Sem conexão';
+}
+function toast(msg,type='success') {
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.className='toast '+type+' show';
+  setTimeout(()=>t.className='toast',3000);
+}
+function fmtBRL(v) { return 'R$\u00a0'+parseFloat(v||0).toFixed(2).replace('.',',').replace(/\B(?=(\d{3})+(?!\d))/g,'.'); }
+function fmtDate(d) { if(!d)return'—';const dt=new Date(d);return isNaN(dt)?'—':dt.toLocaleDateString('pt-BR'); }
+// número da embalagem no UND (qualquer /\d+/: CX/30, FR/24, 30) — 0 se não tem
+function _undNum(und){ const m = String(und||'').match(/\d+/); if(!m) return 0; const n=parseInt(m[0]); return (n>=1 && n<=5000)?n:0; }
+// qtd da embalagem lida SÓ do NOME (sem und)
+function _qtdDoNome(produto){
+  const nome = (produto || '').toUpperCase();
+  const mX = nome.match(/(\d{1,4})\s*X\s*\d+(?:[.,]\d+)?\s*ML\b/);        if (mX) { const n=parseInt(mX[1]); if(n>1&&n<=5000) return n; }  // NxM ML (50X100ML)
+  const mXc = nome.match(/(\d{1,3})\s*X\s*(\d{1,3})\s*(?:CPR|COMP|CAP|CAPS|COM|DRG)\b/); if (mXc) { const n=parseInt(mXc[1])*parseInt(mXc[2]); if(n>1&&n<=5000) return n; }  // NxM CPR (10X10=100, 24X10=240)
+  // C/N, CX/N. Os 2 lookaheads impedem ler MEDIDA como contagem: (?!\d) trava o backtracking
+  // ("C/240ML" nao pode casar so "24") e o segundo barra numero colado em unidade de medida
+  // ("FR C/240ML" = 1 frasco de 240ml, nao 240 unidades; "PCT 50G" = 1 pacote de 50g).
+  const mC = nome.match(/(?:C\/|CX\/|CX|PCT\/?)\s*(\d{1,4})(?!\d)(?!\s*(?:ML|MG|MCG|UI|G|L|GR|GRS)\b)/); if (mC) { const n=parseInt(mC[1]); if(n>1&&n<=5000) return n; }
+  const mU = nome.match(/(\d{1,4})\s*(?:CPR|CAPS|CAP|CPS|CP|COMP|DRG|AMP|FR|ENV|BLS|UND|UN|PASTILHA|PAST|SACHES|SACHE)\b/); if (mU) { const n=parseInt(mU[1]); if(n>1&&n<=5000) return n; }  // N CPR/AMP...
+  // RECIPIENTE: "10 SER", "50FA", "6 BOLS", "5 AMPOLAS", "5 REFIS", "4 CAN". Pega o PRIMEIRO recipiente e NUNCA soma
+  // (MOUNJARO "4 SER 0,5ML+4CAN" = 4 canetas, não 8; TRESIBA "5 REFIS + 5 SIST" = 5). O "+" marca ACESSÓRIO e é
+  // ignorado (Sandimmun "sol oral 50ML + 2 seringas dosadoras" = 1 frasco; as seringas não são o produto).
+  const reR = /(\+\s*)?(\d{1,4})\s*(?:SERINGAS|SERINGA|SER|AMPOLAS|AMPOLA|BOLSAS|BOLSA|BOLS|CANETAS|CANETA|CAN|SISTEMAS|SISTEMA|SIST|REFIS|REFIL|FA)\b/g;
+  let mR; while ((mR = reR.exec(nome))) { if (mR[1]) continue; const n=parseInt(mR[2]); if(n>1&&n<=5000) return n; }
+  const m2 = nome.match(/(?:AMP|FR|CP|CPR|CAPS)\s*\/?\s*(\d+)\b(?!\s*(?:ML|MG|MCG|UI|G)\b)/); if (m2) { const n=parseInt(m2[1]); if(n>1) return n; }
+  return 1;
+}
+// UNIÃO INTELIGENTE: und com número manda (import é confiável); senão nome; default 1.
+// Se os dois divergem, o UND prevalece MAS loga no console (o card marca ⚠️ via qtdEmbDiv).
+function qtdEmbalagem(und, produto){
+  const u = _undNum(und), n = _qtdDoNome(produto);
+  if (u >= 1){ if (n > 1 && n !== u) console.warn('[qtdEmb] und "'+String(und||'').trim()+'" ('+u+') diverge do nome ('+n+') — '+produto); return u; }
+  return n;
+}
+// mensagem de divergência p/ o ⚠️ do card (ou null)
+function qtdEmbDiv(und, produto){
+  const u = _undNum(und); if (u < 1) return null; const n = _qtdDoNome(produto);
+  return (n > 1 && n !== u) ? ('und "'+String(und||'').trim()+'" ('+u+') diverge do nome ('+n+')') : null;
+}
+// BLINDAGEM anti-estouro por PEER (mesma lógica do auditoria_precos.js): unit parece preço de CAIXA?
+function _peDoseKey(p){ const m=(p||'').toUpperCase().match(/(\d+(?:[.,]\d+)?)\s*(MG\/ML|MCG\/ML|MG|MCG|G|UI|%)/g); return m?m.slice(0,2).join('+').replace(/\s+/g,''):''; }
+function _pePaNorm(s){ return (s||'').toUpperCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^A-Z0-9]/g,''); }
+function pareceCaixaPeer(produto, und, pa, unit){
+  unit=parseFloat(unit); if(!(unit>0)) return null;
+  const qtd=qtdEmbalagem(und,produto)||1; if(qtd<=1) return null;
+  const dk=_peDoseKey(produto), pk=_pePaNorm(pa); if(pk.length<3||!dk) return null;
+  const fp=(typeof _bmForma==='function')?_bmForma(produto):null;   // FORMA (inj/oral/tópico...): formas diferentes nunca são peer
+  const peers=(typeof cotacoes!=='undefined'?cotacoes:[]).filter(c=>String(c.fornecedor)!=='1'&&c.tipo!=='global'&&_pePaNorm(c.principio_ativo)===pk&&_peDoseKey(c.produto)===dk&&(typeof _bmForma!=='function'||_bmForma(c.produto)===fp)).map(c=>parseFloat(c.compra_unit)).filter(x=>x>0&&x!==unit);
+  if(peers.length<3) return null;
+  const pmin=Math.min(...peers); const corr=+(unit/qtd).toFixed(4);
+  if(unit/pmin>=3 && corr>=pmin*0.4 && corr<=pmin*2.5) return {qtd,pmin,corr};
+  return null;
+}
+// BLINDAGEM peer-INDEPENDENT (sanidade absoluta): unit alto + ÷qtd barato p/ a forma/material = preço de CAIXA
+// (pega o que NÃO tem peer: agulha/luva, S3MED "COM", genéricos sem peer). Espelha o auditoria_precos.js.
+const _S_MATKW=['agulha','seringa','luva','gaze','swab','cateter','equipo','compressa','algodao','esparadrapo','atadura','sonda','scalp','lanceta','micropore','avental','touca','abaixador','espatula','garrote','eletrodo','preservativo','dreno','curativo','coletor','fralda','absorvente','lamina','capote','prope','clamp'];
+function _sTemDose(p){ return /\d+\s*(mg|mcg|ui|g)\b|\d+\s*%/i.test((p||'').normalize('NFD').replace(/[̀-ͯ]/g,'')); }
+function _sMaterial(p){ const t=' '+String(p||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]/g,' ').replace(/\s+/g,' ').trim()+' '; return _S_MATKW.some(k=>t.includes(' '+k)) && !_sTemDose(p); }
+const _S_LIMIAR={SOLIDO_ORAL:20,LIQUIDO_ORAL:20,INJETAVEL:50,TOPICO:40,OFTALMICO:40,SPRAY:60,MATERIAL:10};
+const _S_TETO  ={SOLIDO_ORAL:12,LIQUIDO_ORAL:20,INJETAVEL:40,TOPICO:40,OFTALMICO:40,SPRAY:60,MATERIAL:5};
+const _sGen = p => { const s=String(p||'').replace(/^[\s*#>+]+/,''); return /^G[.\s]/i.test(s)||/\bGEN\b|GENERICO/i.test(s); };  // genérico (G./GEN)
+// Recipiente (bolsa/seringa/ampola/FA/refil/sistema/caneta) com N>1 no nome. Ignora o que vem depois de "+" (acessório).
+function _sRecipiente(produto){
+  const n=String(produto||'').toUpperCase();
+  const re=/(\+\s*)?(\d{1,4})\s*(?:SERINGAS|SERINGA|SER|AMPOLAS|AMPOLA|BOLSAS|BOLSA|BOLS|FRASCOS|FRASCO|FR|CANETAS|CANETA|CAN|SISTEMAS|SISTEMA|SIST|REFIS|REFIL|FA)\b/g;
+  let m; while((m=re.exec(n))){ if(m[1]) continue; if(parseInt(m[2])>1) return true; }
+  return false;
+}
+function pareceCaixaSanidade(produto, und, unit, caixa){
+  unit=parseFloat(unit); if(!(unit>0)) return null;
+  const qtd=qtdEmbalagem(und,produto)||1; if(qtd<=1) return null;
+  // RECIPIENTE CARO SEM CAIXA: "N BOLS/FR/AMP/FA/SER" + compra_caixa vazia + unit>=100. Buraco que o teto por forma
+  // (abaixo) NÃO pega: numa bolsa/frasco caro o ÷qtd CONTINUA alto, então nunca cai no TETO. Ex.: FLUCAZOL IV
+  // CX 6 BOLS unit 1230 (÷6=205) — o 205 não é "barato" p/ INJETAVEL, mas 1230 é a CAIXA. Peer-independente de
+  // propósito: 26 dos 30 itens desse padrão não têm peer da mesma forma+dose no banco. É ALERTA, não auto-apply.
+  const temCaixa = caixa!=null && caixa!=='' && parseFloat(caixa)>0;
+  if(!temCaixa && unit>=100 && _sRecipiente(produto)) return {qtd, corr:+(unit/qtd).toFixed(4), forma:'RECIPIENTE'};
+  const f = _sMaterial(produto) ? 'MATERIAL' : ((typeof _bmForma==='function')?_bmForma(produto):null);
+  if(!f || !(f in _S_LIMIAR)) return null;
+  const corr=+(unit/qtd).toFixed(4);
+  // genérico sólido-oral: comprimido de genérico > R$3/un quase não existe -> limiar baixo pega os sub-20 (LOSARTANA, LEVOTIROXINA...)
+  const lim = (f==='SOLIDO_ORAL' && _sGen(produto)) ? 3 : _S_LIMIAR[f];
+  if(unit>=lim && corr<=_S_TETO[f]) return {qtd,corr,forma:f};
+  return null;
+}
+function pv(c) {
+  const qtd = qtdEmbalagem(c.und, c.produto);
+  const isGlobal = c.tipo === 'global' || (c.fornecedor||'').toString() === '1';
+
+  if (isGlobal) {
+    // GLOBAL: global_venda1 é preço da CAIXA → divide pela qtd = preço unitário
+    const base = parseFloat(c.global_venda1||0) || parseFloat(c.venda_unit_calculada||0);
+    if (base > 0) return base / qtd;
+  }
+
+  // FORNECEDORES: compra_unit já é preço UNITÁRIO real → aplica markup 25%
+  if (c.compra_unit && parseFloat(c.compra_unit) > 0) {
+    return parseFloat(c.compra_unit) * 1.25;
+  }
+
+  // Se só tem compra_caixa → divide pela qtd e aplica markup
+  if (c.compra_caixa && parseFloat(c.compra_caixa) > 0) {
+    return (parseFloat(c.compra_caixa) / qtd) * 1.25;
+  }
+
+  // Fallback
+  const base = parseFloat(c.venda_unit_calculada||c.global_venda1||c.global_venda2||0);
+  return base > 0 ? base / qtd : 0;
+}
+
+// GLOBAL = estoque próprio (fornecedor '1' ou tipo global). Com estoque>0 = prioridade absoluta na busca.
+function ehGlobalComEstoque(c){ return (c && (c.tipo === 'global' || String(c.fornecedor) === '1')) && (parseInt(c.estoque)||0) > 0; }
+// Filtro de carga: fornecedor precisa de preço (pv>0); GLOBAL precisa de preço E estoque>0 (sem estoque não aparece).
+function incluiNaBusca(c){
+  if (!(pv(c) > 0)) return false;
+  const isGlobal = c.tipo === 'global' || String(c.fornecedor) === '1';
+  if (isGlobal) return (parseInt(c.estoque)||0) > 0;
+  return true;
+}
+
+// ─── BUSCA ────────────────────────────────────────────────────────────────────
+let searchTO;
+function gTab(tab) {
+  // Gate: aba Importar Cotação só p/ admin (Lemuel) ou Isadora (por email).
+  if (tab==='impcot' && (typeof podeImportarCotacao!=='function' || !podeImportarCotacao())) return;
+  document.getElementById('tab-busca').style.display = tab==='busca'?'block':'none';
+  document.getElementById('tab-lista').style.display = tab==='lista'?'block':'none';
+  document.getElementById('tab-ia').style.display = tab==='ia'?'block':'none';
+  const tc = document.getElementById('tab-impcot'); if (tc) tc.style.display = tab==='impcot'?'block':'none';
+  const bBtn = document.getElementById('tab-busca-btn');
+  const lBtn = document.getElementById('tab-lista-btn');
+  const iBtn = document.getElementById('tab-ia-btn');
+  const cBtn = document.getElementById('tab-impcot-btn');
+  bBtn.style.color = tab==='busca'?'#29b8ff':'#8a9ab0';
+  bBtn.style.borderBottom = tab==='busca'?'2px solid #29b8ff':'none';
+  bBtn.style.fontWeight = tab==='busca'?'600':'500';
+  lBtn.style.color = tab==='lista'?'#29b8ff':'#8a9ab0';
+  lBtn.style.borderBottom = tab==='lista'?'2px solid #29b8ff':'none';
+  lBtn.style.fontWeight = tab==='lista'?'600':'500';
+  iBtn.style.color = tab==='ia'?'#29b8ff':'#8a9ab0';
+  iBtn.style.borderBottom = tab==='ia'?'2px solid #29b8ff':'none';
+  iBtn.style.fontWeight = tab==='ia'?'600':'500';
+  if (cBtn) {
+    cBtn.style.color = tab==='impcot'?'#29b8ff':'#8a9ab0';
+    cBtn.style.borderBottom = tab==='impcot'?'2px solid #29b8ff':'none';
+    cBtn.style.fontWeight = tab==='impcot'?'600':'500';
+  }
+  if (tab==='impcot' && typeof initImportCot==='function') initImportCot();
+}
+
+function extrairConcentracao(texto) {
+  const s = (texto||'').toUpperCase();
+  const m = s.match(/[\d]+[.,]?[\d]*\s*(?:MG\/ML|MCG\/ML|UI\/ML|MG|MCG|UI|G(?![A-Z]))/);
+  return m ? m[0].replace(/\s/g,'').toUpperCase() : null;
+}
+function extrairTodasConc(texto) {
+  const s = (texto||'').toUpperCase();
+  const result = [];
+  const reAssoc = /([\d]+[.,]?[\d]*)\+([\d]+[.,]?[\d]*\s*(?:MG\/ML|MCG\/ML|UI\/ML|MG|MCG|UI|G(?![A-Z])))/g;
+  let ma;
+  while ((ma = reAssoc.exec(s)) !== null) {
+    const unit = ma[2].match(/(?:MG\/ML|MCG\/ML|UI\/ML|MG|MCG|UI|G(?![A-Z]))/);
+    if (unit) {
+      result.push((ma[1]+unit[0]).replace(/\s/g,'').toUpperCase());
+      result.push(ma[2].replace(/\s/g,'').toUpperCase());
+    }
+  }
+  const reNorm = /[\d]+[.,]?[\d]*\s*(?:MG\/ML|MCG\/ML|UI\/ML|MG|MCG|UI|G(?![A-Z]))/g;
+  let mn;
+  while ((mn = reNorm.exec(s)) !== null) {
+    const c = mn[0].replace(/\s/g,'').toUpperCase();
+    if (!result.includes(c)) result.push(c);
+  }
+  return result;
+}
+
+function extrairVolume(texto) {
+  const s = (texto||'').toUpperCase().replace(/MG\/ML|MCG\/ML|UI\/ML/g, '');
+  const m = s.match(/(\d+)\s*ML\b/);
+  return m ? parseInt(m[1]) : null;
+}
+
+function extrairForma(texto) {
+  const s = (texto||'').toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  // Ordem importa: mais específico primeiro
+  if (/\bGOTAS?\b|\bGTS\b/.test(s)) return 'GOTAS';
+  if (/\bSHAMPOO\b/.test(s)) return 'SHAMPOO';
+  if (/\bENEMA\b/.test(s)) return 'ENEMA';
+  if (/\bCREME\b/.test(s)) return 'CREME';
+  if (/\bPOMADA\b/.test(s)) return 'POMADA';
+  if (/\bBISNAGA\b/.test(s)) return 'BISNAGA';
+  if (/\bGELEIA\b|\bGEL\b/.test(s)) return 'GEL';
+  if (/\bSUSP(ENSAO)?\b/.test(s)) return 'SUSP';
+  if (/\bXAROPE\b/.test(s)) return 'XAROPE';
+  // INJ: só com palavras explícitas, NÃO /ML sozinho
+  if (/\bINJ(ETAV|ETAVEL)?\b|\bIV\b|\bIM\b|\bAMP\b|\bINJETAVEL\b/.test(s)) return 'INJ';
+  // CPR: incluindo "cp" isolado
+  if (/\bCPR\b|\bCOMP\b|\bCOMPRIMIDO\b|\bCP\b|\bTAB\b/.test(s)) return 'CPR';
+  if (/\bCAPS\b|\bCAPSULA\b/.test(s)) return 'CAPS';
+  return null;
+}
+
+function extrairVaso(texto) {
+  const s = (texto||'').toUpperCase();
+  if (/SEM VASO|S\/VASO|SEM VASOCONSTRITOR/.test(s)) return 'SEM';
+  if (/COM VASO|C\/VASO|COM VASOCONSTRITOR|C\/VASO CONST/.test(s)) return 'COM';
+  return null;
+}
+
+function extrairAtivosAssociados(texto) {
+  const s = texto.toUpperCase();
+  if (s.includes('+') || / E /.test(s)) {
+    return s.replace(/ E /g,'+').split('+').map(p => p.trim().split(/[\s\d]/)[0]).filter(p => p.length > 3);
+  }
+  return null;
+}
+
+
+// ─── BUSCA INTELIGENTE CENTRAL ────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════════════════
+// BUSCA RIGOROSA — casa só se PA + FORMA + DOSE baterem EXATO (dicionário ANVISA).
+// Embalagem (C/30 vs C/100) e marca podem variar. Sem match exato = null (NÃO ENCONTRADO).
+// Precisão > cobertura: melhor não achar do que mandar item errado pro cliente.
+// ══════════════════════════════════════════════════════════════════════════════
+const _bmStrip = s => (s||'').normalize('NFD').replace(/\p{M}/gu,'');
+const _bmNorm  = s => _bmStrip((s||'').toLowerCase()).replace(/[^a-z0-9\s,.\/]/g,' ').replace(/\s+/g,' ').trim();
+const _bmNormF = s => {
+  let t = _bmStrip((s||'').toLowerCase());
+  t = t.replace(/\bfr?\s*[\/.\\]\s*a(mp)?\b/g, ' fa ');   // F/A, FR/A, F.A, FR.AMP -> 'fa' (frasco-ampola = injetável) ANTES de trocar a barra
+  t = t.replace(/[^a-z0-9\s\/]/g,' ').replace(/\//g,' ').replace(/(\d)([a-z])/g,'$1 $2').replace(/([a-z])(\d)/g,'$1 $2');
+  return ' ' + t.replace(/\s+/g,' ').trim() + ' ';
+};
+
+// 9 categorias de forma (ordem: específico -> geral). Categorias diferentes NUNCA casam.
+const _BM_CATS = [
+  ['SHAMPOO',       ['shampoo','xampu','shampo']],
+  ['VAGINAL_RETAL', ['vaginal','supositorio','ovulo','enema','retal','pessario']],
+  ['OFTALMICO',     ['colirio','oftalmico','oft','otologico','auricular','ocular','oftalmica']],
+  ['ADESIVO',       ['adesivo','patch','transdermico','transderm']],
+  ['SPRAY',         ['spray','aerossol','aerosol','aero','aer','inalacao','inalatorio','inal','nasal','jato']],
+  ['INJETAVEL',     ['injetavel','inj','sol inj','solucao injetavel','susp inj','ampola','amp','ampolas','fa','fr amp','frasco ampola','liofilizado','liof','intravenoso','intramuscular','iv','im','sc','ev','epidural','c dil','s dil','diluente']],
+  ['TOPICO',        ['creme','pomada','gel','locao','pasta','unguento','geleia','alcoolica','aquosa','degermante','topica','antisseptico']],
+  ['LIQUIDO_ORAL',  ['xarope','xpe','suspensao','susp','solucao oral','sol oral','gotas','gts','elixir','sacaroleo','solucao','sol']],
+  ['SOLIDO_ORAL',   ['comprimido','comprimidos','cpr','cp','comp','dragea','drageas','revestido','rev','capsula','caps','cap','cps','pastilha','pilula','tablete','lib prol','lp','xr','er','mr']],
+];
+function _bmForma(texto){ const t=_bmNormF(texto); for(const [cat,kws] of _BM_CATS) for(const kw of kws) if(t.includes(' '+kw+' ')) return cat; if(/\d\s+com\b/.test(t)) return 'SOLIDO_ORAL'; return null; }
+const _BM_DOSE_CRIT = {SOLIDO_ORAL:1, INJETAVEL:1, LIQUIDO_ORAL:1};
+
+// Dose canônica: converte MCG/G -> MG (50MCG/ML == 0.05MG/ML). Volume (ML) não é dose.
+function _bmDoses(texto){
+  const up=_bmStrip(String(texto).toUpperCase()).replace(/,/g,'.');
+  const re=/(\d+(?:\.\d+)?)\s*(MG\/ML|MCG\/ML|UI\/ML|MG|MCG|UI|G|%)(?![A-Z])/g;
+  const set=new Set(); let m;
+  while((m=re.exec(up))){ let n=parseFloat(m[1]),u=m[2]; const perML=u.endsWith('/ML'); u=u.replace('/ML','');
+    if(u==='MCG'){n=n/1000;u='MG';} else if(u==='G'){n=n*1000;u='MG';}
+    n=Math.round(n*100000)/100000; set.add(n+u+(perML?'/ML':'')); }
+  return set;
+}
+function _bmDoseEq(a,b){ if(a.size!==b.size) return false; for(const d of a) if(!b.has(d)) return false; return true; }
+// injetável reconstituído (pó/liofilizado + diluente): 40MG (pó) == 40MG/ML (reconstituído) — mesmo produto de força única
+function _bmReconst(prod){ const t=_bmNormF(prod); return t.includes(' liof')||t.includes(' liofilizado')||t.includes(' diluente')||t.includes(' c dil')||t.includes(' s dil')||/ po\b/.test(t); }
+function _bmDoseEqIgnMl(a,b){ const strip=s=>{const x=new Set(); s.forEach(d=>x.add(d.replace('/ML',''))); return x;}; return _bmDoseEq(strip(a),strip(b)); }
+// pedido só tem CONCENTRAÇÃO (%, MG/ML) sem massa absoluta -> aí o VOLUME entra na comparação
+function _bmSoConc(doses){ return doses.size>0 && [...doses].every(d=> d.endsWith('/ML') || d.endsWith('%')); }
+// volume em ML (converte L->ML). Ignora a parte /ML de concentração (não tem dígito colado no ML).
+function _bmVolume(texto){
+  const up=_bmStrip(String(texto).toUpperCase()).replace(/,/g,'.');
+  let vol=null, m;
+  const reL=/(\d+(?:\.\d+)?)\s*(?:LTS|LT|L)\b(?![A-Z0-9])/g; while((m=reL.exec(up))){ vol=parseFloat(m[1])*1000; }
+  const re=/(?<![\/A-Z])(\d+(?:\.\d+)?)\s*ML\b/g; while((m=re.exec(up))){ vol=parseFloat(m[1]); }
+  return vol;
+}
+// largura/dimensão em CM (atadura/gaze/campo: 15CM != 10CM)
+function _bmCm(texto){
+  const up=_bmStrip(String(texto).toUpperCase()).replace(/,/g,'.'); const s=new Set(); let m;
+  const re=/(\d+(?:\.\d+)?)\s*CM/g; while((m=re.exec(up))){ s.add(String(parseFloat(m[1]))); }
+  return s;
+}
+// tamanhos de material (P/M/G/GG/XG/EG). Remove abreviações "P/ C/ S/ N/" antes p/ não confundir.
+function _bmTamanhos(texto){
+  const up=_bmStrip(String(texto).toUpperCase()).replace(/\b[A-Z]\//g,' '); const s=new Set();
+  (up.match(/\b(PP|GG|XG|EG|XGG|XXG)\b/g)||[]).forEach(x=>s.add(x.toLowerCase()));
+  (up.match(/\b[PMG]\b/g)||[]).forEach(x=>s.add(x.toLowerCase()));
+  return s;
+}
+// com/sem genérico (S/AGULHA≠C/AGULHA; S/CLOR≠C/CLORANFENICOL). Extrai todos os "c/x" e "s/x".
+function _bmComSem(texto){
+  const t=_bmNormF(texto); const arr=[]; let m;
+  const skip=new Set(['ml','un','uni','de','da','do','em','no','na','os','as','cx','ou','ao']);
+  const re=/\b(com|sem|c|s)\s+([a-z]{2,})/g;   // aceita abreviação de 2 letras (AG = agulha) c/ guard
+  while((m=re.exec(t))){ if(!skip.has(m[2])) arr.push({sig:(m[1][0]==='c'?'c':'s'), w:m[2]}); }
+  return arr;
+}
+// peso em GRAMAS (algodão/curativo: 500GR != 25G). "(G)" de genérico não conta (sem dígito).
+function _bmPeso(texto){
+  const up=_bmStrip(String(texto).toUpperCase()).replace(/,/g,'.'); const s=new Set(); let m;
+  const re=/(\d+(?:\.\d+)?)\s*GR?\b(?![A-Z])/g; while((m=re.exec(up))){ s.add(String(parseFloat(m[1]))); }
+  return s;
+}
+const _BM_GLOVE=['nitrilica','latex','vinil','borracha'];
+// luva cirúrgica (estéril, tam numérico 6,5/7/8) != luva de procedimento (P/M/G)
+function _bmLuvaTipo(texto){ const t=_bmNormF(texto); if(t.includes(' cirurgic')||t.includes(' cir ')) return 'cir'; if(t.includes(' procedimento')||t.includes(' proced')||t.includes(' proc ')) return 'proc'; return null; }
+// esterilidade: só relevante quando o pedido especifica (estéril x não-estéril de gaze/compressa/campo)
+function _bmEsteril(texto){ const t=_bmNormF(texto); if(/ (nao|n) est/.test(t)) return 'nao'; if(/ esteril/.test(t)||/ est /.test(t)) return 'sim'; return null; }
+// conflito com/sem: pedido "s/X" vs candidato "c/X" (ou vice-versa), casando por prefixo
+function _bmNegConflito(reqText, candText){
+  const rcs=_bmComSem(reqText), ccs=_bmComSem(candText);
+  for(const r of rcs) for(const c of ccs){ if(r.sig!==c.sig && (r.w.startsWith(c.w)||c.w.startsWith(r.w))) return true; }
+  return false;
+}
+
+const _BM_SAIS=new Set(['malato','tosilato','cloridrato','sulfato','acetato','fosfato','succinato','fumarato','cloreto','brometo','citrato','besilato','mesilato','tartarato','maleato','lactato','gluconato','dicloridrato','hidrocloreto','estearato','sodico','potassico','monobasico','dibasico']);
+const _BM_STOP=new Set(['para','com','por','dos','das','sol','inj','amp','cmp','oral','susp','xarope','frasco','caixa','comprimido','capsula','solucao','injetavel','suspensao','uso','via','dose','cada','mais','menos','disp','gts','gotas','creme','gel','pomada','bisnaga','sem','rev','lib','prol','retard','plus','forte','duo','max','mini','bls','pct','env','ser','cpr','cps','xpe','bis','spr','spray','und','unid','comp','cap','liof']);
+function _bmPalavras(linha){ return _bmNorm(linha).split(/\s+/).filter(p=>p.length>3 && !_BM_STOP.has(p) && !_BM_SAIS.has(p) && !/^\d/.test(p)); }
+const _bmDist1=(a,b)=>{ if(a===b)return true; const la=a.length,lb=b.length; if(Math.abs(la-lb)>1)return false; let i=0,j=0,e=0; while(i<la&&j<lb){ if(a[i]===b[j]){i++;j++;continue;} if(++e>1)return false; if(la>lb)i++; else if(lb>la)j++; else {i++;j++;} } if(i<la||j<lb)e++; return e<=1; };
+const _bmFuzzy=(w,t)=>{ if(!t)return false; if(t.includes(w))return true; if(w.length<5)return false; return t.split(/\s+/).some(k=>k.length>=5&&k[0]===w[0]&&_bmDist1(k,w)); };
+// substância casa por PALAVRA INTEIRA (evita cetamina casar dentro de escetamina)
+const _bmTemSub=(sub,texto)=> !!sub && (' '+texto+' ').includes(' '+sub+' ');
+
+// MATERIAL (sem PA): casa por substantivo + característica; bloqueia categorias alheias.
+const _BM_MATKW=['envelope','campo','atadura','ligadura','luva','fralda','sonda','papel','seringa','agulha','lamina','bisturi','kit','teste','tira','lanceta','fita','gaze','compressa','cateter','equipo','mascara','avental','touca','gorro','lencol','esparadrapo','micropore','algodao','coletor','dreno','swab','cotonete','eletrodo','abaixador','espatula','bolsa','scalp','abocath','jelco','termometro','oximetro','glicosimetro','curativo','bandagem','protetor','escova','pinca','tesoura','cuba','bandeja','umidificador','nebulizador','filtro','extensor','torneira','conector','circuito','fio','sutura','hidrogel','alginato','hidrocoloide','sapatilha','prope','prope','sapato','pantufa'];
+const _BM_BLOCK=['figurinha','figurinhas','cromo','cromos','copa','world','cup','panini','album','brinquedo','chocolate','alimento','doce','revista','sticker','boneco','pelucia','beach','tennis','tenis','esporte','esportivo','futebol','game'];
+// palavras GENÉRICAS que caem no path de medicamento como "principal" mas não são princípio ativo (forma/recipiente).
+// Quando o principal é uma dessas, exige uma palavra DISTINTIVA (marca/qualificador) casar — mata "ADESIVO SALONPAS"->ByeByeFever e "ALMOTOLIA 100ML"->água oxigenada.
+const _BM_GENERICO=new Set(['adesivo','almotolia','frasco','pote','bolsa','recipiente','coletor','envelope','guia']);
+// qualificadores genéricos (tamanho/adjetivo) que NÃO servem como palavra distintiva de marca
+const _BM_QUALIF_GEN=new Set(['grande','grandes','pequeno','pequena','medio','media','mini','super','extra','longo','longa','curto','curta','largo','larga','fino','fina','grosso','grossa','simples','comum','normal','descartavel','desc']);
+function _bmMaterial(texto){ if(_bmDoses(texto).size>0) return false; if(_bmForma(texto)) return false; const t=_bmNormF(texto); return _BM_MATKW.some(k=>t.includes(' '+k.split(' ')[0])); }
+// ── discriminadores OBRIGATÓRIOS de material: cada CONCEITO tem famílias (sinônimos). Se o pedido nomeia
+//    uma família, o candidato tem que casar ALGUMA das famílias que o pedido nomeou (senão bloqueia).
+//    Só bloqueiam quando o pedido especifica — não afrouxam nada.
+const _BM_FAM_SUBTIPO=[['uretral','vesical','foley','folley'],['enteral','nasoenteral','nasogastrica','nasogastrico','gastrica','levine','dobbhoff','duodenal','alimentacao'],['aspiracao','aspirativa'],['endotraqueal','orotraqueal','intubacao'],['nelaton'],['retal','rectal']];
+const _BM_FAM_MATERIAL=[['algodao'],['crepom','crepe'],['elastica','elastico'],['gessada','gesso','gessado'],['rayon'],['tnt','sintetica']];
+const _BM_FAM_IDADE=[['infantil','infantis','pediatrica','pediatrico','pediatria','junior','baby','bebe','neonatal'],['adulto','adultos','geriatrica','geriatrico','senior']];
+const _BM_FAM_TESTE=[['igg'],['igm'],['iga'],['antigeno','ag','ns1'],['anticorpo','pcr','molecular']];
+// analito do teste (a doença/alvo): dengue != covid != influenza... (escopo fechado nas comuns). So bloqueia se o pedido nomeia um.
+const _BM_FAM_ANALITO=[['dengue'],['covid','coronavirus','sars'],['influenza','flu','h1n1'],['hiv','aids'],['sifilis','treponema'],['malaria'],['hepatite','hbsag','hcv','hbv'],['gravidez','hcg','bhcg'],['rotavirus'],['estreptococo','strep'],['toxoplasmose'],['leishmaniose']];
+function _bmFamHit(text, fam){ const t=_bmNormF(text); return fam.some(tok=>t.includes(' '+tok+' ')); }
+// calibre N-XX / CH / FR (sonda, cateter, agulha): "N-06"->6, "N.12"->12, "N 08"->8. Null se nao houver.
+function _bmCalibre(texto){ var u=String(texto).toUpperCase(); var m=u.match(/\bN[º°O.\-\s]*(\d{1,2})\b/) || u.match(/\b(?:CH|FR|GA)[.\-\s]*(\d{1,2})\b/); if(!m) return null; var n=m[1].replace(/^0+/,''); return n===''?'0':n; }
+function _bmDiscorda(reqText, candText, familias){
+  const reqFams=familias.filter(f=>_bmFamHit(reqText,f));
+  if(!reqFams.length) return false;                 // pedido não especifica esse conceito -> sem restrição
+  return !reqFams.some(f=>_bmFamHit(candText,f));    // candidato tem que casar ALGUMA família que o pedido nomeou
+}
+function _bmMatchMat(reqText, candText){
+  const ct=_bmNormF(candText);
+  if(_BM_BLOCK.some(b=>ct.includes(' '+b))) return false;             // categoria alheia (figurinha, beach tennis...)
+  const stop=new Set(['para','com','de','do','da','p','e','em','cx','pct','und','unid','kit','c','un','x','sem']);
+  const rw=_bmNormF(reqText).trim().split(/\s+/).filter(w=>w.length>2 && !stop.has(w));
+  if(!rw.length) return false;
+  // mesmo substantivo — PALAVRA INTEIRA (tolera plural s/es). Mata "guia" casar dentro de "guiat".
+  if(!(ct.includes(' '+rw[0]+' ')||ct.includes(' '+rw[0]+'s ')||ct.includes(' '+rw[0]+'es '))) return false;
+  // ── discriminadores obrigatórios (subtipo/material/faixa-etária/tipo-de-teste) ──
+  if(_bmDiscorda(reqText,candText,_BM_FAM_SUBTIPO)) return false;     // sonda uretral != enteral != aspiração != endotraqueal
+  if(_bmDiscorda(reqText,candText,_BM_FAM_MATERIAL)) return false;    // atadura algodão != crepom
+  if(_bmDiscorda(reqText,candText,_BM_FAM_IDADE)) return false;       // fralda infantil != adulto
+  if(_bmDiscorda(reqText,candText,_BM_FAM_TESTE)) return false;       // teste IGG/IGM != antígeno
+  if(_bmDiscorda(reqText,candText,_BM_FAM_ANALITO)) return false;     // teste dengue != covid != influenza (analito)
+  // ── calibre N-XX (só sonda/cateter/dreno/agulha/tubo): N-06 != N-12; evita 4 calibres colapsarem em 1 ──
+  if(['sonda','cateter','dreno','agulha','scalp','abocath','jelco','tubo'].includes(rw[0])){
+    const calReq=_bmCalibre(reqText);
+    if(calReq){ const cc=_bmCalibre(candText); if(cc && cc!==calReq) return false; }
+  }
+  // ── característica-chave OBRIGATÓRIA quando o pedido especifica ──
+  const tamReq=_bmTamanhos(reqText);                                  // tamanho P/M/G/GG/XG/EG (multi-tamanho casa qualquer DESSES)
+  if(tamReq.size){ const tc=_bmTamanhos(candText); if(![...tamReq].some(t=>tc.has(t))) return false; }
+  const vReq=_bmVolume(reqText);                                      // volume (SERINGA 20ML só casa 20ML)
+  if(vReq){ if(vReq!==_bmVolume(candText)) return false; }
+  const sizeReq=(String(reqText).toLowerCase().match(/\d+\s*x\s*\d+/)||[])[0];  // dimensão NxN (23x40)
+  if(sizeReq){ if(!ct.replace(/\s*x\s*/g,'x').includes(sizeReq.replace(/\s*/g,''))) return false; }
+  const cmReq=_bmCm(reqText);                                         // largura CM (atadura/gaze 15CM != 10CM)
+  if(cmReq.size){ const cc=_bmCm(candText); if(![...cmReq].some(x=>cc.has(x))) return false; }
+  const fiosReq=(String(reqText).toUpperCase().match(/(\d+)\s*FIOS/)||[])[1];  // nº de fios (gaze/compressa)
+  if(fiosReq){ const fc=(String(candText).toUpperCase().match(/(\d+)\s*FIOS/)||[])[1]; if(fc && fc!==fiosReq) return false; }
+  const pesoReq=_bmPeso(reqText);                                    // peso GR (algodão 500g != 25g)
+  if(pesoReq.size){ const pc=_bmPeso(candText); if(![...pesoReq].some(x=>pc.has(x))) return false; }
+  const gReq=_BM_GLOVE.find(g=>_bmNormF(reqText).includes(' '+g+' '));  // material da luva (nitrílica != látex)
+  if(gReq){ const gc=_BM_GLOVE.find(g=>ct.includes(' '+g+' ')); if(gc && gc!==gReq) return false; }
+  const ltReq=_bmLuvaTipo(reqText);
+  if(ltReq==='cir'){                                                   // cirúrgica SÓ casa cirúrgica explícita + tamanho numérico igual
+    if(_bmLuvaTipo(candText)!=='cir') return false;
+    const ns=String(reqText).match(/\b([6-9](?:[.,]\d)?)\b/);
+    if(ns){ const nc=String(candText).match(/\b([6-9](?:[.,]\d)?)\b/); if(nc && nc[1].replace(',','.')!==ns[1].replace(',','.')) return false; }
+  } else if(ltReq==='proc'){ if(_bmLuvaTipo(candText)==='cir') return false; }  // procedimento não casa cirúrgica
+  const eReq=_bmEsteril(reqText);                                      // estéril != não-estéril (só se o pedido especifica)
+  if(eReq){ const ec=_bmEsteril(candText); if(ec && ec!==eReq) return false; }
+  if(_bmNegConflito(reqText, candText)) return false;               // com/sem conflitante (s/agulha, s/clor...)
+  // se nenhuma característica-chave no pedido, exige um qualificador em comum
+  if(!tamReq.size && !vReq && !sizeReq && !cmReq.size && !fiosReq && !pesoReq.size){
+    const quals=rw.slice(1);
+    if(quals.length>0 && !quals.some(q=>q.length>2 && ct.includes(q))) return false;
+  }
+  return true;
+}
+function _bmFormaCand(prod){
+  var f=_bmForma(prod); if(f) return f;
+  var up=_bmStrip(String(prod).toUpperCase());
+  if(/\/\s*ML\b/.test(up) || /\d\s*ML\b/.test(up)) return 'LIQUIDO_ORAL';  // sem palavra de forma mas com concentração/volume ML -> líquido (ex.: LACTULOSE 667MG/ML 120ML)
+  return 'SOLIDO_ORAL';                                                    // senão, sólido oral
+}
+// Insulinas NUNCA cruzam subtipo (NPH != Regular != Lispro != Glargina != Aspart != Degludeca != Detemir)
+const _BM_INSU = {nph:['nph'],regular:['regular'],lispro:['lispro','humalog'],aspart:['aspart','asparte','novorapid','fiasp'],glargina:['glargina','lantus','basaglar','toujeo'],degludeca:['degludeca','tresiba'],detemir:['detemir','levemir'],glulisina:['glulisina','apidra']};
+function _bmInsulinaSub(texto){
+  var t=_bmNormF(texto); var isI=t.includes(' insulina '); var sub=null;
+  for(var k in _BM_INSU){ for(var i=0;i<_BM_INSU[k].length;i++){ if(t.includes(' '+_BM_INSU[k][i])){ sub=k; isI=true; } } }
+  return isI ? (sub||'generica') : undefined;   // undefined = não é insulina; 'generica' = insulina sem subtipo identificado
+}
+
+// ── BLINDAGEM DE PREÇO (Lemuel 21/07) — 2 checks que teriam pego o TRESIBA e o HUMALOG sozinhos.
+// Caso real: S3MED gravou preço de CAIXA no compra_unit -> TRESIBA saiu na proposta a 5.263/cx
+// (5x o certo) e o HUMALOG a 320,56 sendo que o nosso GLOBAL vende a 137,10.
+//   (1) custo do fornecedor > a NOSSA venda1 do mesmo item  -> impossível, é preço errado
+//   (2) unitário > 2x a MEDIANA dos peers do mesmo PA+dose  -> destoa demais do mercado
+// É ALERTA, nunca bloqueio automático: marca o item e a tela mostra. Quem decide é o humano.
+function _bpDose(p){ const m=String(p||'').toUpperCase().match(/(\d+(?:[.,]\d+)?)\s*(MG\/ML|MCG\/ML|UI\/ML|U\/ML|MG|MCG|UI|G|%)/g); return m?m.slice(0,2).join('+').replace(/\s+/g,''):''; }
+function _bpChave(c){ const p=_bmNorm(c.principio_ativo||''), d=_bpDose(c.produto||''); return (p.length>=3&&d)?p+'|'+d:null; }
+var _bpCache = null;
+function _bpIndex(){
+  if (_bpCache) return _bpCache;
+  const nossa={}, peers={};
+  (typeof cotacoes!=='undefined'?cotacoes:[]).forEach(c=>{
+    const k=_bpChave(c); if(!k) return;
+    if (String(c.fornecedor)==='1' || String(c.tipo||'').toLowerCase()==='global'){
+      const v=parseFloat(c.global_venda1); if(v>0) (nossa[k]=nossa[k]||[]).push({v, prod:c.produto, cod:c.codigo});
+    } else {
+      const u=parseFloat(c.compra_unit); if(u>0) (peers[k]=peers[k]||[]).push({u, forn:String(c.fornecedor)});
+    }
+  });
+  _bpCache={nossa,peers}; return _bpCache;
+}
+// devolve {tipo, msg} quando o preço do item cheira a errado; null quando está ok
+function bpAlerta(c){
+  if (!c) return null;
+  const u=parseFloat(c.compra_unit); if(!(u>0)) return null;
+  if (String(c.fornecedor)==='1' || String(c.tipo||'').toLowerCase()==='global') return null;  // o GLOBAL é a referência
+  const k=_bpChave(c); if(!k) return null;
+  const {nossa,peers}=_bpIndex();
+  // (1) custo > nossa venda
+  const n=(nossa[k]||[]).slice().sort((a,b)=>a.v-b.v)[0];
+  if (n && u > n.v) return { tipo:'acima-da-nossa-venda',
+    msg:'custo '+u.toFixed(2)+' do fornecedor é MAIOR que a nossa venda '+n.v.toFixed(2)+' (cód '+n.cod+') — preço provavelmente errado' };
+  // (2) > 2x a mediana dos peers
+  const pr=(peers[k]||[]).map(x=>x.u).filter(x=>Math.abs(x-u)>1e-9).sort((a,b)=>a-b);
+  if (pr.length){
+    const med = pr.length%2 ? pr[(pr.length-1)/2] : (pr[pr.length/2-1]+pr[pr.length/2])/2;
+    if (med>0 && u > 2*med) return { tipo:'acima-dos-peers',
+      msg:'unitário '+u.toFixed(2)+' é '+(u/med).toFixed(1)+'x a mediana dos concorrentes ('+med.toFixed(2)+', n='+pr.length+') — pode ser preço de CAIXA gravado como unitário' };
+  }
+  return null;
+}
+
+function buscarMelhorProduto(linha) {
+  linha = (linha == null ? '' : String(linha));   // blindagem: aceita qualquer tipo sem quebrar
+  if (!linha.trim()) return null;
+  // ── MATERIAL ──
+  if (_bmMaterial(linha)) {
+    const cands = cotacoes.filter(c => pv(c) && _bmMatchMat(linha, c.produto||''));
+    if (!cands.length) return null;
+    cands.sort((a,b)=> (ehGlobalComEstoque(b)-ehGlobalComEstoque(a)) || (pv(a) - pv(b)));  // GLOBAL c/ estoque 1º
+    return cands[0];
+  }
+  // ── MEDICAMENTO: PA + FORMA + DOSE exatos ──
+  const reqForma = _bmForma(linha);
+  const reqDoses = _bmDoses(linha);
+  const pal = _bmPalavras(linha);
+  if (!pal.length) return null;
+  const principal = pal[0];
+  const principalGenerico = _BM_GENERICO.has(principal);                          // principal genérico (adesivo/almotolia) -> exige palavra distintiva
+  const distintivasReq = principalGenerico ? pal.slice(1).filter(w=>!_BM_GENERICO.has(w) && !_BM_QUALIF_GEN.has(w)) : [];
+  // CMED: se a palavra principal é uma MARCA que resolve pra 1 substância (não-combo, não-ambígua),
+  // o candidato também casa pelo PA = substância. FORMA e DOSE seguem barreiras duras.
+  const subAlvo = _bmCmed.get(principal) || null;
+  // forma dose-crítica (cpr/inj/líquido) sem dose no pedido = não dá pra confirmar = NÃO ENCONTRADO
+  if (reqDoses.size === 0 && reqForma && _BM_DOSE_CRIT[reqForma]) return null;
+  // sem massa absoluta (só % / MG/ML, ou nenhum mg) -> o VOLUME entra: ALCOOL 70% 1000ML != 50ML; AGUA OX 1000ML != 100ML
+  const reqVol = [...reqDoses].every(d=>d.endsWith('/ML')||d.endsWith('%')) ? _bmVolume(linha) : null;
+  const reqInsu = _bmInsulinaSub(linha);   // se o pedido é insulina, exige mesmo subtipo (NPH != Lispro...)
+  const cands = [];
+  cotacoes.forEach(c => {
+    if (!pv(c)) return;
+    const prod = c.produto||'', pa = c.principio_ativo||'';
+    const paN = _bmNorm(pa), prodN = _bmNorm(prod);
+    const paOK = _bmFuzzy(principal, paN) || _bmFuzzy(principal, prodN)
+              || _bmTemSub(subAlvo, paN) || _bmTemSub(subAlvo, prodN);   // PA direto OU substância do CMED
+    if (!paOK) return;
+    if (principalGenerico && distintivasReq.length && !distintivasReq.some(w=>paN.includes(w)||prodN.includes(w))) return;  // genérico sem palavra distintiva em comum
+    if (reqForma && _bmFormaCand(prod) !== reqForma) return;                                 // FORMA (barreira dura)
+    if (reqDoses.size && !_bmDoseEq(reqDoses, _bmDoses(prod))) {                              // DOSE (barreira dura)
+      // 2ª chance: injetável reconstituído (pó) -> 40MG == 40MG/ML (mesmo produto). NÃO vale p/ solução (DIMORF 10MG != 10MG/ML)
+      if (!(reqForma==='INJETAVEL' && _bmReconst(prod) && _bmDoseEqIgnMl(reqDoses, _bmDoses(prod)))) return;
+    }
+    if (reqVol && reqVol !== _bmVolume(prod)) return;                                        // VOLUME (quando só há concentração)
+    if (_bmNegConflito(linha, prod)) return;                                                 // com/sem conflitante (s/clor vs c/cloranfenicol)
+    if (reqInsu !== undefined) {                                                             // INSULINA: subtipo tem que bater (NPH != Lispro...)
+      const ci = _bmInsulinaSub(prod);
+      if (ci === undefined) return;                                                          // pedido é insulina, candidato não é
+      if (reqInsu !== 'generica' && ci !== reqInsu) return;                                  // subtipo diferente
+    }
+    let sc = 0;
+    if (_bmTemSub(subAlvo, paN) || _bmTemSub(subAlvo, prodN)) sc += 5;   // casou pela substância do CMED (mais confiável que só a marca no nome)
+    if (paN.startsWith(principal) || prodN.startsWith(principal) || (subAlvo && (paN.startsWith(subAlvo) || prodN.startsWith(subAlvo)))) sc += 3;
+    for (let i=1;i<pal.length;i++){ if(paN.includes(pal[i])) sc+=2; if(prodN.includes(pal[i])) sc+=1; }
+    cands.push({c, sc});
+  });
+  if (!cands.length) return null;
+  cands.sort((a,b)=> (ehGlobalComEstoque(b.c)-ehGlobalComEstoque(a.c)) || (b.sc - a.sc) || (pv(a.c) - pv(b.c)));  // GLOBAL c/ estoque 1º
+  return cands[0].c;
+}
+
+/* ─── busca antiga (criativa demais) — substituída pela versão rigorosa acima ───
+function buscarMelhorProdutoOLD(linha) {
+  if (!linha || !linha.trim()) return null;
+
+  const norm = s => (s||'').toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    .replace(/[^\w\s,.]/g,' ').trim();
+
+  // Prefixos de sais farmacêuticos — não são o princípio ativo em si
+  const prefixosSais = new Set(['malato','tosilato','cloridrato','sulfato','acetato',
+    'fosfato','succinato','fumarato','cloreto','brometo','citrato','besilato',
+    'mesilato','tartarato','maleato','lactato','gluconato','dicloridrato',
+    'hidrocloreto','estearato','sodico','potassico','monobasico','dibásico']);
+
+  // Stopwords completas
+  const stopwords = new Set(['para','com','por','dos','das','sol','inj','amp','cmp',
+    'oral','susp','xarope','frasco','caixa','comprimido','capsula','solucao',
+    'injetavel','suspensao','uso','via','dose','cada','mais','menos','seguranca',
+    'disp','gts','gotas','creme','gel','pomada','bisnaga','sem','vaso','con',
+    'rev','lib','prol','retard','plus','forte','duo','max','mini','bls','pct',
+    'cx','fr','ser','cpr','cps','xpe','env','bis','spr','spray','und','unid',
+    'inf','comp','cap','de','do','da','e','em','um','uma','com','sem','para',
+    'via','uso','liq','ped','sol','gel','cre','pom','spr','bls','ret','lib',
+    'mod','ext','lar','nor','iso','mono','di','tri','bi','po','liof','liofil']);
+
+  const linhaNorm = norm(linha);
+
+  // Extrair palavras significativas — excluindo stopwords, prefixos de sais e números
+  // IMPORTANTE: números com unidades (35mg, 150mg) NÃO são palavras de busca
+  // eles só funcionam como filtro/bônus depois que o PA for encontrado
+  const palavras = linhaNorm.split(/\s+/)
+    .filter(p => p.length > 3
+      && !stopwords.has(p)
+      && !prefixosSais.has(p)
+      && !/^[\d]/.test(p));  // Remove qualquer palavra que começa com número
+
+  if (!palavras.length) return null;
+
+  // Palavra principal = primeira palavra não-prefixo (princípio ativo real)
+  const palavraPrincipal = palavras[0];
+
+  // Extrair concentração
+  const concMatch = linha.match(/(\d+[,.]?\d*)\s*(?:MG\/ML|MCG\/ML|UI\/ML|MG|MCG|UI|G(?![A-Z]))/i);
+  const concBusca = concMatch ? concMatch[0].toUpperCase().replace(',','.').replace(/\s/,'') : null;
+
+  // Extrair volume
+  const volMatch = linha.match(/(\d+)\s*ML\b/i);
+  const volBusca = volMatch ? parseInt(volMatch[1]) : null;
+
+  // Extrair forma farmacêutica
+  const formaMap = {
+    'COMP':'CPR','CPR':'CPR','COMPRIMIDO':'CPR',
+    'CAPS':'CPS','CAP':'CPS','CAPSULA':'CPS',
+    'INJ':'INJ','INJETAVEL':'INJ',
+    'SUSP':'SUSP','SUSPENSAO':'SUSP',
+    'XPE':'XPE','XAROPE':'XPE',
+    'SOL':'SOL','SOLUCAO':'SOL',
+    'CRE':'CRE','CREME':'CRE',
+    'POM':'POM','POMADA':'POM',
+    'GTS':'GTS','GOTAS':'GTS',
+    'AMP':'AMP','AMPOLA':'AMP',
+    'SER':'SER','SERINGA':'SER',
+    'ENV':'ENV'
+  };
+  const linhaUp = linha.toUpperCase().replace(/[ÀÁÂÃÄÉÊÍÓÔÕÚÜÇ]/g, c => 
+    'AAAAAEEIOOOUUC'['ÀÁÂÃÄÉÊÍÓÔÕÚÜÇ'.indexOf(c)] || c);
+  let formaBusca = null;
+  for (const [k,v] of Object.entries(formaMap)) {
+    if (new RegExp('\\b'+k+'\\b').test(linhaUp)) { formaBusca = v; break; }
+  }
+
+  // Casamento tolerante a 1 typo (ex.: MIDAZOLAN -> MIDAZOLAM). Fallback: só quando não há match exato.
+  const dist1 = (a, b) => {                 // true se distância de edição <= 1
+    if (a === b) return true;
+    const la = a.length, lb = b.length;
+    if (Math.abs(la - lb) > 1) return false;
+    let i = 0, j = 0, edits = 0;
+    while (i < la && j < lb) {
+      if (a[i] === b[j]) { i++; j++; continue; }
+      if (++edits > 1) return false;
+      if (la > lb) i++; else if (lb > la) j++; else { i++; j++; }
+    }
+    if (i < la || j < lb) edits++;
+    return edits <= 1;
+  };
+  const casaFuzzy = (word, texto) => {
+    if (!texto) return false;
+    if (texto.includes(word)) return true;                 // match exato (substring)
+    if (word.length < 5) return false;                     // palavras curtas: sem fuzzy (evita falso positivo)
+    return texto.split(/\s+/).some(tok => tok.length >= 5 && tok[0] === word[0] && dist1(tok, word));
+  };
+
+  // ── Calcular score para cada produto ──
+  const resultados = [];
+
+  cotacoes.forEach(c => {
+    const prodNorm = norm(c.produto||'');
+    const paNorm = norm(c.principio_ativo||'');
+    const preco = pv(c);
+    if (!preco) return;
+
+    // REGRA PRINCIPAL: a palavra-chave DEVE estar em produto ou princípio ativo
+    // Sem isso, rejeitamos direto — evita falsos positivos
+    const temNoProd = casaFuzzy(palavraPrincipal, prodNorm);
+    const temNoPA = casaFuzzy(palavraPrincipal, paNorm);
+    if (!temNoProd && !temNoPA) return;
+
+    let score = 0;
+
+    // Pontuação por localização
+    if (paNorm.startsWith(palavraPrincipal)) score += 10;
+    else if (paNorm.includes(' '+palavraPrincipal)) score += 8;
+    else if (temNoPA) score += 6;
+
+    if (prodNorm.startsWith(palavraPrincipal)) score += 7;
+    else if (prodNorm.includes(' '+palavraPrincipal)) score += 5;
+    else if (temNoProd) score += 3;
+
+    // Palavras adicionais
+    for (let i = 1; i < palavras.length; i++) {
+      const p = palavras[i];
+      if (paNorm.includes(p)) score += 3;
+      if (prodNorm.includes(p)) score += 2;
+    }
+
+    // Bônus concentração
+    if (concBusca) {
+      const concProd = (c.produto||'').toUpperCase().replace(',','.');
+      if (concProd.includes(concBusca)) score += 8;
+      else {
+        const temOutraConc = /\b\d+[,.]?\d*\s*(?:MG|MCG|UI|G)/.test(c.produto||'');
+        if (temOutraConc) score -= 5;
+      }
+    }
+
+    // Bônus volume
+    if (volBusca) {
+      const volProd = (c.produto||'').match(/(\d+)\s*ML\b/i);
+      if (volProd && parseInt(volProd[1]) === volBusca) score += 4;
+      else if (volProd) score -= 3;
+    }
+
+    // Bônus forma
+    if (formaBusca) {
+      const prodUp = (c.produto||'').toUpperCase();
+      let formaProd = null;
+      for (const [k,v] of Object.entries(formaMap)) {
+        if (new RegExp('\\b'+k+'\\b').test(prodUp)) { formaProd = v; break; }
+      }
+      if (formaProd === formaBusca) score += 4;
+      else if (formaProd && formaProd !== formaBusca) score -= 2;
+    }
+
+    resultados.push({...c, _pvv: preco, _score: score});
+  });
+
+  if (!resultados.length) return null;
+
+  resultados.sort((a,b) => b._score - a._score || a._pvv - b._pvv);
+  return resultados[0];
+}
+─── fim da busca antiga ─── */
+
+// tira a QTD da linha da lista (coluna tab/;/2+espaços, ou número no fim; aceita milhar "10.000"/"10 000").
+function _numQtd(s){ var n=parseInt(String(s).replace(/[.\s]/g,'').replace(/,\d+$/,''),10); return (isNaN(n)||n<1||n>9999999)?0:n; }
+function _parseLinhaQtd(l){
+  l = String(l||'').trim();
+  var parts = l.split(/\t|;|\s{2,}/).map(function(s){return s.trim();}).filter(Boolean);
+  if(parts.length>=2){ var last=parts[parts.length-1]; if(/^[\d.\s]+$/.test(last)){ var q=_numQtd(last); if(q>0) return {produto:parts.slice(0,-1).join(' '), qtd:q}; } }
+  var m = l.match(/^(.+?)\s+(\d{1,3}(?:[.\s]\d{3})+|\d{1,7})\s*$/);   // número no fim (só dígitos, evita "2ML")
+  if(m){ var q2=_numQtd(m[2]); if(q2>0) return {produto:m[1].trim(), qtd:q2}; }
+  return {produto:l, qtd:1};
+}
+function importarLista() {
+  const lista = document.getElementById('lista-rapida').value.trim();
+  if (!lista) { toast('Cole a lista de produtos primeiro','error'); return; }
+  const linhas = lista.split('\n').map(l=>l.trim()).filter(l=>l.length>2);
+  if (!linhas.length) return;
+
+  const stEl = document.getElementById('lista-status');
+  stEl.textContent = `Buscando ${linhas.length} produtos...`;
+
+  let adicionados = 0;
+  const naoEncontradosList = [];
+
+  linhas.forEach(linha => {
+    const {produto, qtd} = _parseLinhaQtd(linha);   // carrega a QTD da lista (bug: antes era sempre 1)
+    const melhor = buscarMelhorProduto(produto);
+    if (melhor) {
+      const ex = itens.find(i => i.id === melhor.id);
+      if (ex) { ex.qtd = (parseInt(ex.qtd)||0) + qtd; }   // item repetido na lista: soma a qtd
+      else {
+        const qtdCx = qtdEmbalagem(melhor.und, melhor.produto);
+        itens.push({...melhor, qtd:qtd, desc_item:0, _pvv:pv(melhor), _qtd_caixa:qtdCx, _bpAlerta:bpAlerta(melhor)});
+        adicionados++;
+      }
+    } else {
+      naoEncontradosList.push(produto);
+    }
+  });
+
+  stEl.innerHTML = `✅ ${adicionados} adicionado(s)${naoEncontradosList.length ? ` · ❌ ${naoEncontradosList.length} não encontrado(s)` : ''}`;
+  if (naoEncontradosList.length) {
+    // os não-encontrados daqui viravam só texto vermelho e se perdiam — agora viram fila de cotação
+    stEl.innerHTML += `<div style="margin-top:8px;padding:8px;background:#fff0f0;border-radius:8px;font-size:12px">
+      <strong>❌ Não encontrados:</strong>
+      <button class="btn btn-outline btn-sm no-print" style="margin-left:8px" onclick="iacAddTodos(${JSON.stringify(naoEncontradosList).replace(/"/g,'&quot;')}, this)">➕ Adicionar os ${naoEncontradosList.length} à fila de cotação</button>
+      ${naoEncontradosList.map(p=>`<div style="color:#c06060;padding:3px 0;display:flex;align-items:center;gap:8px">
+        <span style="flex:1">${p}</span>
+        <button class="btn btn-outline btn-sm no-print" onclick="iacAddUm(${JSON.stringify(p).replace(/"/g,'&quot;')}, this)">➕ Add à fila</button>
+      </div>`).join('')}
+    </div>`;
+  }
+  renderItens();
+  calcTotal();
+  atualizarVisibilidade();
+  if (adicionados > 0) toast(`${adicionados} produto(s) adicionado(s)!`);
+}
+
+// ─── NOME DE FORNECEDOR (código → nome) — compartilhado, idêntico em sistema_final/vendas/painel (FASE A migração #18) ───
+const FORN_NOMES = {
+  '1':'GLOBAL','2':'SUPERMEDICA','3':'STOCK MED','4':'PROMEFARMA','5':'DISMASTER',
+  '6':'ELLO','7':'MAEVE','8':'BRASIL DISTRIBUIDORA','9':'BASCEL / ROBERTINHO MED',
+  '10':'SULMEDIC','11':'ASTHAMED','12':'INDUSTRIA CRISTALIA','13':'RANBAXY',
+  '14':'OUTROS','15':'BIOCHIMICO','16':'PROMEFARMA','17':'BRASIL MEDICAMENTOS',
+  '18':'MCW','19':'SUPERMED','20':'SUPERMAX INDUSTRIA'
+};
+function nomeForn(cod){
+  const c = (cod==null ? '' : String(cod)).trim();
+  if(!c) return 'GLOBAL';
+  return /^\d+$/.test(c) ? (FORN_NOMES[c] || c) : c;
+}
+
+// ── Chave de agrupamento ──
+// Material hospitalar NÃO tem princípio ativo: agrupa pelo NOME (cada tamanho é único).
+// Medicamento: agrupa por princípio ativo + dosagem (compara preço entre fornecedores).
+const MATERIAL_RX = /ATADURA|LUVA|SERINGA|AGULHA|FRALDA|M[ÁA]SCARA|CATETER|SONDA|C[ÂA]NULA|EQUIPO|CAMPO|COMPRESSA|GAZE|ESPARADRAPO|SCALP|ABOCATH|DRENO|TOUCA|AVENTAL|LEN[ÇC]OL|FITA|TERM[ÔO]METRO|ALMOTOLIA|COLETOR|CURATIVO|ESPECULO|ESP[ÉE]CULO/i;
+function chaveGrupo(c){
+  const pa = (c.principio_ativo||'').trim();
+  const prod = (c.produto||'').toUpperCase();
+  // V2: material = SEM PA, ou PA placeholder "OUTROS", ou PA é categoria de material
+  // (MATERIAL_RX testado SÓ no PA, não no nome) — assim medicamento em seringa/ampola
+  // (HEPTRIS, ENOXAPARINA em SERINGA) com PA real NÃO é mais derrubado pra PROD#.
+  if(!pa || pa.toUpperCase()==='OUTROS' || MATERIAL_RX.test(pa)){
+    return 'PROD#' + prod;
+  }
+  // medicamento → princípio ativo + dosagem
+  // REGRA: dose ABSOLUTA (MG/MCG/UI NÃO seguido de /ML) = dose fixa → ignora volume
+  //        (ENOXAPARINA 60MG/0,6ML agrupa com 60MG, p/ comparar o mais barato).
+  //        Concentração (X/ML, %) ou produto medido por volume (soro/água/contraste)
+  //        → PRESERVA o volume (100ML ≠ 500ML; glicose 5% ≠ 50%).
+  const mass = prod.match(/\d+[.,]?\d*\s*(?:MG|MCG|UI)\b(?!\s*\/\s*ML)/g) || [];
+  const conc = prod.match(/\d+[.,]?\d*\s*(?:MG|MCG|UI|MMOL)\s*\/\s*ML\b/g) || [];
+  const pct  = prod.match(/\d+[.,]?\d*\s*%/g) || [];
+  let toks = mass.concat(conc, pct);
+  if (mass.length === 0) toks = toks.concat(prod.match(/\d+[.,]?\d*\s*ML\b/g) || []);
+  const specs = toks.map(x=>x.replace(/\s+/g,'')).sort().join('|');
+  // FORMA como barreira dura: comprimido nunca agrupa com injetável/tópico do mesmo PA+dose (reusa _bmForma).
+  return 'PA#' + pa.toUpperCase() + '#' + specs + '#' + (_bmForma(prod)||'?');
+}
+
+function buscarProduto(q, imediato=false) {
+  clearTimeout(searchTO);
+  const el = document.getElementById('resultado-busca');
+  if (!q || !String(q).trim()) { if(el) el.innerHTML=''; return; }   // guarda: tolera q undefined/nulo/vazio sem estourar
+  const delay = imediato ? 0 : 300;
+  searchTO = setTimeout(async () => {
+    await recarregarCotacoes();  // estoque/preço fresco na busca (cache 60s)
+    if (!cotacoes.length) { el.innerHTML='<div class="loading"><div class="spinner"></div> Carregando banco...</div>'; return; }
+    // Busca por PALAVRAS (todas têm que aparecer), não substring contígua — assim "dexametasona cpr"
+    // casa "DEXAMETASONA 4MG CX10 CPR". Procura em produto + princípio ativo + marca juntos.
+    const termos = q.toLowerCase().split(/\s+/).filter(Boolean);
+    const r = cotacoes.filter(c => {
+      if (!(parseFloat(c.compra_unit||0) > 0 || parseFloat(c.global_venda1||0) > 0)) return false;
+      const hay = ((c.produto||'') + ' ' + (c.principio_ativo||'') + ' ' + (c.marca||'')).toLowerCase();
+      return termos.every(t => hay.includes(t));
+    });
+    if (!r.length) {
+      el.innerHTML = `<div style="padding:12px;background:#fff8f8;border:1px dashed #f0c0c0;border-radius:8px;font-size:13px">
+        <span style="color:var(--vermelho)">❌ "${q}" não encontrado no banco.</span>
+        <br><small style="color:var(--muted)">Adicione manualmente ou verifique a digitação.</small>
+        <br><button class="btn btn-outline btn-sm no-print" style="margin-top:8px" onclick="adicionarNaoEncontrado('${q.replace(/'/g,'&apos;')}')">+ Adicionar como não encontrado</button>
+      </div>`;
+      return;
+    }
+    // Agrupa por principio ativo e pega o mais barato
+    const mapa = {};
+    r.forEach(c => {
+      const k = chaveGrupo(c);
+      const pvv = pv(c);
+      if (!mapa[k] || pvv < mapa[k]._pvv) mapa[k] = {...c, _pvv:pvv};
+    });
+    // Também mostra todas as opções para escolha
+    const grupos = {};
+    r.forEach(c => {
+      const k = chaveGrupo(c);
+      if (!grupos[k]) grupos[k] = [];
+      grupos[k].push({...c, _pvv:pv(c)});
+    });
+    // ordena DENTRO do grupo (global-first) e a LISTA de grupos (os com GLOBAL c/ estoque no TOPO da página)
+    const _entradas = Object.entries(grupos).map(([nome,items])=>{
+      items.sort((a,b)=> (ehGlobalComEstoque(b)-ehGlobalComEstoque(a)) || (a._pvv-b._pvv));  // GLOBAL c/ estoque 1º dentro do card
+      return { items, temGlobal: ehGlobalComEstoque(items[0]) ? 1 : 0 };
+    });
+    _entradas.sort((a,b)=> b.temGlobal - a.temGlobal);  // cards com estoque próprio sobem pro TOPO (sort estável mantém o resto)
+    el.innerHTML = _entradas.map(({items})=>{
+      const melhor = items[0];
+      const alt = items.slice(1);
+      return `
+        <div class="resultado-item"${ehGlobalComEstoque(melhor)?' style="border-left:4px solid #16c060"':''}>
+          <div class="info">
+            <div class="nome">${melhor.produto}</div>
+            <div class="detalhe">
+              ${ehGlobalComEstoque(melhor)?`<span class="badge" style="background:#16c060;color:#fff;font-weight:700">🏠 ESTOQUE PRÓPRIO · ${melhor.estoque} un</span> `:''}${ehRestrito()?'':`<span class="badge badge-blue">${nomeForn(melhor.fornecedor)}</span>`}
+              ${melhor.marca?`<span class="badge" style="background:#f0f4f0;color:var(--muted);margin-left:4px">${melhor.marca}</span>`:''}
+              &nbsp;· CX/${qtdEmbalagem(melhor.und,melhor.produto)} · <strong style="color:var(--verde-escuro)">${fmtBRL(melhor._pvv)}/un</strong> · ${fmtBRL(melhor._pvv*qtdEmbalagem(melhor.und,melhor.produto))}/cx${qtdEmbDiv(melhor.und,melhor.produto)?` <span title="${qtdEmbDiv(melhor.und,melhor.produto)}" style="cursor:help">⚠️</span>`:''}${seloVariacao(melhor)}
+              ${melhor.estoque>0?` · <span style="color:var(--verde-escuro)">✅ ${melhor.estoque} em estoque</span>`:''}
+              ${melhor.validade?` · Venc: ${fmtDate(melhor.validade)}`:''}
+              ${alt.length?`<br><span style="font-size:10px;color:var(--muted)">+${alt.length} opção(ões) alternativa(s): ${alt.map(a=>`${ehRestrito()?'':nomeForn(a.fornecedor)+' · '}${a.marca||''} ${fmtBRL(a._pvv)}/un`).join(' | ')}</span>`:''}
+            </div>
+          </div>
+          <button class="btn btn-primary btn-sm" onclick='addItem(${JSON.stringify(melhor).replace(/'/g,"&#39;")})'>+ Add</button>
+        </div>
+        ${alt.map(a=>`
+          <div class="resultado-item" style="opacity:0.75;margin-left:16px;background:#0f0f0f">
+            <div class="info">
+              <div class="nome" style="font-size:12px">${a.produto} <span class="badge badge-yellow">Alternativo</span></div>
+              <div class="detalhe">
+                ${ehRestrito()?'':`<span class="badge badge-blue">${nomeForn(a.fornecedor)}</span>`}
+                ${a.marca?`<span class="badge" style="background:#f0f4f0;color:var(--muted);margin-left:4px">${a.marca}</span>`:''}
+                &nbsp;· CX/${qtdEmbalagem(a.und,a.produto)} · <strong style="color:var(--verde-escuro)">${fmtBRL(a._pvv)}/un</strong> · ${fmtBRL(a._pvv*qtdEmbalagem(a.und,a.produto))}/cx${qtdEmbDiv(a.und,a.produto)?` <span title="${qtdEmbDiv(a.und,a.produto)}" style="cursor:help">⚠️</span>`:''}
+                ${a.estoque>0?` · <span style="color:var(--verde-escuro)">✅ ${a.estoque} em estoque</span>`:''}
+                ${(a.vencimento||a.validade)?` · Venc: ${fmtDate(a.vencimento||a.validade)}`:''}
+              </div>
+            </div>
+            <button class="btn btn-outline btn-sm" onclick='addItem(${JSON.stringify(a).replace(/'/g,"&#39;")})'>Add</button>
+          </div>`).join('')}
+      `;
+    }).join('');
+  }, delay);
+}
+
+// ─── ITENS ────────────────────────────────────────────────────────────────────
+function addItem(c) {
+  if (itens.find(i=>i.id===c.id)) { toast('Já adicionado','error'); return; }
+  const qtdCx = qtdEmbalagem(c.und, c.produto);
+  itens.push({...c, qtd:1, desc_item:0, _pvv:pv(c), _qtd_caixa: qtdCx, _bpAlerta:bpAlerta(c)});
+  renderItens();
+  document.getElementById('resultado-busca').innerHTML='';
+  document.getElementById('busca-prod').value='';
+  atualizarVisibilidade();
+}
+function remItem(id) { itens=itens.filter(i=>i.id!==id); renderItens(); calcTotal(); atualizarVisibilidade(); }
+function atualizarVisibilidade() {
+  const temItens = itens.length > 0 || naoEncontrados.length > 0;
+  ['card-itens','card-total','card-acoes'].forEach(id => document.getElementById(id).style.display = temItens?'':'none');
+}
+
+function renderItens() {
+  const el = document.getElementById('lista-itens');
+  if (!itens.length) { el.innerHTML='<div class="empty-state" style="padding:20px"><div class="icon">📦</div><p>Nenhum item adicionado</p></div>'; calcTotal(); return; }
+  el.innerHTML = itens.map((c,i)=>{
+    const precoUnit = c._pvv_editado !== undefined ? c._pvv_editado : c._pvv * (1 - (c.desc_item||0)/100);
+    const qtd_caixa = c._qtd_caixa || qtdEmbalagem(c.und, c.produto) || 1;
+    const precoCx = precoUnit * qtd_caixa; // preço unit × qtd embalagem = preço caixa correto
+    const totalItem = precoCx * c.qtd; // Qtd = caixas → total igual ao PDF (Preço CX × qtd)
+    const isGlobal = (c.fornecedor||'').toString() === '1' || c.tipo === 'global';
+    const custoRaw = parseFloat(c.compra_unit||0) || parseFloat(c.compra_caixa||0)/qtd_caixa || 0;
+    let custo = isGlobal ? custoRaw / qtd_caixa : custoRaw; // GLOBAL: divide pela qtd
+    // CUSTO-REF do GLOBAL: o estoque interno não guarda custo de compra, só venda. Sem custo, o MKP some.
+    // Assume que a venda GLOBAL já embute 25% -> custo de referência = venda ÷ 1,25 (preço cheio = MKP 25%).
+    // É SÓ p/ exibir/calcular o MKP na tela: NÃO é gravado como compra_unit (isso poluiria auditoria/invariante).
+    let custoRef = false;
+    if (isGlobal && !(custo > 0)) { custo = (parseFloat(c._pvv)||0) / 1.25; custoRef = custo > 0; }
+    const margem = custo > 0 ? ((precoUnit - custo) / custo * 100) : null;
+    const margemCor = margem === null ? '#888' : margem >= 20 ? '#22c55e' : margem >= 10 ? '#f59e0b' : '#ef4444';  // verde 20%+ / amarelo 10-20% / vermelho abaixo (alinhado c/ setPrecoEdit)
+    const margemTxt = margem === null ? '—' : (margem.toFixed(1)+'%'+(custoRef?' (ref.)':''));
+    return `
+    <div class="item-row">
+      <span style="font-size:11px;color:var(--muted);min-width:28px;font-weight:600">${String(i+1).padStart(3,'0')}</span>
+      <div class="item-info">
+        <div class="item-nome">${c.produto}</div>
+        <div class="item-det">
+          ${c.marca||'—'}${ehRestrito()?'':` · <span style="color:var(--muted)">${nomeForn(c.fornecedor)}</span>`}
+          ${c.estoque>0?` · <span style="color:var(--verde-escuro)">Estoque: ${c.estoque}</span>`:''}
+          ${c.validade?` · Venc: ${fmtDate(c.validade)}`:''}
+        </div>
+        ${(c._bpAlerta && !ehRestrito())?`<div class="no-print" style="margin-top:4px;font-size:11px;color:#e6a817;background:rgba(230,168,23,.08);border:1px solid rgba(230,168,23,.35);border-radius:6px;padding:4px 8px">⚠️ conferir preço: ${c._bpAlerta.msg}</div>`:''}
+        <div class="item-det no-print" style="margin-top:6px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+          ${ehRestrito()?'':`<span style="font-size:11px;color:var(--muted)">Custo: <strong style="${custoRef?'color:#9fb0c0;font-style:italic':'color:#e8f0f8'}">${custo>0?fmtBRL(custo):'—'}</strong>${custoRef?' <span style="font-size:9px;color:#7a8a9a">(ref. venda÷1,25)</span>':''}</span>`}
+          <span style="font-size:11px;color:var(--muted)">Preço UN:
+            <input type="number" id="pvv-edit-${c.id}" value="${precoUnit.toFixed(4)}" min="0" step="0.01"
+              style="width:80px;padding:3px 6px;border:1px solid #29b8ff;border-radius:5px;text-align:right;font-size:12px;font-weight:700;color:#29b8ff;background:#0d1b2a;outline:none;"
+              oninput="setPrecoEdit('${c.id}',this.value)">
+          </span>
+          ${ehRestrito()?'':`<span id="margem-badge-${c.id}" style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px;background:${margemCor}22;color:${margemCor};">MKP ${margemTxt}</span>`}
+          <span style="font-size:10px;color:var(--muted)">Orig: ${fmtBRL(c._pvv)}</span>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+        <span style="font-size:10px;color:var(--muted)">Qtd</span>
+        <input type="number" value="${c.qtd}" min="1" oninput="setQtd('${c.id}',this.value)">
+      </div>
+      <div>
+        <div class="item-preco" id="preco-${c.id}">${fmtBRL(totalItem)}</div>
+        <div class="item-preco-info">CX/${qtd_caixa} · ${fmtBRL(precoUnit)}/un · ${fmtBRL(precoCx)}/cx${qtdEmbDiv(c.und,c.produto)?` <span title="${qtdEmbDiv(c.und,c.produto)} — corrija o cadastro" style="cursor:help">⚠️</span>`:''}</div>
+      </div>
+      <button class="btn btn-danger btn-sm no-print" onclick="remItem('${c.id}')">✕</button>
+    </div>`;
+  }).join('');
+  calcTotal();
+}
+
+function setQtd(id, v) {
+  const i = itens.find(x=>x.id===id);
+  if(i) { i.qtd = parseInt(v)||1; }
+  calcTotal();
+  reRenderPreco(id);
+}
+function setDescItem(id, v) {
+  const i = itens.find(x=>x.id===id);
+  if(i) { i.desc_item = Math.min(8, Math.max(0, parseFloat(v)||0)); }
+  calcTotal();
+  reRenderPreco(id);
+}
+function setPrecoEdit(id, v) {
+  const c = itens.find(x=>x.id===id);
+  if(!c) return;
+  const novo = parseFloat(v) || 0;
+  c._pvv_editado = novo;
+  // Atualizar badge de margem ao vivo
+  const qtd_caixa = c._qtd_caixa || qtdEmbalagem(c.und, c.produto) || 1;
+  const isGlobal = (c.fornecedor||'').toString() === '1' || c.tipo === 'global';
+  const custoRaw = parseFloat(c.compra_unit||0) || parseFloat(c.compra_caixa||0)/qtd_caixa || 0;
+  let custo = isGlobal ? custoRaw / qtd_caixa : custoRaw;
+  // CUSTO-REF do GLOBAL (venda÷1,25) — o MESMO do renderItens. Sem isto o MKP virava "—" ao editar o preço
+  // (o GLOBAL não tem compra_unit, então custo=0 e a margem dava null). Aqui o custo-ref faz o MKP recalcular.
+  let custoRef = false;
+  if (isGlobal && !(custo > 0)) { custo = (parseFloat(c._pvv)||0) / 1.25; custoRef = custo > 0; }
+  const margem = custo > 0 ? ((novo - custo) / custo * 100) : null;
+  const margemCor = margem === null ? '#888' : margem >= 20 ? '#22c55e' : margem >= 10 ? '#f59e0b' : '#ef4444';
+  const margemTxt = margem === null ? '—' : (margem.toFixed(1)+'%'+(custoRef?' (ref.)':''));
+  const badge = document.getElementById('margem-badge-'+id);
+  if(badge) {
+    badge.textContent = 'MKP '+margemTxt;
+    badge.style.color = margemCor;
+    badge.style.background = margemCor+'22';
+  }
+  calcTotal();
+  reRenderPreco(id);
+}
+function reRenderPreco(id) {
+  const c = itens.find(x=>x.id===id);
+  if(!c) return;
+  const precoUnit = c._pvv_editado !== undefined ? c._pvv_editado : c._pvv * (1 - (c.desc_item||0)/100);
+  const qtd_caixa = c._qtd_caixa || qtdEmbalagem(c.und, c.produto) || 1;
+  const totalItem = precoUnit * qtd_caixa * c.qtd; // Preço CX × qtd (igual ao PDF)
+  const el = document.getElementById('preco-'+id);
+  if(el) el.textContent = fmtBRL(totalItem);
+}
+
+function calcTotal() {
+  const subtotal = itens.reduce((s,c) => {
+    const pu = c._pvv_editado !== undefined ? c._pvv_editado : c._pvv*(1-(c.desc_item||0)/100);
+    const qcx = c._qtd_caixa || qtdEmbalagem(c.und, c.produto) || 1;
+    return s + pu * qcx * c.qtd; // Preço CX × qtd (igual ao PDF)
+  }, 0);
+  const descPerc = Math.min(8, Math.max(0, parseFloat(document.getElementById('desc-geral')?.value||0)));
+  const descVal = subtotal * descPerc / 100;
+  const total = subtotal - descVal;
+  const el_s = document.getElementById('val-subtotal'); if(el_s) el_s.textContent = fmtBRL(subtotal);
+  const el_d = document.getElementById('val-desconto'); if(el_d) el_d.textContent = '- ' + fmtBRL(descVal);
+  const el_t = document.getElementById('val-total'); if(el_t) el_t.textContent = fmtBRL(total);
+  const el_c = document.getElementById('cond-display'); if(el_c) el_c.textContent = document.getElementById('condicao')?.value || 'À VISTA';
+  const el_v = document.getElementById('valid-display'); if(el_v) el_v.textContent = (document.getElementById('validade-orc')?.value||7) + ' dias';
+}
+
+document.getElementById('desc-geral')?.addEventListener('input', calcTotal);
+document.getElementById('condicao')?.addEventListener('change', calcTotal);
+document.getElementById('validade-orc')?.addEventListener('change', calcTotal);
+
+// ─── NÃO ENCONTRADOS ─────────────────────────────────────────────────────────
+function adicionarNaoEncontrado(nome) {
+  if(!nome.trim()) return;
+  if(naoEncontrados.find(n=>n.toLowerCase()===nome.toLowerCase())) { toast('Já na lista','error'); return; }
+  naoEncontrados.push(nome);
+  renderNaoEncontrados();
+  atualizarVisibilidade();
+  document.getElementById('resultado-busca').innerHTML='';
+  document.getElementById('busca-prod').value='';
+}
+function remNaoEncontrado(idx) { naoEncontrados.splice(idx,1); renderNaoEncontrados(); atualizarVisibilidade(); }
+function renderNaoEncontrados() {
+  const el = document.getElementById('lista-nao-encontrados');
+  const sec = document.getElementById('nao-encontrados-section');
+  if(!naoEncontrados.length) { sec.style.display='none'; return; }
+  sec.style.display='block';
+  el.innerHTML = (naoEncontrados.length>1 ? `<div class="no-print" style="margin-bottom:8px">
+      <button class="btn btn-outline btn-sm" onclick="iacAddTodos(${JSON.stringify(naoEncontrados).replace(/"/g,'&quot;')}, this)">➕ Adicionar todos os ${naoEncontrados.length} à fila de cotação</button>
+    </div>` : '') + naoEncontrados.map((n,i)=>`
+    <div class="nao-encontrado-row">
+      <span style="color:var(--vermelho);font-size:13px">❌</span>
+      <span style="flex:1;font-size:13px">${n}</span>
+      <span style="font-size:11px;color:var(--muted)">Não disponível no estoque</span>
+      <button class="btn btn-outline btn-sm no-print" onclick="iacAddUm(${JSON.stringify(n).replace(/"/g,'&quot;')}, this)" style="margin-left:8px" title="Manda pra fila de Itens a Cotar">➕ Add à fila</button>
+      <button class="btn btn-danger btn-sm no-print" onclick="remNaoEncontrado(${i})" style="margin-left:4px">✕</button>
+    </div>`).join('');
+}
+
+// ─── MANUAL ───────────────────────────────────────────────────────────────────
+function adicionarManual() { document.getElementById('modal-manual').style.display='flex'; }
+function fecharManual() { document.getElementById('modal-manual').style.display='none'; }
+function salvarManual() {
+  const produto = document.getElementById('man-produto').value.trim();
+  const preco = parseFloat(document.getElementById('man-preco').value)||0;
+  if(!produto) { toast('Informe o produto','error'); return; }
+  if(!preco) { toast('Informe o preço','error'); return; }
+  const id = 'manual_' + Date.now();
+  itens.push({
+    id, produto, marca: document.getElementById('man-marca').value.trim(),
+    fornecedor_nome:'MANUAL', tipo:'manual', _pvv: preco,
+    estoque: document.getElementById('man-estoque').value.trim()||'',
+    validade: document.getElementById('man-vencimento').value||null,
+    qtd:1, qtd_caixa:1, desc_item:0
+  });
+  renderItens(); atualizarVisibilidade(); fecharManual();
+  ['man-produto','man-marca','man-estoque','man-preco','man-vencimento'].forEach(id=>document.getElementById(id).value='');
+  toast('Item adicionado manualmente!');
+}
+document.getElementById('modal-manual').addEventListener('click', e=>{ if(e.target===document.getElementById('modal-manual')) fecharManual(); });
+
+// ─── LIMPAR ───────────────────────────────────────────────────────────────────
+function limparTudo() {
+  if(!confirm('Limpar tudo e iniciar novo orçamento?')) return;
+  itens=[]; naoEncontrados=[];
+  document.getElementById('cliente').value='';
+  document.getElementById('cnpj-cliente').value='';
+  document.getElementById('desc-geral').value='0';
+  renderItens(); renderNaoEncontrados(); atualizarVisibilidade();
+  document.getElementById('resultado-busca').innerHTML='';
+  document.getElementById('busca-prod').value='';
+  // Novo número
+  numOrc++;
+  document.getElementById('num-orc').value = String(numOrc).padStart(5,'0');
+}
+
+// ─── GERAR PDF ────────────────────────────────────────────────────────────────
+function gerarPDF() {
+  if(!itens.length) { toast('Adicione pelo menos um item','error'); return; }
+
+  // TRAVA marca obrigatória: nenhum item pode ir pro PDF sem marca (evita "—" no orçamento do cliente)
+  const semMarca = itens.filter(c => { const m=(c.marca==null?'':String(c.marca)).trim(); return !m || m==='—' || m==='-'; });
+  if(semMarca.length) {
+    toast('Preencha a MARCA antes de gerar o PDF — sem marca: ' + semMarca.map(c=>c.produto).slice(0,3).join(' | ') + (semMarca.length>3?` (+${semMarca.length-3})`:''), 'error');
+    return;
+  }
+
+  const numOrcVal = document.getElementById('num-orc').value;
+  const dataVal = document.getElementById('data-orc').value;
+  const clienteVal = document.getElementById('cliente').value || '—';
+  const cnpjVal = document.getElementById('cnpj-cliente').value || '—';
+  const condicaoVal = document.getElementById('condicao').value;
+  const vendedoraVal = document.getElementById('vendedora').value.trim() || '________';
+  const validadeVal = document.getElementById('validade-orc').value;
+  const descPerc = Math.min(8, Math.max(0, parseFloat(document.getElementById('desc-geral').value||0)));
+
+  const fmtDataBR = (iso) => { if(!iso) return '—'; const [y,m,d]=iso.split('-'); return `${d}/${m}/${y}`; };
+  const now = new Date();
+  const emissao = `${String(now.getDate()).padStart(2,'0')}/${String(now.getMonth()+1).padStart(2,'0')}/${now.getFullYear()} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
+
+  // Validade em data
+  const dataOrc = new Date(dataVal);
+  dataOrc.setDate(dataOrc.getDate() + parseInt(validadeVal||7));
+  const validAte = `${String(dataOrc.getDate()).padStart(2,'0')}/${String(dataOrc.getMonth()+1).padStart(2,'0')}/${dataOrc.getFullYear()}`;
+
+  // Coluna esquerda
+  document.getElementById('print-col-esq').innerHTML = `
+    <div class="row"><span class="label">Orçamento......:</span><span class="val">${numOrcVal} &nbsp;&nbsp; ${fmtDataBR(dataVal)}</span></div>
+    <div class="row"><span class="label">Cliente.............:</span><span class="val">${clienteVal}</span></div>
+    <div class="row"><span class="label">Condição.........:</span><span class="val">${condicaoVal}</span></div>
+    <div class="row"><span class="label">Vendedora......:</span><span class="val">${vendedoraVal}</span></div>
+    <div class="row"><span class="label">Validade até....:</span><span class="val">${validAte}</span></div>
+    ${descPerc>0?`<div class="row"><span class="label">Desconto Geral:</span><span class="val" style="color:#c00">${descPerc}%</span></div>`:''}
+  `;
+
+  // Coluna direita
+  document.getElementById('print-col-dir').innerHTML = `
+    <div class="row"><span class="label">CNPJ Cliente...:</span><span class="val">${cnpjVal}</span></div>
+    <div class="row"><span class="label">CNPJ GlobalMed:</span><span class="val">54.379.172/0001-47</span></div>
+    <div class="row"><span class="label">Telefone..........:</span><span class="val">(62) 99612-7968</span></div>
+  `;
+
+  // Itens
+  let subtotal = 0;
+  const linhas = itens.map((c,i) => {
+    const precoUnit = c._pvv_editado !== undefined ? c._pvv_editado : c._pvv * (1 - (c.desc_item||0)/100);
+    const qtdCx = c._qtd_caixa || qtdEmbalagem(c.und, c.produto) || 1;
+    const precoCx = precoUnit * qtdCx;
+    const totalCx = precoCx * c.qtd;
+    subtotal += totalCx;
+    return `<tr>
+      <td>${c.codigo||'—'}</td>
+      <td><strong>${c.produto}</strong></td>
+      <td>${c.marca||'—'}</td>
+      <td style="text-align:right;color:#888;font-size:10px">${precoUnit.toFixed(4)}</td>
+      <td style="text-align:center">${c.und||'UN'}</td>
+      <td style="text-align:center">${c.qtd}</td>
+      <td style="text-align:right">${fmtBRL(precoCx)}</td>
+      <td style="text-align:right"><strong>${fmtBRL(totalCx)}</strong></td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('print-itens').innerHTML = linhas;
+  const total = subtotal * (1 - descPerc/100);
+  document.getElementById('print-total').textContent = fmtBRL(total);
+  document.getElementById('print-emissao').textContent = `Emitido em: ${emissao}`;
+
+  document.title = `Proposta_GlobalMed_${numOrcVal}_${clienteVal.replace(/\s+/g,'_')}`;
+  window.print();
+}
+
+// ─── START ────────────────────────────────────────────────────────────────────
+iniciar();
+
+
+
+// ─── PEDIDO FECHADO (fonte 2: grava a venda no historico de compra do cliente) ─
+async function pedidoFechado() {
+  if(!podeImportar()){ toast('Sem permissão para fechar pedido (histórico de compra)','error'); return; }
+  const codigo = parseInt(document.getElementById('cliente-codigo').value) || null;
+  const clienteId = document.getElementById('cliente-id').value || null;
+  if (!codigo || !clienteId) { toast('Selecione o cliente (vincule pelo código) antes de fechar o pedido', 'error'); return; }
+  if (!itens.length) { toast('Adicione pelo menos um item', 'error'); return; }
+
+  const btn = document.getElementById('btn-pedido-fechado');
+  const numOrc = document.getElementById('num-orc').value || '';
+  const clienteNome = document.getElementById('cliente').value || '';
+  const vendedoraVal = document.getElementById('vendedora').value || '';
+  const descGeral = Math.min(8, Math.max(0, parseFloat(document.getElementById('desc-geral')?.value||0)));
+
+  // itens com PRECO DE VENDA (o que o cliente paga) — mesma conta do PDF/enviarParaCompras
+  const linhas = itens.map(c => {
+    const qtd_caixa = c._qtd_caixa || qtdEmbalagem(c.und, c.produto) || 1;
+    const vendaUnit = c._pvv_editado !== undefined ? c._pvv_editado : c._pvv * (1 - (c.desc_item||0)/100);
+    const vendaFinal = vendaUnit * (1 - descGeral/100);
+    const precoCaixa = +(vendaFinal * qtd_caixa).toFixed(4);
+    const qtdCaixas = c.qtd || 1;
+    return {
+      codigo_erp: (c.codigo!=null ? (String(c.codigo).replace(/\D/g,'')||String(c.codigo)) : null),
+      produto: (c.produto||'').replace(/^[\s#*+>]+/,'').trim(),
+      produto_norm: (c.produto||'').toUpperCase().normalize('NFD').replace(/\p{M}/gu,'').replace(/[^A-Z0-9]/g,''),
+      marca: c.marca || null,
+      principio_ativo: c.principio_ativo || null,
+      und: c.und || null,
+      quantidade: qtdCaixas,
+      preco_unit: +vendaFinal.toFixed(4),
+      preco_caixa: precoCaixa,
+      total_item: +(precoCaixa * qtdCaixas).toFixed(4),
+    };
+  });
+  const total = calcTotalValor();
+  if (!confirm(`Fechar pedido do cliente #${codigo} ${clienteNome}?\n\nItens: ${linhas.length}\nTotal: ${fmtBRL(total)}\n\nGrava no HISTÓRICO DE COMPRA do cliente.`)) return;
+
+  btn.disabled = true; btn.textContent = '⏳ Gravando...';
+  try {
+    if (numOrc) {
+      const dup = await (await fetch(`${SUPA_URL}/rest/v1/compras?numero_pedido=eq.${encodeURIComponent(numOrc)}&cliente_codigo=eq.${codigo}&select=id&limit=1`, {headers:H})).json();
+      if (dup && dup.length) { toast('Este orçamento já foi fechado p/ esse cliente (não duplico)', 'error'); btn.disabled=false; btn.textContent='🔴 Pedido Fechado'; return; }
+    }
+    const hoje = new Date().toISOString().slice(0,10);
+    const rc = await fetch(`${SUPA_URL}/rest/v1/compras`, { method:'POST', headers:{...H,'Prefer':'return=representation'}, body: JSON.stringify({
+      cliente_codigo: codigo, cliente_id: clienteId, cod_cliente_erp: document.getElementById('cod-cliente-erp').value.trim()||null,
+      cliente_nome: clienteNome, data_compra: hoje, valor_total: total, origem: 'pedido_fechado',
+      numero_pedido: numOrc || null, vendedor_nome: vendedoraVal || null,
+    })});
+    if (!rc.ok) { toast('Erro ao gravar compra: '+(await rc.text()).slice(0,80),'error'); btn.disabled=false; btn.textContent='🔴 Pedido Fechado'; return; }
+    const compra = (await rc.json())[0];
+    const itensBody = linhas.map(l => ({ compra_id: compra.id, ...l }));
+    const ri = await fetch(`${SUPA_URL}/rest/v1/compra_itens`, { method:'POST', headers:{...H,'Prefer':'return=minimal'}, body: JSON.stringify(itensBody) });
+    if (!ri.ok) { toast('Compra criada mas itens falharam: '+(await ri.text()).slice(0,80),'error'); btn.disabled=false; btn.textContent='🔴 Pedido Fechado'; return; }
+    await salvarOrcamento();
+    btn.textContent = '✓ Pedido Fechado!'; btn.style.background='#e0245e'; btn.style.color='#fff';
+    toast('Pedido fechado e gravado no histórico do cliente #'+codigo+'!', 'success');
+    setTimeout(()=>{ btn.disabled=false; btn.textContent='🔴 Pedido Fechado'; btn.style.background=''; btn.style.color='#c81e4f'; }, 3000);
+  } catch(e) { toast('Erro: '+e.message, 'error'); btn.disabled=false; btn.textContent='🔴 Pedido Fechado'; }
+}
+
+// ─── ENVIAR PARA COMPRAS ─────────────────────────────────────────────────────
+async function enviarParaCompras() {
+  if (ehRestrito()) { return; }  // giovana_only não envia para compras
+  if (!itens.length) { toast('Adicione pelo menos um item', 'error'); return; }
+
+  const btn = document.getElementById('btn-enviar-compras');
+  btn.disabled = true;
+  btn.textContent = '⏳ Enviando...';
+
+  const numOrc = document.getElementById('num-orc').value || '—';
+  const clienteVal = document.getElementById('cliente').value || '—';
+  const vendedoraVal = document.getElementById('vendedora').value || '—';
+  const descGeral = Math.min(8, Math.max(0, parseFloat(document.getElementById('desc-geral')?.value||0)));
+
+  // Montar array de itens com preço editado e MKP real
+  const itensPedido = itens.map(c => {
+    const qtd_caixa = c._qtd_caixa || qtdEmbalagem(c.und, c.produto) || 1;
+    const isGlobal = (c.fornecedor||'').toString() === '1' || c.tipo === 'global';
+    let custo = parseFloat(c.compra_unit||0) || parseFloat(c.compra_caixa||0)/qtd_caixa || 0;
+    // CUSTO-REF do GLOBAL (venda÷1,25) só p/ o MKP aparecer — nunca gravado como compra_unit (ver renderItens)
+    if (isGlobal && !(custo > 0)) custo = (parseFloat(c._pvv)||0) / 1.25;
+    // Preço de venda: usa o editado se houver, senão o original com desconto
+    const vendaUnit = c._pvv_editado !== undefined
+      ? c._pvv_editado
+      : c._pvv * (1 - (c.desc_item||0)/100);
+    const vendaFinal = vendaUnit * (1 - descGeral/100);
+    const mkp = custo > 0 ? ((vendaFinal - custo) / custo * 100) : null;
+
+    return {
+      solicitado: c.produto,
+      produto: c.produto,
+      principio_ativo: c.principio_ativo || '',
+      marca: c.marca || '—',
+      fornecedor: c.fornecedor || 'GLOBAL',
+      und: c.und || 'UN',
+      qtd: (c.qtd || 1) * qtd_caixa, // Qtd da tela = caixas → envia em UNIDADES (caixas × embalagem)
+      qtd_caixas: c.qtd || 1,        // referência: nº de caixas pedidas
+      compra_unit: custo,
+      global_venda1: parseFloat(c.global_venda1 || 0),
+      venda_calculada: vendaFinal,  // preço real enviado (editado ou original)
+      venda_original: c._pvv,       // preço original para referência
+      mkp_item: mkp !== null ? parseFloat(mkp.toFixed(2)) : null,
+      vencimento: c.vencimento || c.validade || null,
+      codigo: c.codigo || null,
+    };
+  });
+
+  // Calcular média geral do MKP
+  const itensComMkp = itensPedido.filter(i => i.mkp_item !== null);
+  const mkpMedio = itensComMkp.length > 0
+    ? itensComMkp.reduce((s,i) => s + i.mkp_item, 0) / itensComMkp.length
+    : null;
+
+  const totalCompra = itensPedido.reduce((s, i) => s + i.compra_unit * i.qtd, 0);
+  const totalVenda = itensPedido.reduce((s, i) => s + i.venda_calculada * i.qtd, 0);
+
+  try {
+    // INSERT direto no REST (passa pelo fetch patchado do gm-auth = JWT do usuário
+    // → role authenticated → policy auth_all libera). Antes ia pela Edge Function,
+    // que inseria como anon e o RLS Nível 2 barrava (violates row-level security).
+    const res = await fetch(`${SUPA_URL}/rest/v1/pedidos_compra`, {
+      method: 'POST',
+      headers: { ...H, 'Prefer':'return=minimal' },
+      body: JSON.stringify({
+        numero_orcamento: String(numOrc),
+        cliente: clienteVal,
+        cliente_codigo: parseInt(document.getElementById('cliente-codigo').value)||null,
+        cliente_id: document.getElementById('cliente-id').value||null,
+        cod_cliente_erp: document.getElementById('cod-cliente-erp').value.trim()||null,
+        vendedora: vendedoraVal,
+        status: 'pendente',
+        itens: itensPedido,
+        total_compra: totalCompra,
+        mkp_medio: mkpMedio,
+      })
+    });
+
+    if (res.ok) {
+      await salvarOrcamento();
+      btn.textContent = 'Enviado para Compras!';
+      btn.style.background = '#EAF3DE';
+      btn.style.color = '#0F6E56';
+      toast('Pedido enviado para compras!', 'success');
+      setTimeout(() => {
+        btn.disabled = false;
+        btn.textContent = '📤 Enviar para Compras';
+        btn.style.background = '';
+        btn.style.color = '';
+      }, 4000);
+    } else {
+      const errBody = await res.text();
+      console.error('ERRO INSERT pedidos_compra:', res.status, errBody);
+      throw new Error('Status ' + res.status + ': ' + errBody);
+    }
+  } catch(e) {
+    console.error('CATCH enviarParaCompras:', e);
+    toast('Erro: ' + e.message, 'error');
+    btn.disabled = false;
+    btn.textContent = '📤 Enviar para Compras';
+  }
+}
+
+// ─── SINCRONIZAR PREÇOS EDITADOS NO SISTEMA INTERNO ──────────────────────────
+async function sincronizarPrecos() {
+  const editados = itens.filter(c => c._pvv_editado !== undefined && c._pvv_editado !== c._pvv);
+  if (!editados.length) { toast('Nenhum preço foi alterado', 'error'); return; }
+
+  const btn = document.getElementById('btn-sinc-precos');
+  btn.disabled = true;
+  btn.textContent = '⏳ Sincronizando...';
+
+  let ok = 0, erros = 0;
+  for (const c of editados) {
+    if (!c.id) { erros++; continue; }
+    try {
+      const res = await fetch(`${SUPA_URL}/rest/v1/cotacoes?id=eq.${c.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': SUPA_KEY,
+          'Authorization': 'Bearer ' + SUPA_KEY,
+          'Prefer': 'return=minimal'
+        },
+        body: JSON.stringify({ global_venda1: c._pvv_editado })
+      });
+      if (res.ok) ok++; else erros++;
+    } catch(e) { erros++; }
+  }
+
+  if (erros === 0) {
+    btn.textContent = ok + ' preco(s) sincronizado(s)!';
+    btn.style.background = '#22c55e';
+    btn.style.color = 'white';
+    toast(ok + ' preco(s) atualizado(s) no sistema interno!');
+  } else {
+    btn.textContent = ok + ' ok / ' + erros + ' erro(s)';
+    btn.style.background = '#f59e0b';
+    toast(ok + ' atualizados, ' + erros + ' com erro', 'error');
+  }
+  setTimeout(() => {
+    btn.disabled = false;
+    btn.textContent = 'Sincronizar precos';
+    btn.style.background = '';
+    btn.style.color = '';
+  }, 4000);
+}
+
+// ─── SALVAR / ABRIR ORÇAMENTO ─────────────────────────────────────────────────
+let orcamentoId = null; // ID do orçamento salvo no banco
+
+// ── BUSCA / CADASTRO DE CLIENTE (Fase 1) ──────────────────────────────────────
+let _clienteBuscaTO = null;
+function _digits(s){ return (s||'').replace(/\D/g,''); }
+function limparClienteSel(){
+  document.getElementById('cliente-codigo').value='';
+  document.getElementById('cliente-id').value='';
+  const ind=document.getElementById('cliente-selecionado'); ind.style.display='none'; ind.textContent='';
+  const bf=document.getElementById('btn-pedido-fechado'); if(bf){ bf.style.opacity='0.5'; bf.title='Selecione o cliente para fechar o pedido'; }
+}
+function buscarCliente(q, imediato){
+  clearTimeout(_clienteBuscaTO);
+  const box = document.getElementById('resultado-cliente');
+  const term = (q||'').trim();
+  if(term.length < 2){ box.style.display='none'; box.innerHTML=''; return; }
+  _clienteBuscaTO = setTimeout(async ()=>{
+    const dig = _digits(term);
+    const ors = [`nome.ilike.*${encodeURIComponent(term)}*`];
+    if(dig.length>=2) ors.push(`cnpj_normalizado.ilike.*${dig}*`);
+    if(dig.length>=1) ors.push(`cod_cliente_erp.ilike.*${dig}*`);
+    let rows=[];
+    try{
+      const url = `${SUPA_URL}/rest/v1/clientes?select=id,codigo,cod_cliente_erp,nome,cnpj,contato,whatsapp,cidade,uf,vendedora&or=(${ors.join(',')})&order=nome.asc&limit=8`;
+      rows = await (await fetch(url,{headers:H})).json();
+    }catch(e){ rows=[]; }
+    if(!Array.isArray(rows) || !rows.length){
+      box.innerHTML = `<div style="padding:10px;font-size:12px;color:#8a9ab0">Nenhum cliente encontrado. Preencha "Cliente / Hospital" + CNPJ e clique <b>Cadastrar novo cliente</b>.</div>`;
+      box.style.display='block'; return;
+    }
+    box.innerHTML = rows.map(c=>`
+      <div style="padding:9px 12px;border-bottom:1px solid #14243a;cursor:pointer" onmouseover="this.style.background='#12263d'" onmouseout="this.style.background=''"
+        onclick='selecionarCliente(${JSON.stringify(c).replace(/'/g,"&#39;")})'>
+        <div style="font-size:13px;color:#e8f0f8;font-weight:600">#${c.codigo} · ${c.nome||'(sem nome)'}</div>
+        <div style="font-size:11px;color:#8a9ab0">${c.cnpj||'sem CNPJ'}${c.cod_cliente_erp?` · ERP ${c.cod_cliente_erp}`:''}${c.cidade?` · ${c.cidade}/${c.uf||''}`:''}</div>
+      </div>`).join('');
+    box.style.display='block';
+  }, imediato?0:250);
+}
+function selecionarCliente(c){
+  document.getElementById('cliente').value = c.nome||'';
+  document.getElementById('cnpj-cliente').value = c.cnpj||'';
+  document.getElementById('cod-cliente-erp').value = c.cod_cliente_erp||'';
+  document.getElementById('cliente-codigo').value = c.codigo||'';
+  document.getElementById('cliente-id').value = c.id||'';
+  if(!document.getElementById('vendedora').value && c.vendedora) document.getElementById('vendedora').value = c.vendedora;
+  const ind = document.getElementById('cliente-selecionado');
+  ind.textContent = `✓ Cliente #${c.codigo} vinculado${c.cod_cliente_erp?` (ERP ${c.cod_cliente_erp})`:''}`;
+  ind.style.display='block';
+  document.getElementById('resultado-cliente').style.display='none';
+  document.getElementById('busca-cliente').value = '';
+  const bf=document.getElementById('btn-pedido-fechado'); if(bf){ bf.style.opacity='1'; bf.title='Grava a venda no histórico de compra do cliente'; }
+}
+async function cadastrarClienteFluxo(){
+  const nome = (document.getElementById('cliente').value || document.getElementById('busca-cliente').value || '').trim();
+  const cnpj = document.getElementById('cnpj-cliente').value.trim();
+  const codErp = document.getElementById('cod-cliente-erp').value.trim();
+  if(!nome){ toast('Preencha o nome no campo "Cliente / Hospital" antes de cadastrar','error'); return; }
+  const dig = _digits(cnpj);
+  // 1) evita duplicar: se já existe cliente com esse CNPJ, vincula o existente
+  if(dig.length>=8){
+    try{
+      const ex = await (await fetch(`${SUPA_URL}/rest/v1/clientes?cnpj_normalizado=eq.${dig}&select=id,codigo,cod_cliente_erp,nome,cnpj,vendedora&limit=1`,{headers:H})).json();
+      if(ex && ex.length){ toast('Cliente já cadastrado no código #'+ex[0].codigo+' — vinculado'); selecionarCliente(ex[0]); return; }
+    }catch(e){}
+  }
+  // 1b) cód. ERP também não pode repetir
+  if(codErp){
+    try{
+      const exE = await (await fetch(`${SUPA_URL}/rest/v1/clientes?cod_cliente_erp=eq.${encodeURIComponent(codErp)}&select=id,codigo,cod_cliente_erp,nome,cnpj,vendedora&limit=1`,{headers:H})).json();
+      if(exE && exE.length){ toast('Cód. ERP '+codErp+' já é do cliente #'+exE[0].codigo+' — vinculado'); selecionarCliente(exE[0]); return; }
+    }catch(e){}
+  }
+  // 2) enriquece com dados do prospect pelo CNPJ
+  let extra = {};
+  if(dig.length>=8){
+    try{
+      const p = await (await fetch(`${SUPA_URL}/rest/v1/prospects?cnpj_normalizado=eq.${dig}&select=razao_social,contato,whatsapp,email,cidade,uf,vendedora,id&limit=1`,{headers:H})).json();
+      if(p && p.length){ const pr=p[0];
+        extra = { contato:pr.contato, whatsapp:pr.whatsapp, email:pr.email, cidade:pr.cidade, uf:pr.uf, vendedora:pr.vendedora, prospect_id:pr.id };
+      }
+    }catch(e){}
+  }
+  const body = { nome, cnpj: cnpj||null, cod_cliente_erp: codErp||null, ...extra, atualizado_em:new Date().toISOString() };
+  try{
+    const res = await fetch(`${SUPA_URL}/rest/v1/clientes`,{method:'POST',headers:{...H,'Prefer':'return=representation'},body:JSON.stringify(body)});
+    if(res.status===409){   // corrida: colidiu com a trava de unicidade — vincula o existente
+      const txt = await res.text();
+      if(/cod_cliente_erp/.test(txt) && codErp){
+        const ex = await (await fetch(`${SUPA_URL}/rest/v1/clientes?cod_cliente_erp=eq.${encodeURIComponent(codErp)}&select=id,codigo,cod_cliente_erp,nome,cnpj,vendedora&limit=1`,{headers:H})).json();
+        if(ex && ex.length){ toast('Cód. ERP '+codErp+' já é do cliente #'+ex[0].codigo+' — vinculado','error'); selecionarCliente(ex[0]); return; }
+        toast('Cód. Cliente (ERP) '+codErp+' já cadastrado em outro cliente','error'); return;
+      }
+      if(/cnpj/.test(txt) && dig.length>=8){
+        const ex = await (await fetch(`${SUPA_URL}/rest/v1/clientes?cnpj_normalizado=eq.${dig}&select=id,codigo,cod_cliente_erp,nome,cnpj,vendedora&limit=1`,{headers:H})).json();
+        if(ex && ex.length){ toast('CNPJ já é do cliente #'+ex[0].codigo+' — vinculado','error'); selecionarCliente(ex[0]); return; }
+        toast('CNPJ já cadastrado em outro cliente','error'); return;
+      }
+      toast('Já existe um cliente com esse código/CNPJ/ERP','error'); return;
+    }
+    if(!res.ok){ toast('Erro ao cadastrar: '+(await res.text()).slice(0,90),'error'); return; }
+    const novo = (await res.json())[0];
+    toast('Cliente #'+novo.codigo+' cadastrado'+(extra.prospect_id?' (puxado do prospect)':''));
+    selecionarCliente(novo);
+  }catch(e){ toast('Erro: '+e.message,'error'); }
+}
+
+async function salvarOrcamento() {
+  const btn = document.getElementById('btn-salvar-orc');
+  btn.textContent = 'Salvando...';
+  btn.disabled = true;
+
+  let numOrc = document.getElementById('num-orc').value.trim();
+  if(!numOrc) {
+    numOrc = String(Math.floor(10000 + Math.random() * 90000));
+    document.getElementById('num-orc').value = numOrc;
+  }
+
+  const descGeral = Math.min(8, Math.max(0, parseFloat(document.getElementById('desc-geral')?.value||0)));
+
+  const payload = {
+    numero: numOrc,
+    cliente: document.getElementById('cliente').value.trim(),
+    cnpj_cliente: document.getElementById('cnpj-cliente').value.trim(),
+    cliente_codigo: parseInt(document.getElementById('cliente-codigo').value)||null,
+    cliente_id: document.getElementById('cliente-id').value||null,
+    cod_cliente_erp: document.getElementById('cod-cliente-erp').value.trim()||null,
+    condicao: document.getElementById('condicao').value,
+    vendedora: document.getElementById('vendedora').value.trim() || '',
+    validade: document.getElementById('validade-orc').value,
+    desconto_geral: descGeral,
+    itens: itens.map(c => {
+      const qtd_caixa = c._qtd_caixa || qtdEmbalagem(c.und, c.produto) || 1;
+      const isGlobal = (c.fornecedor||'').toString() === '1' || c.tipo === 'global';
+      const custoRaw = parseFloat(c.compra_unit||0) || parseFloat(c.compra_caixa||0)/qtd_caixa || 0;
+      let custo = isGlobal ? custoRaw / qtd_caixa : custoRaw;
+      // CUSTO-REF do GLOBAL (venda÷1,25) só p/ o mkp_item — NÃO altera compra_unit (não persiste custo fictício)
+      if (isGlobal && !(custo > 0)) custo = (parseFloat(c._pvv)||0) / 1.25;
+      const vendaUnit = c._pvv_editado !== undefined ? c._pvv_editado : c._pvv * (1-(c.desc_item||0)/100);
+      const mkp = custo > 0 ? ((vendaUnit-custo)/custo*100) : null;
+      return { ...c, mkp_item: mkp };
+    }),
+    status: 'rascunho',
+    total_geral: calcTotalValor(),
+    atualizado_em: new Date().toISOString()
+  };
+
+  try {
+    // Verificar se já existe
+    const check = await fetch(`${SUPA_URL}/rest/v1/orcamentos?numero=eq.${numOrc}&select=id`, { headers: H });
+    const exists = await check.json();
+
+    let res;
+    if(exists && exists.length) {
+      orcamentoId = exists[0].id;
+      res = await fetch(`${SUPA_URL}/rest/v1/orcamentos?id=eq.${orcamentoId}`, {
+        method: 'PATCH', headers: {...H, 'Prefer':'return=minimal'},
+        body: JSON.stringify(payload)
+      });
+    } else {
+      payload.criado_em = new Date().toISOString();
+      res = await fetch(`${SUPA_URL}/rest/v1/orcamentos`, {
+        method: 'POST', headers: {...H, 'Prefer':'return=representation'},
+        body: JSON.stringify(payload)
+      });
+      if(res.ok) {
+        const data = await res.json();
+        orcamentoId = data[0]?.id;
+      }
+    }
+
+    btn.textContent = 'Salvo!';
+    btn.style.background = '#22c55e';
+    toast('Orcamento ' + numOrc + ' salvo!');
+    setTimeout(() => { btn.textContent = 'Salvar'; btn.style.background = '#29b8ff'; btn.disabled = false; }, 2500);
+  } catch(e) {
+    toast('Erro ao salvar: ' + e.message, 'error');
+    btn.textContent = 'Salvar'; btn.disabled = false;
+  }
+}
+
+function calcTotalValor() {
+  const descGeral = Math.min(8, Math.max(0, parseFloat(document.getElementById('desc-geral')?.value||0)));
+  const sub = itens.reduce((s,c) => {
+    const pu = c._pvv_editado !== undefined ? c._pvv_editado : c._pvv*(1-(c.desc_item||0)/100);
+    const qcx = c._qtd_caixa || qtdEmbalagem(c.und, c.produto) || 1;
+    return s + pu * qcx * c.qtd; // Preço CX × qtd (igual ao PDF)
+  }, 0);
+  return sub * (1 - descGeral/100);
+}
+
+async function abrirOrcamento() {
+  const num = document.getElementById('busca-orc-num').value.trim();
+  if(!num) { toast('Digite o numero do orcamento', 'error'); return; }
+
+  try {
+    const res = await fetch(`${SUPA_URL}/rest/v1/orcamentos?numero=eq.${num}&select=*`, { headers: H });
+    const data = await res.json();
+    if(!data || !data.length) { toast('Orcamento ' + num + ' nao encontrado', 'error'); return; }
+
+    const orc = data[0];
+    orcamentoId = orc.id;
+
+    document.getElementById('num-orc').value = orc.numero || '';
+    document.getElementById('cliente').value = orc.cliente || '';
+    document.getElementById('cnpj-cliente').value = orc.cnpj_cliente || '';
+    document.getElementById('cod-cliente-erp').value = orc.cod_cliente_erp || '';
+    document.getElementById('cliente-codigo').value = orc.cliente_codigo || '';
+    document.getElementById('cliente-id').value = orc.cliente_id || '';
+    (function(){ const ind=document.getElementById('cliente-selecionado'); const bf=document.getElementById('btn-pedido-fechado');
+      if(orc.cliente_codigo){ ind.textContent='✓ Cliente #'+orc.cliente_codigo+(orc.cod_cliente_erp?' (ERP '+orc.cod_cliente_erp+')':''); ind.style.display='block'; if(bf){bf.style.opacity='1';bf.title='Grava a venda no histórico de compra do cliente';} }
+      else { ind.style.display='none'; if(bf){bf.style.opacity='0.5';bf.title='Selecione o cliente para fechar o pedido';} } })();
+    document.getElementById('condicao').value = orc.condicao || 'A VISTA';
+    document.getElementById('vendedora').value = orc.vendedora || '';
+    document.getElementById('validade-orc').value = orc.validade || '7';
+    if(document.getElementById('desc-geral')) document.getElementById('desc-geral').value = orc.desconto_geral || 0;
+
+    itens = (orc.itens || []).map(i => ({
+      ...i,
+      id: i.id || String(Math.random()),
+      _pvv: i._pvv || i.venda_calculada || 0,
+      _pvv_editado: i._pvv_editado,
+      qtd: i.qtd || 1,
+    }));
+
+    renderItens();
+    calcTotal();
+    ['card-itens','card-total','card-acoes'].forEach(id => {
+      const el = document.getElementById(id);
+      if(el) el.style.display = itens.length ? '' : 'none';
+    });
+
+    document.getElementById('busca-orc-num').value = '';
+    toast('Orcamento ' + num + ' carregado! (' + itens.length + ' itens)');
+  } catch(e) {
+    toast('Erro ao abrir: ' + e.message, 'error');
+  }
+}
+
+
+// ─── IA — LER PEDIDO ──────────────────────────────────────────────────────────
+let iaArquivoBase64 = null;
+let iaArquivoTipo = null;
+
+function handleIAFile(file) {
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    iaArquivoBase64 = e.target.result.split(',')[1];
+    iaArquivoTipo = file.type;
+    document.getElementById('ia-preview-nome').textContent = file.name;
+    document.getElementById('ia-preview-tipo').textContent = file.type.includes('pdf') ? 'PDF' : 'Imagem';
+    document.getElementById('ia-preview-icon').textContent = file.type.includes('pdf') ? '📄' : '🖼️';
+    document.getElementById('ia-preview').style.display = 'block';
+    const btn = document.getElementById('ia-btn-processar');
+    btn.disabled = false;
+    btn.style.opacity = '1';
+  };
+  reader.readAsDataURL(file);
+}
+
+function limparIAArquivo() {
+  iaArquivoBase64 = null;
+  iaArquivoTipo = null;
+  document.getElementById('ia-preview').style.display = 'none';
+  document.getElementById('ia-resultado').style.display = 'none';
+  document.getElementById('ia-file-input').value = '';
+  document.getElementById('ia-status').textContent = '';
+  const btn = document.getElementById('ia-btn-processar');
+  btn.disabled = true;
+  btn.style.opacity = '0.5';
+}
+
+async function processarComIA() {
+  if (!iaArquivoBase64) return;
+  const statusEl = document.getElementById('ia-status');
+  const btn = document.getElementById('ia-btn-processar');
+  btn.disabled = true;
+  btn.style.opacity = '0.5';
+  statusEl.textContent = '🤖 Analisando com IA...';
+
+  try {
+    const isPDF = iaArquivoTipo === 'application/pdf';
+    const contentBlock = isPDF
+      ? { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: iaArquivoBase64 } }
+      : { type: 'image', source: { type: 'base64', media_type: iaArquivoTipo, data: iaArquivoBase64 } };
+
+    const response = await fetch('https://vikewlbhkrikcalzsbeb.supabase.co/functions/v1/ler-pedido', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-opus-4-5',
+        max_tokens: 2000,
+        messages: [{
+          role: 'user',
+          content: [
+            contentBlock,
+            {
+              type: 'text',
+              text: `Você é um assistente de uma distribuidora de medicamentos. Analise esta imagem ou documento e extraia TODOS os nomes de medicamentos, produtos médicos ou insumos hospitalares que aparecem.
+
+Retorne APENAS os itens, um por linha, no formato:
+NOME DO PRODUTO CONCENTRACAO FORMA
+
+Exemplos:
+AMOXICILINA 500MG CAP
+DIPIRONA 500MG/ML AMP
+SORO FISIOLOGICO 0,9% 500ML
+NITROGLICERINA 5ML INJ
+ACIDO VALPROICO 250MG CPR
+
+Regras:
+- Extraia TODOS os itens que pareçam medicamentos ou produtos médicos
+- Inclua concentração e forma farmacêutica quando visível
+- Ignore quantidades, preços, nomes de médicos, datas
+- Um produto por linha, sem numeração, sem traços, sem bullets
+- Se realmente não houver nenhum medicamento ou produto médico, responda apenas: NENHUM_PRODUTO_ENCONTRADO`
+            }
+          ]
+        }]
+      })
+    });
+
+    const data = await response.json();
+    // Não mascarar erro da API como "nenhum produto": mostrar o erro REAL
+    if (!response.ok || data.type === 'error' || data.error) {
+      statusEl.style.color = '#e03e3e';
+      statusEl.textContent = '❌ Erro da IA: ' + (data.error?.message || data.message || ('HTTP ' + response.status));
+      btn.disabled = false;
+      btn.style.opacity = '1';
+      return;
+    }
+    const texto = data.content?.[0]?.text || '';
+
+    if (texto.includes('NENHUM_PRODUTO_ENCONTRADO') || !texto.trim()) {
+      statusEl.style.color = '#e03e3e';
+      statusEl.textContent = '❌ Nenhum produto encontrado no arquivo.';
+      btn.disabled = false;
+      btn.style.opacity = '1';
+      return;
+    }
+
+    document.getElementById('ia-lista-extraida').value = texto.trim();
+    document.getElementById('ia-resultado').style.display = 'block';
+    statusEl.style.color = '#29b8ff';
+    statusEl.textContent = '✅ Lista extraída! Revise e clique em Buscar.';
+  } catch(err) {
+    statusEl.style.color = '#e03e3e';
+    statusEl.textContent = '❌ Erro ao chamar IA: ' + err.message;
+  }
+
+  btn.disabled = false;
+  btn.style.opacity = '1';
+}
+
+function importarListaIA() {
+  const lista = document.getElementById('ia-lista-extraida').value.trim();
+  if (!lista) return;
+  // Usa a mesma lógica da importarLista original
+  document.getElementById('lista-rapida').value = lista;
+  const linhas = lista.split('\n').map(l=>l.trim()).filter(l=>l.length>2);
+  const stEl = document.getElementById('ia-status');
+  stEl.textContent = `Buscando ${linhas.length} produtos...`;
+  let adicionados = 0;
+  const naoEncontrados = [];
+
+  linhas.forEach(linha => {
+    const melhor = buscarMelhorProduto(linha);
+    if (melhor) {
+      if (!itens.find(i => i.id === melhor.id)) {
+        const qtdCx = qtdEmbalagem(melhor.und, melhor.produto);
+        itens.push({...melhor, qtd:1, desc_item:0, _pvv:pv(melhor), _qtd_caixa:qtdCx, _bpAlerta:bpAlerta(melhor)});
+        adicionados++;
+      }
+    } else { naoEncontrados.push(linha); }
+  });
+
+  renderItens();
+  atualizarVisibilidade();
+  stEl.style.color = '#29b8ff';
+  stEl.textContent = `✅ ${adicionados} adicionado(s)${naoEncontrados.length?' · ❌ '+naoEncontrados.length+' não encontrado(s)':''}`;
+  const naoEl = document.getElementById('ia-lista-nao-encontrados');
+  if (naoEncontrados.length) {
+    // idem: o que a IA não achou também alimenta a fila em vez de se perder
+    naoEl.innerHTML = `<div style="background:#1a0d0d;border:1px solid #3a1a1a;border-radius:8px;padding:10px 14px">
+      <div style="font-size:11px;font-weight:600;color:#e03e3e;margin-bottom:6px;display:flex;align-items:center;gap:8px">
+        <span style="flex:1">❌ Não encontrados:</span>
+        <button class="btn btn-outline btn-sm no-print" onclick="iacAddTodos(${JSON.stringify(naoEncontrados).replace(/"/g,'&quot;')}, this)">➕ Adicionar os ${naoEncontrados.length} à fila</button>
+      </div>
+      ${naoEncontrados.map(p=>`<div style="font-size:12px;color:#c0a0a0;padding:3px 0;display:flex;align-items:center;gap:8px">
+        <span style="flex:1">${p}</span>
+        <button class="btn btn-outline btn-sm no-print" onclick="iacAddUm(${JSON.stringify(p).replace(/"/g,'&quot;')}, this)">➕ Add à fila</button>
+      </div>`).join('')}</div>`;
+  } else { naoEl.innerHTML = ''; }
+  if (adicionados > 0) toast(`${adicionados} produto(s) adicionado(s)!`);
+}
+
+function copiarParaLista() {
+  const lista = document.getElementById('ia-lista-extraida').value;
+  document.getElementById('lista-rapida').value = lista;
+  gTab('lista');
+  toast('Lista copiada para a aba Importar!');
+}
+
+</script>
+<script>
+// ═══════════════════════════════════════════════════════════════════════════════
+// IMPORTAR COTAÇÃO — portado de globalmed_sistema_final.html (page-importar)
+// Grava cotações de FORNECEDOR no banco. Acesso: admin (Lemuel) ou Isadora.
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// ── Wrappers REST (mirror sbPost/sbPatch do sistema_final, usando o H da giovana) ──
+async function sbPost(table, body) {
+  const r = await fetch(`${SUPA_URL}/rest/v1/${table}`, {
+    method: 'POST',
+    headers: { 'Content-Type':'application/json', 'apikey': SUPA_KEY, 'Prefer': 'return=representation' },  // SEM Authorization fixo -> gm-auth injeta o JWT; sessão morta = anon = 401 (falha visível)
+    body: JSON.stringify(body)
+  });
+  const data = await r.json();
+  if (!r.ok) throw new Error(data.message || r.statusText);
+  return Array.isArray(data) ? data[0] : data;
+}
+async function sbPatch(table, filter, body) {
+  const id = String(filter).replace(/.*eq\./, '').replace(/.*=eq\./, '');
+  const r = await fetch(`${SUPA_URL}/rest/v1/${table}?id=eq.${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type':'application/json', 'apikey': SUPA_KEY, 'Prefer': 'return=representation' },  // SEM Authorization fixo -> gm-auth injeta o JWT; sessão morta = anon = 401 (falha visível)
+    body: JSON.stringify(body)
+  });
+  const data = await r.json();
+  if (!r.ok) throw new Error(data.message || r.statusText);
+  return Array.isArray(data) ? data[0] : data;
+}
+
+// ── Helpers de normalização (portados de sistema_final; só p/ resolvePA) ──
+function _gmNorm(s){
+  return (s==null?'':String(s)).normalize('NFD').replace(/[̀-ͯ]/g,'')
+    .toUpperCase().replace(/[^A-Z0-9 .\/%]/g,' ').replace(/\s+/g,' ').trim();
+}
+function doseKey(produto){
+  var u=_gmNorm(produto);
+  var mAbs=u.match(/(\d+(?:[.,]\d+)?)\s*(MG|MCG|UI|G)(?!\s*\/\s*ML)(?![A-Z])/);
+  if(mAbs) return mAbs[1].replace(',','.')+mAbs[2];
+  var parts=[];
+  var pc=u.match(/(\d+(?:[.,]\d+)?)\s*%/); if(pc) parts.push(pc[1].replace(',','.')+'%');
+  var rt=u.match(/(\d+(?:[.,]\d+)?)\s*(MG|MCG|UI|G|MEQ)\s*\/\s*ML/); if(rt) parts.push(rt[1].replace(',','.')+rt[2]+'/ML');
+  var vl=u.match(/(\d+(?:[.,]\d+)?)\s*ML(?![A-Z])/); if(vl) parts.push(vl[1].replace(',','.')+'ML');
+  return parts.join('+');
+}
+
+// ── FASE 3: PA automático via CMED (portado; usa SUPA_URL/H da giovana) ──
+async function resolvePA(nome){
+  const dose = doseKey(nome||'');
+  const norm = _gmNorm((nome||'').replace(/^[*#+>&@\.\s]+/, ''));
+  if(!norm) return { pa:'', dose };
+  const cands=[];
+  (String(nome||'').match(/\(([^)]*)\)/g)||[]).forEach(function(x){ var t=x.replace(/[()]/g,''); if(t.indexOf('+')<0){ var n=_gmNorm(t); if(n.length>=4) cands.push(n); } });
+  const w = norm.split(' ').filter(function(s){return s.length>=3;});
+  if(w[0]) cands.push(w[0]);
+  if(w[0]&&w[1]) cands.push(w[0]+' '+w[1]);
+  const uniq=[...new Set(cands)].filter(function(x){return x.length>=4;});
+  if(!uniq.length) return { pa:'', dose };
+  const enc = encodeURIComponent(uniq.map(function(v){return '"'+v.replace(/"/g,'')+'"';}).join(','));
+  try{
+    const r = await fetch(SUPA_URL + '/rest/v1/cmed_dicionario?select=marca_norm,substancia,is_combo,dose_norm&marca_norm=in.(' + enc + ')', { headers: H });
+    const rows = await r.json();
+    if(Array.isArray(rows)){
+      for(const cand of uniq){
+        const hit = rows.find(function(x){return x.marca_norm===cand;});
+        if(hit && !hit.is_combo && hit.substancia){ return { pa: hit.substancia, dose: dose || hit.dose_norm || '' }; }
+      }
+    }
+    const r2 = await fetch(SUPA_URL + '/rest/v1/cmed_dicionario?select=substancia,dose_norm&is_combo=eq.false&substancia=in.(' + enc + ')&limit=1', { headers: H });
+    const rows2 = await r2.json();
+    if(Array.isArray(rows2) && rows2.length && rows2[0].substancia){ return { pa: rows2[0].substancia, dose: dose || rows2[0].dose_norm || '' }; }
+  }catch(e){ /* silencioso: deixa PA vazio, não bloqueia o salvamento */ }
+  return { pa:'', dose };
+}
+
+// ── Datas / embalagem (portados) ──
+function impToISO(d) {
+  if (!d) return null;
+  d = String(d).trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(d)) return d;
+  const m = d.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})$/);
+  if (m) { let a=m[3]; if(a.length===2) a='20'+a; return `${a}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`; }
+  return null;
+}
+function impEmbalagem(und, produto) {
+  const nome = ((und||'') + ' ' + (produto||'')).toUpperCase();
+  const mX = nome.match(/(\d{1,4})\s*X\s*\d/);
+  if (mX) { const n = parseInt(mX[1]); if (n > 1 && n <= 5000) return n; }
+  const mC = nome.match(/(?:C\/|CX\/|CX|C\/)\s*(\d{1,4})/);
+  if (mC) { const n = parseInt(mC[1]); if (n > 1 && n <= 5000) return n; }
+  const mU = nome.match(/(\d{1,4})\s*(?:CPR|CAPS|CAP|CPS|CP|COMP|DRG|AMP|FRS|FR|ENV|BLS|SER)\b/);
+  if (mU) { const n = parseInt(mU[1]); if (n > 1 && n <= 5000) return n; }
+  return 1;
+}
+
+// ═══ FILA DE ITENS A COTAR ═══════════════════════════════════════════════════
+// Item buscado que não existe no banco vai pra fila (tabela itens_a_cotar). O Lemuel manda pros fornecedores
+// e resolve quando chega preço. Resolver NÃO grava em cotacoes — cadastrar é ação manual dele, com marca
+// conferida (regra dele).
+// DEDUP por chave_grupo = paNorm|doseKey|forma, a MESMA chave do buscarMelhorProduto. Assim "DIPIRONA 500MG" e
+// "dipirona 500 mg cx30" viram a mesma linha com vezes=2 (sinal de demanda), em vez de dois quase-duplicados.
+// Quando o resolvePA não resolve (acessório/material), cai no texto normalizado.
+// O unique no banco é PARCIAL (só entre status<>'resolvido'): item resolvido pode voltar a faltar e reentrar.
+// tira sal/hidrato do PA (alnum) p/ a chave casar: "CLORIDRATO DE VANCOMICINA" e "VANCOMICINA" viram a mesma.
+var _IAC_PREF=['FOSFATODISSODICODE','FOSFATOSODICODE','FOSFATOMONOSSODICODE','SUCCINATOSODICODE','SUCCINATODISSODICODE','DICLORIDRATODE','CLORIDRATODE','BROMIDRATODE','BROMETODE','IODETODE','FOSFATODE','ACETATODE','MESILATODE','DIMESILATODE','MALEATODE','OXALATODE','SUCCINATODE','TARTARATODE','HEMITARTARATODE','HEMIFUMARATODE','FUMARATODE','NITRATODE','CITRATODE','BESILATODE','TOSILATODE','PAMOATODE','VALERATODE','DIPROPIONATODE','PROPIONATODE','ENANTATODE','DECANOATODE','CIPIONATODE','CLORETODE','CARBONATODE','BICARBONATODE','LACTATODE','GLUCONATODE'];
+var _IAC_SUF=['DISSODICO','DISSODICA','MONOIDRATADA','MONOIDRATADO','TRIIDRATADO','DIIDRATADO','SODICA','SODICO','POTASSICA','POTASSICO','CALCICA','CALCICO','ANIDRO','ANIDRA','HIDRATADO','HIDRATADA'];
+function _iacStripSal(pa){ var t=_gmNorm(pa||'').replace(/[^A-Z0-9]/g,''); for(var i=0;i<_IAC_PREF.length;i++){ if(t.indexOf(_IAC_PREF[i])===0){ t=t.slice(_IAC_PREF[i].length); break; } } for(var j=0;j<_IAC_SUF.length;j++){ if(t.length-_IAC_SUF[j].length>=4 && t.slice(-_IAC_SUF[j].length)===_IAC_SUF[j]){ t=t.slice(0,-_IAC_SUF[j].length); break; } } return t; }
+function iacChaveGrupo(descricao, pa){
+  const paN = _iacStripSal(pa);
+  const dk  = doseKey(descricao||'');
+  const fm  = (typeof _bmForma==='function' ? _bmForma(descricao||'') : null) || '?';
+  if (paN.length >= 3 && dk) return paN+'|'+dk+'|'+fm;
+  return 'TXT|' + _gmNorm(descricao||'').replace(/[^A-Z0-9]/g,'');   // fallback: sem PA resolvido
+}
+
+// Adiciona (ou incrementa) UM item na fila. Devolve {acao:'novo'|'incrementou'|'erro', vezes, msg}.
+// SELECT + INSERT/PATCH em vez de ON CONFLICT: com índice parcial o PostgREST exigiria declarar o predicado.
+// Espelha a regra da casa "UPDATE existente + INSERT novo, NUNCA delete".
+async function iacAdicionar(descricao, cliente){
+  const desc = String(descricao||'').trim();
+  if(!desc) return {acao:'erro', msg:'descrição vazia'};
+  let pa = '';
+  try { const r = await resolvePA(desc); pa = (r && r.pa) || ''; } catch(e) { pa = ''; }
+  const chave = iacChaveGrupo(desc, pa);
+  try {
+    const ja = await (await fetch(`${SUPA_URL}/rest/v1/itens_a_cotar?chave_grupo=eq.${encodeURIComponent(chave)}&status=neq.resolvido&select=id,vezes,descricao`, { headers: H })).json();
+    if (Array.isArray(ja) && ja.length) {
+      await sbPatch('itens_a_cotar', 'id=eq.'+ja[0].id, { vezes: (ja[0].vezes||1)+1, atualizado_em: new Date().toISOString() });
+      return {acao:'incrementou', vezes:(ja[0].vezes||1)+1, msg:'já estava na fila'};
+    }
+    await sbPost('itens_a_cotar', {
+      descricao: desc, descricao_norm: _gmNorm(desc), chave_grupo: chave,
+      pa: pa || null, origem: 'busca_nao_encontrado', cliente: cliente || null, status: 'pendente'
+    });
+    return {acao:'novo', vezes:1};
+  } catch(e) {
+    // 409 = corrida com outra aba/usuário: alguém inseriu o mesmo item entre o SELECT e o INSERT.
+    if (/409|duplicate|unique/i.test(String(e && e.message))) return {acao:'incrementou', msg:'já estava na fila'};
+    return {acao:'erro', msg:String(e && e.message || e)};
+  }
+}
+
+// BAIXA AUTOMÁTICA da fila: quando um item entra em cotacoes (import / manual), resolve o pendente correspondente.
+// SEGURANÇA (regra do Lemuel): casa SÓ por chave_grupo com PA+dose+forma RESOLVIDO. Se o item cai no fallback
+// 'TXT|' (sem PA), NÃO baixa sozinho — evita "AGUA DESTILADA AMPOLA" resolver "AGUA P/ INJECAO 10ML" por engano.
+// É best-effort: nunca derruba o import se falhar. Recebe [{produto, pa, fornecedor, preco}].
+async function iacBaixaAuto(itens){
+  const vistos = new Set(); let baixados = 0;
+  for (const it of (itens||[])) {
+    const chave = iacChaveGrupo(it.produto, it.pa);
+    if (chave.indexOf('TXT|') === 0) continue;          // sem PA resolvido → não baixa automático
+    if (vistos.has(chave)) continue; vistos.add(chave);
+    try {
+      const pend = await (await fetch(`${SUPA_URL}/rest/v1/itens_a_cotar?chave_grupo=eq.${encodeURIComponent(chave)}&status=neq.resolvido&select=id,obs`, { headers: H })).json();
+      if (!Array.isArray(pend) || !pend.length) continue;
+      for (const p of pend) {
+        await sbPatch('itens_a_cotar', 'id=eq.'+p.id, {
+          status:'resolvido', fornecedor_resposta: it.fornecedor || null,
+          preco_recebido: (Number(it.preco) > 0 ? Number(it.preco) : null),
+          resolvido_em: new Date().toISOString(), atualizado_em: new Date().toISOString(),
+          obs: (p.obs ? p.obs + ' · ' : '') + 'baixa automática: entrou em cotacoes ('+(it.fornecedor||'?')+')'
+        });
+        baixados++;
+      }
+    } catch(e) { /* baixa é best-effort — nunca interrompe o import */ }
+  }
+  if (baixados) toast(`✅ ${baixados} item(ns) da fila "Itens a Cotar" resolvido(s) automaticamente`, 'success');
+  return baixados;
+}
+
+// Botão "add à fila" para uma descrição solta (usado nos não-encontrados da busca/lista/IA).
+function iacClienteAtual(){
+  const el = document.getElementById('cliente');   // campo do cliente do orçamento (não é 'orc-cliente')
+  return el && el.value ? el.value.trim() : '';
+}
+
+async function iacAddUm(descricao, btn){
+  if (btn) { btn.disabled = true; btn.textContent = '⏳'; }
+  const r = await iacAdicionar(descricao, iacClienteAtual());
+  if (btn) {
+    if (r.acao === 'erro') { btn.disabled = false; btn.textContent = '➕ Add à fila'; toast('Erro: '+r.msg, 'error'); return; }
+    btn.textContent = r.acao === 'novo' ? '✅ na fila' : `✅ na fila (${r.vezes||''}×)`;
+    btn.style.opacity = '.6';
+  }
+  toast(r.acao === 'novo' ? 'Adicionado à fila de cotação' : 'Já estava na fila — demanda +1');
+}
+
+// "Adicionar todos os N não encontrados" — um por um, pra cada um passar pelo dedup.
+async function iacAddTodos(lista, btn){
+  const arr = (lista||[]).filter(Boolean);
+  if(!arr.length) return;
+  if (btn) { btn.disabled = true; btn.textContent = `⏳ 0/${arr.length}`; }
+  const cli = iacClienteAtual();
+  let novos=0, inc=0, err=0;
+  for (let i=0; i<arr.length; i++) {
+    const r = await iacAdicionar(arr[i], cli);
+    if (r.acao==='novo') novos++; else if (r.acao==='incrementou') inc++; else err++;
+    if (btn) btn.textContent = `⏳ ${i+1}/${arr.length}`;
+  }
+  if (btn) { btn.textContent = `✅ ${novos} novo(s)${inc?` · ${inc} já estava(m)`:''}`; btn.style.opacity='.6'; }
+  toast(`Fila: ${novos} novo(s)${inc?`, ${inc} incrementado(s)`:''}${err?`, ${err} erro(s)`:''}`, err?'error':'success');
+}
+
+// ── Fornecedores (giovana não tinha) — grava por CÓDIGO, nunca por nome/'GLOBAL' ──
+let fornecedores = [];
+const FORN_COD_POR_NOME = {};
+Object.keys(FORN_NOMES).forEach(function(k){ var n=(FORN_NOMES[k]||'').toUpperCase(); if(!(n in FORN_COD_POR_NOME)) FORN_COD_POR_NOME[n]=k; });
+function impFornCod(f){
+  if (f && f.codigo_fornecedor!=null && String(f.codigo_fornecedor).trim()!=='') return String(f.codigo_fornecedor).trim();
+  const n=((f&&f.nome)||'').toUpperCase().trim();
+  if (FORN_COD_POR_NOME[n]) return FORN_COD_POR_NOME[n];
+  return (f&&f.nome)||'';
+}
+async function carregarFornecedoresImp(){
+  try{
+    const r = await fetch(`${SUPA_URL}/rest/v1/fornecedores?select=*&order=nome.asc`, { headers: H });
+    const data = await r.json();
+    if (Array.isArray(data)) fornecedores = data;
+  }catch(e){ /* mantém lista atual */ }
+  impPreencherFornecedores();
+}
+function impPreencherFornecedores(){
+  const sel = document.getElementById('imp-fornecedor'); if(!sel) return;
+  const atual = sel.value;
+  sel.innerHTML = '<option value="">Selecione...</option>' +
+    fornecedores.map(function(f){ return '<option value="'+impFornCod(f)+'">'+String(f.nome||'').replace(/</g,'&lt;').replace(/"/g,'&quot;')+'</option>'; }).join('');
+  if (atual) sel.value = atual;
+}
+
+// ── Estado da tabela de importação ──
+let impLinhas = [];
+let impIdCounter = 0;
+let impIAB64 = null, impIATipo = null;
+
+function initImportCot() {
+  const dEl = document.getElementById('imp-data');
+  if (dEl && !dEl.value) dEl.value = new Date().toISOString().split('T')[0];
+  impPreencherFornecedores();
+  if (!impLinhas.length) addLinhaImport();
+}
+
+function addLinhaImport() {
+  const id = 'implinha_' + (++impIdCounter);
+  impLinhas.push(id);
+  const tbody = document.getElementById('imp-linhas');
+  const tr = document.createElement('tr');
+  tr.id = id;
+  tr.style.borderBottom = '1px solid #1e3048';
+  const inp = "width:100%;padding:5px 7px;border:1px solid var(--borda);border-radius:6px;font-size:12px;outline:none;font-family:'DM Sans',sans-serif;background:#0a0f14;color:#e8f0f8";
+  tr.innerHTML = `
+    <td style="padding:6px 8px"><input type="text" id="${id}_codigo" placeholder="Cód." style="${inp};max-width:80px"></td>
+    <td style="padding:6px 8px"><input type="text" id="${id}_produto" placeholder="Nome do produto *" style="${inp}"></td>
+    <td style="padding:6px 8px"><input type="text" id="${id}_marca" placeholder="Marca" style="${inp}"></td>
+    <td style="padding:6px 8px"><input type="text" id="${id}_und" placeholder="CX/50" style="${inp};max-width:70px"></td>
+    <td style="padding:6px 8px"><input type="number" id="${id}_qtd" placeholder="0" min="1" style="${inp};max-width:55px;text-align:center"></td>
+    <td style="padding:6px 8px"><input type="number" id="${id}_valor" placeholder="0.00" step="0.01" min="0" style="${inp};max-width:90px"></td>
+    <td style="padding:6px 8px"><input type="date" id="${id}_venc" style="${inp};max-width:130px"></td>
+    <td style="padding:6px 8px"><input type="number" id="${id}_emb" placeholder="1" min="1" title="Unidades por caixa" style="${inp};max-width:65px;text-align:center"></td>
+    <td style="padding:6px 8px"><button onclick="remLinhaImport('${id}')" style="background:none;border:none;cursor:pointer;color:var(--vermelho);font-size:16px;padding:2px 6px">✕</button></td>
+  `;
+  tbody.appendChild(tr);
+}
+function remLinhaImport(id) {
+  impLinhas = impLinhas.filter(l => l !== id);
+  const el = document.getElementById(id);
+  if (el) el.remove();
+}
+function limparImport() {
+  impLinhas = [];
+  document.getElementById('imp-linhas').innerHTML = '';
+  document.getElementById('imp-pedido').value = '';
+  document.getElementById('imp-fornecedor').value = '';
+  document.getElementById('imp-status').textContent = '';
+  impIdCounter = 0;
+  addLinhaImport();
+}
+
+// ── Leitor IA (foto/PDF) — mesma edge function 'ler-pedido' e mesmos modelos do source ──
+function impHandleIAFile(file) {
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    impIAB64 = e.target.result.split(',')[1];
+    impIATipo = file.type;
+    document.getElementById('imp-ia-nome').textContent = file.name;
+    document.getElementById('imp-ia-tipo').textContent = file.type.includes('pdf') ? 'PDF' : 'Imagem';
+    document.getElementById('imp-ia-icon').textContent = file.type.includes('pdf') ? '📄' : '🖼️';
+    document.getElementById('imp-ia-preview').style.display = 'flex';
+    const btn = document.getElementById('imp-ia-btn');
+    btn.disabled = false; btn.style.opacity = '1';
+  };
+  reader.readAsDataURL(file);
+}
+function impLimparIA() {
+  impIAB64 = null; impIATipo = null;
+  document.getElementById('imp-ia-preview').style.display = 'none';
+  document.getElementById('imp-ia-file').value = '';
+  document.getElementById('imp-ia-status').textContent = '';
+  const btn = document.getElementById('imp-ia-btn');
+  btn.disabled = true; btn.style.opacity = '0.5';
+}
+async function impLerOrcamentoIA() {
+  if(!podeImportarCotacao()){ return; }
+  if (!impIAB64) return;
+  const st = document.getElementById('imp-ia-status');
+  const btn = document.getElementById('imp-ia-btn');
+  btn.disabled = true; btn.style.opacity = '0.5';
+  st.style.color = 'var(--muted)';
+  st.textContent = '🤖 Lendo o orçamento... aguarde';
+
+  const isPDF = impIATipo === 'application/pdf';
+  const bloco = isPDF
+    ? { type:'document', source:{ type:'base64', media_type:'application/pdf', data:impIAB64 } }
+    : { type:'image', source:{ type:'base64', media_type:impIATipo, data:impIAB64 } };
+
+  const prompt = `Você é assistente de uma distribuidora farmacêutica. Analise este ORÇAMENTO DE FORNECEDOR (imagem ou PDF) e extraia os itens da tabela de produtos.
+Responda APENAS um JSON válido, sem markdown e sem crases, no formato exato:
+{"pedido":"numero do pedido ou orcamento, ou null","data":"AAAA-MM-DD ou null","itens":[{"codigo":"codigo do produto ou null","produto":"nome completo do produto","marca":"marca/fabricante ou null","und":"unidade, ex CX","embalagem":numero de unidades por caixa ou null,"qtd":quantidade de caixas pedidas ou null,"preco_unit":preco por unidade em numero decimal com ponto,"preco_caixa":preco da caixa fechada em numero decimal com ponto ou null,"estoque":quantidade em estoque do fornecedor em numero inteiro ou null,"vencimento":"AAAA-MM-DD ou null"}]}
+Regras:
+- MAPEIE AS COLUNAS PELO NOME DO CABEÇALHO, NUNCA pela posição. A ordem muda de fornecedor pra fornecedor
+  (ex.: um layout traz "Un | Qtd | Marca | Prç.Unit. | Preço | Total Item" e outro traz a Marca antes da Qtd).
+  Leia o cabeçalho da tabela primeiro e só depois extraia as linhas.
+- qtd = a coluna "Qtd", "Qtd.", "Quant", "Quantidade" = QUANTAS caixas/unidades o fornecedor está ofertando ou
+  cotando naquela linha. NUNCA use 1 como padrão e NUNCA confunda com a embalagem. Se a coluna existir, copie o
+  número dela exatamente. Só use null se a coluna não existir.
+- embalagem = quantas unidades vêm DENTRO de uma caixa, e ela vem do NOME DO PRODUTO, não de coluna nenhuma:
+  "C/24" -> 24, "C/50" -> 50, "C/48" -> 48, "CX 30" -> 30, "C/500" -> 500. Se o nome não tiver esse marcador,
+  embalagem = 1 (ex.: "ACETILCISTEINA 40MG/ML XPE 120ML LARANJA" com Un=UN -> embalagem 1).
+  A embalagem NUNCA sai da coluna Qtd — são coisas diferentes (Qtd=5 caixas de embalagem=50 unidades).
+- preco_unit = valor por UNIDADE (comprimido/ampola/frasco). Colunas: "Prç.Unit.", "Preço Unit", "Vlr Unit",
+  "Unitário", "P.Unit". É o MENOR dos dois preços quando embalagem > 1. Use ponto decimal.
+- preco_caixa = valor da CAIXA fechada. Colunas: "Preço", "Preço Caixa", "Preço CX", "Total CX", "Vlr Caixa".
+  CUIDADO: numa tabela com "Prç.Unit." E "Preço", o "Preço" é a CAIXA (o maior). Se não houver, calcule
+  preco_unit x embalagem.
+- CONFERÊNCIA OBRIGATÓRIA (use pra saber qual coluna é qual): preco_caixa = preco_unit x embalagem.
+  Ex.: unit 6,9104 x emb 24 = 165,85 = preco_caixa. Se a sua leitura não fechar nessa conta, você trocou as
+  colunas — releia o cabeçalho. Quando embalagem=1, preco_unit e preco_caixa são iguais.
+- NÃO use a coluna "Total Item"/"Total" como preço: ela é qtd x preco_caixa (o total da linha), não é preço
+  unitário nem de caixa.
+- estoque = quantidade disponível do fornecedor (colunas "Estoque", "Qtd Estoque", "Em estoque", "Disp", "Saldo").
+  ATENÇÃO: "Qtd" NÃO é estoque. Se não houver uma coluna própria de estoque, use null.
+- Não invente dados; use null quando não houver a informação.
+- Responda somente o JSON, nada antes nem depois.`;
+
+  async function chamar(modelo) {
+    const r = await fetch('https://vikewlbhkrikcalzsbeb.supabase.co/functions/v1/ler-pedido', {
+      method:'POST', headers:{ 'Content-Type':'application/json' },
+      body: JSON.stringify({ model: modelo, max_tokens: 16000, messages:[{ role:'user', content:[ bloco, { type:'text', text: prompt } ] }] })
+    });
+    return r.json();
+  }
+
+  try {
+    let data = await chamar('claude-opus-4-5');
+    if (data && data.type === 'error' && /not_found/i.test(JSON.stringify(data))) {
+      data = await chamar('claude-haiku-4-5-20251001');
+    }
+    if (data && (data.type === 'error' || data.error)) {
+      st.style.color = 'var(--vermelho)';
+      st.textContent = '❌ Erro da IA: ' + ((data.error&&data.error.message) || data.message || 'desconhecido');
+      btn.disabled = false; btn.style.opacity = '1';
+      return;
+    }
+    let texto = (data.content && data.content[0] && data.content[0].text) ? data.content[0].text : '';
+    texto = texto.replace(/```json|```/g, '').trim();
+    const ini = texto.indexOf('{'), fim = texto.lastIndexOf('}');
+    if (ini >= 0 && fim > ini) texto = texto.slice(ini, fim + 1);
+
+    let parsed;
+    try {
+      parsed = JSON.parse(texto);
+    } catch(eParse) {
+      const pedM = texto.match(/"pedido"\s*:\s*"([^"]*)"/);
+      const dataM = texto.match(/"data"\s*:\s*"([^"]*)"/);
+      const objs = texto.match(/\{[^{}]*\}/g) || [];
+      const itensRec = [];
+      objs.forEach(o => { try { const x = JSON.parse(o); if (x.produto) itensRec.push(x); } catch(_){} });
+      if (!itensRec.length) throw eParse;
+      parsed = { pedido: pedM ? pedM[1] : null, data: dataM ? dataM[1] : null, itens: itensRec, _truncado: true };
+    }
+    const itens = parsed.itens || [];
+    if (!itens.length) {
+      st.style.color = 'var(--vermelho)';
+      st.textContent = '❌ Nenhum item encontrado no orçamento.';
+      btn.disabled = false; btn.style.opacity = '1';
+      return;
+    }
+
+    if (parsed.pedido) document.getElementById('imp-pedido').value = parsed.pedido;
+    if (impToISO(parsed.data)) document.getElementById('imp-data').value = impToISO(parsed.data);
+
+    impLinhas = [];
+    document.getElementById('imp-linhas').innerHTML = '';
+    let semPreco = 0;
+    itens.forEach(it => {
+      addLinhaImport();
+      const id = impLinhas[impLinhas.length - 1];
+      const set = (suf, val) => { const el = document.getElementById(id + suf); if (el && val != null && val !== '') el.value = val; };
+      let pu = it.preco_unit;
+      if ((pu == null || pu === '') && it.preco_caixa && it.embalagem) {
+        pu = parseFloat(it.preco_caixa) / parseFloat(it.embalagem);
+        pu = Math.round(pu * 10000) / 10000;
+      }
+      set('_codigo', it.codigo);
+      set('_produto', it.produto);
+      set('_marca', it.marca);
+      set('_und', it.und);
+      set('_qtd', it.qtd);
+      if (pu == null || pu === '' || parseFloat(pu) <= 0) semPreco++;
+      set('_valor', pu);
+      let emb = parseInt(it.embalagem || 0) || 0;
+      if (emb < 1) emb = impEmbalagem(it.und, it.produto);
+      set('_emb', emb);
+      set('_venc', impToISO(it.vencimento));
+    });
+
+    st.style.color = 'var(--verde-escuro)';
+    if (parsed._truncado) {
+      st.style.color = '#BA7517';
+      st.textContent = `⚠️ ${itens.length} item(ns) lido(s), mas o orçamento é grande e pode ter sido cortado no fim. Confira se faltou algum e complete manual se precisar.`;
+    } else {
+      st.textContent = `✅ ${itens.length} item(ns) lido(s)! Confira a tabela e clique em "Importar para o Banco".`;
+    }
+    if (semPreco > 0) {
+      st.style.color = '#BA7517';
+      st.textContent = `⚠️ ${semPreco} de ${itens.length} item(ns) SEM PREÇO — preencha o valor na tabela antes de importar. ` + st.textContent;
+    }
+  } catch (err) {
+    st.style.color = 'var(--vermelho)';
+    st.textContent = '❌ Erro ao ler: ' + err.message + ' — tente outra foto mais nítida ou preencha manual.';
+  }
+  btn.disabled = false; btn.style.opacity = '1';
+}
+
+// ── IMPORTAR PARA O BANCO — mantém TODAS as travas do source ──
+async function executarImport() {
+  if(!podeImportarCotacao()){ return; }
+  const fornecedor = document.getElementById('imp-fornecedor').value.trim();
+  const pedido = document.getElementById('imp-pedido').value.trim();
+  const data = document.getElementById('imp-data').value;
+  const stEl = document.getElementById('imp-status');
+  const btn = document.getElementById('btn-importar');
+
+  if (!fornecedor) { toast('Selecione o fornecedor', 'error'); return; }
+  // pedido OPCIONAL: item manual avulso não precisa de nº de pedido — grava null
+
+  const itens = [];
+  let puladosEstoque = 0;
+  for (const id of impLinhas) {
+    const prodEl = document.getElementById(id + '_produto');
+    const produto = prodEl ? prodEl.value.trim() : '';
+    const valEl = document.getElementById(id + '_valor');
+    const valor = parseFloat((valEl ? valEl.value : 0) || 0);
+    if (!produto) continue;
+    const qtdEl = document.getElementById(id + '_qtd');
+    const qtd = parseInt((qtdEl ? qtdEl.value : 1) || 1) || 1;
+    // COTAÇÃO DE FORNECEDOR: estoque sempre 1 (disponível p/ comprar; não é estoque próprio).
+    let estoque = 1;
+    const embEl = document.getElementById(id + '_emb');
+    let emb = parseInt((embEl ? embEl.value : 0) || 0) || 0;
+    const undEl = document.getElementById(id + '_und');
+    if (emb < 1) emb = impEmbalagem(undEl ? undEl.value : '', produto);
+    const precoCaixa = valor * emb;
+    const codEl = document.getElementById(id + '_codigo');
+    const marcaEl = document.getElementById(id + '_marca');
+    const vencEl = document.getElementById(id + '_venc');
+    itens.push({
+      fornecedor,
+      tipo: 'fornecedor',
+      pedido: pedido || null,
+      data: data || new Date().toISOString().split('T')[0],
+      codigo: codEl ? (codEl.value.trim() || null) : null,
+      produto,
+      marca: marcaEl ? (marcaEl.value.trim() || null) : null,
+      principio_ativo: null,
+      und: undEl ? (undEl.value.trim() || null) : null,
+      compra_unit: valor,
+      compra_caixa: precoCaixa,
+      qtd_orcamento: qtd,
+      total_compra: precoCaixa * qtd,
+      vencimento: vencEl ? (vencEl.value || null) : null,
+      estoque: estoque,
+    });
+  }
+
+  if (!itens.length) {
+    if (puladosEstoque > 0) {
+      stEl.style.color = '#BA7517';
+      stEl.textContent = `⚠️ Nada importado: todos os ${puladosEstoque} item(ns) estavam com estoque 0 (não entram no banco).`;
+      toast('Nenhum item com estoque para importar', 'error');
+    } else {
+      toast('Adicione pelo menos um item', 'error');
+    }
+    return;
+  }
+
+  // TRAVA marca obrigatória — nenhum item entra no banco sem marca
+  const semMarcaImp = itens.filter(i => !i.marca || !String(i.marca).trim());
+  if (semMarcaImp.length) {
+    stEl.style.color = '#c0392b';
+    stEl.textContent = `❌ ${semMarcaImp.length} item(ns) sem MARCA — preencha antes de importar: ` + semMarcaImp.map(i=>i.produto).slice(0,3).join(' | ') + (semMarcaImp.length>3?` (+${semMarcaImp.length-3})`:'');
+    toast('Marca obrigatória — preencha os itens sem marca', 'error');
+    return;
+  }
+
+  // TRAVA estouro: preço unitário ≈ preço da caixa e o nome indica N unidades → provável preço de caixa no campo unitário
+  const estouroImp = itens.filter(i => { const nN = qtdEmbalagem(i.und, i.produto); return nN > 1 && i.compra_unit > 0 && i.compra_caixa > 0 && Math.abs(i.compra_unit - i.compra_caixa)/i.compra_caixa < 0.05; });
+  if (estouroImp.length) {
+    const ex = estouroImp.slice(0,6).map(i => { const nN = qtdEmbalagem(i.und, i.produto); return `• ${i.produto}: unit R$${(+i.compra_unit).toFixed(2)} = caixa R$${(+i.compra_caixa).toFixed(2)} → caixa÷${nN} = R$${(i.compra_unit/nN).toFixed(4)}`; }).join('\n');
+    if (!confirm(`⚠️ ${estouroImp.length} item(ns): o preço UNITÁRIO está igual ao da CAIXA, mas o nome indica várias unidades. O unitário não seria caixa÷N?\n\n${ex}${estouroImp.length>6?'\n…':''}\n\nOK = importar assim mesmo · Cancelar = revisar`)) {
+      stEl.style.color = '#BA7517';
+      stEl.textContent = `Importação cancelada — ${estouroImp.length} item(ns) com preço unitário = preço de caixa. Ajuste p/ caixa÷N e tente de novo.`;
+      return;
+    }
+  }
+
+  // BLINDAGEM anti-estouro: (mercado) unit≥3× o menor peer E ÷qtd cai no peer; (sanidade) SEM peer — unit alto + ÷qtd
+  // barato p/ a forma/material (pega agulha/luva, S3MED "COM", genérico sem peer). Cobre o caso sem compra_caixa.
+  const caixaPeerImp = itens.map(i => {
+    const sp = pareceCaixaPeer(i.produto, i.und, i.principio_ativo, i.compra_unit);
+    const ss = sp ? null : pareceCaixaSanidade(i.produto, i.und, i.compra_unit, i.compra_caixa);
+    const s = sp || ss; return s ? { i, s, via: sp ? 'mercado' : 'sanidade' } : null;
+  }).filter(Boolean);
+  if (caixaPeerImp.length) {
+    const ex = caixaPeerImp.slice(0,6).map(x => `• ${x.i.produto}: unit R$${(+x.i.compra_unit).toFixed(2)} → ÷${x.s.qtd} = R$${x.s.corr}${x.s.pmin!=null?` (mercado ~R$${x.s.pmin.toFixed(4)})`:` (${x.s.forma})`}`).join('\n');
+    if (!confirm(`🔴 ${caixaPeerImp.length} item(ns) PARECEM PREÇO DE CAIXA (unit muito alto; ÷qtd = preço real por unidade). A cotação sai MUITO cara.\n\n${ex}${caixaPeerImp.length>6?'\n…':''}\n\nOK = importar assim mesmo · Cancelar = corrigir p/ ÷qtd`)) {
+      stEl.style.color = '#c0392b';
+      stEl.textContent = `Importação cancelada — ${caixaPeerImp.length} item(ns) com preço parecendo de CAIXA. Ajuste p/ ÷qtd.`;
+      return;
+    }
+  }
+
+  // confirm suave — itens sem preço entram com compra_unit=0 (ficam "sem referência")
+  const semPrecoImp = itens.filter(i => !(i.compra_unit > 0)).length;
+  if (semPrecoImp > 0 && !confirm(`${semPrecoImp} item(ns) vão entrar SEM preço (compra_unit=0, ficam como "sem referência"). Importar mesmo assim?`)) {
+    stEl.style.color = '#BA7517';
+    stEl.textContent = `Importação cancelada — preencha os ${semPrecoImp} item(ns) sem preço e tente de novo.`;
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = '⏳ Importando...';
+  stEl.textContent = '';
+
+  // FASE 3: PA automático via CMED — preenche só os itens que vieram SEM princípio ativo
+  for (let k = 0; k < itens.length; k++) {
+    if (!itens[k].principio_ativo) {
+      btn.textContent = `⏳ Resolvendo PA ${k + 1}/${itens.length}...`;
+      try { const _rp = await resolvePA(itens[k].produto); if (_rp && _rp.pa) itens[k].principio_ativo = _rp.pa; } catch(_e){}
+    }
+  }
+
+  const _np = s => _gmNorm(s||'');
+  let inseridos = 0, atualizados = 0, erros = 0;
+  const _iacBaixarDepois = [];   // itens gravados → baixa automática na fila "Itens a Cotar" no fim
+  for (let i = 0; i < itens.length; i++) {
+    btn.textContent = `⏳ Importando ${i + 1} de ${itens.length}...`;
+    const it = itens[i];
+    const codNum = (it.codigo != null && /^\d+$/.test(String(it.codigo).trim())) ? parseFloat(it.codigo) : null;
+    // Campos comuns (sem estoque — estoque só entra no INSERT novo)
+    const campos = {
+      fornecedor: it.fornecedor,          // gravado por CÓDIGO (nunca 'GLOBAL'/nome)
+      tipo: it.tipo || 'fornecedor',
+      produto: it.produto,
+      marca: it.marca,
+      und: it.und,
+      compra_unit: it.compra_unit,
+      compra_caixa: it.compra_caixa,
+      qtd_orcamento: it.qtd_orcamento,
+      total_compra: it.total_compra,
+      codigo: codNum,
+      pedido: it.pedido,
+      data: it.data,
+      vencimento: it.vencimento,
+      principio_ativo: it.principio_ativo || null,
+    };
+    try {
+      // Procura cotação existente do MESMO fornecedor + MESMO produto → UPDATE por id (NUNCA delete)
+      const existente = cotacoes.find(c =>
+        String(c.fornecedor||'').trim() === String(it.fornecedor).trim() &&
+        _np(c.produto) === _np(it.produto));
+      if (existente && existente.id != null) {
+        await sbPatch('cotacoes', `id=eq.${existente.id}`, campos);   // NÃO mexe no estoque existente
+        atualizados++;
+      } else {
+        await sbPost('cotacoes', { ...campos, estoque: 1 });          // INSERT novo → estoque=1
+        inseridos++;
+      }
+      _iacBaixarDepois.push({ produto: it.produto, pa: it.principio_ativo, fornecedor: it.fornecedor, preco: it.compra_unit });
+    } catch(e) {
+      erros++;
+      console.error(e);
+    }
+  }
+  // baixa automática na fila "Itens a Cotar" — depois de gravar, resolve os pendentes que agora têm preço
+  try { await iacBaixaAuto(_iacBaixarDepois); } catch(e) { console.error('baixa auto:', e); }
+
+  btn.disabled = false;
+  btn.textContent = '📥 Importar para o Banco';
+
+  const total = inseridos + atualizados;
+  const puladoTxt = puladosEstoque > 0 ? ` · ⏭ ${puladosEstoque} pulado(s) por estoque 0` : '';
+  if (total > 0) {
+    stEl.style.color = 'var(--verde-escuro)';
+    stEl.textContent = `✅ ${inseridos} novo(s) + ${atualizados} atualizado(s)${erros ? ` · ⚠️ ${erros} erro(s)` : ''}${puladoTxt}`;
+    await recarregarCotacoes(true);
+    toast(`${inseridos} novos + ${atualizados} atualizados`, 'success');
+  } else {
+    stEl.style.color = 'var(--vermelho)';
+    if (erros > 0) {
+      // nada gravou + houve erro de escrita = sessão provavelmente expirada (writes viram 401)
+      stEl.textContent = `❌ NADA gravado — ${erros} erro(s). Sessão pode ter EXPIRADO: faça LOGIN de novo.`;
+      alert(`❌ NADA FOI GRAVADO NO BANCO.\n\n${erros} escrita(s) falharam — sua sessão provavelmente EXPIROU.\nFaça LOGOUT e LOGIN de novo e importe outra vez.`);
+    } else {
+      stEl.textContent = `❌ Nenhum item para importar.`;
+    }
+    toast('Erro na importação', 'error');
+  }
+}
+
+// Carrega fornecedores no load e sempre que a auth mudar (dropdown do impcot).
+document.addEventListener('gm-auth-ready', function(){ if (podeImportarCotacao()) carregarFornecedoresImp(); });
+document.addEventListener('DOMContentLoaded', function(){ if (podeImportarCotacao()) carregarFornecedoresImp(); });
+</script>
+</body>
+</html>

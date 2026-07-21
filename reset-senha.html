@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GlobalMed — Redefinir senha</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;font-family:system-ui,'Segoe UI',Arial,sans-serif}
+  body{background:#0b1220;color:#e5e7eb;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:16px}
+  .card{width:360px;max-width:94vw;background:#111a2e;border:1px solid #22314f;border-radius:16px;padding:26px 24px;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+  h1{text-align:center;font-size:18px;letter-spacing:.5px;margin-bottom:2px}
+  .sub{text-align:center;color:#8aa0c6;font-size:12px;margin-bottom:18px}
+  input{width:100%;box-sizing:border-box;padding:11px 12px;margin-bottom:10px;border-radius:9px;border:1px solid #2a3a5c;background:#0c1526;color:#e5e7eb;font-size:14px}
+  button{width:100%;padding:11px;border:none;border-radius:9px;background:#2563eb;color:#fff;font-weight:700;font-size:14px;cursor:pointer}
+  #msg{min-height:16px;margin:9px 0;font-size:12px}
+  a{color:#8aa0c6;font-size:12px;text-decoration:none}
+  .center{text-align:center;margin-top:12px}
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>GLOBALMED</h1>
+  <div class="sub">Redefinir senha</div>
+  <div id="conteudo">
+    <input id="p1" type="password" placeholder="nova senha (mín. 6)" autocomplete="new-password">
+    <input id="p2" type="password" placeholder="repita a nova senha" autocomplete="new-password">
+    <div id="msg"></div>
+    <button id="btn">Salvar nova senha</button>
+  </div>
+  <div class="center"><a href="globalmed_painel.html">Voltar ao login</a></div>
+</div>
+<script>
+  var SB='https://vikewlbhkrikcalzsbeb.supabase.co';
+  var ANON='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZpa2V3bGJoa3Jpa2NhbHpzYmViIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgwOTEzMDcsImV4cCI6MjA5MzY2NzMwN30.elMw6mbCoCbFVCnzck-aHQrXGYaZhX-m0RRb1VGYP64';
+  // O link do email do Supabase vem como .../reset-senha.html#access_token=...&type=recovery
+  var hash = new URLSearchParams((location.hash||'').replace(/^#/,''));
+  var token = hash.get('access_token');
+  var tipo = hash.get('type');
+  var msg = document.getElementById('msg');
+  var btn = document.getElementById('btn');
+  if(!token || tipo!=='recovery'){
+    document.getElementById('conteudo').innerHTML =
+      '<div style="color:#f87171;font-size:13px;line-height:1.5">Link inválido ou expirado.<br>Peça um novo email de "esqueci a senha", ou fale com o admin (Lemuel).</div>';
+  } else {
+    btn.onclick = async function(){
+      var p1=document.getElementById('p1').value||'', p2=document.getElementById('p2').value||'';
+      if(p1.length<6){ msg.style.color='#f87171'; msg.textContent='Senha muito curta (mín. 6).'; return; }
+      if(p1!==p2){ msg.style.color='#f87171'; msg.textContent='As senhas não conferem.'; return; }
+      btn.disabled=true; btn.textContent='Salvando…'; msg.style.color='#8aa0c6'; msg.textContent='';
+      try{
+        var r = await fetch(SB+'/auth/v1/user', {
+          method:'PUT',
+          headers:{ apikey:ANON, 'Content-Type':'application/json', Authorization:'Bearer '+token },
+          body: JSON.stringify({ password: p1 })
+        });
+        var d = await r.json();
+        if(!r.ok) throw new Error(d.error_description || d.msg || 'Não foi possível redefinir.');
+        try{ localStorage.removeItem('gm_session'); }catch(e){}
+        document.getElementById('conteudo').innerHTML =
+          '<div style="color:#34d399;font-size:13px;line-height:1.5">✅ Senha redefinida!<br>Já pode entrar com a nova senha.</div>';
+      }catch(e){
+        btn.disabled=false; btn.textContent='Salvar nova senha';
+        msg.style.color='#f87171'; msg.textContent=e.message;
+      }
+    };
+  }
+</script>
+</body>
+</html>

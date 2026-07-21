@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GlobalMed — Vendas Ativas</title>
+<script src="gm-auth.js"></script>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI',system-ui,sans-serif; }
+  body { background:#eef4ef; color:#1c2b22; }
+  header { background:#0f2e1d; color:#fff; padding:16px 28px; display:flex; align-items:center; justify-content:space-between; }
+  header h1 { font-size:22px; color:#4ade80; }
+  header span { font-size:12px; opacity:.7; }
+  .tabs { display:flex; gap:8px; padding:16px 28px 0; }
+  .tab { padding:10px 18px; border-radius:10px 10px 0 0; background:#d7e5da; cursor:pointer; font-weight:600; font-size:14px; }
+  .tab.active { background:#fff; color:#0f7a3d; }
+  .panel { display:none; background:#fff; margin:0 28px 28px; padding:22px; border-radius:0 12px 12px 12px; box-shadow:0 2px 8px rgba(0,0,0,.06); }
+  .panel.active { display:block; }
+  h2 { font-size:17px; margin-bottom:6px; }
+  p.desc { font-size:13px; color:#5b6b60; margin-bottom:14px; }
+  .controls { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:14px; align-items:center; }
+  select, input[type=text], input[type=number] { padding:8px 12px; border:1px solid #c8d6cc; border-radius:8px; font-size:14px; }
+  button { padding:9px 16px; border:none; border-radius:8px; background:#0f7a3d; color:#fff; font-weight:600; font-size:14px; cursor:pointer; }
+  button.sec { background:#e7efe9; color:#0f7a3d; }
+  button:disabled { opacity:.5; cursor:default; }
+  table { width:100%; border-collapse:collapse; font-size:13px; }
+  th { text-align:left; padding:8px 10px; background:#f3f8f4; color:#56685c; font-size:11px; text-transform:uppercase; letter-spacing:.4px; }
+  td { padding:9px 10px; border-top:1px solid #edf2ee; vertical-align:middle; }
+  tr:hover td { background:#f8fbf9; }
+  .tag { display:inline-block; padding:3px 9px; border-radius:20px; font-size:11px; font-weight:700; white-space:nowrap; }
+  .tag.green { background:#d8f7e3; color:#0f7a3d; }
+  .tag.yellow { background:#fdf3d3; color:#9a7405; }
+  .tag.red { background:#fde0e0; color:#b32626; }
+  .tag.blue { background:#deeafd; color:#1d4fb3; }
+  .tag.gray { background:#eceff0; color:#5e6b70; }
+  textarea { width:100%; min-height:200px; padding:14px; border:1px solid #c8d6cc; border-radius:10px; font-size:13px; font-family:monospace; margin-top:10px; }
+  .wa { background:#25d366; padding:6px 12px; border-radius:8px; color:#fff; font-weight:700; font-size:12px; text-decoration:none; display:inline-block; }
+  .muted { color:#8a9a8f; font-size:12px; }
+  .count { font-size:13px; color:#5b6b60; margin-bottom:10px; }
+  .loading { padding:30px; text-align:center; color:#8a9a8f; }
+  .form-cliente { background:#f4f9f5; border:1px solid #d7e5da; border-radius:10px; padding:14px; margin-bottom:14px; display:none; }
+  .form-cliente.show { display:block; }
+  .form-cliente input { margin:4px 6px 4px 0; }
+  label.chk { font-size:13px; display:flex; align-items:center; gap:5px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>GlobalMed <span style="color:#fff;font-weight:400">· Vendas Ativas</span></h1>
+  <span id="status">conectando…</span>
+</header>
+
+<div class="tabs">
+  <div class="tab active" data-p="ofertas">🔥 Ofertas da Semana</div>
+  <div class="tab" data-p="whatsapp">📱 Disparo WhatsApp</div>
+  <div class="tab" data-p="recompra">🔁 Alerta de Recompra</div>
+</div>
+
+<!-- ============ OFERTAS ============ -->
+<div class="panel active" id="p-ofertas">
+  <h2>Ofertas da Semana — Preço Competitivo</h2>
+  <p class="desc">Compara seu preço com a média de mercado (todas as cotações de distribuidores por princípio ativo). Verde = abaixo da média, ótimo pra ofertar.</p>
+  <div class="controls">
+    <label>Ordenar por
+      <select id="of-ord">
+        <option value="comp">Mais competitivo</option>
+        <option value="margem">Maior margem</option>
+        <option value="estoque">Maior estoque</option>
+      </select>
+    </label>
+    <label>Categoria
+      <select id="of-cat">
+        <option value="todos">Todos</option>
+        <option value="medicamento">💊 Medicamentos</option>
+        <option value="material">🩹 Materiais</option>
+      </select>
+    </label>
+    <label>Mínimo de estoque <input type="number" id="of-minest" value="1" style="width:80px"></label>
+    <label class="chk"><input type="checkbox" id="of-socomp" checked> Só competitivos (≤ média de mercado)</label>
+    <label class="chk"><input type="checkbox" id="of-socompara" checked> Só com comparação de mercado (2+ distribuidores)</label>
+    <label class="chk"><input type="checkbox" id="of-soglobal"> Só estoque GLOBAL</label>
+    <button class="sec" onclick="renderOfertas()">Aplicar</button>
+    <button onclick="gerarTextoOferta()">Gerar texto WhatsApp</button>
+    <button class="sec" onclick="copiarTexto('of-texto')">Copiar texto</button>
+  </div>
+  <div class="count" id="of-count"></div>
+  <div id="of-lista" class="loading">Carregando produtos…</div>
+  <textarea id="of-texto" placeholder="O texto da oferta aparece aqui…"></textarea>
+</div>
+
+<!-- ============ WHATSAPP ============ -->
+<div class="panel" id="p-whatsapp">
+  <h2>Disparo WhatsApp</h2>
+  <p class="desc">Envie ofertas para <b>Clientes</b> (quem já compra — relacionamento quente) ou <b>Prospects</b> (novos contatos). O botão abre o WhatsApp com a mensagem pronta e personalizada.</p>
+  <div class="controls">
+    <label>Base
+      <select id="wa-base" onchange="renderContatos()">
+        <option value="clientes">👥 Clientes (quem compra)</option>
+        <option value="prospects">🎯 Prospects (novos)</option>
+      </select>
+    </label>
+    <label>Vendedora
+      <select id="wa-vend" onchange="renderContatos()"><option value="">Todas</option></select>
+    </label>
+    <button class="sec" onclick="document.getElementById('form-cli').classList.toggle('show')">+ Cadastrar cliente</button>
+  </div>
+
+  <div class="form-cliente" id="form-cli">
+    <b style="font-size:13px">Novo cliente</b><br>
+    <input type="text" id="nc-nome" placeholder="Nome / Razão social *" style="width:260px">
+    <input type="text" id="nc-contato" placeholder="Nome do contato" style="width:180px">
+    <input type="text" id="nc-whats" placeholder="WhatsApp (62 9...)*" style="width:160px">
+    <input type="text" id="nc-cidade" placeholder="Cidade" style="width:140px">
+    <input type="text" id="nc-uf" placeholder="UF" style="width:50px">
+    <select id="nc-vend"><option value="">Vendedora</option><option>Isadora</option></select>
+    <button onclick="salvarCliente()">Salvar</button>
+  </div>
+
+  <textarea id="wa-msg" style="min-height:110px" placeholder="Mensagem a enviar. Use {nome} para personalizar."></textarea>
+
+  <!-- FILA DE DISPARO -->
+  <div style="display:flex;gap:10px;align-items:center;margin:10px 0">
+    <button onclick="iniciarFila()" style="background:#0F6E56;color:#fff;font-weight:700">▶ Iniciar Fila de Disparo</button>
+    <span class="muted" style="font-size:12px">Percorre a lista abaixo um a um — você só aperta enviar no WhatsApp.</span>
+  </div>
+  <div id="fila-painel" style="display:none;background:#f0f7f2;border:2px solid #0F6E56;border-radius:12px;padding:16px;margin:10px 0">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+      <div>
+        <b id="fila-pos" style="font-size:15px">1 de 30</b>
+        <div id="fila-nome" style="font-size:18px;font-weight:700;color:#0F6E56;margin-top:2px">—</div>
+        <div id="fila-det" class="muted" style="font-size:12px">—</div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button onclick="filaEnviar()" style="background:#25D366;color:#fff;font-weight:700;padding:10px 18px">📲 Abrir WhatsApp e marcar enviado</button>
+        <button class="sec" onclick="filaPular()">Pular ▸</button>
+        <button class="sec" onclick="filaParar()" style="color:#c0392b">■ Parar</button>
+      </div>
+    </div>
+    <div style="background:#dde8df;border-radius:8px;height:10px;margin-top:12px;overflow:hidden">
+      <div id="fila-barra" style="background:#0F6E56;height:100%;width:0%;transition:.3s"></div>
+    </div>
+    <div id="fila-status" class="muted" style="font-size:12px;margin-top:6px">0 enviados · 0 pulados</div>
+  </div>
+
+  <div class="count" id="wa-count"></div>
+  <div id="wa-lista" class="loading">Carregando…</div>
+</div>
+
+<!-- ============ RECOMPRA ============ -->
+<div class="panel" id="p-recompra">
+  <h2>Alerta de Recompra</h2>
+  <p class="desc">Clientes dos orçamentos salvos, por dias desde o último orçamento. ⚠️ Só funciona se a proposta for SALVA no sistema da Giovana antes de gerar o PDF.</p>
+  <div class="controls">
+    <label>Alertar acima de <input type="number" id="rc-dias" value="30" style="width:70px"> dias</label>
+    <button class="sec" onclick="renderRecompra()">Aplicar</button>
+  </div>
+  <div class="count" id="rc-count"></div>
+  <div id="rc-lista" class="loading">Carregando orçamentos…</div>
+</div>
+
+<script>
+const SB_URL = 'https://vikewlbhkrikcalzsbeb.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZpa2V3bGJoa3Jpa2NhbHpzYmViIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgwOTEzMDcsImV4cCI6MjA5MzY2NzMwN30.elMw6mbCoCbFVCnzck-aHQrXGYaZhX-m0RRb1VGYP64';
+const H = { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY };
+
+let globais = [], prospects = [], clientes = [], orcamentos = [], mercado = {}, _cotTs = 0;
+
+document.querySelectorAll('.tab').forEach(t => t.onclick = async () => {
+  document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(x => x.classList.remove('active'));
+  t.classList.add('active');
+  document.getElementById('p-' + t.dataset.p).classList.add('active');
+  // estoque/preço atualizado ao abrir a aba (cache 60s) + re-render
+  await recarregarCotacoes();
+  const p = t.dataset.p;
+  if (p === 'ofertas') renderOfertas();
+  else if (p === 'whatsapp') renderContatos();
+  else if (p === 'recompra') renderRecompra();
+});
+
+async function sb(path) {
+  const r = await fetch(SB_URL + '/rest/v1/' + path, { headers: H });
+  if (!r.ok) throw new Error(await r.text());
+  return r.json();
+}
+async function sbAll(pathBase, pageSize = 1000) {
+  let out = [], offset = 0;
+  while (true) {
+    const page = await sb(pathBase + `&limit=${pageSize}&offset=${offset}`);
+    out = out.concat(page);
+    if (page.length < pageSize) break;
+    offset += pageSize;
+  }
+  return out;
+}
+
+// ─── NOME DE FORNECEDOR (código → nome) — compartilhado, idêntico em sistema_final/giovana/painel (FASE A migração #18) ───
+const FORN_NOMES = {
+  '1':'GLOBAL','2':'SUPERMEDICA','3':'STOCK MED','4':'PROMEFARMA','5':'DISMASTER',
+  '6':'ELLO','7':'MAEVE','8':'BRASIL DISTRIBUIDORA','9':'BASCEL / ROBERTINHO MED',
+  '10':'SULMEDIC','11':'ASTHAMED','12':'INDUSTRIA CRISTALIA','13':'RANBAXY',
+  '14':'OUTROS','15':'BIOCHIMICO','16':'PROMEFARMA','17':'BRASIL MEDICAMENTOS',
+  '18':'MCW','19':'SUPERMED','20':'SUPERMAX INDUSTRIA'
+};
+function nomeForn(cod){
+  const c = (cod==null ? '' : String(cod)).trim();
+  if(!c) return 'GLOBAL';
+  return /^\d+$/.test(c) ? (FORN_NOMES[c] || c) : c;
+}
+const fmt = n => 'R$ ' + (n||0).toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
+
+async function recarregarCotacoes(force) {
+  if(!force && _cotTs && (Date.now()-_cotTs) < 60000) return;  // cache 60s
+  {
+    const todas = await sbAll(`cotacoes?select=produto,principio_ativo,marca,compra_unit,global_venda1,estoque,und,tipo,fornecedor&order=id.asc`);
+
+    // ---- chave de comparação INTERNA: PA normalizado + dose (ignora volume quando há massa absoluta) ----
+    // (espelha viabilidade/chaveGrupo V2; só afeta a mediana de mercado, NÃO o texto do cliente)
+    function normPA(txt){let s=(txt||'').toUpperCase();
+      s=s.replace(/\b(CLORIDRATO|SULFATO|FOSFATO|ACETATO|SODICO|SÓDICO|SODICA|SÓDICA|DISSODICO|DISSÓDICO|DE POTASSIO|POTASSICO|MONOIDRATAD[OA]|DICLORIDRATO|BESILATO|MESILATO|DIMESILATO|TARTARATO|MALEATO|CITRATO|OXALATO|BROMIDRATO|HEMI[A-Z]*|TRIIDRATAD[OA]|BUTILBROMETO|BROMETO|CLORETO|CLOR|DIPROPIONATO|VALERATO|SUCCINATO|PAMOATO|NITRATO|GLUCONATO|LACTATO|CARBONATO|BICARBONATO(?=\s+DE\s+SODIO)|ENANTATO|DECANOATO|PROPIONATO|FUMARATO|HEMIFUMARATO|DINITRATO|MONOIDRATADA)\b/g,' ');
+      s=s.replace(/\bDE\b|\bDO\b|\bDA\b/g,' ').replace(/[^A-ZÀ-Ú\s]/g,' ').replace(/\s+/g,' ').trim();return s;}
+    function doseDe(nome){const N=(nome||'').toUpperCase();
+      const massa=N.match(/\d+[.,]?\d*\s*(?:MG|MCG|UI|G(?![A-Z]))\b(?!\s*\/\s*ML)/g)||[];   // massa ABSOLUTA (MG/MCG/UI/G, não /ML)
+      const conc =N.match(/\d+[.,]?\d*\s*(?:MG|MCG|UI|MMOL)\s*\/\s*ML\b/g)||[];
+      const pct  =N.match(/\d+[.,]?\d*\s*%/g)||[];
+      const ml   =N.match(/\d+[.,]?\d*\s*ML\b/g)||[];
+      let toks=[...massa,...conc,...pct];
+      if(!massa.length) toks=toks.concat(ml);   // SEM massa absoluta → o volume importa (soro/glicose/ampola-concentração)
+      return toks.slice(0,2).join('+').replace(/\s/g,'');}
+    const pa2 = s => s.split(' ').filter(w=>w.length>2).slice(0,2).join(' ');
+    function chaveDePA(p){const pa=pa2(normPA(p.principio_ativo||''));return pa?pa+'|'+doseDe(p.produto):null;}      // por PA (quando há)
+    function chaveDeNome(p){const N=(p.produto||'').toUpperCase();const d=doseDe(N);if(!d)return null;const idx=N.search(/\d/);let pa=pa2(normPA(N.slice(0,idx>0?idx:N.length)));return pa?pa+'|'+d:null;}  // por NOME (cobre os sem PA)
+
+    const porChave = {};
+    const porChaveForn = {};
+    todas.forEach(p => {
+      const ehDist = p.tipo === 'Fornecedor' || p.tipo === 'fornecedor' || p.tipo === 'industria';
+      const cu = parseFloat(p.compra_unit);
+      if (!(ehDist && cu > 0)) return;
+      const forn = String(p.fornecedor).trim().toUpperCase();
+      // dupla indexação: por PA E por nome — assim os registros SEM PA também entram no mercado
+      new Set([chaveDePA(p), chaveDeNome(p)].filter(Boolean)).forEach(k => {
+        if (!porChave[k]) { porChave[k] = []; porChaveForn[k] = new Set(); }
+        porChave[k].push(cu * 1.25);
+        porChaveForn[k].add(forn);
+      });
+    });
+    for (const k in porChave) {
+      const arr = porChave[k];
+      // mediana é mais robusta que média contra outliers
+      arr.sort((a,b)=>a-b);
+      const mid = Math.floor(arr.length/2);
+      const mediana = arr.length % 2 ? arr[mid] : (arr[mid-1]+arr[mid])/2;
+      // n = nº de fornecedores DISTINTOS (não cotações) — exige 2+ pra mostrar comparativo
+      mercado[k] = { media: mediana, min: arr[0], n: porChaveForn[k].size };
+    }
+    window._chaveDePA = chaveDePA; window._chaveDeNome = chaveDeNome;
+
+    // ---- catálogo ----
+    const comPreco = todas.filter(p => {
+      const ehGlobal = p.tipo === 'global' || p.tipo === 'Estoque próprio';
+      return ehGlobal ? parseFloat(p.global_venda1) > 0 : parseFloat(p.compra_unit) > 0;
+    }).map(p => {
+      const ehGlobal = p.tipo === 'global' || p.tipo === 'Estoque próprio';
+      p._global = ehGlobal;
+      p._origem = ehGlobal ? 'GLOBAL' : nomeForn(p.fornecedor);
+      // GRANULARIDADE (mesma correção da Competitividade): o global_venda1 do estoque próprio é o
+      // preço da CAIXA quando ela tem vários frascos (CX10/CX25...), enquanto o compra_unit do
+      // distribuidor é por FRASCO. Comparar caixa x frasco fazia injetável em frasco-ampola sumir
+      // das Ofertas (Meropenem, Piperacilina, Furosemida...). Divide pelo nº de unidades da caixa.
+      p._qtdCx = ehGlobal ? (qtdEmbalagem(p.und, p.produto) || 1) : 1;
+      p._preco = ehGlobal ? (parseFloat(p.global_venda1) || 0) / p._qtdCx : parseFloat(p.compra_unit) * 1.25;
+      const k1 = window._chaveDePA(p), k2 = window._chaveDeNome(p);
+      const m = (k1 && mercado[k1]) || (k2 && mercado[k2]) || null;
+      // exige 2+ preços de mercado E descarta distorções extremas (>70% de diferença = apresentação errada)
+      let vs = (m && m.n >= 2 && p._preco > 0) ? (p._preco - m.media) / m.media * 100 : null;
+      if (vs !== null && (vs < -70 || vs > 300)) vs = null;
+      p._vsMedia = vs;
+      return p;
+    });
+    comPreco.sort((a,b) => (b._global?1:0)-(a._global?1:0));
+    globais = dedup(comPreco);
+    _cotTs = Date.now();
+  }
+}
+// AUTO-REFRESH: a cada 60s puxa o banco em background e re-renderiza a aba ativa (preservando seleção/filtros).
+async function autoRefreshVendas(){
+  if (document.hidden) return;                                    // aba em 2º plano -> pula
+  const ae = document.activeElement;
+  const digitando = ae && (ae.tagName==='INPUT'||ae.tagName==='TEXTAREA'||ae.tagName==='SELECT');
+  const temSelecao = document.querySelector('.of-chk:checked');   // itens marcados p/ oferta
+  await recarregarCotacoes(true);                                 // dado fresco
+  if (digitando || temSelecao) return;                            // preserva digitação/seleção -> adia o render
+  const p = document.querySelector('.tab.active')?.dataset.p;
+  if (p === 'ofertas') renderOfertas();
+  else if (p === 'whatsapp') renderContatos();
+  else if (p === 'recompra') renderRecompra();
+}
+setInterval(autoRefreshVendas, 60000);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) autoRefreshVendas(); });
+async function init() {
+  try {
+    await recarregarCotacoes(true);
+    prospects = await sbAll(`prospects?select=razao_social,contato,whatsapp,status,vendedora,cidade,uf&order=razao_social.asc`);
+    try { clientes = await sbAll(`clientes?select=*&order=nome.asc`); } catch(e) { clientes = []; }
+    orcamentos = await sbAll(`orcamentos?select=numero,cliente,vendedora,total_geral,criado_em,status&order=criado_em.desc`);
+
+    document.getElementById('status').textContent = `✅ ${globais.length} produtos · ${clientes.length} clientes · ${prospects.length} prospects · ${orcamentos.length} orçamentos`;
+    renderOfertas(); preencherFiltrosWA(); renderContatos(); renderRecompra();
+  } catch (e) {
+    document.getElementById('status').textContent = '❌ erro: ' + e.message.slice(0, 80);
+  }
+}
+
+function dedup(arr) {
+  const seen = {}; const out = [];
+  for (const p of arr) {
+    const k = (p.produto || '').trim().toUpperCase();
+    if (!seen[k]) { seen[k] = 1; out.push(p); }
+  }
+  return out;
+}
+
+// CUSTO-REF do GLOBAL: o estoque interno NÃO guarda custo de compra, só venda — por isso a coluna
+// Margem vinha "—" em todas as linhas (compra_unit é NULL no GLOBAL). Mesmo padrão já usado na
+// Competitividade e na giovana: assume que a venda GLOBAL embute 25% -> custo-ref = venda ÷ 1,25.
+// É SÓ P/ EXIBIR: não é gravado como compra_unit (isso poluiria auditoria/invariante).
+// Vendendo no preço cheio dá exatamente 25%; se o preço for ajustado pra baixo, a margem cai junto.
+function custoRefGlobal(p) {
+  const c = parseFloat(p.compra_unit) || 0;
+  const q = p._qtdCx || 1;
+  if (c > 0) return { custo: c, ref: false };                 // custo real, quando existe (já por unidade)
+  // _preco já é a venda POR UNIDADE (gv1 ÷ qtd da caixa). custo-ref = venda-unitária ÷ 1,25.
+  const v = parseFloat(p._preco) || ((parseFloat(p.global_venda1) || 0) / q);
+  if (v > 0) return { custo: v / 1.25, ref: true };           // custo de referência
+  return null;
+}
+function margem(p) {
+  if (!p._global) return 25;
+  const r = custoRefGlobal(p);
+  const v = parseFloat(p._preco) || 0;                        // já por unidade
+  if (!r || !(r.custo > 0) || v <= 0) return null;
+  return (v - r.custo) / r.custo * 100;
+}
+function margemEhRef(p) { const r = p._global ? custoRefGlobal(p) : null; return !!(r && r.ref); }
+
+// ---------- OFERTAS ----------
+// Classifica produto como 'material' ou 'medicamento' por palavra-chave no nome
+const MATERIAL_KW = [
+  'luva','atadura','mascara','máscara','equipo','cateter','catéter','seringa','agulha',
+  'sonda','compressa','gaze','campo operatorio','campo operatório','campo cirurgico',
+  'campo cirúrgico','avental','touca','prope','propé','sapatinha','eletrodo','coletor',
+  'dosador','escalpe','lanceta','fita cirurgica','fita cirúrgica','fita adesiva',
+  'lamina','lâmina','bisturi','filtro hmef','filtro','bolsa col','bolsa de','torneira',
+  'lencol','lençol','esparadrapo','micropore','abocath','jelco','scalp','angiocath',
+  'curativo','algodao','algodão','tala','aparelho de barbear','macacao','macacão',
+  'capa ','clamp','transofix','linha de sangue','bomba elastomerica','bomba elastomérica',
+  'huber','fistula','fístula','tnt','nr32','swab','degermante','clorexidina 2% escova',
+  'escova scrub','vaselina','glicerina','agua oxifenada','água oxigenada','oximetro','oxímetro'
+];
+function categoriaProduto(p) {
+  const nome = (p.produto || '').toLowerCase();
+  for (const kw of MATERIAL_KW) { if (nome.includes(kw)) return 'material'; }
+  return 'medicamento';
+}
+
+function renderOfertas() {
+  const minEst = parseInt(document.getElementById('of-minest').value) || 0;
+  const ord = document.getElementById('of-ord').value;
+  const cat = document.getElementById('of-cat').value;
+  const soComp = document.getElementById('of-socomp').checked;
+  const soCompara = document.getElementById('of-socompara').checked;
+  const soGlobal = document.getElementById('of-soglobal').checked;
+
+  let lista = globais.filter(p => p._preco > 0);
+  if (cat !== 'todos') lista = lista.filter(p => categoriaProduto(p) === cat);
+  if (soGlobal) lista = lista.filter(p => p._global);
+  lista = lista.filter(p => p._global ? (p.estoque||0) >= minEst : true);
+  if (soCompara) lista = lista.filter(p => p._vsMedia !== null);
+  if (soComp) lista = lista.filter(p => p._vsMedia !== null && p._vsMedia <= 0);
+
+  if (ord === 'comp') lista.sort((a,b) => (a._vsMedia ?? 999) - (b._vsMedia ?? 999));
+  else if (ord === 'margem') lista.sort((a,b) => ((margem(b)??-1)-(margem(a)??-1)));
+  else lista.sort((a,b) => ((b.estoque||0)-(a.estoque||0)));
+  lista = lista.slice(0, 200);
+
+  document.getElementById('of-count').textContent = lista.length + ' produto(s)' + (soComp ? ' abaixo da média de mercado' : '');
+  let html = '<table><tr><th></th><th>Produto</th><th>Marca</th><th>Origem</th><th>Estoque</th><th>Venda</th><th>vs Mercado</th><th>Margem</th></tr>';
+  lista.forEach((p,i) => {
+    const m = margem(p);
+    const corM = m === null ? 'gray' : m >= 25 ? 'green' : m >= 12 ? 'yellow' : 'red';
+    const mTxt = m === null ? '—' : m.toFixed(0) + '%' + (margemEhRef(p) ? ' <span style="opacity:.6">ref.</span>' : '');
+    let vsTxt, vsCor;
+    if (p._vsMedia === null) { vsTxt = 'sem comparação'; vsCor = 'gray'; }
+    else if (p._vsMedia <= -5) { vsTxt = p._vsMedia.toFixed(0) + '% 🔥'; vsCor = 'green'; }
+    else if (p._vsMedia <= 0) { vsTxt = p._vsMedia.toFixed(0) + '%'; vsCor = 'green'; }
+    else { vsTxt = '+' + p._vsMedia.toFixed(0) + '%'; vsCor = 'red'; }
+    html += `<tr>
+      <td><input type="checkbox" class="of-chk" data-i="${i}"></td>
+      <td>${p.produto}</td><td class="muted">${p.marca||'—'}</td>
+      <td><span class="tag ${p._global?'green':'blue'}">${p._origem}</span></td>
+      <td>${p._global ? p.estoque : '<span class=muted>sob pedido</span>'}</td>
+      <td><b>${fmt(p._preco)}</b></td>
+      <td><span class="tag ${vsCor}">${vsTxt}</span></td>
+      <td><span class="tag ${corM}">${mTxt}</span></td></tr>`;
+  });
+  html += '</table>';
+  document.getElementById('of-lista').innerHTML = html;
+  window._ofLista = lista;
+}
+
+// MESMA função da giovana/PDF — qtd de embalagem a partir do nome (não vaza fornecedor)
+function _undNum(und){ const m = String(und||'').match(/\d+/); if(!m) return 0; const n=parseInt(m[0]); return (n>=1 && n<=5000)?n:0; }
+function _qtdDoNome(produto){
+  const nome = (produto || '').toUpperCase();
+  const mX = nome.match(/(\d{1,4})\s*X\s*\d+(?:[.,]\d+)?\s*ML\b/); if (mX) { const n=parseInt(mX[1]); if(n>1&&n<=5000) return n; }
+  const mXc = nome.match(/(\d{1,3})\s*X\s*(\d{1,3})\s*(?:CPR|COMP|CAP|CAPS|COM|DRG)\b/); if (mXc) { const n=parseInt(mXc[1])*parseInt(mXc[2]); if(n>1&&n<=5000) return n; }
+  // C/N, CX/N. Os 2 lookaheads impedem ler MEDIDA como contagem: (?!\d) trava o backtracking
+  // ("C/240ML" nao pode casar so "24") e o segundo barra numero colado em unidade de medida
+  // ("FR C/240ML" = 1 frasco de 240ml, nao 240 unidades; "PCT 50G" = 1 pacote de 50g).
+  const mC = nome.match(/(?:C\/|CX\/|CX|PCT\/?)\s*(\d{1,4})(?!\d)(?!\s*(?:ML|MG|MCG|UI|G|L|GR|GRS)\b)/); if (mC) { const n=parseInt(mC[1]); if(n>1&&n<=5000) return n; }
+  const mU = nome.match(/(\d{1,4})\s*(?:CPR|CAPS|CAP|CPS|CP|COMP|DRG|AMP|FR|ENV|BLS|UND|UN|PASTILHA|PAST|SACHES|SACHE)\b/); if (mU) { const n=parseInt(mU[1]); if(n>1&&n<=5000) return n; }
+  // RECIPIENTE: "10 SER", "50FA", "6 BOLS", "5 AMPOLAS", "5 REFIS", "4 CAN". Pega o PRIMEIRO recipiente e NUNCA soma
+  // (MOUNJARO "4 SER 0,5ML+4CAN" = 4 canetas, não 8; TRESIBA "5 REFIS + 5 SIST" = 5). O "+" marca ACESSÓRIO e é
+  // ignorado (Sandimmun "sol oral 50ML + 2 seringas dosadoras" = 1 frasco; as seringas não são o produto).
+  const reR = /(\+\s*)?(\d{1,4})\s*(?:SERINGAS|SERINGA|SER|AMPOLAS|AMPOLA|BOLSAS|BOLSA|BOLS|CANETAS|CANETA|CAN|SISTEMAS|SISTEMA|SIST|REFIS|REFIL|FA)\b/g;
+  let mR; while ((mR = reR.exec(nome))) { if (mR[1]) continue; const n=parseInt(mR[2]); if(n>1&&n<=5000) return n; }
+  const m2 = nome.match(/(?:AMP|FR|CP|CPR|CAPS)\s*\/?\s*(\d+)\b(?!\s*(?:ML|MG|MCG|UI|G)\b)/); if (m2) { const n=parseInt(m2[1]); if(n>1) return n; }
+  return 1;
+}
+// UNIÃO: und com número manda (import confiável); senão nome; default 1. Diverge -> und prevalece + loga.
+function qtdEmbalagem(und, produto){
+  const u = _undNum(und), n = _qtdDoNome(produto);
+  if (u >= 1){ if (n > 1 && n !== u) console.warn('[qtdEmb] und "'+String(und||'').trim()+'" ('+u+') diverge do nome ('+n+') — '+produto); return u; }
+  return n;
+}
+// Sufixo padronizado: >1 = caixa; =1 = frasco/ampola (/FR) ou unidade (/UN)
+function sufixoUnid(produto, qtd) {
+  if (qtd > 1) return `/CX (${qtd} un)`;
+  return /\b(FR|FRASCO|FA|AMP|AMPOLA)\b|\d+\s*ML\b/.test((produto||'').toUpperCase()) ? '/FR' : '/UN';
+}
+async function gerarTextoOferta() {
+  const selOld = [...document.querySelectorAll('.of-chk:checked')].map(c => window._ofLista[+c.dataset.i]).filter(Boolean);
+  if (!selOld.length) { alert('Marque pelo menos um produto.'); return; }
+  await recarregarCotacoes(true);  // SEMPRE dado fresco antes de gerar oferta p/ cliente
+  // remapeia a seleção pro catálogo atualizado (por produto+fornecedor) e EXCLUI estoque 0
+  const sel0 = selOld.map(o => globais.find(p => p.produto===o.produto && String(p.fornecedor)===String(o.fornecedor)) || o);
+  const _zerados = sel0.filter(p => p._global && (p.estoque||0) <= 0);
+  const sel = sel0.filter(p => !(p._global && (p.estoque||0) <= 0));
+  if (!sel.length) { alert('Nenhum produto com estoque para ofertar — os selecionados estão zerados.'); return; }
+  let t = `*GLOBALMED DISTRIBUIÇÃO* 💊\n*Ofertas da Semana*\n\n`;
+  sel.forEach(p => {
+    const qtd = qtdEmbalagem(p.und, p.produto) || 1;
+    // _preco: global já é preço de CAIXA (global_venda1); fornecedor é UNITÁRIO (compra_unit×1.25)
+    const precoUnit  = p._global ? (p._preco / qtd) : p._preco;
+    const precoCaixa = precoUnit * qtd;
+    t += `▪️ ${p.produto}${p.marca ? ' ('+p.marca+')' : ''}\n   ${fmt(precoCaixa)} ${sufixoUnid(p.produto, qtd)} — ${p._global ? 'pronta entrega' : 'sob encomenda'}\n\n`;
+  });
+  t += `📦 Preços abaixo da média de mercado\n📞 (62) 99612-7968\nValidade da oferta: 7 dias`;
+  document.getElementById('of-texto').value = t;
+  document.getElementById('wa-msg').value = `Olá {nome}! Tudo bem? 😊\n\n` + t;
+  if (_zerados.length) alert('⚠️ ' + _zerados.length + ' item(ns) com estoque 0 foram REMOVIDOS da oferta: ' + _zerados.map(p=>p.produto).slice(0,4).join(', ') + (_zerados.length>4?'…':''));
+}
+
+function copiarTexto(id) {
+  const ta = document.getElementById(id);
+  ta.select(); document.execCommand('copy');
+  alert('Texto copiado!');
+}
+
+// ---------- WHATSAPP ----------
+function preencherFiltrosWA() {
+  const vends = [...new Set([...prospects, ...clientes].map(p => p.vendedora).filter(Boolean))];
+  document.getElementById('wa-vend').innerHTML = '<option value="">Todas</option>' + vends.map(v => `<option>${v}</option>`).join('');
+}
+
+function telLimpo(t) {
+  if (!t) return null;
+  let d = String(t).replace(/\D/g, '');
+  if (d.length < 10) return null;
+  if (!d.startsWith('55')) d = '55' + d;
+  return d;
+}
+
+function listaFiltradaWA() {
+  const base = document.getElementById('wa-base').value;
+  const fv = document.getElementById('wa-vend').value;
+  const ehCliente = base === 'clientes';
+  let lista;
+  if (ehCliente) {
+    lista = clientes.filter(c => telLimpo(c.whatsapp));
+    if (fv) lista = lista.filter(c => c.vendedora === fv);
+  } else {
+    lista = prospects.filter(p => telLimpo(p.whatsapp));
+    if (fv) lista = lista.filter(p => p.vendedora === fv);
+  }
+  return { lista, ehCliente };
+}
+
+function renderContatos() {
+  const { lista, ehCliente } = listaFiltradaWA();
+
+  document.getElementById('wa-count').textContent = lista.length + (ehCliente ? ' cliente(s)' : ' prospect(s)') + ' com WhatsApp';
+  if (ehCliente && !lista.length) {
+    document.getElementById('wa-lista').innerHTML = '<div class="loading">Nenhum cliente cadastrado ainda. Use o botão "+ Cadastrar cliente" acima — comece pelos que mais compram!</div>';
+    return;
+  }
+  let html = '<table><tr><th>Nome</th><th>Contato</th><th>Cidade</th><th>Vendedora</th><th></th></tr>';
+  lista.forEach(p => {
+    const nome = ehCliente ? p.nome : p.razao_social;
+    html += `<tr id="wa-row-${telLimpo(p.whatsapp)}">
+      <td><b>${nome||'—'}</b></td>
+      <td class="muted">${p.contato||'—'}</td>
+      <td class="muted">${p.cidade||''}${p.uf ? '/'+p.uf : ''}</td>
+      <td class="muted">${p.vendedora||'—'}</td>
+      <td><a class="wa" href="#" onclick="abrirWA('${telLimpo(p.whatsapp)}','${(p.contato||nome||'').replace(/'/g,'')}');return false;">WhatsApp ▸</a></td></tr>`;
+  });
+  html += '</table>';
+  document.getElementById('wa-lista').innerHTML = html;
+}
+
+// ---------- FILA DE DISPARO ----------
+let fila = [], filaIdx = 0, filaEnviados = 0, filaPulados = 0, filaEhCliente = false;
+
+function iniciarFila() {
+  const msg = document.getElementById('wa-msg').value.trim();
+  if (!msg) { alert('Escreva a mensagem primeiro (ou gere o texto na aba Ofertas da Semana com "Gerar texto WhatsApp").'); return; }
+  const { lista, ehCliente } = listaFiltradaWA();
+  if (!lista.length) { alert('Nenhum contato na lista atual.'); return; }
+  fila = lista; filaIdx = 0; filaEnviados = 0; filaPulados = 0; filaEhCliente = ehCliente;
+  document.getElementById('fila-painel').style.display = 'block';
+  filaRender();
+}
+
+function filaRender() {
+  if (filaIdx >= fila.length) { filaFim(); return; }
+  const p = fila[filaIdx];
+  const nome = filaEhCliente ? p.nome : p.razao_social;
+  document.getElementById('fila-pos').textContent = (filaIdx+1) + ' de ' + fila.length;
+  document.getElementById('fila-nome').textContent = nome || '—';
+  document.getElementById('fila-det').textContent =
+    (p.contato ? 'Contato: ' + p.contato + ' · ' : '') + (p.cidade||'') + (p.uf ? '/'+p.uf : '') + ' · ' + telLimpo(p.whatsapp);
+  document.getElementById('fila-barra').style.width = (filaIdx / fila.length * 100) + '%';
+  document.getElementById('fila-status').textContent = filaEnviados + ' enviados · ' + filaPulados + ' pulados';
+}
+
+function filaEnviar() {
+  const p = fila[filaIdx];
+  const nome = (p.contato || (filaEhCliente ? p.nome : p.razao_social) || '').trim();
+  abrirWA(telLimpo(p.whatsapp), nome);
+  filaEnviados++;
+  filaMarcaLinha(p, '✅');
+  filaRegistraDisparo(p);
+  filaIdx++;
+  filaRender();
+}
+
+function filaPular() {
+  filaMarcaLinha(fila[filaIdx], '⏭');
+  filaPulados++;
+  filaIdx++;
+  filaRender();
+}
+
+function filaParar() {
+  document.getElementById('fila-painel').style.display = 'none';
+}
+
+function filaFim() {
+  document.getElementById('fila-pos').textContent = 'Concluído!';
+  document.getElementById('fila-nome').textContent = '🎉 Fila finalizada';
+  document.getElementById('fila-det').textContent = filaEnviados + ' mensagens abertas · ' + filaPulados + ' contatos pulados';
+  document.getElementById('fila-barra').style.width = '100%';
+  document.getElementById('fila-status').textContent = 'Pode fechar este painel.';
+}
+
+function filaMarcaLinha(p, emoji) {
+  const row = document.getElementById('wa-row-' + telLimpo(p.whatsapp));
+  if (row) { row.style.opacity = '.55'; row.cells[0].innerHTML = emoji + ' ' + row.cells[0].innerHTML; }
+}
+
+async function filaRegistraDisparo(p) {
+  // grava o último disparo no cliente (se a coluna existir) — não trava a fila se falhar
+  if (!filaEhCliente || !p.id) return;
+  try {
+    await fetch(SB_URL + '/rest/v1/clientes?id=eq.' + p.id, {
+      method: 'PATCH',
+      headers: { ...H, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ult_disparo: new Date().toISOString().split('T')[0] })
+    });
+  } catch(e) { /* silencioso */ }
+}
+
+function abrirWA(tel, nome) {
+  let msg = document.getElementById('wa-msg').value || 'Olá {nome}! Aqui é da GlobalMed Distribuição. Posso te enviar nossas ofertas da semana?';
+  msg = msg.replaceAll('{nome}', nome.split(' ')[0]);
+  window.open('https://wa.me/' + tel + '?text=' + encodeURIComponent(msg), '_blank');
+}
+
+async function salvarCliente() {
+  const nome = document.getElementById('nc-nome').value.trim();
+  const whats = document.getElementById('nc-whats').value.trim();
+  if (!nome || !telLimpo(whats)) { alert('Preencha nome e WhatsApp válido.'); return; }
+  const body = {
+    nome,
+    contato: document.getElementById('nc-contato').value.trim() || null,
+    whatsapp: whats,
+    cidade: document.getElementById('nc-cidade').value.trim() || null,
+    uf: document.getElementById('nc-uf').value.trim().toUpperCase() || null,
+    vendedora: document.getElementById('nc-vend').value || null
+  };
+  const r = await fetch(SB_URL + '/rest/v1/clientes', {
+    method: 'POST',
+    headers: { ...H, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
+    body: JSON.stringify(body)
+  });
+  if (!r.ok) { alert('Erro ao salvar: ' + (await r.text()).slice(0,120) + '\n\nA tabela "clientes" existe? Rode o SQL criar_tabela_clientes.sql no Supabase.'); return; }
+  const novo = await r.json();
+  clientes.push(novo[0]);
+  ['nc-nome','nc-contato','nc-whats','nc-cidade','nc-uf'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('wa-base').value = 'clientes';
+  renderContatos();
+  alert('Cliente salvo! ✅');
+}
+
+// ---------- RECOMPRA ----------
+function renderRecompra() {
+  const limite = parseInt(document.getElementById('rc-dias').value) || 30;
+  const porCliente = {};
+  orcamentos.forEach(o => {
+    const c = (o.cliente||'').trim();
+    if (!c) return;
+    if (!porCliente[c] || new Date(o.criado_em) > new Date(porCliente[c].criado_em)) porCliente[c] = o;
+  });
+  const hoje = new Date();
+  let lista = Object.values(porCliente).map(o => {
+    const dias = Math.floor((hoje - new Date(o.criado_em)) / 86400000);
+    return {...o, dias};
+  });
+  lista.sort((a,b) => b.dias - a.dias);
+
+  const alertas = lista.filter(l => l.dias >= limite).length;
+  document.getElementById('rc-count').textContent = `${lista.length} cliente(s) · ${alertas} precisam de follow-up (≥ ${limite} dias)`;
+
+  let html = '<table><tr><th>Cliente</th><th>Último orçamento</th><th>Valor</th><th>Vendedora</th><th>Dias</th><th>Situação</th></tr>';
+  lista.forEach(l => {
+    const cor = l.dias >= limite*2 ? 'red' : l.dias >= limite ? 'yellow' : 'green';
+    const sit = l.dias >= limite*2 ? '🔴 Urgente' : l.dias >= limite ? '🟡 Follow-up' : '🟢 Recente';
+    html += `<tr>
+      <td><b>${l.cliente}</b></td>
+      <td class="muted">#${l.numero||'—'} · ${new Date(l.criado_em).toLocaleDateString('pt-BR')}</td>
+      <td>${fmt(parseFloat(l.total_geral))}</td>
+      <td class="muted">${l.vendedora||'—'}</td>
+      <td><b>${l.dias}</b></td>
+      <td><span class="tag ${cor}">${sit}</span></td></tr>`;
+  });
+  html += '</table>';
+  document.getElementById('rc-lista').innerHTML = html;
+}
+
+init();
+</script>
+</body>
+</html>

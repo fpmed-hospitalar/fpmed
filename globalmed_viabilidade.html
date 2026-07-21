@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GlobalMed — Viabilidade de Compra</title>
+<script src="gm-auth.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI',system-ui,sans-serif; }
+  body { background:#eef4ef; color:#1c2b22; }
+  header { background:#0f2e1d; color:#fff; padding:16px 28px; display:flex; align-items:center; justify-content:space-between; }
+  header h1 { font-size:22px; color:#4ade80; }
+  header h1 span { color:#fff; font-weight:400; }
+  header #status { font-size:12px; opacity:.75; }
+  .wrap { margin:22px 28px; }
+  .card { background:#fff; padding:22px; border-radius:12px; box-shadow:0 2px 8px rgba(0,0,0,.06); margin-bottom:18px; }
+  h2 { font-size:17px; margin-bottom:6px; }
+  p.desc { font-size:13px; color:#5b6b60; margin-bottom:16px; }
+  .dropzone { border:2px dashed #b6cdbe; border-radius:12px; padding:28px; text-align:center; cursor:pointer; transition:.2s; background:#f6faf7; }
+  .dropzone:hover, .dropzone.drag { border-color:#0f7a3d; background:#edf7f0; }
+  .dropzone .big { font-size:30px; margin-bottom:6px; }
+  .dropzone .t1 { font-weight:700; font-size:15px; color:#0f7a3d; }
+  .dropzone .t2 { font-size:12px; color:#7a8a80; margin-top:4px; }
+  .controls { display:flex; gap:12px; flex-wrap:wrap; align-items:flex-end; margin:14px 0; }
+  label.f { font-size:13px; display:flex; flex-direction:column; gap:3px; color:#56685c; font-weight:600; }
+  select, input[type=text], input[type=number] { padding:8px 12px; border:1px solid #c8d6cc; border-radius:8px; font-size:14px; }
+  button { padding:9px 16px; border:none; border-radius:8px; background:#0f7a3d; color:#fff; font-weight:600; font-size:14px; cursor:pointer; }
+  button.sec { background:#e7efe9; color:#0f7a3d; }
+  button.excel { background:#1d6f42; }
+  button.mini { padding:5px 10px; font-size:12px; background:#b45309; }
+  button:disabled { opacity:.45; cursor:default; }
+  .kpis { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:16px; }
+  .kpi { border-radius:12px; padding:16px; color:#fff; }
+  .kpi .lbl { font-size:11px; text-transform:uppercase; letter-spacing:.5px; opacity:.9; }
+  .kpi .val { font-size:26px; font-weight:800; margin-top:4px; }
+  .kpi.k1 { background:linear-gradient(135deg,#0f7a3d,#16a34a); }
+  .kpi.k2 { background:linear-gradient(135deg,#b45309,#d97706); }
+  .kpi.k3 { background:linear-gradient(135deg,#b32626,#ef4444); }
+  .kpi.k4 { background:linear-gradient(135deg,#0f2e1d,#1c5135); }
+  table { width:100%; border-collapse:collapse; font-size:12.5px; }
+  th { text-align:left; padding:9px 8px; background:#0f2e1d; color:#cde8d8; font-size:10.5px; text-transform:uppercase; letter-spacing:.4px; position:sticky; top:0; }
+  td { padding:8px; border-top:1px solid #edf2ee; vertical-align:middle; }
+  tr.verde td { background:#e9f9f0; } tr.amarelo td { background:#fef8e8; } tr.vermelho td { background:#fdeded; }
+  .tag { display:inline-block; padding:3px 9px; border-radius:20px; font-size:11px; font-weight:700; white-space:nowrap; }
+  .tag.green { background:#d8f7e3; color:#0f7a3d; } .tag.amber { background:#fdf3d3; color:#9a7405; } .tag.red { background:#fde0e0; color:#b32626; }
+  .muted { color:#8a9a8f; } .right { text-align:right; } .center { text-align:center; } .b { font-weight:700; }
+  .tbl-wrap { max-height:600px; overflow:auto; border-radius:10px; border:1px solid #e3ece6; }
+  .hidden { display:none; }
+  .fname { font-size:13px; color:#0f7a3d; font-weight:600; }
+  .legend { display:flex; gap:16px; flex-wrap:wrap; font-size:12px; color:#5b6b60; margin-top:10px; }
+  .legend span { display:flex; align-items:center; gap:5px; } .dot { width:12px; height:12px; border-radius:3px; display:inline-block; }
+  .sub { font-size:11px; color:#7a8a80; }
+  #gate { display:none; text-align:center; padding:60px 20px; color:#7a8a80; font-size:15px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>GlobalMed <span>· Viabilidade de Compra</span></h1>
+  <span id="status">conectando ao banco…</span>
+</header>
+
+<div id="gate">🔒 Acesso restrito. Esta tela mostra fornecedor e custo (uso interno) — só admin.</div>
+
+<div class="wrap" id="app">
+
+  <!-- ENTRADA -->
+  <div class="card">
+    <h2>🎯 Comprar de quem, por quanto, com que margem?</h2>
+    <p class="desc">Informe o <b>preço-alvo de venda</b> por item. O sistema cruza por princípio ativo + forma + dose com os <b>fornecedores do banco</b> (custo real, individual, do mais barato pro mais caro) e diz se dá pra comprar mantendo o seu markup.</p>
+
+    <!-- item avulso -->
+    <div class="controls">
+      <label class="f">Produto
+        <input type="text" id="i-prod" placeholder="Ex: MEROPENEM 1G" style="width:280px"></label>
+      <label class="f">Preço-alvo de venda
+        <input type="number" id="i-alvo" placeholder="0,00" step="0.01" style="width:130px"></label>
+      <label class="f">Markup %
+        <input type="number" id="i-mkp" value="20" step="1" style="width:80px"></label>
+      <button onclick="analisarItem()">Analisar item</button>
+    </div>
+
+    <p class="sub" style="margin:12px 0 6px">— ou COLE uma lista (uma por linha: <b>Produto</b> + <b>Preço-alvo</b>, separados por TAB, ponto-e-vírgula ou espaço; markup opcional no fim) —</p>
+    <div class="controls" style="align-items:flex-start">
+      <textarea id="paste" rows="5" placeholder="FUROSEMIDA 10MG/ML CX100 AMP 2ML;0,90&#10;DIPIRONA 500MG/ML CX100 AMP 2ML;1,20&#10;DEXAMETASONA 4MG/ML CX50 AMP 2,5ML;0,95;25" style="width:min(560px,90%);padding:10px;border:1px solid #c8d6cc;border-radius:8px;font-size:13px;font-family:inherit;resize:vertical"></textarea>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <label class="f">Markup padrão %<input type="number" id="paste-mkp" value="20" step="1" style="width:90px"></label>
+        <button onclick="analisarColado()">Analisar lista</button>
+      </div>
+    </div>
+
+    <p class="sub" style="margin:10px 0 6px">— ou envie uma planilha (Produto · Preço-alvo · Markup opcional) —</p>
+    <div class="dropzone" id="drop">
+      <div class="big">📥</div>
+      <div class="t1">Clique ou arraste a planilha</div>
+      <div class="t2">Excel (.xlsx, .xls) ou CSV — colunas: Produto, Preço-alvo de venda, Markup% (opcional)</div>
+      <input type="file" id="file" accept=".xlsx,.xls,.csv" class="hidden">
+    </div>
+    <div id="cfg" class="hidden">
+      <div class="controls"><span class="fname" id="fname"></span></div>
+      <div class="controls" id="colmap"></div>
+      <div class="controls">
+        <label class="f">Markup padrão (itens sem coluna)
+          <select id="mkp-base"><option value="20" selected>20%</option><option value="25">25%</option><option value="30">30%</option></select></label>
+        <button onclick="analisarPlanilha()">Analisar viabilidade</button>
+        <button class="sec" onclick="resetar()">Trocar arquivo</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- RESULTADO -->
+  <div class="card hidden" id="result">
+    <div class="kpis">
+      <div class="kpi k1"><div class="lbl">🟢 Dá pra comprar</div><div class="val" id="kp-verde">—</div></div>
+      <div class="kpi k2"><div class="lbl">🟡 Apertado</div><div class="val" id="kp-amarelo">—</div></div>
+      <div class="kpi k3"><div class="lbl">🔴 Sem fornecedor</div><div class="val" id="kp-vermelho">—</div></div>
+      <div class="kpi k4"><div class="lbl">Total de itens</div><div class="val" id="kp-tot">—</div></div>
+    </div>
+    <div class="controls">
+      <button class="excel" onclick="exportarExcel()">⬇️ Exportar Excel</button>
+      <label style="font-size:13px;display:flex;align-items:center;gap:5px"><input type="checkbox" id="f-verde" onchange="renderTabela()"> só dá-pra-comprar</label>
+    </div>
+    <div class="tbl-wrap"><table id="tbl"></table></div>
+    <div class="legend">
+      <span><i class="dot" style="background:#e9f9f0"></i> 🟢 custo × (1+markup) ≤ alvo</span>
+      <span><i class="dot" style="background:#fef8e8"></i> 🟡 tem fornecedor, margem menor</span>
+      <span><i class="dot" style="background:#fdeded"></i> 🔴 sem fornecedor com custo</span>
+    </div>
+  </div>
+</div>
+
+<script>
+const SB_URL = 'https://vikewlbhkrikcalzsbeb.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZpa2V3bGJoa3Jpa2NhbHpzYmViIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgwOTEzMDcsImV4cCI6MjA5MzY2NzMwN30.elMw6mbCoCbFVCnzck-aHQrXGYaZhX-m0RRb1VGYP64';
+const H = { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY };
+const SUPA_URL = SB_URL;   // p/ o resolvePA portado
+const fmt = n => 'R$ ' + (Number(n)||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+
+// ── chave PA+forma+dose (idêntica à busca rigorosa da giovana) ──
+function _gmNorm(s){ return (s==null?'':String(s)).normalize('NFD').replace(/[̀-ͯ]/g,'').toUpperCase().replace(/[^A-Z0-9 .\/%]/g,' ').replace(/\s+/g,' ').trim(); }
+function doseKey(produto){
+  var u=_gmNorm(produto);
+  var mAbs=u.match(/(\d+(?:[.,]\d+)?)\s*(MG|MCG|UI|G)(?!\s*\/\s*ML)(?![A-Z])/);
+  if(mAbs) return mAbs[1].replace(',','.')+mAbs[2];
+  var parts=[];
+  var pc=u.match(/(\d+(?:[.,]\d+)?)\s*%/); if(pc) parts.push(pc[1].replace(',','.')+'%');
+  var rt=u.match(/(\d+(?:[.,]\d+)?)\s*(MG|MCG|UI|G|MEQ)\s*\/\s*ML/); if(rt) parts.push(rt[1].replace(',','.')+rt[2]+'/ML');
+  var vl=u.match(/(\d+(?:[.,]\d+)?)\s*ML(?![A-Z])/); if(vl) parts.push(vl[1].replace(',','.')+'ML');
+  return parts.join('+');
+}
+const _bmStrip = s => (s||'').normalize('NFD').replace(/\p{M}/gu,'');
+const _bmNormF = s => { let t=_bmStrip((s||'').toLowerCase()); t=t.replace(/\bfr?\s*[\/.\\]\s*a(mp)?\b/g,' fa '); t=t.replace(/[^a-z0-9\s\/]/g,' ').replace(/\//g,' ').replace(/(\d)([a-z])/g,'$1 $2').replace(/([a-z])(\d)/g,'$1 $2'); return ' '+t.replace(/\s+/g,' ').trim()+' '; };
+const _BM_CATS = [
+  ['SHAMPOO',['shampoo','xampu','shampo']],['VAGINAL_RETAL',['vaginal','supositorio','ovulo','enema','retal','pessario']],
+  ['OFTALMICO',['colirio','oftalmico','oft','otologico','auricular','ocular','oftalmica']],['ADESIVO',['adesivo','patch','transdermico','transderm']],
+  ['SPRAY',['spray','aerossol','aerosol','aero','aer','inalacao','inalatorio','inal','nasal','jato']],
+  ['INJETAVEL',['injetavel','inj','sol inj','solucao injetavel','susp inj','ampola','amp','ampolas','fa','fr amp','frasco ampola','liofilizado','liof','intravenoso','intramuscular','iv','im','sc','ev','epidural','c dil','s dil','diluente']],
+  ['TOPICO',['creme','pomada','gel','locao','pasta','unguento','geleia','alcoolica','aquosa','degermante','topica','antisseptico']],
+  ['LIQUIDO_ORAL',['xarope','xpe','suspensao','susp','solucao oral','sol oral','gotas','gts','elixir','sacaroleo','solucao','sol']],
+  ['SOLIDO_ORAL',['comprimido','comprimidos','cpr','cp','comp','dragea','drageas','revestido','rev','capsula','caps','cap','cps','pastilha','pilula','tablete','lib prol','lp','xr','er','mr']],
+];
+function _bmForma(texto){ const t=_bmNormF(texto); for(const [cat,kws] of _BM_CATS) for(const kw of kws) if(t.includes(' '+kw+' ')) return cat; if(/\d\s+com\b/.test(t)) return 'SOLIDO_ORAL'; return null; }
+// tira sal/hidrato/conectivo do PA p/ casar CMED (ex "AZITROMICINA DIHIDRATADA") com fornecedor ("AZITROMICINA")
+// sal/ester/hidrato por TOKEN (cobre prefixo "BROMETO DE X", sufixo "X SODICA" e hidrato "X DIHIDRATADA")
+const _SALT=['SULFATO','CLORIDRATO','DICLORIDRATO','BROMIDRATO','FOSFATO','ACETATO','MALEATO','TARTARATO','HEMITARTARATO','FUMARATO','HEMIFUMARATO','SUCCINATO','MESILATO','DIMESILATO','BESILATO','TOSILATO','PAMOATO','OXALATO','CITRATO','NITRATO','LACTATO','GLUCONATO','CLORETO','BROMETO','IODETO','CARBONATO','BICARBONATO','DIPROPIONATO','PROPIONATO','VALERATO','ENANTATO','DECANOATO','CIPIONATO','SODICO','SODICA','DISSODICO','DISSODICA','MONOSSODICO','MONOSSODICA','POTASSICO','POTASSICA','CALCICO','CALCICA','MONOIDRATADO','ANIDRO','ANIDRA','DI','DE','DA','DO','DOS','DAS'];
+// ions genericos: se sobrar SO isso, o nome inteiro e o identificador (senao CLORETO DE SODIO == BICARBONATO DE SODIO)
+const _ION=['SODIO','POTASSIO','CALCIO','MAGNESIO','AMONIO','ZINCO','FERRO'];
+function paCore(pa){ const toks=_gmNorm(pa).split(' ').filter(w=>w && w.length>=2 && !_SALT.includes(w) && !/IDRAT/.test(w)); return toks.join(' '); }
+const paN = s => {
+  const bruto=_gmNorm(s||'').replace(/[^A-Z0-9]/g,'');
+  const toks=paCore(s).split(' ').filter(Boolean);
+  if(!toks.length || toks.every(t=>_ION.includes(t))) return bruto;   // guarda de ion
+  const core=toks.join('').replace(/[^A-Z0-9]/g,'');
+  return core.length>=3?core:bruto;
+};
+function chave(produto, pa){ const p=paN(pa), dk=doseKey(produto), fm=_bmForma(produto)||'?'; return (p.length>=3&&dk)?p+'|'+dk+'|'+fm:null; }
+
+// resolvePA portado da giovana (CMED) — usa SUPA_URL/H
+async function resolvePA(nome){
+  const dose = doseKey(nome||'');
+  const norm = _gmNorm((nome||'').replace(/^[*#+>&@\.\s]+/,''));
+  if(!norm) return { pa:'', dose };
+  const cands=[];
+  (String(nome||'').match(/\(([^)]*)\)/g)||[]).forEach(function(x){ var t=x.replace(/[()]/g,''); if(t.indexOf('+')<0){ var n=_gmNorm(t); if(n.length>=4) cands.push(n); } });
+  const w = norm.split(' ').filter(function(s){return s.length>=3;});
+  if(w[0]) cands.push(w[0]); if(w[0]&&w[1]) cands.push(w[0]+' '+w[1]);
+  const uniq=[...new Set(cands)].filter(function(x){return x.length>=4;});
+  if(!uniq.length) return { pa:'', dose };
+  const enc = encodeURIComponent(uniq.map(function(v){return '"'+v.replace(/"/g,'')+'"';}).join(','));
+  try{
+    const r = await fetch(SUPA_URL+'/rest/v1/cmed_dicionario?select=marca_norm,substancia,is_combo,dose_norm&marca_norm=in.('+enc+')',{headers:H});
+    const rows = await r.json();
+    if(Array.isArray(rows)) for(const cand of uniq){ const hit=rows.find(x=>x.marca_norm===cand); if(hit && !hit.is_combo && hit.substancia) return { pa:hit.substancia, dose:dose||hit.dose_norm||'' }; }
+    const r2 = await fetch(SUPA_URL+'/rest/v1/cmed_dicionario?select=substancia,dose_norm&is_combo=eq.false&substancia=in.('+enc+')&limit=1',{headers:H});
+    const rows2 = await r2.json();
+    if(Array.isArray(rows2)&&rows2.length&&rows2[0].substancia) return { pa:rows2[0].substancia, dose:dose||rows2[0].dose_norm||'' };
+  }catch(e){}
+  return { pa:'', dose };
+}
+
+// ── índice de FORNECEDORES por chave (custo = compra_unit; individual; NUNCA mediana) ──
+let fornBy = {};   // chave -> [{forn, custo}] ordenado asc
+let resultado = [], linhasArquivo = [], colunas = [];
+async function sbAll(base,size=1000){ let out=[],off=0; while(true){ const r=await fetch(SB_URL+'/rest/v1/'+base+`&limit=${size}&offset=${off}`,{headers:H}); const pg=await r.json(); if(!Array.isArray(pg))break; out=out.concat(pg); if(pg.length<size)break; off+=size; } return out; }
+
+function gate(){
+  const adm = (window.gmAuth && (typeof gmAuth.isAdmin==='function' ? gmAuth.isAdmin() : (gmAuth.user && gmAuth.user.role==='admin')));
+  document.getElementById('app').style.display = adm ? '' : 'none';
+  document.getElementById('gate').style.display = adm ? 'none' : 'block';
+  return adm;
+}
+async function init(){
+  // espera o gm-auth resolver a sessão (evento) ou tenta apos um tick
+  await new Promise(r=>setTimeout(r,400));
+  if(!gate()){ document.getElementById('status').textContent='acesso restrito'; return; }
+  try{
+    document.getElementById('status').textContent='carregando fornecedores…';
+    const todas = await sbAll('cotacoes?select=produto,principio_ativo,compra_unit,tipo,fornecedor&order=id.asc');
+    fornBy={};
+    todas.forEach(p=>{
+      if(p.tipo==='global'||String(p.fornecedor)==='1') return;   // GLOBAL = venda, não é custo
+      const cu=parseFloat(p.compra_unit); if(!(cu>0)) return;
+      const k=chave(p.produto,p.principio_ativo); if(!k) return;
+      (fornBy[k]=fornBy[k]||[]).push({forn:String(p.fornecedor).trim(), custo:cu});
+    });
+    Object.values(fornBy).forEach(a=>a.sort((x,y)=>x.custo-y.custo));
+    document.getElementById('status').textContent = Object.keys(fornBy).length+' grupos de fornecedor prontos';
+  }catch(e){ document.getElementById('status').textContent='erro ao conectar'; console.error(e); }
+}
+
+// ── classifica 1 item: alvo(venda) + markup + chave ──
+function classificar(produto, alvo, markup, k){
+  const fs = (k && fornBy[k]) ? fornBy[k] : [];
+  const custoAlvo = +(alvo/(1+markup)).toFixed(4);   // pra ter o markup no alvo, custo tem que ser <= isto
+  if(!fs.length) return { produto, alvo, markup, cenario:'vermelho', motivo:'sem fornecedor no banco', custoAlvo, fs:[] };
+  const viaveis = fs.filter(f => f.custo*(1+markup) <= alvo);   // <= : markup exato conta como viável
+  if(viaveis.length){
+    const best=viaveis[0];
+    return { produto, alvo, markup, cenario:'verde', best, margem:+((alvo/best.custo-1)*100).toFixed(1), viaveis, custoAlvo, fs };
+  }
+  const best=fs[0];
+  if(best.custo < alvo){   // dá lucro, mas margem < desejada
+    return { produto, alvo, markup, cenario:'amarelo', best, margem:+((alvo/best.custo-1)*100).toFixed(1), custoAlvo, fs };
+  }
+  return { produto, alvo, markup, cenario:'vermelho', motivo:'nenhum fornecedor viável (custo ≥ alvo)', best, custoAlvo, fs };
+}
+
+async function analisarItem(){
+  const produto=document.getElementById('i-prod').value.trim();
+  const alvo=numBR(document.getElementById('i-alvo').value);
+  const markup=(numBR(document.getElementById('i-mkp').value)||20)/100;
+  if(!produto||!(alvo>0)){ alert('Informe produto e preço-alvo (ex: 0,90).'); return; }
+  document.getElementById('status').textContent='resolvendo PA…';
+  const rp=await resolvePA(produto);
+  const k=chave(produto, rp.pa);
+  resultado=[ classificar(produto, alvo, markup, k) ];
+  document.getElementById('status').textContent = Object.keys(fornBy).length+' grupos de fornecedor';
+  mostrar();
+}
+
+// ── planilha ──
+const drop=document.getElementById('drop'), fileInp=document.getElementById('file');
+drop.onclick=()=>fileInp.click();
+drop.ondragover=e=>{e.preventDefault();drop.classList.add('drag');};
+drop.ondragleave=()=>drop.classList.remove('drag');
+drop.ondrop=e=>{e.preventDefault();drop.classList.remove('drag'); if(e.dataTransfer.files[0]) lerArquivo(e.dataTransfer.files[0]);};
+fileInp.onchange=e=>{ if(e.target.files[0]) lerArquivo(e.target.files[0]); };
+async function lerArquivo(f){
+  document.getElementById('fname').textContent='📄 '+f.name;
+  try{
+    const buf=await f.arrayBuffer(); const wb=XLSX.read(buf,{type:'array'}); const ws=wb.Sheets[wb.SheetNames[0]];
+    const json=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
+    let hdr=json.findIndex(r=>r.filter(c=>String(c).trim()).length>=2); if(hdr<0)hdr=0;
+    colunas=json[hdr].map((c,i)=>String(c).trim()||('Col'+(i+1)));
+    linhasArquivo=json.slice(hdr+1).filter(r=>r.some(c=>String(c).trim())).map(r=>{const o={};colunas.forEach((c,i)=>o[c]=r[i]);return o;});
+    const opts=colunas.map(c=>`<option value="${c}">${c}</option>`).join('');
+    const gP=colunas.find(c=>/produt|descri|item|medicament/i.test(c))||colunas[0];
+    const gA=colunas.find(c=>/alvo|venda|pre[çc]o|valor/i.test(c))||colunas[colunas.length-1];
+    const gM=colunas.find(c=>/markup|marg|mkp/i.test(c))||'';
+    document.getElementById('colmap').innerHTML=
+      `<label class="f">Coluna Produto<select id="c-prod">${opts}</select></label>
+       <label class="f">Coluna Preço-alvo<select id="c-alvo">${opts}</select></label>
+       <label class="f">Coluna Markup% (opcional)<select id="c-mkp"><option value="">—</option>${opts}</select></label>`;
+    const set=(id,v)=>{const s=document.getElementById(id); if(v&&[...s.options].some(o=>o.value===v))s.value=v;};
+    set('c-prod',gP); set('c-alvo',gA); set('c-mkp',gM);
+    document.getElementById('cfg').classList.remove('hidden'); drop.classList.add('hidden');
+  }catch(err){ alert('Erro ao ler: '+err.message); }
+}
+function numBR(v){ if(v==null)return NaN; if(typeof v==='number')return v; return parseFloat(String(v).replace(/[^\d,.-]/g,'').replace(/\.(?=\d{3})/g,'').replace(',','.')); }
+// dedup: linha repetida (mesmo produto+alvo) vira 1 só — garante "25 itens = 25 linhas"
+function _dedupBrutos(arr){ const seen=new Set(), out=[]; for(const b of arr){ const k=_gmNorm(b.produto)+'|'+b.alvo; if(seen.has(k)) continue; seen.add(k); out.push(b); } return out; }
+
+async function analisarPlanilha(){
+  const cP=document.getElementById('c-prod').value, cA=document.getElementById('c-alvo').value, cM=document.getElementById('c-mkp').value;
+  const mkpBase=(parseFloat(document.getElementById('mkp-base').value)||20)/100;
+  const brutos = _dedupBrutos(linhasArquivo.map(r=>({produto:String(r[cP]||'').trim(), alvo:numBR(r[cA]), markup:cM?((numBR(r[cM])||20)/100):mkpBase}))
+    .filter(x=>x.produto && x.alvo>0));
+  resultado=[];
+  const cachePA={};
+  for(let i=0;i<brutos.length;i++){
+    const b=brutos[i];
+    document.getElementById('status').textContent=`resolvendo PA ${i+1}/${brutos.length}…`;
+    if(cachePA[b.produto]===undefined){ const rp=await resolvePA(b.produto); cachePA[b.produto]=rp.pa; }
+    const k=chave(b.produto, cachePA[b.produto]);
+    resultado.push(classificar(b.produto, b.alvo, b.markup, k));
+  }
+  document.getElementById('status').textContent=Object.keys(fornBy).length+' grupos de fornecedor';
+  mostrar();
+}
+
+// ── colar lista (uma por linha: Produto + Preço-alvo [+ Markup], separados por TAB/;/espaço) ──
+async function analisarColado(){
+  const txt=document.getElementById('paste').value||'';
+  const mkpBase=(numBR(document.getElementById('paste-mkp').value)||20)/100;
+  const linhas=txt.split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
+  const brutos=[], semPreco=[];
+  linhas.forEach(l=>{
+    let produto, alvo, mk;
+    const parts=l.split(/\t|;/).map(s=>s.trim()).filter(Boolean);
+    if(parts.length>=2){ produto=parts[0]; alvo=numBR(parts[1]); if(parts[2]) mk=numBR(parts[2]); }
+    else { const m=l.match(/^(.*?)[\s]+(\d[\d.,]*)\s*$/); if(m){ produto=m[1].trim(); alvo=numBR(m[2]); } else { produto=l; alvo=NaN; } }
+    if(produto && alvo>0) brutos.push({produto, alvo, markup:(mk>0?mk/100:mkpBase)});
+    else if(produto) semPreco.push(produto);
+  });
+  if(!brutos.length){ alert('Não achei "produto + preço-alvo" nas linhas.\nFormato: PRODUTO;0,90 (uma por linha; markup opcional no fim).'+(semPreco.length?'\n\nSem preço: '+semPreco.slice(0,3).join(' | '):'')); return; }
+  const brutosU=_dedupBrutos(brutos);
+  resultado=[]; const cachePA={};
+  for(let i=0;i<brutosU.length;i++){
+    const b=brutosU[i];
+    document.getElementById('status').textContent=`resolvendo PA ${i+1}/${brutosU.length}…`;
+    if(cachePA[b.produto]===undefined){ const rp=await resolvePA(b.produto); cachePA[b.produto]=rp.pa; }
+    resultado.push(classificar(b.produto, b.alvo, b.markup, chave(b.produto, cachePA[b.produto])));
+  }
+  document.getElementById('status').textContent=Object.keys(fornBy).length+' grupos de fornecedor'+(semPreco.length?' · '+semPreco.length+' linha(s) sem preço ignoradas':'');
+  mostrar();
+}
+
+function mostrar(){
+  const ordem={verde:0,amarelo:1,vermelho:2};
+  resultado.sort((a,b)=> (ordem[a.cenario]-ordem[b.cenario]) || ((b.margem??-9)-(a.margem??-9)) );
+  document.getElementById('kp-verde').textContent=resultado.filter(r=>r.cenario==='verde').length;
+  document.getElementById('kp-amarelo').textContent=resultado.filter(r=>r.cenario==='amarelo').length;
+  document.getElementById('kp-vermelho').textContent=resultado.filter(r=>r.cenario==='vermelho').length;
+  document.getElementById('kp-tot').textContent=resultado.length;
+  document.getElementById('result').classList.remove('hidden');
+  renderTabela();
+  document.getElementById('result').scrollIntoView({behavior:'smooth'});
+}
+function renderTabela(){
+  const so=document.getElementById('f-verde').checked;
+  const lista=so?resultado.filter(r=>r.cenario==='verde'):resultado;
+  let h='<tr><th>Produto</th><th class=right>Preço-alvo</th><th class=center>Cenário</th><th>Melhor fornecedor</th><th class=right>Custo</th><th class=right>Margem</th><th class=right>Custo-alvo (p/ markup)</th><th>Fornecedores</th><th>Ação</th></tr>';
+  lista.forEach((r,idx)=>{
+    const tag = r.cenario==='verde'?'<span class="tag green">🟢 dá pra comprar</span>':r.cenario==='amarelo'?'<span class="tag amber">🟡 apertado</span>':'<span class="tag red">🔴 sem fornecedor</span>';
+    const forn = r.best?`${r.best.forn} <span class=muted>@ ${fmt(r.best.custo)}</span>`:'<span class=muted>—</span>';
+    const margem = r.margem!=null?`<span class="b" style="color:${r.cenario==='verde'?'#0f7a3d':'#9a7405'}">${r.margem}%</span>`:'<span class=muted>—</span>';
+    const detFs = (r.fs&&r.fs.length)?r.fs.slice(0,4).map(f=>`${f.forn} ${fmt(f.custo)}`).join(' · ')+(r.fs.length>4?` +${r.fs.length-4}`:''):'<span class=muted>nenhum</span>';
+    const acao = r.cenario==='vermelho'?`<button class="mini" onclick="addFila(${idx})">→ fila cotação</button>`:(r.cenario==='amarelo'?`<span class=sub>p/ ${(r.markup*100).toFixed(0)}%: custo ≤ ${fmt(r.custoAlvo)}</span>`:'');
+    h+=`<tr class="${r.cenario}"><td>${r.produto}${r.motivo?`<div class=sub>${r.motivo}</div>`:''}</td>
+      <td class="right b">${fmt(r.alvo)}</td><td class="center">${tag}</td><td>${forn}</td>
+      <td class="right">${r.best?fmt(r.best.custo):'—'}</td><td class="right">${margem}</td>
+      <td class="right">${fmt(r.custoAlvo)}</td><td class="sub">${detFs}</td><td>${acao}</td></tr>`;
+  });
+  document.getElementById('tbl').innerHTML=h;
+}
+
+// 🔴 -> fila Itens a Cotar (reusa a tabela existente; chave = iacChaveGrupo por texto, origem manual)
+async function addFila(idx){
+  const r=resultado[idx]; if(!r) return;
+  const norm = _gmNorm(r.produto);
+  const chaveG = 'TXT|'+norm.replace(/[^A-Z0-9]/g,'');   // item da planilha sem PA garantido -> fallback texto (mesmo criterio da fila)
+  try{
+    const ja = await (await fetch(`${SB_URL}/rest/v1/itens_a_cotar?chave_grupo=eq.${encodeURIComponent(chaveG)}&status=neq.resolvido&select=id,vezes`,{headers:H})).json();
+    if(Array.isArray(ja)&&ja.length){
+      await fetch(`${SB_URL}/rest/v1/itens_a_cotar?id=eq.${ja[0].id}`,{method:'PATCH',headers:{...H,'Content-Type':'application/json'},body:JSON.stringify({vezes:(ja[0].vezes||1)+1,atualizado_em:new Date().toISOString()})});
+    } else {
+      await fetch(`${SB_URL}/rest/v1/itens_a_cotar`,{method:'POST',headers:{...H,'Content-Type':'application/json'},body:JSON.stringify({
+        descricao:r.produto, descricao_norm:norm, chave_grupo:chaveG, origem:'manual', status:'pendente',
+        obs:`viabilidade: alvo ${fmt(r.alvo)}, markup ${(r.markup*100).toFixed(0)}% -> comprar por <= ${fmt(r.custoAlvo)}`})});
+    }
+    document.querySelectorAll('#tbl tr')[idx+1].querySelector('button')?.replaceWith(Object.assign(document.createElement('span'),{className:'sub',textContent:'✅ na fila'}));
+  }catch(e){ alert('Erro ao adicionar à fila: '+e.message); }
+}
+
+function exportarExcel(){
+  const hoje=new Date().toLocaleDateString('pt-BR');
+  const head=['PRODUTO','PREÇO-ALVO','MELHOR FORNECEDOR','CUSTO','MARGEM %','CENÁRIO','CUSTO-ALVO (p/ markup)'];
+  const cen={verde:'DA PRA COMPRAR',amarelo:'APERTADO',vermelho:'SEM FORNECEDOR'};
+  const rows=resultado.map(r=>[ r.produto, +Number(r.alvo).toFixed(4), r.best?r.best.forn:'', r.best?+r.best.custo.toFixed(4):'',
+    r.margem!=null?r.margem:'', cen[r.cenario], +Number(r.custoAlvo).toFixed(4) ]);
+  const aoa=[['GLOBALMED — Viabilidade de Compra'],['Data: '+hoje+'  |  custo = fornecedor individual (mais barato); alvo = preço de venda'],[],head,...rows];
+  const ws=XLSX.utils.aoa_to_sheet(aoa);
+  ws['!cols']=[{wch:46},{wch:12},{wch:22},{wch:12},{wch:10},{wch:18},{wch:20}];
+  ws['!merges']=[{s:{r:0,c:0},e:{r:0,c:6}},{s:{r:1,c:0},e:{r:1,c:6}}];
+  const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,'Viabilidade');
+  XLSX.writeFile(wb, `Viabilidade_Compra_${hoje.replace(/\//g,'-')}.xlsx`);
+}
+function resetar(){ document.getElementById('cfg').classList.add('hidden'); document.getElementById('result').classList.add('hidden'); drop.classList.remove('hidden'); fileInp.value=''; linhasArquivo=[]; colunas=[]; resultado=[]; }
+
+document.addEventListener('gm-auth-ready', init);
+if(window.gmAuth) init();
+</script>
+</body>
+</html>

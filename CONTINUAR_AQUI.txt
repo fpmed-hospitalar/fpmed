@@ -1,0 +1,94 @@
+========================================
+FPMED — CONTEXTO DO PROJETO (clone white-label #2)
+========================================
+
+>>> O QUE E ISTO: clone white-label do sistema do GlobalMed, para o cliente FPMED Hospitalar.
+Projeto SEPARADO, git PROPRIO, banco PROPRIO (a criar), marca PROPRIA (azul/verde).
+Criado em 21/07/2026 copiando SO os arquivos do app do C:\globalmed.
+
+>>> REGRAS MASTER (nao violar):
+1. C:\globalmed fica INTOCADO — e um sistema LIVE (GitHub Pages depende da estrutura atual).
+   Daqui, so LER de la se precisar. Nunca mover/renomear/apagar nada em C:\globalmed.
+2. Banco PROPRIO da FPMED. NUNCA importar clientes / prospects / precos GLOBAL do GlobalMed.
+   So cotacoes de distribuidores, quando o Lemuel autorizar.
+3. SEM Prospeccao. O globalmed_vendedora.html (tela de Prospeccao standalone) NAO foi copiado.
+   ATENCAO: o sistema_final tambem tem uma PAGINA de prospeccao embutida (nav-item "Prospeccao",
+   showPage('prospeccao'), <div id="page-prospeccao">, funcoes salvarProspect/prospeccao no menu).
+   No rebrand, REMOVER essa page + o item de menu do sistema_final tambem.
+4. git PROPRIO, historia limpa, SEM remote (o GitHub da FPMED sera criado depois).
+   NUNCA adicionar o remote do GlobalMed.
+
+>>> STATUS (21/07/2026): pasta base criada + git init. NAO rebrandado, NAO aponta banco ainda.
+Proximos passos (quando o Lemuel mandar): (a) criar o Supabase da FPMED; (b) trocar URL+ANON no
+gm-auth.js e nos .html; (c) rebrand (nome/logo/cores/telefone); (d) remover Prospeccao do
+sistema_final; (e) criar as tabelas (DDL abaixo); (f) criar o GitHub da FPMED e apontar o remote.
+
+========================================
+BLUEPRINT DO SISTEMA (mapeado do GlobalMed, 21/07/2026)
+========================================
+
+ARQUIVOS DO APP COPIADOS (12):
+  sistema_final.html ... o sistema interno (Dashboard, Fornecedores, Cotacoes, Orcamento,
+                         Relatorios, Importar Cotacao/Espelho, Compras por Cliente, Clientes&
+                         Oportunidades, Itens a Cotar, Competitividade, Atualizar Estoque GLOBAL,
+                         Comissoes). >>> TEM uma page de Prospeccao embutida — remover no rebrand.
+  giovana.html ......... proposta comercial (busca de produto, monta orcamento). buscarMelhorProduto.
+  vendas.html .......... "Vendas Ativas": Ofertas da Semana, Disparo WhatsApp, Alerta de Recompra.
+  viabilidade.html ..... viabilidade de compra (preco-alvo x fornecedores). usa CDN xlsx.
+  competitividade.html / competitividade_dark.html ... telas de competitividade de preco (mockups).
+  painel.html .......... painel de notas.
+  dashboard_clientes.html ... dashboard de clientes/oportunidades (template).
+  calculadora_comissao_globalmed.html ... calculadora de comissao da Isadora.
+  GLOBALMED-loja.html .. loja publica (le tabela loja_publica). 414KB.
+  reset-senha.html ..... fluxo de reset de senha.
+  gm-auth.js ........... AUTENTICACAO COMPARTILHADA (todos os .html carregam <script src="gm-auth.js">).
+                         >>> CONTEM a URL + ANON key do banco do GLOBALMED — TROCAR pela da FPMED.
+  NAO copiado: globalmed_vendedora.html (Prospeccao). README/scripts/segredos ficaram no GlobalMed.
+
+DEPENDENCIA EXTERNA (CDN): viabilidade.html usa
+  https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js  (leitura de planilha)
+
+SUPABASE (do GlobalMed — TROCAR TUDO pela instancia da FPMED):
+  URL:  https://vikewlbhkrikcalzsbeb.supabase.co
+  ANON: aparece em gm-auth.js (var SB / var ANON) e nos .html (SUPA_URL2/SUPA_KEY2, VE_SB).
+  EDGE FUNCTION: /functions/v1/ler-pedido  (IA que le pedido/espelho — Claude via backend).
+  A service_role fica SO no segredos.local.txt do Lemuel (NAO veio, e nem deve).
+
+MARCA GLOBALMED (hardcoded — trocar no rebrand):
+  Nome:     "GlobalMed" (titulos, logo, <title>). Ex: <title>GlobalMed - Sistema Interno</title>.
+  Cores:    --verde:#00c27a ; --verde-escuro:#007a4d ; --verde-claro:#e6fff5
+            competitividade_dark: navy #0A141C, painel #10212C, ciano #3AB6CE
+  Fontes:   Syne (logo), Poppins/Inter (texto)
+  Telefone: (62) 99612-7968
+  >>> Marca da FPMED: azul/verde (definir os hex). Nome "FPMED Hospitalar".
+
+REGRA DE PRECO FIXA (mantem na FPMED, e o modelo de negocio):
+  Fornecedor: venda = compra_unit x 1,25  (markup 25%)
+  Estoque proprio (GLOBAL): o banco guarda so a VENDA. custo-ref = venda / 1,25 (preco cheio = MKP 25%).
+  Granularidade: preco por unidade = venda_da_caixa / qtdEmbalagem (CX10 -> /10). Ver Ofertas/Competitividade.
+
+TABELAS DO BANCO (pro DDL da FPMED — criar as que o app usa):
+  cotacoes .......... produtos/precos (o coracao). colunas usadas: id, fornecedor, tipo, pedido,
+                      data, codigo, produto, principio_ativo, und, vencimento, marca, compra_unit,
+                      compra_caixa, qtd_orcamento, total_compra, estoque, global_venda1, global_venda2,
+                      markup, regra, venda_unit_calculada, venda_caixa_calculada, total_venda_calculado,
+                      created_at, venda_loja.
+  fornecedores ...... nome, cnpj, tipo, contato, telefone (sem razao social/cidade dedicadas).
+  clientes .......... id, nome, cnpj, vendedora, obs, cnpj_normalizado(GERADA), cliente_codigo/erp...
+  compras ........... cabecalho de compra (origem, numero_pedido...).
+  compra_itens ...... itens da compra (codigo_erp, preco_unit POR UNIDADE, preco_caixa, quantidade...).
+  orcamentos ........ id, numero, cliente, cnpj_cliente, condicao, vendedora, validade, desconto_geral,
+                      itens(JSON), status, total_geral, criado_em, atualizado_em, cliente_id...
+  itens_a_cotar ..... fila de faltantes. id, descricao, descricao_norm, chave_grupo, pa, origem,
+                      cliente, status, vezes, fornecedor_resposta, preco_recebido, criado_em, obs.
+                      >>> PEGADINHA: apos criar a tabela, rodar NOTIFY pgrst,'reload schema' (cache do PostgREST).
+  cmed_dicionario ... dicionario CMED (marca->PA). usado por resolvePA.
+  pedidos_compra .... pedidos de compra.
+  comissoes_isadora / comissoes_externas ... comissoes (a FPMED pode nao precisar; avaliar).
+  notas ............. usado pelo painel.
+  loja_publica ...... usado pela loja publica.
+  VIEWS: v_preco_variacao, v_compras_mensal.
+  RPC: sistema_final chama /rest/v1/rpc (funcao no banco — mapear qual no rebrand).
+
+>>> RLS: cada tabela precisa de policy 'authenticated' + GRANT select/insert/update (como no GlobalMed).
+========================================

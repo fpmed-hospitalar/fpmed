@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GlobalMed — Painel do Sistema</title>
+<script src="gm-auth.js"></script>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI',system-ui,sans-serif; }
+  body { background:#eef4ef; color:#1c2b22; padding-bottom:50px; }
+  header { background:#0f2e1d; color:#fff; padding:16px 28px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; }
+  header h1 { font-size:22px; color:#4ade80; }
+  header h1 span { color:#fff; font-weight:400; font-size:18px; }
+  header #status { font-size:12px; opacity:.8; }
+  .wrap { max-width:1100px; margin:22px auto; padding:0 16px; }
+  .card { background:#fff; padding:22px; border-radius:12px; box-shadow:0 2px 8px rgba(0,0,0,.06); margin-bottom:18px; }
+  h2 { font-size:16px; margin-bottom:14px; color:#0f2e1d; display:flex; align-items:center; gap:8px; }
+  .refresh { display:flex; gap:10px; align-items:center; margin-bottom:6px; }
+  button { padding:9px 16px; border:none; border-radius:8px; background:#0f7a3d; color:#fff; font-weight:600; font-size:14px; cursor:pointer; }
+  button:hover { background:#0c6633; }
+  button.copy { background:#1d4fb3; }
+  button.copy:hover { background:#173e8f; }
+
+  /* KPI cards */
+  .kpis { display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:14px; }
+  .kpi { border-radius:12px; padding:18px; color:#fff; }
+  .kpi .lbl { font-size:11px; text-transform:uppercase; letter-spacing:.5px; opacity:.9; }
+  .kpi .val { font-size:30px; font-weight:800; margin-top:4px; line-height:1; }
+  .kpi .sub { font-size:11px; opacity:.85; margin-top:6px; }
+  .k1{background:linear-gradient(135deg,#0f7a3d,#16a34a);} .k2{background:linear-gradient(135deg,#0f2e1d,#1c5135);}
+  .k3{background:linear-gradient(135deg,#1d4fb3,#2563eb);} .k4{background:linear-gradient(135deg,#b45309,#d97706);}
+  .k5{background:linear-gradient(135deg,#6d28d9,#7c3aed);} .k6{background:linear-gradient(135deg,#0e7490,#0891b2);}
+
+  table { width:100%; border-collapse:collapse; font-size:13px; }
+  th { text-align:left; padding:9px 10px; background:#0f2e1d; color:#cde8d8; font-size:11px; text-transform:uppercase; letter-spacing:.3px; }
+  td { padding:8px 10px; border-top:1px solid #eef2ee; }
+  tr:hover td { background:#f7faf8; }
+  .right { text-align:right; }
+  .bar { height:8px; background:#e3ece6; border-radius:5px; overflow:hidden; min-width:60px; }
+  .bar > i { display:block; height:100%; background:linear-gradient(90deg,#16a34a,#4ade80); }
+  .muted { color:#8a9a8f; }
+  .b { font-weight:700; }
+  .tbl-wrap { max-height:480px; overflow:auto; border-radius:8px; border:1px solid #e3ece6; }
+  .loading { padding:30px; text-align:center; color:#9aa6a0; }
+  .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:18px; }
+  @media(max-width:760px){ .grid2{grid-template-columns:1fr;} }
+  .toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%); background:#0f2e1d; color:#fff; padding:12px 22px; border-radius:10px; font-size:14px; box-shadow:0 4px 14px rgba(0,0,0,.25); opacity:0; transition:.25s; pointer-events:none; z-index:99; }
+  .toast.show { opacity:1; }
+  .ts { font-size:12px; color:#8a9a8f; }
+  /* notas */
+  .nota { display:flex; align-items:flex-start; gap:10px; padding:10px 12px; border-radius:8px; background:#fafdfb; border:1px solid #eef2ee; margin-bottom:8px; }
+  .nota input[type=checkbox] { margin-top:3px; width:17px; height:17px; cursor:pointer; flex-shrink:0; }
+  .nota .txt { flex:1; font-size:14px; line-height:1.4; }
+  .nota.done .txt { text-decoration:line-through; color:#9aa6a0; }
+  .nota .data { font-size:11px; color:#9aa6a0; white-space:nowrap; }
+  .nota .x { background:none; border:none; color:#c0392b; cursor:pointer; font-size:14px; padding:0 4px; }
+  .nota:hover { background:#f3f8f4; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>GlobalMed <span>· 📊 Painel do Sistema</span></h1>
+  <span id="status">conectando…</span>
+</header>
+
+<div class="wrap">
+
+  <div class="refresh">
+    <button onclick="carregarTudo()">🔄 Atualizar</button>
+    <button class="copy" onclick="copiarResumo()">📋 Copiar resumo pra IA</button>
+    <button onclick="baixarArquivo()" style="background:#5b21b6">📥 Baixar arquivo (.txt)</button>
+    <button onclick="baixarProjeto()" style="background:#166534">⬇️ Baixar projeto completo (.zip)</button>
+    <span class="ts" id="atualizado"></span>
+  </div>
+
+  <!-- KPIS GERAIS -->
+  <div class="card">
+    <h2>📈 Visão Geral <span class="ts" id="loading-kpi"></span></h2>
+    <div class="kpis" id="kpis"><div class="loading">carregando…</div></div>
+  </div>
+
+  <div class="grid2">
+    <!-- COTAÇÕES POR FORNECEDOR -->
+    <div class="card">
+      <h2>🏢 Cotações por Fornecedor</h2>
+      <div class="tbl-wrap">
+        <table id="tbl-forn"><tr><td class="loading">carregando…</td></tr></table>
+      </div>
+    </div>
+
+    <!-- ÚLTIMAS COTAÇÕES -->
+    <div class="card">
+      <h2>🕒 Últimas Cotações Adicionadas</h2>
+      <div class="tbl-wrap">
+        <table id="tbl-ult"><tr><td class="loading">carregando…</td></tr></table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ESTOQUE GLOBAL -->
+  <div class="card">
+    <h2>📦 Resumo de Estoque</h2>
+    <div id="estoque-info" class="loading">carregando…</div>
+  </div>
+
+  <!-- CONTINUAR AQUI (anotações) -->
+  <div class="card">
+    <h2>📝 Continuar Aqui — Anotações & Pendências</h2>
+    <div style="margin-bottom:14px;">
+      <textarea id="nota-txt" placeholder="Escreva uma anotação por linha (pode colar várias de uma vez)..." style="width:100%; min-height:80px; padding:9px 12px; border:1px solid #c8d6cc; border-radius:8px; font-size:14px; font-family:inherit; resize:vertical;"></textarea>
+      <div style="margin-top:8px; display:flex; gap:10px; align-items:center;">
+        <button onclick="addNota()">➕ Adicionar</button>
+        <span class="ts">Cada linha vira uma anotação separada</span>
+      </div>
+    </div>
+    <div id="notas-lista"><div class="loading">carregando…</div></div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SB_URL = 'https://vikewlbhkrikcalzsbeb.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZpa2V3bGJoa3Jpa2NhbHpzYmViIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgwOTEzMDcsImV4cCI6MjA5MzY2NzMwN30.elMw6mbCoCbFVCnzck-aHQrXGYaZhX-m0RRb1VGYP64';
+const H = { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY };
+
+let dados = {};
+
+function toast(m){ const t=document.getElementById('toast'); t.textContent=m; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2200); }
+
+// conta linhas de uma tabela usando header Content-Range (rápido, não baixa tudo)
+async function contar(tabela, filtro=''){
+  const url = SB_URL+'/rest/v1/'+tabela+'?select=id'+(filtro?('&'+filtro):'');
+  const r = await fetch(url, { headers:{...H,'Prefer':'count=exact','Range':'0-0'} });
+  const cr = r.headers.get('content-range'); // formato "0-0/1234"
+  if(cr && cr.includes('/')) return parseInt(cr.split('/')[1]) || 0;
+  return 0;
+}
+
+async function getJSON(path){
+  const r=await fetch(SB_URL+'/rest/v1/'+path,{headers:H});
+  if(!r.ok) throw new Error(await r.text());
+  return r.json();
+}
+
+async function carregarTudo(){
+  document.getElementById('status').textContent='carregando…';
+  try{
+    // contagens gerais (paralelo)
+    const [nCot, nForn, nCli, nOrc, nPed, nProsp] = await Promise.all([
+      contar('cotacoes'),
+      contar('fornecedores'),
+      contar('clientes'),
+      contar('orcamentos'),
+      contar('pedidos_compra'),
+      contar('prospects'),
+    ]);
+    dados.totais={nCot,nForn,nCli,nOrc,nPed,nProsp};
+
+    renderKPIs();
+    await Promise.all([ renderFornecedores(), renderUltimas(), renderEstoque() ]);
+
+    const agora=new Date().toLocaleString('pt-BR');
+    document.getElementById('status').textContent='atualizado';
+    document.getElementById('atualizado').textContent='Última atualização: '+agora;
+  }catch(e){
+    document.getElementById('status').textContent='erro ao conectar';
+    console.error(e);
+  }
+}
+
+function renderKPIs(){
+  const t=dados.totais;
+  document.getElementById('kpis').innerHTML=`
+    <div class="kpi k1"><div class="lbl">Cotações totais</div><div class="val">${t.nCot.toLocaleString('pt-BR')}</div><div class="sub">produtos no banco</div></div>
+    <div class="kpi k2"><div class="lbl">Fornecedores</div><div class="val">${t.nForn}</div><div class="sub">cadastrados</div></div>
+    <div class="kpi k3"><div class="lbl">Clientes</div><div class="val">${t.nCli}</div><div class="sub">ativos</div></div>
+    <div class="kpi k4"><div class="lbl">Orçamentos</div><div class="val">${t.nOrc}</div><div class="sub">gerados</div></div>
+    <div class="kpi k5"><div class="lbl">Pedidos de Compra</div><div class="val">${t.nPed}</div><div class="sub">registrados</div></div>
+    <div class="kpi k6"><div class="lbl">Prospects</div><div class="val">${t.nProsp.toLocaleString('pt-BR')}</div><div class="sub">potenciais clientes</div></div>`;
+}
+
+// ─── NOME DE FORNECEDOR (código → nome) — compartilhado, idêntico em sistema_final/giovana/vendas (FASE A migração #18) ───
+const FORN_NOMES = {
+  '1':'GLOBAL','2':'SUPERMEDICA','3':'STOCK MED','4':'PROMEFARMA','5':'DISMASTER',
+  '6':'ELLO','7':'MAEVE','8':'BRASIL DISTRIBUIDORA','9':'BASCEL / ROBERTINHO MED',
+  '10':'SULMEDIC','11':'ASTHAMED','12':'INDUSTRIA CRISTALIA','13':'RANBAXY',
+  '14':'OUTROS','15':'BIOCHIMICO','16':'PROMEFARMA','17':'BRASIL MEDICAMENTOS',
+  '18':'MCW','19':'SUPERMED','20':'SUPERMAX INDUSTRIA'
+};
+function nomeForn(cod){
+  const c = (cod==null ? '' : String(cod)).trim();
+  if(!c) return 'GLOBAL';
+  return /^\d+$/.test(c) ? (FORN_NOMES[c] || c) : c;
+}
+
+async function renderFornecedores(){
+  // puxa todas as cotações só com fornecedor (paginado)
+  let todas=[], off=0;
+  while(true){
+    const pg=await getJSON(`cotacoes?select=fornecedor&limit=1000&offset=${off}`);
+    todas=todas.concat(pg); if(pg.length<1000) break; off+=1000;
+  }
+  const cont={};
+  todas.forEach(c=>{ const f=nomeForn(c.fornecedor); cont[f]=(cont[f]||0)+1; });
+  const arr=Object.entries(cont).sort((a,b)=>b[1]-a[1]);
+  const max=arr.length?arr[0][1]:1;
+  dados.porForn=arr;
+  let h='<tr><th>Fornecedor</th><th class=right>Itens</th><th>Proporção</th></tr>';
+  arr.forEach(([f,n])=>{
+    h+=`<tr><td class="b">${esc(f)}</td><td class="right">${n.toLocaleString('pt-BR')}</td>
+      <td><div class="bar"><i style="width:${(n/max*100).toFixed(0)}%"></i></div></td></tr>`;
+  });
+  document.getElementById('tbl-forn').innerHTML=h;
+}
+
+async function renderUltimas(){
+  const ult=await getJSON('cotacoes?select=produto,fornecedor,compra_unit,marca,created_at&order=created_at.desc&limit=25');
+  dados.ultimas=ult;
+  let h='<tr><th>Produto</th><th>Fornecedor</th><th class=right>Custo</th><th>Quando</th></tr>';
+  ult.forEach(c=>{
+    const q=c.created_at?new Date(c.created_at).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}):'—';
+    h+=`<tr><td>${esc((c.produto||'').slice(0,40))}</td><td class="muted">${esc(nomeForn(c.fornecedor))}</td>
+      <td class="right">${c.compra_unit?('R$ '+Number(c.compra_unit).toFixed(2)):'—'}</td><td class="muted">${q}</td></tr>`;
+  });
+  document.getElementById('tbl-ult').innerHTML=h;
+}
+
+async function renderEstoque(){
+  const [comEst, semEst, global] = await Promise.all([
+    contar('cotacoes','estoque=eq.1'),
+    contar('cotacoes','estoque=eq.0'),
+    contar('cotacoes','tipo=eq.global'),
+  ]);
+  dados.estoque={comEst,semEst,global};
+  document.getElementById('estoque-info').innerHTML=`
+    <div class="kpis">
+      <div class="kpi k1"><div class="lbl">Em estoque (ativo)</div><div class="val">${comEst.toLocaleString('pt-BR')}</div></div>
+      <div class="kpi k4"><div class="lbl">Sem estoque (stockout)</div><div class="val">${semEst.toLocaleString('pt-BR')}</div></div>
+      <div class="kpi k2"><div class="lbl">Estoque GLOBAL próprio</div><div class="val">${global.toLocaleString('pt-BR')}</div></div>
+    </div>`;
+}
+
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+async function copiarResumo(){
+  const t=dados.totais||{};
+  let txt='';
+  txt+='⚠️ COMO FUNCIONA (LEIA PRIMEIRO): este projeto é operado pelo CLAUDE CODE (CLI da Anthropic no PC do Lemuel, pasta C:\\globalmed). O Claude Code edita os HTML, faz commit/push pro GitHub (GitHub Pages atualiza sozinho) e lê/escreve no Supabase via REST. Um Claude no chat do claude.ai NÃO executa nada disso — só conversa; entregue plano/código/SQL PRONTOS pra rodar no Claude Code, não diga que já fez. Detalhes completos na seção "COMO ESTE PROJETO FUNCIONA" do histórico técnico mais abaixo.\n\n';
+  txt+='=== STATUS GLOBALMED (puxado do banco em '+new Date().toLocaleString('pt-BR')+') ===\n\n';
+  txt+=`Cotações totais: ${t.nCot}\nFornecedores: ${t.nForn}\nClientes: ${t.nCli}\nOrçamentos: ${t.nOrc}\nPedidos de compra: ${t.nPed}\nProspects: ${t.nProsp}\n`;
+  if(dados.estoque) txt+=`\nEstoque ativo: ${dados.estoque.comEst} | Stockout: ${dados.estoque.semEst} | GLOBAL próprio: ${dados.estoque.global}\n`;
+  if(dados.porForn){
+    txt+='\n--- Cotações por fornecedor ---\n';
+    dados.porForn.forEach(([f,n])=>{ txt+=`  ${f}: ${n}\n`; });
+  }
+  if(dados.ultimas && dados.ultimas.length){
+    txt+='\n--- Últimas cotações adicionadas ---\n';
+    dados.ultimas.slice(0,10).forEach(c=>{
+      const q=c.created_at?new Date(c.created_at).toLocaleDateString('pt-BR'):'';
+      txt+=`  [${q}] ${(c.produto||'').slice(0,40)} (${nomeForn(c.fornecedor)})\n`;
+    });
+  }
+  // anexa o HISTÓRICO TÉCNICO (CONTINUAR_AQUI) lido direto do GitHub raw
+  const RAW='https://raw.githubusercontent.com/lemuelbarros-dot/globalmed/main/CONTINUAR_AQUI%20(2).txt';
+  try{
+    const r=await fetch(RAW,{cache:'no-store'});
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    const hist=await r.text();
+    txt+='\n\n========================================\n=== HISTÓRICO TÉCNICO (CONTINUAR_AQUI) ===\n========================================\n\n'+hist;
+  }catch(e){
+    txt+='\n\n[⚠️ Histórico técnico (CONTINUAR_AQUI) não pôde ser carregado do GitHub: '+e.message+' — copiado só com as estatísticas atuais]';
+    toast('⚠️ Histórico não carregou — copiei só as estatísticas');
+  }
+  navigator.clipboard.writeText(txt).then(()=>toast('📋 Resumo completo copiado! Cole na conversa com a IA'))
+    .catch(()=>prompt('Copie o texto:',txt));
+}
+
+// ===== NOTAS / CONTINUAR AQUI =====
+let notas = [];
+async function carregarNotas(){
+  try{
+    const r = await fetch(SB_URL+'/rest/v1/notas?select=*&order=feito.asc,created_at.desc', {headers:H});
+    if(!r.ok) throw new Error(await r.text());
+    notas = await r.json();
+    renderNotas();
+  }catch(e){
+    document.getElementById('notas-lista').innerHTML='<div class="empty" style="padding:14px;color:#9aa6a0">Crie a tabela <b>notas</b> no Supabase pra usar as anotações.</div>';
+    console.error(e);
+  }
+}
+function renderNotas(){
+  if(!notas.length){ document.getElementById('notas-lista').innerHTML='<div style="padding:14px;color:#9aa6a0;text-align:center">Nenhuma anotação ainda. Adicione a primeira!</div>'; return; }
+  let h='';
+  notas.forEach(n=>{
+    const d=n.created_at?new Date(n.created_at).toLocaleDateString('pt-BR'):'';
+    h+=`<div class="nota ${n.feito?'done':''}">
+      <input type="checkbox" ${n.feito?'checked':''} onchange="toggleNota('${n.id}',this.checked)">
+      <span class="txt">${esc(n.texto)}</span>
+      <span class="data">${d}</span>
+      <button class="x" onclick="delNota('${n.id}')">✕</button>
+    </div>`;
+  });
+  document.getElementById('notas-lista').innerHTML=h;
+}
+async function addNota(){
+  const inp=document.getElementById('nota-txt');
+  const linhas=inp.value.split('\n').map(l=>l.trim()).filter(l=>l.length>0);
+  if(!linhas.length) return;
+  try{
+    // cria todas de uma vez
+    const body=linhas.map(texto=>({texto}));
+    const r=await fetch(SB_URL+'/rest/v1/notas',{method:'POST',headers:{...H,'Content-Type':'application/json','Prefer':'return=representation'},body:JSON.stringify(body)});
+    if(!r.ok) throw new Error(await r.text());
+    inp.value='';
+    await carregarNotas();
+    toast(linhas.length>1 ? `✅ ${linhas.length} anotações salvas` : '✅ Anotação salva');
+  }catch(e){ toast('Erro ao salvar'); console.error(e); }
+}
+async function toggleNota(id,feito){
+  try{
+    await fetch(SB_URL+'/rest/v1/notas?id=eq.'+id,{method:'PATCH',headers:{...H,'Content-Type':'application/json'},body:JSON.stringify({feito})});
+    await carregarNotas();
+  }catch(e){ console.error(e); }
+}
+async function delNota(id){
+  if(!confirm('Apagar esta anotação?')) return;
+  try{
+    await fetch(SB_URL+'/rest/v1/notas?id=eq.'+id,{method:'DELETE',headers:H});
+    await carregarNotas();
+    toast('Anotação apagada');
+  }catch(e){ console.error(e); }
+}
+
+carregarTudo();
+carregarNotas();
+
+// ===== BAIXAR ARQUIVO COMPLETO (.txt) =====
+// Baixa o PROJETO COMPLETO (todos os sistemas + CONTINUAR_AQUI + README) como .zip do GitHub
+function baixarProjeto(){
+  const url='https://github.com/lemuelbarros-dot/globalmed/archive/refs/heads/main.zip';
+  const a=document.createElement('a');
+  a.href=url; a.rel='noopener';
+  document.body.appendChild(a); a.click(); a.remove();
+  toast('⬇️ Baixando projeto completo (.zip) do GitHub…');
+}
+
+async function baixarArquivo(){
+  const t=dados.totais||{};
+  const hoje=new Date().toLocaleString('pt-BR');
+  let txt='═══════════════════════════════════════════\n';
+  txt+='GLOBALMED — RESUMO DO SISTEMA\n';
+  txt+='Gerado em: '+hoje+'\n';
+  txt+='═══════════════════════════════════════════\n\n';
+
+  txt+='── VISÃO GERAL ──\n';
+  txt+=`Cotações totais: ${t.nCot||0}\n`;
+  txt+=`Fornecedores: ${t.nForn||0}\n`;
+  txt+=`Clientes: ${t.nCli||0}\n`;
+  txt+=`Orçamentos: ${t.nOrc||0}\n`;
+  txt+=`Pedidos de compra: ${t.nPed||0}\n`;
+  txt+=`Prospects: ${t.nProsp||0}\n`;
+  if(dados.estoque){
+    txt+=`\nEstoque ativo: ${dados.estoque.comEst} | Stockout: ${dados.estoque.semEst} | GLOBAL próprio: ${dados.estoque.global}\n`;
+  }
+
+  if(dados.porForn){
+    txt+='\n── COTAÇÕES POR FORNECEDOR ──\n';
+    dados.porForn.forEach(([f,n])=>{ txt+=`  ${f}: ${n}\n`; });
+  }
+
+  if(dados.ultimas && dados.ultimas.length){
+    txt+='\n── ÚLTIMAS COTAÇÕES ADICIONADAS ──\n';
+    dados.ultimas.slice(0,15).forEach(c=>{
+      const q=c.created_at?new Date(c.created_at).toLocaleDateString('pt-BR'):'';
+      txt+=`  [${q}] ${(c.produto||'').slice(0,45)} (${nomeForn(c.fornecedor)})\n`;
+    });
+  }
+
+  // anotações (tabela notas) — ⚠️ pode ser HISTÓRICO antigo; as REGRAS ATUAIS vêm do CONTINUAR_AQUI (anexado abaixo)
+  txt+='\n── ANOTAÇÕES (tabela notas — ⚠️ HISTÓRICO, pode estar DESATUALIZADO; regras atuais no CONTINUAR_AQUI abaixo) ──\n';
+  if(notas.length){
+    const pend=notas.filter(n=>!n.feito);
+    const feitos=notas.filter(n=>n.feito);
+    if(pend.length){
+      txt+='\nPENDENTES:\n';
+      pend.forEach(n=>{ const d=n.created_at?new Date(n.created_at).toLocaleDateString('pt-BR'):''; txt+=`  [ ] ${n.texto} (${d})\n`; });
+    }
+    if(feitos.length){
+      txt+='\nFEITOS:\n';
+      feitos.forEach(n=>{ const d=n.created_at?new Date(n.created_at).toLocaleDateString('pt-BR'):''; txt+=`  [x] ${n.texto} (${d})\n`; });
+    }
+  } else {
+    txt+='  (nenhuma anotação)\n';
+  }
+
+  // REGRAS ATUAIS — CONTINUAR_AQUI do GitHub raw (mesma fonte do "Copiar resumo"); prevalece sobre as notas acima
+  try {
+    const RAW='https://raw.githubusercontent.com/lemuelbarros-dot/globalmed/main/CONTINUAR_AQUI%20(2).txt';
+    const hist=await (await fetch(RAW+'?t='+Date.now())).text();
+    txt+='\n\n========================================\n=== CONTINUAR_AQUI (REGRAS ATUAIS — prevalece) ===\n========================================\n\n'+hist;
+  } catch(e){
+    txt+='\n\n[⚠️ CONTINUAR_AQUI não pôde ser carregado do GitHub: '+e.message+']';
+  }
+
+  txt+='\n═══════════════════════════════════════════\n';
+
+  // baixar
+  const blob=new Blob([txt],{type:'text/plain;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  const dataArq=new Date().toISOString().slice(0,10);
+  a.href=url; a.download=`GlobalMed_Resumo_${dataArq}.txt`;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  toast('📥 Arquivo baixado!');
+}
+</script>
+</body>
+</html>
