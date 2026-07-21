@@ -19,6 +19,11 @@ Criado em 21/07/2026 copiando SO os arquivos do app do C:\globalmed.
    NUNCA adicionar o remote do GlobalMed.
 
 >>> STATUS (21/07/2026): pasta base criada + git init. NAO rebrandado, NAO aponta banco ainda.
+>>> MODO TOTAL (21/07/2026): Modo total permitido — hook ativo. Quando o Supabase da FPMED
+    existir, criar backup proprio antes de rodadas.
+    (Hook PreToolUse em .claude/settings.json -> .claude/hooks/block-destructive.js, espelhado
+    do GlobalMed, texto rebrandado p/ FPMED. NAO copiado o backup_tabelas.js: e de banco, criar
+    o proprio da FPMED quando o Supabase existir.)
 Proximos passos (quando o Lemuel mandar): (a) criar o Supabase da FPMED; (b) trocar URL+ANON no
 gm-auth.js e nos .html; (c) rebrand (nome/logo/cores/telefone); (d) remover Prospeccao do
 sistema_final; (e) criar as tabelas (DDL abaixo); (f) criar o GitHub da FPMED e apontar o remote.
