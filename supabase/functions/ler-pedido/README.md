@@ -3,8 +3,10 @@
 Proxy público do Claude usado por `fpmed_giovana.html` e `fpmed_sistema_final.html`
 (Importar Cotação / Espelho — ler pedido por IA). Código: `index.ts`.
 
-> **STATUS (22/07/2026): DEPLOYADA** (versão com trava de origem). Verify JWT OFF.
-> Falta só o secret `ANTHROPIC_API_KEY` (Lemuel cola no dashboard).
+> **STATUS (22/07/2026): 100% NO AR** — deployada com trava de origem, Verify JWT OFF,
+> secret `ANTHROPIC_API_KEY` configurado, teste ponta a ponta OK (Claude respondendo).
+> Modelo default: `claude-opus-4-8` (o antigo `claude-sonnet-4-20250514` foi aposentado
+> em 15/06/2026 — se um dia der `not_found_error` de modelo, checar aposentadorias).
 
 ## 🔒 Trava de origem (anti-abuso de crédito)
 A função só aceita requisições cujo header `Origin` seja um dos `ALLOWED_ORIGINS` do

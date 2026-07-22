@@ -71,7 +71,7 @@ Deno.serve(async (req) => {
   }
 
   const payload = {
-    model: body.model || "claude-sonnet-4-20250514",
+    model: body.model || "claude-opus-4-8",
     max_tokens: body.max_tokens || 8000,
     messages: body.messages || [],
   };

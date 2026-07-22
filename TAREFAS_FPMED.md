@@ -32,13 +32,12 @@
       do banco antigo, sintaxe JS validada). URL `https://xzdowrksuswekwffoluk.supabase.co`.
 
 ## ⬜ PENDENTES (na ordem)
-- [~] **Edge function `ler-pedido`**: ✅ DEPLOYADA (22/07, via editor do dashboard), Verify JWT
-      OFF, testada no ar. ✅ v2 com **TRAVA DE ORIGEM** deployada (22/07): só aceita Origin
-      `fpmed-hospitalar.github.io` / `sistema.fpmed.com.br`; resto leva 403 sem gastar crédito
-      (testado: sem Origin 403 · origem estranha 403 · FPMED passa). ⚠️ curl de teste precisa de
-      header Origin; `file://` não funciona (testar via Pages). Falta SÓ o Lemuel colar o secret
-      `ANTHROPIC_API_KEY` (Edge Functions → Secrets; chave no `segredos.local.txt` — Claude não
-      digita API key em formulário). Depois: teste final.
+- [x] **Edge function `ler-pedido` — ✅ 100% NO AR** (22/07): deployada (Verify JWT OFF), trava de
+      origem ativa (só `fpmed-hospitalar.github.io` / `sistema.fpmed.com.br`; resto 403 sem gastar
+      crédito), secret `ANTHROPIC_API_KEY` colado pelo Lemuel, **teste ponta a ponta OK** (Claude
+      respondeu). v3: default trocado `claude-sonnet-4-20250514` (APOSENTADO 15/06/26) →
+      `claude-opus-4-8`. Os HTML mandam `claude-opus-4-5`/`claude-haiku-4-5-20251001` (ambos
+      ativos — ok). ⚠️ curl de teste precisa de header Origin; `file://` não funciona (usar Pages).
 - [x] **Usuários de login criados** (22/07, via Admin API): `lemuelempresas7@outlook.com` e
       `comercial@fpmed.com.br`, ambos `role: admin`, e-mail confirmado, senha inicial definida
       pelo Lemuel (NÃO gravada no repo) com `user_metadata.senha_temporaria: true` (marcador —
