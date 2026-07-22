@@ -2126,7 +2126,7 @@ function compGerarPDF() {
     +'<div style="display:flex;justify-content:space-between;border-bottom:2px solid #1a2e1a;padding-bottom:12px;margin-bottom:18px">'
     +'<div><h2 style="margin:0;font-size:15px">Relatório de Compras — FPMED</h2>'
     +'<p style="margin:4px 0 0;color:#666;font-size:11px">Gerado em '+data+' · '+selecionados.length+' produto(s)</p></div>'
-    +'<div style="font-size:10px;color:#888;text-align:right">CNPJ: [CNPJ]<br>[RAZÃO SOCIAL FPMED]</div></div>'
+    +'<div style="font-size:10px;color:#888;text-align:right">CNPJ: 47.110.418/0001-15<br>FPMED DISTRIBUIDORA DE PRODUTOS HOSPITALARES LTDA</div></div>'
     +'<table><thead><tr>'
     +'<th>Princípio Ativo</th><th>Marca (Global)</th>'
     +'<th style="text-align:center">Estoque</th><th style="text-align:center">Preço Global</th>'
@@ -2135,7 +2135,7 @@ function compGerarPDF() {
     +'<th style="text-align:center">Preço Compra</th>'
     +'</tr></thead><tbody>'+rows+'</tbody></table>'
     +'<div style="font-size:9px;color:#aaa;margin-top:16px;border-top:1px solid #eee;padding-top:8px">'
-    +'[RAZÃO SOCIAL FPMED] · CNPJ: [CNPJ] · '+data+'</div>'
+    +'FPMED DISTRIBUIDORA DE PRODUTOS HOSPITALARES LTDA · CNPJ: 47.110.418/0001-15 · '+data+'</div>'
     +'<script>window.onload=function(){window.print()}<\/script></body></html>';
   const w = window.open('', '_blank');
   if (w) { w.document.write(html); w.document.close(); }
@@ -2597,7 +2597,7 @@ function compAbrirAnalise() {
     + '<div class="header">'
     + '<div><h2 style="margin:0;font-size:16px;font-weight:800;">📊 Análise de Mercado — FPMED</h2>'
     + '<p style="margin:4px 0 0;color:#666;font-size:11px;">Gerado em '+data+' · '+Object.keys(grupos).length+' grupo(s) de PA · '+selecionados.length+' produto(s)</p></div>'
-    + '<div style="font-size:10px;color:#888;text-align:right;">CNPJ: [CNPJ]<br>[RAZÃO SOCIAL FPMED]</div></div>'
+    + '<div style="font-size:10px;color:#888;text-align:right;">CNPJ: 47.110.418/0001-15<br>FPMED DISTRIBUIDORA DE PRODUTOS HOSPITALARES LTDA</div></div>'
     + '<table><thead><tr>'
     + '<th style="min-width:180px;">Princípio Ativo · Produtos</th>'
     + '<th>Distribuidores (preço venda)</th>'
@@ -2609,7 +2609,7 @@ function compAbrirAnalise() {
     + '<th style="text-align:center;min-width:100px;">Status</th>'
     + '</tr></thead><tbody>'+rows+'</tbody></table>'
     + '<div style="font-size:9px;color:#aaa;margin-top:16px;border-top:1px solid #eee;padding-top:8px;">'
-    + '[RAZÃO SOCIAL FPMED] · CNPJ: [CNPJ] · '+data+'</div>'
+    + 'FPMED DISTRIBUIDORA DE PRODUTOS HOSPITALARES LTDA · CNPJ: 47.110.418/0001-15 · '+data+'</div>'
     + '<script>window.onload=function(){window.print()}<\/script></body></html>';
 
   var w = window.open('', '_blank');
@@ -4726,7 +4726,7 @@ function ccImprimir() {
   </style></head><body>
   <div class="hdr">
     <div class="logo"><img src="logo_fpmed.png" alt="FPMED Hospitalar" style="height:48px;width:auto"></div>
-    <div class="emp"><strong>[RAZÃO SOCIAL FPMED]</strong>[CNPJ]<br>[ENDEREÇO]<br></div>
+    <div class="emp"><strong>FPMED DISTRIBUIDORA DE PRODUTOS HOSPITALARES LTDA</strong>CNPJ: 47.110.418/0001-15 · IE: 10.947.387-9<br>RUA 09, S/N, QUADRA 55 A, LOTE 0002, VILA BRASILIA, APARECIDA DE GOIANIA/GO, CEP 74.911-080<br>WhatsApp: (62) 98147-9532 · Tel: (62) 3290-4241 · comercial@fpmed.com.br<br></div>
     <div style="font-size:8px;text-align:right;line-height:1.8"><strong>Data:</strong> ${now.toLocaleDateString('pt-BR')}<br><strong>Emissão:</strong> ${emissao}</div>
   </div>
   <div class="tit"><h2>💼 Cotação para Cliente</h2><span>${itens.length} item(ns)</span></div>
@@ -4750,7 +4750,7 @@ function ccImprimir() {
       </tr>
     </tbody>
   </table>
-  <div class="foot"><span>[RAZÃO SOCIAL FPMED] — Cotação gerada automaticamente</span><span>Emitido em: ${emissao}</span></div>
+  <div class="foot"><span>FPMED DISTRIBUIDORA DE PRODUTOS HOSPITALARES LTDA — Cotação gerada automaticamente</span><span>Emitido em: ${emissao}</span></div>
   <script>window.onload=()=>{window.print();}<\/script></body></html>`);
   win.document.close();
 }
@@ -4843,7 +4843,7 @@ function ccPedidoCompra() {
   </style></head><body>
   <div class="hdr">
     <div class="logo"><img src="logo_fpmed.png" alt="FPMED Hospitalar" style="height:48px;width:auto"></div>
-    <div class="emp"><strong>[RAZÃO SOCIAL FPMED]</strong>[CNPJ]<br>[ENDEREÇO]<br></div>
+    <div class="emp"><strong>FPMED DISTRIBUIDORA DE PRODUTOS HOSPITALARES LTDA</strong>CNPJ: 47.110.418/0001-15 · IE: 10.947.387-9<br>RUA 09, S/N, QUADRA 55 A, LOTE 0002, VILA BRASILIA, APARECIDA DE GOIANIA/GO, CEP 74.911-080<br></div>
     <div style="font-size:9px;text-align:right;line-height:1.8"><strong>Emitido:</strong> ${emissao}</div>
   </div>
   <div class="tit">
@@ -4856,7 +4856,7 @@ function ccPedidoCompra() {
     <strong>R$ ${totalGeral.toFixed(2).replace('.',',')}</strong>
   </div>
   <div class="foot">
-    <span>[RAZÃO SOCIAL FPMED] — Uso interno</span>
+    <span>FPMED DISTRIBUIDORA DE PRODUTOS HOSPITALARES LTDA — Uso interno</span>
     <span>Emitido em: ${emissao}</span>
   </div>
   <script>window.onload=()=>{window.print();}<\/script>
@@ -5305,7 +5305,7 @@ function gerarJanelaPedido(rows, totalGeral, emissao, nPedidos, nForn) {
   </style></head><body>
   <div class="hdr">
     <div class="logo"><img src="logo_fpmed.png" alt="FPMED Hospitalar" style="height:48px;width:auto"></div>
-    <div class="emp"><strong>[RAZÃO SOCIAL FPMED]</strong>[CNPJ]<br>[ENDEREÇO]<br></div>
+    <div class="emp"><strong>FPMED DISTRIBUIDORA DE PRODUTOS HOSPITALARES LTDA</strong>CNPJ: 47.110.418/0001-15 · IE: 10.947.387-9<br>RUA 09, S/N, QUADRA 55 A, LOTE 0002, VILA BRASILIA, APARECIDA DE GOIANIA/GO, CEP 74.911-080<br></div>
     <div style="font-size:9px;text-align:right;line-height:1.7"><strong>Emitido:</strong> ${emissao}</div>
   </div>
   <div class="tit">
@@ -5318,7 +5318,7 @@ function gerarJanelaPedido(rows, totalGeral, emissao, nPedidos, nForn) {
     <strong style="font-size:17px">R$ ${totalGeral.toFixed(2).replace('.',',')}</strong>
   </div>
   <div class="foot">
-    <span>[RAZÃO SOCIAL FPMED] — Uso interno</span>
+    <span>FPMED DISTRIBUIDORA DE PRODUTOS HOSPITALARES LTDA — Uso interno</span>
     <span>Emitido em: ${emissao}</span>
   </div>
   <script>window.onload=()=>{window.print();}<\/script>
@@ -5422,7 +5422,7 @@ async function imprimirPedido(id) {
     </style></head><body>
     <div class="hdr">
       <div class="logo"><img src="logo_fpmed.png" alt="FPMED Hospitalar" style="height:48px;width:auto"></div>
-      <div class="emp"><strong>[RAZÃO SOCIAL FPMED]</strong>[CNPJ]<br>[ENDEREÇO]<br></div>
+      <div class="emp"><strong>FPMED DISTRIBUIDORA DE PRODUTOS HOSPITALARES LTDA</strong>CNPJ: 47.110.418/0001-15 · IE: 10.947.387-9<br>RUA 09, S/N, QUADRA 55 A, LOTE 0002, VILA BRASILIA, APARECIDA DE GOIANIA/GO, CEP 74.911-080<br></div>
       <div style="font-size:9px;text-align:right;line-height:1.8"><strong>Emitido:</strong> ${emissao}</div>
     </div>
     <div class="tit">
@@ -5447,7 +5447,7 @@ async function imprimirPedido(id) {
       <strong style="font-size:18px">R$ ${totalGeral.toFixed(2).replace('.',',')}</strong>
     </div>
     <div class="foot">
-      <span>[RAZÃO SOCIAL FPMED] — Uso interno</span>
+      <span>FPMED DISTRIBUIDORA DE PRODUTOS HOSPITALARES LTDA — Uso interno</span>
       <span>Emitido em: ${emissao}</span>
     </div>
     <script>window.onload=()=>{window.print();}<\/script>

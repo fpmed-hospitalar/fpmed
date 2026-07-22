@@ -274,7 +274,7 @@ function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;')
 async function copiarResumo(){
   const t=dados.totais||{};
   let txt='';
-  txt+='⚠️ COMO FUNCIONA (LEIA PRIMEIRO): este projeto é operado pelo CLAUDE CODE (CLI da Anthropic no PC do Lemuel, pasta C:\\globalmed). O Claude Code edita os HTML, faz commit/push pro GitHub (GitHub Pages atualiza sozinho) e lê/escreve no Supabase via REST. Um Claude no chat do claude.ai NÃO executa nada disso — só conversa; entregue plano/código/SQL PRONTOS pra rodar no Claude Code, não diga que já fez. Detalhes completos na seção "COMO ESTE PROJETO FUNCIONA" do histórico técnico mais abaixo.\n\n';
+  txt+='⚠️ COMO FUNCIONA (LEIA PRIMEIRO): este projeto é operado pelo CLAUDE CODE (CLI da Anthropic no PC do Lemuel, pasta C:\\fpmed). O Claude Code edita os HTML, faz commit/push pro GitHub (GitHub Pages atualiza sozinho) e lê/escreve no Supabase via REST. Um Claude no chat do claude.ai NÃO executa nada disso — só conversa; entregue plano/código/SQL PRONTOS pra rodar no Claude Code, não diga que já fez. Detalhes completos na seção "COMO ESTE PROJETO FUNCIONA" do histórico técnico mais abaixo.\n\n';
   txt+='=== STATUS FPMED (puxado do banco em '+new Date().toLocaleString('pt-BR')+') ===\n\n';
   txt+=`Cotações totais: ${t.nCot}\nFornecedores: ${t.nForn}\nClientes: ${t.nCli}\nOrçamentos: ${t.nOrc}\nPedidos de compra: ${t.nPed}\nProspects: ${t.nProsp}\n`;
   if(dados.estoque) txt+=`\nEstoque ativo: ${dados.estoque.comEst} | Stockout: ${dados.estoque.semEst} | GLOBAL próprio: ${dados.estoque.global}\n`;
@@ -290,7 +290,7 @@ async function copiarResumo(){
     });
   }
   // anexa o HISTÓRICO TÉCNICO (CONTINUAR_AQUI) lido direto do GitHub raw
-  const RAW='https://raw.githubusercontent.com/lemuelbarros-dot/globalmed/main/CONTINUAR_AQUI%20(2).txt';
+  const RAW='https://raw.githubusercontent.com/fpmed-hospitalar/fpmed/main/CONTINUAR_AQUI.txt';
   try{
     const r=await fetch(RAW,{cache:'no-store'});
     if(!r.ok) throw new Error('HTTP '+r.status);
@@ -366,7 +366,7 @@ carregarNotas();
 // ===== BAIXAR ARQUIVO COMPLETO (.txt) =====
 // Baixa o PROJETO COMPLETO (todos os sistemas + CONTINUAR_AQUI + README) como .zip do GitHub
 function baixarProjeto(){
-  const url='https://github.com/lemuelbarros-dot/globalmed/archive/refs/heads/main.zip';
+  const url='https://github.com/fpmed-hospitalar/fpmed/archive/refs/heads/main.zip';
   const a=document.createElement('a');
   a.href=url; a.rel='noopener';
   document.body.appendChild(a); a.click(); a.remove();
@@ -424,7 +424,7 @@ async function baixarArquivo(){
 
   // REGRAS ATUAIS — CONTINUAR_AQUI do GitHub raw (mesma fonte do "Copiar resumo"); prevalece sobre as notas acima
   try {
-    const RAW='https://raw.githubusercontent.com/lemuelbarros-dot/globalmed/main/CONTINUAR_AQUI%20(2).txt';
+    const RAW='https://raw.githubusercontent.com/fpmed-hospitalar/fpmed/main/CONTINUAR_AQUI.txt';
     const hist=await (await fetch(RAW+'?t='+Date.now())).text();
     txt+='\n\n========================================\n=== CONTINUAR_AQUI (REGRAS ATUAIS — prevalece) ===\n========================================\n\n'+hist;
   } catch(e){

@@ -6,11 +6,7 @@
 > **Escopo do pacote FPMED = sistema completo SEM Prospecção e SEM Loja Pública**
 > (decisões de escopo do Lemuel).
 
-Última atualização: 2026-07-21
-
-## ⚠️ LEMBRETE DE INÍCIO DE SESSÃO
-Enquanto a tarefa BLOQUEADA abaixo (dados de registro) não fechar, TODA sessão da FPMED
-deve começar perguntando: **"⚠️ Aguardando dados de registro da FPMED — já chegaram?"**
+Última atualização: 2026-07-22
 
 ## ✅ CONCLUÍDAS
 - [x] Pasta base `C:\fpmed` + cópia limpa (sem segredos, sem Prospecção `vendedora.html`)
@@ -36,9 +32,10 @@ deve começar perguntando: **"⚠️ Aguardando dados de registro da FPMED — j
       do banco antigo, sintaxe JS validada). URL `https://xzdowrksuswekwffoluk.supabase.co`.
 
 ## ⬜ PENDENTES (na ordem)
-- [~] **Edge function `ler-pedido`**: código reescrito e versionado (`supabase/functions/ler-pedido/`)
-      — o fonte NÃO estava em C:\globalmed (só deployado). Falta **deployar** (dashboard/CLI) +
-      **ANTHROPIC_API_KEY da FPMED** (⛔ aguardando Lemuel). A antiga `/api` era vestigial (não recriar).
+- [~] **Edge function `ler-pedido`**: ✅ DEPLOYADA (22/07, via editor do dashboard), Verify JWT
+      OFF, testada no ar (500 controlado "ANTHROPIC_API_KEY nao configurada" = pública e ok).
+      Falta SÓ o Lemuel colar o secret `ANTHROPIC_API_KEY` (Edge Functions → Secrets; chave no
+      `segredos.local.txt` — Claude não digita API key em formulário). Depois: teste final.
 - [ ] **⚠️ Criar usuários de login** no Supabase da FPMED (`auth.users` está VAZIO — sem isso NINGUÉM
       entra no sistema). admin (Lemuel) + vendedoras, com `user_metadata.role`. Senhas com o Lemuel.
 - [x] **Tabelas criadas** no banco novo (12 tabelas/views, `db_schema.sql`). Todas retornam HTTP 200
@@ -50,18 +47,19 @@ deve começar perguntando: **"⚠️ Aguardando dados de registro da FPMED — j
       GitHub Pages (`fpmed-hospitalar.github.io/fpmed`). **Trava:** só vai ao ar sem placeholders e
       sem dado da GlobalMed (aguarda dados de registro) e apontando pro Supabase da FPMED.
 
-## ⛔ BLOQUEADA — AGUARDANDO LEMUEL (previsão: 23/07/2026)
-- [ ] **Dados de registro da FPMED** — o cliente vai enviar: razão social, CNPJ, Inscrição
-      Estadual, endereço, WhatsApp comercial e e-mail. Quando o Lemuel colar os dados: trocar
-      os placeholders `[RAZÃO SOCIAL FPMED]`/`[CNPJ]`/`[ENDEREÇO]`/`[WHATSAPP]` em TODOS os
-      arquivos (PDFs, rodapés), conferir que não sobrou placeholder nem nada da GlobalMed,
-      commit + push.
+## ✅ DESBLOQUEADA (22/07/2026)
+- [x] **Dados de registro da FPMED aplicados**: FPMED DISTRIBUIDORA DE PRODUTOS HOSPITALARES
+      LTDA · CNPJ 47.110.418/0001-15 · IE 10.947.387-9 · RUA 09, S/N, QUADRA 55 A, LOTE 0002,
+      VILA BRASILIA, APARECIDA DE GOIANIA/GO, CEP 74.911-080 · WhatsApp comercial
+      (62) 98147-9532 · fixo (62) 3290-4241 · comercial@fpmed.com.br. Placeholders trocados
+      (giovana 3 blocos + sistema_final 11 pontos), URLs do GitHub antigo trocadas
+      (painel raw/zip + gm-auth recover → `fpmed-hospitalar/fpmed`). Varredura final:
+      **zero placeholder `[...]` / zero dado da GlobalMed** nos *.html/*.js.
 
 ## 🔒 PRÉ-CONDIÇÕES DE DEPLOY (tarefa #11 — travar o push público até resolver)
-1. **Nenhum placeholder** `[...]` e **nenhum dado da GlobalMed** (CNPJ 54.379.172/0001-47,
-   IE, endereço) pode ir ao ar. Já aplicamos placeholders; o deploy só libera com os dados
-   REAIS da FPMED no lugar.
-2. **URLs do GitHub** (painel/gm-auth): trocar do repo antigo p/ o da org `fpmed-hospitalar`.
+1. ✅ FEITO (22/07): dados REAIS da FPMED no lugar; **zero placeholder / zero GlobalMed**
+   confirmado por varredura (globalmed, 54.379.172, 20.131.542, conde francisco, 99612).
+2. ✅ FEITO (22/07): URLs do GitHub (painel raw/zip + gm-auth recover) → `fpmed-hospitalar/fpmed`.
 3. **URL + ANON do Supabase** trocados pela instância da FPMED (não subir apontando p/ o banco do GlobalMed).
 4. **`dashboard_clientes.html`**: contém uma lista de clientes/CNPJs embutida (ex.: "ELLO
    DISTRIBUICAO LTDA", CNPJ 00000000000000) — REVISAR se é demo ou dado real do GlobalMed

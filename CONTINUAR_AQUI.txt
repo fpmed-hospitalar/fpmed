@@ -42,13 +42,13 @@ Criado em 21/07/2026 copiando SO os arquivos do app do C:\globalmed.
     GitHub da org. ATENCAO: dashboard_clientes.html tem lista de clientes/CNPJs embutida
     (ex.: ELLO DISTRIBUICAO LTDA) — revisar se e demo ou dado real do GlobalMed antes do deploy.
 
->>> LEMBRETE DE SESSAO: enquanto a tarefa de dados de registro estiver BLOQUEADA, TODA sessao
-    da FPMED comeca perguntando: "Aguardando dados de registro da FPMED — ja chegaram?".
-
->>> BLOQUEADA — AGUARDANDO LEMUEL (previsao 23/07/2026): dados de registro da FPMED (razao
-    social, CNPJ, IE, endereco, WhatsApp comercial, e-mail). Quando colar: trocar os
-    placeholders em todos os arquivos (PDFs/rodapes), conferir zero placeholder/zero GlobalMed,
-    commit + push.
+>>> DADOS DE REGISTRO APLICADOS (22/07/2026) — tarefa DESBLOQUEADA e fechada:
+    FPMED DISTRIBUIDORA DE PRODUTOS HOSPITALARES LTDA · CNPJ 47.110.418/0001-15 ·
+    IE 10.947.387-9 · RUA 09, S/N, QUADRA 55 A, LOTE 0002, VILA BRASILIA, APARECIDA DE
+    GOIANIA/GO, CEP 74.911-080 · WhatsApp comercial (62) 98147-9532 (aparece pro cliente) ·
+    fixo institucional (62) 3290-4241 · comercial@fpmed.com.br.
+    Varredura ok: zero placeholder [...] e zero dado da GlobalMed nos *.html/*.js.
+    URLs do GitHub antigo tambem trocadas (painel + gm-auth -> fpmed-hospitalar/fpmed).
 
 >>> PROGRESSO (21/07/2026, rodada autonoma):
   [OK] Prospeccao removida do sistema_final (1294 linhas). [OK] Arquivos globalmed_* -> fpmed_*
@@ -60,7 +60,8 @@ Criado em 21/07/2026 copiando SO os arquivos do app do C:\globalmed.
   [OK] SUPABASE FPMED criado: org nova FREE "FPMED Hospitalar", projeto "fpmed", regiao Sao Paulo,
   ref xzdowrksuswekwffoluk, URL https://xzdowrksuswekwffoluk.supabase.co. anon/service_role/DB pw
   no segredos.local.txt (gitignored). NAO usa a org Pro do GlobalMed (custo). Edge function
-  ler-pedido AINDA nao existe no projeto novo — recriar quando for usar Importar Cotacao/Espelho.
+  ler-pedido DEPLOYADA (22/07, dashboard, Verify JWT off, testada) — falta so o Lemuel colar o
+  secret ANTHROPIC_API_KEY (Edge Functions > Secrets) e rodar o teste final.
   PENDENTE: troca URL+ANON nos arquivos, tabelas (DDL), org fpmed-hospitalar no GitHub + deploy.
   BLOQUEADA: dados de registro reais (ver acima).
 

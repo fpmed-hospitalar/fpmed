@@ -108,7 +108,7 @@
   }
   function logout(){ clearSess(); location.reload(); }
   async function recuperar(email){
-    var r = await fetch(SB + '/auth/v1/recover?redirect_to=' + encodeURIComponent('https://lemuelbarros-dot.github.io/globalmed/reset-senha.html'), {
+    var r = await fetch(SB + '/auth/v1/recover?redirect_to=' + encodeURIComponent('https://fpmed-hospitalar.github.io/fpmed/reset-senha.html'), {
       method:'POST', headers:{ apikey:ANON, 'Content-Type':'application/json' },
       body: JSON.stringify({ email: email })
     });
