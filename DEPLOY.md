@@ -54,10 +54,10 @@ controlado sem secret). Falta só o Lemuel colar o secret `ANTHROPIC_API_KEY` em
 Edge Functions → Secrets (a chave está no `segredos.local.txt`; Claude não digita API key).
 Ver `supabase/functions/ler-pedido/README.md`.
 
-## 5) ⚠️ CRIAR OS USUÁRIOS DE LOGIN (o app não funciona sem isso!)
-O Supabase da FPMED está com `auth.users` **VAZIO**. O `gm-auth.js` exige login — sem usuários,
-ninguém entra. Criar (Supabase → Authentication → Users → Add user) os acessos: admin (Lemuel) e
-as vendedoras, com `user_metadata.role` (`admin`, `vendedora`, ou `giovana_only`). Definir senhas
-com o Lemuel (senha é responsabilidade dele — o Claude não digita/grava senha).
+## 5) Usuários de login — ✅ FEITO (22/07/2026)
+Criados via Admin API: `lemuelempresas7@outlook.com` e `comercial@fpmed.com.br`, ambos
+`user_metadata.role: admin` + `senha_temporaria: true`, e-mail confirmado. Login testado OK.
+Senha inicial definida pelo Lemuel (não fica no repo); trocar no 1º login (menu do app).
+Vendedoras (`role: vendedora` / `giovana_only`): criar quando o Lemuel definir a equipe.
 
 ## 6) (Opcional, futuro) domínio próprio `sistema.fpmed.com.br` via CNAME no GitHub Pages.

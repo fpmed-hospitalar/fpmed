@@ -39,8 +39,12 @@
       header Origin; `file://` não funciona (testar via Pages). Falta SÓ o Lemuel colar o secret
       `ANTHROPIC_API_KEY` (Edge Functions → Secrets; chave no `segredos.local.txt` — Claude não
       digita API key em formulário). Depois: teste final.
-- [ ] **⚠️ Criar usuários de login** no Supabase da FPMED (`auth.users` está VAZIO — sem isso NINGUÉM
-      entra no sistema). admin (Lemuel) + vendedoras, com `user_metadata.role`. Senhas com o Lemuel.
+- [x] **Usuários de login criados** (22/07, via Admin API): `lemuelempresas7@outlook.com` e
+      `comercial@fpmed.com.br`, ambos `role: admin`, e-mail confirmado, senha inicial definida
+      pelo Lemuel (NÃO gravada no repo) com `user_metadata.senha_temporaria: true` (marcador —
+      o Supabase não tem flag nativa de troca obrigatória; trocar no 1º login via "trocar senha"
+      do app). Login por senha testado OK (token emitido, role admin). Vendedoras: criar depois,
+      quando o Lemuel definir a equipe.
 - [x] **Tabelas criadas** no banco novo (12 tabelas/views, `db_schema.sql`). Todas retornam HTTP 200
       via REST com a anon key.
 - [x] **RLS LIGADA + testada** (`db_rls.sql`): RLS on + policy `authenticated` em todas as tabelas,
