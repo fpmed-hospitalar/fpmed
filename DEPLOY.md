@@ -35,8 +35,9 @@ git -C C:\fpmed push -u origin master
 1. Repo `fpmed-hospitalar/fpmed` → Settings → **Change visibility → Public** (Pages Free precisa público).
 2. Settings → **Pages** → Source: Deploy from a branch → Branch: `master` / root → Save.
 3. URL final: `https://fpmed-hospitalar.github.io/fpmed/` (páginas: `.../fpmed_painel.html`, etc.).
-4. **Página inicial**: como não há `index.html`, criar um (redirect pro `fpmed_painel.html`) OU renomear
-   a porta de entrada. Decidir com o Lemuel qual é a home.
+4. **Página inicial**: ✅ já existe `index.html` (splash com a marca FPMED que redireciona pro
+   `fpmed_painel.html`). Se o Lemuel preferir outra home (ex.: abrir direto no `fpmed_sistema_final.html`),
+   é só trocar o alvo do redirect no `index.html`.
 
 ## 3) Trocar as URLs do GitHub antigo (agora que a URL nova existe)
 - `gm-auth.js` (recover redirect) e `fpmed_painel.html` (raw/zip do repo) apontam pro repo antigo

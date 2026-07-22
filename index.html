@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FPMED Hospitalar — Sistema de Gestão</title>
+<meta http-equiv="refresh" content="2; url=fpmed_painel.html">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{ --azul:#2CA9E0; --navy:#173A5E; --verde:#8DC63F; --bg:#F4F7FA; --dim:#8496A6; }
+  *{margin:0;padding:0;box-sizing:border-box;font-family:'Inter',sans-serif}
+  body{background:var(--bg);min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--navy);padding:24px}
+  .faixa{position:fixed;top:0;left:0;right:0;background:var(--azul);color:#fff;font-size:12px;padding:6px 20px;display:flex;justify-content:space-between;align-items:center}
+  .faixa b{font-weight:600}
+  .card{background:#fff;border:1px solid #E3EAF1;border-radius:16px;box-shadow:0 8px 30px rgba(23,58,94,.10);padding:40px 44px;text-align:center;max-width:440px;width:100%}
+  .logo{height:70px;width:auto;margin-bottom:20px}
+  h1{font-family:'Montserrat',sans-serif;font-size:19px;font-weight:800;color:var(--navy);letter-spacing:.3px}
+  h1 span{color:var(--azul)}
+  .sub{font-size:13px;color:var(--dim);margin-top:6px}
+  .traco{width:44px;height:4px;background:var(--verde);border-radius:3px;margin:16px auto}
+  .load{display:flex;align-items:center;justify-content:center;gap:10px;color:var(--dim);font-size:13px;margin-top:8px}
+  .spin{width:16px;height:16px;border:2px solid #E3EAF1;border-top-color:var(--azul);border-radius:50%;animation:sp .7s linear infinite}
+  @keyframes sp{to{transform:rotate(360deg)}}
+  a.btn{display:inline-block;margin-top:18px;background:var(--azul);color:#fff;text-decoration:none;font-weight:600;font-size:14px;padding:11px 26px;border-radius:9px}
+  .rodape{position:fixed;bottom:14px;font-size:11px;color:var(--dim)}
+</style>
+</head>
+<body>
+  <div class="faixa"><div>📞 <b>(62) 3290-4241</b> &nbsp;·&nbsp; Compromisso com qualidade!</div><div>FPMED HOSPITALAR</div></div>
+  <div class="card">
+    <img class="logo" src="logo_fpmed.png" alt="FPMED Hospitalar">
+    <h1>Sistema de Gestão</h1>
+    <div class="sub">FP<span style="color:var(--azul)">MED</span> Hospitalar</div>
+    <div class="traco"></div>
+    <div class="load"><span class="spin"></span> Abrindo o sistema…</div>
+    <a class="btn" href="fpmed_painel.html">Entrar agora</a>
+  </div>
+  <div class="rodape">Compromisso com qualidade!</div>
+  <script>setTimeout(function(){ location.replace('fpmed_painel.html'); }, 1500);</script>
+</body>
+</html>
