@@ -26,11 +26,11 @@ deve começar perguntando: **"⚠️ Aguardando dados de registro da FPMED — j
 - [x] **Loja pública removida** do pacote (arquivo + agente descartado; nenhum outro arquivo referenciava)
 - [x] **Placeholders jurídicos** aplicados: `[RAZÃO SOCIAL FPMED]`/`[CNPJ]`/`[ENDEREÇO]` no lugar
       do CNPJ/endereço/razão social da GlobalMed (giovana 7 + sistema_final 28 substituições)
+- [x] **Supabase FPMED criado** (org nova FREE `FPMED Hospitalar`, projeto `fpmed`, região São
+      Paulo, ref `xzdowrksuswekwffoluk`). URL+anon+service_role+DB pw no `segredos.local.txt`.
 
 ## ⬜ PENDENTES (na ordem)
-- [ ] **Supabase FPMED** pelo Chrome (senha gerada → só no `segredos.local.txt`; reporta
-      URL + anon; se pedir pagamento, PARA e avisa)
-- [ ] **Trocar URL + ANON** nos arquivos (`gm-auth.js` e `.html`)
+- [ ] **Trocar URL + ANON** nos arquivos (`gm-auth.js` e `.html`) — URL `https://xzdowrksuswekwffoluk.supabase.co`
 - [ ] **Criar tabelas** no banco novo (DDL do CONTINUAR)
 - [ ] **Criar ORGANIZATION `fpmed-hospitalar`** no GitHub + repo `fpmed` na org (Free)
 - [ ] **Deploy**: remote → org, 1º push, GitHub Pages (`fpmed-hospitalar.github.io/fpmed`)

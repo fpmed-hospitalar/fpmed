@@ -57,7 +57,11 @@ Criado em 21/07/2026 copiando SO os arquivos do app do C:\globalmed.
   [OK] REBRAND VISUAL completo (10 arquivos): tema claro do template, logo real, cores
   #2CA9E0/#173A5E/#8DC63F, Montserrat+Inter, faixa (62) 3290-4241 + slogan. [OK] Loja removida.
   [OK] Placeholders juridicos aplicados (giovana 7 + sistema_final 28) — zero dado da GlobalMed.
-  PENDENTE: Supabase FPMED, troca URL+ANON, tabelas, org fpmed-hospitalar + deploy.
+  [OK] SUPABASE FPMED criado: org nova FREE "FPMED Hospitalar", projeto "fpmed", regiao Sao Paulo,
+  ref xzdowrksuswekwffoluk, URL https://xzdowrksuswekwffoluk.supabase.co. anon/service_role/DB pw
+  no segredos.local.txt (gitignored). NAO usa a org Pro do GlobalMed (custo). Edge function
+  ler-pedido AINDA nao existe no projeto novo — recriar quando for usar Importar Cotacao/Espelho.
+  PENDENTE: troca URL+ANON nos arquivos, tabelas (DDL), org fpmed-hospitalar no GitHub + deploy.
   BLOQUEADA: dados de registro reais (ver acima).
 
 Proximos passos (quando o Lemuel mandar): (a) criar o Supabase da FPMED; (b) trocar URL+ANON no
