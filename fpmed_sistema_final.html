@@ -209,15 +209,9 @@ select.filter{padding:8px 12px;border:1px solid var(--borda);border-radius:9px;f
     <span class="icon">🛒</span> Pedidos de Compra
     <span id="badge-pedidos" style="background:#e03e3e;color:white;border-radius:10px;font-size:9px;padding:1px 6px;margin-left:auto;display:none">0</span>
   </div>
-  <div class="nav-item" onclick="showPage('comissoes-isa',this)" id="nav-comissoes-isa">
-    <span class="icon">💰</span> Comissões Isa
-  </div>
-  <div class="nav-item" onclick="showPage('vendas-externas',this)" id="nav-vendas-externas">
-    <span class="icon">🌐</span> Vendas Externas
-  </div>
   <div class="nav-section">Sistemas</div>
   <div class="nav-item" onclick="location.href='fpmed_giovana.html'">
-    <span class="icon">📄</span> Propostas (Giovana)
+    <span class="icon">📄</span> Propostas
   </div>
   <div class="nav-item" onclick="location.href='fpmed_vendas.html'">
     <span class="icon">📢</span> Vendas Ativas
@@ -986,86 +980,6 @@ select.filter{padding:8px 12px;border:1px solid var(--borda);border-radius:9px;f
     </div>
 
 
-    <!-- COMISSÕES ISA -->
-    <div class="page" id="page-comissoes-isa">
-      <div class="metrics" id="isa-metrics" style="grid-template-columns:repeat(4,1fr)">
-        <div class="metric-card"><div class="label">Próximo Recebimento</div><div class="value" id="isa-proximo" style="font-size:22px">—</div><div class="sub" id="isa-proximo-mes"></div></div>
-        <div class="metric-card"><div class="label">Total Pendente</div><div class="value" id="isa-pendente" style="font-size:22px">—</div><div class="sub" id="isa-pendente-qtd"></div></div>
-        <div class="metric-card"><div class="label">Já Recebido</div><div class="value" id="isa-recebido" style="font-size:22px">—</div><div class="sub" id="isa-recebido-qtd"></div></div>
-        <div class="metric-card"><div class="label">Volume de Vendas</div><div class="value" id="isa-volume" style="font-size:22px">—</div><div class="sub" id="isa-volume-qtd"></div></div>
-      </div>
-
-      <!-- filtro por mês -->
-      <div class="section-header" style="margin-bottom:12px">
-        <h2>Pedidos por Mês de Recebimento</h2>
-        <div class="toolbar">
-          <select class="filter" id="isa-filtro-ano" onchange="renderComissoesIsa()">
-            <option value="2025">2025</option>
-            <option value="2026" selected>2026</option>
-            <option value="2027">2027</option>
-          </select>
-          <select class="filter" id="isa-filtro-status" onchange="renderComissoesIsa()">
-            <option value="todos">Todos</option>
-            <option value="pendente">Pendentes</option>
-            <option value="recebido">Recebidos</option>
-          </select>
-        </div>
-      </div>
-
-      <div id="isa-content"><div class="loading"><div class="spinner"></div> Carregando...</div></div>
-    </div>
-
-    <!-- VENDAS EXTERNAS -->
-    <div class="page" id="page-vendas-externas">
-      <div class="metrics" style="grid-template-columns:repeat(4,1fr)">
-        <div class="metric-card"><div class="label">Próximo Recebimento</div><div class="value" id="ve-proximo" style="font-size:22px">—</div><div class="sub" id="ve-proximo-mes"></div></div>
-        <div class="metric-card"><div class="label">Total Pendente</div><div class="value" id="ve-pendente" style="font-size:22px">—</div><div class="sub" id="ve-pendente-qtd"></div></div>
-        <div class="metric-card"><div class="label">Já Recebido</div><div class="value" id="ve-recebido" style="font-size:22px">—</div><div class="sub" id="ve-recebido-qtd"></div></div>
-        <div class="metric-card"><div class="label">Total Geral</div><div class="value" id="ve-total" style="font-size:22px">—</div><div class="sub" id="ve-total-qtd"></div></div>
-      </div>
-
-      <div class="section-header" style="margin-bottom:12px">
-        <h2>Comissões por Mês de Recebimento</h2>
-        <div class="toolbar">
-          <button class="btn btn-sm" onclick="veNovo()">➕ Nova venda externa</button>
-          <select class="filter" id="ve-filtro-ano" onchange="renderVendasExternas()">
-            <option value="2025">2025</option>
-            <option value="2026" selected>2026</option>
-            <option value="2027">2027</option>
-          </select>
-          <select class="filter" id="ve-filtro-empresa" onchange="renderVendasExternas()"><option value="">Todas as empresas</option></select>
-        </div>
-      </div>
-
-      <!-- FORM -->
-      <div id="ve-form" class="table-wrap" style="display:none;padding:18px;margin-bottom:16px">
-        <h3 id="ve-form-titulo" style="font-family:'Montserrat',sans-serif;font-size:14px;font-weight:700;margin-bottom:14px">Nova venda externa</h3>
-        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
-          <label style="font-size:12px;color:#9aa">Empresa parceira<input id="ve-f-empresa" class="filter" style="width:100%;margin-top:4px" placeholder="quem paga a comissão"></label>
-          <label style="font-size:12px;color:#9aa">Cliente<input id="ve-f-cliente" class="filter" style="width:100%;margin-top:4px" placeholder="pra quem vendeu"></label>
-          <label style="font-size:12px;color:#9aa">Valor da venda (R$)<input id="ve-f-valor" type="number" step="0.01" class="filter" style="width:100%;margin-top:4px" oninput="veCalc()"></label>
-          <label style="font-size:12px;color:#9aa">% comissão<input id="ve-f-pct" type="number" step="0.1" value="3" class="filter" style="width:100%;margin-top:4px" oninput="veCalc()"></label>
-          <label style="font-size:12px;color:#9aa">Condição
-            <select id="ve-f-condicao" class="filter" style="width:100%;margin-top:4px">
-              <option>À Vista</option><option>Boleto 30d</option><option>Boleto 45d</option><option>Boleto 60d</option><option>Boleto 90d</option><option>Outro</option>
-            </select>
-          </label>
-          <label style="font-size:12px;color:#9aa">Data da venda<input id="ve-f-dv" type="date" class="filter" style="width:100%;margin-top:4px"></label>
-          <label style="font-size:12px;color:#9aa">Data de recebimento<input id="ve-f-dr" type="date" class="filter" style="width:100%;margin-top:4px"></label>
-          <label style="font-size:12px;color:#9aa;grid-column:span 2">Observação<input id="ve-f-obs" class="filter" style="width:100%;margin-top:4px" placeholder="opcional"></label>
-        </div>
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:14px">
-          <div style="font-size:13px;color:#9aa">Comissão calculada: <span id="ve-comissao" style="color:#00c27a;font-weight:800;font-size:16px">R$ 0,00</span></div>
-          <div style="display:flex;gap:8px">
-            <button class="btn btn-outline btn-sm" onclick="veCancelar()">Cancelar</button>
-            <button class="btn btn-sm" onclick="veSalvar()" id="ve-btn-salvar">Salvar</button>
-          </div>
-        </div>
-      </div>
-
-      <div id="ve-content"><div class="loading"><div class="spinner"></div> Carregando...</div></div>
-    </div>
-
     <!-- COTAÇÃO PARA CLIENTE -->
     <div class="page" id="page-cotacao-cliente">
       <div class="section-header"><h2>💼 Cotação para Cliente</h2></div>
@@ -1228,9 +1142,7 @@ const pageConfig = {
   comparativo:  { title:'Comparativo de Fornecedores', btn:'🔄 Atualizar', btnAction:()=>recarregarCotacoes(true).then(()=>renderComparativo(undefined,true)) },
   competitividade: { title:'Competitividade de Preço', btn:'', btnAction:null },
   'cotacao-cliente': { title:'Cotação para Cliente', btn:'🖨 Gerar PDF', btnAction:()=>ccImprimir() },
-  'pedidos-compra':  { title:'Pedidos de Compra', btn:'', btnAction:null },
-  'comissoes-isa':    { title:'Comissões — Isadora', btn:'🔄 Atualizar', btnAction:()=>carregarComissoesIsa() },
-  'vendas-externas':  { title:'Vendas Externas', btn:'🔄 Atualizar', btnAction:()=>carregarVendasExternas() }
+  'pedidos-compra':  { title:'Pedidos de Compra', btn:'', btnAction:null }
 };
 async function showPage(name, el) {
   if((name==='importar-espelho'||name==='compras-cliente'||name==='oportunidades'||name==='itens-a-cotar'||name==='clientes-dash'||name==='competitividade') && typeof espPodeVer==='function' && !espPodeVer()){ name='dashboard'; el=document.querySelector('.nav-item[onclick*="dashboard"]'); }
@@ -1252,8 +1164,6 @@ async function showPage(name, el) {
   if (name === 'competitividade') renderCompetitividade();
   if (name === 'cotacao-cliente') { document.getElementById('cc-step1').style.display='block'; document.getElementById('cc-step2').style.display='none'; }
   if (name === 'pedidos-compra') { carregarPedidos(); }
-  if (name === 'comissoes-isa') { carregarComissoesIsa(); }
-  if (name === 'vendas-externas') { carregarVendasExternas(); }
   if (name === 'estoque-global') { pcRenderAguardando(); }
   if (name === 'compras-cliente') { cpcInit(); }
   if (name === 'clientes-dash') { cdInit(); }
@@ -1263,355 +1173,6 @@ async function showPage(name, el) {
 function headerBtnAction() { const name = document.querySelector('.page.active')?.id.replace('page-',''); const cfg = pageConfig[name]; if(cfg?.btnAction) cfg.btnAction(); }
 
 
-// ─── COMISSÕES ISA ────────────────────────────────────────────────────────────
-let _comissoesIsa = [];
-const MESES_ISA = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
-
-async function carregarComissoesIsa() {
-  document.getElementById('isa-content').innerHTML = '<div class="loading"><div class="spinner"></div> Carregando...</div>';
-  try {
-    const res = await fetch('https://xzdowrksuswekwffoluk.supabase.co/rest/v1/comissoes_isadora?order=id.asc', {
-      headers: { 'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh6ZG93cmtzdXN3ZWt3ZmZvbHVrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ2NzE2MTMsImV4cCI6MjEwMDI0NzYxM30.Pk-SlV_pZdniESyrajDdfHdHcnmyCwCMtP_TrShh75Y', 'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh6ZG93cmtzdXN3ZWt3ZmZvbHVrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ2NzE2MTMsImV4cCI6MjEwMDI0NzYxM30.Pk-SlV_pZdniESyrajDdfHdHcnmyCwCMtP_TrShh75Y' }
-    });
-    const rows = await res.json();
-    _comissoesIsa = (rows||[]).map(r => ({
-      id: r.id,
-      pedido: r.pedido,
-      cliente: r.cliente,
-      val: parseFloat(r.val)||0,
-      tipo: r.tipo,
-      condicao: r.condicao,
-      prazo: r.prazo,
-      pct: r.pct,
-      comissao: parseFloat(r.comissao)||0,
-      dataVenda: r.data_venda,
-      recData: r.rec_data,
-      recebido: r.recebido
-    }));
-    renderMetricasIsa();
-    renderComissoesIsa();
-  } catch(e) {
-    document.getElementById('isa-content').innerHTML = '<div style="padding:20px;color:red">Erro ao carregar: '+e.message+'</div>';
-  }
-}
-
-// SÓ CONTA NOS TOTAIS DELA se tem número de pedido de verdade. Pedido '0000' (ou vazio) = lançamento que não é
-// venda da Isadora — ex.: id=21, cliente "LEMUEL BARROS", R$11.850 de 13/07, que é venda externa do Lemuel
-// lançada por engano nesta tabela. Decisão do Lemuel: MANTER registrado e visível na lista, mas fora dos totais.
-// A separação é por TABELA (comissoes_isadora = dela, comissoes_externas = do Lemuel); não há coluna de vendedor
-// e nem precisa, porque só ela usa a tela. Este helper é a única linha de defesa — use em TODA soma.
-function isaContaNoTotal(v){
-  const p = String(v && v.pedido != null ? v.pedido : '').replace(/\D/g,'');
-  return p !== '' && parseInt(p,10) !== 0;
-}
-
-function renderMetricasIsa() {
-  const now = new Date(); now.setHours(0,0,0,0);
-  const _val = _comissoesIsa.filter(isaContaNoTotal);   // exclui o '0000' de todos os KPIs
-  const total = _val.reduce((s,v)=>s+v.comissao,0);
-  const totalVol = _val.reduce((s,v)=>s+v.val,0);
-  const recebido = _val.filter(v=>v.recebido).reduce((s,v)=>s+v.comissao,0);
-  const pendentes = _val.filter(v=>!v.recebido);
-
-  // próximo recebimento: menor rec_data futura
-  const futuros = pendentes.filter(v=>v.recData && new Date(v.recData+'T12:00:00')>=now)
-    .sort((a,b)=>new Date(a.recData)-new Date(b.recData));
-  let proxVal=0, proxMes='—';
-  if(futuros.length) {
-    const dt = new Date(futuros[0].recData+'T12:00:00');
-    const chave = dt.getFullYear()+'-'+dt.getMonth();
-    const doMes = futuros.filter(v=>{ const d=new Date(v.recData+'T12:00:00'); return d.getFullYear()+'-'+d.getMonth()===chave; });
-    proxVal = doMes.reduce((s,v)=>s+v.comissao,0);
-    proxMes = MESES_ISA[dt.getMonth()]+'/'+dt.getFullYear();
-  }
-
-  const fmt = v => 'R$ '+v.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
-  document.getElementById('isa-proximo').textContent = fmt(proxVal);
-  document.getElementById('isa-proximo-mes').textContent = proxMes;
-  document.getElementById('isa-pendente').textContent = fmt(total-recebido);
-  document.getElementById('isa-pendente-qtd').textContent = pendentes.length+' pedido(s)';
-  document.getElementById('isa-recebido').textContent = fmt(recebido);
-  document.getElementById('isa-recebido-qtd').textContent = _val.filter(v=>v.recebido).length+' pedido(s)';
-  document.getElementById('isa-volume').textContent = fmt(totalVol);
-  document.getElementById('isa-volume-qtd').textContent = _val.length+' pedido(s) total';
-}
-
-// VENDAS POR MÊS — agrupa por data_venda (o mês em que ela FECHOU o pedido), independente de quando a comissão
-// cai. É a produção dela no mês. Fica separado dos blocos de recebimento de propósito: nos dados reais nenhum
-// pedido tem venda e recebimento no mesmo mês, então juntar os dois num cabeçalho só mistura conjuntos
-// diferentes (e some com o mês de venda que não tem recebimento nenhum — junho/2026, o maior mês dela).
-// Não respeita o filtro de status (pendente/recebido): venda feita é venda feita, tenha ela recebido ou não.
-function renderVendasMesIsa(ano) {
-  const fmt = v => 'R$ '+v.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
-  const meses = [];
-  for (let m = 0; m < 12; m++) {
-    const its = _comissoesIsa.filter(v => {
-      if (!isaContaNoTotal(v)) return false;         // pedido '0000' não é venda dela
-      if (!v.dataVenda) return false;
-      const d = new Date(v.dataVenda+'T12:00:00');
-      return d.getFullYear() === ano && d.getMonth() === m;
-    });
-    if (its.length) meses.push({ m, n: its.length, val: its.reduce((s,v)=>s+v.val,0) });
-  }
-  if (!meses.length) return '';
-  const totAno = meses.reduce((s,x)=>s+x.val,0);
-  return `<div class="table-wrap" style="margin-bottom:18px;padding:14px 16px">
-    <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;font-weight:600;margin-bottom:10px">
-      📈 Vendas por mês <span style="text-transform:none;letter-spacing:0;font-weight:400">(pela data da venda — a comissão pode cair em outro mês)</span>
-    </div>
-    <div style="display:flex;gap:10px;flex-wrap:wrap">
-      ${meses.map(x=>`<div style="background:#0d1b2a;border:1px solid #1e3048;border-radius:10px;padding:10px 14px;min-width:150px">
-        <div style="font-size:11px;color:#8a9ab0">${MESES_ISA[x.m]} ${ano}</div>
-        <div style="font-size:17px;font-weight:800;color:#8fb4ff;margin-top:2px">${fmt(x.val)}</div>
-        <div style="font-size:11px;color:#8a9ab0">${x.n} pedido${x.n>1?'s':''}</div>
-      </div>`).join('')}
-      <div style="background:#12261c;border:1px solid #1e4030;border-radius:10px;padding:10px 14px;min-width:150px">
-        <div style="font-size:11px;color:#8a9ab0">Total ${ano}</div>
-        <div style="font-size:17px;font-weight:800;color:#00c27a;margin-top:2px">${fmt(totAno)}</div>
-        <div style="font-size:11px;color:#8a9ab0">${meses.reduce((s,x)=>s+x.n,0)} pedidos</div>
-      </div>
-    </div>
-  </div>`;
-}
-
-function renderComissoesIsa() {
-  const ano = parseInt(document.getElementById('isa-filtro-ano').value);
-  const status = document.getElementById('isa-filtro-status').value;
-  const fmt = v => 'R$ '+v.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
-  const fmtDt = s => s ? new Date(s+'T12:00:00').toLocaleDateString('pt-BR') : '—';
-
-  let html = '';
-  for(let m=0; m<12; m++) {
-    let items = _comissoesIsa.filter(v => {
-      if(!v.recData) return false;
-      const dt = new Date(v.recData+'T12:00:00');
-      return dt.getFullYear()===ano && dt.getMonth()===m;
-    });
-    if(status==='pendente') items = items.filter(v=>!v.recebido);
-    if(status==='recebido') items = items.filter(v=>v.recebido);
-    if(!items.length) continue;
-
-    // o '0000' continua LISTADO no bloco (fica registrado, decisão do Lemuel) mas não entra na soma
-    const totalMes = items.filter(isaContaNoTotal).reduce((s,v)=>s+v.comissao,0);
-    const nContam = items.filter(isaContaNoTotal).length;
-    // Aqui NÃO entra "Vendido": este bloco agrupa por rec_data (mês em que ela RECEBE). Somar o val daqui daria
-    // "valor das vendas cuja comissão cai neste mês", que não é o que ela vendeu no mês — nos dados reais os dois
-    // NUNCA coincidem (0 de 16 pedidos têm venda e recebimento no mesmo mês). O total vendido por mês de VENDA
-    // está na faixa "Vendas por mês" (renderVendasMesIsa), acima, onde cada número bate com o seu próprio conjunto.
-    html += `<div class="table-wrap" style="margin-bottom:16px">
-      <div style="background:#1a2e1a;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;border-radius:14px 14px 0 0;gap:10px;flex-wrap:wrap">
-        <span style="color:white;font-weight:700;font-size:13px">${MESES_ISA[m]} ${ano}</span>
-        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
-          <span style="color:#00c27a;font-weight:700;font-size:13px" title="Comissão que ela recebe neste mês">Comissão ${fmt(totalMes)}</span>
-          <span style="background:#2a3e2a;color:#aaa;font-size:11px;padding:2px 8px;border-radius:99px">${nContam} pedido${nContam>1?'s':''}${items.length>nContam?` <span style="color:#e0a03e" title="${items.length-nContam} lançamento(s) com pedido 0000 estão listados mas não somam">+${items.length-nContam} fora</span>`:''}</span>
-        </div>
-      </div>
-      <table style="width:100%;border-collapse:collapse">
-        <thead><tr>
-          <th>Pedido</th><th>Cliente</th><th>Venda</th><th>Condição</th><th>Valor Venda</th><th>Comissão</th><th>Recebe em</th><th>Status</th>
-        </tr></thead>
-        <tbody>`;
-
-    items.forEach(v => {
-      const cond = v.condicao==='avista' ? 'À Vista' : 'Boleto '+v.prazo+'d';
-      const statusBadge = v.recebido
-        ? '<span class="badge badge-green">✓ Recebido</span>'
-        : '<span class="badge badge-yellow">Pendente</span>';
-      const conta = isaContaNoTotal(v);   // '0000' fica visível, mas apagado e marcado como fora do total
-      html += `<tr${conta?'':' style="opacity:.5" title="Pedido 0000: lançamento registrado, mas não é venda da Isadora — não entra nos totais"'}>
-        <td><strong>${v.pedido}</strong>${conta?'':' <span style="color:#e0a03e;font-size:10px;white-space:nowrap">⚠ fora do total</span>'}</td>
-        <td>${v.cliente}</td>
-        <td>${fmtDt(v.dataVenda)}</td>
-        <td><span class="badge badge-blue">${cond}</span></td>
-        <td>${fmt(v.val)}</td>
-        <td style="color:${conta?'#198754':'#8a9ab0'};font-weight:700${conta?'':';text-decoration:line-through'}">${fmt(v.comissao)}</td>
-        <td>${fmtDt(v.recData)}</td>
-        <td>${statusBadge}</td>
-      </tr>`;
-    });
-
-    html += '</tbody></table></div>';
-  }
-
-  if(!html) html = '<div style="text-align:center;color:#aaa;padding:40px">Nenhum pedido encontrado para este período.</div>';
-  else html = `<div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;font-weight:600;margin:4px 0 8px">💰 Recebimentos <span style="text-transform:none;letter-spacing:0;font-weight:400">(pelo mês em que a comissão cai)</span></div>` + html;
-  // a faixa de vendas vem SEMPRE, mesmo quando o filtro de status esconde todos os blocos de recebimento
-  document.getElementById('isa-content').innerHTML = renderVendasMesIsa(ano) + html;
-}
-// ─── FIM COMISSÕES ISA ────────────────────────────────────────────────────────
-
-// ─── VENDAS EXTERNAS (comissões que o Lemuel recebe de empresas parceiras) ──────
-const VE_SB = 'https://xzdowrksuswekwffoluk.supabase.co';
-const VE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh6ZG93cmtzdXN3ZWt3ZmZvbHVrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ2NzE2MTMsImV4cCI6MjEwMDI0NzYxM30.Pk-SlV_pZdniESyrajDdfHdHcnmyCwCMtP_TrShh75Y';
-const VE_H = { 'apikey': VE_KEY, 'Authorization': 'Bearer ' + VE_KEY, 'Content-Type': 'application/json' };
-const VE_FMT = v => 'R$ ' + (Number(v)||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
-const VE_DT = s => s ? new Date(s+'T12:00:00').toLocaleDateString('pt-BR') : '—';
-let _ve = [], _veEdit = null;
-
-async function carregarVendasExternas() {
-  document.getElementById('ve-content').innerHTML = '<div class="loading"><div class="spinner"></div> Carregando...</div>';
-  try {
-    const res = await fetch(VE_SB + '/rest/v1/comissoes_externas?order=data_recebimento.asc.nullslast', { headers: VE_H });
-    const rows = await res.json();
-    if (!Array.isArray(rows)) throw new Error((rows && (rows.message||rows.hint)) || 'resposta inválida');
-    _ve = rows.map(r => ({
-      id: r.id, empresa: r.empresa_parceira||'', cliente: r.cliente||'',
-      valor: parseFloat(r.valor_venda)||0, pct: parseFloat(r.pct)||0, comissao: parseFloat(r.comissao)||0,
-      condicao: r.condicao||'', dataVenda: r.data_venda, recData: r.data_recebimento, recebido: !!r.recebido, obs: r.obs||''
-    }));
-    veFillEmpresas(); renderMetricasVE(); renderVendasExternas();
-  } catch(e) {
-    document.getElementById('ve-content').innerHTML = '<div style="padding:20px;color:#e03e3e">Erro ao carregar: '+e.message+'</div>';
-  }
-}
-
-function veFillEmpresas() {
-  const sel = document.getElementById('ve-filtro-empresa'); const atual = sel.value;
-  const empresas = [...new Set(_ve.map(v=>v.empresa).filter(Boolean))].sort();
-  sel.innerHTML = '<option value="">Todas as empresas</option>' + empresas.map(e=>`<option${e===atual?' selected':''}>${e}</option>`).join('');
-}
-
-function renderMetricasVE() {
-  const now = new Date(); now.setHours(0,0,0,0);
-  const total = _ve.reduce((s,v)=>s+v.comissao,0);
-  const recebido = _ve.filter(v=>v.recebido).reduce((s,v)=>s+v.comissao,0);
-  const pendentes = _ve.filter(v=>!v.recebido);
-  const futuros = pendentes.filter(v=>v.recData && new Date(v.recData+'T12:00:00')>=now).sort((a,b)=>new Date(a.recData)-new Date(b.recData));
-  let proxVal=0, proxMes='—';
-  if (futuros.length) {
-    const dt = new Date(futuros[0].recData+'T12:00:00'); const chave = dt.getFullYear()+'-'+dt.getMonth();
-    proxVal = futuros.filter(v=>{const d=new Date(v.recData+'T12:00:00');return d.getFullYear()+'-'+d.getMonth()===chave;}).reduce((s,v)=>s+v.comissao,0);
-    proxMes = MESES_ISA[dt.getMonth()]+'/'+dt.getFullYear();
-  }
-  document.getElementById('ve-proximo').textContent = VE_FMT(proxVal);
-  document.getElementById('ve-proximo-mes').textContent = proxMes;
-  document.getElementById('ve-pendente').textContent = VE_FMT(total-recebido);
-  document.getElementById('ve-pendente-qtd').textContent = pendentes.length+' venda(s)';
-  document.getElementById('ve-recebido').textContent = VE_FMT(recebido);
-  document.getElementById('ve-recebido-qtd').textContent = _ve.filter(v=>v.recebido).length+' venda(s)';
-  document.getElementById('ve-total').textContent = VE_FMT(total);
-  document.getElementById('ve-total-qtd').textContent = _ve.length+' venda(s) total';
-}
-
-function renderVendasExternas() {
-  const ano = parseInt(document.getElementById('ve-filtro-ano').value);
-  const emp = document.getElementById('ve-filtro-empresa').value;
-  let html = '';
-  for (let m=0; m<12; m++) {
-    let items = _ve.filter(v => { if(!v.recData) return false; const dt=new Date(v.recData+'T12:00:00'); return dt.getFullYear()===ano && dt.getMonth()===m; });
-    if (emp) items = items.filter(v=>v.empresa===emp);
-    if (!items.length) continue;
-    const totalMes = items.reduce((s,v)=>s+v.comissao,0);
-    const tudoRec = items.every(v=>v.recebido);
-    html += `<div class="table-wrap" style="margin-bottom:16px">
-      <div style="background:#1a2e1a;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;border-radius:14px 14px 0 0">
-        <span style="color:white;font-weight:700;font-size:13px">${MESES_ISA[m]} ${ano} ${tudoRec?'<span class="badge badge-green" style="margin-left:6px">tudo recebido</span>':''}</span>
-        <div style="display:flex;gap:10px;align-items:center">
-          <span style="color:#00c27a;font-weight:700;font-size:13px">${VE_FMT(totalMes)}</span>
-          <span style="background:#2a3e2a;color:#aaa;font-size:11px;padding:2px 8px;border-radius:99px">${items.length} venda${items.length>1?'s':''}</span>
-        </div>
-      </div>
-      <table style="width:100%;border-collapse:collapse">
-        <thead><tr><th>Empresa</th><th>Cliente</th><th>Valor Venda</th><th>%</th><th>Comissão</th><th>Condição</th><th>Recebe em</th><th>Status</th><th></th></tr></thead>
-        <tbody>`;
-    items.forEach(v => {
-      const st = v.recebido ? '<span class="badge badge-green">✓ Recebido</span>' : '<span class="badge badge-yellow">Pendente</span>';
-      const btnRec = v.recebido ? '' : `<button class="btn btn-sm" style="padding:2px 8px;font-size:11px" onclick="veMarcarRecebido('${v.id}')" title="Marcar recebido">✅</button>`;
-      html += `<tr>
-        <td><strong>${v.empresa||'—'}</strong></td><td>${v.cliente||'—'}</td>
-        <td>${VE_FMT(v.valor)}</td><td>${v.pct}%</td>
-        <td style="color:#198754;font-weight:700">${VE_FMT(v.comissao)}</td>
-        <td><span class="badge badge-blue">${v.condicao||'—'}</span></td>
-        <td>${VE_DT(v.recData)}</td><td>${st}</td>
-        <td style="white-space:nowrap">${btnRec}
-          <button class="btn btn-outline btn-sm" style="padding:2px 8px;font-size:11px" onclick="veEditar('${v.id}')" title="Editar">✏️</button>
-          <button class="btn btn-outline btn-sm" style="padding:2px 8px;font-size:11px;border-color:#e03e3e;color:#e03e3e" onclick="veExcluir('${v.id}')" title="Excluir">🗑</button>
-        </td></tr>`;
-    });
-    html += '</tbody></table></div>';
-  }
-  if (!html) html = '<div style="text-align:center;color:#aaa;padding:40px">Nenhuma venda externa neste período.</div>';
-  document.getElementById('ve-content').innerHTML = html;
-}
-
-function veCalc() {
-  const val = parseFloat(document.getElementById('ve-f-valor').value)||0;
-  const pct = parseFloat(document.getElementById('ve-f-pct').value)||0;
-  document.getElementById('ve-comissao').textContent = VE_FMT(val*pct/100);
-}
-function veNovo() {
-  _veEdit = null;
-  document.getElementById('ve-form-titulo').textContent = 'Nova venda externa';
-  ['ve-f-empresa','ve-f-cliente','ve-f-valor','ve-f-dv','ve-f-dr','ve-f-obs'].forEach(id=>document.getElementById(id).value='');
-  document.getElementById('ve-f-pct').value = 3;
-  document.getElementById('ve-f-condicao').value = 'À Vista';
-  veCalc();
-  document.getElementById('ve-form').style.display = 'block';
-  document.getElementById('ve-f-empresa').focus();
-}
-function veEditar(id) {
-  const v = _ve.find(x=>x.id===id); if(!v) return;
-  _veEdit = id;
-  document.getElementById('ve-form-titulo').textContent = 'Editar venda externa';
-  document.getElementById('ve-f-empresa').value = v.empresa;
-  document.getElementById('ve-f-cliente').value = v.cliente;
-  document.getElementById('ve-f-valor').value = v.valor;
-  document.getElementById('ve-f-pct').value = v.pct;
-  document.getElementById('ve-f-condicao').value = v.condicao || 'À Vista';
-  document.getElementById('ve-f-dv').value = v.dataVenda || '';
-  document.getElementById('ve-f-dr').value = v.recData || '';
-  document.getElementById('ve-f-obs').value = v.obs;
-  veCalc();
-  document.getElementById('ve-form').style.display = 'block';
-  document.getElementById('ve-form').scrollIntoView({behavior:'smooth',block:'center'});
-}
-function veCancelar() { document.getElementById('ve-form').style.display = 'none'; _veEdit = null; }
-
-async function veSalvar() {
-  const empresa = document.getElementById('ve-f-empresa').value.trim();
-  const valor = parseFloat(document.getElementById('ve-f-valor').value)||0;
-  const pct = parseFloat(document.getElementById('ve-f-pct').value)||0;
-  if (!empresa) { toast('Informe a empresa parceira','error'); return; }
-  if (!(valor>0)) { toast('Informe o valor da venda','error'); return; }
-  const payload = {
-    empresa_parceira: empresa,
-    cliente: document.getElementById('ve-f-cliente').value.trim(),
-    valor_venda: valor, pct: pct, comissao: +(valor*pct/100).toFixed(2),
-    condicao: document.getElementById('ve-f-condicao').value,
-    data_venda: document.getElementById('ve-f-dv').value || null,
-    data_recebimento: document.getElementById('ve-f-dr').value || null,
-    obs: document.getElementById('ve-f-obs').value.trim() || null
-  };
-  const btn = document.getElementById('ve-btn-salvar'); btn.disabled = true; btn.textContent = 'Salvando...';
-  try {
-    let res;
-    if (_veEdit) res = await fetch(VE_SB+'/rest/v1/comissoes_externas?id=eq.'+_veEdit, { method:'PATCH', headers:{...VE_H,'Prefer':'return=minimal'}, body: JSON.stringify(payload) });
-    else res = await fetch(VE_SB+'/rest/v1/comissoes_externas', { method:'POST', headers:{...VE_H,'Prefer':'return=minimal'}, body: JSON.stringify(payload) });
-    if (!res.ok) throw new Error('HTTP '+res.status+': '+(await res.text()).slice(0,120));
-    toast(_veEdit?'Venda atualizada!':'Venda externa registrada!','success');
-    veCancelar(); await carregarVendasExternas();
-  } catch(e) { toast('Erro ao salvar: '+e.message,'error'); }
-  finally { btn.disabled = false; btn.textContent = 'Salvar'; }
-}
-
-async function veMarcarRecebido(id) {
-  try {
-    const res = await fetch(VE_SB+'/rest/v1/comissoes_externas?id=eq.'+id, { method:'PATCH', headers:{...VE_H,'Prefer':'return=minimal'}, body: JSON.stringify({ recebido:true }) });
-    if (!res.ok) throw new Error('HTTP '+res.status);
-    toast('Marcado como recebido ✓','success'); await carregarVendasExternas();
-  } catch(e) { toast('Erro: '+e.message,'error'); }
-}
-
-async function veExcluir(id) {
-  const v = _ve.find(x=>x.id===id);
-  if (!confirm('Excluir a venda externa'+(v?' de '+(v.empresa||'—'):'')+'? Não dá pra desfazer.')) return;
-  try {
-    const res = await fetch(VE_SB+'/rest/v1/comissoes_externas?id=eq.'+id, { method:'DELETE', headers: VE_H });
-    if (!res.ok) throw new Error('HTTP '+res.status);
-    toast('Venda excluída','success'); await carregarVendasExternas();
-  } catch(e) { toast('Erro ao excluir: '+e.message,'error'); }
-}
-// ─── FIM VENDAS EXTERNAS ──────────────────────────────────────────────────────
 
 // ─── INIT ─────────────────────────────────────────────────────────────────────
 async function iniciar() {
@@ -2005,7 +1566,7 @@ function renderResumo() {
 }
 function imprimirOrcamento() {
   if (!itensOrc.length) { toast('Adicione itens ao orçamento','error'); return; }
-  toast('Use a tela da Giovana para gerar o PDF oficial!');
+  toast('Use a tela de Propostas para gerar o PDF oficial!');
 }
 
 // ─── RELATÓRIOS ───────────────────────────────────────────────────────────────
@@ -3276,7 +2837,7 @@ function iacRender(){
     </tr>`).join('');
   document.getElementById('iac-tabela').innerHTML =
     `<thead><tr style="background:#f8faf8"><th style="${th}">Produto</th><th style="${th}">Status</th><th style="${th}">Fornecedor</th><th style="${th};text-align:right">Preço recebido</th><th style="${th};text-align:right">Ação</th></tr></thead>
-     <tbody>${rows || `<tr><td colspan="5" style="padding:22px;text-align:center;color:var(--muted)">${_iac.length?'Nenhum item neste filtro.':'Fila vazia. Itens entram aqui quando a busca da Giovana não encontra o produto.'}</td></tr>`}</tbody>`;
+     <tbody>${rows || `<tr><td colspan="5" style="padding:22px;text-align:center;color:var(--muted)">${_iac.length?'Nenhum item neste filtro.':'Fila vazia. Itens entram aqui quando a busca de Propostas não encontra o produto.'}</td></tr>`}</tbody>`;
 }
 
 async function iacMarcar(id, status){
@@ -3995,7 +3556,7 @@ async function cpcPerfil(codigo){
   const td='padding:8px 10px;border-bottom:1px solid var(--borda);font-size:13px';
   if(!compras || !compras.length){
     el.innerHTML=`<div class="table-wrap" style="padding:20px"><h3 style="font-family:'Montserrat',sans-serif;font-size:16px;margin-bottom:6px">#${cli.codigo} · ${cli.nome||''}</h3>
-      <p style="color:var(--muted);font-size:13px">Nenhuma compra registrada ainda para este cliente. Importe um espelho ou feche um pedido no Giovana.</p></div>`;
+      <p style="color:var(--muted);font-size:13px">Nenhuma compra registrada ainda para este cliente. Importe um espelho ou feche um pedido em Propostas.</p></div>`;
     return;
   }
   // agrega itens -> top produtos + ultimo preco

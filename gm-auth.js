@@ -200,8 +200,8 @@
       '<div style="width:360px;max-width:92vw;background:#111a2e;border:1px solid #22314f;border-radius:16px;padding:28px 24px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.5)">' +
         '<div style="font-size:30px;margin-bottom:6px">🔒</div>' +
         '<div style="font-weight:800;font-size:17px;margin-bottom:6px">Sem permissão</div>' +
-        '<div style="color:#a9bbdb;font-size:13px;line-height:1.5;margin-bottom:18px">Sua conta ('+esc(email)+') tem acesso apenas ao sistema <b>Giovana</b>. Este sistema não está liberado para você.</div>' +
-        '<button id="gm-ir-giovana" style="width:100%;padding:11px;border:none;border-radius:9px;background:#2563eb;color:#fff;font-weight:700;font-size:14px;cursor:pointer;margin-bottom:9px">Ir para o Giovana</button>' +
+        '<div style="color:#a9bbdb;font-size:13px;line-height:1.5;margin-bottom:18px">Sua conta ('+esc(email)+') tem acesso apenas ao sistema de <b>Propostas</b>. Este sistema não está liberado para você.</div>' +
+        '<button id="gm-ir-giovana" style="width:100%;padding:11px;border:none;border-radius:9px;background:#2563eb;color:#fff;font-weight:700;font-size:14px;cursor:pointer;margin-bottom:9px">Ir para Propostas</button>' +
         '<button id="gm-sair2" style="width:100%;padding:10px;border:1px solid #2a3a5c;border-radius:9px;background:#1f2b45;color:#cdd7ea;font-size:13px;cursor:pointer">Sair</button>' +
       '</div>';
     ov.querySelector('#gm-ir-giovana').onclick = function(){ location.href = 'fpmed_giovana.html'; };
