@@ -12,7 +12,7 @@
   var K = 'gm_session';
 
   // ── Controle de acesso por sistema ───────────────────────────────────────────
-  // role 'giovana_only' só entra na globalmed_giovana.html; nos outros sistemas é bloqueado.
+  // role 'giovana_only' só entra na fpmed_giovana.html; nos outros sistemas é bloqueado.
   // admin (Lemuel), vendedora (Isadora) e demais = acesso total.
   var _blocked = false;
   function _paginaGiovana(){ return /giovana/i.test(location.pathname || location.href || ''); }
@@ -204,7 +204,7 @@
         '<button id="gm-ir-giovana" style="width:100%;padding:11px;border:none;border-radius:9px;background:#2563eb;color:#fff;font-weight:700;font-size:14px;cursor:pointer;margin-bottom:9px">Ir para o Giovana</button>' +
         '<button id="gm-sair2" style="width:100%;padding:10px;border:1px solid #2a3a5c;border-radius:9px;background:#1f2b45;color:#cdd7ea;font-size:13px;cursor:pointer">Sair</button>' +
       '</div>';
-    ov.querySelector('#gm-ir-giovana').onclick = function(){ location.href = 'globalmed_giovana.html'; };
+    ov.querySelector('#gm-ir-giovana').onclick = function(){ location.href = 'fpmed_giovana.html'; };
     ov.querySelector('#gm-sair2').onclick = function(){ logout(); };
   }
 
