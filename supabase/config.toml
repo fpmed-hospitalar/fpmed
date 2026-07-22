@@ -1,0 +1,6 @@
+# Config do Supabase CLI — FPMED
+project_id = "fpmed"
+
+# A edge function 'ler-pedido' e PUBLICA (o app chama sem Authorization).
+[functions.ler-pedido]
+verify_jwt = false

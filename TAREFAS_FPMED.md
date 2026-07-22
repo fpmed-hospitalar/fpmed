@@ -36,8 +36,11 @@ deve começar perguntando: **"⚠️ Aguardando dados de registro da FPMED — j
       do banco antigo, sintaxe JS validada). URL `https://xzdowrksuswekwffoluk.supabase.co`.
 
 ## ⬜ PENDENTES (na ordem)
-- [ ] **Recriar edge functions** no projeto novo: `/functions/v1/ler-pedido` (sistema_final) e
-      `/functions/v1/api` (giovana) — usadas por Importar Cotação/Espelho e leitura de pedido por IA.
+- [~] **Edge function `ler-pedido`**: código reescrito e versionado (`supabase/functions/ler-pedido/`)
+      — o fonte NÃO estava em C:\globalmed (só deployado). Falta **deployar** (dashboard/CLI) +
+      **ANTHROPIC_API_KEY da FPMED** (⛔ aguardando Lemuel). A antiga `/api` era vestigial (não recriar).
+- [ ] **⚠️ Criar usuários de login** no Supabase da FPMED (`auth.users` está VAZIO — sem isso NINGUÉM
+      entra no sistema). admin (Lemuel) + vendedoras, com `user_metadata.role`. Senhas com o Lemuel.
 - [x] **Tabelas criadas** no banco novo (12 tabelas/views, `db_schema.sql`). Todas retornam HTTP 200
       via REST com a anon key.
 - [x] **RLS LIGADA + testada** (`db_rls.sql`): RLS on + policy `authenticated` em todas as tabelas,
