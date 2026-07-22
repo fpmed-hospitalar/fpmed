@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>GlobalMed — Viabilidade de Compra</title>
+<title>FPMED — Viabilidade de Compra</title>
 <script src="gm-auth.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
@@ -57,7 +57,7 @@
 <body>
 
 <header>
-  <h1>GlobalMed <span>· Viabilidade de Compra</span></h1>
+  <h1>FPMED <span>· Viabilidade de Compra</span></h1>
   <span id="status">conectando ao banco…</span>
 </header>
 
@@ -389,7 +389,7 @@ function exportarExcel(){
   const cen={verde:'DA PRA COMPRAR',amarelo:'APERTADO',vermelho:'SEM FORNECEDOR'};
   const rows=resultado.map(r=>[ r.produto, +Number(r.alvo).toFixed(4), r.best?r.best.forn:'', r.best?+r.best.custo.toFixed(4):'',
     r.margem!=null?r.margem:'', cen[r.cenario], +Number(r.custoAlvo).toFixed(4) ]);
-  const aoa=[['GLOBALMED — Viabilidade de Compra'],['Data: '+hoje+'  |  custo = fornecedor individual (mais barato); alvo = preço de venda'],[],head,...rows];
+  const aoa=[['FPMED — Viabilidade de Compra'],['Data: '+hoje+'  |  custo = fornecedor individual (mais barato); alvo = preço de venda'],[],head,...rows];
   const ws=XLSX.utils.aoa_to_sheet(aoa);
   ws['!cols']=[{wch:46},{wch:12},{wch:22},{wch:12},{wch:10},{wch:18},{wch:20}];
   ws['!merges']=[{s:{r:0,c:0},e:{r:0,c:6}},{s:{r:1,c:0},e:{r:1,c:6}}];

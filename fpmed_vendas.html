@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>GlobalMed — Vendas Ativas</title>
+<title>FPMED — Vendas Ativas</title>
 <script src="gm-auth.js"></script>
 <style>
   * { margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI',system-ui,sans-serif; }
@@ -47,7 +47,7 @@
 <body>
 
 <header>
-  <h1>GlobalMed <span style="color:#fff;font-weight:400">· Vendas Ativas</span></h1>
+  <h1>FPMED <span style="color:#fff;font-weight:400">· Vendas Ativas</span></h1>
   <span id="status">conectando…</span>
 </header>
 
@@ -449,7 +449,7 @@ async function gerarTextoOferta() {
   const _zerados = sel0.filter(p => p._global && (p.estoque||0) <= 0);
   const sel = sel0.filter(p => !(p._global && (p.estoque||0) <= 0));
   if (!sel.length) { alert('Nenhum produto com estoque para ofertar — os selecionados estão zerados.'); return; }
-  let t = `*GLOBALMED DISTRIBUIÇÃO* 💊\n*Ofertas da Semana*\n\n`;
+  let t = `*FPMED DISTRIBUIÇÃO* 💊\n*Ofertas da Semana*\n\n`;
   sel.forEach(p => {
     const qtd = qtdEmbalagem(p.und, p.produto) || 1;
     // _preco: global já é preço de CAIXA (global_venda1); fornecedor é UNITÁRIO (compra_unit×1.25)
@@ -593,7 +593,7 @@ async function filaRegistraDisparo(p) {
 }
 
 function abrirWA(tel, nome) {
-  let msg = document.getElementById('wa-msg').value || 'Olá {nome}! Aqui é da GlobalMed Distribuição. Posso te enviar nossas ofertas da semana?';
+  let msg = document.getElementById('wa-msg').value || 'Olá {nome}! Aqui é da FPMED Distribuição. Posso te enviar nossas ofertas da semana?';
   msg = msg.replaceAll('{nome}', nome.split(' ')[0]);
   window.open('https://wa.me/' + tel + '?text=' + encodeURIComponent(msg), '_blank');
 }

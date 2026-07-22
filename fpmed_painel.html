@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>GlobalMed — Painel do Sistema</title>
+<title>FPMED — Painel do Sistema</title>
 <script src="gm-auth.js"></script>
 <style>
   * { margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI',system-ui,sans-serif; }
@@ -60,7 +60,7 @@
 <body>
 
 <header>
-  <h1>GlobalMed <span>· 📊 Painel do Sistema</span></h1>
+  <h1>FPMED <span>· 📊 Painel do Sistema</span></h1>
   <span id="status">conectando…</span>
 </header>
 
@@ -249,7 +249,7 @@ async function copiarResumo(){
   const t=dados.totais||{};
   let txt='';
   txt+='⚠️ COMO FUNCIONA (LEIA PRIMEIRO): este projeto é operado pelo CLAUDE CODE (CLI da Anthropic no PC do Lemuel, pasta C:\\globalmed). O Claude Code edita os HTML, faz commit/push pro GitHub (GitHub Pages atualiza sozinho) e lê/escreve no Supabase via REST. Um Claude no chat do claude.ai NÃO executa nada disso — só conversa; entregue plano/código/SQL PRONTOS pra rodar no Claude Code, não diga que já fez. Detalhes completos na seção "COMO ESTE PROJETO FUNCIONA" do histórico técnico mais abaixo.\n\n';
-  txt+='=== STATUS GLOBALMED (puxado do banco em '+new Date().toLocaleString('pt-BR')+') ===\n\n';
+  txt+='=== STATUS FPMED (puxado do banco em '+new Date().toLocaleString('pt-BR')+') ===\n\n';
   txt+=`Cotações totais: ${t.nCot}\nFornecedores: ${t.nForn}\nClientes: ${t.nCli}\nOrçamentos: ${t.nOrc}\nPedidos de compra: ${t.nPed}\nProspects: ${t.nProsp}\n`;
   if(dados.estoque) txt+=`\nEstoque ativo: ${dados.estoque.comEst} | Stockout: ${dados.estoque.semEst} | GLOBAL próprio: ${dados.estoque.global}\n`;
   if(dados.porForn){
@@ -351,7 +351,7 @@ async function baixarArquivo(){
   const t=dados.totais||{};
   const hoje=new Date().toLocaleString('pt-BR');
   let txt='═══════════════════════════════════════════\n';
-  txt+='GLOBALMED — RESUMO DO SISTEMA\n';
+  txt+='FPMED — RESUMO DO SISTEMA\n';
   txt+='Gerado em: '+hoje+'\n';
   txt+='═══════════════════════════════════════════\n\n';
 
@@ -412,7 +412,7 @@ async function baixarArquivo(){
   const url=URL.createObjectURL(blob);
   const a=document.createElement('a');
   const dataArq=new Date().toISOString().slice(0,10);
-  a.href=url; a.download=`GlobalMed_Resumo_${dataArq}.txt`;
+  a.href=url; a.download=`FPMED_Resumo_${dataArq}.txt`;
   document.body.appendChild(a); a.click(); document.body.removeChild(a);
   URL.revokeObjectURL(url);
   toast('📥 Arquivo baixado!');

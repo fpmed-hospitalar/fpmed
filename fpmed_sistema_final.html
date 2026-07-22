@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>GlobalMed — Sistema Interno</title>
+<title>FPMED — Sistema Interno</title>
 <script src="gm-auth.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&display=swap" rel="stylesheet">
 <style>
@@ -151,7 +151,7 @@ select.filter{padding:8px 12px;border:1px solid var(--borda);border-radius:9px;f
 <!-- SIDEBAR -->
 <nav class="sidebar" id="sidebar">
   <div class="sidebar-logo">
-    <h1>GlobalMed</h1>
+    <h1>FPMED</h1>
     <p>Sistema Interno</p>
   </div>
   <div class="nav-section">Principal</div>
@@ -219,7 +219,7 @@ select.filter{padding:8px 12px;border:1px solid var(--borda);border-radius:9px;f
       <div class="db-dot" id="db-dot"></div>
       <span id="db-status-text">Conectando...</span>
     </div>
-    <div style="color:rgba(255,255,255,0.2);font-size:10px;">Supabase · GLOBALMED</div>
+    <div style="color:rgba(255,255,255,0.2);font-size:10px;">Supabase · FPMED</div>
   </div>
 </nav>
 
@@ -889,7 +889,7 @@ select.filter{padding:8px 12px;border:1px solid var(--borda);border-radius:9px;f
     </div>
     <style>
       @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
-      /* Competitividade — identidade escura oficial do catálogo GlobalMed */
+      /* Competitividade — identidade escura oficial do catálogo FPMED */
       #page-competitividade{background:#0A141C;background-image:radial-gradient(1200px 500px at 78% -8%,#103041 0%,rgba(16,48,65,0) 60%);margin:-24px;padding:26px 22px 40px;min-height:calc(100vh - 60px)}
       #cpz-root{--bg:#0A141C;--panel:#10212C;--panel2:#132734;--line:#1E3542;--line2:#274253;--cyan:#3AB6CE;--cyan-b:#63D0E4;--cyan-deep:#1E6274;--ink:#EAF3F6;--body:#8EA0AD;--dim:#5C7280;--green:#35D39B;--amber:#E6B23C;--red:#F2726F;
         max-width:1060px;margin:0 auto;color:var(--ink);font-family:'Inter',-apple-system,'Segoe UI',Roboto,sans-serif;-webkit-font-smoothing:antialiased}
@@ -2113,13 +2113,13 @@ function compGerarPDF() {
       +'<td style="padding:6px 10px;border-bottom:1px solid #eee;text-align:center">'+(melhorFonte ? fmtBRL(melhorFonte.compra) : '—')+'</td>'
       +'</tr>';
   });
-  const html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Relatório Compras GlobalMed</title>'
+  const html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Relatório Compras FPMED</title>'
     +'<style>body{font-family:Arial,sans-serif;font-size:11px;color:#111;margin:20px}'
     +'table{width:100%;border-collapse:collapse}th{background:#1a2e1a;color:white;padding:7px 10px;text-align:left;font-size:10px}'
     +'tr:nth-child(even) td{background:#f9faf9}@media print{body{margin:10px}}</style>'
     +'</head><body>'
     +'<div style="display:flex;justify-content:space-between;border-bottom:2px solid #1a2e1a;padding-bottom:12px;margin-bottom:18px">'
-    +'<div><h2 style="margin:0;font-size:15px">Relatório de Compras — GlobalMed</h2>'
+    +'<div><h2 style="margin:0;font-size:15px">Relatório de Compras — FPMED</h2>'
     +'<p style="margin:4px 0 0;color:#666;font-size:11px">Gerado em '+data+' · '+selecionados.length+' produto(s)</p></div>'
     +'<div style="font-size:10px;color:#888;text-align:right">CNPJ: 54.379.172/0001-47<br>GlobalMed Distribuição</div></div>'
     +'<table><thead><tr>'
@@ -2582,7 +2582,7 @@ function compAbrirAnalise() {
       + '</tr>';
   });
 
-  var html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Análise de Mercado — GlobalMed</title>'
+  var html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Análise de Mercado — FPMED</title>'
     + '<style>body{font-family:Arial,sans-serif;font-size:11px;margin:20px;color:#111}'
     + 'table{width:100%;border-collapse:collapse;margin-top:16px}'
     + 'th{background:#1e293b;color:white;padding:8px 10px;text-align:left;font-size:10px;font-weight:600}'
@@ -2590,7 +2590,7 @@ function compAbrirAnalise() {
     + '.header{display:flex;justify-content:space-between;border-bottom:2px solid #1e293b;padding-bottom:12px;margin-bottom:4px}'
     + '@media print{body{margin:8px}}</style></head><body>'
     + '<div class="header">'
-    + '<div><h2 style="margin:0;font-size:16px;font-weight:800;">📊 Análise de Mercado — GlobalMed</h2>'
+    + '<div><h2 style="margin:0;font-size:16px;font-weight:800;">📊 Análise de Mercado — FPMED</h2>'
     + '<p style="margin:4px 0 0;color:#666;font-size:11px;">Gerado em '+data+' · '+Object.keys(grupos).length+' grupo(s) de PA · '+selecionados.length+' produto(s)</p></div>'
     + '<div style="font-size:10px;color:#888;text-align:right;">CNPJ: 54.379.172/0001-47<br>GlobalMed Distribuição Ltda</div></div>'
     + '<table><thead><tr>'
@@ -3143,7 +3143,7 @@ function cdWhats(codigo){
   const c=_cdCli.find(x=>x.codigo===codigo); const opps=_cdOppByCli[codigo]||[];
   if(!opps.length){ toast('Sem oportunidade pra este cliente','error'); return; }
   const linhas=opps.slice(0,15).map(o=>`• ${o.produto}: de ${cdBRL(o.pago)} por ${cdBRL(o.oferta)}/un`).join('\n');
-  const msg=`Olá! Passando uma oferta especial da GlobalMed:\n\n${linhas}\n\nPreços válidos enquanto durar o estoque. Posso fechar pra você?`;
+  const msg=`Olá! Passando uma oferta especial da FPMED:\n\n${linhas}\n\nPreços válidos enquanto durar o estoque. Posso fechar pra você?`;
   const tel=String((c&&c.whatsapp)||'').replace(/\D/g,'');
   // api.whatsapp.com/send (NÃO wa.me — o wa.me quebra emoji)
   window.open('https://api.whatsapp.com/send?'+(tel?'phone=55'+tel+'&':'')+'text='+encodeURIComponent(msg),'_blank');
@@ -3318,7 +3318,7 @@ function iacCopiar(){
   if(!l.length){ toast('Nada aberto pra copiar','error'); return; }
   const txt = 'Bom dia! Vocês têm esses itens? Podem me passar preço e prazo?\n\n'
     + l.map((x,i)=>`${i+1}. ${x.descricao}${(x.vezes||1)>1?`  (pedido ${x.vezes}x)`:''}`).join('\n')
-    + '\n\nObrigado! — GlobalMed';
+    + '\n\nObrigado! — FPMED';
   navigator.clipboard.writeText(txt)
     .then(()=>toast(`${l.length} item(ns) copiados — cole no WhatsApp`))
     .catch(()=>{ // clipboard bloqueia sem HTTPS/gesto: cai pro prompt em vez de falhar calado
@@ -3596,7 +3596,7 @@ function renderCompetitividade(){
   var h='';
   h+='<div class="top"><div class="logo">'+
      '<svg class="mark" viewBox="0 0 32 28" aria-hidden="true"><path d="M16 25C16 25 3 17.6 3 9.6C3 6 5.9 3.1 9.5 3.1C12 3.1 14.3 4.5 16 6.7C17.7 4.5 20 3.1 22.5 3.1C26.1 3.1 29 6 29 9.6C29 17.6 16 25 16 25Z" fill="none" stroke="#3AB6CE" stroke-width="2"/><polyline class="beat" points="4,15 10.5,15 12.8,10.5 15.4,18.5 18,12.5 20.3,15 28,15" fill="none" stroke="#63D0E4" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/></svg>'+
-     '<div class="wm"><div class="b">GLOBALMED</div><div class="s">DISTRIBUIÇÃO</div></div></div>'+
+     '<div class="wm"><div class="b">FPMED</div><div class="s">DISTRIBUIÇÃO</div></div></div>'+
      '<div class="cz-acts"><button class="cz-btn" onclick="cpzExport()">⬇ Excel</button><button class="cz-btn" onclick="recarregarCotacoes(true).then(function(){renderCompetitividade();})">🔄 Atualizar</button></div></div>';
   // ── HERO ──
   h+='<div class="hero"><div class="kicker">Análise de Preço</div><h1>Meu preço vs o mercado</h1><div class="accent"></div>'+
@@ -3680,7 +3680,7 @@ function cpzExport(){
   var cenTxt={verde:'GANHO FACIL',amarelo:'MARGEM APERTA',vermelho:'COMPRAR MELHOR',competitivo:'COMPETITIVO'};
   var rows=arr.map(function(r){ return '<tr><td>'+_cpzEsc(r.prod)+'</td><td>'+_cpzEsc(_cpzPaNorm(r.pa))+'</td><td>'+r.nosso.toFixed(4).replace('.',',')+'</td><td>'+_cpzEsc(r.melhor.forn)+'</td><td>'+r.melhor.cu.toFixed(4).replace('.',',')+'</td><td>'+r.media.toFixed(4).replace('.',',')+'</td><td>'+r.acima.toFixed(0)+'%</td><td>'+cenTxt[r.cen]+(r.revisar?' (REVISAR)':'')+'</td><td>'+(r.ind?_cpzEsc(r.ind.forn)+' '+r.ind.cu.toFixed(2).replace('.',','):'')+'</td></tr>'; }).join('');
   var head='<tr><th>PRODUTO</th><th>PA</th><th>NOSSO/UN</th><th>MELHOR CONCORRENTE</th><th>CUSTO CONC.</th><th>MEDIA MERC.</th><th>ACIMA%</th><th>SITUACAO</th><th>COMPRAR DIRETO IND.</th></tr>';
-  var html='<html xmlns:x="urn:schemas-microsoft-com:office:excel"><head><meta charset="UTF-8"></head><body><table border="1"><caption>GlobalMed - Competitividade de Preco</caption>'+head+rows+'</table></body></html>';
+  var html='<html xmlns:x="urn:schemas-microsoft-com:office:excel"><head><meta charset="UTF-8"></head><body><table border="1"><caption>FPMED - Competitividade de Preco</caption>'+head+rows+'</table></body></html>';
   var blob=new Blob(['﻿'+html],{type:'application/vnd.ms-excel'});
   var a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='Competitividade_'+new Date().toLocaleDateString('pt-BR').replace(/\//g,'-')+'.xls'; document.body.appendChild(a); a.click(); document.body.removeChild(a);
 }
@@ -3714,7 +3714,7 @@ function cpzRelatorio(){
   var medAcima=acima.length?_cpzMed(acima.map(function(r){return r.acima;})):0;
   var nNovos=sel.filter(function(r){return r.cen==='verde'||r.cen==='amarelo';}).length;
   var nInd=sel.filter(function(r){return r.cen==='vermelho';}).length;
-  var foot='<div class="cpz-foot">'+_cpzLogoSVG()+' <b>GLOBALMED</b> · Distribuição &nbsp;·&nbsp; '+CPZ_TEL+' &nbsp;·&nbsp; cotação para o cliente</div>';
+  var foot='<div class="cpz-foot">'+_cpzLogoSVG()+' <b>FPMED</b> · Distribuição &nbsp;·&nbsp; '+CPZ_TEL+' &nbsp;·&nbsp; cotação para o cliente</div>';
   // ── PÁGINA 1: RAIO-X ──
   var strip='<div class="cpz-strip">'+
     '<div class="s"><div class="v c-red">'+acima.length+'/'+sel.length+'</div><div class="k">acima do concorrente mais barato</div></div>'+
@@ -3736,7 +3736,7 @@ function cpzRelatorio(){
       (cli?'':'<td>'+_cpzMoney(r.custoRef)+'</td>')+
       '<td>'+jogCell+'</td></tr>';
   }).join('');
-  var pag1='<div class="cpz-page"><div class="cpz-head"><div class="hl">'+_cpzLogoSVG()+' <span class="b">GLOBALMED</span> <span class="s">DISTRIBUIÇÃO</span></div><div class="hr">Comparativo de preços · '+new Date().toLocaleDateString('pt-BR')+'</div></div>'+
+  var pag1='<div class="cpz-page"><div class="cpz-head"><div class="hl">'+_cpzLogoSVG()+' <span class="b">FPMED</span> <span class="s">DISTRIBUIÇÃO</span></div><div class="hr">Comparativo de preços · '+new Date().toLocaleDateString('pt-BR')+'</div></div>'+
     '<h1>Raio-X de competitividade</h1><p class="lead">Comparamos os itens da sua lista com as ofertas do mercado. Onde estávamos acima, já ajustamos.</p>'+
     strip+'<table class="cpz-tbl">'+th+trs+'</table>'+foot+'</div>';
   // ── PÁGINA 2: ITEM A ITEM ──
@@ -3748,7 +3748,7 @@ function cpzRelatorio(){
     var margLine = cli ? '' : '<div class="mrg">margem no novo preço: '+((j.novo!=null&&r.custoRef>0)?((j.novo/r.custoRef-1)*100).toFixed(0)+'%':'—')+' · custo-ref '+_cpzMoney(r.custoRef)+'</div>'+_cpzMkpMediaBlock(r);
     return '<div class="cpz-card"><div class="ct"><b>'+_cpzEsc(_cpzNome(r))+'</b><span class="sub2">'+_cpzEsc(_cpzPaNorm(r.pa))+'</span></div><div class="rd">'+j.leitura+'</div>'+precoBloco+margLine+'</div>';
   }).join('');
-  var pag2='<div class="cpz-page"><div class="cpz-head"><div class="hl">'+_cpzLogoSVG()+' <span class="b">GLOBALMED</span></div><div class="hr">O que fizemos em cada item</div></div><h1>Item a item</h1><div class="cpz-cards">'+cards+'</div>'+foot+'</div>';
+  var pag2='<div class="cpz-page"><div class="cpz-head"><div class="hl">'+_cpzLogoSVG()+' <span class="b">FPMED</span></div><div class="hr">O que fizemos em cada item</div></div><h1>Item a item</h1><div class="cpz-cards">'+cards+'</div>'+foot+'</div>';
   // ── CONTROLES (não imprime) ──
   var ctrl='<div class="cpz-rep-ctrl"><div class="mode">Modo: '+
     '<button class="'+(cli?'on':'')+'" onclick="_cpzModoRel(\'cliente\')">Cliente</button>'+
@@ -3808,13 +3808,13 @@ function espLimpar(){
 }
 const ESP_PROMPT = `Voce e assistente de uma distribuidora farmaceutica. Esta imagem/PDF e um ESPELHO DE ORCAMENTO do ERP (venda ao cliente). Extraia o CABECALHO e os ITENS da tabela.
 Responda APENAS um JSON valido, sem markdown e sem crases, no formato exato:
-{"pedido":"numero do orcamento","data":"AAAA-MM-DD","cliente":"nome do cliente","cnpj":"CNPJ do CLIENTE (perto do nome do cliente), NUNCA o CNPJ da GlobalMed","cod_cliente_erp":"codigo do cliente no ERP (campo Cod. Cliente)","vendedor_codigo":"codigo do vendedor","vendedor_nome":"nome do vendedor","total_geral":numero,"itens":[{"codigo":"codigo do produto como TEXTO preservando zeros a esquerda","produto":"nome do produto SEM prefixos #,*,+,> no inicio","marca":"marca","und":"unidade CX/AMP/FR...","qtd":numero,"preco_unit":numero,"preco_caixa":numero,"total_item":numero,"controlado":true_ou_false}]}
+{"pedido":"numero do orcamento","data":"AAAA-MM-DD","cliente":"nome do cliente","cnpj":"CNPJ do CLIENTE (perto do nome do cliente), NUNCA o CNPJ da FPMED","cod_cliente_erp":"codigo do cliente no ERP (campo Cod. Cliente)","vendedor_codigo":"codigo do vendedor","vendedor_nome":"nome do vendedor","total_geral":numero,"itens":[{"codigo":"codigo do produto como TEXTO preservando zeros a esquerda","produto":"nome do produto SEM prefixos #,*,+,> no inicio","marca":"marca","und":"unidade CX/AMP/FR...","qtd":numero,"preco_unit":numero,"preco_caixa":numero,"total_item":numero,"controlado":true_ou_false}]}
 Regras:
 - Remova prefixos #, *, +, > do INICIO do nome do produto.
 - Numeros usam virgula decimal (47,7140) -> ponto (47.7140). Remova separador de milhar (5.515,71 -> 5515.71).
 - preco_unit = coluna "Preco UNIT"; preco_caixa = coluna "Preco CAIXA"; total_item = coluna "Total Item".
 - codigo do produto: TEXTO com zeros a esquerda (ex "0000162").
-- cnpj: use o do CLIENTE, nunca o da GlobalMed.
+- cnpj: use o do CLIENTE, nunca o da FPMED.
 - controlado: true se o nome tiver (C1),(C2),(B1) etc; senao false.
 - Nao invente; null quando faltar. Responda somente o JSON.`;
 
@@ -4705,7 +4705,7 @@ function ccImprimir() {
   }).join('');
 
   const win = window.open('', '_blank');
-  win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Cotação GlobalMed</title>
+  win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Cotação FPMED</title>
   <style>
     body{font-family:Arial,sans-serif;font-size:10px;color:#000;padding:20px;max-width:210mm;margin:0 auto;}
     .hdr{display:flex;align-items:flex-start;justify-content:space-between;border-bottom:2px solid #000;padding-bottom:12px;margin-bottom:14px;}
@@ -4720,7 +4720,7 @@ function ccImprimir() {
     @media print{body{padding:0;}@page{size:A4;margin:10mm;}}
   </style></head><body>
   <div class="hdr">
-    <div class="logo"><div class="n">GlobalMed</div><div class="s">DISTRIBUIÇÃO</div></div>
+    <div class="logo"><div class="n">FPMED</div><div class="s">DISTRIBUIÇÃO</div></div>
     <div class="emp"><strong>GLOBALMED DISTRIBUICAO LTDA</strong>54.379.172/0001-47<br>AV CONDE FRANCISCO MATARAZO QD 03 LT 08<br>APARECIDA DE GOIANIA — GO</div>
     <div style="font-size:8px;text-align:right;line-height:1.8"><strong>Data:</strong> ${now.toLocaleDateString('pt-BR')}<br><strong>Emissão:</strong> ${emissao}</div>
   </div>
@@ -4821,7 +4821,7 @@ function ccPedidoCompra() {
 
   const win = window.open('', '_blank');
   win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8">
-  <title>Pedido de Compra GlobalMed</title>
+  <title>Pedido de Compra FPMED</title>
   <style>
     body{font-family:Arial,sans-serif;font-size:11px;color:#000;padding:20px;max-width:297mm;margin:0 auto;}
     .hdr{display:flex;align-items:flex-start;justify-content:space-between;border-bottom:2px solid #000;padding-bottom:12px;margin-bottom:16px;}
@@ -4837,7 +4837,7 @@ function ccPedidoCompra() {
     @media print{body{padding:0;}@page{size:A4;margin:10mm;}}
   </style></head><body>
   <div class="hdr">
-    <div class="logo"><div class="n">GlobalMed</div><div class="s">DISTRIBUIÇÃO</div></div>
+    <div class="logo"><div class="n">FPMED</div><div class="s">DISTRIBUIÇÃO</div></div>
     <div class="emp"><strong>GLOBALMED DISTRIBUICAO LTDA</strong>54.379.172/0001-47<br>AV CONDE FRANCISCO MATARAZO QD 03 LT 08<br>APARECIDA DE GOIANIA — GO</div>
     <div style="font-size:9px;text-align:right;line-height:1.8"><strong>Emitido:</strong> ${emissao}</div>
   </div>
@@ -5299,7 +5299,7 @@ function gerarJanelaPedido(rows, totalGeral, emissao, nPedidos, nForn) {
     @media print{body{padding:0;}@page{size:A4;margin:8mm;}}
   </style></head><body>
   <div class="hdr">
-    <div class="logo"><div class="n">GlobalMed</div><div class="s">DISTRIBUIÇÃO</div></div>
+    <div class="logo"><div class="n">FPMED</div><div class="s">DISTRIBUIÇÃO</div></div>
     <div class="emp"><strong>GLOBALMED DISTRIBUICAO LTDA</strong>54.379.172/0001-47<br>AV CONDE FRANCISCO MATARAZO QD 03 LT 08<br>APARECIDA DE GOIANIA — GO</div>
     <div style="font-size:9px;text-align:right;line-height:1.7"><strong>Emitido:</strong> ${emissao}</div>
   </div>
@@ -5416,7 +5416,7 @@ async function imprimirPedido(id) {
       @media print{body{padding:0;}@page{size:A4;margin:10mm;}}
     </style></head><body>
     <div class="hdr">
-      <div class="logo"><div class="n">GlobalMed</div><div class="s">DISTRIBUIÇÃO</div></div>
+      <div class="logo"><div class="n">FPMED</div><div class="s">DISTRIBUIÇÃO</div></div>
       <div class="emp"><strong>GLOBALMED DISTRIBUICAO LTDA</strong>54.379.172/0001-47<br>AV CONDE FRANCISCO MATARAZO QD 03 LT 08<br>APARECIDA DE GOIANIA — GO</div>
       <div style="font-size:9px;text-align:right;line-height:1.8"><strong>Emitido:</strong> ${emissao}</div>
     </div>

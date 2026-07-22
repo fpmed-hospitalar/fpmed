@@ -24,6 +24,21 @@ Criado em 21/07/2026 copiando SO os arquivos do app do C:\globalmed.
     (Hook PreToolUse em .claude/settings.json -> .claude/hooks/block-destructive.js, espelhado
     do GlobalMed, texto rebrandado p/ FPMED. NAO copiado o backup_tabelas.js: e de banco, criar
     o proprio da FPMED quando o Supabase existir.)
+>>> PADRAO DO PROJETO (21/07/2026): TODA rodada da FPMED usa uma TASK LIST — arquivo
+    TAREFAS_FPMED.md na raiz. Marcar concluida na hora que fechar cada etapa. Commit por etapa.
+>>> DEPLOY (21/07/2026): o deploy da FPMED vai numa ORGANIZATION nova do GitHub chamada
+    "fpmed-hospitalar" (repo "fpmed", plano Free) — SEM "lemuelbarros" na URL. GitHub Pages ->
+    fpmed-hospitalar.github.io/fpmed. Futuro (pos-venda): dominio proprio sistema.fpmed.com.br
+    via CNAME no GitHub Pages. NUNCA usar a conta pessoal do Lemuel na URL publica.
+
+>>> PROGRESSO (21/07/2026, rodada autonoma):
+  [OK] Prospeccao removida do sistema_final (1294 linhas). [OK] Arquivos globalmed_* -> fpmed_*
+  (git mv, refs internas ajustadas). [OK] Varredura do NOME-marca GlobalMed->FPMED (61 trocas).
+  [OK] logo_fpmed.png baixado do site (fpmed.com.br). [OK] fpmed_template.html movido do Downloads.
+  PENDENTE: dados de registro reais da FPMED (razao social, CNPJ, IE, endereco, WhatsApp) — 17
+  linhas de identidade juridica nos PDFs/loja ainda com dados da GlobalMed (nao inventei).
+  PENDENTE: Supabase FPMED, rebrand visual (template/cores/logo real/tel/slogan), tabelas, org+deploy.
+
 Proximos passos (quando o Lemuel mandar): (a) criar o Supabase da FPMED; (b) trocar URL+ANON no
 gm-auth.js e nos .html; (c) rebrand (nome/logo/cores/telefone); (d) remover Prospeccao do
 sistema_final; (e) criar as tabelas (DDL abaixo); (f) criar o GitHub da FPMED e apontar o remote.

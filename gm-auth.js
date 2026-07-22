@@ -1,5 +1,5 @@
 /* ══════════════════════════════════════════════════════════════════════════
-   GlobalMed — Portão de login (Supabase Auth · Nível 1)
+   FPMED — Portão de login (Supabase Auth · Nível 1)
    Uso: incluir <script src="gm-auth.js"></script> no <head> de cada sistema.
    - Mostra um overlay de login até haver sessão válida (email + senha).
    - Guarda a sessão no localStorage e renova pelo refresh_token.
@@ -133,7 +133,7 @@
   function showLogin(msg, tipo){
     ov.innerHTML =
       '<div style="width:340px;max-width:92vw;background:#111a2e;border:1px solid #22314f;border-radius:16px;padding:26px 24px;box-shadow:0 20px 60px rgba(0,0,0,.5)">' +
-        '<div style="text-align:center;font-weight:800;font-size:18px;letter-spacing:.5px;margin-bottom:2px">GLOBALMED</div>' +
+        '<div style="text-align:center;font-weight:800;font-size:18px;letter-spacing:.5px;margin-bottom:2px">FPMED</div>' +
         '<div style="text-align:center;color:#8aa0c6;font-size:12px;margin-bottom:18px">Acesso ao sistema</div>' +
         '<input id="gm-email" type="email" placeholder="email" autocomplete="username" style="width:100%;box-sizing:border-box;padding:11px 12px;margin-bottom:10px;border-radius:9px;border:1px solid #2a3a5c;background:#0c1526;color:#e5e7eb;font-size:14px">' +
         '<input id="gm-pass" type="password" placeholder="senha" autocomplete="current-password" style="width:100%;box-sizing:border-box;padding:11px 12px;border-radius:9px;border:1px solid #2a3a5c;background:#0c1526;color:#e5e7eb;font-size:14px">' +
