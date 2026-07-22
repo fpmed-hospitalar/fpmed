@@ -42,6 +42,17 @@ Criado em 21/07/2026 copiando SO os arquivos do app do C:\globalmed.
     GitHub da org. ATENCAO: dashboard_clientes.html tem lista de clientes/CNPJs embutida
     (ex.: ELLO DISTRIBUICAO LTDA) — revisar se e demo ou dado real do GlobalMed antes do deploy.
 
+>>> SEED DE COTACOES FEITO (22/07/2026, autorizado pelo Lemuel):
+    7.451 cotacoes de DISTRIBUIDOR importadas do GlobalMed p/ a cotacoes da FPMED.
+    Criterio: fornecedor != '1' E tipo != 'global' (as 517 linhas GLOBAL ficaram fora;
+    os dois criterios batiam nas MESMAS 517). ZERO cliente/prospect/orcamento/compra.
+    Sanitizacao: venda_loja=NULL (100%), global_venda1/2=NULL (100%), datas DD/MM/YYYY
+    convertidas p/ ISO, id novo gerado pelo banco, created_at original preservado.
+    45 fornecedores; fornecedor_nome backfilled (codigos 2/13/18 -> SUPERMEDICA/RANBAXY/MCW
+    via FORN_NOMES). Auditoria pos-seed: total 7.451, zero GLOBAL, zero venda_loja.
+    ATENCAO: PostgREST da FPMED pagina em 1000 (nao 2000 como o GlobalMed) — paginar com
+    limit=1000 em qualquer script.
+
 >>> DADOS DE REGISTRO APLICADOS (22/07/2026) — tarefa DESBLOQUEADA e fechada:
     FPMED DISTRIBUIDORA DE PRODUTOS HOSPITALARES LTDA · CNPJ 47.110.418/0001-15 ·
     IE 10.947.387-9 · RUA 09, S/N, QUADRA 55 A, LOTE 0002, VILA BRASILIA, APARECIDA DE

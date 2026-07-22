@@ -1685,8 +1685,13 @@ function preencherSelects() {
 
 // ─── COTAÇÕES ─────────────────────────────────────────────────────────────────
 let _cotTs = 0;  // timestamp da última carga de cotações (p/ cache de 60s)
+// FPMED: garante fornecedor_nome preenchido (linhas antigas/importadas sem a coluna)
+function _normFornNome(arr){
+  (arr||[]).forEach(c => { if(!c.fornecedor_nome) c.fornecedor_nome = (String(c.fornecedor)==='1'||(c.tipo||'').toLowerCase()==='global') ? 'GLOBAL' : nomeForn(c.fornecedor); });
+  return arr;
+}
 async function carregarCotacoes() {
-  cotacoes = await sbGet('cotacoes', 'order=id.desc') || [];
+  cotacoes = _normFornNome(await sbGet('cotacoes', 'order=id.desc') || []);
   cotacoesCache = [...cotacoes];
   _cotTs = Date.now();
   renderCotacoes(cotacoes);
@@ -1696,7 +1701,7 @@ async function carregarCotacoes() {
 // nas abas sem puxar 6.400 linhas a cada troca. Atualiza os arrays em memória (sem re-render aqui).
 async function recarregarCotacoes(force){
   if(force || !_cotTs || (Date.now() - _cotTs) > 60000){
-    cotacoes = await sbGet('cotacoes', 'order=id.desc') || [];
+    cotacoes = _normFornNome(await sbGet('cotacoes', 'order=id.desc') || []);
     cotacoesCache = [...cotacoes];
     _cotTs = Date.now();
   }

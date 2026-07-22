@@ -32,6 +32,10 @@
       do banco antigo, sintaxe JS validada). URL `https://xzdowrksuswekwffoluk.supabase.co`.
 
 ## ⬜ PENDENTES (na ordem)
+- [x] **SEED de cotações** (22/07, autorizado): 7.451 cotações de distribuidor do GlobalMed →
+      `cotacoes` FPMED. Zero GLOBAL (517 excluídas), zero cliente/prospect, `venda_loja` zerada,
+      45 fornecedores, `fornecedor_nome` backfilled + normalização no app. Dashboard/Competitividade
+      populados.
 - [x] **Edge function `ler-pedido` — ✅ 100% NO AR** (22/07): deployada (Verify JWT OFF), trava de
       origem ativa (só `fpmed-hospitalar.github.io` / `sistema.fpmed.com.br`; resto 403 sem gastar
       crédito), secret `ANTHROPIC_API_KEY` colado pelo Lemuel, **teste ponta a ponta OK** (Claude
