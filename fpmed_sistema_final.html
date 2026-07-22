@@ -186,9 +186,6 @@ select.filter{padding:8px 12px;border:1px solid var(--borda);border-radius:9px;f
     <span class="icon">📊</span> Clientes &amp; Oportunidades
     <span style="background:#10b981;color:#052e22;border-radius:10px;font-size:8px;font-weight:800;padding:1px 5px;margin-left:auto">NOVA</span>
   </div>
-  <div class="nav-item" onclick="showPage('oportunidades',this)" style="opacity:.7">
-    <span class="icon">💡</span> Oportunidades <span style="font-size:9px;color:var(--muted)">(antiga)</span>
-  </div>
   <div class="nav-item" onclick="showPage('itens-a-cotar',this)">
     <span class="icon">📝</span> Itens a Cotar
     <span id="badge-iac" style="background:#e0a03e;color:#1a1a1a;border-radius:10px;font-size:9px;font-weight:700;padding:1px 6px;margin-left:auto;display:none">0</span>
@@ -589,26 +586,6 @@ select.filter{padding:8px 12px;border:1px solid var(--borda);border-radius:9px;f
       <div id="cpc-step2" style="display:none">
         <button class="btn btn-outline btn-sm" onclick="cpcVoltar()" style="margin-bottom:14px">← Voltar à lista</button>
         <div id="cpc-perfil"></div>
-      </div>
-    </div>
-
-    <!-- OPORTUNIDADES DE VENDA (motor Fase 3) -->
-    <div class="page" id="page-oportunidades">
-      <div class="section-header"><h2>💡 Oportunidades de Venda</h2></div>
-      <div class="table-wrap" style="padding:16px 20px;margin-bottom:14px">
-        <p style="font-size:12.5px;color:var(--muted);margin-bottom:12px">Cruza o que cada cliente <strong>já comprou</strong> (por código do ERP) com o preço disponível <strong>agora</strong> (estoque Global + fornecedores). Mostra onde dá pra <strong>oferecer mais barato</strong> do que ele pagou ou <strong>recomprar</strong> o que está em estoque.</p>
-        <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
-          <input id="op-busca" placeholder="Filtrar por cliente ou produto..." oninput="opRender()" style="flex:1;min-width:220px;padding:9px 12px;border:1px solid var(--borda);border-radius:8px;font-size:13px;outline:none">
-          <select id="op-filtro" onchange="opRender()" style="padding:9px 12px;border:1px solid var(--borda);border-radius:8px;font-size:13px;outline:none">
-            <option value="preco">💰 Só onde posso oferecer mais barato</option>
-            <option value="estoque">🏠 Só em estoque FPMED (recompra)</option>
-            <option value="todas">Todas as oportunidades</option>
-          </select>
-          <span id="op-status" style="font-size:12px;color:var(--muted)"></span>
-        </div>
-      </div>
-      <div class="table-wrap" style="padding:0;overflow-x:auto">
-        <table style="width:100%;border-collapse:collapse;font-size:13px" id="op-tabela"></table>
       </div>
     </div>
 
@@ -1099,7 +1076,6 @@ const pageConfig = {
   importar:     { title:'Importar Cotação',        btn:'',                btnAction:null },
   'importar-espelho': { title:'Importar Espelho (histórico de compra)', btn:'', btnAction:null },
   'compras-cliente': { title:'Compras por Cliente', btn:'', btnAction:null },
-  'oportunidades': { title:'Oportunidades de Venda', btn:'', btnAction:null },
   'clientes-dash': { title:'Clientes & Oportunidades', btn:'🔄 Atualizar', btnAction:()=>cdInit() },
   'itens-a-cotar': { title:'Itens a Cotar', btn:'🔄 Atualizar', btnAction:()=>iacCarregar() },
   comparativo:  { title:'Comparativo de Fornecedores', btn:'🔄 Atualizar', btnAction:()=>recarregarCotacoes(true).then(()=>renderComparativo(undefined,true)) },
@@ -1107,7 +1083,7 @@ const pageConfig = {
   'pedidos-compra':  { title:'Pedidos de Compra', btn:'', btnAction:null }
 };
 async function showPage(name, el) {
-  if((name==='importar-espelho'||name==='compras-cliente'||name==='oportunidades'||name==='itens-a-cotar'||name==='clientes-dash'||name==='competitividade') && typeof espPodeVer==='function' && !espPodeVer()){ name='dashboard'; el=document.querySelector('.nav-item[onclick*="dashboard"]'); }
+  if((name==='importar-espelho'||name==='compras-cliente'||name==='itens-a-cotar'||name==='clientes-dash'||name==='competitividade') && typeof espPodeVer==='function' && !espPodeVer()){ name='dashboard'; el=document.querySelector('.nav-item[onclick*="dashboard"]'); }
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   document.getElementById('page-' + name).classList.add('active');
@@ -1129,7 +1105,6 @@ async function showPage(name, el) {
   if (name === 'compras-cliente') { cpcInit(); }
   if (name === 'clientes-dash') { cdInit(); }
   if (name === 'itens-a-cotar') { iacCarregar(); }
-  if (name === 'oportunidades') { opInit(); }
 }
 function headerBtnAction() { const name = document.querySelector('.page.active')?.id.replace('page-',''); const cfg = pageConfig[name]; if(cfg?.btnAction) cfg.btnAction(); }
 
@@ -2906,9 +2881,9 @@ const espPaNorm = s => (s||'').toUpperCase().normalize('NFD').replace(/\p{M}/gu,
 function espPodeVer(){ try{ var u=window.gmAuth&&window.gmAuth.user; var r=(u&&(u.role||(u.user_metadata&&u.user_metadata.role)))||''; return r==='admin'; }catch(e){ return false; } }
 function espAplicaPermissao(){
   var mostra = espPodeVer();
-  ['importar-espelho','compras-cliente','oportunidades','itens-a-cotar','clientes-dash','competitividade'].forEach(function(n){ var nav=document.querySelector('.nav-item[onclick*="'+n+'"]'); if(nav) nav.style.display = mostra ? '' : 'none'; });
+  ['importar-espelho','compras-cliente','itens-a-cotar','clientes-dash','competitividade'].forEach(function(n){ var nav=document.querySelector('.nav-item[onclick*="'+n+'"]'); if(nav) nav.style.display = mostra ? '' : 'none'; });
   if(!mostra){ var pg=document.querySelector('.page.active');
-    if(pg && (pg.id==='page-importar-espelho'||pg.id==='page-compras-cliente'||pg.id==='page-oportunidades') && typeof showPage==='function') showPage('dashboard', document.querySelector('.nav-item[onclick*="dashboard"]')); }
+    if(pg && (pg.id==='page-importar-espelho'||pg.id==='page-compras-cliente') && typeof showPage==='function') showPage('dashboard', document.querySelector('.nav-item[onclick*="dashboard"]')); }
 }
 document.addEventListener('gm-auth-ready', espAplicaPermissao);
 if(window.gmAuth) espAplicaPermissao();
@@ -3563,67 +3538,6 @@ async function cpcPerfil(codigo){
         <th style="${th}">Produto</th><th style="${th}">Marca</th><th style="${th}">Un</th><th style="${th};text-align:right">Última compra</th><th style="${th};text-align:right">Últ. preço unit</th><th style="${th};text-align:right">Últ. preço caixa</th></tr></thead>
         <tbody>${precoRows}</tbody></table></div>
     </div>`;
-}
-
-// ═══ MOTOR DE OPORTUNIDADE (Fase 3) ═══════════════════════════════════════════
-let _opLista=[];
-function opTokens(s){ return (s||'').toUpperCase().normalize('NFD').replace(/\p{M}/gu,'').split(/[^A-Z0-9]+/).filter(w=>w.length>=4); }
-function opMesmoProduto(a,b){ const tb=new Set(opTokens(b)); return opTokens(a).some(w=>tb.has(w)); }  // trava anti-colisao de codigo
-async function opInit(){
-  const st=document.getElementById('op-status'); st.textContent='Carregando...';
-  document.getElementById('op-tabela').innerHTML='<tbody><tr><td style="padding:18px;color:var(--muted)">Cruzando compras × estoque...</td></tr></tbody>';
-  try{
-    await recarregarCotacoes();
-    const itens = await (await fetch(`${SUPA_URL2}/rest/v1/compra_itens?select=codigo_erp,produto,produto_norm,preco_unit,compras!inner(cliente_codigo,cliente_nome,data_compra)&limit=50000`,{headers:SH})).json();
-    const codeMap={};
-    (typeof cotacoes!=='undefined'?cotacoes:[]).forEach(c=>{ const cod=parseInt(c.codigo); if(!(cod>0)) return; (codeMap[cod]=codeMap[cod]||[]).push(c); });
-    const agg={};
-    (itens||[]).forEach(it=>{ const cod=(it.codigo_erp||'').replace(/\D/g,''); if(!cod) return; const cli=it.compras&&it.compras.cliente_codigo; if(cli==null) return;
-      const key=cli+'|'+cod; const dt=(it.compras&&it.compras.data_compra)||'';
-      if(!agg[key]) agg[key]={cliente:cli, cliente_nome:(it.compras&&it.compras.cliente_nome)||('#'+cli), codigo:cod, produto:it.produto, freq:0, ultimaData:'', lastPaid:null};
-      const a=agg[key]; a.freq++;
-      if(dt>=a.ultimaData){ a.ultimaData=dt; a.lastPaid=parseFloat(it.preco_unit)||null; a.produto=it.produto; } });
-    const ops=[];
-    Object.values(agg).forEach(a=>{
-      const cands=(codeMap[parseInt(a.codigo)]||[]).filter(c=>opMesmoProduto(c.produto, a.produto) && pv(c)>0);
-      if(!cands.length) return;
-      let best=null; cands.forEach(c=>{ const p=pv(c); if(best===null||p<best.preco) best={preco:p, row:c}; });
-      const globalRow=cands.find(c=> (c.tipo==='global'||String(c.fornecedor)==='1') && parseInt(c.estoque||0)>0);
-      const globalEst=globalRow?parseInt(globalRow.estoque||0):0;
-      const economia=(a.lastPaid!=null && best)? +(a.lastPaid-best.preco).toFixed(4) : null;
-      ops.push({ ...a, best:best?best.preco:null,
-        bestForn: best?(best.row.tipo==='global'||String(best.row.fornecedor)==='1'?'FPMED':nomeForn(best.row.fornecedor)):'—',
-        globalEst, economia, temPreco:(economia!=null&&economia>0), temEstoque:globalEst>0 });
-    });
-    _opLista=ops; st.textContent=ops.length+' cruzamentos';
-  }catch(e){ _opLista=[]; st.textContent='Erro: '+e.message; }
-  opRender();
-}
-function opRender(){
-  if(!document.getElementById('op-tabela')) return;
-  const q=(document.getElementById('op-busca').value||'').toLowerCase().trim();
-  const filtro=document.getElementById('op-filtro').value;
-  let lista=_opLista.slice();
-  if(filtro==='preco') lista=lista.filter(o=>o.temPreco);
-  else if(filtro==='estoque') lista=lista.filter(o=>o.temEstoque);
-  else lista=lista.filter(o=>o.temPreco||o.temEstoque);
-  if(q) lista=lista.filter(o=>(o.cliente_nome||'').toLowerCase().includes(q)||(o.produto||'').toLowerCase().includes(q));
-  lista.sort((a,b)=> ((b.economia>0?b.economia:0)*b.freq)-((a.economia>0?a.economia:0)*a.freq) || (b.globalEst-a.globalEst) || (b.freq-a.freq));
-  const th='padding:9px 11px;text-align:left;font-size:11px;color:var(--muted);font-weight:600;border-bottom:1px solid var(--borda)';
-  const td='padding:9px 11px;border-bottom:1px solid var(--borda);font-size:13px';
-  const rows=lista.slice(0,300).map(o=>{
-    const pct=(o.economia>0&&o.lastPaid>0)?Math.round(o.economia/o.lastPaid*100):0;
-    const sinal=(o.temPreco?`<span style="color:#16a34a;font-weight:700">💰 -${pct}%</span>`:'')+(o.temEstoque?` <span style="color:#2563eb">🏠 ${o.globalEst}un</span>`:'');
-    return `<tr>
-      <td style="${td}"><b>#${o.cliente}</b> ${o.cliente_nome}</td>
-      <td style="${td}">${o.produto} <span style="color:var(--muted);font-size:11px">#${o.codigo}</span></td>
-      <td style="${td};text-align:right">${o.lastPaid!=null?fmtBRL(o.lastPaid):'—'}<div style="font-size:10px;color:var(--muted)">${o.freq}× · ${cpcData(o.ultimaData)}</div></td>
-      <td style="${td};text-align:right;font-weight:600">${o.best!=null?fmtBRL(o.best):'—'}<div style="font-size:10px;color:var(--muted)">${o.bestForn}</div></td>
-      <td style="${td};text-align:right;color:${o.economia>0?'#16a34a':'var(--muted)'};font-weight:600">${o.economia>0?fmtBRL(o.economia):'—'}</td>
-      <td style="${td}">${sinal||'🔁'}</td></tr>`; }).join('');
-  document.getElementById('op-tabela').innerHTML=
-    `<thead><tr style="background:#f8faf8"><th style="${th}">Cliente</th><th style="${th}">Produto</th><th style="${th};text-align:right">Ele pagou</th><th style="${th};text-align:right">Melhor agora</th><th style="${th};text-align:right">Economia/un</th><th style="${th}">Sinal</th></tr></thead>
-     <tbody>${rows||`<tr><td colspan="6" style="padding:22px;text-align:center;color:var(--muted)">Nenhuma oportunidade${_opLista.length?' com esse filtro':' — importe espelhos ou feche pedidos pra ter histórico'}.</td></tr>`}</tbody>`;
 }
 
 function impHandleIAFile(file) {
