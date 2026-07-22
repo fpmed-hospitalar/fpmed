@@ -80,6 +80,10 @@
    `authenticated` funciona. Como o repo vai público com a anon dentro, isso era essencial.
 
 ## 📌 Decisões/observações
+- **Porta de entrada (22/07)**: link/splash abre DIRETO o `fpmed_sistema_final.html` (menu lateral
+  completo). Painel virou acesso secundário via seção "Sistemas" do menu (com Giovana, Vendas,
+  Viabilidade). Standalones têm pill "← Sistema" na topfaixa (à esquerda, p/ não colidir com o
+  badge do gm-auth). `vendas.html` tolera ausência da tabela `prospects` (Prospecção fora do pacote).
 - **gm-auth.js**: nome de arquivo mantido (include interno, sem prefixo `globalmed_`). Decidir
   se renomeia p/ `fp-auth.js`.
 - **competitividade_dark**: mantido tema ESCURO (variante do catálogo), recolorido p/ navy+azul FPMED.
