@@ -38,7 +38,8 @@ deve começar perguntando: **"⚠️ Aguardando dados de registro da FPMED — j
 ## ⬜ PENDENTES (na ordem)
 - [ ] **Recriar edge functions** no projeto novo: `/functions/v1/ler-pedido` (sistema_final) e
       `/functions/v1/api` (giovana) — usadas por Importar Cotação/Espelho e leitura de pedido por IA.
-- [ ] **Criar tabelas** no banco novo (DDL do CONTINUAR) + RLS/GRANT + `NOTIFY pgrst,'reload schema'`
+- [x] **Tabelas criadas** no banco novo (12 tabelas/views, `db_schema.sql`). Todas retornam HTTP 200
+      via REST com a anon key. RLS ficou **OFF** (igual ao GlobalMed; app não tem policies) — ver hardening abaixo.
 - [ ] **Deploy** (#11): 1º push (precisa auth git/PAT p/ o repo privado) → depois tornar PÚBLICO +
       GitHub Pages (`fpmed-hospitalar.github.io/fpmed`). **Trava:** só vai ao ar sem placeholders e
       sem dado da GlobalMed (aguarda dados de registro) e apontando pro Supabase da FPMED.
@@ -61,6 +62,10 @@ deve começar perguntando: **"⚠️ Aguardando dados de registro da FPMED — j
    (regra master: nunca importar clientes do GlobalMed). Limpar/substituir por demo antes do deploy.
 5. **Pix/WhatsApp**: dados de pagamento antigos existiam só na loja (removida). Conferir que
    nenhum Pix/WhatsApp da GlobalMed sobrou.
+6. **Segurança do banco (RLS)**: as tabelas estão com **RLS OFF** (igual ao GlobalMed hoje; a anon
+   key é pública, então qualquer um com ela lê/grava). O `gm-auth.js` já manda o JWT do usuário como
+   `authenticated`. HARDENING FUTURO recomendado: ligar RLS + policies `authenticated` por tabela
+   (o app já está pronto pra isso). Não é obrigatório p/ funcionar, mas é o passo de segurança certo.
 
 ## 📌 Decisões/observações
 - **gm-auth.js**: nome de arquivo mantido (include interno, sem prefixo `globalmed_`). Decidir
