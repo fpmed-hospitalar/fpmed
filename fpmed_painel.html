@@ -4,63 +4,89 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>FPMED — Painel do Sistema</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="gm-auth.js"></script>
 <style>
-  * { margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI',system-ui,sans-serif; }
-  body { background:#eef4ef; color:#1c2b22; padding-bottom:50px; }
-  header { background:#0f2e1d; color:#fff; padding:16px 28px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; }
-  header h1 { font-size:22px; color:#4ade80; }
-  header h1 span { color:#fff; font-weight:400; font-size:18px; }
-  header #status { font-size:12px; opacity:.8; }
+  /* ═══════════ FPMED HOSPITALAR — DESIGN SYSTEM OFICIAL (tema CLARO) ═══════════ */
+  :root{
+    --azul:#2CA9E0; --azul-escuro:#1B8DC4; --azul-claro:#EAF6FC;
+    --navy:#173A5E; --navy-2:#1F4A75;
+    --verde:#8DC63F; --verde-escuro:#6FA32C; --verde-claro:#F1F8E6;
+    --bg:#F4F7FA; --card:#FFFFFF; --linha:#E3EAF1;
+    --ink:#1E2A36; --texto:#4A5B6B; --dim:#8496A6;
+    --amarelo:#E8A93C; --vermelho:#E05C5C;
+    --sombra:0 2px 10px rgba(23,58,94,.07);
+  }
+  * { margin:0; padding:0; box-sizing:border-box; font-family:'Inter',system-ui,sans-serif; }
+  body { background:var(--bg); color:var(--ink); padding-bottom:50px; -webkit-font-smoothing:antialiased; }
+
+  /* faixa azul institucional */
+  .topfaixa { background:var(--azul); color:#fff; font-size:12px; padding:6px 28px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px; }
+  .topfaixa b { font-weight:600; }
+
+  header { background:#fff; color:var(--ink); padding:14px 28px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; border-bottom:1px solid var(--linha); box-shadow:var(--sombra); }
+  .brand { display:flex; align-items:center; gap:14px; }
+  .brand img { height:38px; width:auto; display:block; }
+  header h1 { font-family:'Montserrat',sans-serif; font-size:20px; font-weight:700; color:var(--navy); }
+  header h1 span { color:var(--azul); font-weight:600; font-size:17px; }
+  header #status { font-size:12px; color:var(--dim); }
   .wrap { max-width:1100px; margin:22px auto; padding:0 16px; }
-  .card { background:#fff; padding:22px; border-radius:12px; box-shadow:0 2px 8px rgba(0,0,0,.06); margin-bottom:18px; }
-  h2 { font-size:16px; margin-bottom:14px; color:#0f2e1d; display:flex; align-items:center; gap:8px; }
-  .refresh { display:flex; gap:10px; align-items:center; margin-bottom:6px; }
-  button { padding:9px 16px; border:none; border-radius:8px; background:#0f7a3d; color:#fff; font-weight:600; font-size:14px; cursor:pointer; }
-  button:hover { background:#0c6633; }
-  button.copy { background:#1d4fb3; }
-  button.copy:hover { background:#173e8f; }
+  .card { background:var(--card); padding:22px; border-radius:14px; box-shadow:var(--sombra); border:1px solid var(--linha); margin-bottom:18px; }
+  h2 { font-family:'Montserrat',sans-serif; font-size:16px; margin-bottom:14px; color:var(--navy); font-weight:700; display:flex; align-items:center; gap:8px; }
+  .refresh { display:flex; gap:10px; align-items:center; margin-bottom:6px; flex-wrap:wrap; }
+  button { font-family:'Inter',sans-serif; padding:9px 16px; border:none; border-radius:8px; background:var(--azul); color:#fff; font-weight:600; font-size:14px; cursor:pointer; }
+  button:hover { background:var(--azul-escuro); }
+  button.copy { background:var(--navy); }
+  button.copy:hover { background:var(--navy-2); }
 
   /* KPI cards */
   .kpis { display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:14px; }
-  .kpi { border-radius:12px; padding:18px; color:#fff; }
+  .kpi { border-radius:14px; padding:18px; color:#fff; }
   .kpi .lbl { font-size:11px; text-transform:uppercase; letter-spacing:.5px; opacity:.9; }
-  .kpi .val { font-size:30px; font-weight:800; margin-top:4px; line-height:1; }
-  .kpi .sub { font-size:11px; opacity:.85; margin-top:6px; }
-  .k1{background:linear-gradient(135deg,#0f7a3d,#16a34a);} .k2{background:linear-gradient(135deg,#0f2e1d,#1c5135);}
-  .k3{background:linear-gradient(135deg,#1d4fb3,#2563eb);} .k4{background:linear-gradient(135deg,#b45309,#d97706);}
-  .k5{background:linear-gradient(135deg,#6d28d9,#7c3aed);} .k6{background:linear-gradient(135deg,#0e7490,#0891b2);}
+  .kpi .val { font-family:'Montserrat',sans-serif; font-size:30px; font-weight:800; margin-top:4px; line-height:1; }
+  .kpi .sub { font-size:11px; opacity:.9; margin-top:6px; }
+  .k1{background:linear-gradient(135deg,#2CA9E0,#1B8DC4);} .k2{background:linear-gradient(135deg,#173A5E,#1F4A75);}
+  .k3{background:linear-gradient(135deg,#1B8DC4,#2CA9E0);} .k4{background:linear-gradient(135deg,#E8A93C,#C9821F);}
+  .k5{background:linear-gradient(135deg,#8DC63F,#6FA32C);} .k6{background:linear-gradient(135deg,#1F4A75,#2CA9E0);}
 
   table { width:100%; border-collapse:collapse; font-size:13px; }
-  th { text-align:left; padding:9px 10px; background:#0f2e1d; color:#cde8d8; font-size:11px; text-transform:uppercase; letter-spacing:.3px; }
-  td { padding:8px 10px; border-top:1px solid #eef2ee; }
-  tr:hover td { background:#f7faf8; }
+  th { text-align:left; padding:9px 10px; background:var(--navy); color:#C9DAEA; font-size:11px; text-transform:uppercase; letter-spacing:.3px; }
+  td { padding:8px 10px; border-top:1px solid #F0F4F8; color:var(--texto); }
+  tr:hover td { background:var(--azul-claro); }
   .right { text-align:right; }
-  .bar { height:8px; background:#e3ece6; border-radius:5px; overflow:hidden; min-width:60px; }
-  .bar > i { display:block; height:100%; background:linear-gradient(90deg,#16a34a,#4ade80); }
-  .muted { color:#8a9a8f; }
+  .bar { height:8px; background:#E3EAF1; border-radius:5px; overflow:hidden; min-width:60px; }
+  .bar > i { display:block; height:100%; background:linear-gradient(90deg,#1B8DC4,#2CA9E0); }
+  .muted { color:var(--dim); }
   .b { font-weight:700; }
-  .tbl-wrap { max-height:480px; overflow:auto; border-radius:8px; border:1px solid #e3ece6; }
-  .loading { padding:30px; text-align:center; color:#9aa6a0; }
+  .tbl-wrap { max-height:480px; overflow:auto; border-radius:8px; border:1px solid var(--linha); }
+  .loading { padding:30px; text-align:center; color:var(--dim); }
   .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:18px; }
   @media(max-width:760px){ .grid2{grid-template-columns:1fr;} }
-  .toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%); background:#0f2e1d; color:#fff; padding:12px 22px; border-radius:10px; font-size:14px; box-shadow:0 4px 14px rgba(0,0,0,.25); opacity:0; transition:.25s; pointer-events:none; z-index:99; }
+  .toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%); background:var(--navy); color:#fff; padding:12px 22px; border-radius:10px; font-size:14px; box-shadow:0 4px 14px rgba(23,58,94,.25); opacity:0; transition:.25s; pointer-events:none; z-index:99; }
   .toast.show { opacity:1; }
-  .ts { font-size:12px; color:#8a9a8f; }
+  .ts { font-size:12px; color:var(--dim); }
   /* notas */
-  .nota { display:flex; align-items:flex-start; gap:10px; padding:10px 12px; border-radius:8px; background:#fafdfb; border:1px solid #eef2ee; margin-bottom:8px; }
-  .nota input[type=checkbox] { margin-top:3px; width:17px; height:17px; cursor:pointer; flex-shrink:0; }
+  .nota { display:flex; align-items:flex-start; gap:10px; padding:10px 12px; border-radius:8px; background:#FAFCFE; border:1px solid var(--linha); margin-bottom:8px; }
+  .nota input[type=checkbox] { margin-top:3px; width:17px; height:17px; cursor:pointer; flex-shrink:0; accent-color:var(--azul); }
   .nota .txt { flex:1; font-size:14px; line-height:1.4; }
-  .nota.done .txt { text-decoration:line-through; color:#9aa6a0; }
-  .nota .data { font-size:11px; color:#9aa6a0; white-space:nowrap; }
-  .nota .x { background:none; border:none; color:#c0392b; cursor:pointer; font-size:14px; padding:0 4px; }
-  .nota:hover { background:#f3f8f4; }
+  .nota.done .txt { text-decoration:line-through; color:var(--dim); }
+  .nota .data { font-size:11px; color:var(--dim); white-space:nowrap; }
+  .nota .x { background:none; border:none; color:var(--vermelho); cursor:pointer; font-size:14px; padding:0 4px; }
+  .nota:hover { background:var(--azul-claro); }
 </style>
 </head>
 <body>
 
+<div class="topfaixa">
+  <div>📞 <b>(62) 3290-4241</b> &nbsp;·&nbsp; Compromisso com qualidade!</div>
+  <div>FPMED HOSPITALAR</div>
+</div>
+
 <header>
-  <h1>FPMED <span>· 📊 Painel do Sistema</span></h1>
+  <div class="brand">
+    <img src="logo_fpmed.png" alt="FPMED Hospitalar">
+    <h1>FPMED <span>· 📊 Painel do Sistema</span></h1>
+  </div>
   <span id="status">conectando…</span>
 </header>
 
@@ -69,8 +95,8 @@
   <div class="refresh">
     <button onclick="carregarTudo()">🔄 Atualizar</button>
     <button class="copy" onclick="copiarResumo()">📋 Copiar resumo pra IA</button>
-    <button onclick="baixarArquivo()" style="background:#5b21b6">📥 Baixar arquivo (.txt)</button>
-    <button onclick="baixarProjeto()" style="background:#166534">⬇️ Baixar projeto completo (.zip)</button>
+    <button onclick="baixarArquivo()" style="background:#6FA32C">📥 Baixar arquivo (.txt)</button>
+    <button onclick="baixarProjeto()" style="background:#1F4A75">⬇️ Baixar projeto completo (.zip)</button>
     <span class="ts" id="atualizado"></span>
   </div>
 
@@ -108,7 +134,7 @@
   <div class="card">
     <h2>📝 Continuar Aqui — Anotações & Pendências</h2>
     <div style="margin-bottom:14px;">
-      <textarea id="nota-txt" placeholder="Escreva uma anotação por linha (pode colar várias de uma vez)..." style="width:100%; min-height:80px; padding:9px 12px; border:1px solid #c8d6cc; border-radius:8px; font-size:14px; font-family:inherit; resize:vertical;"></textarea>
+      <textarea id="nota-txt" placeholder="Escreva uma anotação por linha (pode colar várias de uma vez)..." style="width:100%; min-height:80px; padding:9px 12px; border:1px solid var(--linha); border-radius:8px; font-size:14px; font-family:inherit; resize:vertical;"></textarea>
       <div style="margin-top:8px; display:flex; gap:10px; align-items:center;">
         <button onclick="addNota()">➕ Adicionar</button>
         <span class="ts">Cada linha vira uma anotação separada</span>

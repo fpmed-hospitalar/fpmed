@@ -4,22 +4,25 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>FPMED — Redefinir senha</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-  *{margin:0;padding:0;box-sizing:border-box;font-family:system-ui,'Segoe UI',Arial,sans-serif}
-  body{background:#0b1220;color:#e5e7eb;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:16px}
-  .card{width:360px;max-width:94vw;background:#111a2e;border:1px solid #22314f;border-radius:16px;padding:26px 24px;box-shadow:0 20px 60px rgba(0,0,0,.5)}
-  h1{text-align:center;font-size:18px;letter-spacing:.5px;margin-bottom:2px}
-  .sub{text-align:center;color:#8aa0c6;font-size:12px;margin-bottom:18px}
-  input{width:100%;box-sizing:border-box;padding:11px 12px;margin-bottom:10px;border-radius:9px;border:1px solid #2a3a5c;background:#0c1526;color:#e5e7eb;font-size:14px}
-  button{width:100%;padding:11px;border:none;border-radius:9px;background:#2563eb;color:#fff;font-weight:700;font-size:14px;cursor:pointer}
+  *{margin:0;padding:0;box-sizing:border-box;font-family:'Inter',system-ui,'Segoe UI',Arial,sans-serif}
+  body{background:#F4F7FA;color:#1E2A36;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:16px}
+  .card{width:360px;max-width:94vw;background:#FFFFFF;border:1px solid #E3EAF1;border-radius:16px;padding:26px 24px;box-shadow:0 20px 60px rgba(23,58,94,.15)}
+  .brand{display:flex;justify-content:center;margin-bottom:6px}
+  .sub{text-align:center;color:#8496A6;font-size:12px;margin-bottom:18px}
+  input{width:100%;box-sizing:border-box;padding:11px 12px;margin-bottom:10px;border-radius:9px;border:1px solid #E3EAF1;background:#F4F7FA;color:#1E2A36;font-size:14px}
+  input:focus{outline:none;border-color:#2CA9E0;background:#fff}
+  button{width:100%;padding:11px;border:none;border-radius:9px;background:#2CA9E0;color:#fff;font-family:'Montserrat',sans-serif;font-weight:700;font-size:14px;cursor:pointer}
+  button:hover{background:#1B8DC4}
   #msg{min-height:16px;margin:9px 0;font-size:12px}
-  a{color:#8aa0c6;font-size:12px;text-decoration:none}
+  a{color:#2CA9E0;font-size:12px;text-decoration:none}
   .center{text-align:center;margin-top:12px}
 </style>
 </head>
 <body>
 <div class="card">
-  <h1>FPMED</h1>
+  <div class="brand"><img src="logo_fpmed.png" alt="FPMED Hospitalar" style="height:40px;width:auto;display:block"></div>
   <div class="sub">Redefinir senha</div>
   <div id="conteudo">
     <input id="p1" type="password" placeholder="nova senha (mín. 6)" autocomplete="new-password">

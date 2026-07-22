@@ -23,6 +23,8 @@ scratchpad/
 *.jpg
 *.jpeg
 *.png
+# EXCECAO: o logo oficial da FPMED PODE (e deve) ser versionado — o deploy precisa dele
+!logo_fpmed.png
 auditoria_*.txt
 varredura_*.txt
 scan_*.txt

@@ -4,60 +4,84 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>FPMED — Viabilidade de Compra</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="gm-auth.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
-  * { margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI',system-ui,sans-serif; }
-  body { background:#eef4ef; color:#1c2b22; }
-  header { background:#0f2e1d; color:#fff; padding:16px 28px; display:flex; align-items:center; justify-content:space-between; }
-  header h1 { font-size:22px; color:#4ade80; }
-  header h1 span { color:#fff; font-weight:400; }
-  header #status { font-size:12px; opacity:.75; }
+  /* ═══════════ FPMED HOSPITALAR — DESIGN SYSTEM OFICIAL (tema CLARO) ═══════════ */
+  :root{
+    --azul:#2CA9E0; --azul-escuro:#1B8DC4; --azul-claro:#EAF6FC;
+    --navy:#173A5E; --navy-2:#1F4A75;
+    --verde:#8DC63F; --verde-escuro:#6FA32C; --verde-claro:#F1F8E6;
+    --bg:#F4F7FA; --card:#FFFFFF; --linha:#E3EAF1;
+    --ink:#1E2A36; --texto:#4A5B6B; --dim:#8496A6;
+    --amarelo:#E8A93C; --vermelho:#E05C5C;
+    --sombra:0 2px 10px rgba(23,58,94,.07); --raio:14px;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; font-family:'Inter',system-ui,sans-serif; }
+  body { background:var(--bg); color:var(--ink); -webkit-font-smoothing:antialiased; }
+  .topfaixa { background:var(--azul); color:#fff; font-size:12px; padding:6px 28px; display:flex; justify-content:space-between; align-items:center; }
+  .topfaixa b { font-weight:600; }
+  header { background:#fff; color:var(--navy); padding:14px 28px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid var(--linha); box-shadow:var(--sombra); }
+  header .brand { display:flex; align-items:center; gap:14px; }
+  header .brand img { height:34px; width:auto; display:block; }
+  header h1 { font-family:'Montserrat',sans-serif; font-size:22px; font-weight:700; color:var(--navy); }
+  header h1 span { color:var(--azul); font-weight:500; }
+  header #status { font-size:12px; color:var(--dim); }
   .wrap { margin:22px 28px; }
-  .card { background:#fff; padding:22px; border-radius:12px; box-shadow:0 2px 8px rgba(0,0,0,.06); margin-bottom:18px; }
-  h2 { font-size:17px; margin-bottom:6px; }
-  p.desc { font-size:13px; color:#5b6b60; margin-bottom:16px; }
-  .dropzone { border:2px dashed #b6cdbe; border-radius:12px; padding:28px; text-align:center; cursor:pointer; transition:.2s; background:#f6faf7; }
-  .dropzone:hover, .dropzone.drag { border-color:#0f7a3d; background:#edf7f0; }
+  .card { background:var(--card); padding:22px; border-radius:var(--raio); box-shadow:var(--sombra); border:1px solid var(--linha); margin-bottom:18px; }
+  h2 { font-family:'Montserrat',sans-serif; font-size:17px; font-weight:700; color:var(--navy); margin-bottom:6px; }
+  p.desc { font-size:13px; color:var(--texto); margin-bottom:16px; }
+  .dropzone { border:2px dashed #B6CFE0; border-radius:var(--raio); padding:28px; text-align:center; cursor:pointer; transition:.2s; background:var(--azul-claro); }
+  .dropzone:hover, .dropzone.drag { border-color:var(--azul); background:#DFF1FB; }
   .dropzone .big { font-size:30px; margin-bottom:6px; }
-  .dropzone .t1 { font-weight:700; font-size:15px; color:#0f7a3d; }
-  .dropzone .t2 { font-size:12px; color:#7a8a80; margin-top:4px; }
+  .dropzone .t1 { font-weight:700; font-size:15px; color:var(--azul-escuro); }
+  .dropzone .t2 { font-size:12px; color:var(--dim); margin-top:4px; }
   .controls { display:flex; gap:12px; flex-wrap:wrap; align-items:flex-end; margin:14px 0; }
-  label.f { font-size:13px; display:flex; flex-direction:column; gap:3px; color:#56685c; font-weight:600; }
-  select, input[type=text], input[type=number] { padding:8px 12px; border:1px solid #c8d6cc; border-radius:8px; font-size:14px; }
-  button { padding:9px 16px; border:none; border-radius:8px; background:#0f7a3d; color:#fff; font-weight:600; font-size:14px; cursor:pointer; }
-  button.sec { background:#e7efe9; color:#0f7a3d; }
-  button.excel { background:#1d6f42; }
-  button.mini { padding:5px 10px; font-size:12px; background:#b45309; }
+  label.f { font-size:13px; display:flex; flex-direction:column; gap:3px; color:var(--texto); font-weight:600; }
+  select, input[type=text], input[type=number] { font-family:'Inter',sans-serif; padding:8px 12px; border:1px solid var(--linha); border-radius:8px; font-size:14px; color:var(--ink); }
+  button { font-family:'Inter',sans-serif; padding:9px 16px; border:none; border-radius:8px; background:var(--azul); color:#fff; font-weight:600; font-size:14px; cursor:pointer; }
+  button:hover { background:var(--azul-escuro); }
+  button.sec { background:var(--azul-claro); color:var(--azul-escuro); }
+  button.excel { background:var(--verde); } button.excel:hover { background:var(--verde-escuro); }
+  button.mini { padding:5px 10px; font-size:12px; background:var(--amarelo); } button.mini:hover { background:#CE9226; }
   button:disabled { opacity:.45; cursor:default; }
   .kpis { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:16px; }
-  .kpi { border-radius:12px; padding:16px; color:#fff; }
+  .kpi { border-radius:var(--raio); padding:16px; color:#fff; box-shadow:var(--sombra); }
   .kpi .lbl { font-size:11px; text-transform:uppercase; letter-spacing:.5px; opacity:.9; }
-  .kpi .val { font-size:26px; font-weight:800; margin-top:4px; }
-  .kpi.k1 { background:linear-gradient(135deg,#0f7a3d,#16a34a); }
-  .kpi.k2 { background:linear-gradient(135deg,#b45309,#d97706); }
-  .kpi.k3 { background:linear-gradient(135deg,#b32626,#ef4444); }
-  .kpi.k4 { background:linear-gradient(135deg,#0f2e1d,#1c5135); }
+  .kpi .val { font-family:'Montserrat',sans-serif; font-size:26px; font-weight:800; margin-top:4px; }
+  .kpi.k1 { background:linear-gradient(135deg,#8DC63F,#6FA32C); }
+  .kpi.k2 { background:linear-gradient(135deg,#E8A93C,#CE9226); }
+  .kpi.k3 { background:linear-gradient(135deg,#E05C5C,#C24040); }
+  .kpi.k4 { background:linear-gradient(135deg,#173A5E,#1F4A75); }
   table { width:100%; border-collapse:collapse; font-size:12.5px; }
-  th { text-align:left; padding:9px 8px; background:#0f2e1d; color:#cde8d8; font-size:10.5px; text-transform:uppercase; letter-spacing:.4px; position:sticky; top:0; }
-  td { padding:8px; border-top:1px solid #edf2ee; vertical-align:middle; }
-  tr.verde td { background:#e9f9f0; } tr.amarelo td { background:#fef8e8; } tr.vermelho td { background:#fdeded; }
+  th { text-align:left; padding:9px 8px; background:var(--navy); color:#C9DAEA; font-size:10.5px; text-transform:uppercase; letter-spacing:.4px; position:sticky; top:0; }
+  td { padding:8px; border-top:1px solid #EDF2F7; vertical-align:middle; color:var(--texto); }
+  tr.verde td { background:var(--verde-claro); } tr.amarelo td { background:#FDF6E6; } tr.vermelho td { background:#FBEDED; }
   .tag { display:inline-block; padding:3px 9px; border-radius:20px; font-size:11px; font-weight:700; white-space:nowrap; }
-  .tag.green { background:#d8f7e3; color:#0f7a3d; } .tag.amber { background:#fdf3d3; color:#9a7405; } .tag.red { background:#fde0e0; color:#b32626; }
-  .muted { color:#8a9a8f; } .right { text-align:right; } .center { text-align:center; } .b { font-weight:700; }
-  .tbl-wrap { max-height:600px; overflow:auto; border-radius:10px; border:1px solid #e3ece6; }
+  .tag.green { background:var(--verde-claro); color:var(--verde-escuro); } .tag.amber { background:#FBF0D8; color:#B07E1E; } .tag.red { background:#FBE0E0; color:#B54040; }
+  .muted { color:var(--dim); } .right { text-align:right; } .center { text-align:center; } .b { font-weight:700; }
+  .tbl-wrap { max-height:600px; overflow:auto; border-radius:10px; border:1px solid var(--linha); }
   .hidden { display:none; }
-  .fname { font-size:13px; color:#0f7a3d; font-weight:600; }
-  .legend { display:flex; gap:16px; flex-wrap:wrap; font-size:12px; color:#5b6b60; margin-top:10px; }
+  .fname { font-size:13px; color:var(--azul-escuro); font-weight:600; }
+  .legend { display:flex; gap:16px; flex-wrap:wrap; font-size:12px; color:var(--texto); margin-top:10px; }
   .legend span { display:flex; align-items:center; gap:5px; } .dot { width:12px; height:12px; border-radius:3px; display:inline-block; }
-  .sub { font-size:11px; color:#7a8a80; }
-  #gate { display:none; text-align:center; padding:60px 20px; color:#7a8a80; font-size:15px; }
+  .sub { font-size:11px; color:var(--dim); }
+  #gate { display:none; text-align:center; padding:60px 20px; color:var(--dim); font-size:15px; }
 </style>
 </head>
 <body>
 
+<div class="topfaixa">
+  <div>📞 <b>(62) 3290-4241</b> &nbsp;·&nbsp; Compromisso com qualidade!</div>
+  <div>FPMED HOSPITALAR</div>
+</div>
+
 <header>
-  <h1>FPMED <span>· Viabilidade de Compra</span></h1>
+  <div class="brand">
+    <img src="logo_fpmed.png" alt="FPMED Hospitalar">
+    <h1>FPMED <span>· Viabilidade de Compra</span></h1>
+  </div>
   <span id="status">conectando ao banco…</span>
 </header>
 

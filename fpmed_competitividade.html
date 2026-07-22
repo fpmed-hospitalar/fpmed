@@ -4,48 +4,53 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>FPMED — Análise de Competitividade de Preço</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root{
-    --gm:#0E5A9C; --gm-dark:#0A4275; --gm-light:#2E86C1;
-    --ink:#1a2733; --muted:#5b6b7a; --line:#e4e9ef; --bg:#eef2f6;
-    --green:#15803d; --green-bg:#dcfce7;
-    --amber:#b45309; --amber-bg:#fef3c7;
-    --red:#b91c1c; --red-bg:#fee2e2;
+    --gm:#2CA9E0; --gm-dark:#1B8DC4; --gm-light:#EAF6FC;
+    --navy:#173A5E; --navy2:#1F4A75;
+    --ink:#1E2A36; --muted:#4A5B6B; --line:#E3EAF1; --bg:#F4F7FA;
+    --green:#6FA32C; --green-bg:#F1F8E6;
+    --amber:#E8A93C; --amber-bg:#fef3c7;
+    --red:#E05C5C; --red-bg:#fee2e2;
   }
   *{box-sizing:border-box;margin:0;padding:0}
   body{
-    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    font-family:'Inter',-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
     background:var(--bg); color:var(--ink); line-height:1.5; padding:28px 16px;
   }
-  .page{max-width:1000px;margin:0 auto;background:#fff;border-radius:16px;overflow:hidden;
-    box-shadow:0 10px 40px rgba(14,90,156,.10),0 2px 8px rgba(0,0,0,.04)}
+  .page{max-width:1000px;margin:0 auto;background:#fff;border-radius:14px;overflow:hidden;
+    box-shadow:0 2px 10px rgba(23,58,94,.07)}
+  /* TOPBAR institucional */
+  .topbar{background:var(--gm);color:#fff;font-size:12px;padding:6px 20px;display:flex;justify-content:space-between;align-items:center}
+  .topbar b{font-weight:700}
   /* HEADER */
-  .head{background:linear-gradient(135deg,var(--gm) 0%,var(--gm-dark) 100%);color:#fff;padding:28px 34px 24px}
-  .brand{font-size:13px;letter-spacing:3px;font-weight:700;opacity:.85;text-transform:uppercase}
-  .brand b{color:#fff}
-  h1{font-size:25px;font-weight:800;margin-top:6px;letter-spacing:-.3px}
+  .head{background:linear-gradient(135deg,var(--navy) 0%,var(--navy2) 100%);color:#fff;padding:24px 34px 24px}
+  .brand-logo{background:#fff;border-radius:10px;padding:7px 10px;display:inline-flex}
+  .brand-logo img{height:32px;width:auto;display:block}
+  h1{font-family:'Montserrat',sans-serif;font-size:25px;font-weight:800;margin-top:14px;letter-spacing:-.3px}
   .sub{font-size:14px;opacity:.9;margin-top:6px;max-width:640px}
   .tag{display:inline-block;margin-top:14px;background:rgba(255,255,255,.16);
     padding:5px 12px;border-radius:999px;font-size:12px;font-weight:600}
   /* KPI */
   .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line)}
   .kpi{background:#fff;padding:18px 20px}
-  .kpi .n{font-size:30px;font-weight:800;color:var(--gm);letter-spacing:-1px;line-height:1}
+  .kpi .n{font-family:'Montserrat',sans-serif;font-size:30px;font-weight:800;color:var(--navy);letter-spacing:-1px;line-height:1}
   .kpi .n.red{color:var(--red)}
   .kpi .l{font-size:12.5px;color:var(--muted);margin-top:6px;font-weight:500}
   /* SECTION */
   .sec{padding:26px 34px}
-  .sec h2{font-size:16px;font-weight:800;color:var(--ink);margin-bottom:4px}
+  .sec h2{font-family:'Montserrat',sans-serif;font-size:16px;font-weight:800;color:var(--navy);margin-bottom:4px}
   .sec .hint{font-size:13px;color:var(--muted);margin-bottom:18px}
   /* BAR CHART */
   .bar-row{display:grid;grid-template-columns:172px 1fr 56px;align-items:center;gap:12px;margin-bottom:9px}
   .bar-name{font-size:12.5px;font-weight:600;color:var(--ink);text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .bar-track{background:#f1f4f8;border-radius:6px;height:22px;position:relative;overflow:hidden}
   .bar-fill{height:100%;border-radius:6px;transition:width .6s}
-  .bar-fill.g{background:linear-gradient(90deg,#22c55e,#15803d)}
-  .bar-fill.a{background:linear-gradient(90deg,#f59e0b,#b45309)}
-  .bar-fill.r{background:linear-gradient(90deg,#ef4444,#b91c1c)}
-  .bar-val{font-size:13px;font-weight:700;color:var(--ink);text-align:left}
+  .bar-fill.g{background:linear-gradient(90deg,#8DC63F,#6FA32C)}
+  .bar-fill.a{background:linear-gradient(90deg,#E8A93C,#c98f28)}
+  .bar-fill.r{background:linear-gradient(90deg,#E05C5C,#c23e3e)}
+  .bar-val{font-family:'Montserrat',sans-serif;font-size:13px;font-weight:700;color:var(--navy);text-align:left}
   /* TABLE */
   table{width:100%;border-collapse:collapse;font-size:13.5px}
   thead th{background:var(--gm);color:#fff;text-align:left;padding:11px 12px;font-weight:600;font-size:12.5px}
@@ -54,7 +59,7 @@
   tbody td{padding:10px 12px;border-bottom:1px solid var(--line)}
   tbody tr:nth-child(even){background:#f8fafc}
   .prod{font-weight:600}
-  .price-our{font-weight:800;color:var(--gm)}
+  .price-our{font-family:'Montserrat',sans-serif;font-weight:800;color:var(--navy)}
   .comp{color:var(--muted)}
   .comp b{color:var(--ink);font-weight:700}
   .diff{font-weight:700;text-align:right}
@@ -86,8 +91,13 @@
 <body>
 <div class="page">
 
+  <div class="topbar">
+    <div>📞 <b>(62) 3290-4241</b> &nbsp;·&nbsp; Compromisso com qualidade!</div>
+    <div>FPMED HOSPITALAR</div>
+  </div>
+
   <div class="head">
-    <div class="brand"><b>FPMED</b> · DISTRIBUIÇÃO</div>
+    <span class="brand-logo"><img src="logo_fpmed.png" alt="FPMED Hospitalar"></span>
     <h1>Análise de Competitividade de Preço</h1>
     <div class="sub">Como o nosso preço de venda se compara ao dos concorrentes no portal — e onde dá para ganhar mais cotações.</div>
     <span class="tag">Amostra de 9 itens · portal · julho/2026</span>

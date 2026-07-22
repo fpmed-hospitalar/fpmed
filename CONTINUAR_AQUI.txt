@@ -31,13 +31,34 @@ Criado em 21/07/2026 copiando SO os arquivos do app do C:\globalmed.
     fpmed-hospitalar.github.io/fpmed. Futuro (pos-venda): dominio proprio sistema.fpmed.com.br
     via CNAME no GitHub Pages. NUNCA usar a conta pessoal do Lemuel na URL publica.
 
+>>> ESCOPO (21/07/2026): Pacote FPMED = sistema completo SEM Prospeccao e SEM Loja Publica
+    (decisoes de escopo do Lemuel). A loja (fpmed-loja.html) foi REMOVIDA do repo.
+
+>>> REGRA DE SEGURANCA / PRE-CONDICAO DE DEPLOY (21/07/2026): o CNPJ/IE/endereco/razao social
+    da GlobalMed NUNCA pode aparecer no sistema da FPMED — nem em prototipo. Enquanto os dados
+    reais nao chegam, as 17 linhas juridicas ficam com PLACEHOLDERS visiveis
+    [RAZAO SOCIAL FPMED]/[CNPJ]/[ENDERECO]/[WHATSAPP]. O push publico so libera quando NAO
+    houver placeholder NEM dado da GlobalMed, com URL+ANON do Supabase da FPMED e URLs do
+    GitHub da org. ATENCAO: dashboard_clientes.html tem lista de clientes/CNPJs embutida
+    (ex.: ELLO DISTRIBUICAO LTDA) — revisar se e demo ou dado real do GlobalMed antes do deploy.
+
+>>> LEMBRETE DE SESSAO: enquanto a tarefa de dados de registro estiver BLOQUEADA, TODA sessao
+    da FPMED comeca perguntando: "Aguardando dados de registro da FPMED — ja chegaram?".
+
+>>> BLOQUEADA — AGUARDANDO LEMUEL (previsao 23/07/2026): dados de registro da FPMED (razao
+    social, CNPJ, IE, endereco, WhatsApp comercial, e-mail). Quando colar: trocar os
+    placeholders em todos os arquivos (PDFs/rodapes), conferir zero placeholder/zero GlobalMed,
+    commit + push.
+
 >>> PROGRESSO (21/07/2026, rodada autonoma):
   [OK] Prospeccao removida do sistema_final (1294 linhas). [OK] Arquivos globalmed_* -> fpmed_*
   (git mv, refs internas ajustadas). [OK] Varredura do NOME-marca GlobalMed->FPMED (61 trocas).
   [OK] logo_fpmed.png baixado do site (fpmed.com.br). [OK] fpmed_template.html movido do Downloads.
-  PENDENTE: dados de registro reais da FPMED (razao social, CNPJ, IE, endereco, WhatsApp) — 17
-  linhas de identidade juridica nos PDFs/loja ainda com dados da GlobalMed (nao inventei).
-  PENDENTE: Supabase FPMED, rebrand visual (template/cores/logo real/tel/slogan), tabelas, org+deploy.
+  [OK] REBRAND VISUAL completo (10 arquivos): tema claro do template, logo real, cores
+  #2CA9E0/#173A5E/#8DC63F, Montserrat+Inter, faixa (62) 3290-4241 + slogan. [OK] Loja removida.
+  [OK] Placeholders juridicos aplicados (giovana 7 + sistema_final 28) — zero dado da GlobalMed.
+  PENDENTE: Supabase FPMED, troca URL+ANON, tabelas, org fpmed-hospitalar + deploy.
+  BLOQUEADA: dados de registro reais (ver acima).
 
 Proximos passos (quando o Lemuel mandar): (a) criar o Supabase da FPMED; (b) trocar URL+ANON no
 gm-auth.js e nos .html; (c) rebrand (nome/logo/cores/telefone); (d) remover Prospeccao do
