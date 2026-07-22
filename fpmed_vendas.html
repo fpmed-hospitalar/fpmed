@@ -327,11 +327,12 @@ document.addEventListener('visibilitychange', () => { if (!document.hidden) auto
 async function init() {
   try {
     await recarregarCotacoes(true);
-    prospects = await sbAll(`prospects?select=razao_social,contato,whatsapp,status,vendedora,cidade,uf&order=razao_social.asc`);
+    // FPMED: sem Prospecção no pacote — tabela prospects não existe; segue com lista vazia.
+    try { prospects = await sbAll(`prospects?select=razao_social,contato,whatsapp,status,vendedora,cidade,uf&order=razao_social.asc`); } catch(e) { prospects = []; }
     try { clientes = await sbAll(`clientes?select=*&order=nome.asc`); } catch(e) { clientes = []; }
     orcamentos = await sbAll(`orcamentos?select=numero,cliente,vendedora,total_geral,criado_em,status&order=criado_em.desc`);
 
-    document.getElementById('status').textContent = `✅ ${globais.length} produtos · ${clientes.length} clientes · ${prospects.length} prospects · ${orcamentos.length} orçamentos`;
+    document.getElementById('status').textContent = `✅ ${globais.length} produtos · ${clientes.length} clientes · ${orcamentos.length} orçamentos`;
     renderOfertas(); preencherFiltrosWA(); renderContatos(); renderRecompra();
   } catch (e) {
     document.getElementById('status').textContent = '❌ erro: ' + e.message.slice(0, 80);
