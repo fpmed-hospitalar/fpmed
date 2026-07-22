@@ -265,7 +265,7 @@ async function renderEstoque(){
     <div class="kpis">
       <div class="kpi k1"><div class="lbl">Em estoque (ativo)</div><div class="val">${comEst.toLocaleString('pt-BR')}</div></div>
       <div class="kpi k4"><div class="lbl">Sem estoque (stockout)</div><div class="val">${semEst.toLocaleString('pt-BR')}</div></div>
-      <div class="kpi k2"><div class="lbl">Estoque GLOBAL próprio</div><div class="val">${global.toLocaleString('pt-BR')}</div></div>
+      <div class="kpi k2"><div class="lbl">Estoque FPMED próprio</div><div class="val">${global.toLocaleString('pt-BR')}</div></div>
     </div>`;
 }
 
@@ -277,7 +277,7 @@ async function copiarResumo(){
   txt+='⚠️ COMO FUNCIONA (LEIA PRIMEIRO): este projeto é operado pelo CLAUDE CODE (CLI da Anthropic no PC do Lemuel, pasta C:\\fpmed). O Claude Code edita os HTML, faz commit/push pro GitHub (GitHub Pages atualiza sozinho) e lê/escreve no Supabase via REST. Um Claude no chat do claude.ai NÃO executa nada disso — só conversa; entregue plano/código/SQL PRONTOS pra rodar no Claude Code, não diga que já fez. Detalhes completos na seção "COMO ESTE PROJETO FUNCIONA" do histórico técnico mais abaixo.\n\n';
   txt+='=== STATUS FPMED (puxado do banco em '+new Date().toLocaleString('pt-BR')+') ===\n\n';
   txt+=`Cotações totais: ${t.nCot}\nFornecedores: ${t.nForn}\nClientes: ${t.nCli}\nOrçamentos: ${t.nOrc}\nPedidos de compra: ${t.nPed}\nProspects: ${t.nProsp}\n`;
-  if(dados.estoque) txt+=`\nEstoque ativo: ${dados.estoque.comEst} | Stockout: ${dados.estoque.semEst} | GLOBAL próprio: ${dados.estoque.global}\n`;
+  if(dados.estoque) txt+=`\nEstoque ativo: ${dados.estoque.comEst} | Stockout: ${dados.estoque.semEst} | FPMED próprio: ${dados.estoque.global}\n`;
   if(dados.porForn){
     txt+='\n--- Cotações por fornecedor ---\n';
     dados.porForn.forEach(([f,n])=>{ txt+=`  ${f}: ${n}\n`; });
@@ -389,7 +389,7 @@ async function baixarArquivo(){
   txt+=`Pedidos de compra: ${t.nPed||0}\n`;
   txt+=`Prospects: ${t.nProsp||0}\n`;
   if(dados.estoque){
-    txt+=`\nEstoque ativo: ${dados.estoque.comEst} | Stockout: ${dados.estoque.semEst} | GLOBAL próprio: ${dados.estoque.global}\n`;
+    txt+=`\nEstoque ativo: ${dados.estoque.comEst} | Stockout: ${dados.estoque.semEst} | FPMED próprio: ${dados.estoque.global}\n`;
   }
 
   if(dados.porForn){

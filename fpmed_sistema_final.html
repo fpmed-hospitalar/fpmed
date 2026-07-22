@@ -194,16 +194,13 @@ select.filter{padding:8px 12px;border:1px solid var(--borda);border-radius:9px;f
     <span id="badge-iac" style="background:#e0a03e;color:#1a1a1a;border-radius:10px;font-size:9px;font-weight:700;padding:1px 6px;margin-left:auto;display:none">0</span>
   </div>
   <div class="nav-item" onclick="showPage('estoque-global',this)">
-    <span class="icon">📦</span> Atualizar Estoque GLOBAL
+    <span class="icon">📦</span> Atualizar Estoque FPMED
   </div>
   <div class="nav-item" onclick="showPage('comparativo',this)">
     <span class="icon">📊</span> Comparativo Fornec.
   </div>
   <div class="nav-item" onclick="showPage('competitividade',this)" id="nav-competitividade">
     <span class="icon">🎯</span> Competitividade
-  </div>
-  <div class="nav-item" onclick="showPage('cotacao-cliente',this)">
-    <span class="icon">💼</span> Cotação p/ Cliente
   </div>
   <div class="nav-item" onclick="showPage('pedidos-compra',this)" id="nav-pedidos">
     <span class="icon">🛒</span> Pedidos de Compra
@@ -335,7 +332,7 @@ select.filter{padding:8px 12px;border:1px solid var(--borda);border-radius:9px;f
           </select>
           <select class="filter" onchange="filtrarCotacoes()" id="filtro-tipo">
             <option value="">Todos tipos</option>
-            <option value="global">GLOBAL (sem markup)</option>
+            <option value="global">FPMED (sem markup)</option>
             <option value="fornecedor">Fornecedor (+25%)</option>
           </select>
           <button class="btn btn-primary" onclick="openModal('modal-cotacao')">+ Nova</button>
@@ -414,11 +411,11 @@ select.filter{padding:8px 12px;border:1px solid var(--borda);border-radius:9px;f
     </div>
     <div class="form-row">
       <div class="form-group"><label>Fornecedor</label>
-        <select id="cot-fornecedor"><option value="">GLOBAL (sem markup)</option></select>
+        <select id="cot-fornecedor"><option value="">FPMED (sem markup)</option></select>
       </div>
       <div class="form-group"><label>Tipo</label>
         <select id="cot-tipo">
-          <option value="global">GLOBAL (sem markup)</option>
+          <option value="global">FPMED (sem markup)</option>
           <option value="fornecedor">Fornecedor (+25%)</option>
         </select>
       </div>
@@ -604,7 +601,7 @@ select.filter{padding:8px 12px;border:1px solid var(--borda);border-radius:9px;f
           <input id="op-busca" placeholder="Filtrar por cliente ou produto..." oninput="opRender()" style="flex:1;min-width:220px;padding:9px 12px;border:1px solid var(--borda);border-radius:8px;font-size:13px;outline:none">
           <select id="op-filtro" onchange="opRender()" style="padding:9px 12px;border:1px solid var(--borda);border-radius:8px;font-size:13px;outline:none">
             <option value="preco">💰 Só onde posso oferecer mais barato</option>
-            <option value="estoque">🏠 Só em estoque Global (recompra)</option>
+            <option value="estoque">🏠 Só em estoque FPMED (recompra)</option>
             <option value="todas">Todas as oportunidades</option>
           </select>
           <span id="op-status" style="font-size:12px;color:var(--muted)"></span>
@@ -708,7 +705,7 @@ select.filter{padding:8px 12px;border:1px solid var(--borda);border-radius:9px;f
     <!-- ATUALIZAR ESTOQUE GLOBAL -->
     <div class="page" id="page-estoque-global">
       <div class="section-header">
-        <h2>📦 Atualizar Estoque GLOBAL</h2>
+        <h2>📦 Atualizar Estoque FPMED</h2>
       </div>
       <div class="table-wrap" style="padding:24px;margin-bottom:20px">
         <h3 style="font-family:'Montserrat',sans-serif;font-size:15px;font-weight:700;margin-bottom:8px">1. Cole o conteúdo do relatório de estoque</h3>
@@ -765,7 +762,7 @@ select.filter{padding:8px 12px;border:1px solid var(--borda);border-radius:9px;f
       <div class="table-wrap" style="padding:20px;margin-bottom:16px;display:none;border:2px solid #e6a817;background:#fffdf5" id="eg-ausentes-box">
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;flex-wrap:wrap">
           <span style="font-size:20px">⚠️</span>
-          <h3 style="font-family:'Montserrat',sans-serif;font-size:15px;font-weight:700;color:#9a6b00"><span id="eg-ausentes-count">0</span> no GLOBAL com saldo mas AUSENTES do relatório</h3>
+          <h3 style="font-family:'Montserrat',sans-serif;font-size:15px;font-weight:700;color:#9a6b00"><span id="eg-ausentes-count">0</span> no FPMED com saldo mas AUSENTES do relatório</h3>
           <div style="margin-left:auto;display:flex;gap:8px">
             <button class="btn btn-outline btn-sm" onclick="egMarcarAusentes(true)">Marcar todos</button>
             <button class="btn btn-outline btn-sm" onclick="egMarcarAusentes(false)">Desmarcar todos</button>
@@ -812,7 +809,7 @@ select.filter{padding:8px 12px;border:1px solid var(--borda);border-radius:9px;f
           <h3 style="font-family:'Montserrat',sans-serif;font-size:15px;font-weight:700">Itens aguardando chegar</h3>
           <span id="eg-aguardando-resumo" style="font-size:12px;color:var(--muted);margin-left:auto"></span>
         </div>
-        <p style="font-size:12px;color:var(--muted);margin-bottom:12px">Itens de pedidos de compra (não concluídos) cruzados com o estoque GLOBAL. <strong style="color:#16c060">✅ CHEGOU</strong> = já tem saldo no GLOBAL.</p>
+        <p style="font-size:12px;color:var(--muted);margin-bottom:12px">Itens de pedidos de compra (não concluídos) cruzados com o estoque FPMED. <strong style="color:#16c060">✅ CHEGOU</strong> = já tem saldo no FPMED.</p>
         <div style="overflow-x:auto;max-height:340px;overflow-y:auto">
           <table style="width:100%;border-collapse:collapse;font-size:12px">
             <thead style="position:sticky;top:0;background:#f8faf8">
@@ -846,7 +843,7 @@ select.filter{padding:8px 12px;border:1px solid var(--borda);border-radius:9px;f
         <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:10px">
           <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#1a5e1a;cursor:pointer;padding:8px 14px;border:2px solid #4caf50;border-radius:9px;background:#e8f5e9;font-weight:600">
             <input type="checkbox" id="comp-filtro-global" onchange="renderComparativo()" style="width:15px;height:15px;cursor:pointer;accent-color:#2e7d32">
-            📦 Só Estoque GLOBAL
+            📦 Só Estoque FPMED
           </label>
           <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#7B3F00;cursor:pointer;padding:8px 14px;border:2px solid #FF8C00;border-radius:9px;background:#FFF3E0;font-weight:600">
             <input type="checkbox" id="comp-filtro-promo" onchange="renderComparativo()" style="width:15px;height:15px;cursor:pointer;accent-color:#FF6B00">
@@ -854,7 +851,7 @@ select.filter{padding:8px 12px;border:1px solid var(--borda);border-radius:9px;f
           </label>
         </div>
         <div style="display:flex;gap:12px;flex-wrap:wrap;font-size:11px;color:var(--muted);margin-bottom:10px;padding:8px 12px;background:#f8faf8;border-radius:8px;">
-          <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:2px;background:#D3D1C7;display:inline-block"></span>Estoque Global</span>
+          <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:2px;background:#D3D1C7;display:inline-block"></span>Estoque FPMED</span>
           <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:2px;background:#C0DD97;display:inline-block"></span>Distribuidor</span>
           <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:2px;background:#B5D4F4;display:inline-block"></span>Indústria</span>
           <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:2px;background:#9FE1CB;display:inline-block"></span>Menor preço = comprar aqui</span>
@@ -980,42 +977,6 @@ select.filter{padding:8px 12px;border:1px solid var(--borda);border-radius:9px;f
     </div>
 
 
-    <!-- COTAÇÃO PARA CLIENTE -->
-    <div class="page" id="page-cotacao-cliente">
-      <div class="section-header"><h2>💼 Cotação para Cliente</h2></div>
-      <div class="table-wrap" style="padding:20px;margin-bottom:16px" id="cc-step1">
-        <h3 style="font-family:'Montserrat',sans-serif;font-size:14px;font-weight:700;margin-bottom:8px">1. Cole a lista de produtos do cliente</h3>
-        <p style="font-size:12px;color:var(--muted);margin-bottom:10px">Um produto por linha. Ex: CIPROFLOXACINO 200MG · HIDROCORTISONA 500MG</p>
-        <textarea id="cc-lista" rows="12" placeholder="CIPROFLOXACINO 200MG&#10;HIDROCORTISONA 500MG&#10;DEXAMETASONA 4MG&#10;..."
-          style="width:100%;padding:12px;border:1px solid var(--borda);border-radius:9px;font-size:13px;font-family:'Inter',sans-serif;outline:none;resize:vertical;line-height:1.8"></textarea>
-        <div style="display:flex;gap:10px;margin-top:12px;align-items:center">
-          <button class="btn btn-primary" style="padding:10px 24px" onclick="ccBuscarLista()">🔍 Buscar no Banco</button>
-          <span id="cc-step1-status" style="font-size:12px;color:var(--muted)"></span>
-        </div>
-      </div>
-      <div id="cc-step2" style="display:none">
-        <div class="table-wrap" style="padding:20px;margin-bottom:16px">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
-            <h3 style="font-family:'Montserrat',sans-serif;font-size:14px;font-weight:700">2. Resultados — Melhor preço encontrado</h3>
-            <button class="btn btn-outline btn-sm" onclick="ccVoltar()">← Editar lista</button>
-          </div>
-          <div id="cc-resultados-lista"></div>
-        </div>
-        <div class="table-wrap" style="padding:20px">
-          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
-            <div>
-              <div style="font-size:12px;color:var(--muted);margin-bottom:4px">TOTAL DA COTAÇÃO</div>
-              <div id="cc-total" style="font-family:'Montserrat',sans-serif;font-size:28px;font-weight:800;color:var(--verde-escuro)">R$ 0,00</div>
-            </div>
-            <div style="display:flex;gap:10px">
-              <button class="btn btn-outline" onclick="ccVoltar()">← Voltar</button>
-              <button class="btn btn-outline" onclick="ccPedidoCompra()">🛒 Pedido de Compra</button>
-              <button class="btn btn-primary" onclick="ccImprimir()">🖨 Gerar PDF</button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
   </div>
 </div>
 
@@ -1111,9 +1072,11 @@ const FORN_NOMES = {
   '14':'OUTROS','15':'BIOCHIMICO','17':'BRASIL MEDICAMENTOS','18':'MCW','19':'SUPERMED','20':'SUPERMAX INDUSTRIA'
 };
 function nomeForn(cod){
+  // FPMED: função de EXIBIÇÃO — o valor de dado continua 'GLOBAL'/código '1' no banco e nos filtros.
   const c = (cod==null ? '' : String(cod)).trim();
-  if(!c) return 'GLOBAL';
-  return /^\d+$/.test(c) ? (FORN_NOMES[c] || c) : c;
+  if(!c) return 'FPMED';
+  const n = /^\d+$/.test(c) ? (FORN_NOMES[c] || c) : c;
+  return n === 'GLOBAL' ? 'FPMED' : n;
 }
 // inverso do FORN_NOMES (nome → código); '14'/OUTROS fica de fora de propósito (código desativado)
 const COD_POR_NOME = Object.fromEntries(
@@ -1141,7 +1104,6 @@ const pageConfig = {
   'itens-a-cotar': { title:'Itens a Cotar', btn:'🔄 Atualizar', btnAction:()=>iacCarregar() },
   comparativo:  { title:'Comparativo de Fornecedores', btn:'🔄 Atualizar', btnAction:()=>recarregarCotacoes(true).then(()=>renderComparativo(undefined,true)) },
   competitividade: { title:'Competitividade de Preço', btn:'', btnAction:null },
-  'cotacao-cliente': { title:'Cotação para Cliente', btn:'🖨 Gerar PDF', btnAction:()=>ccImprimir() },
   'pedidos-compra':  { title:'Pedidos de Compra', btn:'', btnAction:null }
 };
 async function showPage(name, el) {
@@ -1156,13 +1118,12 @@ async function showPage(name, el) {
   if (cfg.btn) { hBtn.textContent = cfg.btn; hBtn.style.display=''; }
   else hBtn.style.display='none';
   // Estoque/preço sempre atual: recarrega cotações (cache 60s) ANTES de renderizar abas que usam estoque
-  if (['dashboard','comparativo','competitividade','cotacao-cliente','relatorios','importar','orcamento','cotacoes'].includes(name)) { await recarregarCotacoes(); }
+  if (['dashboard','comparativo','competitividade','relatorios','importar','orcamento','cotacoes'].includes(name)) { await recarregarCotacoes(); }
   if (name === 'relatorios') renderRelatorios();
   if (name === 'dashboard') renderDashboard();
   if (name === 'importar') initImport();
   if (name === 'comparativo') renderComparativo();
   if (name === 'competitividade') renderCompetitividade();
-  if (name === 'cotacao-cliente') { document.getElementById('cc-step1').style.display='block'; document.getElementById('cc-step2').style.display='none'; }
   if (name === 'pedidos-compra') { carregarPedidos(); }
   if (name === 'estoque-global') { pcRenderAguardando(); }
   if (name === 'compras-cliente') { cpcInit(); }
@@ -1248,7 +1209,7 @@ function preencherSelects() {
 let _cotTs = 0;  // timestamp da última carga de cotações (p/ cache de 60s)
 // FPMED: garante fornecedor_nome preenchido (linhas antigas/importadas sem a coluna)
 function _normFornNome(arr){
-  (arr||[]).forEach(c => { if(!c.fornecedor_nome) c.fornecedor_nome = (String(c.fornecedor)==='1'||(c.tipo||'').toLowerCase()==='global') ? 'GLOBAL' : nomeForn(c.fornecedor); });
+  (arr||[]).forEach(c => { if(!c.fornecedor_nome) c.fornecedor_nome = (String(c.fornecedor)==='1'||(c.tipo||'').toLowerCase()==='global') ? 'FPMED' : nomeForn(c.fornecedor); });
   return arr;
 }
 async function carregarCotacoes() {
@@ -1294,7 +1255,7 @@ function renderCotacoes(lista) {
     <td><strong style="font-size:12px">${c.produto}</strong></td>
     <td style="font-size:11px;color:var(--muted)">${c.principio_ativo||'—'}</td>
     <td style="font-size:12px">${c.marca||'—'}</td>
-    <td><span class="badge badge-blue">${c.fornecedor_nome||'GLOBAL'}</span></td>
+    <td><span class="badge badge-blue">${c.fornecedor_nome||'FPMED'}</span></td>
     <td style="font-size:12px">R$ ${parseFloat(c.preco_unit||0).toFixed(4)}</td>
     <td style="font-weight:600;color:var(--verde-escuro)">${fmtBRL(pv(c))}</td>
     <td><span class="badge ${c.tipo==='global'?'badge-yellow':'badge-red'}">${c.tipo==='global'?'Sem markup':'+25%'}</span></td>
@@ -1406,7 +1367,7 @@ function renderDashboard() {
   document.getElementById('m-fornecedores').textContent = fornecedores.length;
   document.getElementById('m-cotacoes').textContent = cotacoes.length;
   document.getElementById('m-vencendo').textContent = venc.length;
-  document.getElementById('m-produtos-sub').textContent = `${cotacoes.filter(c=>c.tipo==='global').length} no estoque GLOBAL`;
+  document.getElementById('m-produtos-sub').textContent = `${cotacoes.filter(c=>c.tipo==='global').length} no estoque FPMED`;
   const rec = cotacoes.slice(0,10);
   const el = document.getElementById('tabela-recentes');
   if (!rec.length) { el.innerHTML='<div class="empty-state"><div class="icon">📦</div><p>Nenhuma cotação</p></div>'; return; }
@@ -1414,7 +1375,7 @@ function renderDashboard() {
   ${rec.map(c=>`<tr>
     <td><strong style="font-size:12px">${c.produto}</strong><br><small style="color:var(--muted)">${c.principio_ativo||''}</small></td>
     <td style="font-size:12px">${c.marca||'—'}</td>
-    <td><span class="badge badge-blue">${c.fornecedor_nome||'GLOBAL'}</span></td>
+    <td><span class="badge badge-blue">${c.fornecedor_nome||'FPMED'}</span></td>
     <td style="font-weight:600;color:var(--verde-escuro)">${fmtBRL(pv(c))}</td>
     <td style="font-size:12px">${fmtDate(c.validade)}</td>
   </tr>`).join('')}</tbody></table>`;
@@ -1509,7 +1470,7 @@ function buscarParaOrcamento(q) {
       <div class="busca-resultado">
         <div style="flex:1">
           <div style="font-size:13px;font-weight:500">${c.produto}</div>
-          <div style="font-size:11px;color:var(--muted)">${c.fornecedor_nome||'GLOBAL'} · ${c.marca||''} · ${fmtBRL(c.pvv)}/un${c.estoque>0?' ✅ '+c.estoque+' un':''}</div>
+          <div style="font-size:11px;color:var(--muted)">${c.fornecedor_nome||'FPMED'} · ${c.marca||''} · ${fmtBRL(c.pvv)}/un${c.estoque>0?' ✅ '+c.estoque+' un':''}</div>
         </div>
         <button class="btn btn-primary btn-sm" onclick='addOrc(${JSON.stringify(c).replace(/'/g,"&#39;")})'>+ Add</button>
       </div>`).join('');
@@ -1539,7 +1500,7 @@ function renderOrc() {
       <span style="font-size:11px;color:var(--muted);min-width:28px;font-weight:600">${String(i+1).padStart(3,'0')}</span>
       <div class="item-info">
         <div class="item-nome">${c.produto}</div>
-        <div class="item-det">${c.marca||''} · ${c.fornecedor_nome||'GLOBAL'}</div>
+        <div class="item-det">${c.marca||''} · ${c.fornecedor_nome||'FPMED'}</div>
       </div>
       <div style="display:flex;align-items:center;gap:8px">
         <span style="font-size:12px;color:var(--muted)">Qtd:</span>
@@ -1575,7 +1536,7 @@ function renderRelatorios() {
   if (!cotacoes.length) { el.innerHTML='<div class="empty-state"><p>Carregue cotações primeiro</p></div>'; return; }
   // Por fornecedor
   const porForn = {};
-  cotacoes.forEach(c => { const n=c.fornecedor_nome||'GLOBAL'; porForn[n]=(porForn[n]||0)+1; });
+  cotacoes.forEach(c => { const n=c.fornecedor_nome||'FPMED'; porForn[n]=(porForn[n]||0)+1; });
   const maxForn = Math.max(...Object.values(porForn));
   const fTop = Object.entries(porForn).sort((a,b)=>b[1]-a[1]).slice(0,8);
   // Por produto
@@ -1604,7 +1565,7 @@ function renderRelatorios() {
       ${comp.length ? `<table><thead><tr><th>Produto</th><th>Fornecedor</th><th>Marca</th><th>Preço Venda</th><th>Status</th></tr></thead><tbody>
       ${comp.map(([nome,items])=>items.sort((a,b)=>a.pvv-b.pvv).map((c,i)=>`<tr>
         <td style="font-size:12px">${i===0?`<strong>${nome}</strong>`:''}</td>
-        <td style="font-size:12px">${c.fornecedor_nome||'GLOBAL'}</td>
+        <td style="font-size:12px">${c.fornecedor_nome||'FPMED'}</td>
         <td style="font-size:12px">${c.marca||'—'}</td>
         <td style="font-weight:600;color:${i===0?'var(--verde-escuro)':'var(--texto)'};font-size:12px">${fmtBRL(c.pvv)}</td>
         <td>${i===0?'<span class="badge badge-green">✓ Melhor</span>':'<span class="badge badge-yellow">Alternativo</span>'}</td>
@@ -1707,8 +1668,8 @@ function compGerarPDF() {
     +'<p style="margin:4px 0 0;color:#666;font-size:11px">Gerado em '+data+' · '+selecionados.length+' produto(s)</p></div>'
     +'<div style="font-size:10px;color:#888;text-align:right">CNPJ: 47.110.418/0001-15<br>FPMED DISTRIBUIDORA DE PRODUTOS HOSPITALARES LTDA</div></div>'
     +'<table><thead><tr>'
-    +'<th>Princípio Ativo</th><th>Marca (Global)</th>'
-    +'<th style="text-align:center">Estoque</th><th style="text-align:center">Preço Global</th>'
+    +'<th>Princípio Ativo</th><th>Marca (FPMED)</th>'
+    +'<th style="text-align:center">Estoque</th><th style="text-align:center">Preço FPMED</th>'
     +'<th style="text-align:center">Média Mercado</th><th style="text-align:center">Preço Sugerido</th>'
     +'<th style="text-align:center">Margem</th><th style="text-align:center">Melhor Fonte</th>'
     +'<th style="text-align:center">Preço Compra</th>'
@@ -1929,7 +1890,7 @@ function renderAnaliseMercado(lista, el) {
   html += '<div style="background:#EFF6FF;border:1px solid #BFDBFE;border-radius:12px;padding:14px 18px;margin-bottom:16px;display:flex;gap:12px;align-items:flex-start;">';
   html += '<span style="font-size:20px;">🔍</span>';
   html += '<div><div style="font-weight:700;font-size:13px;color:#1e40af;">Modo Análise de Mercado</div>';
-  html += '<div style="font-size:12px;color:#3b82f6;margin-top:2px;">Mostra todas as cotações de distribuidores mesmo sem estoque GLOBAL. Use para precificar compras de indústria.</div></div></div>';
+  html += '<div style="font-size:12px;color:#3b82f6;margin-top:2px;">Mostra todas as cotações de distribuidores mesmo sem estoque FPMED. Use para precificar compras de indústria.</div></div></div>';
 
   lista.forEach(function(g) {
     const distOps = g.opcoes.filter(o => !ehIndustria(o.forn, o) && !ehGlobal(o));
@@ -2367,7 +2328,7 @@ function renderComparativo(termo, manterLimite) {
   const nOcultas = (distTodos.length-distribuidores.length) + (indTodos.length-industrias.length);
 
   // Cabeçalhos
-  const thGlobal = `<th style="text-align:center;min-width:110px;padding:8px 10px;background:#F1EFE8;color:#444441;font-size:10px;font-weight:600;border-bottom:0.5px solid #B4B2A9;white-space:nowrap">Estoque Global<br><span style="font-weight:400;font-size:9px">Referência</span></th>`;
+  const thGlobal = `<th style="text-align:center;min-width:110px;padding:8px 10px;background:#F1EFE8;color:#444441;font-size:10px;font-weight:600;border-bottom:0.5px solid #B4B2A9;white-space:nowrap">Estoque FPMED<br><span style="font-weight:400;font-size:9px">Referência</span></th>`;
   const thMediaMercado = `<th style="text-align:center;min-width:110px;padding:8px 10px;background:#FFF3CD;color:#856404;font-size:10px;font-weight:600;border-bottom:0.5px solid #FFDA6A;white-space:nowrap">⚖️ Média Mercado<br><span style="font-weight:400;font-size:9px">Preço venda concorrentes</span></th>`;
   const thSeuPreco = `<th style="text-align:center;min-width:110px;padding:8px 10px;background:#D1FAE5;color:#065F46;font-size:10px;font-weight:600;border-bottom:0.5px solid #6EE7B7;white-space:nowrap">🎯 Seu Preço Sugerido<br><span style="font-weight:400;font-size:9px">Abaixo da média</span></th>`;
   const thFonteIdeal = `<th style="text-align:center;min-width:120px;padding:8px 10px;background:#EDE9FE;color:#5B21B6;font-size:10px;font-weight:600;border-bottom:0.5px solid #C4B5FD;white-space:nowrap">💡 Melhor Fonte Compra<br><span style="font-weight:400;font-size:9px">Indústria prioritária</span></th>`;
@@ -3184,7 +3145,7 @@ function renderCompetitividade(){
      '<div class="cz-acts"><button class="cz-btn" onclick="cpzExport()">⬇ Excel</button><button class="cz-btn" onclick="recarregarCotacoes(true).then(function(){renderCompetitividade();})">🔄 Atualizar</button></div></div>';
   // ── HERO ──
   h+='<div class="hero"><div class="kicker">Análise de Preço</div><h1>Meu preço vs o mercado</h1><div class="accent"></div>'+
-     '<p>Como o preço de venda do nosso estoque (GLOBAL) se compara ao dos concorrentes no portal — e onde dá pra ganhar mais cotação. Concorrente = todo fornecedor que não é o GLOBAL nem compra-direta/indústria; custo de referência = preço ÷ 1,25.</p></div>';
+     '<p>Como o preço de venda do nosso estoque (FPMED) se compara ao dos concorrentes no portal — e onde dá pra ganhar mais cotação. Concorrente = todo fornecedor que não é o FPMED nem compra-direta/indústria; custo de referência = preço ÷ 1,25.</p></div>';
   // ── KPIs (régua MKP-na-média; só dado confiável — suspeitos >60% ficam de fora) ──
   h+='<div class="kpis">'+
      '<div class="kpi"><div class="n c-red">'+acimaRows.length+'<span class="u">/'+total+'</span></div><div class="l">itens acima da média do mercado</div></div>'+
@@ -3228,7 +3189,7 @@ function renderCompetitividade(){
      '<div class="bk"><div class="cap"><span class="dot a"></span>Margem fina</div><div class="cnt">'+cnt.amarelo+' ITENS</div><p>Dá pra entrar na média, mas a margem fica <b>0–20%</b>. Decisão sua: entrar magro pra ganhar a cotação ou segurar.</p><div class="items">'+_cpzEsc(sample('amarelo'))+'</div></div>'+
      '<div class="bk"><div class="cap"><span class="dot r"></span>Comprar melhor</div><div class="cnt">'+cnt.vermelho+' ITENS</div><p>Até na média seria <b>prejuízo</b> — o problema é o custo. Comprar por ≤ custo-alvo (indústria/fornecedor novo) resolve.</p><div class="items">'+_cpzEsc(sample('vermelho'))+'</div></div>'+
      '</div></div>';
-  h+='<div class="foot"><span class="tag">✅ '+cnt.competitivo+' itens já competitivos</span> (nosso preço já ≤ média do mercado). <b>Régua:</b> classificação pela <b>MKP se vender na média</b> (custo = preço ÷ 1,25) — 🟢 ≥20%, 🟡 0–20%, 🔴 &lt;0. "vs melhor" é só informativo. KPIs/barras usam só os <b>'+total+' confiáveis</b>; os <b>'+susp.length+'</b> com &gt;60% acima do melhor ficam no bloco de suspeita.<br><b>Selos:</b> <b>vs genérico</b> = nosso item é a marca e os concorrentes cotados são genéricos (prêmio de marca é esperado). <b>pack N vs M</b> = o concorrente mais barato vende em pack N e o nosso é M — pack maior sempre tem unitário menor. Os dois explicam o "% acima" sem tirar o item dos KPIs.<br><b>Base:</b> '+allTotal+' itens GLOBAL com estoque e ≥1 concorrente. Concorrente = todo fornecedor exceto GLOBAL e compra-direta/indústria. Média sobre todas as cotações limpas.</div>';
+  h+='<div class="foot"><span class="tag">✅ '+cnt.competitivo+' itens já competitivos</span> (nosso preço já ≤ média do mercado). <b>Régua:</b> classificação pela <b>MKP se vender na média</b> (custo = preço ÷ 1,25) — 🟢 ≥20%, 🟡 0–20%, 🔴 &lt;0. "vs melhor" é só informativo. KPIs/barras usam só os <b>'+total+' confiáveis</b>; os <b>'+susp.length+'</b> com &gt;60% acima do melhor ficam no bloco de suspeita.<br><b>Selos:</b> <b>vs genérico</b> = nosso item é a marca e os concorrentes cotados são genéricos (prêmio de marca é esperado). <b>pack N vs M</b> = o concorrente mais barato vende em pack N e o nosso é M — pack maior sempre tem unitário menor. Os dois explicam o "% acima" sem tirar o item dos KPIs.<br><b>Base:</b> '+allTotal+' itens FPMED com estoque e ≥1 concorrente. Concorrente = todo fornecedor exceto o FPMED e compra-direta/indústria. Média sobre todas as cotações limpas.</div>';
   root.innerHTML=h;
   _cpzTabela();
 }
@@ -3631,7 +3592,7 @@ async function opInit(){
       const globalEst=globalRow?parseInt(globalRow.estoque||0):0;
       const economia=(a.lastPaid!=null && best)? +(a.lastPaid-best.preco).toFixed(4) : null;
       ops.push({ ...a, best:best?best.preco:null,
-        bestForn: best?(best.row.tipo==='global'||String(best.row.fornecedor)==='1'?'GLOBAL':nomeForn(best.row.fornecedor)):'—',
+        bestForn: best?(best.row.tipo==='global'||String(best.row.fornecedor)==='1'?'FPMED':nomeForn(best.row.fornecedor)):'—',
         globalEst, economia, temPreco:(economia!=null&&economia>0), temEstoque:globalEst>0 });
     });
     _opLista=ops; st.textContent=ops.length+' cruzamentos';
@@ -4095,354 +4056,6 @@ async function executarImport() {
     toast('Erro na importação', 'error');
   }
 }
-
-// ─── COTAÇÃO PARA CLIENTE ─────────────────────────────────────────────────────
-let ccResultados = [];
-
-async function ccBuscarLista() {
-  const texto = document.getElementById('cc-lista').value.trim();
-  if (!texto) { toast('Cole a lista de produtos', 'error'); return; }
-  const linhas = texto.split('\n').map(l => l.trim()).filter(Boolean);
-  const status = document.getElementById('cc-step1-status');
-  status.textContent = `Buscando ${linhas.length} produto(s)...`;
-  ccResultados = [];
-
-  for (const linha of linhas) {
-    const termo = linha.toLowerCase().replace(/[^a-z0-9\s%\/,\.]/g, '').trim();
-    const palavras = termo.split(/\s+/).filter(p => p.length > 2);
-
-    // Busca no banco por princípio ativo ou produto
-    const candidatos = cotacoes.filter(c => {
-      const pa = (c.principio_ativo || '').toLowerCase();
-      const prod = (c.produto || '').toLowerCase();
-      return palavras.some(p => pa.includes(p) || prod.includes(p));
-    });
-
-    if (!candidatos.length) {
-      ccResultados.push({ solicitado: linha, encontrado: null, opcoes: [] });
-      continue;
-    }
-
-    // Agrupar por fornecedor e pegar melhor preço de cada
-    const porForn = {};
-    candidatos.forEach(c => {
-      const FORN_NOMES = {
-      '1':'GLOBAL','2':'SUPERMEDICA','3':'STOCK MED','4':'PROMEFARMA','5':'DISMASTER',
-      '6':'ELLO','7':'MAEVE','8':'BRASIL DISTRIBUIDORA','9':'BASCEL / ROBERTINHO MED',
-      '10':'SULMEDIC','11':'ASTHAMED','12':'INDUSTRIA CRISTALIA','13':'RANBAXY',
-      '14':'OUTROS','15':'BIOCHIMICO','17':'BRASIL MEDICAMENTOS','18':'MCW','19':'SUPERMED','20':'SUPERMAX INDUSTRIA'
-    };
-    const fornCod = c.fornecedor || '1';
-    // Se o campo fornecedor já é um nome (não numérico), usar direto
-    // Se é código numérico, mapear para nome
-    let forn = /^\d+$/.test(fornCod) ? (FORN_NOMES[fornCod] || fornCod) : fornCod;
-    // Normalizar nomes conhecidos
-    const FORN_NORM = {
-      'SUPERMEDICA':'SUPERMEDICA','STOCK MED':'STOCK MED','SULMEDIC':'SULMEDIC',
-      'RANBAXY':'RANBAXY','PROMEFARMA':'PROMEFARMA','DISMASTER':'DISMASTER',
-      'ELLO':'ELLO','MAEVE':'MAEVE','BRASIL DISTRIBUIDORA':'BRASIL DISTRIBUIDORA',
-      'BASCEL / ROBERTINHO MED':'BASCEL / ROBERTINHO MED','ASTHAMED':'ASTHAMED',
-      'INDUSTRIA CRISTALIA':'INDUSTRIA CRISTALIA','BIOCHIMICO':'BIOCHIMICO',
-      'SANTA CRUZ':'SANTA CRUZ','GOYAZ SERVICE COMERCIO E LOGISTICA LTDA':'GOYAZ SERVICE',
-      'INDUSTRIA BLAU':'INDUSTRIA BLAU','LATINOFARMA':'LATINOFARMA',
-      'ABL PRODUTOS PARA SAUDE':'ABL PRODUTOS PARA SAUDE','NORTH PHARMA':'NORTH PHARMA',
-      'EMS':'EMS','EUROFARMA DIST':'EUROFARMA DIST'
-    };
-    forn = FORN_NORM[forn] || forn;
-    // Se tipo é global/estoque próprio, forçar forn = 'GLOBAL'
-    const tipoNorm = (c.tipo||'').toLowerCase().trim();
-    if (tipoNorm === 'global' || tipoNorm === 'estoque próprio' || tipoNorm === 'estoque proprio') forn = 'GLOBAL';
-      let preco = parseFloat(c.compra_unit || 0);
-      if (!preco && c.compra_caixa) {
-        const qtd = parseInt((c.und || '1').replace(/\D/g, '')) || 1;
-        preco = parseFloat(c.compra_caixa) / qtd;
-      }
-      if (!preco) preco = parseFloat(c.global_venda1 || c.venda_unit_calculada || 0);
-      if (!preco) return;
-
-      // Preço de venda: GLOBAL usa global_venda1, outros aplicam markup 25%
-      let venda = forn === 'GLOBAL'
-        ? parseFloat(c.global_venda1 || c.venda_unit_calculada || 0)
-        : preco * 1.25;
-      if (!venda) return;
-
-      if (!porForn[forn] || venda < porForn[forn].venda) {
-        porForn[forn] = { forn, produto: c.produto, marca: c.marca || '—', und: c.und || 'UN', venda, compra: preco, estoque: parseInt(c.estoque || 0) };
-      }
-    });
-
-    const opcoes = Object.values(porForn).sort((a, b) => a.venda - b.venda);
-    const melhor = opcoes[0] || null;
-    ccResultados.push({ solicitado: linha, encontrado: melhor, opcoes, desconto: 0 });
-  }
-
-  status.textContent = `${ccResultados.filter(r => r.encontrado).length} de ${linhas.length} encontrado(s)`;
-  ccRenderResultados();
-  document.getElementById('cc-step1').style.display = 'none';
-  document.getElementById('cc-step2').style.display = 'block';
-}
-
-function ccRenderResultados() {
-  const el = document.getElementById('cc-resultados-lista');
-  el.innerHTML = ccResultados.map((r, idx) => {
-    if (!r.encontrado) {
-      return `<div style="padding:16px;margin-bottom:12px;border-radius:12px;border:1px solid #fde8e8;background:#fff8f8">
-        <div style="display:flex;justify-content:space-between;align-items:center">
-          <div>
-            <div style="font-size:11px;color:#999;text-transform:uppercase;margin-bottom:2px">SOLICITADO</div>
-            <div style="font-size:14px;font-weight:600;color:#c0392b">${r.solicitado}</div>
-          </div>
-          <span style="background:#fde8e8;color:#c0392b;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:600">❌ Não encontrado</span>
-        </div>
-      </div>`;
-    }
-    const desc = r.desconto || 0;
-    const vendaComDesc = r.encontrado.venda * (1 - desc / 100);
-    const alternativas = r.opcoes.filter(o => o !== r.encontrado);
-
-    return `<div style="padding:16px;margin-bottom:12px;border-radius:12px;border:1px solid #e8f0e8;background:white">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap">
-        <div style="flex:1;min-width:200px">
-          <div style="font-size:11px;color:#999;text-transform:uppercase;margin-bottom:2px">SOLICITADO</div>
-          <div style="font-size:13px;font-weight:600;color:#333">${r.solicitado}</div>
-          <div style="font-size:11px;color:#666;margin-top:4px">
-            <span style="font-weight:500">${r.encontrado.produto}</span><br>
-            <span style="color:#999">${r.encontrado.forn} · ${r.encontrado.marca} · ${r.encontrado.und}</span>
-          </div>
-        </div>
-        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
-          <div style="font-size:22px;font-weight:800;color:var(--verde-escuro);font-family:'Montserrat',sans-serif">${fmtBRL(vendaComDesc)}</div>
-          ${desc > 0 ? `<div style="font-size:11px;color:#999;text-decoration:line-through">${fmtBRL(r.encontrado.venda)}</div>` : ''}
-          <div style="display:flex;align-items:center;gap:6px;background:#f5f5f5;padding:4px 10px;border-radius:20px">
-            <span style="font-size:11px;color:#555">Desconto:</span>
-            <input type="number" min="0" max="8" step="0.5" value="${desc}"
-              style="width:48px;padding:2px 6px;border:1px solid #ddd;border-radius:6px;font-size:12px;font-weight:600;text-align:center;outline:none"
-              oninput="ccAtualizarDesconto(${idx}, this.value)"> %
-          </div>
-        </div>
-      </div>
-      ${alternativas.length ? `
-      <div style="margin-top:10px;padding-top:10px;border-top:1px dashed #eee">
-        <div style="font-size:10px;color:#aaa;margin-bottom:6px">TROCAR PARA:</div>
-        <div style="display:flex;gap:6px;flex-wrap:wrap">
-          ${alternativas.slice(0,3).map((o, oi) => `
-            <button onclick="ccTrocar(${idx}, ${r.opcoes.indexOf(o)})"
-              style="background:#f5f5f5;border:1px solid #e0e0e0;border-radius:20px;padding:4px 12px;font-size:11px;cursor:pointer;color:#444">
-              ${o.forn} · ${o.marca} · ${fmtBRL(o.venda)}
-            </button>`).join('')}
-        </div>
-      </div>` : ''}
-    </div>`;
-  }).join('');
-  ccAtualizarTotal();
-}
-
-function ccAtualizarDesconto(idx, valor) {
-  const desc = Math.min(8, Math.max(0, parseFloat(valor) || 0));
-  ccResultados[idx].desconto = desc;
-  ccRenderResultados();
-}
-
-function ccTrocar(idx, opIdx) {
-  ccResultados[idx].encontrado = ccResultados[idx].opcoes[opIdx];
-  ccResultados[idx].desconto = 0;
-  ccRenderResultados();
-}
-
-function ccAtualizarTotal() {
-  const total = ccResultados.reduce((s, r) => {
-    if (!r.encontrado) return s;
-    const desc = r.desconto || 0;
-    return s + r.encontrado.venda * (1 - desc / 100);
-  }, 0);
-  document.getElementById('cc-total').textContent = fmtBRL(total);
-}
-
-function ccVoltar() {
-  document.getElementById('cc-step1').style.display = 'block';
-  document.getElementById('cc-step2').style.display = 'none';
-}
-
-function ccImprimir() {
-  const itens = ccResultados.filter(r => r.encontrado);
-  if (!itens.length) { toast('Nenhum item para imprimir', 'error'); return; }
-  const now = new Date();
-  const emissao = now.toLocaleDateString('pt-BR') + ' ' + now.toLocaleTimeString('pt-BR');
-  const totalGeral = itens.reduce((s, r) => {
-    const desc = r.desconto || 0;
-    return s + r.encontrado.venda * (1 - desc / 100);
-  }, 0);
-
-  const rows = itens.map((r, i) => {
-    const desc = r.desconto || 0;
-    const vendaFinal = r.encontrado.venda * (1 - desc / 100);
-    return `<tr style="background:${i % 2 === 0 ? 'white' : '#f9f9f9'}">
-      <td style="padding:7px 10px;border-bottom:1px solid #eee;font-size:10px;color:#888">${String(i+1).padStart(2,'0')}</td>
-      <td style="padding:7px 10px;border-bottom:1px solid #eee;font-size:10px;font-weight:600">${r.solicitado}</td>
-      <td style="padding:7px 10px;border-bottom:1px solid #eee;font-size:9px;color:#555">${r.encontrado.produto}</td>
-      <td style="padding:7px 10px;border-bottom:1px solid #eee;font-size:9px;color:#555">${r.encontrado.marca}</td>
-      <td style="padding:7px 10px;border-bottom:1px solid #eee;font-size:9px;text-align:center">${r.encontrado.und}</td>
-      <td style="padding:7px 10px;border-bottom:1px solid #eee;font-size:10px;text-align:right">${fmtBRL(r.encontrado.venda)}</td>
-      <td style="padding:7px 10px;border-bottom:1px solid #eee;font-size:10px;text-align:center;color:${desc > 0 ? '#c0392b' : '#aaa'}">${desc > 0 ? desc + '%' : '—'}</td>
-      <td style="padding:7px 10px;border-bottom:1px solid #eee;font-size:10px;font-weight:700;text-align:right;color:#1a7a4a">${fmtBRL(vendaFinal)}</td>
-    </tr>`;
-  }).join('');
-
-  const win = window.open('', '_blank');
-  win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Cotação FPMED</title>
-  <style>
-    body{font-family:Arial,sans-serif;font-size:10px;color:#000;padding:20px;max-width:210mm;margin:0 auto;}
-    .hdr{display:flex;align-items:flex-start;justify-content:space-between;border-bottom:2px solid #000;padding-bottom:12px;margin-bottom:14px;}
-    .logo{background:#fff;padding:8px 14px;border-radius:6px;}.logo .n{font-size:16px;font-weight:800;color:white;letter-spacing:-0.5px;}.logo .s{font-size:7px;color:#29b8ff;letter-spacing:3px;}
-    .emp{text-align:center;font-size:8px;line-height:1.8;}.emp strong{font-size:10px;display:block;margin-bottom:2px;}
-    .tit{background:#0d1b2a;color:white;padding:8px 14px;border-radius:6px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;}
-    .tit h2{font-size:12px;color:white;margin:0;}.tit span{font-size:9px;opacity:0.7;}
-    table{width:100%;border-collapse:collapse;}
-    th{background:#0d1b2a;color:white;padding:7px 10px;font-size:9px;font-weight:600;text-align:left;}
-    .total-row td{background:#f0f7f0;font-weight:700;border-top:2px solid #1a7a4a;}
-    .foot{margin-top:14px;font-size:8px;color:#777;border-top:1px solid #eee;padding-top:8px;display:flex;justify-content:space-between;}
-    @media print{body{padding:0;}@page{size:A4;margin:10mm;}}
-  </style></head><body>
-  <div class="hdr">
-    <div class="logo"><img src="logo_fpmed.png" alt="FPMED Hospitalar" style="height:48px;width:auto"></div>
-    <div class="emp"><strong>FPMED DISTRIBUIDORA DE PRODUTOS HOSPITALARES LTDA</strong>CNPJ: 47.110.418/0001-15 · IE: 10.947.387-9<br>RUA 09, S/N, QUADRA 55 A, LOTE 0002, VILA BRASILIA, APARECIDA DE GOIANIA/GO, CEP 74.911-080<br>WhatsApp: (62) 98147-9532 · Tel: (62) 3290-4241 · comercial@fpmed.com.br<br></div>
-    <div style="font-size:8px;text-align:right;line-height:1.8"><strong>Data:</strong> ${now.toLocaleDateString('pt-BR')}<br><strong>Emissão:</strong> ${emissao}</div>
-  </div>
-  <div class="tit"><h2>💼 Cotação para Cliente</h2><span>${itens.length} item(ns)</span></div>
-  <table>
-    <!-- 🔒 NÃO adicionar coluna de fornecedor aqui — esta cotação vai pro CLIENTE. Ver REGRA DE OURO no CONTINUAR_AQUI. -->
-    <thead><tr>
-      <th style="width:24px">#</th>
-      <th>Produto Solicitado</th>
-      <th>Produto Ofertado</th>
-      <th>Marca</th>
-      <th style="text-align:center">Und</th>
-      <th style="text-align:right">Preço Unit.</th>
-      <th style="text-align:center">Desc.</th>
-      <th style="text-align:right">Preço Final</th>
-    </tr></thead>
-    <tbody>
-      ${rows}
-      <tr class="total-row">
-        <td colspan="7" style="padding:8px 10px;font-size:11px;text-align:right">TOTAL GERAL</td>
-        <td style="padding:8px 10px;font-size:12px;text-align:right;color:#1a7a4a">${fmtBRL(totalGeral)}</td>
-      </tr>
-    </tbody>
-  </table>
-  <div class="foot"><span>FPMED DISTRIBUIDORA DE PRODUTOS HOSPITALARES LTDA — Cotação gerada automaticamente</span><span>Emitido em: ${emissao}</span></div>
-  <script>window.onload=()=>{window.print();}<\/script></body></html>`);
-  win.document.close();
-}
-
-
-// ─── PEDIDO DE COMPRA (COTAÇÃO P/ CLIENTE) ───────────────────────────────────
-function ccPedidoCompra() {
-  const itensValidos = ccResultados.filter(r => r.encontrado);
-  if (!itensValidos.length) { toast('Nenhum item para gerar pedido', 'error'); return; }
-
-  const now = new Date();
-  const emissao = now.toLocaleDateString('pt-BR') + ' ' + now.toLocaleTimeString('pt-BR');
-
-  // Agrupar por fornecedor
-  const porForn = {};
-  itensValidos.forEach(r => {
-    const forn = r.encontrado.forn || 'GLOBAL';
-    if (!porForn[forn]) porForn[forn] = [];
-    porForn[forn].push(r);
-  });
-
-  const fornList = Object.keys(porForn).sort();
-
-  const rows = fornList.map(forn => {
-    const itensForn = porForn[forn];
-    const totalForn = itensForn.reduce((s,r) => s + r.encontrado.compra * r.qtd||1, 0);
-
-    const linhas = itensForn.map((r,i) => {
-      const compra = r.encontrado.compra || 0;
-      const qtd = r.qtd || 1;
-      const desc = r.desconto || 0;
-      return `<tr style="background:${i%2===0?'white':'#f9faf9'}">
-        <td style="padding:6px 10px;font-size:11px">${r.solicitado}</td>
-        <td style="padding:6px 10px;font-size:11px;font-weight:500">${r.encontrado.produto}</td>
-        <td style="padding:6px 10px;font-size:11px">${r.encontrado.marca}</td>
-        <td style="padding:6px 10px;font-size:11px;text-align:center">${r.encontrado.und||'UN'}</td>
-        <td style="padding:6px 10px;font-size:11px;text-align:center">${qtd}</td>
-        <td style="padding:6px 10px;font-size:11px;text-align:right">R$ ${compra.toFixed(4)}</td>
-        <td style="padding:6px 10px;font-size:11px;text-align:right;font-weight:600;color:#1a7a4a">R$ ${(compra*qtd).toFixed(2).replace('.',',')}</td>
-      </tr>`;
-    }).join('');
-
-    return `
-    <div style="margin-bottom:24px;break-inside:avoid;">
-      <div style="background:#0d1b2a;color:white;padding:8px 14px;border-radius:6px 6px 0 0;display:flex;justify-content:space-between;align-items:center">
-        <span style="font-size:12px;font-weight:600">🏢 FORNECEDOR: ${nomeForn(forn).toUpperCase()}</span>
-        <span style="font-size:11px;opacity:.7">${itensForn.length} item(ns)</span>
-      </div>
-      <table style="width:100%;border-collapse:collapse;border:1px solid #e0e0e0;border-top:none">
-        <thead>
-          <tr style="background:#f5f5f5">
-            <th style="padding:6px 10px;font-size:9px;font-weight:600;color:#666;text-align:left;border-bottom:1px solid #ddd">SOLICITADO</th>
-            <th style="padding:6px 10px;font-size:9px;font-weight:600;color:#666;text-align:left;border-bottom:1px solid #ddd;min-width:180px">PRODUTO OFERTADO</th>
-            <th style="padding:6px 10px;font-size:9px;font-weight:600;color:#666;text-align:left;border-bottom:1px solid #ddd">MARCA</th>
-            <th style="padding:6px 10px;font-size:9px;font-weight:600;color:#666;text-align:center;border-bottom:1px solid #ddd">UND</th>
-            <th style="padding:6px 10px;font-size:9px;font-weight:600;color:#666;text-align:center;border-bottom:1px solid #ddd">QTD</th>
-            <th style="padding:6px 10px;font-size:9px;font-weight:600;color:#666;text-align:right;border-bottom:1px solid #ddd">COMPRA UNIT</th>
-            <th style="padding:6px 10px;font-size:9px;font-weight:600;color:#666;text-align:right;border-bottom:1px solid #ddd">TOTAL</th>
-          </tr>
-        </thead>
-        <tbody>${linhas}</tbody>
-        <tfoot>
-          <tr style="background:#f0f7f0">
-            <td colspan="6" style="padding:7px 10px;font-size:11px;font-weight:600;text-align:right;border-top:2px solid #1a7a4a">TOTAL — ${nomeForn(forn).toUpperCase()}</td>
-            <td style="padding:7px 10px;font-size:13px;font-weight:700;text-align:right;color:#1a7a4a;border-top:2px solid #1a7a4a">R$ ${totalForn.toFixed(2).replace('.',',')}</td>
-          </tr>
-        </tfoot>
-      </table>
-    </div>`;
-  }).join('');
-
-  const totalGeral = itensValidos.reduce((s,r) => s + (r.encontrado.compra||0) * (r.qtd||1), 0);
-
-  const win = window.open('', '_blank');
-  win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8">
-  <title>Pedido de Compra FPMED</title>
-  <style>
-    body{font-family:Arial,sans-serif;font-size:11px;color:#000;padding:20px;max-width:297mm;margin:0 auto;}
-    .hdr{display:flex;align-items:flex-start;justify-content:space-between;border-bottom:2px solid #000;padding-bottom:12px;margin-bottom:16px;}
-    .logo{background:#fff;padding:8px 14px;border-radius:6px;}
-    .logo .n{font-size:16px;font-weight:800;color:white;}
-    .logo .s{font-size:7px;color:#29b8ff;letter-spacing:3px;}
-    .emp{text-align:center;font-size:9px;line-height:1.8;}
-    .emp strong{font-size:11px;display:block;}
-    .tit{background:#0d1b2a;color:white;padding:8px 14px;border-radius:6px;margin-bottom:16px;display:flex;justify-content:space-between;}
-    .tit h2{font-size:13px;color:white;margin:0;}
-    .total-final{background:#0d1b2a;color:white;padding:10px 16px;border-radius:6px;margin-top:16px;display:flex;justify-content:space-between;align-items:center;}
-    .foot{margin-top:16px;font-size:9px;color:#777;border-top:1px solid #eee;padding-top:8px;display:flex;justify-content:space-between;}
-    @media print{body{padding:0;}@page{size:A4;margin:10mm;}}
-  </style></head><body>
-  <div class="hdr">
-    <div class="logo"><img src="logo_fpmed.png" alt="FPMED Hospitalar" style="height:48px;width:auto"></div>
-    <div class="emp"><strong>FPMED DISTRIBUIDORA DE PRODUTOS HOSPITALARES LTDA</strong>CNPJ: 47.110.418/0001-15 · IE: 10.947.387-9<br>RUA 09, S/N, QUADRA 55 A, LOTE 0002, VILA BRASILIA, APARECIDA DE GOIANIA/GO, CEP 74.911-080<br></div>
-    <div style="font-size:9px;text-align:right;line-height:1.8"><strong>Emitido:</strong> ${emissao}</div>
-  </div>
-  <div class="tit">
-    <h2>🛒 PEDIDO DE COMPRA — Cotação p/ Cliente</h2>
-    <span style="font-size:10px;opacity:.7">${fornList.length} fornecedor(es) · ${itensValidos.length} item(ns)</span>
-  </div>
-  ${rows}
-  <div class="total-final">
-    <span>TOTAL GERAL DE COMPRA</span>
-    <strong>R$ ${totalGeral.toFixed(2).replace('.',',')}</strong>
-  </div>
-  <div class="foot">
-    <span>FPMED DISTRIBUIDORA DE PRODUTOS HOSPITALARES LTDA — Uso interno</span>
-    <span>Emitido em: ${emissao}</span>
-  </div>
-  <script>window.onload=()=>{window.print();}<\/script>
-  </body></html>`);
-  win.document.close();
-}
-
 
 // ─── PEDIDOS DE COMPRA ────────────────────────────────────────────────────────
 async function carregarPedidos() {

@@ -104,7 +104,7 @@
     <label>Mínimo de estoque <input type="number" id="of-minest" value="1" style="width:80px"></label>
     <label class="chk"><input type="checkbox" id="of-socomp" checked> Só competitivos (≤ média de mercado)</label>
     <label class="chk"><input type="checkbox" id="of-socompara" checked> Só com comparação de mercado (2+ distribuidores)</label>
-    <label class="chk"><input type="checkbox" id="of-soglobal"> Só estoque GLOBAL</label>
+    <label class="chk"><input type="checkbox" id="of-soglobal"> Só estoque FPMED</label>
     <button class="sec" onclick="renderOfertas()">Aplicar</button>
     <button onclick="gerarTextoOferta()">Gerar texto WhatsApp</button>
     <button class="sec" onclick="copiarTexto('of-texto')">Copiar texto</button>
@@ -289,7 +289,7 @@ async function recarregarCotacoes(force) {
     }).map(p => {
       const ehGlobal = p.tipo === 'global' || p.tipo === 'Estoque próprio';
       p._global = ehGlobal;
-      p._origem = ehGlobal ? 'GLOBAL' : nomeForn(p.fornecedor);
+      p._origem = ehGlobal ? 'FPMED' : nomeForn(p.fornecedor);  // rótulo de exibição (o dado continua tipo='global')
       // GRANULARIDADE (mesma correção da Competitividade): o global_venda1 do estoque próprio é o
       // preço da CAIXA quando ela tem vários frascos (CX10/CX25...), enquanto o compra_unit do
       // distribuidor é por FRASCO. Comparar caixa x frasco fazia injetável em frasco-ampola sumir
