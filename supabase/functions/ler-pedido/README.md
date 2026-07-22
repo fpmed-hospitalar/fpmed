@@ -3,6 +3,20 @@
 Proxy público do Claude usado por `fpmed_giovana.html` e `fpmed_sistema_final.html`
 (Importar Cotação / Espelho — ler pedido por IA). Código: `index.ts`.
 
+> **STATUS (22/07/2026): DEPLOYADA** (versão com trava de origem). Verify JWT OFF.
+> Falta só o secret `ANTHROPIC_API_KEY` (Lemuel cola no dashboard).
+
+## 🔒 Trava de origem (anti-abuso de crédito)
+A função só aceita requisições cujo header `Origin` seja um dos `ALLOWED_ORIGINS` do
+`index.ts` (`https://fpmed-hospitalar.github.io` e o futuro `https://sistema.fpmed.com.br`).
+Qualquer outra origem (ou sem Origin — ex.: curl) recebe **403** sem gastar crédito.
+Testado no ar: sem Origin → 403 · origem estranha → 403 · origens FPMED → passam.
+⚠️ Consequências práticas:
+- `curl` de teste precisa de `-H "Origin: https://fpmed-hospitalar.github.io"`.
+- Abrir os HTML por `file://` NÃO funciona pro Importar Cotação (Origin `null` é barrado) —
+  testar pelo GitHub Pages. Se um dia mudar o domínio, atualizar `ALLOWED_ORIGINS` e redeployar.
+- É trava de abuso casual (navegador não forja Origin), não autenticação forte.
+
 > A antiga edge function `/functions/v1/api` era vestigial (só sobrava definida na giovana,
 > nunca chamada) — **não** precisa recriar. Só a `ler-pedido`.
 
@@ -28,6 +42,7 @@ supabase functions deploy ler-pedido                 # verify_jwt=false vem do c
 ```bash
 curl -s -X POST https://xzdowrksuswekwffoluk.supabase.co/functions/v1/ler-pedido \
   -H "content-type: application/json" \
+  -H "Origin: https://fpmed-hospitalar.github.io" \
   -d '{"model":"claude-sonnet-4-20250514","max_tokens":50,"messages":[{"role":"user","content":"responda: ok"}]}'
 ```
 Deve voltar um JSON com `content[].text`. Se vier `ANTHROPIC_API_KEY nao configurada`, faltou o secret.

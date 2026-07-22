@@ -33,9 +33,12 @@
 
 ## ⬜ PENDENTES (na ordem)
 - [~] **Edge function `ler-pedido`**: ✅ DEPLOYADA (22/07, via editor do dashboard), Verify JWT
-      OFF, testada no ar (500 controlado "ANTHROPIC_API_KEY nao configurada" = pública e ok).
-      Falta SÓ o Lemuel colar o secret `ANTHROPIC_API_KEY` (Edge Functions → Secrets; chave no
-      `segredos.local.txt` — Claude não digita API key em formulário). Depois: teste final.
+      OFF, testada no ar. ✅ v2 com **TRAVA DE ORIGEM** deployada (22/07): só aceita Origin
+      `fpmed-hospitalar.github.io` / `sistema.fpmed.com.br`; resto leva 403 sem gastar crédito
+      (testado: sem Origin 403 · origem estranha 403 · FPMED passa). ⚠️ curl de teste precisa de
+      header Origin; `file://` não funciona (testar via Pages). Falta SÓ o Lemuel colar o secret
+      `ANTHROPIC_API_KEY` (Edge Functions → Secrets; chave no `segredos.local.txt` — Claude não
+      digita API key em formulário). Depois: teste final.
 - [ ] **⚠️ Criar usuários de login** no Supabase da FPMED (`auth.users` está VAZIO — sem isso NINGUÉM
       entra no sistema). admin (Lemuel) + vendedoras, com `user_metadata.role`. Senhas com o Lemuel.
 - [x] **Tabelas criadas** no banco novo (12 tabelas/views, `db_schema.sql`). Todas retornam HTTP 200
@@ -62,9 +65,9 @@
    confirmado por varredura (globalmed, 54.379.172, 20.131.542, conde francisco, 99612).
 2. ✅ FEITO (22/07): URLs do GitHub (painel raw/zip + gm-auth recover) → `fpmed-hospitalar/fpmed`.
 3. **URL + ANON do Supabase** trocados pela instância da FPMED (não subir apontando p/ o banco do GlobalMed).
-4. **`dashboard_clientes.html`**: contém uma lista de clientes/CNPJs embutida (ex.: "ELLO
-   DISTRIBUICAO LTDA", CNPJ 00000000000000) — REVISAR se é demo ou dado real do GlobalMed
-   (regra master: nunca importar clientes do GlobalMed). Limpar/substituir por demo antes do deploy.
+4. ✅ FEITO (22/07): `dashboard_clientes.html` ERA dado real do GlobalMed (33 clientes/CNPJs).
+   Substituído por 10 clientes 100% fictícios (CNPJs prefixo 00., inválidos; marcas fictícias).
+   Varredura: zero dos 33 nomes/CNPJs reais remanescente.
 5. **Pix/WhatsApp**: dados de pagamento antigos existiam só na loja (removida). Conferir que
    nenhum Pix/WhatsApp da GlobalMed sobrou.
 6. **Segurança do banco (RLS)** — ✅ FEITO: RLS ligada em todas as tabelas + policy `authenticated`,
