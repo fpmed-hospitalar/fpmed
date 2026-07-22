@@ -501,9 +501,9 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--texto);min-
 
 <script>
 // ─── SUPABASE CONFIG ─────────────────────────────────────────────────────────
-const SUPA_URL = 'https://vikewlbhkrikcalzsbeb.supabase.co';
-const EDGE_URL_G = 'https://vikewlbhkrikcalzsbeb.supabase.co/functions/v1/api';
-const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZpa2V3bGJoa3Jpa2NhbHpzYmViIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgwOTEzMDcsImV4cCI6MjA5MzY2NzMwN30.elMw6mbCoCbFVCnzck-aHQrXGYaZhX-m0RRb1VGYP64';
+const SUPA_URL = 'https://xzdowrksuswekwffoluk.supabase.co';
+const EDGE_URL_G = 'https://xzdowrksuswekwffoluk.supabase.co/functions/v1/api';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh6ZG93cmtzdXN3ZWt3ZmZvbHVrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ2NzE2MTMsImV4cCI6MjEwMDI0NzYxM30.Pk-SlV_pZdniESyrajDdfHdHcnmyCwCMtP_TrShh75Y';
 const H = { 'Content-Type':'application/json', 'apikey':SUPA_KEY, 'Authorization':'Bearer '+SUPA_KEY };
 
 // ── ACESSO RESTRITO (Nível 1, só esconde na tela) ────────────────────────────
@@ -545,8 +545,8 @@ let naoEncontrados = []; // itens sem preço
 let numOrc = 1;
 
 // ─── INIT ─────────────────────────────────────────────────────────────────────
-const EDGE_URL = 'https://vikewlbhkrikcalzsbeb.supabase.co/functions/v1/api';
-const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZpa2V3bGJoa3Jpa2NhbHpzYmViIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgwOTEzMDcsImV4cCI6MjA5MzY2NzMwN30.elMw6mbCoCbFVCnzck-aHQrXGYaZhX-m0RRb1VGYP64';
+const EDGE_URL = 'https://xzdowrksuswekwffoluk.supabase.co/functions/v1/api';
+const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh6ZG93cmtzdXN3ZWt3ZmZvbHVrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ2NzE2MTMsImV4cCI6MjEwMDI0NzYxM30.Pk-SlV_pZdniESyrajDdfHdHcnmyCwCMtP_TrShh75Y';
 
 async function iniciar() {
   const hoje = new Date();
@@ -2293,7 +2293,7 @@ async function processarComIA() {
       ? { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: iaArquivoBase64 } }
       : { type: 'image', source: { type: 'base64', media_type: iaArquivoTipo, data: iaArquivoBase64 } };
 
-    const response = await fetch('https://vikewlbhkrikcalzsbeb.supabase.co/functions/v1/ler-pedido', {
+    const response = await fetch('https://xzdowrksuswekwffoluk.supabase.co/functions/v1/ler-pedido', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -2755,7 +2755,7 @@ Regras:
 - Responda somente o JSON, nada antes nem depois.`;
 
   async function chamar(modelo) {
-    const r = await fetch('https://vikewlbhkrikcalzsbeb.supabase.co/functions/v1/ler-pedido', {
+    const r = await fetch('https://xzdowrksuswekwffoluk.supabase.co/functions/v1/ler-pedido', {
       method:'POST', headers:{ 'Content-Type':'application/json' },
       body: JSON.stringify({ model: modelo, max_tokens: 16000, messages:[{ role:'user', content:[ bloco, { type:'text', text: prompt } ] }] })
     });

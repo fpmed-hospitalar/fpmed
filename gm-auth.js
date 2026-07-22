@@ -7,8 +7,8 @@
    - Nível 1: é PORTÃO DE ACESSO (não é RLS). Dados seguem via anon key.
    ══════════════════════════════════════════════════════════════════════════ */
 (function () {
-  var SB   = 'https://vikewlbhkrikcalzsbeb.supabase.co';
-  var ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZpa2V3bGJoa3Jpa2NhbHpzYmViIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgwOTEzMDcsImV4cCI6MjA5MzY2NzMwN30.elMw6mbCoCbFVCnzck-aHQrXGYaZhX-m0RRb1VGYP64';
+  var SB   = 'https://xzdowrksuswekwffoluk.supabase.co';
+  var ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh6ZG93cmtzdXN3ZWt3ZmZvbHVrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ2NzE2MTMsImV4cCI6MjEwMDI0NzYxM30.Pk-SlV_pZdniESyrajDdfHdHcnmyCwCMtP_TrShh75Y';
   var K = 'gm_session';
 
   // ── Controle de acesso por sistema ───────────────────────────────────────────

@@ -32,9 +32,12 @@ deve começar perguntando: **"⚠️ Aguardando dados de registro da FPMED — j
 - [x] **ORG `fpmed-hospitalar` + repo `fpmed`** criados no GitHub (Free, repo PRIVADO por ora).
       Remote local `origin` → `https://github.com/fpmed-hospitalar/fpmed.git` (sem push ainda).
 
+- [x] **URL + ANON trocados** em todos os arquivos → Supabase da FPMED (12 anon + 16 URL, 0 resquício
+      do banco antigo, sintaxe JS validada). URL `https://xzdowrksuswekwffoluk.supabase.co`.
+
 ## ⬜ PENDENTES (na ordem)
-- [ ] **Trocar URL + ANON** nos arquivos (`gm-auth.js` e `.html`) — URL `https://xzdowrksuswekwffoluk.supabase.co`
-      (usar a anon JWT do `segredos.local.txt`). Recriar a edge function `ler-pedido` no projeto novo.
+- [ ] **Recriar edge functions** no projeto novo: `/functions/v1/ler-pedido` (sistema_final) e
+      `/functions/v1/api` (giovana) — usadas por Importar Cotação/Espelho e leitura de pedido por IA.
 - [ ] **Criar tabelas** no banco novo (DDL do CONTINUAR) + RLS/GRANT + `NOTIFY pgrst,'reload schema'`
 - [ ] **Deploy** (#11): 1º push (precisa auth git/PAT p/ o repo privado) → depois tornar PÚBLICO +
       GitHub Pages (`fpmed-hospitalar.github.io/fpmed`). **Trava:** só vai ao ar sem placeholders e
