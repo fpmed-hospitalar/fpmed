@@ -13,7 +13,7 @@
 
   // ── Controle de acesso por sistema ───────────────────────────────────────────
   // role 'giovana_only' só entra na fpmed_giovana.html; nos outros sistemas é bloqueado.
-  // admin (Lemuel), vendedora (Isadora) e demais = acesso total.
+  // admin e vendedora e demais = acesso total às páginas (gates finos por role dentro de cada sistema).
   var _blocked = false;
   function _paginaGiovana(){ return /giovana/i.test(location.pathname || location.href || ''); }
   function _pagPermitida(role){

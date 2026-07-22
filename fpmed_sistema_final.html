@@ -895,7 +895,7 @@ select.filter{padding:8px 12px;border:1px solid var(--borda);border-radius:9px;f
     </div>
     <style>@keyframes slideUp{from{opacity:0;transform:translateX(-50%) translateY(16px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}</style>
 
-    <!-- COMPETITIVIDADE DE PREÇO (admin/Isadora — expõe fornecedor) -->
+    <!-- COMPETITIVIDADE DE PREÇO (só admin — expõe fornecedor) -->
     <div class="page" id="page-competitividade">
       <div id="cpz-root"><div class="loading"><div class="spinner"></div> Carregando...</div></div>
     </div>
@@ -2940,9 +2940,9 @@ const espStrip = s => String(s||'').replace(/^[\s#*+>]+/,'').trim();
 const espDigits = s => String(s||'').replace(/\D/g,'');
 const espPaNorm = s => (s||'').toUpperCase().normalize('NFD').replace(/\p{M}/gu,'').replace(/[^A-Z0-9]/g,'');
 
-// PERMISSAO: Importar Espelho expoe preco de venda/cliente -> SO admin (Lemuel) ou Isadora.
+// PERMISSAO (FPMED): Importar Espelho expoe preco de venda/cliente -> SO role admin.
 // giovana_only (Sebastiao) ja e bloqueado do sistema_final pelo gm-auth; vendedora (Guilherme) NAO ve a aba.
-function espPodeVer(){ try{ var u=window.gmAuth&&window.gmAuth.user; var e=((u&&u.email)||'').toLowerCase(); var r=(u&&(u.role||(u.user_metadata&&u.user_metadata.role)))||''; return r==='admin' || e==='isadoraassiscomercial@outlook.com'; }catch(e){ return false; } }
+function espPodeVer(){ try{ var u=window.gmAuth&&window.gmAuth.user; var r=(u&&(u.role||(u.user_metadata&&u.user_metadata.role)))||''; return r==='admin'; }catch(e){ return false; } }
 function espAplicaPermissao(){
   var mostra = espPodeVer();
   ['importar-espelho','compras-cliente','oportunidades','itens-a-cotar','clientes-dash','competitividade'].forEach(function(n){ var nav=document.querySelector('.nav-item[onclick*="'+n+'"]'); if(nav) nav.style.display = mostra ? '' : 'none'; });
@@ -2952,7 +2952,7 @@ function espAplicaPermissao(){
 document.addEventListener('gm-auth-ready', espAplicaPermissao);
 if(window.gmAuth) espAplicaPermissao();
 
-// ═══ COMPETITIVIDADE DE PREÇO (admin/Isadora) ═══════════════════════════════════
+// ═══ COMPETITIVIDADE DE PREÇO (só admin) ═══════════════════════════════════════
 // Meu preço/un (GLOBAL) vs concorrentes (TODO fornecedor que não é indústria nem GLOBAL).
 // Concorrente = compra_unit cru por unidade (preço do portal, sem ×1,25). custo-ref = nosso/1,25.
 var _cpzRows=[], _cpzSort={col:'acima',dir:-1}, _cpzFiltroCor='', _cpzBusca='';
@@ -3166,7 +3166,7 @@ function _cpzComputar(){
 
 function renderCompetitividade(){
   var root=document.getElementById('cpz-root'); if(!root) return;
-  if(typeof espPodeVer==='function' && !espPodeVer()){ root.innerHTML='<div style="text-align:center;padding:60px 20px;color:#5b6b7a">🔒 Acesso restrito — só admin ou Isadora.</div>'; return; }
+  if(typeof espPodeVer==='function' && !espPodeVer()){ root.innerHTML='<div style="text-align:center;padding:60px 20px;color:#5b6b7a">🔒 Acesso restrito — só administrador.</div>'; return; }
   _cpzRows=_cpzComputar();
   var allTotal=_cpzRows.length;
   var susp=_cpzRows.filter(function(r){return r.revisar;});          // >60% acima = suspeita de preço errado no banco (fora dos KPIs)

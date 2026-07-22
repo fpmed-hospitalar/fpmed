@@ -170,17 +170,8 @@ create table if not exists public.cmed_dicionario (
   is_combo   boolean default false
 );
 
--- COMISSOES (a FPMED pode nao precisar; criadas p/ nao quebrar as telas)
-create table if not exists public.comissoes_isadora (
-  id         bigint generated always as identity primary key,
-  created_at timestamptz default now()
-);
-create table if not exists public.comissoes_externas (
-  id               bigint generated always as identity primary key,
-  data_recebimento date,
-  recebido         boolean default false,
-  created_at       timestamptz default now()
-);
+-- COMISSOES: fora do pacote FPMED — tabelas comissoes_isadora/comissoes_externas
+-- DROPADAS em 22/07/2026 (as telas que as usavam sairam do menu na mesma data).
 
 -- VIEWS usadas pelo app
 create or replace view public.v_compras_mensal as

@@ -508,26 +508,26 @@ const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsI
 const H = { 'Content-Type':'application/json', 'apikey':SUPA_KEY, 'Authorization':'Bearer '+SUPA_KEY };
 
 // ── ACESSO RESTRITO (Nível 1, só esconde na tela) ────────────────────────────
-// role 'giovana_only' (ex.: Sebastião) NÃO vê custo nem fornecedor. Lemuel/Isadora veem tudo.
+// role 'giovana_only' NÃO vê custo nem fornecedor. Admin vê tudo.
 // NÃO afeta o cálculo do preço (o custo continua sendo lido por trás).
 function ehRestrito(){ try{ var u = window.gmAuth && window.gmAuth.user;
   return !!(u && (u.role==='giovana_only' || (u.user_metadata && u.user_metadata.role==='giovana_only'))); }catch(e){ return false; } }
-// Importar lista + IA Ler Pedido: SÓ Lemuel e Isadora (por EMAIL). Guilherme (vendedora) e Sebastião NÃO veem.
+// FPMED: gates por ROLE (sem e-mail hardcoded). Importar lista + IA Ler Pedido: SÓ role 'admin'.
 function podeImportar(){
-  try{ var u = window.gmAuth && window.gmAuth.user; var e = ((u && u.email) || '').toLowerCase();
-    return e === 'lemuelempresas7@outlook.com' || e === 'isadoraassiscomercial@outlook.com'; }catch(e){ return false; } }
-// Importar Cotação (grava no banco de cotações): SÓ role 'admin' (Lemuel) ou Isadora (por email).
-function podeImportarCotacao(){ try{ var u=window.gmAuth&&window.gmAuth.user; var e=((u&&u.email)||'').toLowerCase(); var r=(u&&(u.role|| (u.user_metadata&&u.user_metadata.role)))||''; return r==='admin' || e==='isadoraassiscomercial@outlook.com'; }catch(e){ return false; } }
+  try{ var u = window.gmAuth && window.gmAuth.user; var r = (u && (u.role || (u.user_metadata && u.user_metadata.role))) || '';
+    return r === 'admin'; }catch(e){ return false; } }
+// Importar Cotação (grava no banco de cotações): SÓ role 'admin'.
+function podeImportarCotacao(){ try{ var u=window.gmAuth&&window.gmAuth.user; var r=(u&&(u.role|| (u.user_metadata&&u.user_metadata.role)))||''; return r==='admin'; }catch(e){ return false; } }
 function gmAplicaRestrito(){ window.GM_RESTRITO = ehRestrito();
   if(window.GM_RESTRITO){ var b=document.getElementById('btn-enviar-compras'); if(b) b.style.display='none'; }
-  // Pedido Fechado grava histórico de compra (preço de venda do cliente): SÓ Lemuel/Isadora.
-  // Esconde de giovana_only (Sebastião) e vendedora (Guilherme).
+  // Pedido Fechado grava histórico de compra (preço de venda do cliente): SÓ admin.
+  // Esconde de giovana_only e vendedora.
   var _pf=document.getElementById('btn-pedido-fechado'); if(_pf) _pf.style.display = podeImportar() ? '' : 'none';
   // re-avalia a cada evento: mostra Importar/IA só p/ os emails permitidos, esconde do resto
   var _imp = podeImportar();
   var lb=document.getElementById('tab-lista-btn'); if(lb) lb.style.display = _imp ? '' : 'none';
   var ib=document.getElementById('tab-ia-btn');    if(ib) ib.style.display = _imp ? '' : 'none';
-  // Importar Cotação: gate independente (admin OU Isadora)
+  // Importar Cotação: gate independente (role admin)
   var _impc = podeImportarCotacao();
   var tc=document.getElementById('tab-impcot-btn'); if(tc) tc.style.display = _impc ? '' : 'none';
   var tcP=document.getElementById('tab-impcot');
@@ -785,7 +785,7 @@ function incluiNaBusca(c){
 // ─── BUSCA ────────────────────────────────────────────────────────────────────
 let searchTO;
 function gTab(tab) {
-  // Gate: aba Importar Cotação só p/ admin (Lemuel) ou Isadora (por email).
+  // Gate: aba Importar Cotação só p/ role admin.
   if (tab==='impcot' && (typeof podeImportarCotacao!=='function' || !podeImportarCotacao())) return;
   document.getElementById('tab-busca').style.display = tab==='busca'?'block':'none';
   document.getElementById('tab-lista').style.display = tab==='lista'?'block':'none';
@@ -2416,7 +2416,7 @@ function copiarParaLista() {
 <script>
 // ═══════════════════════════════════════════════════════════════════════════════
 // IMPORTAR COTAÇÃO — portado de fpmed_sistema_final.html (page-importar)
-// Grava cotações de FORNECEDOR no banco. Acesso: admin (Lemuel) ou Isadora.
+// Grava cotações de FORNECEDOR no banco. Acesso: role admin.
 // ═══════════════════════════════════════════════════════════════════════════════
 
 // ── Wrappers REST (mirror sbPost/sbPatch do sistema_final, usando o H da giovana) ──
