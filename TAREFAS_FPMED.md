@@ -49,10 +49,12 @@
 - [x] **RLS LIGADA + testada** (`db_rls.sql`): RLS on + policy `authenticated` em todas as tabelas,
       views com `security_invoker`. Testado: anon INSERT→401 e SELECT→`[]` (bloqueada); `authenticated`
       insere/lê (policy ok). Pré-condição de deploy #6 ✅ SATISFEITA.
-- [~] **Deploy** (#11): ✅ 1º push FEITO (22/07, credencial git já estava no Windows; branch
-      `master` → `origin/master`, repo ainda PRIVADO). Falta (com OK do Lemuel): tornar PÚBLICO +
-      GitHub Pages (`fpmed-hospitalar.github.io/fpmed`) + revisar `dashboard_clientes.html`
-      (pré-condição #4, ELLO) + Redirect URL do reset-senha no Supabase Auth.
+- [x] **Deploy (#11) — ✅ SISTEMA NO AR** (22/07/2026): repo PÚBLICO, GitHub Pages ativo em
+      `https://fpmed-hospitalar.github.io/fpmed/`. Supabase Auth configurado: Site URL =
+      URL do Pages; Redirect URL do `reset-senha.html` adicionada. **Smoke test OK**: 10 páginas
+      HTTP 200, gm-auth apontando pro banco FPMED (zero banco antigo), razão social real servida,
+      zero placeholder/GlobalMed no ar, login renderizando, zero erro de console, splash→painel
+      redirecionando. Pendente pós-venda: domínio `sistema.fpmed.com.br` (CNAME).
 
 ## ✅ DESBLOQUEADA (22/07/2026)
 - [x] **Dados de registro da FPMED aplicados**: FPMED DISTRIBUIDORA DE PRODUTOS HOSPITALARES
