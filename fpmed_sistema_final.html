@@ -3347,7 +3347,7 @@ async function espLer(){
   const bloco = isPDF ? {type:'document',source:{type:'base64',media_type:'application/pdf',data:espB64}} : {type:'image',source:{type:'base64',media_type:espTipo,data:espB64}};
   async function chamar(m){ const r=await fetch('https://xzdowrksuswekwffoluk.supabase.co/functions/v1/ler-pedido',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:m,max_tokens:16000,messages:[{role:'user',content:[bloco,{type:'text',text:ESP_PROMPT}]}]})}); return r.json(); }
   try{
-    let data=await chamar('claude-opus-4-5');
+    let data=await chamar('claude-haiku-4-5');
     if(data&&data.type==='error'&&/not_found/i.test(JSON.stringify(data))) data=await chamar('claude-haiku-4-5-20251001');
     if(data&&(data.type==='error'||data.error)){ st.style.color='var(--vermelho)'; st.textContent='❌ Erro da IA: '+(data.error?.message||data.message||'desconhecido'); btn.disabled=false; btn.style.opacity='1'; return; }
     let t=(data.content&&data.content[0]&&data.content[0].text)||'';
@@ -3723,7 +3723,7 @@ Regras:
   }
 
   try {
-    let data = await chamar('claude-opus-4-5');
+    let data = await chamar('claude-haiku-4-5');
     if (data && data.type === 'error' && /not_found/i.test(JSON.stringify(data))) {
       data = await chamar('claude-haiku-4-5-20251001');
     }

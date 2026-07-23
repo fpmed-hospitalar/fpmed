@@ -45,6 +45,6 @@ supabase functions deploy ler-pedido                 # verify_jwt=false vem do c
 curl -s -X POST https://xzdowrksuswekwffoluk.supabase.co/functions/v1/ler-pedido \
   -H "content-type: application/json" \
   -H "Origin: https://fpmed-hospitalar.github.io" \
-  -d '{"model":"claude-sonnet-4-20250514","max_tokens":50,"messages":[{"role":"user","content":"responda: ok"}]}'
+  -d '{"model":"claude-haiku-4-5","max_tokens":50,"messages":[{"role":"user","content":"responda: ok"}]}'
 ```
 Deve voltar um JSON com `content[].text`. Se vier `ANTHROPIC_API_KEY nao configurada`, faltou o secret.

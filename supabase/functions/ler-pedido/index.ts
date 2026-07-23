@@ -71,7 +71,7 @@ Deno.serve(async (req) => {
   }
 
   const payload = {
-    model: body.model || "claude-opus-4-8",
+    model: body.model || "claude-haiku-4-5",  // custo: Haiku 4.5 ($1/$5 MTok) — conferido na doc oficial 22/07/2026
     max_tokens: body.max_tokens || 8000,
     messages: body.messages || [],
   };

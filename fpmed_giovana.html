@@ -2299,7 +2299,7 @@ async function processarComIA() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model: 'claude-opus-4-5',
+        model: 'claude-haiku-4-5',
         max_tokens: 2000,
         messages: [{
           role: 'user',
@@ -2765,7 +2765,7 @@ Regras:
   }
 
   try {
-    let data = await chamar('claude-opus-4-5');
+    let data = await chamar('claude-haiku-4-5');
     if (data && data.type === 'error' && /not_found/i.test(JSON.stringify(data))) {
       data = await chamar('claude-haiku-4-5-20251001');
     }
