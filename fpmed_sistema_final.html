@@ -589,58 +589,59 @@ select.filter{padding:8px 12px;border:1px solid var(--borda);border-radius:9px;f
       </div>
     </div>
 
-    <!-- CLIENTES & OPORTUNIDADES (dashboard unificado — tema escuro-verde do protótipo) -->
+    <!-- CLIENTES & OPORTUNIDADES (dashboard unificado — TEMA CLARO padrão do sistema, 22/07) -->
     <div class="page" id="page-clientes-dash">
       <style>
-        #page-clientes-dash .cd-wrap { background:#0f1512; color:#e8f0ec; border-radius:14px; padding:20px; }
+        #page-clientes-dash .cd-wrap { background:transparent; color:var(--texto); padding:0; }
         #page-clientes-dash .cd-kpis { display:grid; grid-template-columns:repeat(5,1fr); gap:12px; margin-bottom:20px; }
-        #page-clientes-dash .cd-kpi { background:#161d19; border:1px solid #1f2a24; border-radius:12px; padding:16px; }
-        #page-clientes-dash .cd-kpi .l { font-size:11px; text-transform:uppercase; letter-spacing:.5px; color:#6b7d74; margin-bottom:8px; }
-        #page-clientes-dash .cd-kpi .v { font-size:24px; font-weight:800; }
-        #page-clientes-dash .cd-kpi .f { font-size:11px; color:#5a6b62; margin-top:4px; }
-        #page-clientes-dash .cd-kpi.alert { border-color:#7f1d1d; } #page-clientes-dash .cd-kpi.alert .v { color:#f87171; }
-        #page-clientes-dash .cd-kpi.hot { border-color:#065f46; } #page-clientes-dash .cd-kpi.hot .v { color:#34d399; }
+        #page-clientes-dash .cd-kpi { background:var(--branco); border:1px solid var(--borda); border-radius:12px; padding:16px; box-shadow:0 2px 10px rgba(23,58,94,.06); }
+        #page-clientes-dash .cd-kpi .l { font-size:11px; text-transform:uppercase; letter-spacing:.5px; color:var(--muted); margin-bottom:8px; }
+        #page-clientes-dash .cd-kpi .v { font-size:24px; font-weight:800; color:var(--navy); }
+        #page-clientes-dash .cd-kpi .f { font-size:11px; color:var(--muted); margin-top:4px; }
+        #page-clientes-dash .cd-kpi.alert { border-color:#F3C7C7; background:#FDF3F3; } #page-clientes-dash .cd-kpi.alert .v { color:var(--vermelho); }
+        #page-clientes-dash .cd-kpi.hot { border-color:#D4E9B4; background:#F1F8E6; } #page-clientes-dash .cd-kpi.hot .v { color:#6FA32C; }
         #page-clientes-dash .cd-grid { display:grid; grid-template-columns:400px 1fr; gap:16px; }
-        #page-clientes-dash .cd-panel { background:#161d19; border:1px solid #1f2a24; border-radius:12px; overflow:hidden; }
-        #page-clientes-dash .cd-ph { padding:12px 16px; border-bottom:1px solid #1f2a24; font-weight:600; font-size:14px; display:flex; justify-content:space-between; }
-        #page-clientes-dash .cd-search { padding:12px 16px; border-bottom:1px solid #1f2a24; }
-        #page-clientes-dash .cd-search input { width:100%; background:#0f1512; border:1px solid #24312a; border-radius:8px; padding:9px 12px; color:#e8f0ec; font-size:13px; outline:none; }
-        #page-clientes-dash .cd-filters { display:flex; gap:6px; padding:10px 16px; border-bottom:1px solid #1f2a24; flex-wrap:wrap; }
-        #page-clientes-dash .cd-filters button { background:#0f1512; border:1px solid #24312a; color:#8fa399; padding:5px 10px; border-radius:6px; font-size:11px; cursor:pointer; }
-        #page-clientes-dash .cd-filters button.on { background:#10b981; border-color:#10b981; color:#052e22; font-weight:600; }
+        #page-clientes-dash .cd-panel { background:var(--branco); border:1px solid var(--borda); border-radius:12px; overflow:hidden; box-shadow:0 2px 10px rgba(23,58,94,.06); }
+        #page-clientes-dash .cd-ph { padding:12px 16px; border-bottom:1px solid var(--borda); font-weight:700; font-size:14px; color:var(--navy); display:flex; justify-content:space-between; }
+        #page-clientes-dash .cd-search { padding:12px 16px; border-bottom:1px solid var(--borda); }
+        #page-clientes-dash .cd-search input { width:100%; background:var(--bg); border:1px solid var(--borda); border-radius:8px; padding:9px 12px; color:var(--texto); font-size:13px; outline:none; box-sizing:border-box; }
+        #page-clientes-dash .cd-search input:focus { border-color:var(--verde); background:var(--branco); }
+        #page-clientes-dash .cd-filters { display:flex; gap:6px; padding:10px 16px; border-bottom:1px solid var(--borda); flex-wrap:wrap; }
+        #page-clientes-dash .cd-filters button { background:var(--branco); border:1px solid var(--borda); color:var(--texto); padding:5px 10px; border-radius:6px; font-size:11px; cursor:pointer; }
+        #page-clientes-dash .cd-filters button.on { background:var(--verde); border-color:var(--verde); color:#fff; font-weight:600; }
         #page-clientes-dash .cd-list { max-height:600px; overflow-y:auto; }
-        #page-clientes-dash .cd-row { padding:12px 16px; border-bottom:1px solid #12181500; border-top:1px solid #12181500; cursor:pointer; display:flex; align-items:center; gap:10px; }
-        #page-clientes-dash .cd-row:hover { background:#1a221d; }
-        #page-clientes-dash .cd-row.sel { background:#12241c; border-left:3px solid #10b981; }
+        #page-clientes-dash .cd-row { padding:12px 16px; border-bottom:1px solid #F0F4F8; cursor:pointer; display:flex; align-items:center; gap:10px; transition:background .1s; }
+        #page-clientes-dash .cd-row:hover { background:var(--verde-claro); }
+        #page-clientes-dash .cd-row.sel { background:var(--verde-claro); border-left:3px solid var(--fverde); }
         #page-clientes-dash .cd-dot { width:9px; height:9px; border-radius:50%; flex-shrink:0; }
-        #page-clientes-dash .cd-dot.g{background:#10b981} #page-clientes-dash .cd-dot.y{background:#f59e0b} #page-clientes-dash .cd-dot.r{background:#ef4444}
-        #page-clientes-dash .cd-row .nm { font-size:13px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-        #page-clientes-dash .cd-row .mt { font-size:11px; color:#6b7d74; margin-top:2px; }
-        #page-clientes-dash .cd-row .rv { text-align:right; font-size:13px; font-weight:600; color:#34d399; white-space:nowrap; }
+        #page-clientes-dash .cd-dot.g{background:var(--fverde)} #page-clientes-dash .cd-dot.y{background:var(--amarelo)} #page-clientes-dash .cd-dot.r{background:var(--vermelho)}
+        #page-clientes-dash .cd-row .nm { font-size:13px; font-weight:600; color:var(--texto); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        #page-clientes-dash .cd-row .mt { font-size:11px; color:var(--muted); margin-top:2px; }
+        #page-clientes-dash .cd-row .rv { text-align:right; font-size:13px; font-weight:700; color:var(--navy); white-space:nowrap; }
         #page-clientes-dash .cd-dstats { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:18px; }
-        #page-clientes-dash .cd-dstat { background:#0f1512; border:1px solid #1f2a24; border-radius:8px; padding:12px; }
-        #page-clientes-dash .cd-dstat .l { font-size:10px; text-transform:uppercase; color:#6b7d74; }
-        #page-clientes-dash .cd-dstat .v { font-size:16px; font-weight:700; margin-top:3px; }
-        #page-clientes-dash .cd-sect { font-size:12px; text-transform:uppercase; letter-spacing:.5px; color:#8fa399; margin:18px 0 10px; font-weight:600; }
-        #page-clientes-dash .cd-bars { display:flex; align-items:flex-end; gap:8px; height:120px; padding:10px; background:#0f1512; border-radius:8px; }
+        #page-clientes-dash .cd-dstat { background:var(--bg); border:1px solid var(--borda); border-radius:8px; padding:12px; }
+        #page-clientes-dash .cd-dstat .l { font-size:10px; text-transform:uppercase; color:var(--muted); }
+        #page-clientes-dash .cd-dstat .v { font-size:16px; font-weight:700; margin-top:3px; color:var(--navy); }
+        #page-clientes-dash .cd-sect { font-size:12px; text-transform:uppercase; letter-spacing:.5px; color:var(--texto); margin:18px 0 10px; font-weight:700; }
+        #page-clientes-dash .cd-bars { display:flex; align-items:flex-end; gap:8px; height:120px; padding:10px; background:var(--bg); border:1px solid var(--borda); border-radius:8px; }
         #page-clientes-dash .cd-bar { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; height:100%; gap:4px; }
-        #page-clientes-dash .cd-bar .b { width:100%; background:linear-gradient(180deg,#10b981,#059669); border-radius:4px 4px 0 0; min-height:2px; }
-        #page-clientes-dash .cd-bar .m { font-size:10px; color:#6b7d74; } #page-clientes-dash .cd-bar .vv { font-size:9px; color:#8fa399; }
+        #page-clientes-dash .cd-bar .b { width:100%; background:linear-gradient(180deg,var(--verde),var(--verde-escuro)); border-radius:4px 4px 0 0; min-height:2px; }
+        #page-clientes-dash .cd-bar .m { font-size:10px; color:var(--muted); } #page-clientes-dash .cd-bar .vv { font-size:9px; color:var(--texto); }
         #page-clientes-dash table.cd-t { width:100%; border-collapse:collapse; }
-        #page-clientes-dash .cd-t th { text-align:left; font-size:10px; text-transform:uppercase; color:#6b7d74; padding:8px 10px; border-bottom:1px solid #1f2a24; }
-        #page-clientes-dash .cd-t td { padding:9px 10px; font-size:12px; border-bottom:1px solid #161d19; } #page-clientes-dash .cd-t td.r{text-align:right}
-        #page-clientes-dash .cd-opp { background:linear-gradient(135deg,#0d2a20,#0f1512); border:1px solid #10b981; border-radius:10px; padding:14px; }
-        #page-clientes-dash .cd-opprow { display:flex; justify-content:space-between; align-items:center; padding:9px 0; border-bottom:1px solid #163a2c; gap:10px; }
+        #page-clientes-dash .cd-t th { text-align:left; font-size:10px; text-transform:uppercase; color:var(--muted); padding:8px 10px; border-bottom:1px solid var(--borda); }
+        #page-clientes-dash .cd-t td { padding:9px 10px; font-size:12px; color:var(--texto); border-bottom:1px solid #F0F4F8; } #page-clientes-dash .cd-t td.r{text-align:right}
+        #page-clientes-dash .cd-opp { background:#F1F8E6; border:1px solid var(--fverde); border-radius:10px; padding:14px; }
+        #page-clientes-dash .cd-opprow { display:flex; justify-content:space-between; align-items:center; padding:9px 0; border-bottom:1px solid #D4E9B4; gap:10px; }
         #page-clientes-dash .cd-opprow:last-child{border:0}
-        #page-clientes-dash .cd-badge { background:#10b981; color:#052e22; font-size:10px; font-weight:700; padding:3px 8px; border-radius:20px; white-space:nowrap; }
-        #page-clientes-dash .cd-wa { width:100%; margin-top:14px; background:#25d366; color:#053; border:0; padding:11px; border-radius:8px; font-weight:700; font-size:13px; cursor:pointer; }
-        #page-clientes-dash .cd-empty { text-align:center; color:#6b7d74; padding:60px 20px; font-size:14px; }
+        #page-clientes-dash .cd-badge { background:var(--fverde); color:#fff; font-size:10px; font-weight:700; padding:3px 8px; border-radius:20px; white-space:nowrap; }
+        #page-clientes-dash .cd-wa { width:100%; margin-top:14px; background:#25d366; color:#fff; border:0; padding:11px; border-radius:8px; font-weight:700; font-size:13px; cursor:pointer; }
+        #page-clientes-dash .cd-empty { text-align:center; color:var(--muted); padding:60px 20px; font-size:14px; }
       </style>
       <div class="cd-wrap">
         <div class="cd-kpis" id="cd-kpis"></div>
         <div class="cd-grid">
           <div class="cd-panel">
-            <div class="cd-ph">Clientes <span style="font-size:11px;color:#6b7d74;font-weight:400" id="cd-cnt"></span></div>
+            <div class="cd-ph">Clientes <span style="font-size:11px;color:var(--muted);font-weight:400" id="cd-cnt"></span></div>
             <div class="cd-search"><input id="cd-q" placeholder="Buscar por nome ou CNPJ..." oninput="cdRender()"></div>
             <div class="cd-filters">
               <button class="on" id="cd-f-fat" onclick="cdSetF('fat')">Maior valor</button>
@@ -2562,16 +2563,23 @@ function cdOferta(custo,pago){ const piso=custo*(1+CD_PISO), teto=custo*(1+CD_TE
   let oferta=Math.min(teto, pago*0.95); oferta=Math.max(piso, oferta); oferta=Math.round(oferta*100)/100;
   return { oferta, markup:Math.round((oferta/custo-1)*100), econ:+(pago-oferta).toFixed(2) }; }
 
+// blindagem: SEMPRE retorna array. Resposta de erro da API (objeto) vira exceção com mensagem legível.
+async function cdArr(url){
+  const r = await fetch(url, { headers: SH });
+  const d = await r.json().catch(() => null);
+  if (!r.ok) throw new Error((d && (d.message || d.hint)) || ('HTTP ' + r.status));
+  return Array.isArray(d) ? d : [];
+}
 async function cdInit(){
   const kp=document.getElementById('cd-kpis'); if(!kp) return;
-  kp.innerHTML='<div style="padding:20px;color:#6b7d74">Carregando dados reais...</div>';
+  kp.innerHTML='<div style="padding:20px;color:var(--muted)">Carregando dados reais...</div>';
   const det=document.getElementById('cd-detail'); det.className='cd-empty'; det.textContent='← Selecione um cliente para ver o perfil e as oportunidades';
   try{
     await recarregarCotacoes();
     const [clientes, compras, itens] = await Promise.all([
-      (await fetch(`${SUPA_URL2}/rest/v1/clientes?select=codigo,nome,cnpj,cidade,uf,whatsapp&order=codigo`,{headers:SH})).json(),
-      (await fetch(`${SUPA_URL2}/rest/v1/compras?select=cliente_codigo,valor_total,data_compra&limit=20000`,{headers:SH})).json(),
-      (await fetch(`${SUPA_URL2}/rest/v1/compra_itens?select=produto,principio_ativo,quantidade,preco_unit,compras!inner(cliente_codigo,data_compra)&limit=50000`,{headers:SH})).json()
+      cdArr(`${SUPA_URL2}/rest/v1/clientes?select=codigo,nome,cnpj,cidade,uf,whatsapp&order=codigo`),
+      cdArr(`${SUPA_URL2}/rest/v1/compras?select=cliente_codigo,valor_total,data_compra&limit=20000`),
+      cdArr(`${SUPA_URL2}/rest/v1/compra_itens?select=produto,principio_ativo,quantidade,preco_unit,compras!inner(cliente_codigo,data_compra)&limit=50000`)
     ]);
     const agg={}; (compras||[]).forEach(c=>{ const k=c.cliente_codigo; if(k==null)return; if(!agg[k])agg[k]={fat:0,n:0,ult:null};
       agg[k].fat+=parseFloat(c.valor_total)||0; agg[k].n++; if(!agg[k].ult||c.data_compra>agg[k].ult)agg[k].ult=c.data_compra; });
@@ -2590,7 +2598,16 @@ async function cdInit(){
     Object.values(_cdOppByCli).forEach(a=>a.sort((x,y)=>y.econProj-x.econProj));
     _cdCli=(clientes||[]).filter(c=>agg[c.codigo]).map(c=>({ ...c, fat:agg[c.codigo].fat, n:agg[c.codigo].n, ult:agg[c.codigo].ult, dias:cdDias(agg[c.codigo].ult), nOpp:(_cdOppByCli[c.codigo]||[]).length }));
     cdKpis(); cdRender();
-  }catch(e){ kp.innerHTML='<div style="padding:20px;color:#f87171">Erro: '+e.message+'</div>'; }
+    if(!_cdCli.length){
+      det.className='cd-empty';
+      det.innerHTML='<div style="text-align:center;padding:40px 20px"><div style="font-size:34px;margin-bottom:10px">🌱</div>'+
+        '<div style="font-weight:700;font-size:15px;margin-bottom:6px;color:var(--navy, #173A5E)">Nenhum cliente ainda</div>'+
+        '<div style="font-size:13px;color:var(--muted)">Eles aparecem aqui conforme forem cadastrados ou importados<br>(Importar Espelho / Propostas alimentam esta tela).</div></div>';
+    }
+  }catch(e){
+    kp.innerHTML='<div style="padding:20px;color:#c0392b">⚠️ Não consegui carregar os clientes: '+e.message+'</div>';
+    document.getElementById('cd-list').innerHTML='<div class="cd-empty" style="padding:30px">Tente o 🔄 Atualizar; se persistir, faça login novamente.</div>';
+  }
 }
 
 function cdKpis(){
@@ -2617,20 +2634,20 @@ function cdRender(){
     <div class="cd-row ${_cdSel===c.codigo?'sel':''}" onclick="cdSel(${c.codigo})">
       <div class="cd-dot ${cdDot(c.dias)}"></div>
       <div style="flex:1;min-width:0"><div class="nm">${c.nome||('#'+c.codigo)}</div>
-        <div class="mt">${c.n} compras · ${c.ult?cpcData(c.ult):'—'} (${c.dias>9000?'—':c.dias+'d'})${c.nOpp?` · <span style="color:#34d399">🎯 ${c.nOpp}</span>`:''}</div></div>
+        <div class="mt">${c.n} compras · ${c.ult?cpcData(c.ult):'—'} (${c.dias>9000?'—':c.dias+'d'})${c.nOpp?` · <span style="color:#6FA32C;font-weight:700">🎯 ${c.nOpp}</span>`:''}</div></div>
       <div class="rv">${cdK(c.fat)}</div>
-    </div>`).join('') || '<div class="cd-empty" style="padding:30px">Nenhum cliente.</div>';
+    </div>`).join('') || ('<div class="cd-empty" style="padding:30px;text-align:center">' + (_cdCli.length ? 'Nenhum cliente neste filtro.' : '🌱 Nenhum cliente ainda — eles aparecem aqui conforme forem cadastrados/importados.') + '</div>');
 }
 
 async function cdSel(codigo){
   _cdSel=codigo; cdRender();
   const c=_cdCli.find(x=>x.codigo===codigo); if(!c)return;
-  const el=document.getElementById('cd-detail'); el.className=''; el.innerHTML='<div style="padding:30px;color:#6b7d74">Carregando perfil...</div>';
+  const el=document.getElementById('cd-detail'); el.className=''; el.innerHTML='<div style="padding:30px;color:var(--muted)">Carregando perfil...</div>';
   let mensal=[], itens=[];
   try{
-    mensal=await (await fetch(`${SUPA_URL2}/rest/v1/v_compras_mensal?cliente_codigo=eq.${codigo}&select=ano_mes,num_compras,total_mes&order=ano_mes`,{headers:SH})).json();
-    itens=await (await fetch(`${SUPA_URL2}/rest/v1/compra_itens?select=produto,marca,quantidade,preco_unit,compras!inner(cliente_codigo,data_compra)&compras.cliente_codigo=eq.${codigo}&limit=5000`,{headers:SH})).json();
-  }catch(e){}
+    mensal=await cdArr(`${SUPA_URL2}/rest/v1/v_compras_mensal?cliente_codigo=eq.${codigo}&select=ano_mes,num_compras,total_mes&order=ano_mes`);
+    itens=await cdArr(`${SUPA_URL2}/rest/v1/compra_itens?select=produto,marca,quantidade,preco_unit,compras!inner(cliente_codigo,data_compra)&compras.cliente_codigo=eq.${codigo}&limit=5000`);
+  }catch(e){ mensal=Array.isArray(mensal)?mensal:[]; itens=[]; console.warn('cdSel: falha ao carregar perfil', e); }
   const prod={}; (itens||[]).forEach(i=>{ const k=_gmNorm(i.produto); const dt=(i.compras&&i.compras.data_compra)||'';
     if(!prod[k])prod[k]={produto:i.produto,marca:i.marca,qtd:0,fat:0,ult:'',preco:null};
     const p=prod[k]; p.qtd+=Number(i.quantidade)||0; p.fat+=(Number(i.quantidade)||0)*(Number(i.preco_unit)||0);
@@ -2638,13 +2655,13 @@ async function cdSel(codigo){
   const top=Object.values(prod).sort((a,b)=>b.fat-a.fat).slice(0,8);
   const opps=_cdOppByCli[codigo]||[];
   const max=Math.max(1,...(mensal||[]).map(m=>Number(m.total_mes)||0));
-  const dc=c.dias<=30?'#10b981':c.dias<=CD_CHURN?'#f59e0b':'#ef4444';
+  const dc=c.dias<=30?'#6FA32C':c.dias<=CD_CHURN?'#C9821F':'#c0392b';
   const dtxt=c.dias<=30?'Ativo':c.dias<=CD_CHURN?'Atenção':'Risco de churn';
   const MES=['','Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
   el.innerHTML=`<div style="padding:20px">
     <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;gap:10px;flex-wrap:wrap">
-      <div><div style="font-size:18px;font-weight:800">${c.nome||('#'+c.codigo)}</div>
-        <div style="font-size:12px;color:#6b7d74;margin-top:3px">${c.cnpj||'sem CNPJ'}${c.cidade?' · '+c.cidade+'/'+(c.uf||''):''}</div></div>
+      <div><div style="font-size:18px;font-weight:800;color:var(--navy)">${c.nome||('#'+c.codigo)}</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:3px">${c.cnpj||'sem CNPJ'}${c.cidade?' · '+c.cidade+'/'+(c.uf||''):''}</div></div>
       <span style="background:${dc}22;color:${dc};padding:5px 12px;border-radius:20px;font-size:12px;font-weight:700;white-space:nowrap">● ${dtxt} (${c.dias>9000?'—':c.dias+'d'})</span>
     </div>
     <div class="cd-dstats">
@@ -2655,19 +2672,19 @@ async function cdSel(codigo){
     </div>
     <div class="cd-sect">📈 Compras por mês</div>
     <div class="cd-bars">${(mensal&&mensal.length)?mensal.map(m=>{const v=Number(m.total_mes)||0;const mm=String(m.ano_mes).split('-');
-      return `<div class="cd-bar"><div class="vv">${cdK(v)}</div><div class="b" style="height:${v/max*90}%"></div><div class="m">${MES[+mm[1]]||mm[1]}/${String(mm[0]).slice(2)}</div></div>`;}).join(''):'<div style="color:#6b7d74;padding:20px">Sem histórico mensal.</div>'}</div>
+      return `<div class="cd-bar"><div class="vv">${cdK(v)}</div><div class="b" style="height:${v/max*90}%"></div><div class="m">${MES[+mm[1]]||mm[1]}/${String(mm[0]).slice(2)}</div></div>`;}).join(''):'<div style="color:var(--muted);padding:20px">Sem histórico mensal.</div>'}</div>
     <div class="cd-sect">🏆 Itens que mais compra</div>
     <table class="cd-t"><thead><tr><th>Produto</th><th>Marca</th><th class="r">Qtd</th><th class="r">Últ. preço</th><th class="r">Total</th></tr></thead>
-      <tbody>${top.map(p=>`<tr><td>${p.produto}</td><td style="color:#6b7d74">${p.marca||'—'}</td><td class="r">${p.qtd}</td><td class="r">${p.preco!=null?cdBRL(p.preco):'—'}</td><td class="r">${cdK(p.fat)}</td></tr>`).join('')||'<tr><td colspan="5" style="color:#6b7d74;padding:14px">Sem itens.</td></tr>'}</tbody></table>
+      <tbody>${top.map(p=>`<tr><td>${p.produto}</td><td style="color:var(--muted)">${p.marca||'—'}</td><td class="r">${p.qtd}</td><td class="r">${p.preco!=null?cdBRL(p.preco):'—'}</td><td class="r">${cdK(p.fat)}</td></tr>`).join('')||'<tr><td colspan="5" style="color:var(--muted);padding:14px">Sem itens.</td></tr>'}</tbody></table>
     <div class="cd-sect">🎯 Oportunidades para oferecer AGORA</div>
     ${opps.length?`<div class="cd-opp">
       ${opps.map(o=>`<div class="cd-opprow">
         <div style="min-width:0"><div style="font-size:12px;font-weight:600">${o.produto}</div>
-          <div style="font-size:11px;color:#8fa399">Ele paga <b>${cdBRL(o.pago)}</b> → oferta <b style="color:#34d399">${cdBRL(o.oferta)}</b>/un · custo ${cdBRL(o.custo)} (${o.forn})</div></div>
+          <div style="font-size:11px;color:var(--muted)">Ele paga <b>${cdBRL(o.pago)}</b> → oferta <b style="color:#6FA32C">${cdBRL(o.oferta)}</b>/un · custo ${cdBRL(o.custo)} (${o.forn})</div></div>
         <span class="cd-badge">-${Math.round((o.pago-o.oferta)/o.pago*100)}% p/ ele · margem ${o.markup}%</span>
       </div>`).join('')}
       <button class="cd-wa" onclick="cdWhats(${codigo})">📱 Gerar oferta WhatsApp (${opps.length} ${opps.length>1?'itens':'item'})</button>
-    </div>`:'<div style="color:#6b7d74;font-size:13px;padding:10px">Nenhuma oportunidade nova para os itens deste cliente. (Precisa haver custo de fornecedor cadastrado, abaixo do que ele pagou.)</div>'}
+    </div>`:'<div style="color:var(--muted);font-size:13px;padding:10px">Nenhuma oportunidade nova para os itens deste cliente. (Precisa haver custo de fornecedor cadastrado, abaixo do que ele pagou.)</div>'}
   </div>`;
 }
 

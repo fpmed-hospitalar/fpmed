@@ -95,6 +95,7 @@ create table if not exists public.compra_itens (
   codigo_erp   text,
   produto      text,
   produto_norm text,
+  principio_ativo text,
   marca        text,
   und          text,
   quantidade   numeric,
