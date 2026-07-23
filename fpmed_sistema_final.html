@@ -685,9 +685,19 @@ select.filter{padding:8px 12px;border:1px solid var(--borda);border-radius:9px;f
         <h2>📦 Atualizar Estoque FPMED</h2>
       </div>
       <div class="table-wrap" style="padding:24px;margin-bottom:20px">
-        <h3 style="font-family:'Montserrat',sans-serif;font-size:15px;font-weight:700;margin-bottom:8px">1. Cole o conteúdo do relatório de estoque</h3>
-        <p style="font-size:13px;color:var(--muted);margin-bottom:14px">Abra o PDF, selecione tudo (Ctrl+A), copie e cole abaixo.</p>
-        <textarea id="eg-texto" placeholder="Cole aqui o texto do relatório de estoque..." style="width:100%;height:180px;padding:12px;border:1px solid var(--borda);border-radius:10px;font-size:12px;font-family:'Inter',sans-serif;resize:vertical;outline:none;box-sizing:border-box"></textarea>
+        <h3 style="font-family:'Montserrat',sans-serif;font-size:15px;font-weight:700;margin-bottom:8px">1. Envie o PDF do relatório de estoque</h3>
+        <div id="eg-dropzone" onclick="document.getElementById('eg-pdf-input').click()"
+             style="border:2px dashed var(--borda);border-radius:12px;padding:26px 20px;text-align:center;cursor:pointer;background:#fafcff;transition:all .15s;margin-bottom:12px">
+          <div style="font-size:26px;margin-bottom:6px">📎</div>
+          <div style="font-size:14px;font-weight:600">Enviar PDF do relatório</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:4px">clique para escolher ou arraste e solte o arquivo aqui</div>
+          <input type="file" id="eg-pdf-input" accept=".pdf,application/pdf" style="display:none" onchange="egPdfArquivo(this.files[0]); this.value=''">
+        </div>
+        <div id="eg-pdf-status" style="font-size:13px;color:var(--muted);margin-bottom:8px"></div>
+        <details style="margin-top:6px">
+          <summary style="font-size:13px;color:var(--muted);cursor:pointer">Opção B — colar o texto manualmente (Ctrl+A no PDF, copiar e colar)</summary>
+          <textarea id="eg-texto" placeholder="Cole aqui o texto do relatório de estoque..." style="width:100%;height:180px;padding:12px;border:1px solid var(--borda);border-radius:10px;font-size:12px;font-family:'Inter',sans-serif;resize:vertical;outline:none;box-sizing:border-box;margin-top:10px"></textarea>
+        </details>
         <div style="margin-top:12px;display:flex;gap:10px;align-items:center">
           <button class="btn btn-primary" onclick="egProcessar()">🔍 Processar Relatório</button>
           <button class="btn btn-outline" onclick="egLimpar()">🗑 Limpar</button>
@@ -4572,9 +4582,121 @@ document.querySelectorAll('.modal-overlay').forEach(el => el.addEventListener('c
 let egProdutos = []; // produtos parseados do relatório
 let egAusentes = []; // globais c/ estoque>0 ausentes do relatório (candidatos a zerar, individual)
 
+// ══ UPLOAD DE PDF (caminho principal) ═════════════════════════════════════════
+// Camada A: pdf.js (CDN, grátis, no navegador) extrai o texto agrupando itens por
+// posição Y da página (senão as colunas embaralham). Joga o texto no MESMO parser
+// do colar (egProcessar). Camada B (fallback): PDF escaneado/ilegível -> IA
+// (ler-pedido, Haiku) transcreve as linhas no formato do parser.
+const EG_PDFJS_CDN = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+const EG_PDFJS_WORKER = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+let _egPdfjsPromise = null;
+function egCarregarPdfjs(){
+  if (window.pdfjsLib) return Promise.resolve(window.pdfjsLib);
+  if (_egPdfjsPromise) return _egPdfjsPromise;
+  _egPdfjsPromise = new Promise((res, rej) => {
+    const s = document.createElement('script');
+    s.src = EG_PDFJS_CDN;
+    s.onload = () => { window.pdfjsLib.GlobalWorkerOptions.workerSrc = EG_PDFJS_WORKER; res(window.pdfjsLib); };
+    s.onerror = () => rej(new Error('não consegui carregar o pdf.js (CDN)'));
+    document.head.appendChild(s);
+  });
+  return _egPdfjsPromise;
+}
+// extrai texto preservando a ORDEM das linhas: agrupa itens pela posição Y (tolerância
+// de 2.5pt), ordena linhas de cima p/ baixo (Y desc no PDF) e itens por X.
+async function egPdfExtrairTexto(arrayBuffer){
+  const pdfjs = await egCarregarPdfjs();
+  const doc = await pdfjs.getDocument({ data: arrayBuffer }).promise;
+  const paginas = [];
+  for (let p = 1; p <= doc.numPages; p++) {
+    const page = await doc.getPage(p);
+    const tc = await page.getTextContent();
+    const linhas = [];  // [{y, itens:[{x, str}]}]
+    for (const it of tc.items) {
+      if (!it.str || !it.str.trim()) continue;
+      const x = it.transform[4], y = it.transform[5];
+      let alvo = linhas.find(l => Math.abs(l.y - y) <= 2.5);
+      if (!alvo) { alvo = { y, itens: [] }; linhas.push(alvo); }
+      alvo.itens.push({ x, str: it.str });
+    }
+    linhas.sort((a, b) => b.y - a.y);  // topo da página primeiro
+    const txt = linhas.map(l => l.itens.sort((a, b) => a.x - b.x).map(i => i.str).join(' ')
+      .replace(/\s{2,}/g, ' ').trim()).join('\n');
+    paginas.push(txt);
+  }
+  return paginas.join('\n');
+}
+// heurística: texto "prestável" precisa ter linhas de produto (código de 7 dígitos)
+function egTextoPrestavel(t){
+  if (!t || t.trim().length < 80) return false;
+  return ((t.match(/\b\d{7}\b/g) || []).length) >= 1;
+}
+async function egPdfArquivo(file){
+  if (!file) return;
+  const st = document.getElementById('eg-pdf-status');
+  if (!/pdf$/i.test(file.type) && !/\.pdf$/i.test(file.name)) { st.style.color='var(--vermelho)'; st.textContent = '❌ Envie um arquivo PDF.'; return; }
+  try {
+    st.style.color = 'var(--muted)';
+    st.textContent = '📄 Lendo "' + file.name + '" (extração local, grátis)...';
+    const buf = await file.arrayBuffer();
+    let texto = '';
+    try { texto = await egPdfExtrairTexto(buf.slice(0)); } catch(e) { texto = ''; }
+    if (egTextoPrestavel(texto)) {
+      document.getElementById('eg-texto').value = texto;
+      st.style.color = 'var(--verde-escuro)';
+      st.textContent = '✅ Texto extraído localmente (' + texto.split('\n').length + ' linhas). Processando...';
+      egProcessar();
+      if (!egProdutos.length) {
+        st.style.color = 'var(--muted)';
+        st.textContent = '⚠️ Extração local não achou produtos — tentando com IA...';
+        await egPdfIA(buf, file, st);
+      }
+      return;
+    }
+    // Camada B: PDF escaneado/sem texto -> IA
+    st.style.color = 'var(--muted)';
+    st.textContent = '🤖 PDF sem texto extraível (escaneado?) — lendo com IA (Haiku)...';
+    await egPdfIA(buf, file, st);
+  } catch(e) {
+    st.style.color = 'var(--vermelho)';
+    st.textContent = '❌ ' + e.message;
+  }
+}
+async function egPdfIA(buf, file, st){
+  if (file.size > 20 * 1024 * 1024) { st.style.color='var(--vermelho)'; st.textContent='❌ PDF acima de 20MB — use a Opção B (colar texto).'; return; }
+  const b64 = await new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result.split(',')[1]); r.onerror = rej; r.readAsDataURL(file); });
+  const prompt = 'Este documento é um relatório de estoque de uma distribuidora de medicamentos. Transcreva CADA linha de produto EXATAMENTE neste formato, uma por linha, sem cabeçalho e sem comentários:\n' +
+    'CODIGO NOME_DO_PRODUTO MARCA VENDA1 VENDA2 ESTOQUE\n' +
+    'Regras: CODIGO = o código numérico de 7 dígitos com zeros à esquerda (ex.: 0001964). VENDA1 e VENDA2 = os dois preços no formato brasileiro com vírgula (ex.: 1.234,56). ESTOQUE = número inteiro no fim da linha. Ignore cabeçalhos, rodapés, datas e números de página. Se não houver relatório de estoque, responda NENHUM_PRODUTO_ENCONTRADO.';
+  const r = await fetch('https://xzdowrksuswekwffoluk.supabase.co/functions/v1/ler-pedido', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ model: 'claude-haiku-4-5', max_tokens: 16000, messages: [{ role: 'user', content: [
+      { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: b64 } },
+      { type: 'text', text: prompt } ] }] })
+  });
+  const data = await r.json();
+  if (data && (data.type === 'error' || data.error)) { st.style.color='var(--vermelho)'; st.textContent = '❌ IA: ' + ((data.error && data.error.message) || data.message || 'erro'); return; }
+  let t = ((data.content && data.content[0] && data.content[0].text) || '').replace(/```\w*|```/g, '').trim();
+  if (!t || /NENHUM_PRODUTO_ENCONTRADO/.test(t) || !egTextoPrestavel(t)) { st.style.color='var(--vermelho)'; st.textContent = '❌ A IA não encontrou linhas de produto neste PDF. Confira o arquivo ou use a Opção B.'; return; }
+  document.getElementById('eg-texto').value = t;
+  st.style.color = 'var(--verde-escuro)';
+  st.textContent = '🤖 Texto lido pela IA (' + t.split('\n').length + ' linhas). Processando...';
+  egProcessar();
+}
+// arrastar e soltar
+document.addEventListener('DOMContentLoaded', function(){
+  const dz = document.getElementById('eg-dropzone');
+  if (!dz) return;
+  ['dragover','dragenter'].forEach(ev => dz.addEventListener(ev, e => { e.preventDefault(); dz.style.borderColor='var(--azul)'; dz.style.background='#eaf6fc'; }));
+  ['dragleave','drop'].forEach(ev => dz.addEventListener(ev, e => { e.preventDefault(); dz.style.borderColor='var(--borda)'; dz.style.background='#fafcff'; }));
+  dz.addEventListener('drop', e => { const f = e.dataTransfer.files && e.dataTransfer.files[0]; if (f) egPdfArquivo(f); });
+});
+// ══ FIM UPLOAD DE PDF ═════════════════════════════════════════════════════════
+
 function egLimpar() {
   document.getElementById('eg-texto').value = '';
   document.getElementById('eg-status-proc').textContent = '';
+  const ps = document.getElementById('eg-pdf-status'); if (ps) ps.textContent = '';
   document.getElementById('eg-preview-box').style.display = 'none';
   document.getElementById('eg-btn-box').style.display = 'none';
   document.getElementById('eg-progress').style.display = 'none';
