@@ -698,9 +698,10 @@ select.filter{padding:8px 12px;border:1px solid var(--borda);border-radius:9px;f
           <summary style="font-size:13px;color:var(--muted);cursor:pointer">Opção B — colar o texto manualmente (Ctrl+A no PDF, copiar e colar)</summary>
           <textarea id="eg-texto" placeholder="Cole aqui o texto do relatório de estoque..." style="width:100%;height:180px;padding:12px;border:1px solid var(--borda);border-radius:10px;font-size:12px;font-family:'Inter',sans-serif;resize:vertical;outline:none;box-sizing:border-box;margin-top:10px"></textarea>
         </details>
-        <div style="margin-top:12px;display:flex;gap:10px;align-items:center">
+        <div style="margin-top:12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
           <button class="btn btn-primary" onclick="egProcessar()">🔍 Processar Relatório</button>
           <button class="btn btn-outline" onclick="egLimpar()">🗑 Limpar</button>
+          <button class="btn btn-outline" onclick="egDesfazer()" title="Restaura o estado anterior à última atualização (5 backups guardados)">↩ Desfazer última atualização</button>
           <span id="eg-status-proc" style="font-size:13px;color:var(--muted)"></span>
         </div>
       </div>
@@ -4968,7 +4969,109 @@ function egProcessar() {
   pcRenderAguardando();   // cruza pedidos de compra x o que chegou no relatório
 }
 
-async function egExecutar() {
+// ══ SEGURANÇA (22/07): confirmação forte + backup/desfazer + trava de relatório parcial ══
+// egExecutar agora SÓ abre o modal de confirmação; a gravação real fica no egExecutarReal.
+function egExecutar() {
+  if (egProdutos.length === 0) return;
+  const existentes = new Set(cotacoes.filter(c => String(c.fornecedor)==='1').map(c => egNormCod(c.codigo)));
+  const nUpd = egProdutos.filter(p => existentes.has(p.codigo)).length;
+  const nNovos = egProdutos.length - nUpd;
+  const marcados = new Set([...document.querySelectorAll('.eg-aus-chk:checked')].map(ch => String(ch.dataset.id)));
+  const aZerar = (egAusentes || []).filter(c => marcados.has(String(c.id)));
+  const totalGlobal = cotacoes.filter(c => String(c.fornecedor)==='1').length;
+  const parcial = totalGlobal > 0 && egProdutos.length < 0.3 * totalGlobal;
+
+  const zeradosHtml = aZerar.length
+    ? `<div style="margin:10px 0;padding:10px;background:#fdecea;border:1px solid #e05c5c;border-radius:8px;max-height:140px;overflow:auto">
+         <b style="color:#a32d2d">Serão ZERADOS (${aZerar.length}):</b>
+         ${aZerar.map(c => `<div style="font-size:12px;color:#7a2020">0️⃣ ${c.codigo || ''} ${String(c.produto||'').slice(0,60)}</div>`).join('')}
+       </div>` : '';
+  const parcialHtml = parcial
+    ? `<div style="margin:10px 0;padding:10px;background:#fdecea;border:2px solid #c0392b;border-radius:8px;color:#a32d2d;font-weight:700">
+         ⚠ Este relatório parece PARCIAL: só ${egProdutos.length} produtos contra ${totalGlobal} no estoque atual
+         (${Math.round(egProdutos.length/totalGlobal*100)}%). ${(egAusentes||[]).length} produto(s) ficariam como ausentes.
+         Confira o arquivo antes de continuar.</div>` : '';
+
+  const ov = document.createElement('div');
+  ov.id = 'eg-modal-conf';
+  ov.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(10,20,30,.55);display:flex;align-items:center;justify-content:center;padding:20px';
+  ov.innerHTML = `
+    <div style="background:#fff;border-radius:14px;max-width:560px;width:100%;padding:26px;box-shadow:0 20px 60px rgba(0,0,0,.35)">
+      <h3 style="font-family:'Montserrat',sans-serif;font-size:17px;font-weight:800;margin-bottom:12px">⚠️ Confirmar atualização do estoque</h3>
+      <div style="font-size:14px;line-height:1.9">
+        ➕ <b>${nNovos}</b> produto(s) NOVOS entrando no estoque<br>
+        ✏️ <b>${nUpd}</b> atualização(ões) de preço/estoque<br>
+        0️⃣ <b>${aZerar.length}</b> produto(s) serão ZERADOS
+      </div>
+      ${zeradosHtml}${parcialHtml}
+      <div style="margin-top:14px;font-size:13px;color:var(--muted)">Um backup automático será salvo antes (dá pra desfazer com ↩).</div>
+      <div style="margin-top:12px">
+        <label style="font-size:13px;font-weight:600">Digite <span style="color:#c0392b">ATUALIZAR</span> para liberar:</label>
+        <input id="eg-conf-input" autocomplete="off" style="width:100%;box-sizing:border-box;margin-top:6px;padding:10px 12px;border:1px solid var(--borda);border-radius:8px;font-size:14px;letter-spacing:1px">
+      </div>
+      <div style="display:flex;gap:10px;margin-top:16px">
+        <button id="eg-conf-cancel" class="btn" style="flex:1;background:#5b6b7a;font-size:14px;padding:12px">✖ Cancelar</button>
+        <button id="eg-conf-ok" class="btn btn-primary" style="flex:1;font-size:14px;padding:12px" disabled>Confirmar e gravar</button>
+      </div>
+    </div>`;
+  document.body.appendChild(ov);
+  const inp = ov.querySelector('#eg-conf-input'), ok = ov.querySelector('#eg-conf-ok');
+  inp.focus();
+  inp.addEventListener('input', () => { ok.disabled = inp.value.trim().toUpperCase() !== 'ATUALIZAR'; });
+  ov.querySelector('#eg-conf-cancel').onclick = () => ov.remove();
+  ok.onclick = () => { ov.remove(); egExecutarReal(); };
+}
+
+// ── BACKUP: snapshot do estado atual dos itens afetados (mantém os 5 últimos) ──
+async function egCriarBackup(resumo) {
+  const existentes = new Set(cotacoes.filter(c => String(c.fornecedor)==='1').map(c => egNormCod(c.codigo)));
+  const marcados = new Set([...document.querySelectorAll('.eg-aus-chk:checked')].map(ch => String(ch.dataset.id)));
+  const afetados = [];
+  for (const p of egProdutos) {
+    if (!existentes.has(p.codigo)) continue;
+    const c = cotacoes.find(x => String(x.fornecedor)==='1' && egNormCod(x.codigo)===p.codigo);
+    if (c) afetados.push({ id: c.id, codigo: c.codigo, produto: c.produto, estoque: c.estoque, global_venda1: c.global_venda1, global_venda2: c.global_venda2 });
+  }
+  for (const c of (egAusentes || [])) {
+    if (marcados.has(String(c.id))) afetados.push({ id: c.id, codigo: c.codigo, produto: c.produto, estoque: c.estoque, global_venda1: c.global_venda1, global_venda2: c.global_venda2 });
+  }
+  const bkp = await sbPost('estoque_backup', { resumo, snapshot: afetados, inseridos: [] });
+  // mantém só os 5 últimos
+  try {
+    const todos = await sbGet('estoque_backup', 'select=id&order=id.desc');
+    for (const b of todos.slice(5)) {
+      await fetch(`${SUPA_URL2}/rest/v1/estoque_backup?id=eq.${b.id}`, { method: 'DELETE', headers: { 'Content-Type':'application/json', 'apikey': SUPA_KEY2 } });
+    }
+  } catch(e) { console.warn('limpeza de backups antigos falhou', e); }
+  return bkp;
+}
+
+// ── DESFAZER: restaura o último backup não-restaurado ──
+async function egDesfazer() {
+  const st = document.getElementById('eg-pdf-status');
+  try {
+    const bkps = await sbGet('estoque_backup', 'select=*&restaurado=eq.false&order=id.desc&limit=1');
+    if (!Array.isArray(bkps) || !bkps.length) { alert('Nenhum backup disponível para desfazer.'); return; }
+    const b = bkps[0];
+    const snap = Array.isArray(b.snapshot) ? b.snapshot : [];
+    const ins = Array.isArray(b.inseridos) ? b.inseridos : [];
+    if (!confirm(`↩ Desfazer a última atualização?\n\n${b.resumo || ''}\nCriado em: ${new Date(b.criado_em).toLocaleString('pt-BR')}\n\nRestaura ${snap.length} item(ns) ao estado anterior e remove ${ins.length} inserido(s).`)) return;
+    let ok = 0, err = 0;
+    for (const s of snap) {
+      try { await sbPatch('cotacoes', String(s.id), { estoque: s.estoque, global_venda1: s.global_venda1, global_venda2: s.global_venda2 }); ok++; }
+      catch(e) { err++; console.error('desfazer: falha no id', s.id, e); }
+    }
+    for (const id of ins) {
+      try { const r = await fetch(`${SUPA_URL2}/rest/v1/cotacoes?id=eq.${id}&fornecedor=eq.1`, { method: 'DELETE', headers: { 'Content-Type':'application/json', 'apikey': SUPA_KEY2 } }); if (r.ok) ok++; else err++; }
+      catch(e) { err++; }
+    }
+    await sbPatch('estoque_backup', String(b.id), { restaurado: true });
+    alert(`↩ Desfazer concluído: ${ok} operação(ões) restauradas${err ? ' · ' + err + ' erro(s) (ver console)' : ''}.`);
+    await iniciar();
+  } catch(e) { alert('❌ Desfazer falhou: ' + e.message); }
+}
+
+async function egExecutarReal() {
   if (egProdutos.length === 0) return;
 
   // BLINDAGEM: não grava nome de linha grudada sem confirmação explícita (senão recria os PREDNISOLONA FUROSEMIDA)
@@ -4986,6 +5089,19 @@ async function egExecutar() {
   btn.textContent = '⏳ Processando...';
   document.getElementById('eg-progress').style.display = 'block';
   document.getElementById('eg-status-exec').textContent = '';
+
+  // BACKUP AUTOMÁTICO antes de qualquer escrita (permite ↩ Desfazer)
+  let _bkp = null; const _insIds = [];
+  try {
+    document.getElementById('eg-progress-label').textContent = 'Salvando backup do estado atual...';
+    _bkp = await egCriarBackup(`import de estoque ${new Date().toLocaleString('pt-BR')} — ${egProdutos.length} produtos no relatório`);
+  } catch(e) {
+    if (!confirm('⚠️ Não consegui salvar o BACKUP (' + e.message + ').\n\nContinuar SEM possibilidade de desfazer?')) {
+      btn.disabled = false; btn.textContent = '✅ Atualizar Banco de Dados';
+      document.getElementById('eg-progress').style.display = 'none';
+      return;
+    }
+  }
 
   const codigosRelatorio = new Set(egProdutos.map(p => p.codigo));
   const codigosExistentes = new Set(cotacoes.filter(c=>c.fornecedor==='1').map(c=>egNormCod(c.codigo)));
@@ -5033,8 +5149,8 @@ async function egExecutar() {
           nUpd++;
         }
       } else {
-        // INSERT
-        await sbPost('cotacoes', {
+        // INSERT (guarda o id criado p/ o Desfazer poder remover)
+        const criado = await sbPost('cotacoes', {
           fornecedor: '1',
           codigo: p.codigo,
           produto: p.produto,
@@ -5044,12 +5160,18 @@ async function egExecutar() {
           global_venda2: p.venda2,
           tipo: 'global'
         });
+        if (criado && criado.id) _insIds.push(criado.id);
         nIns++;
       }
     } catch(e) {
       console.error('Erro em', p.codigo, e);
       nErr++;
     }
+  }
+
+  // registra no backup os ids inseridos (p/ o Desfazer removê-los)
+  if (_bkp && _bkp.id && _insIds.length) {
+    try { await sbPatch('estoque_backup', String(_bkp.id), { inseridos: _insIds }); } catch(e) { console.warn('não registrei inseridos no backup', e); }
   }
 
   // RESUMO final — se NADA gravou (sessão expirada -> writes viram 401), grita em vermelho e manda logar
