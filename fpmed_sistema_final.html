@@ -1090,6 +1090,7 @@ const pageConfig = {
   'itens-a-cotar': { title:'Itens a Cotar', btn:'🔄 Atualizar', btnAction:()=>iacCarregar() },
   comparativo:  { title:'Comparativo de Fornecedores', btn:'🔄 Atualizar', btnAction:()=>recarregarCotacoes(true).then(()=>renderComparativo(undefined,true)) },
   competitividade: { title:'Competitividade de Preço', btn:'', btnAction:null },
+  'estoque-global': { title:'Atualizar Estoque FPMED', btn:'', btnAction:null },
   'pedidos-compra':  { title:'Pedidos de Compra', btn:'', btnAction:null }
 };
 async function showPage(name, el) {

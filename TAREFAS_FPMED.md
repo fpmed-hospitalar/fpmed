@@ -8,6 +8,11 @@
 
 Última atualização: 2026-07-22
 
+## 🧪 REGRA PERMANENTE DE TESTE (22/07)
+Todo teste de tela que GRAVA no banco: usar a prévia SEM clicar em gravar, OU apagar os
+dados de teste imediatamente depois (e provar a limpeza com contagem antes/depois).
+Auditoria de 22/07: banco confirmado limpo após teste do upload de PDF (preview-only).
+
 ## ✅ CONCLUÍDAS
 - [x] Pasta base `C:\fpmed` + cópia limpa (sem segredos, sem Prospecção `vendedora.html`)
 - [x] Git próprio inicializado (commit `bfe2f0d`)
