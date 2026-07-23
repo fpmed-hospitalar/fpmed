@@ -51,8 +51,11 @@ Criado em 21/07/2026 copiando SO os arquivos do app do C:\globalmed.
     (divergencia alta, documentada no SYNC_GLOBAL.md).
     DADOS: node tools/sync_cotacoes_global.js (preview) -> OK por rodada -> --gravar.
     Filtros fixos: exclui GLOBAL (fornecedor 1/tipo global), so tabela cotacoes, dedup
-    (fornecedor, produto). Baseline atual: ultimo_sync 490e856 (= estado do clone).
-    DECISOES DE NEGOCIO PENDENTES (nao portar sem OK): MKP 25->32% da Global; portal de cards.
+    (fornecedor, produto). Baseline atual: ultimo_sync e7501e0 (1o sync de codigo feito
+    22/07 — 110 asserts verdes; ver SYNC_GLOBAL.md).
+    DECISOES JA TOMADAS pelo Lemuel (22/07): MKP 32% PORTADO (excecao: custo-ref GLOBAL
+    segue venda/1,25); portal de cards FORA em definitivo (entrada direta no sistema).
+    PENDENCIA MANUAL: upgrades da Competitividade da Global (tema escuro x claro).
 
 >>> SEED DE COTACOES FEITO (22/07/2026, autorizado pelo Lemuel):
     7.451 cotacoes de DISTRIBUIDOR importadas do GlobalMed p/ a cotacoes da FPMED.
@@ -83,14 +86,17 @@ Criado em 21/07/2026 copiando SO os arquivos do app do C:\globalmed.
   [OK] SUPABASE FPMED criado: org nova FREE "FPMED Hospitalar", projeto "fpmed", regiao Sao Paulo,
   ref xzdowrksuswekwffoluk, URL https://xzdowrksuswekwffoluk.supabase.co. anon/service_role/DB pw
   no segredos.local.txt (gitignored). NAO usa a org Pro do GlobalMed (custo). Edge function
-  ler-pedido DEPLOYADA (22/07, dashboard, Verify JWT off, testada) — falta so o Lemuel colar o
-  secret ANTHROPIC_API_KEY (Edge Functions > Secrets) e rodar o teste final.
-  PENDENTE: troca URL+ANON nos arquivos, tabelas (DDL), org fpmed-hospitalar no GitHub + deploy.
-  BLOQUEADA: dados de registro reais (ver acima).
+  ler-pedido 100% NO AR (22/07): secret colado, trava de origem, modelo claude-haiku-4-5 (custo).
 
-Proximos passos (quando o Lemuel mandar): (a) criar o Supabase da FPMED; (b) trocar URL+ANON no
-gm-auth.js e nos .html; (c) rebrand (nome/logo/cores/telefone); (d) remover Prospeccao do
-sistema_final; (e) criar as tabelas (DDL abaixo); (f) criar o GitHub da FPMED e apontar o remote.
+>>> SISTEMA NO AR (22/07/2026): https://fpmed-hospitalar.github.io/fpmed/ — repo publico,
+  Pages ativo, RLS ligada, logins admin criados, 7.451 cotacoes seedadas. Historico do git
+  REESCRITO 22/07 (dashboard_clientes) — nunca fazer push de dado real de cliente.
+  23/07: logo dos PDFs (window.open) com URL absoluta; favicon FPMED nas 10 paginas;
+  coracao da Global substituido pela cruz oficial (tela + PDF da Competitividade).
+
+Proximos passos (quando o Lemuel mandar): (a) sync de dados quando a Global tiver cotacoes
+novas; (b) porte manual da Competitividade (SYNC_GLOBAL.md); (c) vendedoras quando a equipe
+for definida; (d) dominio sistema.fpmed.com.br pos-venda. Placar completo: TAREFAS_FPMED.md.
 
 ========================================
 BLUEPRINT DO SISTEMA (mapeado do GlobalMed, 21/07/2026)
