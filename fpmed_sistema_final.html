@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>FPMED — Sistema Interno</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 44 44'%3E%3Crect x='15' y='2' width='14' height='14' rx='3' fill='%238DC63F'/%3E%3Crect x='15' y='28' width='14' height='14' rx='3' fill='%23173A5E'/%3E%3Crect x='2' y='15' width='14' height='14' rx='3' fill='%232CA9E0'/%3E%3Crect x='28' y='15' width='14' height='14' rx='3' fill='%232CA9E0'/%3E%3Crect x='15' y='15' width='14' height='14' rx='3' fill='%231B8DC4'/%3E%3C/svg%3E">
 <script src="gm-auth.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -896,8 +897,6 @@ select.filter{padding:8px 12px;border:1px solid var(--borda);border-radius:9px;f
       #cpz-root .top{display:flex;justify-content:space-between;align-items:center;padding:4px 2px 0}
       #cpz-root .logo{display:flex;align-items:center;gap:11px}
       #cpz-root .logo .mark{width:34px;height:30px;flex:0 0 auto}
-      #cpz-root .logo .mark .beat{stroke-dasharray:44;stroke-dashoffset:0;animation:cpzBeat 2.2s ease-in-out infinite}
-      @keyframes cpzBeat{0%,58%,100%{stroke-dashoffset:0}66%{stroke-dashoffset:44}72%{stroke-dashoffset:44}}
       #cpz-root .logo .wm .b{font-family:'Montserrat',sans-serif;font-weight:700;font-size:16px;letter-spacing:1.5px;color:#173A5E;line-height:1}
       #cpz-root .logo .wm .s{font-size:8px;letter-spacing:4px;color:var(--cyan);margin-top:2px;font-weight:500}
       #cpz-root .cz-acts{display:flex;gap:8px;align-items:center}
@@ -3146,7 +3145,7 @@ function renderCompetitividade(){
   // ── HEADER (logo coração + ações) ──
   var h='';
   h+='<div class="top"><div class="logo">'+
-     '<svg class="mark" viewBox="0 0 32 28" aria-hidden="true"><path d="M16 25C16 25 3 17.6 3 9.6C3 6 5.9 3.1 9.5 3.1C12 3.1 14.3 4.5 16 6.7C17.7 4.5 20 3.1 22.5 3.1C26.1 3.1 29 6 29 9.6C29 17.6 16 25 16 25Z" fill="none" stroke="#2CA9E0" stroke-width="2"/><polyline class="beat" points="4,15 10.5,15 12.8,10.5 15.4,18.5 18,12.5 20.3,15 28,15" fill="none" stroke="#63D0E4" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/></svg>'+
+     '<svg class="mark" viewBox="0 0 44 44" aria-hidden="true"><rect x="15" y="2" width="14" height="14" rx="3" fill="#8DC63F"/><rect x="15" y="28" width="14" height="14" rx="3" fill="#173A5E"/><rect x="2" y="15" width="14" height="14" rx="3" fill="#2CA9E0"/><rect x="28" y="15" width="14" height="14" rx="3" fill="#2CA9E0"/><rect x="15" y="15" width="14" height="14" rx="3" fill="#1B8DC4"/></svg>'+
      '<div class="wm"><div class="b">FPMED</div><div class="s">HOSPITALAR</div></div></div>'+
      '<div class="cz-acts"><button class="cz-btn" onclick="cpzExport()">⬇ Excel</button><button class="cz-btn" onclick="recarregarCotacoes(true).then(function(){renderCompetitividade();})">🔄 Atualizar</button></div></div>';
   // ── HERO ──
@@ -3256,7 +3255,7 @@ function _cpzJogada(r){
 function _cpzRelPreco(id,val){ var v=parseFloat(String(val).replace(',','.')); if(isNaN(v)) delete _cpzPrecoNovo[id]; else _cpzPrecoNovo[id]=+v.toFixed(2); cpzRelatorio(); }
 function _cpzModoRel(m){ _cpzModo=m; cpzRelatorio(); }
 function _cpzFecharRel(){ var o=document.getElementById('cpz-report'); if(o) o.remove(); }
-function _cpzLogoSVG(){ return '<svg viewBox="0 0 32 28" style="width:26px;height:23px;vertical-align:middle"><path d="M16 25C16 25 3 17.6 3 9.6C3 6 5.9 3.1 9.5 3.1C12 3.1 14.3 4.5 16 6.7C17.7 4.5 20 3.1 22.5 3.1C26.1 3.1 29 6 29 9.6C29 17.6 16 25 16 25Z" fill="none" stroke="#2CA9E0" stroke-width="2"/><polyline points="4,15 10.5,15 12.8,10.5 15.4,18.5 18,12.5 20.3,15 28,15" fill="none" stroke="#63D0E4" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/></svg>'; }
+function _cpzLogoSVG(){ return '<svg viewBox="0 0 44 44" style="width:23px;height:23px;vertical-align:middle"><rect x="15" y="2" width="14" height="14" rx="3" fill="#8DC63F"/><rect x="15" y="28" width="14" height="14" rx="3" fill="#173A5E"/><rect x="2" y="15" width="14" height="14" rx="3" fill="#2CA9E0"/><rect x="28" y="15" width="14" height="14" rx="3" fill="#2CA9E0"/><rect x="15" y="15" width="14" height="14" rx="3" fill="#1B8DC4"/></svg>'; }
 function cpzRelatorio(){
   var sel=_cpzRows.filter(function(r){return _cpzSel[r.id];}).sort(function(a,b){return b.acima-a.acima;});
   if(!sel.length){ alert('Marque itens na tabela primeiro (checkbox na 1ª coluna).'); return; }
