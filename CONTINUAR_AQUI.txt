@@ -42,6 +42,18 @@ Criado em 21/07/2026 copiando SO os arquivos do app do C:\globalmed.
     GitHub da org. ATENCAO: dashboard_clientes.html tem lista de clientes/CNPJs embutida
     (ex.: ELLO DISTRIBUICAO LTDA) — revisar se e demo ou dado real do GlobalMed antes do deploy.
 
+>>> SYNC GLOBALMED->FPMED (22/07/2026) — procedimento PERMANENTE:
+    Comando do Lemuel: "sincroniza as melhorias da Global" -> seguir o SYNC_GLOBAL.md.
+    CODIGO: node tools/sync_da_global.js (relatorio de commits pendentes da Global, mapa
+    globalmed_* -> fpmed_*, avisos de divergencia). Mostrar lista -> OK do Lemuel -> portar
+    com REBRAND (checklist no SYNC_GLOBAL.md) -> testar -> commit -> --marcar <hash>.
+    NUNCA portar as cegas. sistema_final/index/gm-auth/dashboard_clientes = PORTE MANUAL
+    (divergencia alta, documentada no SYNC_GLOBAL.md).
+    DADOS: node tools/sync_cotacoes_global.js (preview) -> OK por rodada -> --gravar.
+    Filtros fixos: exclui GLOBAL (fornecedor 1/tipo global), so tabela cotacoes, dedup
+    (fornecedor, produto). Baseline atual: ultimo_sync 490e856 (= estado do clone).
+    DECISOES DE NEGOCIO PENDENTES (nao portar sem OK): MKP 25->32% da Global; portal de cards.
+
 >>> SEED DE COTACOES FEITO (22/07/2026, autorizado pelo Lemuel):
     7.451 cotacoes de DISTRIBUIDOR importadas do GlobalMed p/ a cotacoes da FPMED.
     Criterio: fornecedor != '1' E tipo != 'global' (as 517 linhas GLOBAL ficaram fora;

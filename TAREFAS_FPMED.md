@@ -32,6 +32,20 @@
       do banco antigo, sintaxe JS validada). URL `https://xzdowrksuswekwffoluk.supabase.co`.
 
 ## ⬜ PENDENTES (na ordem)
+- [ ] **⚠️ PRÓXIMA: Clientes & Oportunidades — bug + tema** (pedido 22/07): (1) corrigir
+      "Erro: (itens || []).forEach is not a function" na raiz (validar Array.isArray, resposta
+      de erro da API vira mensagem amigável, estado vazio bonito "Nenhum cliente ainda...");
+      (2) reestilizar a página do tema ESCURO pro tema CLARO padrão do sistema (reusar
+      classes/variáveis existentes) + varrer outras telas destoantes e LISTAR antes de mexer;
+      (3) testar com banco sem clientes (console limpo, filtros não quebram); (4) commit
+      "Clientes & Oportunidades: corrige erro forEach e padroniza cores com o tema claro do sistema".
+- [ ] **1º sync de código da Global** (aguardando escolha do Lemuel): 32 commits pendentes no
+      relatório (`node tools/sync_da_global.js`). Destaques portáveis: correções de data
+      toISOString/UTC na giovana, busca instantânea + botão Buscar, fuzzy "complexo b", score
+      de confiança FASE 3, "Esgotou no fornecedor", suites tests/ (125 asserts). PORTE MANUAL:
+      upgrades da Competitividade no sistema_final. DECISÃO DE NEGÓCIO: MKP 25%→32%.
+- [ ] **Sync de dados**: preview rodado 22/07 → 0 novos / 0 atualizados / 7.451 pulados (seed
+      já cobriu tudo). Próxima rodada quando a Global tiver cotações novas; gravar SÓ com OK.
 - [x] **SEED de cotações** (22/07, autorizado): 7.451 cotações de distribuidor do GlobalMed →
       `cotacoes` FPMED. Zero GLOBAL (517 excluídas), zero cliente/prospect, `venda_loja` zerada,
       45 fornecedores, `fornecedor_nome` backfilled + normalização no app. Dashboard/Competitividade
