@@ -3,7 +3,7 @@
 > Comando do Lemuel: **"sincroniza as melhorias da Global"** → rodar o fluxo abaixo.
 > C:\globalmed é **SÓ LEITURA** (regra master). Nunca portar às cegas: preview → OK → porta → testa → commit.
 
-ultimo_sync: 490e856
+ultimo_sync: e7501e0
 
 (`ultimo_sync` = último commit da GlobalMed já considerado. `490e856` = estado da Global
 no momento do clone da FPMED, 21/07/2026 20:29 — 4 min antes do 1º commit da FPMED.)
@@ -38,9 +38,17 @@ Divergiram muito entre os projetos; diff automático NÃO aplica limpo — porta
 O `tools/sync_da_global.js` marca esses como [PORTE MANUAL] e avisa (⚠️ N commits locais) qualquer
 outro arquivo que acumular divergência local.
 
-## ⚠️ DECISÕES DE NEGÓCIO pendentes ao portar (não portar sem OK explícito)
-- **MKP 25% → 32%** (Global commit 3236d65): mudança de precificação. FPMED segue em 25% até o Lemuel decidir.
-- **Portal de entrada** (5ff0dbf/fa973c6/71595b7): FPMED decidiu entrada direta no sistema — só portar se o Lemuel mudar de ideia.
+## ⚠️ DECISÕES DE NEGÓCIO (decididas pelo Lemuel no 1º sync, 22/07/2026)
+- **MKP 32%** (Global 3236d65): ✅ PORTADO — markup de fornecedor ×1,32 em giovana/vendas/sistema.
+  EXCEÇÃO mantida: custo-ref do estoque GLOBAL segue **venda ÷ 1,25** (não muda com o MKP).
+- **Portal de entrada** (5ff0dbf/fa973c6/71595b7): ❌ FORA em definitivo — FPMED entra direto no sistema.
+- **Importador PDF CLI** (tools/importa_estoque_pdf.js + testa_pdf_estoque.js): ❌ FORA — FPMED
+  tem upload de PDF direto no browser (Atualizar Estoque).
+
+## ⏳ PENDÊNCIA MANUAL — upgrades da Competitividade (Global 005cb75/7cc5b87/e7501e0)
+A Global evoluiu a tela Competitividade em cima do TEMA ESCURO; a FPMED já converteu essa tela
+pro tema claro — o diff não encaixa. O marcador está em e7501e0, mas a PARTE CPZ desses commits
+NÃO foi portada: portar a ideia manualmente (reaplicando o tema claro) quando o Lemuel pedir.
 
 ## Fluxo de SYNC DE DADOS (cotações de distribuidor) — SÓ com OK por rodada
 1. `node tools/sync_cotacoes_global.js` → PREVIEW: N novos / N atualizados / N pulados (nada gravado).
