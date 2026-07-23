@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dashboard Clientes & Oportunidades</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; background:#F4F7FA; color:#1E2A36; padding:20px; }
+  .wrap { max-width:1400px; margin:0 auto; }
+  .topfaixa { background:#2CA9E0; color:#fff; font-size:12px; padding:8px 16px; border-radius:10px; margin-bottom:16px; display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap; }
+  .topfaixa b { font-weight:600; }
+  .brandbar { display:flex; align-items:center; gap:12px; margin-bottom:16px; }
+  h1 { font-family:'Montserrat',sans-serif; font-size:22px; font-weight:700; color:#173A5E; margin-bottom:2px; display:flex; align-items:center; gap:10px; }
+  h1 .ico { width:32px;height:32px;background:linear-gradient(135deg,#2CA9E0,#1B8DC4);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px; }
+  .sub { color:#8496A6; font-size:13px; margin-bottom:20px; }
+  .kpis { display:grid; grid-template-columns:repeat(5,1fr); gap:12px; margin-bottom:22px; }
+  .kpi { background:#FFFFFF; border:1px solid #E3EAF1; border-radius:12px; padding:16px; position:relative; overflow:hidden; box-shadow:0 2px 10px rgba(23,58,94,.07); }
+  .kpi .lbl { font-size:11px; text-transform:uppercase; letter-spacing:.5px; color:#8496A6; margin-bottom:8px; }
+  .kpi .val { font-family:'Montserrat',sans-serif; font-size:26px; font-weight:800; color:#173A5E; }
+  .kpi .foot { font-size:11px; color:#8496A6; margin-top:4px; }
+  .kpi.alert { border-color:#F3C7C7; background:#FDF3F3; }
+  .kpi.alert .val { color:#E05C5C; }
+  .kpi.hot { border-color:#D4E9B4; background:#F1F8E6; }
+  .kpi.hot .val { color:#6FA32C; }
+  .grid { display:grid; grid-template-columns:420px 1fr; gap:16px; }
+  .panel { background:#FFFFFF; border:1px solid #E3EAF1; border-radius:12px; padding:0; overflow:hidden; box-shadow:0 2px 10px rgba(23,58,94,.07); }
+  .panel-h { padding:14px 16px; border-bottom:1px solid #E3EAF1; font-family:'Montserrat',sans-serif; font-weight:700; font-size:14px; color:#173A5E; display:flex; justify-content:space-between; align-items:center; }
+  .search { padding:12px 16px; border-bottom:1px solid #E3EAF1; }
+  .search input { width:100%; background:#F4F7FA; border:1px solid #E3EAF1; border-radius:8px; padding:9px 12px; color:#1E2A36; font-size:13px; }
+  .search input:focus { outline:none; border-color:#2CA9E0; background:#fff; }
+  .filters { display:flex; gap:6px; padding:10px 16px; border-bottom:1px solid #E3EAF1; flex-wrap:wrap; }
+  .filters button { background:#fff; border:1px solid #E3EAF1; color:#4A5B6B; padding:5px 10px; border-radius:6px; font-size:11px; cursor:pointer; }
+  .filters button.on { background:#2CA9E0; border-color:#2CA9E0; color:#fff; font-weight:600; }
+  .clist { max-height:560px; overflow-y:auto; }
+  .crow { padding:12px 16px; border-bottom:1px solid #F0F4F8; cursor:pointer; display:flex; align-items:center; gap:10px; transition:background .1s; }
+  .crow:hover { background:#EAF6FC; }
+  .crow.sel { background:#EAF6FC; border-left:3px solid #8DC63F; }
+  .dot { width:9px; height:9px; border-radius:50%; flex-shrink:0; }
+  .dot.g { background:#8DC63F; } .dot.y { background:#E8A93C; } .dot.r { background:#E05C5C; }
+  .crow .info { flex:1; min-width:0; }
+  .crow .nm { font-size:13px; font-weight:600; color:#1E2A36; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .crow .meta { font-size:11px; color:#8496A6; margin-top:2px; }
+  .crow .val { text-align:right; font-family:'Montserrat',sans-serif; font-size:13px; font-weight:700; color:#173A5E; }
+  .crow .val small { display:block; color:#8496A6; font-weight:400; font-size:10px; }
+  .detail { padding:20px; }
+  .dhead { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:18px; }
+  .dhead .nm { font-family:'Montserrat',sans-serif; font-size:18px; font-weight:700; color:#173A5E; }
+  .dhead .cnpj { font-size:12px; color:#8496A6; margin-top:3px; }
+  .dstats { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:20px; }
+  .dstat { background:#F4F7FA; border:1px solid #E3EAF1; border-radius:8px; padding:12px; }
+  .dstat .l { font-size:10px; text-transform:uppercase; color:#8496A6; }
+  .dstat .v { font-family:'Montserrat',sans-serif; font-size:17px; font-weight:700; color:#173A5E; margin-top:3px; }
+  .sec-t { font-size:12px; text-transform:uppercase; letter-spacing:.5px; color:#4A5B6B; margin:18px 0 10px; font-weight:700; }
+  .bars { display:flex; align-items:flex-end; gap:8px; height:120px; padding:10px; background:#F4F7FA; border-radius:8px; }
+  .bar { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; height:100%; gap:4px; }
+  .bar .b { width:100%; background:linear-gradient(180deg,#2CA9E0,#1B8DC4); border-radius:4px 4px 0 0; min-height:2px; }
+  .bar .m { font-size:10px; color:#8496A6; }
+  .bar .vv { font-size:9px; color:#4A5B6B; }
+  table { width:100%; border-collapse:collapse; }
+  th { text-align:left; font-size:10px; text-transform:uppercase; color:#8496A6; padding:8px 10px; border-bottom:1px solid #E3EAF1; }
+  td { padding:9px 10px; font-size:12px; border-bottom:1px solid #F0F4F8; color:#4A5B6B; }
+  td.r { text-align:right; }
+  .opp { background:#F1F8E6; border:1px solid #8DC63F; border-radius:10px; padding:14px; margin-top:8px; }
+  .opp-row { display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid #D4E9B4; }
+  .opp-row:last-child { border:0; }
+  .opp .p { font-size:12px; font-weight:600; color:#1E2A36; }
+  .opp .d { font-size:11px; color:#4A5B6B; }
+  .badge { background:#8DC63F; color:#fff; font-size:10px; font-weight:700; padding:3px 8px; border-radius:20px; }
+  .wa-btn { width:100%; margin-top:14px; background:#25d366; color:#fff; border:0; padding:11px; border-radius:8px; font-weight:700; font-size:13px; cursor:pointer; }
+  .empty { text-align:center; color:#8496A6; padding:60px 20px; font-size:14px; }
+  ::-webkit-scrollbar { width:8px; } ::-webkit-scrollbar-thumb { background:#D3DEE9; border-radius:4px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topfaixa">
+    <div>📞 <b>(62) 3290-4241</b> &nbsp;·&nbsp; Compromisso com qualidade!</div>
+    <div>FPMED HOSPITALAR</div>
+  </div>
+  <div class="brandbar">
+    <img src="logo_fpmed.png" alt="FPMED Hospitalar" style="height:34px;width:auto;display:block">
+  </div>
+  <h1><span class="ico">📊</span> Clientes &amp; Oportunidades</h1>
+  <div class="sub">Dashboard unificado · dados fictícios de demonstração · protótipo</div>
+
+  <div class="kpis">
+    <div class="kpi"><div class="lbl">Faturamento total</div><div class="val" id="k-fat">—</div><div class="foot">10 clientes demo</div></div>
+    <div class="kpi"><div class="lbl">Ticket médio</div><div class="val" id="k-tkt">—</div><div class="foot">por compra</div></div>
+    <div class="kpi"><div class="lbl">Compras totais</div><div class="val" id="k-comp">—</div><div class="foot">notas fiscais</div></div>
+    <div class="kpi alert"><div class="lbl">⚠️ Risco de churn</div><div class="val" id="k-risk">—</div><div class="foot">+60 dias sem comprar</div></div>
+    <div class="kpi hot"><div class="lbl">🎯 Oportunidades</div><div class="val" id="k-opp">—</div><div class="foot">itens p/ oferecer hoje</div></div>
+  </div>
+
+  <div class="grid">
+    <div class="panel">
+      <div class="panel-h">Clientes <span style="font-size:11px;color:#6b7d74;font-weight:400" id="cnt">—</span></div>
+      <div class="search"><input id="q" placeholder="Buscar por nome ou CNPJ..." oninput="render()"></div>
+      <div class="filters">
+        <button class="on" data-f="fat" onclick="setF(this,'fat')">Maior valor</button>
+        <button data-f="risk" onclick="setF(this,'risk')">Risco de churn</button>
+        <button data-f="rec" onclick="setF(this,'rec')">Mais recentes</button>
+      </div>
+      <div class="clist" id="clist"></div>
+    </div>
+    <div class="panel"><div id="detail" class="empty">← Selecione um cliente para ver o perfil</div></div>
+  </div>
+</div>
+
+<script>
+// ⚠️ DADOS 100% FICTÍCIOS DE DEMONSTRAÇÃO — nomes e CNPJs inventados (CNPJs começam com 00. e
+// não passam na validação de dígito). NUNCA colocar cliente real aqui sem autorização.
+const DATA = [{"cnpj": "00111222000100", "nome": "HOSPITAL SANTA CLARA LTDA (DEMO)", "fat": 385200.5, "ncompras": 24, "ultima": "14/07/2026", "dias": 2, "meses": {"2026-01": 52000.0, "2026-02": 61300.5, "2026-03": 58900.0, "2026-04": 49500.0, "2026-05": 55000.0, "2026-06": 60500.0, "2026-07": 48000.0}, "top": [{"desc": "DIPIRONA 500MG/ML INJ CX100 AMP 2ML", "marca": "FARMADEMO", "qtd": 900, "fat": 58500, "preco": 65}, {"desc": "SORO FISIOLOGICO 0,9% CX24 FR 500ML", "marca": "BIOEXEMPLO", "qtd": 1200, "fat": 54000, "preco": 45}, {"desc": "CEFTRIAXONA 1G IV CX50 FR PO", "marca": "GENERIMED", "qtd": 280, "fat": 50400, "preco": 180}, {"desc": "OMEPRAZOL 40MG INJ CX25 FR", "marca": "LABMODELO", "qtd": 350, "fat": 42000, "preco": 120}, {"desc": "LUVA PROCEDIMENTO M CX100", "marca": "PHARMATESTE", "qtd": 1500, "fat": 33000, "preco": 22}]}, {"cnpj": "00222333000111", "nome": "CLINICA BEM VIVER LTDA (DEMO)", "fat": 218450.0, "ncompras": 15, "ultima": "10/07/2026", "dias": 6, "meses": {"2026-01": 28000.0, "2026-02": 31450.0, "2026-03": 30000.0, "2026-04": 29500.0, "2026-05": 33500.0, "2026-06": 34000.0, "2026-07": 32000.0}, "top": [{"desc": "AMOXICILINA 500MG CX500 CPR", "marca": "GENERIMED", "qtd": 400, "fat": 38000, "preco": 95}, {"desc": "PARACETAMOL 750MG CX200 CPR", "marca": "FARMADEMO", "qtd": 600, "fat": 27000, "preco": 45}, {"desc": "SERINGA 10ML CX100", "marca": "PHARMATESTE", "qtd": 800, "fat": 24000, "preco": 30}]}, {"cnpj": "00333444000122", "nome": "HOSPITAL SAO FICTICIO", "fat": 176800.0, "ncompras": 11, "ultima": "01/07/2026", "dias": 15, "meses": {"2026-02": 42000.0, "2026-03": 38800.0, "2026-05": 46000.0, "2026-07": 50000.0}, "top": [{"desc": "ALBUMINA HUMANA 20% CX1 FR 50ML", "marca": "BIOEXEMPLO", "qtd": 300, "fat": 48000, "preco": 160}, {"desc": "MEROPENEM 1G CX25 FR AMP", "marca": "LABMODELO", "qtd": 120, "fat": 42000, "preco": 350}, {"desc": "HEPARINA 5000UI SC CX25 AMP", "marca": "GENERIMED", "qtd": 200, "fat": 36000, "preco": 180}]}, {"cnpj": "00444555000133", "nome": "DISTRIBUIDORA EXEMPLO MED LTDA", "fat": 142300.0, "ncompras": 8, "ultima": "24/06/2026", "dias": 22, "meses": {"2026-01": 35000.0, "2026-03": 38300.0, "2026-05": 34000.0, "2026-06": 35000.0}, "top": [{"desc": "INSULINA NPH 100UI/ML CX1 FR 10ML", "marca": "BIOEXEMPLO", "qtd": 500, "fat": 27500, "preco": 55}, {"desc": "ATENOLOL 50MG CX30 CPR", "marca": "FARMADEMO", "qtd": 2000, "fat": 16000, "preco": 8}, {"desc": "LOSARTANA 50MG CX30 CPR", "marca": "GENERIMED", "qtd": 3000, "fat": 15000, "preco": 5}]}, {"cnpj": "00555666000144", "nome": "CASA DE SAUDE MODELO", "fat": 98600.0, "ncompras": 6, "ultima": "15/05/2026", "dias": 68, "meses": {"2026-01": 22000.0, "2026-02": 18600.0, "2026-04": 28000.0, "2026-05": 30000.0}, "top": [{"desc": "CONTRASTE IODADO 300MG CX1 FR 100ML", "marca": "LABMODELO", "qtd": 150, "fat": 27000, "preco": 180}, {"desc": "PROPOFOL 10MG/ML CX5 FR 20ML", "marca": "BIOEXEMPLO", "qtd": 180, "fat": 21600, "preco": 120}]}, {"cnpj": "00666777000155", "nome": "CLINICA VIDA PLENA (DEMO)", "fat": 76400.0, "ncompras": 5, "ultima": "02/07/2026", "dias": 14, "meses": {"2026-03": 18000.0, "2026-04": 15400.0, "2026-06": 21000.0, "2026-07": 22000.0}, "top": [{"desc": "ONDANSETRONA 4MG INJ CX100 AMP", "marca": "GENERIMED", "qtd": 90, "fat": 16200, "preco": 180}, {"desc": "CETOPROFENO 100MG IV CX50 FR", "marca": "FARMADEMO", "qtd": 110, "fat": 14300, "preco": 130}]}, {"cnpj": "00777888000166", "nome": "LABORATORIO DEMO ANALISES CLINICAS", "fat": 54200.0, "ncompras": 4, "ultima": "10/04/2026", "dias": 97, "meses": {"2026-01": 14000.0, "2026-02": 12200.0, "2026-04": 28000.0}, "top": [{"desc": "TIRAS DE GLICEMIA CX50", "marca": "PHARMATESTE", "qtd": 700, "fat": 21000, "preco": 30}, {"desc": "ALCOOL 70% CX12 FR 1L", "marca": "LABMODELO", "qtd": 500, "fat": 12500, "preco": 25}]}, {"cnpj": "00888999000177", "nome": "FARMACIA POPULAR EXEMPLO LTDA", "fat": 39800.0, "ncompras": 3, "ultima": "28/02/2026", "dias": 144, "meses": {"2026-01": 15800.0, "2026-02": 24000.0}, "top": [{"desc": "IBUPROFENO 600MG CX20 CPR", "marca": "FARMADEMO", "qtd": 1200, "fat": 14400, "preco": 12}, {"desc": "AZITROMICINA 500MG CX5 CPR", "marca": "GENERIMED", "qtd": 800, "fat": 12800, "preco": 16}]}, {"cnpj": "00999000000188", "nome": "UPA DEMONSTRACAO 24H", "fat": 28900.0, "ncompras": 2, "ultima": "09/06/2026", "dias": 37, "meses": {"2026-05": 13900.0, "2026-06": 15000.0}, "top": [{"desc": "ADRENALINA 1MG/ML CX100 AMP 1ML", "marca": "BIOEXEMPLO", "qtd": 60, "fat": 10800, "preco": 180}, {"desc": "ATROPINA 0,25MG/ML CX100 AMP", "marca": "LABMODELO", "qtd": 50, "fat": 8500, "preco": 170}]}, {"cnpj": "00123456000199", "nome": "HOSPITAL MUNICIPAL FICTICIO", "fat": 18600.0, "ncompras": 1, "ultima": "12/01/2026", "dias": 191, "meses": {"2026-01": 18600.0}, "top": [{"desc": "VANCOMICINA 500MG CX25 FR AMP", "marca": "GENERIMED", "qtd": 40, "fat": 11200, "preco": 280}, {"desc": "EQUIPO MACROGOTAS CX100", "marca": "PHARMATESTE", "qtd": 200, "fat": 7400, "preco": 37}]}];
+let sortMode='fat', selected=null;
+const brl = n => 'R$ '+n.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+const brlk = n => n>=1000000 ? 'R$ '+(n/1000000).toFixed(2)+'M' : n>=1000 ? 'R$ '+(n/1000).toFixed(0)+'k' : 'R$ '+n.toFixed(0);
+const MES = {'01':'Jan','02':'Fev','03':'Mar','04':'Abr','05':'Mai','06':'Jun','07':'Jul'};
+
+// simular oportunidades: itens do cliente que "entraram baratos" (mock realista)
+function oppsFor(c){
+  // pega top itens e simula 1-2 com preço melhor no GLOBAL
+  const o=[];
+  c.top.slice(0,3).forEach((it,i)=>{
+    if(i%2===0 && it.preco>1){
+      const novo = (it.preco*0.82).toFixed(2);
+      o.push({desc:it.desc, de:it.preco, por:novo, econ:((it.preco-novo)*it.qtd).toFixed(0)});
+    }
+  });
+  return o;
+}
+
+function kpis(){
+  const fat=DATA.reduce((s,c)=>s+c.fat,0);
+  const comp=DATA.reduce((s,c)=>s+c.ncompras,0);
+  const risk=DATA.filter(c=>c.dias>60).length;
+  let opp=0; DATA.forEach(c=>opp+=oppsFor(c).length);
+  document.getElementById('k-fat').textContent=brlk(fat);
+  document.getElementById('k-tkt').textContent=brlk(fat/comp);
+  document.getElementById('k-comp').textContent=comp;
+  document.getElementById('k-risk').textContent=risk;
+  document.getElementById('k-opp').textContent=opp;
+}
+
+function dotClass(d){ return d<=30?'g':d<=60?'y':'r'; }
+
+function render(){
+  const q=(document.getElementById('q').value||'').toLowerCase();
+  let list=DATA.filter(c=>c.nome.toLowerCase().includes(q)||c.cnpj.includes(q));
+  if(sortMode==='fat') list.sort((a,b)=>b.fat-a.fat);
+  if(sortMode==='risk') list.sort((a,b)=>b.dias-a.dias);
+  if(sortMode==='rec') list.sort((a,b)=>a.dias-b.dias);
+  document.getElementById('cnt').textContent='('+list.length+')';
+  document.getElementById('clist').innerHTML=list.map(c=>`
+    <div class="crow ${selected===c.cnpj?'sel':''}" onclick="sel('${c.cnpj}')">
+      <div class="dot ${dotClass(c.dias)}"></div>
+      <div class="info">
+        <div class="nm">${c.nome}</div>
+        <div class="meta">${c.ncompras} compras · última ${c.ultima} (${c.dias}d)</div>
+      </div>
+      <div class="val">${brlk(c.fat)}<small>total</small></div>
+    </div>`).join('');
+}
+function setF(el,m){ document.querySelectorAll('.filters button').forEach(b=>b.classList.remove('on')); el.classList.add('on'); sortMode=m; render(); }
+
+function sel(cnpj){
+  selected=cnpj; render();
+  const c=DATA.find(x=>x.cnpj===cnpj);
+  const meses=Object.entries(c.meses);
+  const max=Math.max(...meses.map(m=>m[1]),1);
+  const opps=oppsFor(c);
+  const dc=c.dias<=30?'#8DC63F':c.dias<=60?'#E8A93C':'#E05C5C';
+  const dtxt=c.dias<=30?'Ativo':c.dias<=60?'Atenção':'Risco de churn';
+  document.getElementById('detail').classList.remove('empty');
+  document.getElementById('detail').innerHTML=`
+    <div class="detail">
+      <div class="dhead">
+        <div><div class="nm">${c.nome}</div><div class="cnpj">CNPJ ${c.cnpj}</div></div>
+        <div style="text-align:right"><span style="background:${dc}22;color:${dc};padding:5px 12px;border-radius:20px;font-size:12px;font-weight:700">● ${dtxt}</span></div>
+      </div>
+      <div class="dstats">
+        <div class="dstat"><div class="l">Total comprado</div><div class="v">${brlk(c.fat)}</div></div>
+        <div class="dstat"><div class="l">Nº compras</div><div class="v">${c.ncompras}</div></div>
+        <div class="dstat"><div class="l">Ticket médio</div><div class="v">${brlk(c.fat/c.ncompras)}</div></div>
+        <div class="dstat"><div class="l">Última compra</div><div class="v" style="color:${dc}">${c.dias}d</div></div>
+      </div>
+
+      <div class="sec-t">📈 Compras por mês</div>
+      <div class="bars">
+        ${meses.map(([m,v])=>`<div class="bar"><div class="vv">${brlk(v)}</div><div class="b" style="height:${(v/max*90)}%"></div><div class="m">${MES[m.split('-')[1]]||m}</div></div>`).join('')}
+      </div>
+
+      <div class="sec-t">🏆 Itens que mais compra</div>
+      <table>
+        <tr><th>Produto</th><th>Marca</th><th class="r">Qtd</th><th class="r">Últ. preço</th><th class="r">Total</th></tr>
+        ${c.top.map(it=>`<tr><td>${it.desc}</td><td style="color:#6b7d74">${it.marca||'—'}</td><td class="r">${it.qtd}</td><td class="r">${brl(it.preco||0)}</td><td class="r">${brlk(it.fat)}</td></tr>`).join('')}
+      </table>
+
+      ${opps.length?`
+      <div class="sec-t">🎯 Oportunidades para oferecer AGORA</div>
+      <div class="opp">
+        ${opps.map(o=>`<div class="opp-row"><div><div class="p">${o.desc}</div><div class="d">Ele paga ${brl(o.de)} → entrou a <b style="color:#6FA32C">${brl(o.por)}</b>/un</div></div><span class="badge">-18% · economia ${brlk(o.econ)}</span></div>`).join('')}
+        <button class="wa-btn" onclick="alert('Gera texto pronto pro WhatsApp com estas ofertas — reusa o disparo que já existe no sistema')">📱 Gerar oferta WhatsApp</button>
+      </div>`:'<div class="sec-t">🎯 Oportunidades</div><div style="color:#6b7d74;font-size:13px;padding:10px">Nenhuma oportunidade nova para os itens deste cliente no momento.</div>'}
+    </div>`;
+}
+
+kpis(); render();
+</script>
+</body>
+</html>
