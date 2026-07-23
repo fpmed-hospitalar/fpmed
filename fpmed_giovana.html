@@ -224,7 +224,8 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--texto);min-
     <!-- ABA BUSCA -->
     <div id="tab-busca">
       <div class="busca-wrap">
-        <input type="text" id="busca-prod" placeholder="Digite o produto, princípio ativo ou marca..." oninput="buscarProduto(this.value)" onkeydown="if(event.key==='Enter'){buscarProduto(this.value,true);}">
+        <input type="text" id="busca-prod" placeholder="Digite o produto, princípio ativo ou marca..." oninput="buscarProduto(this.value)" onkeydown="if(event.key==='Enter'){event.preventDefault();buscarForcado();}">
+        <button id="btn-buscar" class="btn" style="background:#29b8ff;color:#060c12;font-weight:700;white-space:nowrap" onclick="buscarForcado()">🔍 Buscar</button>
       </div>
       <div id="resultado-busca"></div>
       <div class="divider"></div>
@@ -551,7 +552,10 @@ const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsI
 
 async function iniciar() {
   const hoje = new Date();
-  document.getElementById('data-orc').value = hoje.toISOString().split('T')[0];
+  // data LOCAL (getFullYear/Month/Date) — NÃO toISOString(): em UTC-3, de madrugada o UTC ainda
+  // está no dia anterior e a proposta mostrava 21/07 no dia 22/07.
+  document.getElementById('data-orc').value =
+    `${hoje.getFullYear()}-${String(hoje.getMonth()+1).padStart(2,'0')}-${String(hoje.getDate()).padStart(2,'0')}`;
   numOrc = Math.floor(Date.now()/1000) % 100000;
   document.getElementById('num-orc').value = String(numOrc).padStart(5,'0');
   
@@ -669,6 +673,9 @@ function toast(msg,type='success') {
 }
 function fmtBRL(v) { return 'R$\u00a0'+parseFloat(v||0).toFixed(2).replace('.',',').replace(/\B(?=(\d{3})+(?!\d))/g,'.'); }
 function fmtDate(d) { if(!d)return'—';const dt=new Date(d);return isNaN(dt)?'—':dt.toLocaleDateString('pt-BR'); }
+// data de HOJE em yyyy-mm-dd LOCAL (getFullYear/Month/Date) — NÃO toISOString() (que é UTC e, de
+// madrugada em UTC-3, ainda está no dia anterior/seguinte, gravando/mostrando o dia errado).
+function hojeLocalISO(){ const h=new Date(); return `${h.getFullYear()}-${String(h.getMonth()+1).padStart(2,'0')}-${String(h.getDate()).padStart(2,'0')}`; }
 // número da embalagem no UND (qualquer /\d+/: CX/30, FR/24, 30) — 0 se não tem
 function _undNum(und){ const m = String(und||'').match(/\d+/); if(!m) return 0; const n=parseInt(m[0]); return (n>=1 && n<=5000)?n:0; }
 // qtd da embalagem lida SÓ do NOME (sem und)
@@ -757,14 +764,14 @@ function pv(c) {
     if (base > 0) return base / qtd;
   }
 
-  // FORNECEDORES: compra_unit já é preço UNITÁRIO real → aplica markup 25%
+  // FORNECEDORES: compra_unit já é preço UNITÁRIO real → aplica markup 32% (era 25%, mudou 22/07)
   if (c.compra_unit && parseFloat(c.compra_unit) > 0) {
-    return parseFloat(c.compra_unit) * 1.25;
+    return parseFloat(c.compra_unit) * 1.32;
   }
 
   // Se só tem compra_caixa → divide pela qtd e aplica markup
   if (c.compra_caixa && parseFloat(c.compra_caixa) > 0) {
-    return (parseFloat(c.compra_caixa) / qtd) * 1.25;
+    return (parseFloat(c.compra_caixa) / qtd) * 1.32;
   }
 
   // Fallback
@@ -775,10 +782,14 @@ function pv(c) {
 // GLOBAL = estoque próprio (fornecedor '1' ou tipo global). Com estoque>0 = prioridade absoluta na busca.
 function ehGlobalComEstoque(c){ return (c && (c.tipo === 'global' || String(c.fornecedor) === '1')) && (parseInt(c.estoque)||0) > 0; }
 // Filtro de carga: fornecedor precisa de preço (pv>0); GLOBAL precisa de preço E estoque>0 (sem estoque não aparece).
+// DISTRIBUIDOR com estoque=0 EXPLÍCITO = "esgotou no fornecedor" (botão 🚫 do card, 22/07) -> fora da busca.
+// null/'' = estoque não informado (a maioria das cotações) -> continua entrando só com pv>0, como sempre.
+// Esgotado é ESTADO, não deleção: a cotação e o compra_unit ficam intactos (reimport/edição reverte).
 function incluiNaBusca(c){
   if (!(pv(c) > 0)) return false;
   const isGlobal = c.tipo === 'global' || String(c.fornecedor) === '1';
   if (isGlobal) return (parseInt(c.estoque)||0) > 0;
+  if (c.estoque === 0 || c.estoque === '0') return false;   // esgotado marcado no fornecedor
   return true;
 }
 
@@ -977,7 +988,11 @@ const _BM_SAIS=new Set(['malato','tosilato','cloridrato','sulfato','acetato','fo
 const _BM_STOP=new Set(['para','com','por','dos','das','sol','inj','amp','cmp','oral','susp','xarope','frasco','caixa','comprimido','capsula','solucao','injetavel','suspensao','uso','via','dose','cada','mais','menos','disp','gts','gotas','creme','gel','pomada','bisnaga','sem','rev','lib','prol','retard','plus','forte','duo','max','mini','bls','pct','env','ser','cpr','cps','xpe','bis','spr','spray','und','unid','comp','cap','liof']);
 function _bmPalavras(linha){ return _bmNorm(linha).split(/\s+/).filter(p=>p.length>3 && !_BM_STOP.has(p) && !_BM_SAIS.has(p) && !/^\d/.test(p)); }
 const _bmDist1=(a,b)=>{ if(a===b)return true; const la=a.length,lb=b.length; if(Math.abs(la-lb)>1)return false; let i=0,j=0,e=0; while(i<la&&j<lb){ if(a[i]===b[j]){i++;j++;continue;} if(++e>1)return false; if(la>lb)i++; else if(lb>la)j++; else {i++;j++;} } if(i<la||j<lb)e++; return e<=1; };
-const _bmFuzzy=(w,t)=>{ if(!t)return false; if(t.includes(w))return true; if(w.length<5)return false; return t.split(/\s+/).some(k=>k.length>=5&&k[0]===w[0]&&_bmDist1(k,w)); };
+// pares a distância-1 que são palavras REAIS diferentes (nunca typo uma da outra) — o fuzzy NÃO pode uni-los.
+// Caso real 22/07: busca "complexo b" devolvia EQUIPO MACROGOTAS COMPLETO (COMPLEXO~COMPLETO, 1 letra).
+const _BM_FUZZY_NAO=[['complexo','completo']];
+const _bmFuzzyParProibido=(a,b)=>_BM_FUZZY_NAO.some(p=>(p[0]===a&&p[1]===b)||(p[0]===b&&p[1]===a));
+const _bmFuzzy=(w,t)=>{ if(!t)return false; if(t.includes(w))return true; if(w.length<5)return false; return t.split(/\s+/).some(k=>k.length>=5&&k[0]===w[0]&&!_bmFuzzyParProibido(k,w)&&_bmDist1(k,w)); };
 // substância casa por PALAVRA INTEIRA (evita cetamina casar dentro de escetamina)
 const _bmTemSub=(sub,texto)=> !!sub && (' '+texto+' ').includes(' '+sub+' ');
 
@@ -987,6 +1002,13 @@ const _BM_BLOCK=['figurinha','figurinhas','cromo','cromos','copa','world','cup',
 // palavras GENÉRICAS que caem no path de medicamento como "principal" mas não são princípio ativo (forma/recipiente).
 // Quando o principal é uma dessas, exige uma palavra DISTINTIVA (marca/qualificador) casar — mata "ADESIVO SALONPAS"->ByeByeFever e "ALMOTOLIA 100ML"->água oxigenada.
 const _BM_GENERICO=new Set(['adesivo','almotolia','frasco','pote','bolsa','recipiente','coletor','envelope','guia']);
+// ÁGUA tem GRAU/USO distinto e não intercambiável: INJ = estéril/apirogênica/p-injeção (uso no
+// PACIENTE) x EQUIP = autoclave/deionizada (uso em EQUIPAMENTO). "destilada" é neutro (aparece nos
+// dois). Na dúvida entre águas de uso diferente NÃO casa (segurança do paciente). Só age quando o
+// pedido é água (principal='agua') e nomeia um grau.
+const _BM_AGUA_INJ=['injecao','injetavel','injetaveis','esteril','apirogenica','apirogenico','irrigacao'];
+const _BM_AGUA_EQUIP=['autoclave','deionizada','desmineralizada','bidestilada','reagente'];
+function _bmAguaGrau(texto){ const s=_bmNormF(texto); if(_BM_AGUA_INJ.some(k=>s.includes(' '+k))) return 'INJ'; if(_BM_AGUA_EQUIP.some(k=>s.includes(' '+k))) return 'EQUIP'; return null; }
 // qualificadores genéricos (tamanho/adjetivo) que NÃO servem como palavra distintiva de marca
 const _BM_QUALIF_GEN=new Set(['grande','grandes','pequeno','pequena','medio','media','mini','super','extra','longo','longa','curto','curta','largo','larga','fino','fina','grosso','grossa','simples','comum','normal','descartavel','desc']);
 function _bmMaterial(texto){ if(_bmDoses(texto).size>0) return false; if(_bmForma(texto)) return false; const t=_bmNormF(texto); return _BM_MATKW.some(k=>t.includes(' '+k.split(' ')[0])); }
@@ -1132,6 +1154,10 @@ function buscarMelhorProduto(linha) {
   const principal = pal[0];
   const principalGenerico = _BM_GENERICO.has(principal);                          // principal genérico (adesivo/almotolia) -> exige palavra distintiva
   const distintivasReq = principalGenerico ? pal.slice(1).filter(w=>!_BM_GENERICO.has(w) && !_BM_QUALIF_GEN.has(w)) : [];
+  // principal é recipiente genérico (almotolia/adesivo/frasco/guia...) SEM palavra distintiva =
+  // não dá pra identificar o produto -> NÃO ENCONTRADO. Mata "ALMOTOLIA 100ML"->água oxigenada
+  // (o volume batia). Precisão > cobertura: melhor null do que cotar o conteúdo errado do recipiente.
+  if (principalGenerico && !distintivasReq.length) return null;
   // CMED: se a palavra principal é uma MARCA que resolve pra 1 substância (não-combo, não-ambígua),
   // o candidato também casa pelo PA = substância. FORMA e DOSE seguem barreiras duras.
   const subAlvo = _bmCmed.get(principal) || null;
@@ -1148,6 +1174,7 @@ function buscarMelhorProduto(linha) {
     const paOK = _bmFuzzy(principal, paN) || _bmFuzzy(principal, prodN)
               || _bmTemSub(subAlvo, paN) || _bmTemSub(subAlvo, prodN);   // PA direto OU substância do CMED
     if (!paOK) return;
+    if (principal === 'agua') { const grReq = _bmAguaGrau(linha); if (grReq && _bmAguaGrau(prod) !== grReq) return; }  // água injetável(paciente) != água autoclave/equipamento
     if (principalGenerico && distintivasReq.length && !distintivasReq.some(w=>paN.includes(w)||prodN.includes(w))) return;  // genérico sem palavra distintiva em comum
     if (reqForma && _bmFormaCand(prod) !== reqForma) return;                                 // FORMA (barreira dura)
     if (reqDoses.size && !_bmDoseEq(reqDoses, _bmDoses(prod))) {                              // DOSE (barreira dura)
@@ -1171,6 +1198,44 @@ function buscarMelhorProduto(linha) {
   cands.sort((a,b)=> (ehGlobalComEstoque(b.c)-ehGlobalComEstoque(a.c)) || (b.sc - a.sc) || (pv(a.c) - pv(b.c)));  // GLOBAL c/ estoque 1º
   return cands[0].c;
 }
+
+// ─── SCORE DE CONFIANÇA (FASE 3) — mesmos critérios adversariais da auditoria ───────────
+// Marca match AUTOMÁTICO (lista/IA) como alta/media/baixa. media/baixa -> ⚠️ CONFERIR na tela e
+// TRAVA o PDF até o vendedor confirmar. Match escolhido À MÃO (addItem) já entra alta.
+// SINAIS FORTES (baixa): (a) família/subtipo divergente, (c) preço foge >3x da mediana dos peers.
+// SINAL MÉDIO (media): (d) dose/volume só num lado; (b+e) poucas palavras em comum / casou só pela marca.
+function _confPeerMediana(c){
+  const pk=_pePaNorm(c.principio_ativo||c.produto), dk=_peDoseKey(c.produto), f=(typeof _bmForma==='function'?_bmForma(c.produto):null)||'?';
+  if(pk.length<3||!dk) return null;
+  const key=pk+'|'+dk+'|'+f;
+  const ps=(typeof cotacoes!=='undefined'?cotacoes:[]).filter(x=>String(x.fornecedor)!=='1'&&x.tipo!=='global'
+      && (_pePaNorm(x.principio_ativo||x.produto)+'|'+_peDoseKey(x.produto)+'|'+((_bmForma(x.produto))||'?'))===key)
+    .map(x=>pv(x)).filter(v=>v>0);
+  if(ps.length<3) return null;
+  ps.sort((a,b)=>a-b); const m=ps.length>>1; return ps.length%2?ps[m]:(ps[m-1]+ps[m])/2;
+}
+function _bmConfianca(pedido, c){
+  if(!c || !pedido) return {nivel:'alta', motivos:[]};
+  const cp=c.produto||'', pa=c.principio_ativo||''; const motivos=[]; let forte=false, medio=false;
+  // (a) família/subtipo divergente
+  const FAMS=[_BM_FAM_SUBTIPO,_BM_FAM_MATERIAL,_BM_FAM_IDADE,_BM_FAM_TESTE,_BM_FAM_ANALITO];
+  if(FAMS.some(f=>_bmDiscorda(pedido,cp,f))){ motivos.push('subtipo/família diferente do pedido'); forte=true; }
+  // (c) preço foge >3x da mediana dos peers do mesmo grupo
+  const med=_confPeerMediana(c); if(med){ const p=pv(c); if(p>0 && (p/med>3||med/p>3)){ motivos.push('preço '+(p>med?(p/med).toFixed(1)+'x acima':(med/p).toFixed(1)+'x abaixo')+' da mediana'); forte=true; } }
+  // (d) dose/volume só num lado
+  const dq=_bmDoses(pedido).size>0, dc=_bmDoses(cp).size>0;
+  if(dq!==dc){ motivos.push('dose só '+(dq?'no pedido':'no item escolhido')); medio=true; }
+  // (b)+(e) poucas palavras em comum / casou só pela marca (dicionário)
+  const wq=_bmPalavras(pedido); const wc=new Set([..._bmPalavras(cp),..._bmPalavras(pa)]);
+  const inter=wq.filter(w=>wc.has(w));
+  const principal=wq[0], paN=_bmNorm(pa), prodN=_bmNorm(cp);
+  const soMarca=!!principal && _bmCmed.has(principal) && !paN.includes(principal) && !prodN.includes(principal);
+  if(wq.length>=2 && inter.length<=1){ motivos.push(soMarca?'casou pela marca (dicionário)':'poucas palavras em comum'); medio=true; }
+  const nivel = forte ? 'baixa' : (medio ? 'media' : 'alta');
+  return {nivel, motivos};
+}
+// confirma um match sinalizado (destrava aquele item p/ o PDF)
+function confirmarMatch(id){ const it=itens.find(i=>i.id===id); if(it){ it._confOK=true; renderItens(); } }
 
 /* ─── busca antiga (criativa demais) — substituída pela versão rigorosa acima ───
 function buscarMelhorProdutoOLD(linha) {
@@ -1365,7 +1430,7 @@ function importarLista() {
       if (ex) { ex.qtd = (parseInt(ex.qtd)||0) + qtd; }   // item repetido na lista: soma a qtd
       else {
         const qtdCx = qtdEmbalagem(melhor.und, melhor.produto);
-        itens.push({...melhor, qtd:qtd, desc_item:0, _pvv:pv(melhor), _qtd_caixa:qtdCx, _bpAlerta:bpAlerta(melhor)});
+        itens.push({...melhor, qtd:qtd, desc_item:0, _pvv:pv(melhor), _qtd_caixa:qtdCx, _bpAlerta:bpAlerta(melhor), _conf:_bmConfianca(produto, melhor)});
         adicionados++;
       }
     } else {
@@ -1433,14 +1498,53 @@ function chaveGrupo(c){
   return 'PA#' + pa.toUpperCase() + '#' + specs + '#' + (_bmForma(prod)||'?');
 }
 
+// GATILHO MANUAL (botão 🔍 Buscar + Enter): força recarregar o banco se não carregou ou está velho
+// (>60s), e SÓ ENTÃO dispara a MESMA busca (imediata). Resolve o "trava e não puxa" de quando as
+// 7965 linhas ainda não chegaram, e dá feedback "buscando…". NÃO toca o matching nem a auto-busca.
+async function buscarForcado() {
+  const inp = document.getElementById('busca-prod');
+  const q = inp ? inp.value : '';
+  if (!q || !q.trim()) { if (inp) inp.focus(); return; }
+  if (cotacoes.length) { buscarProduto(q, true); return; }   // JÁ tem dados: instantâneo (buscarProduto renderiza na hora + refresh em segundo plano)
+  // ÚNICO caso que espera: banco nunca carregou. Feedback no botão.
+  const btn = document.getElementById('btn-buscar');
+  const orig = btn ? btn.innerHTML : '';
+  if (btn) { btn.disabled = true; btn.innerHTML = '⏳ buscando…'; }
+  try { await recarregarCotacoes(true); }
+  catch (e) { /* recarregarCotacoes já engole o erro e mantém o cache */ }
+  finally { if (btn) { btn.disabled = false; btn.innerHTML = orig; } }
+  buscarProduto(q, true);   // mesma busca de sempre, imediata (matching intacto)
+}
+
+// refresh do banco em SEGUNDO PLANO: dispara só se estiver velho (>60s), sem travar a busca.
+// Quando termina, se o campo ainda tem a MESMA busca, re-renderiza silencioso (sem piscar).
+let _bgRefreshing = false;
+function _refreshBg(q) {
+  if (_bgRefreshing) return;
+  if (_cotTs && (Date.now() - _cotTs) < 60000) return;   // fresco: nada a fazer
+  _bgRefreshing = true;
+  const tsBefore = _cotTs;
+  Promise.resolve(recarregarCotacoes(true)).catch(() => {}).then(() => {
+    _bgRefreshing = false;
+    if (_cotTs === tsBefore) return;                      // nada recarregou -> sem re-render (sem piscar)
+    const inp = document.getElementById('busca-prod');
+    if (inp && inp.value === q && q && q.trim()) buscarProduto(q, true);   // mesma busca -> atualiza com dado fresco
+  });
+}
+
 function buscarProduto(q, imediato=false) {
   clearTimeout(searchTO);
   const el = document.getElementById('resultado-busca');
   if (!q || !String(q).trim()) { if(el) el.innerHTML=''; return; }   // guarda: tolera q undefined/nulo/vazio sem estourar
   const delay = imediato ? 0 : 300;
   searchTO = setTimeout(async () => {
-    await recarregarCotacoes();  // estoque/preço fresco na busca (cache 60s)
-    if (!cotacoes.length) { el.innerHTML='<div class="loading"><div class="spinner"></div> Carregando banco...</div>'; return; }
+    if (!cotacoes.length) {   // ÚNICO caso que espera: banco nunca carregou (sem dados não dá pra buscar)
+      el.innerHTML='<div class="loading"><div class="spinner"></div> Carregando banco...</div>';
+      await recarregarCotacoes(true);
+      if (!cotacoes.length) { el.innerHTML='<div class="loading">Sem conexão com o banco. Tente o botão 🔍 Buscar.</div>'; return; }
+    } else {
+      _refreshBg(q);   // dados JÁ carregados: busca é instantânea; o reload (se velho) roda em segundo plano
+    }
     // Busca por PALAVRAS (todas têm que aparecer), não substring contígua — assim "dexametasona cpr"
     // casa "DEXAMETASONA 4MG CX10 CPR". Procura em produto + princípio ativo + marca juntos.
     const termos = q.toLowerCase().split(/\s+/).filter(Boolean);
@@ -1518,7 +1622,7 @@ function buscarProduto(q, imediato=false) {
 function addItem(c) {
   if (itens.find(i=>i.id===c.id)) { toast('Já adicionado','error'); return; }
   const qtdCx = qtdEmbalagem(c.und, c.produto);
-  itens.push({...c, qtd:1, desc_item:0, _pvv:pv(c), _qtd_caixa: qtdCx, _bpAlerta:bpAlerta(c)});
+  itens.push({...c, qtd:1, desc_item:0, _pvv:pv(c), _qtd_caixa: qtdCx, _bpAlerta:bpAlerta(c), _conf:{nivel:'alta',motivos:[]}});   // escolhido à mão = confiança alta
   renderItens();
   document.getElementById('resultado-busca').innerHTML='';
   document.getElementById('busca-prod').value='';
@@ -1560,6 +1664,11 @@ function renderItens() {
           ${c.validade?` · Venc: ${fmtDate(c.validade)}`:''}
         </div>
         ${(c._bpAlerta && !ehRestrito())?`<div class="no-print" style="margin-top:4px;font-size:11px;color:#e6a817;background:rgba(230,168,23,.08);border:1px solid rgba(230,168,23,.35);border-radius:6px;padding:4px 8px">⚠️ conferir preço: ${c._bpAlerta.msg}</div>`:''}
+        ${(c._conf && c._conf.nivel!=='alta' && !c._confOK)?`<div class="no-print" style="margin-top:4px;font-size:11px;color:${c._conf.nivel==='baixa'?'#ef4444':'#e6a817'};background:${c._conf.nivel==='baixa'?'rgba(239,68,68,.08)':'rgba(230,168,23,.08)'};border:1px solid ${c._conf.nivel==='baixa'?'rgba(239,68,68,.4)':'rgba(230,168,23,.35)'};border-radius:6px;padding:5px 8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <span style="flex:1">⚠️ <strong>CONFERIR</strong> (confiança ${c._conf.nivel}): ${c._conf.motivos.join(' · ')||'match automático'} — confira se é o produto certo</span>
+          <button class="btn btn-outline btn-sm" style="padding:2px 10px" onclick="confirmarMatch('${c.id}')">✓ Confirmar match</button>
+        </div>`:''}
+        ${(c._conf && c._conf.nivel!=='alta' && c._confOK)?`<div class="no-print" style="margin-top:4px;font-size:10px;color:#16c060">✓ match conferido</div>`:''}
         <div class="item-det no-print" style="margin-top:6px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
           ${ehRestrito()?'':`<span style="font-size:11px;color:var(--muted)">Custo: <strong style="${custoRef?'color:var(--muted);font-style:italic':'color:var(--texto)'}">${custo>0?fmtBRL(custo):'—'}</strong>${custoRef?' <span style="font-size:9px;color:var(--muted)">(ref. venda÷1,25)</span>':''}</span>`}
           <span style="font-size:11px;color:var(--muted)">Preço UN:
@@ -1579,10 +1688,48 @@ function renderItens() {
         <div class="item-preco" id="preco-${c.id}">${fmtBRL(totalItem)}</div>
         <div class="item-preco-info">CX/${qtd_caixa} · ${fmtBRL(precoUnit)}/un · ${fmtBRL(precoCx)}/cx${qtdEmbDiv(c.und,c.produto)?` <span title="${qtdEmbDiv(c.und,c.produto)} — corrija o cadastro" style="cursor:help">⚠️</span>`:''}</div>
       </div>
-      <button class="btn btn-danger btn-sm no-print" onclick="remItem('${c.id}')">✕</button>
+      <div class="no-print" style="display:flex;flex-direction:column;gap:4px;align-items:stretch">
+        <button class="btn btn-danger btn-sm" onclick="remItem('${c.id}')">✕</button>
+        ${(!isGlobal && !ehRestrito() && !c._esgotado)?`<button class="btn btn-outline btn-sm" style="font-size:10px;padding:3px 6px;white-space:nowrap" title="Fornecedor confirmou que acabou: grava estoque=0 nessa cotação (preço intacto), some das buscas e já busca o plano B" onclick="marcarEsgotado('${c.id}')">🚫 Esgotou</button>`:''}
+        ${c._esgotado?`<span style="font-size:10px;color:#ef4444;text-align:center" title="Marcado esgotado no fornecedor — fora das buscas">🚫 esgotado</span>`:''}
+      </div>
     </div>`;
   }).join('');
   calcTotal();
+}
+
+// ── ESGOTADO NO FORNECEDOR (22/07, fluxo do Lemuel na ligação) ─────────────────
+// Atendente confirma que o item acabou -> marca AQUELA cotação com estoque=0 (PATCH por id,
+// preço/cotação intactos — esgotado é estado, não deleção; reimport do fornecedor reverte),
+// tira da base local da busca e JÁ REBUSCA o mesmo produto p/ oferecer o plano B na hora.
+// Troca no orçamento SÓ com confirmação — nunca sozinho.
+async function marcarEsgotado(id){
+  const c = itens.find(x=>x.id===id); if(!c) return;
+  const isGlobal = (c.fornecedor||'').toString()==='1' || c.tipo==='global';
+  if (isGlobal) { toast('Item do estoque GLOBAL — 🚫 é só para fornecedor externo.','error'); return; }
+  if (!confirm(`🚫 ESGOTOU NO FORNECEDOR?\n\n${c.produto}\nFornecedor: ${nomeForn(c.fornecedor)} · Marca: ${c.marca||'—'}\n\nGrava estoque=0 NESSA cotação (preço fica intacto) e ela some das buscas até o fornecedor voltar a ter.`)) return;
+  try {
+    await sbPatch('cotacoes', `id=eq.${c.id}`, { estoque: 0 });
+  } catch(e){ toast('Erro ao marcar esgotado: '+e.message,'error'); return; }
+  cotacoes = cotacoes.filter(x => x.id !== c.id);   // some da busca local na hora (a carga já filtra estoque=0)
+  c._esgotado = true; renderItens();
+  toast('🚫 Esgotado marcado — fora das buscas.');
+  // plano B na hora: rebusca o MESMO produto (o esgotado já saiu do pool)
+  const alt = buscarMelhorProduto(c.produto);
+  if (alt && alt.id !== c.id) {
+    const p = pv(alt);
+    if (confirm(`Melhor alternativa AGORA:\n\n${alt.produto}\n${nomeForn(alt.fornecedor)} · ${alt.marca||'—'} · ${fmtBRL(p)}/un\n\nTROCAR no orçamento? (OK = troca mantendo a Qtd · Cancelar = item fica como está)`)) {
+      const qtdAntiga = c.qtd;
+      itens = itens.filter(i => i.id !== c.id);
+      addItem(alt);
+      const novo = itens.find(i => i.id === alt.id);
+      if (novo) { novo.qtd = qtdAntiga; }
+      renderItens(); calcTotal();
+      toast('Item trocado pela alternativa.');
+    }
+  } else {
+    toast('Sem alternativa no banco para esse produto — avalie remover do orçamento ou mandar pra fila de cotação.', 'error');
+  }
 }
 
 function setQtd(id, v) {
@@ -1729,6 +1876,14 @@ function gerarPDF() {
     return;
   }
 
+  // TRAVA de confiança (FASE 3): match automático de confiança média/baixa não vai pro PDF sem o
+  // vendedor confirmar (botão ✓ Confirmar match na linha). Evita mandar produto errado pro cliente.
+  const semConferir = itens.filter(c => c._conf && c._conf.nivel!=='alta' && !c._confOK);
+  if(semConferir.length) {
+    toast('⚠️ ' + semConferir.length + ' item(ns) com confiança média/baixa — clique "✓ Confirmar match" em cada um antes de gerar o PDF: ' + semConferir.map(c=>c.produto).slice(0,2).join(' | ') + (semConferir.length>2?` (+${semConferir.length-2})`:''), 'error');
+    return;
+  }
+
   const numOrcVal = document.getElementById('num-orc').value;
   const dataVal = document.getElementById('data-orc').value;
   const clienteVal = document.getElementById('cliente').value || '—';
@@ -1742,8 +1897,9 @@ function gerarPDF() {
   const now = new Date();
   const emissao = `${String(now.getDate()).padStart(2,'0')}/${String(now.getMonth()+1).padStart(2,'0')}/${now.getFullYear()} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
 
-  // Validade em data
-  const dataOrc = new Date(dataVal);
+  // Validade em data — parse LOCAL do yyyy-mm-dd (new Date("yyyy-mm-dd") é UTC e a validade saía 1 dia antes)
+  const _dv = (dataVal||'').split('-').map(Number);
+  const dataOrc = (_dv.length===3 && _dv.every(n=>!isNaN(n))) ? new Date(_dv[0], _dv[1]-1, _dv[2]) : new Date(dataVal);
   dataOrc.setDate(dataOrc.getDate() + parseInt(validadeVal||7));
   const validAte = `${String(dataOrc.getDate()).padStart(2,'0')}/${String(dataOrc.getMonth()+1).padStart(2,'0')}/${dataOrc.getFullYear()}`;
 
@@ -1842,7 +1998,7 @@ async function pedidoFechado() {
       const dup = await (await fetch(`${SUPA_URL}/rest/v1/compras?numero_pedido=eq.${encodeURIComponent(numOrc)}&cliente_codigo=eq.${codigo}&select=id&limit=1`, {headers:H})).json();
       if (dup && dup.length) { toast('Este orçamento já foi fechado p/ esse cliente (não duplico)', 'error'); btn.disabled=false; btn.textContent='🔴 Pedido Fechado'; return; }
     }
-    const hoje = new Date().toISOString().slice(0,10);
+    const hoje = hojeLocalISO();   // data LOCAL, não toISOString (UTC virava o dia de madrugada)
     const rc = await fetch(`${SUPA_URL}/rest/v1/compras`, { method:'POST', headers:{...H,'Prefer':'return=representation'}, body: JSON.stringify({
       cliente_codigo: codigo, cliente_id: clienteId, cod_cliente_erp: document.getElementById('cod-cliente-erp').value.trim()||null,
       cliente_nome: clienteNome, data_compra: hoje, valor_total: total, origem: 'pedido_fechado',
@@ -2379,7 +2535,7 @@ function importarListaIA() {
     if (melhor) {
       if (!itens.find(i => i.id === melhor.id)) {
         const qtdCx = qtdEmbalagem(melhor.und, melhor.produto);
-        itens.push({...melhor, qtd:1, desc_item:0, _pvv:pv(melhor), _qtd_caixa:qtdCx, _bpAlerta:bpAlerta(melhor)});
+        itens.push({...melhor, qtd:1, desc_item:0, _pvv:pv(melhor), _qtd_caixa:qtdCx, _bpAlerta:bpAlerta(melhor), _conf:_bmConfianca(linha, melhor)});
         adicionados++;
       }
     } else { naoEncontrados.push(linha); }
@@ -2648,7 +2804,7 @@ let impIAB64 = null, impIATipo = null;
 
 function initImportCot() {
   const dEl = document.getElementById('imp-data');
-  if (dEl && !dEl.value) dEl.value = new Date().toISOString().split('T')[0];
+  if (dEl && !dEl.value) dEl.value = hojeLocalISO();   // data LOCAL, não UTC
   impPreencherFornecedores();
   if (!impLinhas.length) addLinhaImport();
 }
@@ -2882,7 +3038,7 @@ async function executarImport() {
       fornecedor,
       tipo: 'fornecedor',
       pedido: pedido || null,
-      data: data || new Date().toISOString().split('T')[0],
+      data: data || hojeLocalISO(),   // data LOCAL, não toISOString (UTC virava o dia de madrugada)
       codigo: codEl ? (codEl.value.trim() || null) : null,
       produto,
       marca: marcaEl ? (marcaEl.value.trim() || null) : null,

@@ -235,6 +235,23 @@ function nomeForn(cod){
 }
 const fmt = n => 'R$ ' + (n||0).toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
 
+// FORMA (injetável x oral x tópico...) — mesmo _bmForma validado do sistema_final. Serve pra não
+// comparar preço de injetável com comprimido oral na mesma chave (a mediana ficava poluída).
+const _bmStrip = s => (s||'').normalize('NFD').replace(/\p{M}/gu,'');
+const _bmNormF = s => { let t=_bmStrip((s||'').toLowerCase()); t=t.replace(/\bfr?\s*[\/.\\]\s*a(mp)?\b/g,' fa '); t=t.replace(/[^a-z0-9\s\/]/g,' ').replace(/\//g,' ').replace(/(\d)([a-z])/g,'$1 $2').replace(/([a-z])(\d)/g,'$1 $2'); return ' '+t.replace(/\s+/g,' ').trim()+' '; };
+const _BM_CATS = [
+  ['SHAMPOO',['shampoo','xampu','shampo']],
+  ['VAGINAL_RETAL',['vaginal','supositorio','ovulo','enema','retal','pessario']],
+  ['OFTALMICO',['colirio','oftalmico','oft','otologico','auricular','ocular','oftalmica']],
+  ['ADESIVO',['adesivo','patch','transdermico','transderm']],
+  ['SPRAY',['spray','aerossol','aerosol','aero','aer','inalacao','inalatorio','inal','nasal','jato']],
+  ['INJETAVEL',['injetavel','inj','sol inj','solucao injetavel','susp inj','ampola','amp','ampolas','fa','fr amp','frasco ampola','liofilizado','liof','intravenoso','intramuscular','iv','im','sc','ev','epidural','c dil','s dil','diluente']],
+  ['TOPICO',['creme','pomada','gel','locao','pasta','unguento','geleia','alcoolica','aquosa','degermante','topica','antisseptico']],
+  ['LIQUIDO_ORAL',['xarope','xpe','suspensao','susp','solucao oral','sol oral','gotas','gts','elixir','sacaroleo','solucao','sol']],
+  ['SOLIDO_ORAL',['comprimido','comprimidos','cpr','cp','comp','dragea','drageas','revestido','rev','capsula','caps','cap','cps','pastilha','pilula','tablete','lib prol','lp','xr','er','mr']],
+];
+const _bmForma = texto => { const t=_bmNormF(texto); for(const [cat,kws] of _BM_CATS) for(const kw of kws) if(t.includes(' '+kw+' ')) return cat; if(/\d\s+com\b/.test(t)) return 'SOLIDO_ORAL'; return null; };
+
 async function recarregarCotacoes(force) {
   if(!force && _cotTs && (Date.now()-_cotTs) < 60000) return;  // cache 60s
   {
@@ -257,29 +274,36 @@ async function recarregarCotacoes(force) {
     function chaveDePA(p){const pa=pa2(normPA(p.principio_ativo||''));return pa?pa+'|'+doseDe(p.produto):null;}      // por PA (quando há)
     function chaveDeNome(p){const N=(p.produto||'').toUpperCase();const d=doseDe(N);if(!d)return null;const idx=N.search(/\d/);let pa=pa2(normPA(N.slice(0,idx>0?idx:N.length)));return pa?pa+'|'+d:null;}  // por NOME (cobre os sem PA)
 
+    // Guarda os MEMBROS de cada chave (preço + forma + fornecedor), pra poder filtrar por FORMA
+    // na hora de comparar. Antes agregava mediana fixa e injetável entrava junto com oral.
     const porChave = {};
-    const porChaveForn = {};
     todas.forEach(p => {
       const ehDist = p.tipo === 'Fornecedor' || p.tipo === 'fornecedor' || p.tipo === 'industria';
       const cu = parseFloat(p.compra_unit);
       if (!(ehDist && cu > 0)) return;
       const forn = String(p.fornecedor).trim().toUpperCase();
-      // dupla indexação: por PA E por nome — assim os registros SEM PA também entram no mercado
+      const forma = _bmForma(p.produto);
       new Set([chaveDePA(p), chaveDeNome(p)].filter(Boolean)).forEach(k => {
-        if (!porChave[k]) { porChave[k] = []; porChaveForn[k] = new Set(); }
-        porChave[k].push(cu * 1.25);
-        porChaveForn[k].add(forn);
+        (porChave[k] = porChave[k] || []).push({ v: cu * 1.32, forma, forn });
       });
     });
-    for (const k in porChave) {
-      const arr = porChave[k];
-      // mediana é mais robusta que média contra outliers
-      arr.sort((a,b)=>a-b);
+    // mercadoDe(item): mediana + nº de fornecedores da chave do item. CONSERVADOR: se o NOSSO item
+    // tem forma reconhecida, só entram peers da MESMA forma (ou de forma indefinida). Forma nula no
+    // nosso item = usa todos (comportamento antigo). Assim injetável não é comparado com comprimido.
+    mercado._de = function(p) {
+      const k = chaveDePA(p) || chaveDeNome(p);
+      let membros = k ? porChave[k] : null;
+      if (!membros) { const k2 = chaveDeNome(p); membros = k2 ? porChave[k2] : null; }
+      if (!membros || !membros.length) return null;
+      const fp = _bmForma(p.produto);
+      let ms = membros;
+      if (fp) ms = membros.filter(x => x.forma === fp || x.forma === null);
+      if (ms.length < 1) return null;
+      const arr = ms.map(x => x.v).sort((a,b)=>a-b);
       const mid = Math.floor(arr.length/2);
       const mediana = arr.length % 2 ? arr[mid] : (arr[mid-1]+arr[mid])/2;
-      // n = nº de fornecedores DISTINTOS (não cotações) — exige 2+ pra mostrar comparativo
-      mercado[k] = { media: mediana, min: arr[0], n: porChaveForn[k].size };
-    }
+      return { media: mediana, min: arr[0], n: new Set(ms.map(x=>x.forn)).size };
+    };
     window._chaveDePA = chaveDePA; window._chaveDeNome = chaveDeNome;
 
     // ---- catálogo ----
@@ -295,9 +319,8 @@ async function recarregarCotacoes(force) {
       // distribuidor é por FRASCO. Comparar caixa x frasco fazia injetável em frasco-ampola sumir
       // das Ofertas (Meropenem, Piperacilina, Furosemida...). Divide pelo nº de unidades da caixa.
       p._qtdCx = ehGlobal ? (qtdEmbalagem(p.und, p.produto) || 1) : 1;
-      p._preco = ehGlobal ? (parseFloat(p.global_venda1) || 0) / p._qtdCx : parseFloat(p.compra_unit) * 1.25;
-      const k1 = window._chaveDePA(p), k2 = window._chaveDeNome(p);
-      const m = (k1 && mercado[k1]) || (k2 && mercado[k2]) || null;
+      p._preco = ehGlobal ? (parseFloat(p.global_venda1) || 0) / p._qtdCx : parseFloat(p.compra_unit) * 1.32;
+      const m = mercado._de(p);   // mediana dos peers da MESMA forma (injetável x oral separados)
       // exige 2+ preços de mercado E descarta distorções extremas (>70% de diferença = apresentação errada)
       let vs = (m && m.n >= 2 && p._preco > 0) ? (p._preco - m.media) / m.media * 100 : null;
       if (vs !== null && (vs < -70 || vs > 300)) vs = null;
@@ -478,7 +501,7 @@ async function gerarTextoOferta() {
   let t = `*FPMED DISTRIBUIÇÃO* 💊\n*Ofertas da Semana*\n\n`;
   sel.forEach(p => {
     const qtd = qtdEmbalagem(p.und, p.produto) || 1;
-    // _preco: global já é preço de CAIXA (global_venda1); fornecedor é UNITÁRIO (compra_unit×1.25)
+    // _preco: global já é preço de CAIXA (global_venda1); fornecedor é UNITÁRIO (compra_unit×1.32)
     const precoUnit  = p._global ? (p._preco / qtd) : p._preco;
     const precoCaixa = precoUnit * qtd;
     t += `▪️ ${p.produto}${p.marca ? ' ('+p.marca+')' : ''}\n   ${fmt(precoCaixa)} ${sufixoUnid(p.produto, qtd)} — ${p._global ? 'pronta entrega' : 'sob encomenda'}\n\n`;

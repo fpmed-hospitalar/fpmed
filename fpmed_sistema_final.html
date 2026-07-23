@@ -844,7 +844,7 @@ select.filter{padding:8px 12px;border:1px solid var(--borda);border-radius:9px;f
           <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:2px;background:#C0DD97;display:inline-block"></span>Distribuidor</span>
           <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:2px;background:#B5D4F4;display:inline-block"></span>Indústria</span>
           <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:2px;background:#9FE1CB;display:inline-block"></span>Menor preço = comprar aqui</span>
-          <span style="color:#333">Decisão mostra de quem comprar + preço de venda com +25% mkp</span>
+          <span style="color:#333">Decisão mostra de quem comprar + preço de venda com +32% mkp</span>
         </div>
         <div style="display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap">
           <div style="font-size:12px;color:var(--muted)" id="comp-sel-info">0 produtos</div>
@@ -1034,11 +1034,11 @@ function pv(c) {
   const qtd = qtdEmbalagem(c.und, c.produto);   // und-primário (CX/N) + nome de fallback — mesma qtd das outras telas
   if (c.compra_unit && parseFloat(c.compra_unit) > 0) {
     const u = parseFloat(c.compra_unit);
-    return c.tipo === 'global' ? u : u * 1.25;
+    return c.tipo === 'global' ? u : u * 1.32;
   }
   if (c.compra_caixa && parseFloat(c.compra_caixa) > 0) {
     const u = parseFloat(c.compra_caixa) / qtd;
-    return c.tipo === 'global' ? u : u * 1.25;
+    return c.tipo === 'global' ? u : u * 1.32;
   }
   return parseFloat(c.venda_unit_calculada||c.global_venda1||c.global_venda2||0);
 }
@@ -1246,7 +1246,7 @@ function renderCotacoes(lista) {
     <td><span class="badge badge-blue">${c.fornecedor_nome||'FPMED'}</span></td>
     <td style="font-size:12px">R$ ${parseFloat(c.preco_unit||0).toFixed(4)}</td>
     <td style="font-weight:600;color:var(--verde-escuro)">${fmtBRL(pv(c))}</td>
-    <td><span class="badge ${c.tipo==='global'?'badge-yellow':'badge-red'}">${c.tipo==='global'?'Sem markup':'+25%'}</span></td>
+    <td><span class="badge ${c.tipo==='global'?'badge-yellow':'badge-red'}">${c.tipo==='global'?'Sem markup':'+32%'}</span></td>
     <td style="font-size:12px">${fmtDate(c.validade)}</td>
     <td>${c.estoque>0?`<span class="badge badge-green">${c.estoque} un</span>`:'—'}</td>
     <td><button class="btn btn-danger btn-sm" onclick="deletarCotacao('${c.id}')">✕</button></td>
@@ -1339,11 +1339,11 @@ async function deletarCotacao(id) {
 document.getElementById('cot-preco')?.addEventListener('input', function() {
   const tipo = document.getElementById('cot-tipo').value;
   const v = parseFloat(this.value)||0;
-  document.getElementById('cot-venda-prev').value = fmtBRL(v * (tipo==='global'?1:1.25));
+  document.getElementById('cot-venda-prev').value = fmtBRL(v * (tipo==='global'?1:1.32));
 });
 document.getElementById('cot-tipo')?.addEventListener('change', function() {
   const p = parseFloat(document.getElementById('cot-preco').value)||0;
-  document.getElementById('cot-venda-prev').value = fmtBRL(p * (this.value==='global'?1:1.25));
+  document.getElementById('cot-venda-prev').value = fmtBRL(p * (this.value==='global'?1:1.32));
 });
 
 // ─── DASHBOARD ────────────────────────────────────────────────────────────────
@@ -1621,12 +1621,12 @@ function compGerarPDF() {
     const indOps = g.opcoes.filter(o => ehIndustria(o.forn, o));
     const globalMin = globalOps.length ? Math.min(...globalOps.map(o=>o.compra)) : null;
     const globalEst = globalOps.length ? globalOps[0].estoque : 0;
-    const vendasDist = distOps.map(o => o.compra * 1.25);
+    const vendasDist = distOps.map(o => o.compra * 1.32);
     const mediaMercado = vendasDist.length >= 2 ? vendasDist.reduce((a,b)=>a+b,0)/vendasDist.length : null;
     const menorInd = indOps.length ? Math.min(...indOps.map(o=>o.compra)) : null;
     const menorDist = distOps.length ? Math.min(...distOps.map(o=>o.compra)) : null;
     const melhorFonte = menorInd ? indOps.find(o=>o.compra===menorInd) : menorDist ? distOps.find(o=>o.compra===menorDist) : null;
-    const seuPreco = mediaMercado ? mediaMercado * 0.95 : (melhorFonte ? melhorFonte.compra * 1.25 : null);
+    const seuPreco = mediaMercado ? mediaMercado * 0.95 : (melhorFonte ? melhorFonte.compra * 1.32 : null);
     const margem = (seuPreco && melhorFonte) ? ((seuPreco - melhorFonte.compra) / seuPreco * 100) : null;
     const isPromo = mediaMercado != null && margem !== null && margem >= 15;
     const marcaGlobal = g.marcaGlobal || (globalOps.length ? globalOps[0].marca : '—');
@@ -1885,8 +1885,8 @@ function renderAnaliseMercado(lista, el) {
     const indOps = g.opcoes.filter(o => ehIndustria(o.forn, o));
     const globalOps = g.opcoes.filter(o => ehGlobal(o));
 
-    // Média de mercado baseada nos preços de venda dos distribuidores (compra * 1.25)
-    const vendasDist = distOps.filter(o => o.compra > 0).map(o => o.compra * 1.25);
+    // Média de mercado baseada nos preços de venda dos distribuidores (compra * 1.32)
+    const vendasDist = distOps.filter(o => o.compra > 0).map(o => o.compra * 1.32);
     const mediaMercado = vendasDist.length >= 2 ? vendasDist.reduce(function(a,b){return a+b;},0) / vendasDist.length : null;
 
     // Menor preço indústria
@@ -1895,7 +1895,7 @@ function renderAnaliseMercado(lista, el) {
     const melhorInd = menorInd ? indComPreco.find(o => o.compra === menorInd) : null;
 
     // Seu preço de venda se comprar da indústria (markup 25%)
-    const seuPrecoInd = menorInd ? menorInd * 1.25 : null;
+    const seuPrecoInd = menorInd ? menorInd * 1.32 : null;
 
     // Competitividade: comparar com média de mercado
     let competitividade = null, corComp = '#888', labelComp = '—';
@@ -1936,7 +1936,7 @@ function renderAnaliseMercado(lista, el) {
       html += '<div style="font-size:10px;color:#92400e;margin-top:2px;">Média de '+vendasDist.length+' cotação(ões)</div>';
       html += '<div style="margin-top:8px;">';
       distOps.filter(o=>o.compra>0).sort(function(a,b){return a.compra-b.compra;}).forEach(function(o) {
-        const venda = o.compra * 1.25;
+        const venda = o.compra * 1.32;
         html += '<div style="display:flex;justify-content:space-between;font-size:11px;padding:3px 0;border-bottom:1px dashed #f5f5f5;">';
         html += '<span style="color:#555;">'+o.forn+'</span>';
         html += '<span style="font-weight:600;">compra: '+fmtBRL(o.compra)+' → venda: '+fmtBRL(venda)+'</span></div>';
@@ -1952,11 +1952,11 @@ function renderAnaliseMercado(lista, el) {
     html += '<div style="font-size:10px;font-weight:700;color:#5b21b6;text-transform:uppercase;margin-bottom:8px;">🏭 Indústria (seu custo)</div>';
     if (indComPreco.length) {
       indComPreco.sort(function(a,b){return a.compra-b.compra;}).forEach(function(o) {
-        const venda = o.compra * 1.25;
+        const venda = o.compra * 1.32;
         const isMelhor = o.compra === menorInd;
         html += '<div style="padding:6px 8px;border-radius:8px;margin-bottom:6px;background:'+(isMelhor?'#f5f3ff':'#fafafa')+';border:1px solid '+(isMelhor?'#c4b5fd':'#eee')+';">';
         html += '<div style="font-weight:700;font-size:11px;color:'+(isMelhor?'#5b21b6':'#555')+';">'+o.forn+(isMelhor?' ⭐':'')+'</div>';
-        html += '<div style="font-size:12px;margin-top:2px;">Compra: <strong>'+fmtBRL(o.compra)+'</strong> → Venda +25%: <strong style="color:#065f46;">'+fmtBRL(venda)+'</strong></div>';
+        html += '<div style="font-size:12px;margin-top:2px;">Compra: <strong>'+fmtBRL(o.compra)+'</strong> → Venda +32%: <strong style="color:#065f46;">'+fmtBRL(venda)+'</strong></div>';
         html += '</div>';
       });
     } else {
@@ -2076,11 +2076,11 @@ function compAbrirAnalise() {
       });
     });
 
-    var vendasDist = distOps.map(function(o){return o.compra*1.25;});
+    var vendasDist = distOps.map(function(o){return o.compra*1.32;});
     var media = vendasDist.length >= 2 ? vendasDist.reduce(function(a,b){return a+b;},0)/vendasDist.length : null;
     var menorInd = indOps.length ? Math.min.apply(null,indOps.map(function(o){return o.compra;})) : null;
     var melhorInd = menorInd ? indOps.find(function(o){return o.compra===menorInd;}) : null;
-    var seuPreco = menorInd ? menorInd*1.25 : null;
+    var seuPreco = menorInd ? menorInd*1.32 : null;
     var precoAgr = media ? media*0.95 : null;
     var diff = (seuPreco&&media) ? (media-seuPreco)/media*100 : null;
     var margemAgr = (precoAgr&&menorInd) ? (precoAgr-menorInd)/precoAgr*100 : null;
@@ -2099,7 +2099,7 @@ function compAbrirAnalise() {
 
     // Linha de distribuidores
     var distStr = distOps.length ? distOps.map(function(o){
-      return o.forn+': '+fmtBRL(o.compra*1.25);
+      return o.forn+': '+fmtBRL(o.compra*1.32);
     }).join(' | ') : '—';
 
     rows += '<tr>'
@@ -2150,7 +2150,9 @@ function compAbrirAnalise() {
 function _cmpQuando(c){
   var s = c.data || c.created_at; if(!s) return null;
   var m = String(s).slice(0,10).match(/^(\d{4})-(\d{2})-(\d{2})$/); if(!m) return null;
-  var dias = Math.round((Date.now() - new Date(+m[1], +m[2]-1, +m[3]).getTime())/86400000);
+  // compara MEIA-NOITE com MEIA-NOITE (senão à noite conta +1 dia: 10 dias vira 11).
+  var hj = new Date(); var hojeMN = new Date(hj.getFullYear(), hj.getMonth(), hj.getDate()).getTime();
+  var dias = Math.round((hojeMN - new Date(+m[1], +m[2]-1, +m[3]).getTime())/86400000);
   return { txt: m[3]+'/'+m[2], dias: dias };
 }
 // cor da idade: <=30d normal, 31-90d atenção, >90d velha
@@ -2278,7 +2280,7 @@ function renderComparativo(termo, manterLimite) {
     compLista = compLista.filter(g => {
       const distOps = g.opcoes.filter(o => !ehIndustria(o.forn, o) && !ehGlobal(o));
       const indOps = g.opcoes.filter(o => ehIndustria(o.forn, o));
-      const vendasDist = distOps.map(o => o.compra * 1.25);
+      const vendasDist = distOps.map(o => o.compra * 1.32);
       const mediaMercado = vendasDist.length >= 2 ? vendasDist.reduce((a,b)=>a+b,0)/vendasDist.length : null;
       const menorCompra = indOps.length ? Math.min(...indOps.map(o=>o.compra))
         : distOps.length ? Math.min(...distOps.map(o=>o.compra)) : null;
@@ -2344,7 +2346,7 @@ function renderComparativo(termo, manterLimite) {
     const globalMin = globalOps.length ? Math.min(...globalOps.map(o=>o.compra)) : null;
 
     // Preços de venda dos distribuidores concorrentes (compra+25%)
-    const vendasDist = distOps.map(o=>o.compra*1.25);
+    const vendasDist = distOps.map(o=>o.compra*1.32);
     const mediaMercado = vendasDist.length >= 2 ? vendasDist.reduce((a,b)=>a+b,0)/vendasDist.length : null;
 
     // Menor preço de compra (priorizar indústria)
@@ -2356,7 +2358,7 @@ function renderComparativo(termo, manterLimite) {
       : menorDist ? distOps.find(o=>o.compra===menorDist) : null;
 
     // Seu preço sugerido: 5% abaixo da média do mercado
-    const seuPreco = mediaMercado ? mediaMercado * 0.95 : (melhorCompra ? melhorCompra * 1.25 : null);
+    const seuPreco = mediaMercado ? mediaMercado * 0.95 : (melhorCompra ? melhorCompra * 1.32 : null);
     const margem = (seuPreco && melhorCompra) ? ((seuPreco - melhorCompra) / seuPreco * 100) : null;
 
     // Célula global
@@ -2400,7 +2402,7 @@ function renderComparativo(termo, manterLimite) {
       return op
         ? `<td style="text-align:center;padding:6px 10px;border-bottom:0.5px solid #f0f0f0;background:${isMenor?'#E1F5EE':'#FAFEF7'}">
             <div style="font-size:11px;font-weight:${isMenor?'700':'400'};color:${isMenor?'#0F6E56':'#27500A'}">${isMenor?'✅ ':''}${fmtBRL(op.compra)}</div>
-            <div style="font-size:9px;color:#aaa">venda: ${fmtBRL(op.compra*1.25)}</div>
+            <div style="font-size:9px;color:#aaa">venda: ${fmtBRL(op.compra*1.32)}</div>
             <div style="font-size:9px;color:#bbb">${op.marca}</div>
             ${op.quando ? `<div style="font-size:9px;color:${_cmpIdadeCor(op.quando.dias)}" title="cotação de ${op.quando.dias} dias atrás">${op.quando.txt}</div>` : ''}
            </td>`
@@ -2919,7 +2921,7 @@ if(window.gmAuth) espAplicaPermissao();
 
 // ═══ COMPETITIVIDADE DE PREÇO (só admin) ═══════════════════════════════════════
 // Meu preço/un (GLOBAL) vs concorrentes (TODO fornecedor que não é indústria nem GLOBAL).
-// Concorrente = compra_unit cru por unidade (preço do portal, sem ×1,25). custo-ref = nosso/1,25.
+// Concorrente = compra_unit cru por unidade (preço do portal, sem ×1,32). custo-ref = nosso/1,25 (excecao do Lemuel: NAO muda).
 var _cpzRows=[], _cpzSort={col:'acima',dir:-1}, _cpzFiltroCor='', _cpzBusca='';
 var _cpzSel={}, _cpzModo='cliente', _cpzPrecoNovo={};   // seleção p/ relatório, modo cliente|interno, preços novos editados (id->valor)
 // DEFINIÇÃO FINAL: concorrente = TODO fornecedor EXCETO a lista de compra-direta (por código E por nome) + tipo='industria'.
@@ -2934,24 +2936,24 @@ function _cpzKey(pa,produto){ var p=_cpzPaNorm(pa), dk=doseKey(produto), fm=_bmF
 function _cpzMed(a){ var s=a.slice().sort(function(x,y){return x-y;}); var m=Math.floor(s.length/2); return s.length%2?s[m]:(s[m-1]+s[m])/2; }
 function _cpzLimpa(arr){ if(arr.length<2) return arr; var med=_cpzMed(arr.map(function(x){return x.cu;})); return arr.filter(function(x){return x.cu>=med/3 && x.cu<=med*3;}); }  // tira outlier: dupla-divisão/dado anômalo (baixo <med/3, inclui par >5x) e preço de caixa (alto >med*3)
 function _cpzMoney(n){ return 'R$ '+(Number(n)||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); }
-// MKP se vender na média (custo=nosso/1,25) + solução (interno). mkp<0 -> custo-alvo/indústria; 0..25 -> custo ideal.
+// MKP se vender na média (custo=nosso/1,25, fica) + solução (interno). mkp<0 -> custo-alvo/indústria; 0..32 -> custo ideal. custo-alvo = media/1,32 (markup da casa).
 function _cpzMkpMediaBlock(r){
-  var custo=r.nosso/1.25, mkp=(r.media/custo-1)*100, custoAlvo=r.media/1.25;
+  var custo=r.nosso/1.25, mkp=(r.media/custo-1)*100, custoAlvo=r.media/1.32;
   var col=mkp>=20?'var(--green)':mkp>=0?'var(--amber)':'var(--red)';
   var s='<div style="font-size:10px;color:var(--dim);margin-top:3px;line-height:1.5">vender na média '+_cpzMoney(r.media)+' → <b style="color:'+col+'">MKP '+(mkp>=0?'+':'')+mkp.toFixed(0)+'%</b>';
   if(mkp<0){
-    s+=' <span style="color:var(--red)">(abaixo do custo)</span><br><span style="color:var(--green)">✅ comprar a ≤ '+_cpzMoney(custoAlvo)+' (custo-alvo p/ MKP 25% na média)</span>';
+    s+=' <span style="color:var(--red)">(abaixo do custo)</span><br><span style="color:var(--green)">✅ comprar a ≤ '+_cpzMoney(custoAlvo)+' (custo-alvo p/ MKP 32% na média)</span>';
     s+= (r.indMin && r.indMin.cu<=custoAlvo)
       ? '<br><span style="color:var(--cyan-b)">→ '+_cpzEsc(r.indMin.forn)+' tem a '+_cpzMoney(r.indMin.cu)+' — resolve</span>'
       : '<br><span style="color:var(--amber)">→ nenhuma indústria no banco alcança — <a href="#" onclick="_cpzAddFila('+r.id+');return false" style="color:var(--cyan-b)">cotar fora (fila)</a></span>';
-  } else if(mkp<25){
-    s+='<br>pra ter 25% na média, custo ideal ≤ '+_cpzMoney(custoAlvo);
+  } else if(mkp<32){
+    s+='<br>pra ter 32% na média, custo ideal ≤ '+_cpzMoney(custoAlvo);
   }
   return s+'</div>';
 }
 async function _cpzAddFila(id){ var r=_cpzRows.filter(function(x){return x.id===id;})[0]; if(!r) return;
   try{ var norm=(typeof _gmNorm==='function')?_gmNorm(r.prod):String(r.prod).toUpperCase(); var chaveG='TXT|'+norm.replace(/[^A-Z0-9]/g,'');
-    await sbPost('itens_a_cotar',{descricao:r.prod,descricao_norm:norm,chave_grupo:chaveG,origem:'competitividade',status:'pendente',obs:'MKP na média negativo — comprar por <= '+_cpzMoney(r.media/1.25)});
+    await sbPost('itens_a_cotar',{descricao:r.prod,descricao_norm:norm,chave_grupo:chaveG,origem:'competitividade',status:'pendente',obs:'MKP na média negativo — comprar por <= '+_cpzMoney(r.media/1.32)});
     alert('✅ '+_cpzNome(r)+' enviado pra fila Itens a Cotar.');
   }catch(e){ alert('Erro ao enviar pra fila: '+e.message); }
 }
@@ -3120,7 +3122,7 @@ function _cpzComputar(){
     var packDif = _cpzPackDif(g.produto, pool);   // selo explicativo; NÃO tira dos KPIs
     var revisar = (acima>60 && !confirmado) || !!mistura;
     var motivoRev = mistura ? mistura : (revisar ? 'preço '+Math.round(acima)+'% acima do melhor concorrente' : null);
-    var custoAlvo=media/1.25;                  // comprar por ≤ isto garante MKP 25% vendendo na média
+    var custoAlvo=media/1.32;                  // comprar por ≤ isto garante MKP 32% vendendo na média
     var ind=null;
     if(cen==='vermelho'){ var ip=(indBy[k]||[]).slice().sort(function(a,b){return a.cu-b.cu;})[0]; if(ip && ip.cu<=custoAlvo) ind=ip; }
     var indMin=(indBy[k]||[]).slice().sort(function(a,b){return a.cu-b.cu;})[0]||null;   // indústria/compra-direta mais barata (p/ solução do MKP)
@@ -3245,7 +3247,7 @@ function _cpzJogada(r){
   var nv=_cpzPrecoNovo[r.id], auto, jog, leitura;
   var custo=r.nosso/1.25, mkpMelhor=(r.melhor.cu/custo-1)*100, mkpMed=(r.media/custo-1)*100;
   if(r.cen==='competitivo'){ auto=+(r.nosso).toFixed(2); jog='Já competitivo'; leitura='Nosso preço já está ≤ média do mercado — mantemos '+_cpzMoney(r.nosso)+'.'; }
-  else if(r.cen==='vermelho'){ auto=null; jog='Custo · indústria'; leitura='Até vendendo na média seria prejuízo (MKP '+mkpMed.toFixed(0)+'%) — comprar por ≤ '+_cpzMoney(r.media/1.25)+' (indústria/fornecedor novo) resolve.'; }
+  else if(r.cen==='vermelho'){ auto=null; jog='Custo · indústria'; leitura='Até vendendo na média seria prejuízo (MKP '+mkpMed.toFixed(0)+'%) — comprar por ≤ '+_cpzMoney(r.media/1.32)+' (indústria/fornecedor novo) resolve.'; }
   else if(mkpMelhor>=20){ auto=+(r.melhor.cu-0.01).toFixed(2); jog='Bater o melhor'; leitura='Dá pra bater a melhor oferta ('+_cpzMoney((nv!=null&&nv!=='')?nv:auto)+') mantendo margem '+mkpMelhor.toFixed(0)+'% — ganho de cotação.'; }
   else { auto=+(r.media).toFixed(2); jog='Preço na média'; leitura='Ajustamos para a média do mercado ('+_cpzMoney((nv!=null&&nv!=='')?nv:auto)+'), margem '+mkpMed.toFixed(0)+'%.'; }
   var novo=(nv!=null&&nv!=='')?nv:auto;
