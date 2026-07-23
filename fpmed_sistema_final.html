@@ -4440,7 +4440,7 @@ function gerarJanelaPedido(rows, totalGeral, emissao, nPedidos, nForn) {
     @media print{body{padding:0;}@page{size:A4;margin:8mm;}}
   </style></head><body>
   <div class="hdr">
-    <div class="logo"><img src="logo_fpmed.png" alt="FPMED Hospitalar" style="height:48px;width:auto"></div>
+    <div class="logo"><img src="${new URL('logo_fpmed.png',location.href).href}" alt="FPMED Hospitalar" style="height:48px;width:auto"></div>
     <div class="emp"><strong>FPMED DISTRIBUIDORA DE PRODUTOS HOSPITALARES LTDA</strong>CNPJ: 47.110.418/0001-15 · IE: 10.947.387-9<br>RUA 09, S/N, QUADRA 55 A, LOTE 0002, VILA BRASILIA, APARECIDA DE GOIANIA/GO, CEP 74.911-080<br></div>
     <div style="font-size:9px;text-align:right;line-height:1.7"><strong>Emitido:</strong> ${emissao}</div>
   </div>
@@ -4557,7 +4557,7 @@ async function imprimirPedido(id) {
       @media print{body{padding:0;}@page{size:A4;margin:10mm;}}
     </style></head><body>
     <div class="hdr">
-      <div class="logo"><img src="logo_fpmed.png" alt="FPMED Hospitalar" style="height:48px;width:auto"></div>
+      <div class="logo"><img src="${new URL('logo_fpmed.png',location.href).href}" alt="FPMED Hospitalar" style="height:48px;width:auto"></div>
       <div class="emp"><strong>FPMED DISTRIBUIDORA DE PRODUTOS HOSPITALARES LTDA</strong>CNPJ: 47.110.418/0001-15 · IE: 10.947.387-9<br>RUA 09, S/N, QUADRA 55 A, LOTE 0002, VILA BRASILIA, APARECIDA DE GOIANIA/GO, CEP 74.911-080<br></div>
       <div style="font-size:9px;text-align:right;line-height:1.8"><strong>Emitido:</strong> ${emissao}</div>
     </div>

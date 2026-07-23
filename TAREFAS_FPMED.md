@@ -6,7 +6,7 @@
 > **Escopo do pacote FPMED = sistema completo SEM Prospecção e SEM Loja Pública**
 > (decisões de escopo do Lemuel).
 
-Última atualização: 2026-07-22
+Última atualização: 2026-07-23
 
 ## 🧪 REGRA PERMANENTE DE TESTE (22/07)
 Todo teste de tela que GRAVA no banco: usar a prévia SEM clicar em gravar, OU apagar os
@@ -37,20 +37,30 @@ Auditoria de 22/07: banco confirmado limpo após teste do upload de PDF (preview
       do banco antigo, sintaxe JS validada). URL `https://xzdowrksuswekwffoluk.supabase.co`.
 
 ## ⬜ PENDENTES (na ordem)
-- [ ] **⚠️ PRÓXIMA: Clientes & Oportunidades — bug + tema** (pedido 22/07): (1) corrigir
-      "Erro: (itens || []).forEach is not a function" na raiz (validar Array.isArray, resposta
-      de erro da API vira mensagem amigável, estado vazio bonito "Nenhum cliente ainda...");
-      (2) reestilizar a página do tema ESCURO pro tema CLARO padrão do sistema (reusar
-      classes/variáveis existentes) + varrer outras telas destoantes e LISTAR antes de mexer;
-      (3) testar com banco sem clientes (console limpo, filtros não quebram); (4) commit
-      "Clientes & Oportunidades: corrige erro forEach e padroniza cores com o tema claro do sistema".
-- [ ] **1º sync de código da Global** (aguardando escolha do Lemuel): 32 commits pendentes no
-      relatório (`node tools/sync_da_global.js`). Destaques portáveis: correções de data
-      toISOString/UTC na giovana, busca instantânea + botão Buscar, fuzzy "complexo b", score
-      de confiança FASE 3, "Esgotou no fornecedor", suites tests/ (125 asserts). PORTE MANUAL:
-      upgrades da Competitividade no sistema_final. DECISÃO DE NEGÓCIO: MKP 25%→32%.
 - [ ] **Sync de dados**: preview rodado 22/07 → 0 novos / 0 atualizados / 7.451 pulados (seed
       já cobriu tudo). Próxima rodada quando a Global tiver cotações novas; gravar SÓ com OK.
+- [ ] **Porte manual da Competitividade** (Global 005cb75/7cc5b87/e7501e0, parte cpz): a Global
+      evoluiu a tela em cima do tema ESCURO; FPMED já está no claro — portar a ideia manualmente
+      quando o Lemuel pedir (registrado no SYNC_GLOBAL.md).
+- [ ] **Vendedoras** (`role: vendedora`/`giovana_only`): criar quando o Lemuel definir a equipe.
+- [ ] **Domínio próprio** `sistema.fpmed.com.br` (CNAME no Pages) — pós-venda.
+- [x] **Clientes & Oportunidades — bug + tema** (22/07): forEach corrigido na raiz (cdArr()
+      valida Array.isArray + erro amigável + estado vazio), tema claro aplicado. Console limpo.
+- [x] **1º SYNC de código da Global** (22/07, commits `3473800`+`8381ca9`): 11 commits na giovana
+      (score de confiança FASE 3 com "Confirmar match", datas UTC, fuzzy, qtd/PA), FORMA na vendas,
+      `_cmpQuando` no sistema_final, **MKP 32%** (exceção: custo-ref GLOBAL segue ÷1,25),
+      suíte tests/ portada (6 suítes, 110 asserts verdes). Marcador `ultimo_sync: e7501e0`.
+      Fora em definitivo: portal de cards (entrada direta) e importador PDF CLI (upload no browser).
+- [x] **Varredura de marca** (22/07, commit `3fb4782`): favicon FPMED (cruz SVG data-URI) nas
+      10 páginas; coração da Global substituído pela cruz oficial na Competitividade (tela + PDF);
+      zero referência ao Supabase/GitHub da GlobalMed em *.html/*.js.
+- [x] **Atualizar Estoque FPMED — segurança** (22/07): modal "digite ATUALIZAR", backup
+      automático + desfazer (5 snapshots, tabela `estoque_backup`), trava de relatório parcial
+      (<30%), upload de PDF direto (pdf.js local + fallback IA). Testado ponta a ponta, banco limpo.
+- [x] **Menu limpo** (22/07): sem Comissões Isa / Vendas Externas / Cotação p/ Cliente /
+      Oportunidades antiga; "Giovana"→"Propostas"; Global→FPMED em todo texto visível.
+- [x] **dashboard_clientes**: demo 100% fictício + HISTÓRICO DO GIT REESCRITO (filter-branch +
+      force push, 22/07) — clone limpo verificado, zero CNPJ real em qualquer commit.
 - [x] **SEED de cotações** (22/07, autorizado): 7.451 cotações de distribuidor do GlobalMed →
       `cotacoes` FPMED. Zero GLOBAL (517 excluídas), zero cliente/prospect, `venda_loja` zerada,
       45 fornecedores, `fornecedor_nome` backfilled + normalização no app. Dashboard/Competitividade
@@ -58,9 +68,9 @@ Auditoria de 22/07: banco confirmado limpo após teste do upload de PDF (preview
 - [x] **Edge function `ler-pedido` — ✅ 100% NO AR** (22/07): deployada (Verify JWT OFF), trava de
       origem ativa (só `fpmed-hospitalar.github.io` / `sistema.fpmed.com.br`; resto 403 sem gastar
       crédito), secret `ANTHROPIC_API_KEY` colado pelo Lemuel, **teste ponta a ponta OK** (Claude
-      respondeu). v3: default trocado `claude-sonnet-4-20250514` (APOSENTADO 15/06/26) →
-      `claude-opus-4-8`. Os HTML mandam `claude-opus-4-5`/`claude-haiku-4-5-20251001` (ambos
-      ativos — ok). ⚠️ curl de teste precisa de header Origin; `file://` não funciona (usar Pages).
+      respondeu). v4 (22/07, decisão de custo): modelo padrão e chamadas dos HTML em
+      `claude-haiku-4-5` (fallback `claude-haiku-4-5-20251001`) — o sonnet-4 antigo foi
+      APOSENTADO 15/06/26. ⚠️ curl de teste precisa de header Origin; `file://` não funciona (usar Pages).
 - [x] **Usuários de login criados** (22/07, via Admin API): `lemuelempresas7@outlook.com` e
       `comercial@fpmed.com.br`, ambos `role: admin`, e-mail confirmado, senha inicial definida
       pelo Lemuel (NÃO gravada no repo) com `user_metadata.senha_temporaria: true` (marcador —
@@ -111,7 +121,7 @@ Auditoria de 22/07: banco confirmado limpo após teste do upload de PDF (preview
   se renomeia p/ `fp-auth.js`.
 - **competitividade_dark**: REMOVIDA em 22/07 (decisão do Lemuel) — redundante com a Competitividade
   clara do sistema_final. A Competitividade interna foi convertida pro tema claro na mesma data.
-- **PDFs via `window.open` no sistema_final**: logo por caminho relativo pode não resolver em
-  janela `about:blank` — se o logo não aparecer no PDF, embutir como base64.
+- **PDFs via `window.open` no sistema_final**: ✅ RESOLVIDO 23/07 — logo agora entra com URL
+  absoluta (`new URL('logo_fpmed.png', location.href)`), resolve em qualquer janela `about:blank`.
 
 Legenda: [x] concluída · [ ] pendente · ⛔ bloqueada
