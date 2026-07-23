@@ -109,7 +109,8 @@ Auditoria de 22/07: banco confirmado limpo após teste do upload de PDF (preview
   badge do gm-auth). `vendas.html` tolera ausência da tabela `prospects` (Prospecção fora do pacote).
 - **gm-auth.js**: nome de arquivo mantido (include interno, sem prefixo `globalmed_`). Decidir
   se renomeia p/ `fp-auth.js`.
-- **competitividade_dark**: mantido tema ESCURO (variante do catálogo), recolorido p/ navy+azul FPMED.
+- **competitividade_dark**: REMOVIDA em 22/07 (decisão do Lemuel) — redundante com a Competitividade
+  clara do sistema_final. A Competitividade interna foi convertida pro tema claro na mesma data.
 - **PDFs via `window.open` no sistema_final**: logo por caminho relativo pode não resolver em
   janela `about:blank` — se o logo não aparecer no PDF, embutir como base64.
 

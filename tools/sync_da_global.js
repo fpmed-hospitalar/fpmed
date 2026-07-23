@@ -28,7 +28,7 @@ const MAPA = {
   'globalmed_painel.html':            { fpmed: 'fpmed_painel.html', status: 'portavel' },
   'dashboard_clientes.html':          { fpmed: 'dashboard_clientes.html', status: 'manual', motivo: 'FPMED usa dados 100% fictícios (nunca trazer a lista de clientes da Global)' },
   'globalmed_competitividade.html':   { fpmed: 'fpmed_competitividade.html', status: 'portavel' },
-  'globalmed_competitividade_dark.html': { fpmed: 'fpmed_competitividade_dark.html', status: 'portavel' },
+  'globalmed_competitividade_dark.html': { fpmed: null, status: 'fora', motivo: 'removida do pacote FPMED em 22/07 (redundante com a Competitividade clara)' },
   'gm-auth.js':                       { fpmed: 'gm-auth.js', status: 'manual', motivo: 'aponta pro Supabase/URLs da FPMED — portar só a LÓGICA, nunca as constantes' },
   'reset-senha.html':                 { fpmed: 'reset-senha.html', status: 'portavel' },
   'index.html':                       { fpmed: 'index.html', status: 'manual', motivo: 'entradas diferentes: Global tem portal de cards; FPMED abre direto o sistema (decisão do Lemuel 22/07)' },
