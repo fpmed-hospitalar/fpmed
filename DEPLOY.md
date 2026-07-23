@@ -10,7 +10,7 @@ banco novo. Faltam os passos abaixo — vários dependem de dados/decisões do L
       Conferido: zero placeholder `[...]` nos *.html/*.js.
 - [x] **Zero dado da GlobalMed** (22/07/2026): grep em *.html/*.js → zero ocorrência de
       globalmed / 54.379.172 / 20.131.542 / conde francisco / 99612 / banco antigo.
-- [ ] `dashboard_clientes.html`: revisar a lista de clientes/CNPJs embutida (ex.: ELLO DISTRIBUICAO) —
+- [x] `dashboard_clientes.html`: lista de clientes reais da Global — RESOLVIDO 22/07 (demo + histórico reescrito) —
       é demo? Se for dado real do GlobalMed, limpar antes de publicar.
 
 ## 1) 1º PUSH (repo é privado; precisa de credencial git) — passo a passo do PAT

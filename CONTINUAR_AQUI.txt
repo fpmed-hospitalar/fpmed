@@ -40,7 +40,7 @@ Criado em 21/07/2026 copiando SO os arquivos do app do C:\globalmed.
     [RAZAO SOCIAL FPMED]/[CNPJ]/[ENDERECO]/[WHATSAPP]. O push publico so libera quando NAO
     houver placeholder NEM dado da GlobalMed, com URL+ANON do Supabase da FPMED e URLs do
     GitHub da org. ATENCAO: dashboard_clientes.html tem lista de clientes/CNPJs embutida
-    (ex.: ELLO DISTRIBUICAO LTDA) — revisar se e demo ou dado real do GlobalMed antes do deploy.
+    (lista de clientes reais da Global) — RESOLVIDO 22/07: trocada por demo e historico reescrito.
 
 >>> SYNC GLOBALMED->FPMED (22/07/2026) — procedimento PERMANENTE:
     Comando do Lemuel: "sincroniza as melhorias da Global" -> seguir o SYNC_GLOBAL.md.
