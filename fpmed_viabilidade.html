@@ -230,7 +230,10 @@ let resultado = [], linhasArquivo = [], colunas = [];
 async function sbAll(base,size=1000){ let out=[],off=0; while(true){ const r=await fetch(SB_URL+'/rest/v1/'+base+`&limit=${size}&offset=${off}`,{headers:H}); const pg=await r.json(); if(!Array.isArray(pg))break; out=out.concat(pg); if(pg.length<size)break; off+=size; } return out; }
 
 function gate(){
-  const adm = (window.gmAuth && (typeof gmAuth.isAdmin==='function' ? gmAuth.isAdmin() : (gmAuth.user && gmAuth.user.role==='admin')));
+  // Viabilidade de Compra é ferramenta de GESTOR (diretor/gerente). vendedor/propostas já são
+  // barrados na entrada pelo gm-auth; aqui reforçamos só-gestor.
+  const adm = !!(window.gmAuth && (typeof gmAuth.isGestor==='function' ? gmAuth.isGestor()
+                : (gmAuth.can && gmAuth.can('verSensivel'))));
   document.getElementById('app').style.display = adm ? '' : 'none';
   document.getElementById('gate').style.display = adm ? 'none' : 'block';
   return adm;

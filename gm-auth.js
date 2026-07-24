@@ -11,13 +11,37 @@
   var ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh6ZG93cmtzdXN3ZWt3ZmZvbHVrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ2NzE2MTMsImV4cCI6MjEwMDI0NzYxM30.Pk-SlV_pZdniESyrajDdfHdHcnmyCwCMtP_TrShh75Y';
   var K = 'gm_session';
 
-  // ── Controle de acesso por sistema ───────────────────────────────────────────
-  // role 'giovana_only' só entra na fpmed_giovana.html; nos outros sistemas é bloqueado.
-  // admin e vendedora e demais = acesso total às páginas (gates finos por role dentro de cada sistema).
+  // ── CARGOS e CAPACIDADES ──────────────────────────────────────────────────────
+  // Cargos: diretor, gerente, vendedor, propostas. Legado: admin=diretor, vendedora=vendedor,
+  // giovana_only=propostas. GESTOR = diretor|gerente (vê custo/fornecedor/intel, grava, apaga).
+  // ATENÇÃO: isto é a camada de TELA/UX. A segurança REAL é a RLS no banco (db_rls_cargos.sql),
+  // que decide por app_metadata.role do JWT — não dá pra burlar pelo F12.
+  function _normCargo(r){
+    r = (r||'').toLowerCase();
+    if(r==='admin') return 'diretor';
+    if(r==='vendedora') return 'vendedor';
+    if(r==='giovana_only') return 'propostas';
+    if(r==='diretor'||r==='gerente'||r==='vendedor'||r==='propostas') return r;
+    return 'vendedor';   // desconhecido = menor privilégio
+  }
+  function _cargoLabel(c){ return ({diretor:'Diretor',gerente:'Gerente',vendedor:'Vendedor',propostas:'Propostas'})[c] || 'Vendedor'; }
+  function _gestor(c){ return c==='diretor' || c==='gerente'; }
+  function _can(c, cap){
+    switch(cap){
+      case 'verSensivel': case 'grava': case 'gestor': return _gestor(c);   // custo/fornecedor/intel/gravar/apagar
+      case 'usarIA':      return _gestor(c) || c==='vendedor';              // IA Ler Pedido / Importar lista
+      case 'destrutivo':  return c==='diretor';                            // (reservado p/ futuro)
+      default: return false;
+    }
+  }
+
+  // ── Controle de acesso por PÁGINA ─────────────────────────────────────────────
+  // vendedor e propostas: SÓ a tela Propostas (fpmed_giovana). gerente/diretor: tudo.
   var _blocked = false;
   function _paginaGiovana(){ return /giovana/i.test(location.pathname || location.href || ''); }
   function _pagPermitida(role){
-    if(role === 'giovana_only') return _paginaGiovana();
+    var c = _normCargo(role);
+    if(c==='propostas' || c==='vendedor') return _paginaGiovana();
     return true;
   }
 
@@ -64,13 +88,20 @@
     return _origFetch(input, init);
   };
 
+  // CARGO: lido do app_metadata (NÃO editável pelo usuário) com fallback pro user_metadata
+  // (compat) — a fonte de verdade de segurança é a RLS no banco, que lê o app_metadata do JWT.
+  function _roleFrom(u){
+    if(!u) return 'vendedor';
+    return (u.app_metadata && u.app_metadata.role)
+        || (u.user_metadata && u.user_metadata.role)
+        || 'vendedor';
+  }
   function saveFromToken(d){
     var s = {
       access_token:  d.access_token,
       refresh_token: d.refresh_token,
       expires_at:    Date.now() + (d.expires_in || 3600) * 1000,
-      user: { id: d.user && d.user.id, email: d.user && d.user.email,
-              role: (d.user && d.user.user_metadata && d.user.user_metadata.role) || 'vendedora' }
+      user: { id: d.user && d.user.id, email: d.user && d.user.email, role: _roleFrom(d.user) }
     };
     setSess(s); return s;
   }
@@ -176,11 +207,12 @@
   function injectBar(){
     if(document.getElementById('gm-auth-bar')) return;
     var s = getSess() || {}; var email = (s.user && s.user.email) || '';
+    var cargoLbl = _cargoLabel(_normCargo(s.user && s.user.role));
     var bar = document.createElement('div');
     bar.id = 'gm-auth-bar';
     bar.style.cssText = 'position:fixed;top:8px;right:8px;z-index:2147483000;display:flex;gap:6px;align-items:center;font-family:system-ui,\'Segoe UI\',Arial,sans-serif;font-size:11px;';
     bar.innerHTML =
-      '<span style="background:#111a2e;color:#a9bbdb;border:1px solid #22314f;border-radius:20px;padding:3px 9px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">👤 '+esc(email)+'</span>' +
+      '<span style="background:#111a2e;color:#a9bbdb;border:1px solid #22314f;border-radius:20px;padding:3px 9px;max-width:210px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">👤 '+esc(email)+' <b style="color:#7fd0ff">· '+esc(cargoLbl)+'</b></span>' +
       '<button id="gm-troca" title="Trocar minha senha" style="background:#1f2b45;color:#cdd7ea;border:1px solid #2a3a5c;border-radius:20px;padding:3px 9px;cursor:pointer;font-size:11px">🔑</button>' +
       '<button id="gm-sair" style="background:#7f1d1d;color:#fff;border:none;border-radius:20px;padding:3px 10px;cursor:pointer;font-size:11px">Sair</button>';
     document.body.appendChild(bar);
@@ -214,9 +246,14 @@
     if(!_pagPermitida(roleg)){ _blocked = true; showSemPermissao(sg); return; }  // giovana_only fora da giovana
     if(ov && ov.parentNode) ov.parentNode.removeChild(ov);
     var s = getSess() || {};
+    var _cargo = _normCargo(s.user && s.user.role);
     window.gmAuth = {
       user: s.user || null,
-      isAdmin: function(){ return !!(s.user && s.user.role === 'admin'); },
+      cargo: _cargo,                                   // diretor|gerente|vendedor|propostas
+      cargoLabel: _cargoLabel(_cargo),
+      can: function(cap){ return _can(_cargo, cap); }, // gate de tela (a RLS é a trava real)
+      isGestor: function(){ return _gestor(_cargo); },
+      isAdmin: function(){ return _cargo === 'diretor'; },   // compat: diretor = admin de antes
       logout: logout,
       trocarSenha: trocarSenha
     };

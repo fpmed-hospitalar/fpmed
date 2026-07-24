@@ -509,22 +509,23 @@ const EDGE_URL_G = 'https://xzdowrksuswekwffoluk.supabase.co/functions/v1/api';
 const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh6ZG93cmtzdXN3ZWt3ZmZvbHVrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ2NzE2MTMsImV4cCI6MjEwMDI0NzYxM30.Pk-SlV_pZdniESyrajDdfHdHcnmyCwCMtP_TrShh75Y';
 const H = { 'Content-Type':'application/json', 'apikey':SUPA_KEY, 'Authorization':'Bearer '+SUPA_KEY };
 
-// ── ACESSO RESTRITO (Nível 1, só esconde na tela) ────────────────────────────
-// role 'giovana_only' NÃO vê custo nem fornecedor. Admin vê tudo.
-// NÃO afeta o cálculo do preço (o custo continua sendo lido por trás).
-function ehRestrito(){ try{ var u = window.gmAuth && window.gmAuth.user;
-  return !!(u && (u.role==='giovana_only' || (u.user_metadata && u.user_metadata.role==='giovana_only'))); }catch(e){ return false; } }
-// FPMED: gates por ROLE (sem e-mail hardcoded). Importar lista + IA Ler Pedido: SÓ role 'admin'.
-function podeImportar(){
-  try{ var u = window.gmAuth && window.gmAuth.user; var r = (u && (u.role || (u.user_metadata && u.user_metadata.role))) || '';
-    return r === 'admin'; }catch(e){ return false; } }
-// Importar Cotação (grava no banco de cotações): SÓ role 'admin'.
-function podeImportarCotacao(){ try{ var u=window.gmAuth&&window.gmAuth.user; var r=(u&&(u.role|| (u.user_metadata&&u.user_metadata.role)))||''; return r==='admin'; }catch(e){ return false; } }
+// ── ACESSO POR CARGO (camada de TELA) ────────────────────────────────────────
+// A trava REAL é a RLS no banco (db_rls_cargos.sql): vendedor/propostas leem a view
+// cotacoes_vendedor (sem custo) e não gravam. Aqui só espelhamos isso na UI.
+function _gmCan(cap){ try{ return !!(window.gmAuth && window.gmAuth.can && window.gmAuth.can(cap)); }catch(e){ return false; } }
+// vendedor/propostas NÃO veem custo nem fornecedor (verSensivel = gestor). Default seguro: restrito.
+function ehRestrito(){ return !_gmCan('verSensivel'); }
+// Importar lista + IA Ler Pedido: vendedor pra cima (usarIA).
+function podeImportar(){ return _gmCan('usarIA'); }
+// Importar Cotação e Pedido Fechado GRAVAM na base -> só gestor (diretor/gerente).
+function podeImportarCotacao(){ return _gmCan('grava'); }
+function podeGravarBase(){ return _gmCan('grava'); }
+// Endpoint de cotações por cargo: gestor lê a tabela (com custo); vendedor lê a view sem custo.
+function cotEndpoint(){ return _gmCan('verSensivel') ? 'cotacoes' : 'cotacoes_vendedor'; }
 function gmAplicaRestrito(){ window.GM_RESTRITO = ehRestrito();
   if(window.GM_RESTRITO){ var b=document.getElementById('btn-enviar-compras'); if(b) b.style.display='none'; }
-  // Pedido Fechado grava histórico de compra (preço de venda do cliente): SÓ admin.
-  // Esconde de giovana_only e vendedora.
-  var _pf=document.getElementById('btn-pedido-fechado'); if(_pf) _pf.style.display = podeImportar() ? '' : 'none';
+  // Pedido Fechado grava histórico de compra (preço de venda do cliente): só GESTOR.
+  var _pf=document.getElementById('btn-pedido-fechado'); if(_pf) _pf.style.display = podeGravarBase() ? '' : 'none';
   // re-avalia a cada evento: mostra Importar/IA só p/ os emails permitidos, esconde do resto
   var _imp = podeImportar();
   var lb=document.getElementById('tab-lista-btn'); if(lb) lb.style.display = _imp ? '' : 'none';
@@ -567,7 +568,7 @@ async function iniciar() {
     const pageSize = 500;
     while(true) {
       const to = from + pageSize - 1;
-      const r = await fetch(`${SUPA_URL}/rest/v1/cotacoes?select=*&order=id`, {
+      const r = await fetch(`${SUPA_URL}/rest/v1/${cotEndpoint()}?select=*&order=id`, {
         headers: {
           'apikey': SUPA_KEY,
           'Authorization': 'Bearer ' + SUPA_KEY,
@@ -597,7 +598,7 @@ async function recarregarCotacoes(force){
   try{
     let allData=[], from=0; const pageSize=500;
     while(true){ const to=from+pageSize-1;
-      const r=await fetch(`${SUPA_URL}/rest/v1/cotacoes?select=*&order=id`,{headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Range':`${from}-${to}`}});
+      const r=await fetch(`${SUPA_URL}/rest/v1/${cotEndpoint()}?select=*&order=id`,{headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Range':`${from}-${to}`}});
       const data=await r.json(); if(!Array.isArray(data)||data.length===0)break; allData=allData.concat(data); if(data.length<pageSize)break; from+=pageSize;
     }
     if(allData.length){ cotacoes = allData.filter(incluiNaBusca); _cotTs=Date.now(); }
@@ -773,6 +774,11 @@ function pv(c) {
   // Se só tem compra_caixa → divide pela qtd e aplica markup
   if (c.compra_caixa && parseFloat(c.compra_caixa) > 0) {
     return (parseFloat(c.compra_caixa) / qtd) * 1.32;
+  }
+
+  // VENDEDOR (view cotacoes_vendedor): não recebe custo; recebe o preço de venda já calculado.
+  if (c.venda_unit_forn && parseFloat(c.venda_unit_forn) > 0) {
+    return parseFloat(c.venda_unit_forn);
   }
 
   // Fallback

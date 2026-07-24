@@ -2906,9 +2906,10 @@ const espStrip = s => String(s||'').replace(/^[\s#*+>]+/,'').trim();
 const espDigits = s => String(s||'').replace(/\D/g,'');
 const espPaNorm = s => (s||'').toUpperCase().normalize('NFD').replace(/\p{M}/gu,'').replace(/[^A-Z0-9]/g,'');
 
-// PERMISSAO (FPMED): Importar Espelho expoe preco de venda/cliente -> SO role admin.
-// giovana_only (Sebastiao) ja e bloqueado do sistema_final pelo gm-auth; vendedora (Guilherme) NAO ve a aba.
-function espPodeVer(){ try{ var u=window.gmAuth&&window.gmAuth.user; var r=(u&&(u.role||(u.user_metadata&&u.user_metadata.role)))||''; return r==='admin'; }catch(e){ return false; } }
+// PERMISSAO (FPMED): o back-office (sistema_final) é só GESTOR (diretor/gerente). vendedor/propostas
+// já são barrados na entrada pelo gm-auth. Aqui liberamos o menu sensível pro gestor.
+// A trava REAL das colunas/linhas é a RLS no banco (db_rls_cargos.sql).
+function espPodeVer(){ try{ return !!(window.gmAuth && window.gmAuth.can && window.gmAuth.can('verSensivel')); }catch(e){ return false; } }
 function espAplicaPermissao(){
   var mostra = espPodeVer();
   ['importar-espelho','compras-cliente','itens-a-cotar','clientes-dash','competitividade'].forEach(function(n){ var nav=document.querySelector('.nav-item[onclick*="'+n+'"]'); if(nav) nav.style.display = mostra ? '' : 'none'; });
