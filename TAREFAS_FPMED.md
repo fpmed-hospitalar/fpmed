@@ -93,9 +93,12 @@ Auditoria de 22/07: banco confirmado limpo após teste do upload de PDF (preview
 ## ⬜ PENDENTES (na ordem)
 - [ ] **Sync de dados**: preview rodado 22/07 → 0 novos / 0 atualizados / 7.451 pulados (seed
       já cobriu tudo). Próxima rodada quando a Global tiver cotações novas; gravar SÓ com OK.
-- [ ] **Porte manual da Competitividade** (Global 005cb75/7cc5b87/e7501e0, parte cpz): a Global
-      evoluiu a tela em cima do tema ESCURO; FPMED já está no claro — portar a ideia manualmente
-      quando o Lemuel pedir (registrado no SYNC_GLOBAL.md).
+- [x] **Porte manual da Competitividade + Comparativo** (24/07, commit `7af9021`): upgrades da
+      Global (005cb75/7cc5b87/e7501e0) portados com tema claro reaplicado — giro/impacto R$/mês,
+      botão "fila de cotação", curadoria+regra revisar; Comparativo com heatmap/scorecard win-rate/
+      Δ vs melhor/drill-down; rolagem 70vh + sticky + barra espelho. Drill-down blindado (histórico
+      não capturado ainda → "sem histórico"). Testado no ar (console limpo). Competitividade fica
+      VAZIA até carregarem o estoque próprio FPMED (é a base da tela).
 - [ ] **Vendedoras** (`role: vendedora`/`giovana_only`): criar quando o Lemuel definir a equipe.
 - [ ] **Domínio próprio** `sistema.fpmed.com.br` (CNAME no Pages) — pós-venda.
 - [x] **Clientes & Oportunidades — bug + tema** (22/07): forEach corrigido na raiz (cdArr()

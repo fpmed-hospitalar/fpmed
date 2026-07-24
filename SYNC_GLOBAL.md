@@ -45,10 +45,16 @@ outro arquivo que acumular divergência local.
 - **Importador PDF CLI** (tools/importa_estoque_pdf.js + testa_pdf_estoque.js): ❌ FORA — FPMED
   tem upload de PDF direto no browser (Atualizar Estoque).
 
-## ⏳ PENDÊNCIA MANUAL — upgrades da Competitividade (Global 005cb75/7cc5b87/e7501e0)
-A Global evoluiu a tela Competitividade em cima do TEMA ESCURO; a FPMED já converteu essa tela
-pro tema claro — o diff não encaixa. O marcador está em e7501e0, mas a PARTE CPZ desses commits
-NÃO foi portada: portar a ideia manualmente (reaplicando o tema claro) quando o Lemuel pedir.
+## ✅ Competitividade + Comparativo (Global 005cb75/7cc5b87/e7501e0) — PORTADO 24/07
+Feito via git apply --reject (contexto casou, só 3 hunks de TEMA rejeitaram e foram reaplicados
+no claro). Entrou: giro/impacto R$/mês (coluna+KPI, inerte enquanto compra_itens vazio → "sem
+giro"), botão "fila de cotação", indústria destaque, curadoria VENVANSE 30/70+DIAD, regra
+CONFIRMADO vence mistura; Comparativo com heatmap, scorecard win-rate, Δ vs melhor, drill-down;
+rolagem 70vh + cabeçalho sticky + coluna fixa + barra espelho (scrollbar adaptada ao claro).
+Drill-down blindado (FPMED não captura histórico ainda → degrada p/ "sem histórico"; tabela
+historico_precos não existe, tudo tolerante a falha). Testado no ar: Comparativo 100 linhas c/
+features, Competitividade renderiza vazia (0 estoque próprio GLOBAL — matéria-prima da tela),
+console limpo. Commit 7af9021.
 
 ## Fluxo de SYNC DE DADOS (cotações de distribuidor) — SÓ com OK por rodada
 1. `node tools/sync_cotacoes_global.js` → PREVIEW: N novos / N atualizados / N pulados (nada gravado).
