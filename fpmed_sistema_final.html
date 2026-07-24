@@ -930,6 +930,36 @@ select.filter{padding:8px 12px;border:1px solid var(--borda);border-radius:9px;f
       #cpz-root tbody td{padding:11px 15px;border-bottom:1px solid var(--line)}
       #cpz-root tbody tr:last-child td{border-bottom:none}
       #cpz-root tbody tr:hover{background:#EAF6FC}
+      /* ── ROLAGEM (porte 24/07): scroll interno c/ cabeçalho sticky, coluna Produto fixa e
+         scrollbar no tema CLARO. Barra horizontal ESPELHO no topo (sincronizada via _mkTopScroll). */
+      #cpz-root .tscroll{max-height:70vh;overflow:auto;position:relative}
+      #cpz-root .tscroll thead th{position:sticky;top:0;z-index:6}
+      #cpz-root .tscroll thead th:first-child{position:sticky;left:0;z-index:9;background:var(--panel2)}
+      #cpz-root .tscroll thead th:nth-child(2){position:sticky;left:var(--c1w,56px);z-index:9;background:var(--panel2)}
+      #cpz-root .tscroll tbody td.ct{position:sticky;left:0;z-index:3;background:var(--panel)}
+      #cpz-root .tscroll tbody td.prod{position:sticky;left:var(--c1w,56px);z-index:3;background:var(--panel)}
+      #cpz-root .tscroll::-webkit-scrollbar,#cpz-root .hscroll-top::-webkit-scrollbar{height:10px;width:10px}
+      #cpz-root .tscroll::-webkit-scrollbar-track,#cpz-root .hscroll-top::-webkit-scrollbar-track{background:#EAF0F5;border-radius:8px}
+      #cpz-root .tscroll::-webkit-scrollbar-thumb,#cpz-root .hscroll-top::-webkit-scrollbar-thumb{background:#B9C8D6;border-radius:8px}
+      #cpz-root .tscroll::-webkit-scrollbar-thumb:hover,#cpz-root .hscroll-top::-webkit-scrollbar-thumb:hover{background:var(--cyan)}
+      .hscroll-top{overflow-x:auto;overflow-y:hidden;height:14px;margin-bottom:3px}
+      .hscroll-top>div{height:1px}
+      /* Comparativo (tema claro): mesmo padrão — scroll interno, cabeçalho+scorecard sticky,
+         coluna Princípio Ativo fixa, scrollbar discreta. */
+      .cmp-tscroll{max-height:70vh;overflow:auto;position:relative}
+      .cmp-tscroll thead tr:first-child th{position:sticky;top:0;z-index:6}
+      .cmp-tscroll thead tr:nth-child(2) th{position:sticky;top:var(--h1,35px);z-index:5}
+      .cmp-tscroll thead tr:first-child th:first-child{position:sticky;left:0;z-index:9;background:#f8faf8}
+      .cmp-tscroll thead tr:first-child th:nth-child(2){position:sticky;left:var(--c1w,36px);z-index:9;background:#f8faf8}
+      .cmp-tscroll tbody td:first-child{position:sticky;left:0;z-index:3}
+      .cmp-tscroll tbody td:nth-child(2){position:sticky;left:var(--c1w,36px);z-index:3}
+      .cmp-tscroll::-webkit-scrollbar{height:10px;width:10px}
+      .cmp-tscroll::-webkit-scrollbar-track{background:#F1EFE8;border-radius:8px}
+      .cmp-tscroll::-webkit-scrollbar-thumb{background:#B4B2A9;border-radius:8px}
+      .cmp-tscroll::-webkit-scrollbar-thumb:hover{background:#97C459}
+      #comp-hst::-webkit-scrollbar{height:10px}
+      #comp-hst::-webkit-scrollbar-track{background:#F1EFE8;border-radius:8px}
+      #comp-hst::-webkit-scrollbar-thumb{background:#B4B2A9;border-radius:8px}
       #cpz-root .prod{font-weight:600;color:var(--ink)}
       #cpz-root .our{font-family:'Montserrat',sans-serif;font-weight:700;color:var(--cyan)}
       #cpz-root .comp{color:var(--dim);font-size:12.5px} #cpz-root .comp b{color:var(--ink);font-weight:600}
@@ -2258,6 +2288,69 @@ function comparativoBuscaDebounce(valor) {
 var COMP_MIN_COBERTURA = 5;
 var compMostrarTodas = false;
 function compToggleColunas(){ compMostrarTodas = !compMostrarTodas; renderComparativo(undefined, true); }
+// ── ROLAGEM (22/07): espelho da barra horizontal NO TOPO + medidas p/ colunas/linhas sticky.
+// Sincroniza topo<->container (atribuição igual não re-dispara evento = sem loop) e mede a
+// largura da 1ª coluna (--c1w) e a altura da 1ª linha do thead (--h1) pros sticky de CSS.
+function _mkTopScroll(topId, contId){
+  var top = document.getElementById(topId), c = document.getElementById(contId);
+  if (!top || !c) return;
+  var t = c.querySelector('table');
+  if (top.firstElementChild) top.firstElementChild.style.width = (t ? t.scrollWidth : c.scrollWidth) + 'px';
+  top.onscroll = function(){ c.scrollLeft = top.scrollLeft; };
+  c.onscroll  = function(){ top.scrollLeft = c.scrollLeft; };
+  var th1 = c.querySelector('thead tr:first-child th');
+  if (th1) c.style.setProperty('--c1w', th1.offsetWidth + 'px');
+  var tr1 = c.querySelector('thead tr:first-child');
+  if (tr1) c.style.setProperty('--h1', tr1.offsetHeight + 'px');
+}
+var compOrdenaWin = false;   // false = colunas por cobertura (default) | true = por win rate
+function compToggleOrdena(){ compOrdenaWin = !compOrdenaWin; renderComparativo(undefined, true); }
+// ── DRILL-DOWN do histórico (upgrade 22/07): clique na célula abre mini-histórico daquele
+//    fornecedor naquele item (historico_precos + v_preco_variacao, fetch só ao clicar, com cache).
+var _cmpDrillCache = {};
+function _cmpDrillFecha(){ var p=document.getElementById('cmp-drill'); if(p) p.remove(); document.removeEventListener('click', _cmpDrillFecha); }
+async function _cmpDrill(ev, el){
+  ev.stopPropagation();                                   // não seleciona a linha
+  _cmpDrillFecha();
+  const forn = decodeURIComponent(el.dataset.forn||''), prod = decodeURIComponent(el.dataset.prod||'');
+  const pop = document.createElement('div');
+  pop.id = 'cmp-drill';
+  pop.style.cssText = 'position:fixed;z-index:9999;background:#fff;border:1px solid #B4B2A9;border-radius:10px;box-shadow:0 8px 30px rgba(0,0,0,.18);padding:12px 14px;font-size:12px;min-width:250px;max-width:340px';
+  const x = Math.min(ev.clientX, window.innerWidth-360), y = Math.min(ev.clientY+8, window.innerHeight-220);
+  pop.style.left = Math.max(8,x)+'px'; pop.style.top = Math.max(8,y)+'px';
+  pop.innerHTML = '<div style="font-weight:700;margin-bottom:6px">📈 '+forn+'<div style="font-weight:400;font-size:11px;color:#777">'+prod+'</div></div><div id="cmp-drill-body" style="color:#888">carregando…</div>';
+  pop.onclick = function(e){ e.stopPropagation(); };
+  document.body.appendChild(pop);
+  setTimeout(function(){ document.addEventListener('click', _cmpDrillFecha); }, 0);
+  const key = forn+'||'+prod;
+  try {
+    if (!_cmpDrillCache[key]) {
+      const q = 'fornecedor=eq.'+encodeURIComponent(forn)+'&produto=eq.'+encodeURIComponent(prod);
+      // FPMED ainda não captura histórico de preços (historico_precos/v_preco_variacao vazios ou
+      // ausentes). Cada fonte é buscada de forma independente e tolerante a falha -> degrada p/
+      // "sem histórico", nunca lança erro. Quando o Lemuel ligar a captura, o drill-down acende sozinho.
+      const _safe = (url) => fetch(url, {headers:SH}).then(r=>r.ok?r.json():[]).catch(()=>[]);
+      const [h, v] = await Promise.all([
+        _safe(SUPA_URL2+'/rest/v1/historico_precos?select=compra_unit,capturado_em,origem&'+q+'&order=capturado_em.desc&limit=8'),
+        _safe(SUPA_URL2+'/rest/v1/v_preco_variacao?select=preco_atual,preco_anterior,data_anterior,var_pct&'+q+'&limit=1')
+      ]);
+      _cmpDrillCache[key] = { h: Array.isArray(h)?h:[], v: (Array.isArray(v)&&v[0])||null };
+    }
+    const d = _cmpDrillCache[key];
+    const body = document.getElementById('cmp-drill-body'); if(!body) return;
+    let html = '';
+    if (d.v && d.v.var_pct != null) {
+      const up = d.v.var_pct > 0;
+      html += '<div style="margin-bottom:6px;padding:4px 8px;border-radius:7px;background:'+(up?'#FDECEA':'#E1F5EE')+';color:'+(up?'#C0392B':'#0F6E56')+';font-weight:600">'+(up?'▲':'▼')+' '+Math.abs(d.v.var_pct)+'% desde '+String(d.v.data_anterior).slice(0,10).split('-').reverse().join('/')+' ('+fmtBRL(d.v.preco_anterior)+' → '+fmtBRL(d.v.preco_atual)+')</div>';
+    }
+    if (d.h.length) {
+      html += d.h.map(function(x){ return '<div style="display:flex;justify-content:space-between;gap:12px;padding:2px 0;border-bottom:1px dashed #eee"><span style="color:#777">'+String(x.capturado_em||'').slice(0,10).split('-').reverse().join('/')+'</span><span style="font-weight:600">'+fmtBRL(x.compra_unit)+'</span><span style="color:#bbb;font-size:10px">'+(x.origem||'')+'</span></div>'; }).join('');
+    } else if (!d.v) {
+      html += '<div style="color:#999">sem histórico gravado ainda — o preço atual é o único conhecido</div>';
+    }
+    body.innerHTML = html || '<div style="color:#999">sem histórico gravado ainda</div>';
+  } catch(e) { const body=document.getElementById('cmp-drill-body'); if(body) body.innerHTML='<div style="color:#C0392B">erro ao buscar histórico</div>'; }
+}
 
 function renderComparativo(termo, manterLimite) {
   if (termo === undefined) termo = document.getElementById('comp-busca')?.value || '';
@@ -2307,11 +2400,24 @@ function renderComparativo(termo, manterLimite) {
   const cobertura = {};
   todosForns.forEach(f => cobertura[f] = 0);
   compLista.forEach(g => g.opcoes.forEach(o => { if(cobertura[o.forn]!==undefined) cobertura[o.forn]++; }));
-  // ordena por cobertura (mais preenchida primeiro); empate = alfabético; indústria sempre depois
+  // ── SCORECARD por fornecedor (upgrade 22/07): win rate (% das linhas onde é o mais barato
+  //    entre distribuidores) + idade média das cotações. Camada de leitura — pool intacto.
+  const winCount = {}, idadeSoma = {}, idadeN = {};
+  todosForns.forEach(f => { winCount[f]=0; idadeSoma[f]=0; idadeN[f]=0; });
+  compLista.forEach(g => {
+    const dOps = g.opcoes.filter(o => !ehIndustria(o.forn, o) && !ehGlobal(o) && o.compra > 0);
+    if (dOps.length) { const min = Math.min(...dOps.map(o=>o.compra)); dOps.forEach(o => { if (Math.abs(o.compra-min)<0.001 && winCount[o.forn]!==undefined) winCount[o.forn]++; }); }
+    g.opcoes.forEach(o => { if (o.quando && idadeSoma[o.forn]!==undefined) { idadeSoma[o.forn]+=o.quando.dias; idadeN[o.forn]++; } });
+  });
+  const winRate = f => cobertura[f] ? Math.round(winCount[f]/cobertura[f]*100) : 0;
+  const idadeMed = f => idadeN[f] ? Math.round(idadeSoma[f]/idadeN[f]) : null;
+  // ordena por cobertura (default) OU por win rate (toggle); empate = alfabético; indústria sempre depois
   const porCobertura = (a,b) => (cobertura[b]-cobertura[a]) || a.localeCompare(b);
+  const porWin = (a,b) => (winRate(b)-winRate(a)) || (cobertura[b]-cobertura[a]) || a.localeCompare(b);
+  const ordCol = compOrdenaWin ? porWin : porCobertura;
   const visivel = f => compMostrarTodas || cobertura[f] >= COMP_MIN_COBERTURA;
-  const distTodos = todosForns.filter(f=>!ehIndustria(f)).sort(porCobertura);
-  const indTodos  = todosForns.filter(f=>ehIndustria(f)).sort(porCobertura);
+  const distTodos = todosForns.filter(f=>!ehIndustria(f)).sort(ordCol);
+  const indTodos  = todosForns.filter(f=>ehIndustria(f)).sort(ordCol);
   const distribuidores = distTodos.filter(visivel);
   const industrias     = indTodos.filter(visivel);
   const nOcultas = (distTodos.length-distribuidores.length) + (indTodos.length-industrias.length);
@@ -2328,12 +2434,13 @@ function renderComparativo(termo, manterLimite) {
   // aviso das colunas ocultas + botão de alternar
   const colInfo = document.getElementById('comp-colunas-info');
   if (colInfo) {
-    colInfo.innerHTML = (nOcultas > 0 || compMostrarTodas)
+    colInfo.innerHTML = ((nOcultas > 0 || compMostrarTodas)
       ? `<span style="font-size:11px;color:var(--muted)">${compMostrarTodas
             ? 'mostrando as '+(distTodos.length+indTodos.length)+' colunas'
             : nOcultas+' coluna(s) oculta(s) · menos de '+COMP_MIN_COBERTURA+' cotações'}</span>
          <button onclick="compToggleColunas()" style="margin-left:8px;font-size:11px;padding:3px 10px;border:1px solid #B4B2A9;border-radius:6px;background:white;cursor:pointer">${compMostrarTodas?'ocultar vazias':'mostrar todas'}</button>`
-      : '';
+      : '')
+      + `<button onclick="compToggleOrdena()" title="ordem das colunas de fornecedor" style="margin-left:8px;font-size:11px;padding:3px 10px;border:1px solid #B4B2A9;border-radius:6px;background:${compOrdenaWin?'#E1F5EE':'white'};cursor:pointer">colunas: ${compOrdenaWin?'🏆 win rate':'cobertura'}</button>`;
   }
 
   const totalLinhas = compLista.length;
@@ -2394,13 +2501,22 @@ function renderComparativo(termo, manterLimite) {
          </td>`
       : `<td style="text-align:center;padding:6px 10px;border-bottom:0.5px solid #f0f0f0;color:#ccc;font-size:11px">—</td>`;
 
-    // Células por distribuidor
+    // Células por distribuidor — HEATMAP pelo ranking do preço NA LINHA (upgrade 22/07):
+    // verde = mais barato do pool, amarelo = meio, vermelho = mais caro. Discreto (3 tons).
+    // Clique na célula = mini-histórico do fornecedor naquele item (drill-down).
+    const distValsAsc = distOps.filter(o=>o.compra>0).map(o=>o.compra).sort((a,b)=>a-b);
+    const heatBg = (v) => {
+      if (distValsAsc.length < 2) return '#FAFEF7';
+      const rank = distValsAsc.findIndex(x => Math.abs(x-v) < 0.001);
+      const pct = rank / (distValsAsc.length - 1);
+      return pct <= 0.34 ? '#E1F5EE' : pct <= 0.67 ? '#FFF8E1' : '#FDECEA';
+    };
     const celDist = distribuidores.map(f => {
       const op = g.opcoes.find(o=>o.forn===f);
       const isMenor = menorDist!=null && op && Math.abs(op.compra-menorDist)<0.001;
       return op
-        ? `<td style="text-align:center;padding:6px 10px;border-bottom:0.5px solid #f0f0f0;background:${isMenor?'#E1F5EE':'#FAFEF7'}">
-            <div style="font-size:11px;font-weight:${isMenor?'700':'400'};color:${isMenor?'#0F6E56':'#27500A'}">${isMenor?'✅ ':''}${fmtBRL(op.compra)}</div>
+        ? `<td data-forn="${encodeURIComponent(f)}" data-prod="${encodeURIComponent(op.produto||'')}" onclick="_cmpDrill(event,this)" title="clique: histórico de preço" style="cursor:pointer;text-align:center;padding:6px 10px;border-bottom:0.5px solid #f0f0f0;background:${heatBg(op.compra)}">
+            <div style="font-size:11px;font-weight:${isMenor?'700':'400'};color:${isMenor?'#0F6E56':'#27500A'};${isMenor?'text-decoration:underline':''}">${isMenor?'✅ ':''}${fmtBRL(op.compra)}</div>
             <div style="font-size:9px;color:#aaa">venda: ${fmtBRL(op.compra*1.32)}</div>
             <div style="font-size:9px;color:#bbb">${op.marca}</div>
             ${op.quando ? `<div style="font-size:9px;color:${_cmpIdadeCor(op.quando.dias)}" title="cotação de ${op.quando.dias} dias atrás">${op.quando.txt}</div>` : ''}
@@ -2413,7 +2529,7 @@ function renderComparativo(termo, manterLimite) {
       const op = g.opcoes.find(o=>o.forn===f);
       const isMenor = menorInd!=null && op && Math.abs(op.compra-menorInd)<0.001;
       return op
-        ? `<td style="text-align:center;padding:6px 10px;border-bottom:0.5px solid #f0f0f0;background:${isMenor?'#DBEAFE':'#F0F7FF'}">
+        ? `<td data-forn="${encodeURIComponent(f)}" data-prod="${encodeURIComponent(op.produto||'')}" onclick="_cmpDrill(event,this)" title="clique: histórico de preço" style="cursor:pointer;text-align:center;padding:6px 10px;border-bottom:0.5px solid #f0f0f0;background:${isMenor?'#DBEAFE':'#F0F7FF'}">
             <div style="font-size:11px;font-weight:${isMenor?'700':'400'};color:${isMenor?'#1D4ED8':'#0C447C'}">${isMenor?'🏭 ':''}${fmtBRL(op.compra)}</div>
             <div style="font-size:9px;color:#bbb">${op.marca}</div>
             ${op.quando ? `<div style="font-size:9px;color:${_cmpIdadeCor(op.quando.dias)}" title="cotação de ${op.quando.dias} dias atrás">${op.quando.txt}</div>` : ''}
@@ -2437,16 +2553,25 @@ function renderComparativo(termo, manterLimite) {
          </td>`
       : `<td style="text-align:center;padding:6px 10px;border-bottom:0.5px solid #f0f0f0;color:#ccc;font-size:11px">—</td>`;
 
+    // Δ vs MELHOR (upgrade 22/07): quanto o 2º colocado está acima do melhor preço da linha
+    // (dist+indústria, sem GLOBAL) = folga de negociação. 1 cotação só = "único".
+    const todosVals = g.opcoes.filter(o=>!ehGlobal(o) && o.compra>0).map(o=>o.compra).sort((a,b)=>a-b);
+    const celDelta = todosVals.length >= 2
+      ? `<td style="text-align:center;padding:6px 10px;border-bottom:0.5px solid #f0f0f0;vertical-align:middle" title="2º colocado ${fmtBRL(todosVals[1])} vs melhor ${fmtBRL(todosVals[0])} — margem de aperto na negociação">
+          <div style="font-size:12px;font-weight:700;color:${((todosVals[1]-todosVals[0])/todosVals[0]*100)>=15?'#0F6E56':'#666'}">+${((todosVals[1]-todosVals[0])/todosVals[0]*100).toFixed(1)}%</div>
+          <div style="font-size:9px;color:#aaa">2º vs melhor</div>
+         </td>`
+      : `<td style="text-align:center;padding:6px 10px;border-bottom:0.5px solid #f0f0f0;color:#bbb;font-size:10px" title="só 1 fornecedor cotou — sem base de comparação">único</td>`;
     const rowBg = isSel ? '#EDE9FE' : isPromo ? '#FFFBF0' : idx%2===0 ? 'white' : '#fafcfa';
     const rowBorderL = isSel ? '3px solid #7C3AED' : '3px solid transparent';
     return `<tr style="background:${rowBg};border-left:${rowBorderL};cursor:pointer;transition:background 0.1s" onclick="compToggle('${g.chave.replace(/'/g,"\\'")}',this)">
-      <td style="text-align:center;padding:6px 10px;border-bottom:0.5px solid #f0f0f0;width:40px;vertical-align:middle">
+      <td style="text-align:center;padding:6px 10px;border-bottom:0.5px solid #f0f0f0;width:40px;vertical-align:middle;background:${rowBg}">
         <label style="display:flex;align-items:center;justify-content:center;cursor:pointer" onclick="event.stopPropagation()">
           <input type="checkbox" ${isSel?'checked':''} onchange="compToggle('${g.chave.replace(/'/g,"\\'")}',this.closest('tr'))"
             style="width:16px;height:16px;cursor:pointer;accent-color:#7C3AED">
         </label>
       </td>
-      <td style="padding:6px 12px;border-bottom:0.5px solid #f0f0f0;vertical-align:middle">
+      <td style="padding:6px 12px;border-bottom:0.5px solid #f0f0f0;vertical-align:middle;background:${rowBg}">
         <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
           <span style="font-size:12px;font-weight:600;color:#1a2e1a">${labelExibicao(g)}</span>
           ${isPromo ? '<span style="font-size:10px;font-weight:700;background:#FF6B00;color:white;padding:1px 6px;border-radius:8px">🏷️ PROMO</span>' : ''}
@@ -2454,19 +2579,29 @@ function renderComparativo(termo, manterLimite) {
         </div>
         <div style="font-size:10px;color:#aaa;margin-top:2px">${g.opcoes.length} opção(ões)${g.marcaGlobal ? ' · <span style="color:#7C3AED;font-weight:500">'+g.marcaGlobal+'</span>' : ''}</div>
       </td>
-      ${celGlobal}${celMedia}${celSeuPreco}${celFonte}${celValeComprar}${celDist}${celInd}
+      ${celGlobal}${celMedia}${celSeuPreco}${celFonte}${celDelta}${celValeComprar}${celDist}${celInd}
     </tr>`;
   }).join('');
 
-  el.innerHTML = `<div style="overflow-x:auto">
+  // header da coluna Δ vs melhor + SCORECARD (linha extra sob o cabeçalho: cobertura + win rate + idade média)
+  const thDelta = `<th style="text-align:center;min-width:80px;padding:8px 10px;background:#F3F4F6;color:#374151;font-size:10px;font-weight:600;border-bottom:0.5px solid #D1D5DB;white-space:nowrap">📐 Δ vs melhor<br><span style="font-weight:400;font-size:9px">folga de negociação</span></th>`;
+  const scoreTd = (f, bg) => { const im = idadeMed(f); return `<th style="text-align:center;padding:4px 6px;background:${bg};border-bottom:0.5px solid #e0e8e0;font-weight:400;font-size:9px;color:#555;white-space:nowrap" title="${cobertura[f]} itens cotados · ganha em ${winCount[f]} (${winRate(f)}% win rate)${im!=null?' · cotações com ~'+im+' dias':''}">${cobertura[f]} itens<br><b style="color:${winRate(f)>=30?'#0F6E56':'#555'}">🏆 ${winRate(f)}%</b>${im!=null?`<br><span style="color:${_cmpIdadeCor(im)}">~${im}d</span>`:''}</th>`; };
+  const scoreRow = `<tr>
+      <th colspan="7" style="text-align:right;padding:4px 10px;background:#fcfcfa;border-bottom:0.5px solid #e0e8e0;font-size:9px;color:#999;font-weight:400">scorecard → itens cotados · 🏆 win rate (mais barato) · idade média</th>
+      ${distribuidores.map(f=>scoreTd(f,'#F4F9EC')).join('')}${industrias.map(f=>scoreTd(f,'#EFF6FD')).join('')}
+    </tr>`;
+
+  el.innerHTML = `<div class="hscroll-top" id="comp-hst"><div></div></div>
+  <div class="cmp-tscroll" id="comp-tsc">
   <table style="width:100%;border-collapse:collapse;font-size:12px">
     <thead><tr style="background:#f8faf8">
       <th style="width:36px;border-bottom:0.5px solid #e0e8e0"></th>
       <th style="text-align:left;padding:9px 12px;border-bottom:0.5px solid #e0e8e0;min-width:200px;font-size:10px;font-weight:600;color:#555">Princípio Ativo</th>
-      ${thGlobal}${thMediaMercado}${thSeuPreco}${thFonteIdeal}${thValeComprar}${thDist}${thInd}
-    </tr></thead>
+      ${thGlobal}${thMediaMercado}${thSeuPreco}${thFonteIdeal}${thDelta}${thValeComprar}${thDist}${thInd}
+    </tr>${scoreRow}</thead>
     <tbody>${rows}</tbody>
   </table></div>${compMontarBotaoMais(totalLinhas)}`;
+  _mkTopScroll('comp-hst','comp-tsc');
 }
 
 // Rodapé com botão de paginação
@@ -2995,7 +3130,14 @@ var _CPZ_CONFIRMADOS = [
   '*FLUOXETINA 20MG CX30 CPR (C1)',
   '*DIAZEPAM INJ.10MG CX100 AMP 2ML (B1)',
   '*VENVANSE 50MG CX28 CAPS (A3)',
-  'DOPAMINA 5MG/ML INJ CX100 AMP 10ML'
+  'DOPAMINA 5MG/ML INJ CX100 AMP 10ML',
+  // ── curadoria 22/07 (OK Lemuel): marca vs genérico — prêmio de marca REAL, preço dos
+  //    concorrentes conferido. VENVANSE 50 já estava (20/07); voltou à revisão pelo gatilho
+  //    de MISTURA (pool varia >3x = genérico barato x marca cara no mesmo pool, esperado
+  //    p/ lisdexanfetamina) — por isso confirmado agora VENCE o gatilho de mistura tb.
+  '*VENVANSE 30MG CX28 CAPS (A3)',
+  '*VENVANSE 70MG CX28 CAPS (A3)',
+  'DIAD 1,5MG CX1 CPR'
 ];
 // compara por nome normalizado (espaco/caixa) — o nome do GLOBAL e' estavel e auditavel a olho
 function _cpzCur(s){ return String(s==null?'':s).toUpperCase().replace(/\s+/g,' ').trim(); }
@@ -3085,6 +3227,43 @@ function _cpzVsGenerico(nomeNosso, pa, pool){
   return pool.length>0 && gen/pool.length>=0.5;
 }
 
+// ── GIRO / IMPACTO EM R$ (upgrade 22/07, aprovado): cruza o histórico de vendas REAL
+// (compra_itens.codigo_erp x codigo do GLOBAL) e estima o volume MENSAL vendido por item.
+// impacto/mês = (nosso preço − média do mercado) × volume mensal. Item sem venda no
+// histórico = "sem giro" (não inventa número). Camada por CIMA da engine — zero cálculo mudado.
+var _cpzGiro = null;            // mapa codigo(sem zeros) -> {volMes, qtdTotal, meses}
+var _cpzGiroLoading = false;
+async function _cpzCarregaGiro(){
+  if (_cpzGiro || _cpzGiroLoading) return;
+  _cpzGiroLoading = true;
+  try {
+    const r = await fetch(`${SUPA_URL2}/rest/v1/compra_itens?select=codigo_erp,quantidade,compras!inner(data_compra)&limit=10000`, { headers: SH });
+    const d = await r.json();
+    const porCod = {}; let dMin = null, dMax = null;
+    (Array.isArray(d)?d:[]).forEach(function(it){
+      const cod = String(it.codigo_erp||'').replace(/^0+/,''); if(!cod) return;
+      const q = parseFloat(it.quantidade)||0; if(!(q>0)) return;
+      porCod[cod] = (porCod[cod]||0) + q;
+      const dc = it.compras && it.compras.data_compra; if(dc){ if(!dMin||dc<dMin) dMin=dc; if(!dMax||dc>dMax) dMax=dc; }
+    });
+    // meses do histórico (span real das compras; mínimo 1 pra não dividir por ~0)
+    const meses = (dMin&&dMax) ? Math.max(1, (new Date(dMax) - new Date(dMin)) / (1000*60*60*24*30.44)) : 1;
+    const m = {};
+    Object.keys(porCod).forEach(function(c){ m[c] = { qtdTotal: porCod[c], meses: meses, volMes: porCod[c]/meses }; });
+    _cpzGiro = m;
+  } catch(e) { _cpzGiro = {}; }
+  _cpzGiroLoading = false;
+  if (document.getElementById('cpz-tbody')) renderCompetitividade();   // re-render silencioso quando o giro chegar
+}
+// anexa impacto nas rows já computadas (camada de leitura; null = sem giro)
+function _cpzAnexaImpacto(){
+  if (!_cpzGiro) return;
+  _cpzRows.forEach(function(r){
+    const g = _cpzGiro[String(r.codigo==null?'':r.codigo).replace(/^0+/,'')];
+    r.giroMes = g ? g.volMes : null;
+    r.impacto = (g && r.nosso > r.media) ? (r.nosso - r.media) * g.volMes : (g ? 0 : null);
+  });
+}
 function _cpzComputar(){
   var cots = (typeof cotacoes!=='undefined'?cotacoes:[]);
   var concBy={}, indBy={};
@@ -3120,13 +3299,15 @@ function _cpzComputar(){
     var mistura = _cpzMistura(pool);            // pool com cheiro de mistura -> REVISAR, fora dos KPIs
     var vsGen = _cpzVsGenerico(g.produto, g.principio_ativo, pool);
     var packDif = _cpzPackDif(g.produto, pool);   // selo explicativo; NÃO tira dos KPIs
-    var revisar = (acima>60 && !confirmado) || !!mistura;
+    // CONFIRMADO vence os DOIS gatilhos (curadoria 22/07): item conferido com o Lemuel não é
+    // suspeita — nem por >60% nem por mistura (marca x genérico no mesmo pool varia >3x e é real).
+    var revisar = !confirmado && ((acima>60) || !!mistura);
     var motivoRev = mistura ? mistura : (revisar ? 'preço '+Math.round(acima)+'% acima do melhor concorrente' : null);
     var custoAlvo=media/1.32;                  // comprar por ≤ isto garante MKP 32% vendendo na média
     var ind=null;
     if(cen==='vermelho'){ var ip=(indBy[k]||[]).slice().sort(function(a,b){return a.cu-b.cu;})[0]; if(ip && ip.cu<=custoAlvo) ind=ip; }
     var indMin=(indBy[k]||[]).slice().sort(function(a,b){return a.cu-b.cu;})[0]||null;   // indústria/compra-direta mais barata (p/ solução do MKP)
-    rows.push({id:_id++, prod:g.produto, pa:g.principio_ativo, nosso:nosso, custoRef:custoRef, melhor:melhor, media:media, mediana:_cpzMed(pool.map(function(x){return x.cu;})), pool:pool.slice(), nConc:pool.length, cen:cen, acima:acima, acimaMedia:acimaMedia, mkpMed:mkpMed, revisar:revisar, motivoRev:motivoRev, mistura:mistura, vsGen:vsGen, packDif:packDif, ind:ind, indMin:indMin, qtd:qtd, gv1:gv1});
+    rows.push({id:_id++, prod:g.produto, pa:g.principio_ativo, nosso:nosso, custoRef:custoRef, melhor:melhor, media:media, mediana:_cpzMed(pool.map(function(x){return x.cu;})), pool:pool.slice(), nConc:pool.length, cen:cen, acima:acima, acimaMedia:acimaMedia, mkpMed:mkpMed, revisar:revisar, motivoRev:motivoRev, mistura:mistura, vsGen:vsGen, packDif:packDif, ind:ind, indMin:indMin, qtd:qtd, gv1:gv1, codigo:g.codigo});   // codigo = passthrough p/ cruzar giro (compra_itens.codigo_erp) — NÃO entra em cálculo
   });
   return rows;
 }
@@ -3135,6 +3316,8 @@ function renderCompetitividade(){
   var root=document.getElementById('cpz-root'); if(!root) return;
   if(typeof espPodeVer==='function' && !espPodeVer()){ root.innerHTML='<div style="text-align:center;padding:60px 20px;color:#5b6b7a">🔒 Acesso restrito — só administrador.</div>'; return; }
   _cpzRows=_cpzComputar();
+  _cpzCarregaGiro();          // 1a vez: dispara o fetch do histórico; re-renderiza sozinho ao chegar
+  _cpzAnexaImpacto();         // anexa impacto/mês quando o giro já está em memória
   var allTotal=_cpzRows.length;
   var susp=_cpzRows.filter(function(r){return r.revisar;});          // >60% acima = suspeita de preço errado no banco (fora dos KPIs)
   var conf=_cpzRows.filter(function(r){return !r.revisar;});         // dado confiável
@@ -3158,6 +3341,12 @@ function renderCompetitividade(){
      '<div class="kpi"><div class="n '+(medMkp>=20?'c-green':medMkp>=0?'c-amber':'c-red')+'">'+(medMkp>=0?'+':'')+medMkp.toFixed(0)+'%</div><div class="l">MKP vendendo na média (mediana)</div></div>'+
      '<div class="kpi"><div class="n c-green">'+cnt.verde+'</div><div class="l">🟢 ganho fácil · vender na média já lucra ≥20%</div></div>'+
      '<div class="kpi"><div class="n c-red">'+cnt.vermelho+'</div><div class="l">🔴 prejuízo até na média · comprar melhor</div></div>'+
+     (function(){ // KPI R$ EM JOGO/MÊS: soma do impacto dos vermelhos confiáveis COM giro (venda real)
+        if(!_cpzGiro) return '<div class="kpi"><div class="n" style="color:var(--dim)">…</div><div class="l">💸 R$ em jogo/mês · carregando giro</div></div>';
+        var emJogo=0, comGiro=0;
+        conf.forEach(function(r){ if(r.cen==='vermelho' && r.impacto>0){ emJogo+=r.impacto; comGiro++; } });
+        return '<div class="kpi"><div class="n c-red">'+_cpzMoney(emJogo)+'</div><div class="l">💸 em jogo/mês nos 🔴 ('+comGiro+' c/ giro) · (nosso−média)×vol. mensal vendido</div></div>';
+     })()+
      '</div>';
   // ── SUSPEITOS (preço de concorrente com granularidade errada / caixa÷unidade) ──
   if(susp.length){
@@ -3178,15 +3367,16 @@ function renderCompetitividade(){
   // ── TABELA ──
   h+='<div class="sec"><h2>Detalhe por item</h2><div class="hint">Nosso preço, a melhor oferta do concorrente e o que dá pra fazer. Clique no cabeçalho pra ordenar.</div>'+
      '<div class="cz-tools"><input id="cpz-busca" placeholder="Buscar produto ou PA…" style="min-width:230px" oninput="_cpzBusca=this.value;_cpzTabela()">'+
-     '<select id="cpz-cor" onchange="_cpzFiltroCor=this.value;_cpzTabela()"><option value="">todas ('+allTotal+')</option>'+
+     '<select id="cpz-cor" onchange="_cpzFiltroCor=this.value;if(this.value===\'vermelho\'){_cpzSort={col:\'impacto\',dir:-1};}_cpzTabela()"><option value="">todas ('+allTotal+')</option>'+
      '<option value="verde">ganho fácil ('+cntAll.verde+')</option><option value="amarelo">margem aperta ('+cntAll.amarelo+')</option>'+
      '<option value="vermelho">comprar melhor ('+cntAll.vermelho+')</option><option value="competitivo">competitivo ('+cntAll.competitivo+')</option>'+
      '<option value="suspeito">⚠ suspeitos >60% ('+susp.length+')</option></select>'+
      '<button class="cz-btn" onclick="_cpzSelFiltrados()">☑ selecionar filtrados</button>'+
      '<button class="cz-btn" onclick="cpzRelatorio()" style="background:var(--cyan-deep);border-color:var(--cyan)">📄 Relatório PDF (<span id="cpz-nsel">0</span>)</button>'+
      '<span style="font-size:12px;color:var(--dim)" id="cpz-cont"></span></div>'+
-     '<div class="card" style="overflow-x:auto"><table><thead><tr>'+
-     '<th style="width:26px;cursor:default"></th>'+_cpzTh('prod','Produto')+_cpzTh('nosso','Nosso')+_cpzTh('melhor','Concorrentes cotados (melhor sublinhado)')+_cpzTh('media','Média merc.')+_cpzTh('acima','Acima')+'<th>Situação</th></tr></thead>'+
+     '<div class="hscroll-top" id="cpz-hst"><div></div></div>'+
+     '<div class="card tscroll" id="cpz-tsc"><table><thead><tr>'+
+     '<th style="width:26px;cursor:default"></th>'+_cpzTh('prod','Produto')+_cpzTh('nosso','Nosso')+_cpzTh('melhor','Concorrentes cotados (melhor sublinhado)')+_cpzTh('media','Média merc.')+_cpzTh('acima','Acima')+_cpzTh('impacto','Impacto/mês')+'<th>Situação</th></tr></thead>'+
      '<tbody id="cpz-tbody"></tbody></table></div></div>';
   // ── BUCKETS (só confiável) ──
   var sample=function(cor){return conf.filter(function(r){return r.cen===cor;}).sort(function(a,b){return b.acima-a.acima;}).slice(0,6).map(function(r){return _cpzNome(r);}).join(' · ')||'—';};
@@ -3198,6 +3388,7 @@ function renderCompetitividade(){
   h+='<div class="foot"><span class="tag">✅ '+cnt.competitivo+' itens já competitivos</span> (nosso preço já ≤ média do mercado). <b>Régua:</b> classificação pela <b>MKP se vender na média</b> (custo = preço ÷ 1,25) — 🟢 ≥20%, 🟡 0–20%, 🔴 &lt;0. "vs melhor" é só informativo. KPIs/barras usam só os <b>'+total+' confiáveis</b>; os <b>'+susp.length+'</b> com &gt;60% acima do melhor ficam no bloco de suspeita.<br><b>Selos:</b> <b>vs genérico</b> = nosso item é a marca e os concorrentes cotados são genéricos (prêmio de marca é esperado). <b>pack N vs M</b> = o concorrente mais barato vende em pack N e o nosso é M — pack maior sempre tem unitário menor. Os dois explicam o "% acima" sem tirar o item dos KPIs.<br><b>Base:</b> '+allTotal+' itens FPMED com estoque e ≥1 concorrente. Concorrente = todo fornecedor exceto o FPMED e compra-direta/indústria. Média sobre todas as cotações limpas.</div>';
   root.innerHTML=h;
   _cpzTabela();
+  _mkTopScroll('cpz-hst','cpz-tsc');
 }
 function _cpzNome(r){ var n=String(r.prod||'').replace(/^[*#>+\s]+/,''); return n.length>34?n.slice(0,34)+'…':n; }
 function _cpzTh(col,label){ var ar=_cpzSort.col===col?(_cpzSort.dir<0?' ▾':' ▴'):''; return '<th onclick="_cpzOrdenar(\''+col+'\')">'+label+ar+'</th>'; }
@@ -3209,21 +3400,28 @@ function _cpzTabela(){
   else if(_cpzFiltroCor) arr=arr.filter(function(r){return r.cen===_cpzFiltroCor;});
   if(_cpzBusca){ var q=_cpzBusca.toLowerCase(); arr=arr.filter(function(r){return (r.prod||'').toLowerCase().indexOf(q)>=0 || (r.pa||'').toLowerCase().indexOf(q)>=0;}); }
   var c=_cpzSort.col, d=_cpzSort.dir;
-  arr.sort(function(a,b){ var va,vb; if(c==='prod'){va=(a.prod||'');vb=(b.prod||'');return va<vb?-d:va>vb?d:0;} if(c==='pa'){va=(a.pa||'');vb=(b.pa||'');return va<vb?-d:va>vb?d:0;} va=(c==='nosso'?a.nosso:c==='melhor'?a.melhor.cu:c==='media'?a.media:a.acima); vb=(c==='nosso'?b.nosso:c==='melhor'?b.melhor.cu:c==='media'?b.media:b.acima); return (va-vb)*d; });
+  arr.sort(function(a,b){ var va,vb; if(c==='prod'){va=(a.prod||'');vb=(b.prod||'');return va<vb?-d:va>vb?d:0;} if(c==='pa'){va=(a.pa||'');vb=(b.pa||'');return va<vb?-d:va>vb?d:0;} if(c==='impacto'){va=(a.impacto==null?-Infinity:a.impacto);vb=(b.impacto==null?-Infinity:b.impacto);return (va-vb)*d;} va=(c==='nosso'?a.nosso:c==='melhor'?a.melhor.cu:c==='media'?a.media:a.acima); vb=(c==='nosso'?b.nosso:c==='melhor'?b.melhor.cu:c==='media'?b.media:b.acima); return (va-vb)*d; });
   var badge={verde:'<span class="pill p-g">Baixar e lucrar</span>',amarelo:'<span class="pill p-a">Margem aperta</span>',vermelho:'<span class="pill p-r">Comprar melhor</span>',competitivo:'<span class="pill p-c">Competitivo</span>'};
   var html=arr.map(function(r){
     var acimaTxt = r.cen==='competitivo' ? '<span style="color:var(--green)">'+r.acima.toFixed(0)+'%</span>' : '+'+r.acima.toFixed(0)+'%';
-    var sit = badge[r.cen] + (r.revisar?'<span class="pill p-rev" title="'+_cpzEsc(r.motivoRev||'')+'">REVISAR</span>':'') + (r.vsGen?'<span class="pill" style="border:1px solid var(--line);color:var(--dim)" title="nosso item é a marca; os concorrentes cotados são genéricos — o prêmio de marca é esperado">vs genérico</span>':'') + (r.packDif?'<span class="pill" style="border:1px solid var(--line);color:var(--dim)" title="o concorrente mais barato ('+_cpzEsc(r.packDif.forn)+') vende em pack de '+r.packDif.dele+' e o nosso é de '+r.packDif.meu+' — pack maior sempre tem unitário menor">pack '+r.packDif.dele+' vs '+r.packDif.meu+'</span>':'') + (r.ind?'<div style="font-size:11px;color:var(--dim);margin-top:4px">comprar direto da <b style="color:var(--body)">'+_cpzEsc(r.ind.forn)+'</b> a '+_cpzMoney(r.ind.cu)+' resolve</div>':'');
+    // AÇÃO NA LINHA (22/07): vermelho ganha botão "→ fila de cotação" (reusa _cpzAddFila) e a
+    // indústria que resolve (r.ind, já calculado) vira destaque roxo em vez de linha apagada.
+    var acao = (r.cen==='vermelho') ? '<button class="pill" style="border:1px solid var(--cyan);color:var(--cyan-b);background:rgba(58,182,206,.08);cursor:pointer;margin-left:4px" title="manda pra fila Itens a Cotar (cotar fornecedor novo)" onclick="_cpzAddFila('+r.id+')">→ fila de cotação</button>' : '';
+    var sit = badge[r.cen] + acao + (r.revisar?'<span class="pill p-rev" title="'+_cpzEsc(r.motivoRev||'')+'">REVISAR</span>':'') + (r.vsGen?'<span class="pill" style="border:1px solid var(--line);color:var(--dim)" title="nosso item é a marca; os concorrentes cotados são genéricos — o prêmio de marca é esperado">vs genérico</span>':'') + (r.packDif?'<span class="pill" style="border:1px solid var(--line);color:var(--dim)" title="o concorrente mais barato ('+_cpzEsc(r.packDif.forn)+') vende em pack de '+r.packDif.dele+' e o nosso é de '+r.packDif.meu+' — pack maior sempre tem unitário menor">pack '+r.packDif.dele+' vs '+r.packDif.meu+'</span>':'') + (r.ind?'<div style="font-size:11px;margin-top:5px;padding:4px 8px;border-radius:8px;background:rgba(124,58,237,.12);border:1px solid rgba(124,58,237,.45);color:#c4b5fd">🏭 <b>'+_cpzEsc(r.ind.forn)+'</b> resolve a '+_cpzMoney(r.ind.cu)+'</div>':'');
+    var impTd = (r.impacto==null)
+      ? '<td class="center" style="color:var(--dim);font-size:11px" title="sem venda no histórico (compra_itens) — impacto não estimável">'+(_cpzGiro?'sem giro':'…')+'</td>'
+      : '<td class="diff" title="(nosso '+_cpzMoney(r.nosso)+' − média '+_cpzMoney(r.media)+') × '+r.giroMes.toFixed(1)+' un/mês vendidas">'+(r.impacto>0?'<b style="color:var(--red)">'+_cpzMoney(r.impacto)+'</b>':'<span style="color:var(--green)">—</span>')+'<div style="font-size:10px;color:var(--dim)">'+r.giroMes.toFixed(1)+' un/mês</div></td>';
     return '<tr><td class="ct"><input type="checkbox" onchange="_cpzToggleSel('+r.id+',this.checked)" '+(_cpzSel[r.id]?'checked':'')+'></td>'+
       '<td class="prod">'+_cpzEsc(_cpzNome(r))+'<div style="font-size:11px;color:var(--dim);font-weight:400">'+_cpzEsc(_cpzPaNorm(r.pa))+'</div></td>'+
       '<td class="our">'+_cpzMoney(r.nosso)+'</td>'+
       '<td class="comp" style="max-width:340px;white-space:normal;line-height:1.7">'+r.pool.map(function(p,i){return '<span'+(i===0?' style="text-decoration:underline;color:var(--ink);font-weight:700"':'')+'>'+_cpzEsc(p.forn)+' '+_cpzMoney(p.cu)+'</span>';}).join('<span style="color:var(--line2)"> · </span>')+'</td>'+
       '<td class="comp">'+_cpzMoney(r.media)+' <span style="font-size:10.5px">('+r.nConc+')</span>'+_cpzMkpMediaBlock(r)+'</td>'+
-      '<td class="diff">'+acimaTxt+'</td><td class="center">'+sit+'</td></tr>';
+      '<td class="diff">'+acimaTxt+'</td>'+impTd+'<td class="center">'+sit+'</td></tr>';
   }).join('');
-  tb.innerHTML=html||'<tr><td colspan="7" style="text-align:center;color:var(--dim);padding:20px">nenhum item</td></tr>';
+  tb.innerHTML=html||'<tr><td colspan="8" style="text-align:center;color:var(--dim);padding:20px">nenhum item</td></tr>';
   _cpzAtualizaNSel();
   var cont=document.getElementById('cpz-cont'); if(cont) cont.textContent=arr.length+' item(ns)';
+  _mkTopScroll('cpz-hst','cpz-tsc');   // re-sincroniza a barra do topo (largura muda com filtro/busca)
 }
 function cpzExport(){
   if(!_cpzRows.length){ alert('Nada pra exportar — abra a tela primeiro.'); return; }
