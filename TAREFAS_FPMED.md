@@ -8,6 +8,60 @@
 
 Última atualização: 2026-07-23
 
+## 🔐 CONTROLE DE ACESSO POR CARGO (24/07) — RLS no banco, não só no front
+> Decisão do Lemuel: gate de tela não basta (F12 burla a REST). O controle real é **RLS por
+> cargo lido do JWT** (`app_metadata.role` — NÃO editável pelo usuário). Arquivo: `db_rls_cargos.sql`.
+
+**Cargos** (em `app_metadata.role`): `diretor`, `gerente`, `vendedor`, `propostas`.
+Legado: `admin`=diretor, `vendedora`=vendedor, `giovana_only`=propostas.
+**GESTOR** = diretor|gerente (função `cargo_gestor()` no banco).
+
+**Matriz (tela × cargo × API):**
+
+| Recurso | Diretor | Gerente | Vendedor | Propostas |
+|---|---|---|---|---|
+| Entra no back-office (sistema_final, Vendas, Viabilidade, Painel) | ✅ | ✅ | ❌ (só Propostas) | ❌ (só Propostas) |
+| Tela **Propostas** (giovana) | ✅ | ✅ | ✅ | ✅ |
+| Ver **custo de fornecedor / margem / quem fornece** | ✅ | ✅ | ❌ | ❌ |
+| **Cotações** (tabela com custo) via API | ✅ lê base | ✅ lê base | ❌ RLS bloqueia (lê view `cotacoes_vendedor` sem custo) | idem vendedor |
+| Telas de inteligência (Competitividade, Compras/Cliente, Clientes&Op, Itens a Cotar) | ✅ | ✅ | ❌ | ❌ |
+| **Gravar** na base (Importar Cotação/Espelho, Atualizar Estoque, Pedido Fechado) | ✅ | ✅ | ❌ 403 | ❌ 403 |
+| **Apagar** cotação / desfazer | ✅ | ✅ | ❌ | ❌ |
+| **IA Ler Pedido** + Importar lista (montar proposta) | ✅ | ✅ | ✅ | ❌ |
+| Salvar **orçamento** / cadastrar cliente | ✅ | ✅ | ✅ | ✅ |
+| Enviar proposta **para compras** (pedido) | ✅ | ✅ | ❌ | ❌ |
+
+Obs.: diretor e gerente têm as MESMAS permissões (decisão do Lemuel: escrita/apagar = diretor+gerente).
+A distinção é organizacional; `cargo_destrutivo()`=diretor fica reservada p/ dar poderes só-diretor no futuro.
+
+**Como criar um usuário de cada cargo** (via Admin API, com `service_role` do segredos.local.txt; o
+Claude NÃO digita senha — o usuário troca no 1º login). O papel VAI EM `app_metadata`, nunca em user_metadata:
+```
+# criar:  POST {SB}/auth/v1/admin/users
+{ "email":"fulano@fpmed.com.br", "password":"<temporaria>", "email_confirm":true,
+  "app_metadata": { "role":"gerente" } }        # role = diretor|gerente|vendedor|propostas
+# mudar cargo de quem já existe:  PUT {SB}/auth/v1/admin/users/{id}
+{ "app_metadata": { "role":"vendedor" } }
+```
+⚠️ Corpo JSON via ARQUIVO (`--data-binary @arq.json`): o PowerShell come as aspas em `-d '...'`.
+⚠️ Depois de mudar o cargo, o usuário precisa **sair e entrar** (ou o token renova sozinho em ≤1h)
+   pro JWT novo carregar o `app_metadata`. Sessão com token velho cai no default `vendedor`.
+
+**Teste de burla executado (24/07, JWT real de vendedor via API direta):**
+1. ler custo na tabela base → `[]` (RLS bloqueia) ✅
+2. ler coluna `compra_unit` na view → 400 "column does not exist" ✅
+3. ler `venda_unit_forn` na view → OK (preço de venda, sem custo) ✅
+4. ler `compras` / `fornecedores` → `[]` ✅
+5. INSERT em cotacoes → **403 "violates row-level security policy"** ✅
+6. contraprova gestor (gerente): lê custo/fornecedor e faz INSERT → OK ✅
+Validado também no browser real: vendedor entra só em Propostas (7.416 produtos, preço sem custo),
+é barrado do sistema_final ("sem permissão"); diretor vê o menu completo.
+
+**⚠️ LIMITAÇÃO HONESTA (markup fixo):** como o markup é 32% conhecido, o preço de venda de item de
+distribuidor permite deduzir o custo (venda ÷ 1,32). O que fica realmente protegido é a IDENTIDADE do
+fornecedor, o número de custo rotulado, o histórico de compras e a ESCRITA. Custo 100% opaco exigiria
+markup variável/oculto (mudança de regra de negócio) — avisar o Lemuel se ele quiser isso.
+
 ## 🧪 REGRA PERMANENTE DE TESTE (22/07)
 Todo teste de tela que GRAVA no banco: usar a prévia SEM clicar em gravar, OU apagar os
 dados de teste imediatamente depois (e provar a limpeza com contagem antes/depois).

@@ -94,6 +94,15 @@ Criado em 21/07/2026 copiando SO os arquivos do app do C:\globalmed.
   23/07: logo dos PDFs (window.open) com URL absoluta; favicon FPMED nas 10 paginas;
   coracao da Global substituido pela cruz oficial (tela + PDF da Competitividade).
 
+>>> ACESSO POR CARGO (24/07/2026): controle REAL no banco (RLS por app_metadata.role do JWT,
+  nao editavel pelo usuario). Cargos: diretor/gerente (gestor, veem tudo) | vendedor (so Propostas,
+  sem custo, le view cotacoes_vendedor) | propostas (mais restrito). SQL: db_rls_cargos.sql.
+  Front espelha em gm-auth (gmAuth.cargo/can/isGestor). Testes de burla passaram (vendedor nao le
+  custo nem grava via API). Matriz completa + como criar usuario de cada cargo: TAREFAS_FPMED.md.
+  Os 2 usuarios reais viraram 'diretor' no app_metadata. gm-auth.js versionado (?v=cargos) p/ cache.
+  LIMITACAO: markup fixo 32% -> preco de venda de distribuidor deixa deduzir o custo (venda/1,32);
+  o que fica opaco e fornecedor/intel/escrita. Custo 100% opaco = markup variavel (mudar se o Lemuel pedir).
+
 Proximos passos (quando o Lemuel mandar): (a) sync de dados quando a Global tiver cotacoes
 novas; (b) porte manual da Competitividade (SYNC_GLOBAL.md); (c) vendedoras quando a equipe
 for definida; (d) dominio sistema.fpmed.com.br pos-venda. Placar completo: TAREFAS_FPMED.md.
