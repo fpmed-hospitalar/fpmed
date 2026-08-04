@@ -90,6 +90,34 @@ Auditoria de 22/07: banco confirmado limpo após teste do upload de PDF (preview
 - [x] **URL + ANON trocados** em todos os arquivos → Supabase da FPMED (12 anon + 16 URL, 0 resquício
       do banco antigo, sintaxe JS validada). URL `https://xzdowrksuswekwffoluk.supabase.co`.
 
+## 📋 FILA ATUAL (ordem definida pelo Lemuel em 04/08/2026, fim do dia)
+> Regra: pedido novo entra no FIM da fila. Só "URGÊNCIA" fura. Ver `CONTINUAR_AQUI.txt`.
+
+1. ⬜ **LICITAÇÕES V1** — prioridade 1. Spec pronta em `LICITACOES_SPEC.md`.
+   Começar pelo protótipo busca+lista com dia real do PNCP e **mostrar screenshot ANTES**
+   de construir o cruzamento. ⚠️ A API do PNCP estava **fora do ar** em 04/08 (504/503) —
+   se ainda estiver, o módulo tem que degradar com cache + aviso, nunca tela branca.
+2. ✅ ~~Investigação do "Carregando…"~~ — **JÁ FEITO** (commit `aa6177d`): eram 2 cargas
+   concorrentes de `cotacoes` (18 requests p/ 9 páginas) + `recarregarCotacoes` que não
+   re-renderizava. Promise em voo compartilhada + erro visível + timeout de 25s.
+   Sobrou 1 ponto: `autoRefreshEstoque` manda `force=true` e ignora o cache de 60s — cortar
+   isso elimina as 9 requests extras, mas é decisão de negócio (a Competitividade quer fresco).
+3. ⬜ **Comparativo simplificado** — ⚠️ **SEM SPEC**. O Lemuel pediu na reordenação da fila mas
+   não detalhou o que simplificar. Perguntar antes de começar.
+4. ⬜ **Blocos 2 e 4** do sync de código. Bloco 2 peça 1/N já entrou (`091ece8`, bug da Melhor
+   Fonte). Faltam: filtro "Só Estoque GLOBAL", `estoque_em` (tem DDL), dropdown/filtro de
+   fornecedor em Cotações, Comparativo por família, Itens a Cotar, vacina de cache.
+5. ⬜ **Estoque 0 → 1 no FLUXO** — a regra já vale no dado (781 linhas no seed); falta gravar
+   na tela Atualizar Estoque + `tools/le_estoque_fpmed.js` + teste.
+6. ⬜ **Pack via CMED/web** — resolver o pack dos itens sem contagem no nome casando com a
+   apresentação oficial da `cmed_pf` (camada 1) e busca web (camada 2). Tabela
+   `pack_confirmado` (produto → pack, fonte, data). **Não alterar preço no banco** — a tela
+   usa o pack e divide só na exibição. Preview antes de ativar.
+7. ⬜ **PDF de proposta** — portar da Global: caixa "⚠ OBSERVAÇÕES" (IA + estoque rotativo)
+   antes do "Prazo para entrega a combinar", conferir rodapés e a nota "* Preço Unit".
+   **Bug conhecido**: a coluna PREÇO UNIT sai crua (`0.2556`) em vez de `R$ 0,26` — formatar
+   em pt-BR como na Global. Testar com 1 item e com vários.
+
 ## ⬜ PENDENTES (na ordem)
 - [x] **Sync de dados EXECUTADO (04/08, com OK do Lemuel)**: **13.406 novos + 149 atualizados +
       7.267 pulados**. Backup completo antes (`backups/backup_2026-08-04_1528`). Filtros master
