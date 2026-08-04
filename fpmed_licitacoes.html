@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
@@ -107,11 +107,26 @@ function ymd(d){ const p=n=>String(n).padStart(2,'0'); return d.getFullYear()+p(
   i.value=d.toISOString().slice(0,10);
 })();
 
+// tamanhoPagina=10: MEDIDO em 04/08/2026. Com 50 o PNCP simplesmente NÃO RESPONDE (a fetch fica
+// pendurada >45s e a tela travava em "Buscando…"); com 10 responde em ~450ms. O mínimo aceito
+// pela API é 10 — abaixo disso devolve 400 "must be greater than or equal to 10".
+const TAM_PAGINA = 10;
+const TIMEOUT_MS = 20000;
+
+// Toda chamada tem prazo. Sem isso, uma resposta que nunca chega vira "Carregando…" eterno —
+// foi exatamente o que aconteceu aqui e no Dashboard no mesmo dia.
 async function puxarPagina(params, pagina){
-  const q = new URLSearchParams({...params, pagina:String(pagina), tamanhoPagina:'50'});
-  const r = await fetch(API+'?'+q, {headers:{'Accept':'application/json'}});
-  if(!r.ok) throw new Error('PNCP respondeu '+r.status);
-  return r.json();
+  const q = new URLSearchParams({...params, pagina:String(pagina), tamanhoPagina:String(TAM_PAGINA)});
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), TIMEOUT_MS);
+  try {
+    const r = await fetch(API+'?'+q, {headers:{'Accept':'application/json'}, signal:ctrl.signal});
+    if(!r.ok) throw new Error('PNCP respondeu '+r.status);
+    return await r.json();
+  } catch(e){
+    if (e.name === 'AbortError') throw new Error('o PNCP não respondeu em ' + (TIMEOUT_MS/1000) + 's');
+    throw e;
+  } finally { clearTimeout(t); }
 }
 
 async function buscar(){
@@ -130,7 +145,7 @@ async function buscar(){
   st.textContent = fresco ? 'usando cache…' : 'consultando o PNCP…';
   lista.innerHTML = '<div class="aviso">Buscando…</div>';
 
-  let todos;
+  let todos; let truncadoEm = null;
   try {
     if (fresco) { todos = emCache.dados; }
     else {
@@ -138,10 +153,17 @@ async function buscar(){
       if(uf) params.uf = uf;
       const p1 = await puxarPagina(params,1);
       todos = p1.data || [];
-      const tp = Math.min(p1.totalPaginas||1, 10);          // teto de 10 páginas por busca
-      for(let p=2;p<=tp;p++){ const px = await puxarPagina(params,p); todos = todos.concat(px.data||[]); }
+      // teto de 20 páginas (200 itens) por busca — com tamanhoPagina=10, 20 chamadas de ~450ms
+      const TETO = 20;
+      const tp = Math.min(p1.totalPaginas||1, TETO);
+      for(let p=2;p<=tp;p++){
+        st.textContent = 'consultando o PNCP… página '+p+'/'+tp;
+        const px = await puxarPagina(params,p);
+        todos = todos.concat(px.data||[]);
+      }
       cache.set(chave,{quando:Date.now(),dados:todos});
-      if((p1.totalPaginas||1) > 10) st.dataset.truncou = String(p1.totalPaginas);
+      // NUNCA truncar em silêncio: se houver mais páginas que o teto, o usuário precisa saber.
+      truncadoEm = (p1.totalPaginas||1) > TETO ? {lidas:tp, total:p1.totalPaginas} : null;
     }
   } catch(e){
     // DEGRADAR COM ELEGÂNCIA: nunca tela branca. Se houver cache velho, mostra com aviso.
@@ -157,7 +179,7 @@ async function buscar(){
     st.textContent=''; return;
   }
   st.textContent='';
-  render(todos, kws, null);
+  render(todos, kws, truncadoEm ? ('Li ' + truncadoEm.lidas + ' de ' + truncadoEm.total + ' paginas (teto por busca). Refine os filtros para nao perder licitacao.') : null);
 }
 
 function render(todos, kws, aviso){
