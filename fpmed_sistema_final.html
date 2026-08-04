@@ -1230,19 +1230,62 @@ function _normFornNome(arr){
   return arr;
 }
 async function carregarCotacoes() {
-  cotacoes = _normFornNome(await sbGet('cotacoes', 'order=id.desc') || []);
-  cotacoesCache = [...cotacoes];
-  _cotTs = Date.now();
+  try {
+    await _puxarCotacoes();                 // compartilha a carga em voo (sem duplicar requests)
+  } catch (e) {
+    // ERRO VISÍVEL, nunca "Carregando..." pra sempre — era o que a tela fazia até 04/08/2026.
+    _falhaCarga('Não consegui carregar as cotações: ' + (e && e.message ? e.message : e));
+    throw e;
+  }
   renderCotacoes(cotacoes);
   renderDashboard();
 }
+
+// Troca qualquer placeholder "Carregando…" por uma mensagem de erro com botão de tentar de novo.
+function _falhaCarga(msg){
+  const alvos = document.querySelectorAll('#tabela-recentes, #cot-lista, #page-competitividade, #page-dashboard');
+  alvos.forEach(el => {
+    if (!el || !/Carregando/i.test(el.textContent || '')) return;
+    el.innerHTML = '<div style="padding:24px;text-align:center;color:var(--vermelho,#c0392b)">'
+      + '<div style="font-size:15px;font-weight:600;margin-bottom:6px">⚠️ ' + String(msg).replace(/</g,'&lt;') + '</div>'
+      + '<div style="font-size:12px;color:var(--muted,#777);margin-bottom:12px">O banco não respondeu. Os dados podem estar desatualizados.</div>'
+      + '<button onclick="location.reload()" style="padding:8px 16px;border-radius:6px;border:0;background:var(--azul,#2CA9E0);color:#fff;cursor:pointer">Tentar de novo</button>'
+      + '</div>';
+  });
+}
+
+// GUARDA DE TIMEOUT: se depois de 25s a tela ainda estiver no placeholder, avisa em vez de
+// deixar o usuário olhando "Carregando…" sem fim (aconteceu 3x em 04/08 e parecia travamento).
+setTimeout(() => {
+  const preso = [...document.querySelectorAll('#tabela-recentes, #cot-lista')]
+    .some(el => el && /Carregando/i.test(el.textContent || ''));
+  if (preso) _falhaCarga('A carga demorou demais (mais de 25s)');
+}, 25000);
 // Recarrega cotações do banco só se o cache tiver +60s (ou force=true) — evita estoque/preço velho
 // nas abas sem puxar 6.400 linhas a cada troca. Atualiza os arrays em memória (sem re-render aqui).
+// DE-DUPLICAÇÃO DE CARGA (04/08/2026). Sintoma medido no ar: 18 requests em `cotacoes` para
+// 9 páginas de dado — duas cargas COMPLETAS concorrentes. O boot chama carregarCotacoes() e o
+// visibilitychange dispara autoRefreshEstoque() -> recarregarCotacoes(true) por cima.
+// Consertado com uma promise em voo compartilhada: quem pedir enquanto uma carga acontece
+// espera a MESMA, em vez de abrir outra. 8,3s de rede viraram ~4s, e some a corrida em que
+// as duas escreviam em `cotacoes` fora de ordem.
+let _cotInflight = null;
+function _puxarCotacoes(){
+  if (_cotInflight) return _cotInflight;                       // já tem uma em voo: reusa
+  _cotInflight = (async () => {
+    try {
+      const dados = _normFornNome(await sbGet('cotacoes', 'order=id.desc') || []);
+      cotacoes = dados;
+      cotacoesCache = [...dados];
+      _cotTs = Date.now();
+      return dados;
+    } finally { _cotInflight = null; }
+  })();
+  return _cotInflight;
+}
 async function recarregarCotacoes(force){
   if(force || !_cotTs || (Date.now() - _cotTs) > 60000){
-    cotacoes = _normFornNome(await sbGet('cotacoes', 'order=id.desc') || []);
-    cotacoesCache = [...cotacoes];
-    _cotTs = Date.now();
+    await _puxarCotacoes();
   }
 }
 // AUTO-REFRESH: a cada 60s puxa o banco em background e re-renderiza a aba ativa (se não atrapalhar).
