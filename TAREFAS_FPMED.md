@@ -102,8 +102,22 @@ Auditoria de 22/07: banco confirmado limpo após teste do upload de PDF (preview
    re-renderizava. Promise em voo compartilhada + erro visível + timeout de 25s.
    Sobrou 1 ponto: `autoRefreshEstoque` manda `force=true` e ignora o cache de 60s — cortar
    isso elimina as 9 requests extras, mas é decisão de negócio (a Competitividade quer fresco).
-3. ⬜ **Comparativo simplificado** — ⚠️ **SEM SPEC**. O Lemuel pediu na reordenação da fila mas
-   não detalhou o que simplificar. Perguntar antes de começar.
+3. ⬜ **Comparativo SIMPLIFICADO** — spec do Lemuel (04/08):
+   - **A tela vira só comparativo de preço**: `PRODUTO/PA | NOSSO (estoque FPMED) | preço de
+     cada FORNECEDOR | menor preço em verde`. Recolher para uma expansão opcional
+     **"ver análise"**: "Seu preço sugerido", "Melhor fonte", "Δ vs melhor", "Vale comprar"
+     e o scorecard. (Não apagar — o bug da Melhor Fonte acabou de ser corrigido em `091ece8`
+     e a lógica continua valendo dentro da expansão.)
+   - **TUDO SEMPRE UNITÁRIO**, nunca preço de caixa em célula nenhuma. Badge discreto do pack
+     quando dividir: `un · cx100`. Valor com cara de caixa **sem pack identificável** →
+     `⚠ conferir emb.` no lugar do número cru.
+   - **Destaque do estoque**: célula do estoque FPMED com fundo azul-claro forte quando há
+     saldo, + selos "Em estoque"/"PROMO" no nome.
+     ✅ **JÁ EXISTE NA FPMED, nada a portar** — conferido 04/08: os selos PROMO e "Em estoque"
+     são idênticos aos da Global (FPMED L1733/1734 e L2645 × Global L3612/3613 e L4885).
+     **Falta só o fundo azul-claro da célula**, que é coisa nova, não porte.
+   - Manter busca, filtro "Só Estoque FPMED" e seleção/exportação.
+   - **Teste obrigatório**: CEFALOTINA 475,25 → **4,75 un · cx100**. Screenshot antes/depois.
 4. ⬜ **Blocos 2 e 4** do sync de código. Bloco 2 peça 1/N já entrou (`091ece8`, bug da Melhor
    Fonte). Faltam: filtro "Só Estoque GLOBAL", `estoque_em` (tem DDL), dropdown/filtro de
    fornecedor em Cotações, Comparativo por família, Itens a Cotar, vacina de cache.
