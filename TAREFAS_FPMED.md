@@ -93,10 +93,28 @@ Auditoria de 22/07: banco confirmado limpo após teste do upload de PDF (preview
 ## 📋 FILA ATUAL (ordem definida pelo Lemuel em 04/08/2026, fim do dia)
 > Regra: pedido novo entra no FIM da fila. Só "URGÊNCIA" fura. Ver `CONTINUAR_AQUI.txt`.
 
-1. ⬜ **LICITAÇÕES V1** — prioridade 1. Spec pronta em `LICITACOES_SPEC.md`.
-   Começar pelo protótipo busca+lista com dia real do PNCP e **mostrar screenshot ANTES**
-   de construir o cruzamento. ⚠️ A API do PNCP estava **fora do ar** em 04/08 (504/503) —
-   se ainda estiver, o módulo tem que degradar com cache + aviso, nunca tela branca.
+1. 🔄 **LICITAÇÕES V1 — EM ANDAMENTO** (commit `71d313f`). Spec: `LICITACOES_SPEC.md`.
+   ✅ **A API do PNCP VOLTOU** (estava 504/503 de manhã): 969 ms, 41 licitações em GO em 03/08.
+   ✅ **CORS LIBERADO** direto do domínio do Pages (445 ms, HTTP 200) → **a edge function proxy
+      NÃO é necessária na V1**. Menos um ponto de falha e menos custo.
+   ✅ `fpmed_licitacoes.html` criado — tema claro FPMED, filtros (UF/modalidade/palavras-chave/
+      data), 4 KPIs, lista ordenada por quem encerra primeiro, cache de 15 min, degradação com
+      aviso, erro visível com "Tentar de novo". **A tela renderiza certa no ar.**
+   ⛔ **PONTO EXATO DE RETOMADA — a busca trava em "Buscando…"**. A página carrega e os filtros
+      aparecem, mas `buscar()` não retorna (o `Runtime.evaluate` estourou 45 s ao chamá-la).
+      A API responde fora do browser, e o CORS está liberado — então o defeito é **meu**, no
+      `buscar()`/`puxarPagina`, não no PNCP.
+      **Onde olhar primeiro:** o laço `for(let p=2;p<=tp;p++)` faz até 10 páginas **em série**;
+      com `tamanhoPagina=50` e 5 páginas isso deveria levar ~3 s. Suspeitas, nesta ordem:
+      (a) `p1.totalPaginas` vindo alto e o teto de 10 não segurando como esperado;
+      (b) alguma página respondendo 400 e a exceção caindo no `catch` que só troca a tela
+          quando **não** há cache — deixando o "Buscando…" na tela;
+      (c) `st.dataset.truncou` mexendo no elemento errado.
+      **Como depurar:** abrir a página, `await puxarPagina({dataInicial:'20260803',
+      dataFinal:'20260803',codigoModalidadeContratacao:'6',uf:'GO'},1)` no console e ver o
+      retorno; depois instrumentar o laço com `console.log(p)`.
+   ⬜ Depois disso: screenshot com a lista populada **para o Lemuel aprovar** (ponto (c) do modo
+      automático — é obrigatório parar aqui), e só então o cruzamento com o estoque.
 2. ✅ ~~Investigação do "Carregando…"~~ — **JÁ FEITO** (commit `aa6177d`): eram 2 cargas
    concorrentes de `cotacoes` (18 requests p/ 9 páginas) + `recarregarCotacoes` que não
    re-renderizava. Promise em voo compartilhada + erro visível + timeout de 25s.
