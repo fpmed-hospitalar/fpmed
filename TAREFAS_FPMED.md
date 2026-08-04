@@ -104,6 +104,11 @@ Auditoria de 22/07: banco confirmado limpo após teste do upload de PDF (preview
       aparecem, mas `buscar()` não retorna (o `Runtime.evaluate` estourou 45 s ao chamá-la).
       A API responde fora do browser, e o CORS está liberado — então o defeito é **meu**, no
       `buscar()`/`puxarPagina`, não no PNCP.
+      **Confirmado pelo caminho real do usuário** (clique no botão, não via `javascript_tool`):
+      o status muda para "consultando o PNCP…" e a lista para "Buscando…", e fica preso por
+      +10 s. Ou seja, **não é artefato da ferramenta de automação** — a `fetch` dispara e a
+      promise não resolve. Isso reforça a suspeita (b): alguma página do laço rejeitando e o
+      `catch` não repintando a tela quando não há cache.
       **Onde olhar primeiro:** o laço `for(let p=2;p<=tp;p++)` faz até 10 páginas **em série**;
       com `tamanhoPagina=50` e 5 páginas isso deveria levar ~3 s. Suspeitas, nesta ordem:
       (a) `p1.totalPaginas` vindo alto e o teto de 10 não segurando como esperado;
