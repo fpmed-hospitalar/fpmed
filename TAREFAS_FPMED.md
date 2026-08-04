@@ -118,8 +118,35 @@ Auditoria de 22/07: banco confirmado limpo após teste do upload de PDF (preview
       **Como depurar:** abrir a página, `await puxarPagina({dataInicial:'20260803',
       dataFinal:'20260803',codigoModalidadeContratacao:'6',uf:'GO'},1)` no console e ver o
       retorno; depois instrumentar o laço com `console.log(p)`.
-   ⬜ Depois disso: screenshot com a lista populada **para o Lemuel aprovar** (ponto (c) do modo
-      automático — é obrigatório parar aqui), e só então o cruzamento com o estoque.
+   ✅ **BUSCA DESTRAVADA** (commit `0bdf37c`) — causa raiz **medida**: a API do PNCP **não
+      responde** com `tamanhoPagina=50` (fetch pendurada >45 s); com **10** responde em ~450 ms.
+      O mínimo aceito pela API é 10. Junto entrou `AbortController` com timeout de 20 s em toda
+      chamada (era o MESMO defeito do Dashboard que eu reintroduzi aqui — agora a guarda é
+      estrutural), teto de 20 páginas com progresso na tela, e aviso quando trunca.
+      ⚠️ **Não consegui o screenshot da lista populada** — o Pages ainda servia a versão antiga
+      nas tentativas. **Primeira coisa da próxima sessão:** abrir a tela, clicar em Buscar
+      (data 03/08/2026, GO, pregão eletrônico → esperado ~41 publicadas) e conferir.
+
+   ⬜ **REDESIGN estilo SIGA** (spec do Lemuel, 04/08 — fazer JUNTO com a validação da busca):
+      - **Topo direito**: "Período" (dropdown: data de abertura / publicação / encerramento) +
+        "Intervalo" (faixa de datas).
+      - **Centro-hero**: título grande **"Encontrar"** + subtítulo "Busque oportunidades de
+        dispensas, pregões…" + **barra de busca grande centralizada** com lupa. Abaixo, 3 links:
+        *Pesquisa avançada* (expande UF/modalidade/palavras-chave) · *Meus alertas* (o futuro
+        jornal) · *Encontrar por Nº*.
+      - **Cards de resultado**, um por licitação:
+        · linha 1 em **azul destaque**: `MODALIDADE Nº XX/AAAA — ÓRGÃO / UF`, clicável p/ o edital
+        · linha 2: o **objeto**, 2–3 linhas com reticências
+        · **etiquetas verdes** com as categorias/palavras-chave que casaram
+        · "Abertura em DD/MM/AAAA às HH:MM" + "Modo de disputa: …" (`modoDisputaNome` da API)
+        · badges na base: "Fonte: PNCP — [órgão]" (cinza) + modalidade (azul)
+        · **nosso diferencial**: badge `🎯 X itens no nosso estoque` quando o cruzamento achar
+      - **KPIs discretos** acima dos resultados (os 4 que já existem).
+      - **Tema claro FPMED** — não copiar o dark do SIGA: cards brancos, sombra suave, azul
+        FPMED nos títulos, verde nas etiquetas.
+      ✅ **Aprovação antecipada dada pelo Lemuel**: screenshot é só registro; **não parar**.
+   ⬜ Depois: cruzamento com o estoque (matching PA+dose), agenda/acompanhar
+      (`licitacoes_acompanhadas`, RLS gestor grava / logado lê), KPIs — até fechar a V1.
 2. ✅ ~~Investigação do "Carregando…"~~ — **JÁ FEITO** (commit `aa6177d`): eram 2 cargas
    concorrentes de `cotacoes` (18 requests p/ 9 páginas) + `recarregarCotacoes` que não
    re-renderizava. Promise em voo compartilhada + erro visível + timeout de 25s.
