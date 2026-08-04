@@ -1,4 +1,26 @@
 #!/usr/bin/env node
+// ╔══════════════════════════════════════════════════════════════════════════════════════════╗
+// ║  ⛔ DESATIVADO PERMANENTEMENTE — COMPLIANCE DE PROTEÇÃO DE DADOS (Lemuel, 04/08/2026)     ║
+// ╚══════════════════════════════════════════════════════════════════════════════════════════╝
+// NENHUM dado comercial cruza entre GlobalMed e FPMED, nas DUAS direções: cotações,
+// fornecedores, preços, custos, clientes, prospects, compras, estoque, propostas.
+// São empresas distintas; cada base cresce só pelos meios próprios da sua dona.
+// O que já entrou está CONGELADO (marco no COMPLIANCE.md). Só CÓDIGO continua sendo portado,
+// pelo tools/sync_da_global.js.
+//
+// O arquivo fica no repo como REGISTRO de como as linhas herdadas entraram (filtro, dedup,
+// sanitização) — é a documentação da procedência. NÃO REATIVAR. Se um dia houver base legal
+// para transferência entre as empresas, isso é decisão jurídica + contrato, não um flag aqui.
+(function _travaCompliance() {
+  if (process.env.FPMED_COMPLIANCE_OVERRIDE === 'JURIDICO-APROVADO') {
+    console.error('\n⚠️  OVERRIDE DE COMPLIANCE ATIVO — exige aprovação jurídica registrada.\n');
+    return;
+  }
+  console.error('\n⛔ BLOQUEADO — sync de DADOS entre GlobalMed e FPMED está proibido em definitivo.');
+  console.error('   Política: COMPLIANCE.md (raiz do projeto).');
+  console.error('   Só CÓDIGO cruza, via tools/sync_da_global.js. As cotações herdadas estão CONGELADAS.\n');
+  process.exit(1);
+})();
 /* ═══════════════════════════════════════════════════════════════════════════
    SYNC DE DADOS: cotações de DISTRIBUIDOR GlobalMed -> FPMED
    Uso:

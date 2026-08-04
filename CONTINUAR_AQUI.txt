@@ -25,6 +25,16 @@ Criado em 21/07/2026 copiando SO os arquivos do app do C:\globalmed.
     BACKUP PROPRIO FEITO (04/08): .claude/hooks/backup_tabelas.js — so GET, service_role lida do
     segredos.local.txt, pagina em 1000 (limite do PostgREST da FPMED), grava JSON em backups/
     (gitignored), 11 tabelas. O ABRIR_CLAUDE_TOTAL.bat roda ele sozinho antes de cada rodada.
+>>> COMPLIANCE — REGRA MASTER INVIOLAVEL (04/08/2026): NENHUM dado comercial cruza entre
+    GlobalMed e FPMED, nas DUAS direcoes (cotacoes, fornecedores, precos, custos, clientes,
+    prospects, compras, estoque, propostas). So CODIGO cruza, via tools/sync_da_global.js.
+    O sync de DADOS (tools/sync_cotacoes_global.js) ABORTA na primeira linha de proposito.
+    CONGELADO em 04/08: 20.857 herdadas + 1.381 estoque proprio = 22.238 cotacoes.
+    Dai em diante cada base cresce so por meios proprios da empresa dona.
+    Pedido pra cruzar dado NAO e autorizacao suficiente: exige contrato + parecer juridico
+    registrados no COMPLIANCE.md ANTES de qualquer codigo. Politica completa: COMPLIANCE.md.
+    Guards: tests/testa_compliance.js (suite padrao) + tests/db/testa_congelamento.js (banco).
+
 >>> FILA EM ORDEM (04/08/2026 — regra do Lemuel): TUDO que ele mandar entra no FIM DA FILA
     e e feito em ordem. NUNCA largar a tarefa atual no meio pra atender o que acabou de chegar.
     UNICA excecao: se ele escrever URGENCIA, ai fura a fila e atende na hora.
@@ -152,7 +162,7 @@ DEPENDENCIA EXTERNA (CDN): viabilidade.html usa
   https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js  (leitura de planilha)
 
 SUPABASE (do GlobalMed — TROCAR TUDO pela instancia da FPMED):
-  URL:  https://vikewlbhkrikcalzsbeb.supabase.co
+  URL:  [REF DA GLOBALMED REMOVIDA 04/08/2026 — COMPLIANCE.md] .supabase.co
   ANON: aparece em gm-auth.js (var SB / var ANON) e nos .html (SUPA_URL2/SUPA_KEY2, VE_SB).
   EDGE FUNCTION: /functions/v1/ler-pedido  (IA que le pedido/espelho — Claude via backend).
   A service_role fica SO no segredos.local.txt do Lemuel (NAO veio, e nem deve).
