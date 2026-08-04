@@ -46,6 +46,40 @@ Dashboard deles em 04/08/2026: **972 licitações** e **23.610 itens** publicado
 
 ---
 
+## 1B. ESTUDO PARTE 2 — Análise e Jurídico
+
+### 1B.1 Histórico de compras
+Itens **encerrados** com órgão / processo / UF, **situação** (Aceito e Habilitado, Encerrado,
+Cancelado, Fracassado/Deserto, Anulado), **preço estimado vs homologado**, e o **ranking de
+licitantes** com CNPJ, razão social e último lance — vencedor marcado.
+
+Filtros: termos / marca / fabricante · período · estados · portais · modalidades · situações ·
+órgãos · **empresa específica** · classificação (vencedora / desclassificada / inabilitada) ·
+**baixa participação** (deserto, 1–3 licitantes).
+
+> 🔑 O filtro de **baixa participação** é ouro comercial: aponta onde há pouca disputa.
+
+### 1B.2 Análise de mercado (por termo)
+Mapa do Brasil por volume · barras mensais · valor total contratado · cartões de
+correspondências, catálogo, estados, órgãos, **empresas** (tabela vencedores × concorrentes com
+vitórias e valor vendido), marcas e contratação futura.
+
+### 1B.3 Análise de empresas (por CNPJ)
+Cartão cadastral · painel de participação (disputas / vencidas / valores, vitórias por
+modalidade, desclassificações e inabilitações **com motivo**) · gráficos de principais itens
+vencidos, valor por objeto, sazonalidade e marcas.
+
+### 1B.4 Jurídico — não é o que parece
+**NÃO é gerador de peças.** É **busca sobre acervo de peças REAIS protocoladas nos portais**
+(impugnação, esclarecimento, recurso, contrarrazões), com filtro "somente nova lei" e o texto
+integral servindo de **precedente**.
+
+A **única IA** deles é o *"Converse com o edital"* (chat limitado).
+
+> 🔑 **Aqui está a brecha.** Eles têm acervo, não têm geração. Ver V2-DIFERENCIAL.
+
+---
+
 ## 2. NOSSO MÓDULO — V1 (a construir)
 
 ### 2.1 Fonte de dados
@@ -93,11 +127,41 @@ com PA preenchido), 7.451 cotações de distribuidor e a régua da CMED (25.702 
 
 ---
 
+## 2B. V1.5 — HISTÓRICO DE RESULTADOS (a funcionalidade mais valiosa do SIGA)
+**Quem venceu e por quanto** — de graça, a partir dos **resultados/atas do PNCP**.
+Busca por **produto** e por **CNPJ de concorrente**.
+
+Por que é a prioridade logo depois da V1: saber o **preço homologado** de um item que a FPMED
+vende responde a pergunta que nenhuma outra tela responde — *"por quanto dá pra ganhar isto?"*.
+Hoje a Competitividade compara com cotação de distribuidor; o histórico compara com **o preço
+que o governo efetivamente pagou**.
+
+Replicar do que o PNCP publica: órgão, processo, UF, situação, preço estimado × homologado,
+licitantes com CNPJ e último lance. O filtro de **baixa participação** (deserto, 1–3 licitantes)
+entra junto — é o que aponta onde há pouca disputa.
+
+---
+
 ## 3. V2 — registrado, NÃO construir agora
+- **Análise de mercado por termo**: mapa do Brasil por volume + série mensal + valor contratado.
+- **Análise de empresa completa** (por CNPJ): participação, vitórias, desclassificações com motivo.
 - **Comprasnet Goiás** e **Licitanet** (os dois portais mais relevantes pra GO).
 - **Funil kanban** de negócios.
-- **Templates jurídicos** (impugnação, recurso).
 - Jornais com alerta recorrente por WhatsApp (reaproveitando o disparo da tela Vendas Ativas).
+
+## 3B. 🎯 V2-DIFERENCIAL — gerador de minuta jurídica com IA (o SIGA NÃO tem)
+O Jurídico deles é **acervo de busca**: peças reais já protocoladas, servindo de precedente.
+Útil, mas o trabalho de escrever continua com você.
+
+**Nosso:** a partir do **edital + os dados da FPMED**, gerar rascunho de **esclarecimento** ou
+**impugnação** via edge function (**claude-haiku-4-5**, o modelo de custo já adotado no
+`ler-pedido`), com aviso fixo e não removível: **"rascunho — revisar com advogado"**.
+
+Encaixa no que já existe: a edge function, a trava de origem e o modelo já estão no ar desde
+22/07. O que entra é o prompt e a tela.
+
+⚠️ Regra: a minuta é **rascunho assistido**, nunca peça final. O aviso não é decorativo — peça
+protocolada errada tem custo processual real.
 
 ---
 
@@ -107,10 +171,13 @@ Ordem definida pelo Lemuel: **normalização por unidade → sync de dados → B
 
 | Etapa | Entrega | Estado |
 |---|---|---|
-| 0 | Estudo + esta spec | ✅ |
+| 0 | Estudo (partes 1 e 2) + esta spec | ✅ |
 | 1 | **Protótipo busca + lista** com dados reais do PNCP + **screenshot pro Lemuel** | ⏸ aguarda a fila · **e a API voltar** |
 | 2 | Cruzamento com estoque/preços (o diferencial) | — |
 | 3 | `licitacoes_acompanhadas` + jornal + card "Próximas disputas" | — |
 | 4 | KPIs + ordenação por aderência | — |
+| 5 | **V1.5 — histórico de resultados** (quem venceu, por quanto, por CNPJ) | — |
+| 6 | V2 — análise de mercado / de empresa | — |
+| 7 | V2-DIFERENCIAL — gerador de minuta jurídica com IA | — |
 
 > Regra do Lemuel: **mostrar o screenshot do protótipo busca+lista ANTES** de construir o cruzamento.
