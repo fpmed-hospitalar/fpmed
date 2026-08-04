@@ -206,12 +206,35 @@ Gravado como `fornecedor='1'` / `tipo='global'` / `global_venda1=PRECO_MINIMO1`.
 **Telas conferidas no ar (04/08):**
 - ✅ **Vendas Ativas popula**: 200 produtos, itens com badge FPMED e estoque 1.
 - ✅ Dashboard: "1381 no estoque FPMED", 8.832 cotações.
-- ❌ **Competitividade continua ZERO.** Funil medido com a função real (`tools/diag_competitividade.js`):
-  `_cpzKey` exige PA com ≥3 chars **e** dose — com `principio_ativo` vazio, **1.381 de 1.381** morrem
-  no 1º portão. Não é bug de tela: é dado faltando. Potencial se o PA for preenchido: **767** das 1.381
-  têm dose legível no nome, contra **1.564** chaves distintas do lado concorrente.
-  Caminho: rodar `resolvePA` no import (a Global usa a tabela `cmed_pf` pra isso — Bloco 3 do sync,
-  ainda NÃO portado; é por isso que aqui não roda igual lá).
+- ✅ **Competitividade AGORA POPULA** (04/08, com OK do Lemuel). Estava zerada porque `_cpzKey` exige
+  PA com ≥3 chars **e** dose, e `principio_ativo` estava vazio: **1.381 de 1.381** morriam no 1º portão.
+  Não era bug de tela, era dado faltando.
+
+### 🧬 Preenchimento do `principio_ativo` (04/08) — `tools/preenche_pa_global.js`
+A FPMED **não tem a `cmed_pf`** (Bloco 3 do sync, não portado) e a `cmed_dicionario` está **vazia** —
+por isso o `resolvePA` do app devolvia nada e o import deixou o campo NULL. Fonte usada: o próprio
+banco, onde 4.350 linhas de distribuidor já têm PA (938 PAs distintos). **Não inventa PA** — só grava
+o que casa contra esse vocabulário, em 2 camadas:
+- **A)** mesmo produto já cotado por distribuidor com PA → 7
+- **B)** token(s) do nome batem num PA conhecido → 437
+- **não resolvido (fica NULL)** → 937
+
+Dos 937 que ficaram vazios, **635 são material** (luva, gaze, seringa, cateter, sonda…) que não tem PA
+por natureza — correto ficar vazio. Os **302 restantes são medicamento de verdade** (SORO FISIOLÓGICO,
+PENICILINA, BICARBONATO, MORFINA, HEPARINA, HIDROCORTISONA, FITOMENADIONA…) cujo PA simplesmente não
+existe no nosso vocabulário de 938. **Esses só resolvem com o Bloco 3 (CMED)** — é o limite honesto
+desta abordagem.
+
+Backup completo das 1.381 linhas antes de escrever (`backups/backup_pa_global_*.json`), PATCH por id,
+444 gravadas, 0 erro.
+
+**Resultado medido:** funil de 0 → **441 formam chave**, 344 com concorrente. Tela no ar: **241 itens
+no pool confiável**, 98 acima da média, MKP mediano **+34%**, 14 "ganho fácil", 22 "prejuízo".
+
+⚠️ **Achado novo pra próxima rodada:** os **59 itens "em revisão"** (fora dos KPIs, a tela já os isola
+sozinha) são todos do mesmo formato `pack N vs 1` — nosso preço é da CAIXA e o do concorrente é por
+UNIDADE (ex.: IPRATROPIO nosso R$ 596,41 vs R$ 1,31 · +45602%). É granularidade do lado concorrente,
+não erro do nosso preço. Vale uma conferência item a item.
 
 ## 🩺 SAÚDE DO SISTEMA (rodada 04/08/2026)
 - Suíte: **110 asserts verdes / 0 falhas** em 6 suítes (`node tests/run_all.js`).
