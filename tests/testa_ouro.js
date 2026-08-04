@@ -30,9 +30,17 @@ const rangeA = block('function _undNum(und)', 'let searchTO', false);
 // Bloco B: cluster _bm* (norma/forma/dose/discriminadores/material) + buscarMelhorProduto
 const rangeB = block('const _bmStrip = s =>', '/* ─── busca antiga', false);
 
+// O motor portado da Global (04/08) espera mais coisas no ambiente do que a versao antiga:
+// _bmClasseB (classe CMED intercambiavel), _packColunaAtual (pack lido da coluna do pedido) e
+// SUPA_URL/SUPA_KEY (o carregarDicMarcaPa le o de-para marca<->PA do banco; aqui fica inerte).
 const factorySrc =
   'let cotacoes = [];\n' +
   'let _bmCmed = new Map();\n' +
+  'let _bmClasseB = new Set();\n' +
+  'let _packColunaAtual = null;\n' +
+  'let itens = [];\n' +
+  'const SUPA_URL = "https://x"; const SUPA_KEY = "k";\n' +
+  'function renderItens(){}\n' +
   'console.warn = function(){};\n' +
   rangeA + '\n' + rangeB + '\n' +
   'return {\n' +

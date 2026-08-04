@@ -585,8 +585,14 @@ async function iniciar() {
     _cotTs = Date.now();
     setDbStatus(true);
     toast(`✓ ${cotacoes.length} produtos carregados`);
-    carregarCmed();  // dicionário CMED (marca->substância) em paralelo; a busca funciona mesmo sem ele
-    carregarVariacoes();  // histórico de preços (selo ↑/↓ no card) em paralelo
+    // ENRIQUECIMENTOS OPCIONAIS — o banco já carregou. Cada um roda ISOLADO: se qualquer um
+    // falhar, a busca continua funcionando (só sem aquele reforço). Sem esse isolamento, um erro
+    // num carregador acessório derrubaria a carga inteira, com as cotações já na memória.
+    // O `typeof` fica no ARGUMENTO de propósito: função inexistente estoura ReferenceError ANTES
+    // de entrar no _fpOpcional, e nenhum try lá dentro alcançaria isso.
+    _fpOpcional(typeof carregarCmed === 'function' ? carregarCmed : null);              // CMED (marca->substância)
+    _fpOpcional(typeof carregarDicMarcaPa === 'function' ? carregarDicMarcaPa : null);  // de-para marca<->PA
+    _fpOpcional(typeof carregarVariacoes === 'function' ? carregarVariacoes : null);    // histórico de preços
   } catch(e) {
     setDbStatus(false);
     toast('Erro: ' + e.message, 'error');
@@ -605,6 +611,15 @@ async function recarregarCotacoes(force){
   }catch(e){ /* falhou: mantém o cache atual */ }
 }
 // HISTÓRICO DE PREÇOS: carrega só as variações (onde o preço mudou) p/ o selo ↑/↓ no card.
+// roda um carregador ACESSORIO sem deixar que ele contamine a carga principal (nem por excecao
+// sincrona, nem por promise rejeitada). O banco de cotacoes e o que importa; o resto e reforco.
+// >>> O de-para marca<->PA (dicionario_marca_pa) AINDA NAO EXISTE no banco da FPMED: a chamada
+//     falha em silencio e a busca segue sem ele. No dia em que a tabela for criada, passa a
+//     funcionar sozinha, sem mexer aqui.
+function _fpOpcional(fn){
+  try { const p = (typeof fn === 'function') ? fn() : null; if (p && p.catch) p.catch(()=>{}); }
+  catch(e){ /* reforco que falhou nao tira a busca do ar */ }
+}
 async function carregarVariacoes(){
   try{
     const r = await fetch(`${SUPA_URL}/rest/v1/v_preco_variacao?select=fornecedor,produto_norm,var_pct,preco_atual,preco_anterior,data_anterior&var_pct=not.is.null`, {headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY}});
@@ -679,6 +694,9 @@ function fmtDate(d) { if(!d)return'—';const dt=new Date(d);return isNaN(dt)?'�
 // madrugada em UTC-3, ainda está no dia anterior/seguinte, gravando/mostrando o dia errado).
 function hojeLocalISO(){ const h=new Date(); return `${h.getFullYear()}-${String(h.getMonth()+1).padStart(2,'0')}-${String(h.getDate()).padStart(2,'0')}`; }
 // número da embalagem no UND (qualquer /\d+/: CX/30, FR/24, 30) — 0 se não tem
+// ── declarações que o motor portado espera (add pelo porta_motor_da_global.js) ──
+let _bmClasseB = new Set();   // classe CMED (COMPLEXO_B) — preenchida pelo carregarCmed
+let _packColunaAtual = null;  // pack lido da COLUNA do pedido em tabela (usado pelos avisos)
 function _undNum(und){ const m = String(und||'').match(/\d+/); if(!m) return 0; const n=parseInt(m[0]); return (n>=1 && n<=5000)?n:0; }
 // qtd da embalagem lida SÓ do NOME (sem und)
 function _qtdDoNome(produto){
@@ -700,7 +718,16 @@ function _qtdDoNome(produto){
 }
 // UNIÃO INTELIGENTE: und com número manda (import é confiável); senão nome; default 1.
 // Se os dois divergem, o UND prevalece MAS loga no console (o card marca ⚠️ via qtdEmbDiv).
+// memoizado (função pura dos dois textos): o pv() chama isto uma vez por cotação, por item do
+// pedido. O aviso do console.warn sai só na 1ª vez de cada par — e é isso que se quer, porque na
+// 2ª ele seria a mesma linha repetida 90 vezes.
 function qtdEmbalagem(und, produto){
+  return (typeof _bmMemo === 'function')
+    ? _bmMemo('qe', String(und == null ? '' : und) + '' + String(produto == null ? '' : produto),
+              () => qtdEmbalagemCalc(und, produto))
+    : qtdEmbalagemCalc(und, produto);
+}
+function qtdEmbalagemCalc(und, produto){
   const u = _undNum(und), n = _qtdDoNome(produto);
   if (u >= 1){ if (n > 1 && n !== u) console.warn('[qtdEmb] und "'+String(und||'').trim()+'" ('+u+') diverge do nome ('+n+') — '+produto); return u; }
   return n;
@@ -756,6 +783,10 @@ function pareceCaixaSanidade(produto, und, unit, caixa){
   if(unit>=lim && corr<=_S_TETO[f]) return {qtd,corr,forma:f};
   return null;
 }
+// PACK DECLARADO: a embalagem foi DITA em algum lugar, ainda que valha 1? "FR 1", "CX1", "UN1" no
+// campo und são declarações explícitas de embalagem unitária — diferente de silêncio. É o que
+// separa "a caixa tem 1 unidade" (sabido) de "não sei quantas unidades tem" (chute).
+function _packDeclarado(c){ return /\d/.test(String(c.und == null ? '' : c.und)); }
 function pv(c) {
   const qtd = qtdEmbalagem(c.und, c.produto);
   const isGlobal = c.tipo === 'global' || (c.fornecedor||'').toString() === '1';
@@ -771,16 +802,32 @@ function pv(c) {
     return parseFloat(c.compra_unit) * 1.32;
   }
 
-  // Se só tem compra_caixa → divide pela qtd e aplica markup
+  // Se só tem compra_caixa → divide pela qtd e aplica markup.
+  // >>> MAS SÓ QUANDO O PACK É CONHECIDO (bug #3 da 68036, LEVOFLOXACINO a R$622,66/bolsa).
+  //     qtdEmbalagem devolve 1 tanto quando a caixa TEM 1 unidade quanto quando ele NÃO ACHOU o
+  //     pack — e dividir por esse 1 afirma "esta caixa tem 1 unidade" sem nenhuma evidência.
+  //     Resultado: o preço da CAIXA INTEIRA ia pro orçamento como preço unitário. Medido no banco
+  //     (tools/sonda_caixa_sem_pack.js): 574 linhas nessa situação, 118 delas com preço acima de
+  //     3x a mediana de pelo menos 3 concorrentes do mesmo PA — uma delas 1.144x.
+  //     A CAUSA DE ORIGEM é a descrição da MCW truncada em 50 caracteres: o pack fica no FIM do
+  //     nome ("...CX/60BLS") e foi cortado. O importador (tools/importa_mcw.js) JÁ decidiu certo e
+  //     deixa compra_unit NULL de propósito, "chutar pack vira preço unitário errado no
+  //     orçamento" — e era aqui que essa abstenção cuidadosa estava sendo desfeita.
+  //     Sem pack não há preço unitário. Preço que não se sabe não vira preço no orçamento: a linha
+  //     sai da busca (pv 0 -> incluiNaBusca false), não entra com um número inventado.
+  //     RECUPERAÇÃO DE VERDADE: reimportar a MCW com o nome completo devolve as 574 de uma vez.
   if (c.compra_caixa && parseFloat(c.compra_caixa) > 0) {
+    if (!(qtd > 1) && !_packDeclarado(c)) return 0;
     return (parseFloat(c.compra_caixa) / qtd) * 1.32;
   }
 
+
   // VENDEDOR (view cotacoes_vendedor): não recebe custo; recebe o preço de venda já calculado.
+  // ISTO É DA FPMED — não existe na Global (lá o gate é por e-mail, aqui é por cargo).
+  // Reinjetado pelo tools/porta_motor_da_global.js a cada sync; se sumir, o vendedor perde preço.
   if (c.venda_unit_forn && parseFloat(c.venda_unit_forn) > 0) {
     return parseFloat(c.venda_unit_forn);
   }
-
   // Fallback
   const base = parseFloat(c.venda_unit_calculada||c.global_venda1||c.global_venda2||0);
   return base > 0 ? base / qtd : 0;
@@ -905,8 +952,33 @@ function extrairAtivosAssociados(texto) {
 // Precisão > cobertura: melhor não achar do que mandar item errado pro cliente.
 // ══════════════════════════════════════════════════════════════════════════════
 const _bmStrip = s => (s||'').normalize('NFD').replace(/\p{M}/gu,'');
-const _bmNorm  = s => _bmStrip((s||'').toLowerCase()).replace(/[^a-z0-9\s,.\/]/g,' ').replace(/\s+/g,' ').trim();
-const _bmNormF = s => {
+// memoizado logo abaixo (_bmMemo): é chamado uma vez por cotação POR ITEM do pedido
+const _bmNormCalc = s => _bmStrip((s||'').toLowerCase()).replace(/[^a-z0-9\s,.\/]/g,' ').replace(/\s+/g,' ').trim();
+const _bmNorm  = s => _bmMemo('nm', String(s == null ? '' : s), () => _bmNormCalc(s));
+// ── PRÉ-CÁLCULO POR COTAÇÃO (o "pré-índice", 04/08) ──────────────────────────────────────────
+// MEDIDO, não suposto: uma busca em lote de 91 itens custava 169ms POR ITEM contra 21.393
+// cotações — 15,4 segundos, e o número cresce junto com o banco. O gasto não estava na conta da
+// dose (memoizar só ela devolveu 4ms): estava em RENORMALIZAR O MESMO TEXTO. Cada função de
+// leitura — forma, volume, calibre, tipo de soro — é chamada uma vez por cotação POR ITEM do
+// pedido, ou seja quase 2 milhões de vezes num pedido de 91 linhas, sempre sobre os mesmos textos.
+// São todas funções PURAS de texto: o resultado nunca envelhece e não há o que invalidar.
+// >>> O QUE ELAS DEVOLVEM É COMPARTILHADO — quem recebe SÓ LÊ. Nenhum caminho de hoje escreve num
+//     Set devolvido por essas funções; se um dia precisar, copie antes de mexer.
+const _BM_MEMO = new Map();
+function _bmMemo(tag, txt, calc){
+  // UM MAPA POR FUNÇÃO, com a chave sendo a STRING ORIGINAL — nada de concatenar tag+texto.
+  // A 1ª versão montava a chave com `tag + ' ' + txt` e economizou só 4ms dos 169: o ganho ia
+  // embora dentro do próprio memo, porque cada chamada CRIAVA uma string nova de ~60 caracteres e
+  // o Map tinha que hashear tudo de novo. Reusando a string que já veio da linha do banco, o hash
+  // dela já está calculado e o lookup sai de graça. Medir antes e depois foi o que mostrou isso.
+  let m = _BM_MEMO.get(tag); if (!m) { m = new Map(); _BM_MEMO.set(tag, m); }
+  const hit = m.get(txt); if (hit !== undefined) return hit;
+  const v = calc();
+  if (m.size < 120000) m.set(txt, v);
+  return v;
+}
+const _bmNormF = s => _bmMemo('nf', String(s == null ? '' : s), () => _bmNormFCalc(s));
+const _bmNormFCalc = s => {
   let t = _bmStrip((s||'').toLowerCase());
   t = t.replace(/\bfr?\s*[\/.\\]\s*a(mp)?\b/g, ' fa ');   // F/A, FR/A, F.A, FR.AMP -> 'fa' (frasco-ampola = injetável) ANTES de trocar a barra
   t = t.replace(/[^a-z0-9\s\/]/g,' ').replace(/\//g,' ').replace(/(\d)([a-z])/g,'$1 $2').replace(/([a-z])(\d)/g,'$1 $2');
@@ -920,28 +992,184 @@ const _BM_CATS = [
   ['OFTALMICO',     ['colirio','oftalmico','oft','otologico','auricular','ocular','oftalmica']],
   ['ADESIVO',       ['adesivo','patch','transdermico','transderm']],
   ['SPRAY',         ['spray','aerossol','aerosol','aero','aer','inalacao','inalatorio','inal','nasal','jato']],
-  ['INJETAVEL',     ['injetavel','inj','sol inj','solucao injetavel','susp inj','ampola','amp','ampolas','fa','fr amp','frasco ampola','liofilizado','liof','intravenoso','intramuscular','iv','im','sc','ev','epidural','c dil','s dil','diluente']],
+  // 'sol dil' (solução para diluição, oncológico) entra aqui de propósito: sem ele o "SOL" jogava
+  // o item em LIQUIDO_ORAL e a barreira de FORMA matava o par ANTES da conta de dose (29/07).
+  // Medido no banco: 0 linhas com "SOL DIL" hoje — não mexe em nada do que já existe.
+  ['INJETAVEL',     ['injetavel','inj','sol inj','sol dil','solucao injetavel','susp inj','ampola','amp','ampolas','fa','fr amp','frasco ampola','liofilizado','liof','intravenoso','intramuscular','iv','im','sc','ev','epidural','c dil','s dil','diluente']],
   ['TOPICO',        ['creme','pomada','gel','locao','pasta','unguento','geleia','alcoolica','aquosa','degermante','topica','antisseptico']],
   ['LIQUIDO_ORAL',  ['xarope','xpe','suspensao','susp','solucao oral','sol oral','gotas','gts','elixir','sacaroleo','solucao','sol']],
-  ['SOLIDO_ORAL',   ['comprimido','comprimidos','cpr','cp','comp','dragea','drageas','revestido','rev','capsula','caps','cap','cps','pastilha','pilula','tablete','lib prol','lp','xr','er','mr']],
+  ['SOLIDO_ORAL',   ['comprimido','comprimidos','cpr','cp','comp','dragea','drageas','revestido','rev','capsula','caps','cap','cps','pastilha','pilula','tablete','efervescente','lib prol','lp','xr','er','mr']],
 ];
-function _bmForma(texto){ const t=_bmNormF(texto); for(const [cat,kws] of _BM_CATS) for(const kw of kws) if(t.includes(' '+kw+' ')) return cat; if(/\d\s+com\b/.test(t)) return 'SOLIDO_ORAL'; return null; }
+// CLASSE terapêutica intercambiável derivada da CMED (PASSO 3 item 2, política do Lemuel:
+// "sobreposição de classe B"). Hoje só COMPLEXO_B: complexos de vitamina B que compartilham o
+// núcleo (tiamina+piridoxina+riboflavina+nicotinamida) casam entre si. Reconhece pela FRASE
+// "complexo b" (pega CENTRIX COMPLEXO B, não pega COMPLEXO PROTROMBINICO) OU por marca no set
+// _bmClasseB (Santiplex/Hyplex/Comple B... vindos da view). null quando não é classe conhecida.
+function _bmClasseFam(texto){
+  const t=' '+_bmNormF(texto)+' ';
+  if(/\bcomplexo\s*b(?![a-z])/.test(t)) return 'COMPLEXO_B';   // "complexo b", "complexo b12", "complexo b 12"; NÃO "complexo protrombinico/bc"
+  for(const marca of _bmClasseB){ if(marca && t.includes(' '+marca+' ')) return 'COMPLEXO_B'; }
+  return null;
+}
+// SUB-FORMA oral (23530 caso 2): efervescente != liberação prolongada != normal. Barreira só quando
+// os DOIS lados nomeiam e divergem (mesma filosofia dos discriminadores). null = não especificado.
+function _bmSubFormaOral(texto){ const t=' '+_bmNormF(texto)+' ';
+  if(/ eferv/.test(t)) return 'EFERV';
+  if(/ lib\s*prol| liberacao\s*prol| retard| \d*\s*lp | xr | \bum dia\b/.test(t)) return 'LP';
+  return null;
+}
+function _bmForma(texto){ const t=_bmNormF(texto); if(t.includes(' gel ') && /(caps|cps|capsula)\b/.test(t)) return 'SOLIDO_ORAL'; /* cápsula gelatinosa (CPS GEL / 21CAPS GEL DURA) é ORAL, não gel tópico */ for(const [cat,kws] of _BM_CATS) for(const kw of kws) if(t.includes(' '+kw+' ')) return cat; if(/\d\s+com\b/.test(t)) return 'SOLIDO_ORAL'; return null; }
 const _BM_DOSE_CRIT = {SOLIDO_ORAL:1, INJETAVEL:1, LIQUIDO_ORAL:1};
 
+// ── ARITMÉTICA DE CONCENTRAÇÃO (bug #5 da 68036) ──────────────────────────────────────────────
+// Quatro notações que dizem A MESMA COISA e que o motor lia como coisas diferentes:
+//    2%          ==  20MG/G  ==  20MG/ML     (1% = 1g em 100ml = 10mg/ml)
+//    250MG/5ML   ==  50MG/ML                 (dose por volume -> concentração)
+//    200+40MG/5ML == 40MG/ML + 8MG/ML        (a unidade escrita só no fim vale pros DOIS componentes)
+// É CONTA, não dicionário: não há lista de sinônimos aqui, e por isso não precisa de manutenção
+// quando entra produto novo — foi o critério do Lemuel ("aritmética e não dicionário").
+//
+// >>> E, no meio disso, um DEFEITO PURO de leitura de número: o separador de milhar era lido como
+//     parte decimal. "1.200.000UI" virava 200UI, "600.000UI" virava 600UI e "5.000.000UI" virava
+//     ZERO. Os dois lados da comparação erravam junto, então o casamento até funcionava por
+//     acidente — mas doses distintas podiam colidir (20.000UI e 20UI davam o mesmo 20UI), e dose
+//     errada é o tipo de erro que chega no paciente, não no total da proposta.
+//     A guarda: só colapsa quando o primeiro grupo NÃO é zero, senão "0.125MG" (digoxina, decimal
+//     escrito com ponto) viraria 125MG — mil vezes a dose.
+function _bmNumTxt(n){ n = Math.round(n * 100000) / 100000; return String(n); }
+// MEMÓRIA (não é otimização prematura, é o custo medido): numa busca em lote o MESMO texto de
+// produto é normalizado uma vez por item do pedido — 21.393 candidatos × 91 itens. Com a
+// aritmética nova o custo por item subiu de 105ms pra 141ms; com a memória ele volta a cair.
+// São funções PURAS de texto, então o resultado nunca envelhece e não há o que invalidar.
+const _BM_CANON_MEMO = new Map(), _BM_DOSES_MEMO = new Map();
+function _bmDoseCanon(bruto){
+  const k = String(bruto);
+  const hit = _BM_CANON_MEMO.get(k); if (hit !== undefined) return hit;
+  const r = _bmDoseCanonCalc(k);
+  if (_BM_CANON_MEMO.size < 200000) _BM_CANON_MEMO.set(k, r);
+  return r;
+}
+function _bmDoseCanonCalc(bruto){
+  let up = _bmStrip(String(bruto).toUpperCase());
+  up = up.replace(/\b([1-9]\d{0,2})((?:\.\d{3})+)(?!\d)/g, (m, a, b) => a + b.replace(/\./g, ''));  // milhar (ponto) ANTES da vírgula virar ponto
+  up = up.replace(/,/g, '.');                                                                       // decimal brasileiro
+  // >>> ASSOCIAÇÃO ESCRITA COM BARRA: "50/12,5MG" é LOSARTANA 50MG + HIDROCLOROTIAZIDA 12,5MG.
+  //     Este é o bug #4 da 68036: o cliente pediu HIDROCLOROTIAZIDA 12,5MG PURA e recebeu
+  //     "LOSARTANA POTASSICA HIDROCLOROTIAZIDA 50/12,5MG" — outro medicamento, com uma droga a
+  //     mais que o paciente não deveria tomar. Essa linha não tem '+' em lugar nenhum e tem
+  //     principio_ativo VAZIO, então a barreira de combo (que lê o '+' do PA) não a enxergava; e
+  //     a dose lida era só "12,5MG" (o "50/" ficava órfão), que bate com a do pedido.
+  //     Lendo os DOIS números, a dose vira {50MG, 12.5MG} e a barreira de dose que já existe
+  //     rejeita sozinha — sem regra nova e sem dicionário de combos.
+  //     O (?!\s*\/) deixa de fora "200/40MG/5ML", que é dose-por-volume e tem regra própria.
+  up = up.replace(/(\d+(?:\.\d+)?)\s*\/\s*(\d+(?:\.\d+)?)\s*(MG|MCG|UI|G)\b(?!\s*\/)/g,
+    (m, a, b, u) => a + u + ' + ' + b + u);
+  // composto com a unidade só no fim: "200+40MG/5ML" -> "200MG/5ML + 40MG/5ML"; "4+0,5G" -> "4G + 0.5G"
+  up = up.replace(/(\d+(?:\.\d+)?)\s*\+\s*(\d+(?:\.\d+)?)\s*(MG|MCG|UI|G)\b(\s*\/\s*(?:\d+(?:\.\d+)?\s*)?(?:ML|G)\b)?/g,
+    (m, a, b, u, den) => { den = den || ''; return a + u + den + ' + ' + b + u + den; });
+  // dose por volume -> concentração por ML: "250MG/5ML" -> "50MG/ML"; "1200000UI/4ML" -> "300000UI/ML"
+  up = up.replace(/(\d+(?:\.\d+)?)\s*(MG|MCG|UI|G)\s*\/\s*(\d+(?:\.\d+)?)\s*(?:ML|G)\b/g,
+    (m, a, u, n) => { const d = parseFloat(n); return d > 0 ? (_bmNumTxt(parseFloat(a) / d) + u + '/ML') : m; });
+  up = up.replace(/(\d+(?:\.\d+)?)\s*%/g, (m, a) => _bmNumTxt(parseFloat(a) * 10) + 'MG/ML');        // 2% -> 20MG/ML
+  // por GRAMA == por MILILITRO. SEM \b antes da unidade: em "20MG/G" o M vem colado no 0 (dois
+  // caracteres de palavra), e ali NÃO existe fronteira — com \b esta linha nunca casava nada.
+  up = up.replace(/(MG|MCG|UI)\s*\/\s*G\b/g, '$1/ML');
+  return up;
+}
 // Dose canônica: converte MCG/G -> MG (50MCG/ML == 0.05MG/ML). Volume (ML) não é dose.
+// O conjunto devolvido é COMPARTILHADO entre chamadas (memória) — quem recebe só LÊ. Ninguém
+// escreve num Set de dose hoje; se um dia precisar, copie antes de mexer.
 function _bmDoses(texto){
-  const up=_bmStrip(String(texto).toUpperCase()).replace(/,/g,'.');
+  const _k = String(texto);
+  const _hit = _BM_DOSES_MEMO.get(_k); if (_hit !== undefined) return _hit;
+  const _r = _bmDosesCalc(_k);
+  if (_BM_DOSES_MEMO.size < 200000) _BM_DOSES_MEMO.set(_k, _r);
+  return _r;
+}
+function _bmDosesCalc(texto){
+  const up=_bmDoseCanon(texto);
   const re=/(\d+(?:\.\d+)?)\s*(MG\/ML|MCG\/ML|UI\/ML|MG|MCG|UI|G|%)(?![A-Z])/g;
   const set=new Set(); let m;
   while((m=re.exec(up))){ let n=parseFloat(m[1]),u=m[2]; const perML=u.endsWith('/ML'); u=u.replace('/ML','');
     if(u==='MCG'){n=n/1000;u='MG';} else if(u==='G'){n=n*1000;u='MG';}
     n=Math.round(n*100000)/100000; set.add(n+u+(perML?'/ML':'')); }
+  // DOSE COMPOSTA com a unidade escrita SÓ NO FIM (28/07, caso real 63622/Eduardo): o banco grava
+  // "4MG+500MG/ML" e o cliente escreve "4MG/ML + 500MG/ML" — é a MESMA dose, o "/ML" do fim vale
+  // pros dois componentes. Adiciona a variante (aditivo: não tira nada do conjunto).
+  const comp=up.match(/(\d+(?:\.\d+)?)\s*(MG|MCG|G)\s*\+\s*(\d+(?:\.\d+)?)\s*(MG|MCG|G)\s*\/\s*ML/);
+  if(comp){ let n1=parseFloat(comp[1]), u1=comp[2];
+    if(u1==='MCG'){n1=n1/1000;} else if(u1==='G'){n1=n1*1000;}
+    const chave=(Math.round(n1*100000)/100000);
+    set.delete(chave+'MG'); set.add(chave+'MG/ML'); }   // SUBSTITUI (o conjunto é comparado por igualdade)
+  // ── A TRIPLA REDUNDANTE (pedido de oncologia, 03/08) ────────────────────────────────────────
+  // O pedido de onco escreve a MESMA informação duas vezes: dose total + concentração + volume.
+  //    "DOCETAXEL 20MG ... 20MG/ML ... C/1ML"      -> 20 × 1  = 20MG   (o total é redundante)
+  //    "CISPLATINA 50MG ... 1MG/ML ... C/50ML"     -> 1 × 50  = 50MG
+  // O banco cadastra só a concentração ("DOCETAXEL 20MG/ML F/A 1ML"), então o pedido saía com
+  // DUAS doses no conjunto e o candidato com UMA — e a barreira de dose, que compara conjuntos
+  // por igualdade, rejeitava. Não eram doses diferentes: era a mesma dose dita duas vezes.
+  // Quando a conta fecha, o total sai e fica a concentração (que é a forma canônica do banco).
+  // >>> A ÚNICA TOLERÂNCIA DO SISTEMA, e ela é declarada: 2%. O rótulo do paclitaxel escreve
+  //     "6MG/ML C/16,7ML" e 6 × 16,7 = 100,2, não 100 — o 16,7 já é 16,666... arredondado. Isto
+  //     NÃO é folga na comparação de produtos: é o reconhecimento de que UM MESMO pedido se
+  //     contradiz na terceira casa. Se os números divergirem mais que isso, o conjunto fica com
+  //     as duas doses e a barreira volta a rejeitar — a discordância vira barreira, não palpite.
+  if (set.size === 2) {
+    const arr = [...set];
+    const mg = arr.find(d => /^\d+(?:\.\d+)?MG$/.test(d));
+    const cc = arr.find(d => /^\d+(?:\.\d+)?MG\/ML$/.test(d));
+    if (mg && cc) {
+      const vols = [...(typeof _bmMl === 'function' ? _bmMl(texto) : new Set())].map(Number).filter(n => n > 0);
+      const total = parseFloat(mg), conc = parseFloat(cc);
+      if (vols.some(v => total > 0 && Math.abs(conc * v - total) / total <= 0.02)) set.delete(mg);
+    }
+  }
   return set;
 }
 function _bmDoseEq(a,b){ if(a.size!==b.size) return false; for(const d of a) if(!b.has(d)) return false; return true; }
 // injetável reconstituído (pó/liofilizado + diluente): 40MG (pó) == 40MG/ML (reconstituído) — mesmo produto de força única
 function _bmReconst(prod){ const t=_bmNormF(prod); return t.includes(' liof')||t.includes(' liofilizado')||t.includes(' diluente')||t.includes(' c dil')||t.includes(' s dil')||/ po\b/.test(t); }
 function _bmDoseEqIgnMl(a,b){ const strip=s=>{const x=new Set(); s.forEach(d=>x.add(d.replace('/ML',''))); return x;}; return _bmDoseEq(strip(a),strip(b)); }
+// DOSE TOTAL == CONCENTRAÇÃO × VOLUME (aprovado pelo Lemuel 29/07, caso dos oncológicos do 63622).
+// O cliente escreve a dose TOTAL do frasco ("ATEZOLIZUMABE 1200MG FA C/20ML") e o banco cadastra
+// CONCENTRAÇÃO × VOLUME ("60MG/ML SOL DIL 20ML") — é o MESMO produto, 60 × 20 = 1200.
+// A REGRA, SEM FOLGA (é a barreira mais crítica do sistema): um lado tem SÓ massa absoluta, o outro
+// SÓ concentração, os DOIS declaram volume, o volume é o MESMO e a conta fecha EXATA. Sem tolerância.
+// Dose composta (2 componentes) e UI/% ficam de fora — só dose única em MG canônico.
+function _bmDoseTotalEq(dosesA, mlA, dosesB, mlB){
+  const volUnico = s => { const a=[...s].map(Number).filter(n=>n>0); return a.length===1 ? a[0] : null; };
+  const vA = volUnico(mlA), vB = volUnico(mlB);
+  if (vA === null || vB === null || vA !== vB) return false;      // os dois lados, e o MESMO volume
+  const so = (s, re) => { const a=[...s]; return (a.length===1 && re.test(a[0])) ? parseFloat(a[0]) : null; };
+  const massa = s => so(s, /^\d+(?:\.\d+)?MG$/);                  // 1200MG (absoluta)
+  const conc  = s => so(s, /^\d+(?:\.\d+)?MG\/ML$/);              // 60MG/ML
+  const arred = n => Math.round(n * 100000) / 100000;             // mesma casa que o _bmDoses usa
+  const mA = massa(dosesA), cA = conc(dosesA), mB = massa(dosesB), cB = conc(dosesB);
+  if (mA !== null && cB !== null) return arred(cB * vB) === arred(mA);
+  if (mB !== null && cA !== null) return arred(cA * vA) === arred(mB);
+  return false;
+}
+// >>> COMPLEMENTO (bug #5, caso do BROMETO DE PANCURONIO 4MG): a regra acima exige volume nos DOIS
+//     lados — e um pedido normal NÃO declara volume, escreve só a dose total ("PANCURONIO 4MG").
+//     Ou seja: a regra nunca podia disparar justamente no caso mais comum, que é o cliente pedir
+//     pela dose total e o banco cadastrar concentração × volume (2MG/ML × 2ML = 4MG).
+//     Aqui o lado da MASSA pode não declarar volume nenhum; quem manda é o volume do lado da
+//     CONCENTRAÇÃO. A conta continua EXATA, sem tolerância.
+//     A GUARDA CONTINUA: se o lado da concentração não declara volume, NÃO HÁ CONTA e nada casa —
+//     é o que preserva "DIMORF 10MG != DIMORF 10MG/ML". E volume declarado e DIFERENTE barra.
+function _bmDoseTotalEqSemVol(dosesA, mlA, dosesB, mlB){
+  if (_bmDoseTotalEq(dosesA, mlA, dosesB, mlB)) return true;
+  const volUnico = s => { const a=[...s].map(Number).filter(n=>n>0); return a.length===1 ? a[0] : null; };
+  const so = (s, re) => { const a=[...s]; return (a.length===1 && re.test(a[0])) ? parseFloat(a[0]) : null; };
+  const massa = s => so(s, /^\d+(?:\.\d+)?MG$/);
+  const conc  = s => so(s, /^\d+(?:\.\d+)?MG\/ML$/);
+  const arred = n => Math.round(n * 100000) / 100000;
+  const vA = volUnico(mlA), vB = volUnico(mlB);
+  const mA = massa(dosesA), cA = conc(dosesA), mB = massa(dosesB), cB = conc(dosesB);
+  if (mA !== null && cB !== null && vB !== null && vA === null) return arred(cB * vB) === arred(mA);
+  if (mB !== null && cA !== null && vA !== null && vB === null) return arred(cA * vA) === arred(mB);
+  return false;
+}
 // pedido só tem CONCENTRAÇÃO (%, MG/ML) sem massa absoluta -> aí o VOLUME entra na comparação
 function _bmSoConc(doses){ return doses.size>0 && [...doses].every(d=> d.endsWith('/ML') || d.endsWith('%')); }
 // volume em ML (converte L->ML). Ignora a parte /ML de concentração (não tem dígito colado no ML).
@@ -949,7 +1177,10 @@ function _bmVolume(texto){
   const up=_bmStrip(String(texto).toUpperCase()).replace(/,/g,'.');
   let vol=null, m;
   const reL=/(\d+(?:\.\d+)?)\s*(?:LTS|LT|L)\b(?![A-Z0-9])/g; while((m=reL.exec(up))){ vol=parseFloat(m[1])*1000; }
-  const re=/(?<![\/A-Z])(\d+(?:\.\d+)?)\s*ML\b/g; while((m=re.exec(up))){ vol=parseFloat(m[1]); }
+  // O lookbehind barra ML depois de "/" (concentração "MG/ML") e de letra. Faltava barrar depois
+  // de DÍGITO e de PONTO: em "C/16.7ML" o motor pulava o "1" (que vem depois da barra) e casava a
+  // partir do "6", lendo o volume como **6,7ML** em vez de 16,7ML. Numero truncado no meio.
+  const re=/(?<![\/A-Z0-9.])(\d+(?:\.\d+)?)\s*ML\b/g; while((m=re.exec(up))){ vol=parseFloat(m[1]); }
   return vol;
 }
 // largura/dimensão em CM (atadura/gaze/campo: 15CM != 10CM)
@@ -957,6 +1188,216 @@ function _bmCm(texto){
   const up=_bmStrip(String(texto).toUpperCase()).replace(/,/g,'.'); const s=new Set(); let m;
   const re=/(\d+(?:\.\d+)?)\s*CM/g; while((m=re.exec(up))){ s.add(String(parseFloat(m[1]))); }
   return s;
+}
+// TODOS os volumes em ML como CONJUNTO (68574): o _bmVolume ignora "C/100ML" (o lookbehind barra o
+// "/") e o FIXADOR CITOLOGICO 100ML casava com o de 500ML. Aqui é set, igual _bmCm/_bmPeso.
+function _bmMl(texto){ return _bmMemo('ml', String(texto == null ? '' : texto), () => _bmMlCalc(texto)); }
+function _bmMlCalc(texto){
+  const up=_bmStrip(String(texto).toUpperCase()).replace(/,/g,'.'); const s=new Set(); let m;
+  const re=/(\d+(?:\.\d+)?)\s*ML\b/g; while((m=re.exec(up))){ s.add(String(parseFloat(m[1]))); }
+  return s;
+}
+// METRAGEM em metros (68574): "4,5M" != "1,8M"; atadura/fita/rolo. A mesma medida aparece escrita
+// em metro ou em centímetro colado ("1,80M" e "180MT" são a MESMA atadura) — por isso a comparação
+// aceita equivalência ×100 em vez de chutar unidade. Não pega MM/ML/MG/MCG (o (?![A-Z]) garante).
+function _bmMetros(texto){
+  const up=_bmStrip(String(texto).toUpperCase()).replace(/,/g,'.'); const s=new Set(); let m;
+  const re=/(\d+(?:\.\d+)?)\s*(?:MTS|MT|METROS|METRO|M)\b(?![A-Z])/g;
+  while((m=re.exec(up))){ s.add(parseFloat(m[1])); }
+  return s;
+}
+function _bmMetrosIgual(a, b){   // 1.8 ≡ 180 (metro x centímetro), 4.5 ≠ 1.8
+  for(const x of a) for(const y of b){ if(x===y || x===y*100 || y===x*100) return true; }
+  return false;
+}
+// NÚMERO ÓRFÃO (28/07): número que não tem unidade colada e não pertence a outro conceito.
+// Nasceu de um buraco que EU abri ao tornar a barreira de CM aditiva: candidato que escreve a
+// largura sem unidade ("ATADURA CREPOM 20 C/12") deixava de ser comparado e casava um pedido de
+// 10CM. Tira do texto o que já tem dono — pack (C/12, CX30), medidas com unidade (500G, 13 FIOS,
+// 4,5M) — e devolve o que sobrou. É por isso que "13 FIOS" e "C/500" não viram largura.
+function _bmNumSolto(texto){
+  var u=_bmStrip(String(texto).toUpperCase()).replace(/,/g,'.');
+  u=u.replace(/\b(?:C\/|CX\/?|PCT\/?|EMB\/?|PC\/?)\s*\d+(?:\.\d+)?/g,' ');
+  u=u.replace(/(\d+(?:\.\d+)?)\s*(?:CM|MM|MT|METROS?|METRO|ML|MG|MCG|UI|KG|GR|G|L|%|FIOS|FIO|F|UN|UND|UNID|CPR|COMP|CAPS|CPS|AMP|FA|FR|DOSES?)\b/g,' ');
+  var s=new Set(), m, re=/(\d+(?:\.\d+)?)/g;
+  while((m=re.exec(u))) s.add(String(parseFloat(m[1])));
+  return s;
+}
+// DIMINUTIVO — DICIONÁRIO EXPLÍCITO, nunca regra de sufixo (decisão do Lemuel, 28/07: -inha/-inho
+// genérico quebraria bolsinha, agulhinha e nome próprio de produto). Cresce um caso por vez, cada
+// um com o seu assert na suíte.
+const _BM_DIMINUTIVO={ escovinha:'escova' };
+// ABREVIAÇÕES — mesma receita: dicionário explícito, NUNCA regra de prefixo (senão
+// "DESCONGESTIONANTE" viraria "DESC"). Vale nos DOIS sentidos. Cresce um caso por vez.
+const _BM_ABREV={ desc:'descartavel', descartavel:'desc', procedim:'procedimento', procedimento:'procedim' };
+// SINÔNIMO DE MOLÉCULA (aprovado 28/07): butilbrometo de escopolamina = hioscina. É a MESMA
+// substância, não é contexto — de-para direto nos dois sentidos.
+// >>> PENICILINA (bug #5): "BENZILPENICILINA BENZATINA" é o nome oficial, "PENICILINA G BENZATINA"
+//     é o nome antigo e "BENZETACIL" é a marca — a MESMA substância, escrita de três jeitos.
+//     O valor pode ser lista: um nome oficial costuma ter mais de um apelido.
+//     ESTE DE-PARA SÓ EXISTE COM A GUARDA _bmPeniSub LOGO ABAIXO. Sozinho, ele abriria a porta
+//     pra benzatina virar cristalica ou procaína — que é erro clínico, não erro de preço.
+const _BM_SINON_MOL={ escopolamina:'hioscina', hioscina:'escopolamina', butilescopolamina:'hioscina',
+  benzilpenicilina:['penicilina','benzetacil'], benzetacil:['penicilina','benzilpenicilina'] };
+function _bmSinonMol(p){
+  const v=_BM_SINON_MOL[p]; const base = v ? (Array.isArray(v)?v:[v]) : [];
+  // + o dicionário do BANCO (dicionario_marca_pa), que é evolutivo e vale nos DOIS sentidos.
+  // O valor pode ser composto ("HEPARINA SODICA"): entra inteiro E pelo 1º token significativo,
+  // porque o banco às vezes grava só "HEPARINA" e o _bmFuzzy compara palavra a palavra.
+  const doBanco = _bmDic.get(p) || [];
+  const out = base.slice();
+  doBanco.forEach(s => { if (out.indexOf(s) < 0) out.push(s);
+    const t = String(s).split(/\s+/)[0]; if (t && t.length >= 4 && out.indexOf(t) < 0) out.push(t); });
+  return out;
+}
+// aviso da equivalência imperfeita (só existe quando a entrada do banco tem `aviso`)
+function _bmDicAvisoDe(p){ return _bmDicAviso.get(p) || null; }
+// ── DICIONÁRIO MARCA <-> PRINCÍPIO ATIVO, vindo do BANCO (tabela dicionario_marca_pa) ─────────
+// Mora no banco, não no código, porque é EVOLUTIVO: cada pedido ensina uma marca nova, e um
+// dicionário no código faria de cada marca nova um deploy.
+// _bmDic é um Map bidirecional: TRANSAMIN -> [acido tranexamico] e ACIDO TRANEXAMICO -> [transamin],
+// as duas direções gravadas na carga, porque o pedido tanto pode trazer a marca quanto o genérico.
+// _bmDicAviso guarda o texto de alerta das equivalências IMPERFEITAS (LUMAZENIL é typo de
+// FLUMAZENIL, não sinônimo) — essas casam, mas nunca caladas.
+let _bmDic = new Map(), _bmDicAviso = new Map(), _bmPalCanon = new Map();
+// DE-PARA DE PALAVRA (linhas tipo='palavra' da mesma tabela). Não é substância: é vocabulário —
+// o MESMO objeto escrito com outra palavra. "DRENO SUCTOR" e "DRENO SUCÇÃO" são o mesmo dreno.
+// Aplicado nos DOIS lados antes de comparar material, para o pedido e o cadastro falarem a mesma
+// língua. Também iguala a vírgula decimal ao ponto: o pedido escreve "4.8" e o banco "4,8".
+// ── BARREIRA DO NÚMERO DISCRIMINADOR (04/08) ─────────────────────────────────────────────────
+// Em material, o número NÃO é detalhe: é o produto. Quatro casos reais de um pedido só:
+//    SONDA FOLEY 24/3 VIAS   casava   SONDA DE FOLEY 2 VIAS N.14
+//    LAMINA BISTURI N 15     casava   LAMINA BISTURI N.23
+//    PAPEL LENCOL 50X70      casava   PAPEL LENCOL 50CMX50MT
+//    DRENO SUCTOR 4.8/3.2    casavam  DRENO SUCCAO CANULA 6,4   (os três caíam na mesma linha)
+// O motor lia esses números no PEDIDO (pra não confundir com quantidade) mas nunca os comparava
+// com o candidato. Resultado: calibre, número de vias e medida viravam enfeite.
+// TRÊS ESPÉCIES, comparadas separadamente — misturar faria "3 VIAS" barrar um calibre 3:
+//   cal  = calibre     "N 15", "N.23", "Nº 20", "18G", e o decimal solto da cânula ("4,8")
+//   vias = nº de vias  "3 VIAS"
+//   med  = medida par  "50X70", "7,5 X 7,5"  (par ordenado, unidade ignorada: 50CMX50MT = 50x50)
+// A barreira é dos DOIS LADOS, como todas as outras da casa: só barra quando o pedido E o
+// candidato declaram a MESMA espécie e não têm nenhum valor em comum. Quem não declara não vota.
+// DOSE TOTAL do frasco como chave: concentração × volume quando dá, senão a própria dose.
+// Serve pra perguntar "são o mesmo produto?" sem depender de COMO a dose foi escrita —
+// "200MG em 100ML" e "2MG/ML em 100ML" dão a mesma chave, porque são o mesmo frasco.
+function _bmDoseTotKey(texto){
+  const arr = [..._bmDoses(texto)];
+  const ml = [..._bmMl(texto)].map(Number).filter(n => n > 0);
+  const vol = (ml.length === 1) ? ml[0] : null;
+  if (arr.length === 1 && vol) {
+    const m = arr[0].match(/^(\d+(?:\.\d+)?)(MG|UI)\/ML$/);
+    if (m) return (Math.round(parseFloat(m[1]) * vol * 100000) / 100000) + m[2];
+  }
+  return arr.sort().join('|');
+}
+function _bmDiscrim(texto, comDecimal){
+  return _bmMemo(comDecimal ? 'dd1' : 'dd0', String(texto == null ? '' : texto), () => _bmDiscrimCalc(texto, comDecimal));
+}
+function _bmDiscrimCalc(texto, comDecimal){
+  // NORMALIZAÇÃO PRÓPRIA, de propósito: o _bmNormF apaga pontuação e transforma "7,5" em "7 5" —
+  // dois números soltos em vez de um decimal, e aí "7,5 X 7,5" virava a medida "5x7". Aqui a
+  // vírgula decimal vira ponto e o ponto e a barra SOBREVIVEM, que é o que sustenta "4.8",
+  // "N.23" e "24/3 VIAS".
+  const t = ' ' + _bmStrip(String(texto == null ? '' : texto).toUpperCase()).toLowerCase()
+    .replace(/(\d)\s*,\s*(\d)/g, '$1.$2')
+    .replace(/[^a-z0-9.\/]+/g, ' ').replace(/\s+/g, ' ') + ' ';
+  const cal = new Set(), vias = new Set(), med = new Set();
+  let m;
+  // DECIMAL SOLTO = calibre da cânula ("DRENO SUCTOR 4.8" x "CANULA 6,4"), tamanho da luva ("7.0").
+  // Só em MATERIAL (comDecimal): em medicamento os decimais são dose e volume, e lê-los como
+  // calibre criaria barreira falsa em cima de "1,8ML", "0,5%" e afins.
+  if (comDecimal) { const reD = /\s(\d+\.\d+)(?![\d.\/])/g;
+    while ((m = reD.exec(t))) cal.add(String(parseFloat(m[1]))); }
+  const reN = /\s(?:n|no|nº|n°)\s*\.?\s*(\d+(?:\.\d+)?)(?![\d.])/g;   // N 15 · N.23 · Nº 20
+  while ((m = reN.exec(t))) cal.add(String(parseFloat(m[1])));
+  const reG = /\s(\d+(?:\.\d+)?)\s*g\b/g;                              // 18G (calibre de agulha/cateter)
+  while ((m = reG.exec(t))) cal.add(String(parseFloat(m[1])));
+  const reV = /\s(\d+)\s*\/?\s*(\d+)?\s*vias?\b/g;                     // "3 VIAS" e "24/3 VIAS"
+  while ((m = reV.exec(t))) { if (m[2]) { cal.add(String(parseFloat(m[1]))); vias.add(String(parseFloat(m[2]))); }
+                             else vias.add(String(parseFloat(m[1]))); }
+  const reM = /\s(\d+(?:\.\d+)?)\s*(?:cm|mm|mt|m)?\s*x\s*(\d+(?:\.\d+)?)\s*(?:cm|mm|mt|m)?(?![\d.])/g;
+  while ((m = reM.exec(t))) med.add(parseFloat(m[1]) + 'x' + parseFloat(m[2]));
+  return { cal, vias, med };
+}
+// barra quando a MESMA espécie é declarada dos dois lados e não há valor em comum
+function _bmDiscrimConflito(a, b, comDecimal){
+  const da = _bmDiscrim(a, comDecimal), db = _bmDiscrim(b, comDecimal);
+  const bate = (x, y) => !x.size || !y.size || [...x].some(v => y.has(v));
+  return !bate(da.cal, db.cal) || !bate(da.vias, db.vias) || !bate(da.med, db.med);
+}
+// >>> DUAS COISAS AQUI SÃO POR CUSTO, não por gosto (medido no pedido cirúrgico, que é quase todo
+//     material): esta função roda uma vez por cotação POR ITEM do pedido. A versão original
+//     construía um `new RegExp` para CADA entrada do dicionário a cada chamada — 3 entradas ×
+//     21 mil linhas × 37 itens = 2,3 milhões de regexes compiladas do zero.
+//     (1) as regexes são compiladas UMA vez, quando o dicionário carrega (_bmPalRe);
+//     (2) o resultado é memoizado por texto — e o cache é LIMPO quando o dicionário muda, senão
+//         responderia com o vocabulário antigo, que é o jeito silencioso de errar.
+// >>> AUTO-CORRIGÍVEL DE PROPÓSITO: a 1ª versão exigia que quem trocasse o dicionário chamasse
+//     um "compila" — e a suíte pegou na hora o que isso custa. Um teste trocou o _bmPalCanon
+//     direto e as regexes ficaram as antigas: o de-para simplesmente parou de agir, em silêncio.
+//     Agora a compilação é LAZY e guarda QUAL Map compilou; se o Map for outro, recompila e joga
+//     fora o cache. Ninguém precisa lembrar de chamar nada.
+let _bmPalRe = [], _bmPalReSrc = null;
+function _bmPalReGarante(){
+  if (_bmPalReSrc === _bmPalCanon) return;
+  _bmPalRe = [];
+  _bmPalCanon.forEach((para, de) => _bmPalRe.push([new RegExp('(^|\\s)' + de + '(?=\\s|$)', 'g'), '$1' + para]));
+  _bmPalReSrc = _bmPalCanon;
+  if (typeof _BM_MEMO !== 'undefined' && _BM_MEMO.delete) _BM_MEMO.delete('cp');   // vocabulário novo, cache velho não vale
+}
+function _bmCanonPal(txt){ _bmPalReGarante(); return _bmMemo('cp', String(txt == null ? '' : txt), () => _bmCanonPalCalc(txt)); }
+function _bmCanonPalCalc(txt){
+  let t = _bmNormF(txt);
+  for (let i = 0; i < _bmPalRe.length; i++) t = t.replace(_bmPalRe[i][0], _bmPalRe[i][1]);
+  return t.replace(/(\d),(\d)/g, '$1.$2');
+}
+async function carregarDicMarcaPa(){
+  try{
+    const r = await fetch(`${SUPA_URL}/rest/v1/dicionario_marca_pa?select=tipo,de,para,aviso`,
+      { headers: { 'apikey': SUPA_KEY, 'Authorization': 'Bearer ' + SUPA_KEY } });
+    const rows = await r.json();
+    if (!Array.isArray(rows)) return;
+    const d = new Map(), av = new Map(), pc = new Map();
+    const par = (a, b) => { const na=_bmNorm(a), nb=_bmNorm(b); if(!na||!nb) return;
+      if(!d.has(na)) d.set(na, []); if(!d.has(nb)) d.set(nb, []);
+      if(d.get(na).indexOf(nb)<0) d.get(na).push(nb);
+      if(d.get(nb).indexOf(na)<0) d.get(nb).push(na); };
+    rows.forEach(x => { par(x.de, x.para);
+      if (x.aviso) { av.set(_bmNorm(x.de), x.aviso); av.set(_bmNorm(x.para), x.aviso); }
+      // 'palavra' vira canonicalização de UMA direção (de -> para): as duas grafias viram a mesma
+      if (x.tipo === 'palavra') { const de=_bmNorm(x.de), pa=_bmNorm(x.para);
+        if (de && pa && de.indexOf(' ')<0 && pa.indexOf(' ')<0 && !pc.has(de)) pc.set(de, pa); } });
+    _bmDic = d; _bmDicAviso = av; _bmPalCanon = pc;
+  }catch(e){ /* o dicionário é aditivo: sem ele a busca funciona como antes */ }
+}
+// SUBTIPO DA PENICILINA: benzatina, procaína e cristalica/potássica são produtos DIFERENTES.
+// Mesma forma da guarda de insulina: só age quando os DOIS lados nomeiam o subtipo.
+function _bmPeniSub(t){ const u=' '+_bmNormF(t)+' ';
+  if(!/ penicilina| benzetacil| benzilpenicilina/.test(u)) return null;
+  if(/ benzatina | benz | benzet/.test(u)) return 'BENZATINA';
+  if(/ procaina | proc /.test(u)) return 'PROCAINA';
+  if(/ cristalica | cristalina | potassica | sodica /.test(u)) return 'CRISTALICA';
+  return null;
+}
+// SORO: RINGER SIMPLES != RINGER COM LACTATO, e FISIOLÓGICO != GLICOSADO != GLICOFISIOLÓGICO.
+// A 68036 pede RINGER SIMPLES e o estoque só tem LACTATO — são soluções diferentes, e o de-para
+// de nome (cloreto de sódio <-> soro fisiológico) não pode virar vale-tudo entre soros.
+// ÁCIDO FOLÍNICO ≠ ÁCIDO FÓLICO — NUNCA, nem como alternativa (pedido de oncologia, 03/08).
+// Folinato de cálcio / leucovorin (resgate de metotrexato, modulador do 5-FU) não tem nada a ver
+// com ácido fólico (vitamina B9). O pedido pede 300MG e o "AFOLIMAX SOL 0,2MG/ML 30ML (ACIDO
+// FOLICO)" do banco tem 6MG no frasco — 50 vezes menos. Uma letra separa os dois nomes, e é
+// exatamente o tipo de par que um fuzzy de 1-2 letras aproxima: por isso a guarda é EXPLÍCITA e
+// roda ANTES de qualquer fuzzy. Aqui o sem-match estava certo e continua certo.
+function _bmFolinico(t){ const u=' '+_bmNormF(t)+' ';
+  if(/ folinic| folinat| leucovorin/.test(u)) return 'FOLINICO';
+  if(/ folico | folic /.test(u)) return 'FOLICO';
+  return null;
+}
+function _bmSoroTipo(t){ const u=' '+_bmNormF(t)+' ';
+  if(/ glicofisiologic/.test(u)) return 'GLICOFISIO';
+  if(/ ringer/.test(u)) return / lactat|hartmann/.test(u) ? 'RINGER_LACT' : 'RINGER_SIMPLES';
+  return null;
 }
 // tamanhos de material (P/M/G/GG/XG/EG). Remove abreviações "P/ C/ S/ N/" antes p/ não confundir.
 function _bmTamanhos(texto){
@@ -997,40 +1438,98 @@ function _bmPalavras(linha){ return _bmNorm(linha).split(/\s+/).filter(p=>p.leng
 const _bmDist1=(a,b)=>{ if(a===b)return true; const la=a.length,lb=b.length; if(Math.abs(la-lb)>1)return false; let i=0,j=0,e=0; while(i<la&&j<lb){ if(a[i]===b[j]){i++;j++;continue;} if(++e>1)return false; if(la>lb)i++; else if(lb>la)j++; else {i++;j++;} } if(i<la||j<lb)e++; return e<=1; };
 // pares a distância-1 que são palavras REAIS diferentes (nunca typo uma da outra) — o fuzzy NÃO pode uni-los.
 // Caso real 22/07: busca "complexo b" devolvia EQUIPO MACROGOTAS COMPLETO (COMPLEXO~COMPLETO, 1 letra).
-const _BM_FUZZY_NAO=[['complexo','completo']];
+const _BM_FUZZY_NAO=[['complexo','completo'],['sodio','sodico'],['sodio','sodica'],['calcio','calcico'],['potassio','potassico']];   // +14531: CLORETO DE SODIO nunca fuzzy-casa DICLOFENACO SODICO (íon != adjetivo de sal)
 const _bmFuzzyParProibido=(a,b)=>_BM_FUZZY_NAO.some(p=>(p[0]===a&&p[1]===b)||(p[0]===b&&p[1]===a));
 const _bmFuzzy=(w,t)=>{ if(!t)return false; if(t.includes(w))return true; if(w.length<5)return false; return t.split(/\s+/).some(k=>k.length>=5&&k[0]===w[0]&&!_bmFuzzyParProibido(k,w)&&_bmDist1(k,w)); };
 // substância casa por PALAVRA INTEIRA (evita cetamina casar dentro de escetamina)
 const _bmTemSub=(sub,texto)=> !!sub && (' '+texto+' ').includes(' '+sub+' ');
 
 // MATERIAL (sem PA): casa por substantivo + característica; bloqueia categorias alheias.
-const _BM_MATKW=['envelope','campo','atadura','ligadura','luva','fralda','sonda','papel','seringa','agulha','lamina','bisturi','kit','teste','tira','lanceta','fita','gaze','compressa','cateter','equipo','mascara','avental','touca','gorro','lencol','esparadrapo','micropore','algodao','coletor','dreno','swab','cotonete','eletrodo','abaixador','espatula','bolsa','scalp','abocath','jelco','termometro','oximetro','glicosimetro','curativo','bandagem','protetor','escova','pinca','tesoura','cuba','bandeja','umidificador','nebulizador','filtro','extensor','torneira','conector','circuito','fio','sutura','hidrogel','alginato','hidrocoloide','sapatilha','prope','prope','sapato','pantufa'];
+const _BM_MATKW=['envelope','campo','atadura','ligadura','luva','fralda','sonda','papel','seringa','agulha','lamina','bisturi','kit','teste','tira','lanceta','fita','gaze','compressa','cateter','equipo','mascara','avental','touca','gorro','lencol','esparadrapo','micropore','algodao','coletor','dreno','swab','cotonete','eletrodo','abaixador','espatula','bolsa','scalp','abocath','jelco','termometro','oximetro','glicosimetro','curativo','bandagem','protetor','escova','pinca','tesoura','cuba','bandeja','umidificador','nebulizador','filtro','extensor','torneira','conector','circuito','fio','sutura','hidrogel','alginato','hidrocoloide','sapatilha','prope','prope','sapato','pantufa','tubo','canula'];
 const _BM_BLOCK=['figurinha','figurinhas','cromo','cromos','copa','world','cup','panini','album','brinquedo','chocolate','alimento','doce','revista','sticker','boneco','pelucia','beach','tennis','tenis','esporte','esportivo','futebol','game'];
 // palavras GENÉRICAS que caem no path de medicamento como "principal" mas não são princípio ativo (forma/recipiente).
 // Quando o principal é uma dessas, exige uma palavra DISTINTIVA (marca/qualificador) casar — mata "ADESIVO SALONPAS"->ByeByeFever e "ALMOTOLIA 100ML"->água oxigenada.
-const _BM_GENERICO=new Set(['adesivo','almotolia','frasco','pote','bolsa','recipiente','coletor','envelope','guia']);
+const _BM_GENERICO=new Set(['adesivo','almotolia','frasco','pote','bolsa','recipiente','coletor','envelope','guia','adaptador','canhao','colirio']);   // +14531: adaptador/canhão exigem distintiva (coleta-vácuo != Transofix); colírio exige o PA pedido
 // ÁGUA tem GRAU/USO distinto e não intercambiável: INJ = estéril/apirogênica/p-injeção (uso no
 // PACIENTE) x EQUIP = autoclave/deionizada (uso em EQUIPAMENTO). "destilada" é neutro (aparece nos
 // dois). Na dúvida entre águas de uso diferente NÃO casa (segurança do paciente). Só age quando o
 // pedido é água (principal='agua') e nomeia um grau.
 const _BM_AGUA_INJ=['injecao','injetavel','injetaveis','esteril','apirogenica','apirogenico','irrigacao'];
 const _BM_AGUA_EQUIP=['autoclave','deionizada','desmineralizada','bidestilada','reagente'];
-function _bmAguaGrau(texto){ const s=_bmNormF(texto); if(_BM_AGUA_INJ.some(k=>s.includes(' '+k))) return 'INJ'; if(_BM_AGUA_EQUIP.some(k=>s.includes(' '+k))) return 'EQUIP'; return null; }
+const _BM_AGUA_BACT=['bacteriostatica','bacteriostatico'];   // 14531: tem CONSERVANTE — grau próprio, checado ANTES (o nome costuma trazer "p/ injeção" junto)
+function _bmAguaGrau(texto){ const s=_bmNormF(texto); if(_BM_AGUA_BACT.some(k=>s.includes(' '+k))) return 'BACT'; if(_BM_AGUA_INJ.some(k=>s.includes(' '+k))) return 'INJ'; if(_BM_AGUA_EQUIP.some(k=>s.includes(' '+k))) return 'EQUIP'; return null; }
 // qualificadores genéricos (tamanho/adjetivo) que NÃO servem como palavra distintiva de marca
 const _BM_QUALIF_GEN=new Set(['grande','grandes','pequeno','pequena','medio','media','mini','super','extra','longo','longa','curto','curta','largo','larga','fino','fina','grosso','grossa','simples','comum','normal','descartavel','desc']);
-function _bmMaterial(texto){ if(_bmDoses(texto).size>0) return false; if(_bmForma(texto)) return false; const t=_bmNormF(texto); return _BM_MATKW.some(k=>t.includes(' '+k.split(' ')[0])); }
+// DISPOSITIVOS de CALIBRE (gauge): cateter/agulha/scalp/abocath/jelco/cânula/sonda/dreno/tubo.
+// O calibre "22G"/"25G" (gauge) NÃO é dose em grama, e "intravenoso" NÃO é forma injetável de
+// medicamento — são material puro (PASSO 0 unificação, 23/07). Reconhecidos ANTES do bail de
+// dose/forma pra não desrotar pro caminho de medicamento (onde cateter nunca casa).
+const _BM_DEVICE=['cateter','agulha','scalp','abocath','jelco','canula','sonda','dreno','lanceta','equipo','extensor','tubo'];
+// MATERIAL PELA CABEÇA DO NOME (68574): produto cujo nome começa com uma destas palavras É material,
+// mesmo trazendo volume/peso no nome ("FIXADOR CITOLOGICO FRASCO C/100ML" era desrotado pro caminho
+// de MEDICAMENTO por causa do "100ML" e lá casou "FIXADOR DE TUBO ENDOTRAQUEAL" — outro produto).
+// Só vale como PRIMEIRA palavra, pra não desrotar medicamento que cita "fita"/"frasco" no meio.
+// (NÃO entram aqui as palavras do _BM_GENERICO — almotolia/coletor/frasco/bolsa são RECIPIENTE, e
+// viram o conteúdo de outro produto: "ALMOTOLIA 100ML" casaria "AGUA OXIGENADA ... ALMOTOLIA".
+// Isso é a suíte de ouro caso 2, que pegou a regressão na hora.)
+const _BM_MAT_CABECA=['fixador','escova','escovinha','espatula','lencol','glicosimetro','fita','compressa','atadura','gaze','algodao','luva','luvas','avental','touca','fralda','curativo','esparadrapo'];
+function _bmMaterial(texto){
+  const t=_bmNormF(texto);
+  if(_BM_DEVICE.some(k=>t.includes(' '+k+' ')||t.includes(' '+k+'s '))) return true;   // dispositivo -> material (calibre/via não desrotam)
+  const _cab=t.trim().split(/\s+/)[0];
+  if(_BM_MAT_CABECA.includes(_cab)) return true;                                        // cabeça de material -> material
+  if(_bmDoses(texto).size>0) return false; if(_bmForma(texto)) return false;
+  return _BM_MATKW.some(k=>t.includes(' '+k.split(' ')[0]));
+}
 // ── discriminadores OBRIGATÓRIOS de material: cada CONCEITO tem famílias (sinônimos). Se o pedido nomeia
 //    uma família, o candidato tem que casar ALGUMA das famílias que o pedido nomeou (senão bloqueia).
 //    Só bloqueiam quando o pedido especifica — não afrouxam nada.
-const _BM_FAM_SUBTIPO=[['uretral','vesical','foley','folley'],['enteral','nasoenteral','nasogastrica','nasogastrico','gastrica','levine','dobbhoff','duodenal','alimentacao'],['aspiracao','aspirativa'],['endotraqueal','orotraqueal','intubacao'],['nelaton'],['retal','rectal']];
+const _BM_FAM_SUBTIPO=[['uretral','vesical','foley','folley'],['enteral','nasoenteral','nasogastrica','nasogastrico','gastrica','levine','dobbhoff','duodenal','alimentacao'],['aspiracao','aspirativa'],['endotraqueal','orotraqueal','intubacao'],['nelaton'],['retal','rectal'],['peridural','epidural'],['raqui','raquidiana','raquianestesia','espinal']];  // agulha peridural != raqui != comum (caso real 64996)
 const _BM_FAM_MATERIAL=[['algodao'],['crepom','crepe'],['elastica','elastico'],['gessada','gesso','gessado'],['rayon'],['tnt','sintetica']];
 const _BM_FAM_IDADE=[['infantil','infantis','pediatrica','pediatrico','pediatria','junior','baby','bebe','neonatal'],['adulto','adultos','geriatrica','geriatrico','senior']];
 const _BM_FAM_TESTE=[['igg'],['igm'],['iga'],['antigeno','ag','ns1'],['anticorpo','pcr','molecular']];
 // analito do teste (a doença/alvo): dengue != covid != influenza... (escopo fechado nas comuns). So bloqueia se o pedido nomeia um.
 const _BM_FAM_ANALITO=[['dengue'],['covid','coronavirus','sars'],['influenza','flu','h1n1'],['hiv','aids'],['sifilis','treponema'],['malaria'],['hepatite','hbsag','hcv','hbv'],['gravidez','hcg','bhcg'],['rotavirus'],['estreptococo','strep'],['toxoplasmose'],['leishmaniose']];
+// TIPO DE FITA (68574): fita de AUTOCLAVE é indicador de esterilização, MICROPOROSA/CREPE são
+// curativo, ISOLANTE/DUPLA FACE não são nem hospitalar. Trocar uma pela outra é erro grosseiro
+// (900 un, R$ 3.249 na proposta do Eduardo).
+const _BM_FAM_FITA=[['autoclave','indicadora','esterilizacao'],['microporosa','micropore','microporo'],['crepe','crepom'],['isolante','eletrica'],['adesiva','embalagem','durex'],['cirurgica','transpore','transpore'],['zebrada','sinalizacao','demarcacao']];
+// TIPO DE COMPRESSA (68574): CAMPO OPERATÓRIO é pano cirúrgico grande (com fio radiopaco), gaze é
+// outro produto. O pedido de campo operatório casava a gaze 7,5x7,5 e ainda comia a linha da gaze.
+const _BM_FAM_COMPRESSA=[['campo','operatorio','cirurgico','laparotomia'],['gaze','gazes'],['nao','tecido','tnt'],['algodonada','algodao']];
+// TIPO DE FIXADOR (28/07, caso real 68574): "fixador" são três produtos sem parentesco —
+// CITOLÓGICO (líquido/spray de laboratório), de CATETER (curativo adesivo) e de TUBO ENDOTRAQUEAL
+// (dispositivo). O citológico do cliente estava casando um curativo fixador de cateter: R$2.494,68
+// de produto ERRADO dentro da proposta — e item errado é pior que item faltando.
+// AGULHA DE CANETA/INSULINA (28/07, caso real 68574): a hipodérmica "13x4,5" do pedido casava
+// "AGULHA P/ CANETA INSULINA 31G 6MM". São produtos distintos e a barreira é SIMÉTRICA — pedido
+// comum não recebe caneta, pedido de caneta não recebe hipodérmica. Calibres de caneta (31G/32G) e
+// comprimentos em mm (4/5/6/8mm) são a assinatura; hipodérmica se escreve NxN (13x4,5, 25x7).
+function _bmAgulhaCaneta(texto){
+  var t=_bmNormF(texto);
+  return / caneta /.test(t) || / insulina /.test(t) || /\b3[12]\s?g\b/.test(t) || /\b[4568]\s?mm\b/.test(t);
+}
+const _BM_FAM_FIXADOR=[['citologico','citologia','citopatologico','laminas'],['cateter','venoso','curativo','fenestrado','fene'],['tubo','endotraqueal','orotraqueal','canula','tot']];
 function _bmFamHit(text, fam){ const t=_bmNormF(text); return fam.some(tok=>t.includes(' '+tok+' ')); }
 // calibre N-XX / CH / FR (sonda, cateter, agulha): "N-06"->6, "N.12"->12, "N 08"->8. Null se nao houver.
-function _bmCalibre(texto){ var u=String(texto).toUpperCase(); var m=u.match(/\bN[º°O.\-\s]*(\d{1,2})\b/) || u.match(/\b(?:CH|FR|GA)[.\-\s]*(\d{1,2})\b/); if(!m) return null; var n=m[1].replace(/^0+/,''); return n===''?'0':n; }
+// calibre com ESCALA (PASSO 3 item 3): {n:número, s:'FR'|'G'|'N'}. CH/Fr/FR/Fg = MESMA escala French;
+// G/GA = gauge; G e FR NUNCA se convertem. "N" (número) é CORINGA de escala (N.24 casa 24G e 14FR).
+function _bmCalibre(texto){
+  var u=String(texto).toUpperCase(); var m, s, n;
+  if((m=u.match(/\b(?:CH|FR|FG)[.\-\s]*(\d{1,2})\b/)) || (m=u.match(/\b(\d{1,2})\s*(?:CH|FR|FG)\b/))) { s='FR'; n=m[1]; }
+  else if((m=u.match(/\bGA[.\-\s]*(\d{1,2})\b/)) || (m=u.match(/\b(\d{1,2})\s*GA\b/)) || (m=u.match(/\b(\d{1,2})\s*G(?=[X\s\/\-]|$)/))) { s='G'; n=m[1]; }
+  else if((m=u.match(/\bN[º°O.\-\s]*(\d{1,2})\b/))) { s='N'; n=m[1]; }
+  else return null;
+  n=n.replace(/^0+/,''); n=(n===''?'0':n);
+  return { n:n, s:s };
+}
+// tamanho em mm do TUBO/SONDA ENDOTRAQUEAL, canônico ×10: "7,0"->70, "7,5"->75, "N.75"->75,
+// "N.8,0MM"->80, "N.40"->40 (=4,0mm). Só usado na família endotraqueal. Null se não achar.
+function _bmEndoMm(texto){
+  var u=String(texto).toUpperCase();
+  var m=u.match(/\bN[º°O.\-\s]*(\d)[,.]?(\d)?\s*M?M?\b/) || u.match(/\b(\d)[,.](\d)\s*M?M?\b/);
+  if(!m) return null; return parseInt(m[1],10)*10 + (m[2]?parseInt(m[2],10):0);
+}
 function _bmDiscorda(reqText, candText, familias){
   const reqFams=familias.filter(f=>_bmFamHit(reqText,f));
   if(!reqFams.length) return false;                 // pedido não especifica esse conceito -> sem restrição
@@ -1043,34 +1542,110 @@ function _bmMatchMat(reqText, candText){
   const rw=_bmNormF(reqText).trim().split(/\s+/).filter(w=>w.length>2 && !stop.has(w));
   if(!rw.length) return false;
   // mesmo substantivo — PALAVRA INTEIRA (tolera plural s/es). Mata "guia" casar dentro de "guiat".
-  if(!(ct.includes(' '+rw[0]+' ')||ct.includes(' '+rw[0]+'s ')||ct.includes(' '+rw[0]+'es '))) return false;
+  // 68574: o pedido do cliente vem no PLURAL ("LUVAS DE PROCEDIMENTOS") e o banco cadastra no
+  // SINGULAR ("LUVA PROCEDIM...") — antes só o inverso era tolerado e o item SUMIA da proposta.
+  const _sing = rw[0].replace(/(?:es|s)$/,'');
+  const _dimin = _BM_DIMINUTIVO[rw[0]] || null;    // de-para explícito (escovinha -> escova)
+  const _abrev = _BM_ABREV[rw[0]] || _BM_ABREV[_sing] || null;      // desc <-> descartavel
+  const _molec = _bmSinonMol(rw[0])[0] || null;                      // escopolamina <-> hioscina
+  if(!(ct.includes(' '+rw[0]+' ')||ct.includes(' '+rw[0]+'s ')||ct.includes(' '+rw[0]+'es ')
+       ||(_sing.length>=3 && (ct.includes(' '+_sing+' ')||ct.includes(' '+_sing+'s ')||ct.includes(' '+_sing+'es ')))
+       ||(_dimin && (ct.includes(' '+_dimin+' ')||ct.includes(' '+_dimin+'s ')))
+       ||(_abrev && (ct.includes(' '+_abrev+' ')||ct.includes(' '+_abrev+'s ')))
+       ||(_molec && (ct.includes(' '+_molec+' ')||ct.includes(' '+_molec+'/'))))){
+    // SINÔNIMO TUBO<->SONDA no contexto ENDOTRAQUEAL (caso real 64997): cliente escreve "TUBO
+    // ENDOTRAQUEAL", banco cadastra "SONDA ENDOTRAQUEAL" — mesmo dispositivo. SÓ nesse contexto
+    // (os DOIS lados na família endotraqueal/orotraqueal/intubação); tubo genérico não vira sonda.
+    var _altTubo = rw[0]==='tubo' ? 'sonda' : (rw[0]==='sonda' ? 'tubo' : null);
+    var _famEndo = ['endotraqueal','orotraqueal','intubacao'];
+    // SINÔNIMO FITA<->TIRA no contexto GLICEMIA (28/07, caso real 68574): o cliente escreve "FITA
+    // DE GLICEMIA", o banco cadastra "TIRAS P/GLICOSE". Mesma receita do tubo<->sonda: só vale com
+    // os DOIS lados no contexto glicemia/glicose/reagente — fita adesiva/autoclave/micropore fora.
+    var _altTira = rw[0]==='fita' ? 'tira' : (rw[0]==='tira' ? 'fita' : null);
+    var _famGli = ['glicemia','glicose','glicosimetro','reagente'];
+    var _okTira = _altTira && _bmFamHit(reqText,_famGli) && _bmFamHit(candText,_famGli)
+                  && (ct.includes(' '+_altTira+' ')||ct.includes(' '+_altTira+'s '));
+    if(!_okTira && !(_altTubo && _bmFamHit(reqText,_famEndo) && _bmFamHit(candText,_famEndo)
+         && (ct.includes(' '+_altTubo+' ')||ct.includes(' '+_altTubo+'s ')))) return false;
+  }
+  // CABEÇAS mutuamente exclusivas (14531): EXTENSOR não é EQUIPO (e vice-versa) — o candidato
+  // "EQUIPO INFUSOR ... (EXTENSOR)" contém a palavra, mas a CABEÇA do nome diz o que ele é.
+  const candHead = ct.trim().split(' ')[0];
+  if(rw[0]==='extensor' && candHead==='equipo') return false;
+  if(rw[0]==='equipo' && candHead==='extensor') return false;
   // ── discriminadores obrigatórios (subtipo/material/faixa-etária/tipo-de-teste) ──
   if(_bmDiscorda(reqText,candText,_BM_FAM_SUBTIPO)) return false;     // sonda uretral != enteral != aspiração != endotraqueal
   if(_bmDiscorda(reqText,candText,_BM_FAM_MATERIAL)) return false;    // atadura algodão != crepom
   if(_bmDiscorda(reqText,candText,_BM_FAM_IDADE)) return false;       // fralda infantil != adulto
   if(_bmDiscorda(reqText,candText,_BM_FAM_TESTE)) return false;       // teste IGG/IGM != antígeno
   if(_bmDiscorda(reqText,candText,_BM_FAM_ANALITO)) return false;     // teste dengue != covid != influenza (analito)
+  // fita/compressa: só valem quando o PEDIDO é do produto (senão "campo" de outro item bloquearia)
+  if((rw[0]==='fita'||rw[0]==='fitas') && _bmDiscorda(reqText,candText,_BM_FAM_FITA)) return false;            // autoclave != microporosa != crepe
+  if((rw[0]==='compressa'||rw[0]==='compressas') && _bmDiscorda(reqText,candText,_BM_FAM_COMPRESSA)) return false;  // campo operatório != gaze
+  if(rw[0]==='fixador' && _bmDiscorda(reqText,candText,_BM_FAM_FIXADOR)) return false;                              // citológico != cateter != tubo
+  if(rw[0]==='agulha'||rw[0]==='agulhas'){ if(_bmAgulhaCaneta(reqText) !== _bmAgulhaCaneta(candText)) return false; } // caneta de insulina != hipodérmica
   // ── calibre N-XX (só sonda/cateter/dreno/agulha/tubo): N-06 != N-12; evita 4 calibres colapsarem em 1 ──
   if(['sonda','cateter','dreno','agulha','scalp','abocath','jelco','tubo'].includes(rw[0])){
     const calReq=_bmCalibre(reqText);
-    if(calReq){ const cc=_bmCalibre(candText); if(cc && cc!==calReq) return false; }
+    if(calReq){ const cc=_bmCalibre(candText);
+      if(cc){
+        if(cc.n!==calReq.n) return false;                                   // número diferente (N-06 != N-12, 22G != 24G)
+        if(cc.s!=='N' && calReq.s!=='N' && cc.s!==calReq.s) return false;   // mesmo número, escalas EXPLÍCITAS diferentes: gauge != French
+      }
+    }
+  }
+  // ── tamanho em mm do ENDOTRAQUEAL (7,0 != 7,5; "N.75"=7,5): não deixa TUBO 7,0 baixar em N.75 ──
+  if(_bmFamHit(reqText,['endotraqueal','orotraqueal','intubacao']) && _bmFamHit(candText,['endotraqueal','orotraqueal','intubacao'])){
+    const mmReq=_bmEndoMm(reqText);
+    if(mmReq){ const mmC=_bmEndoMm(candText); if(mmC && mmC!==mmReq) return false; }
   }
   // ── característica-chave OBRIGATÓRIA quando o pedido especifica ──
   const tamReq=_bmTamanhos(reqText);                                  // tamanho P/M/G/GG/XG/EG (multi-tamanho casa qualquer DESSES)
   if(tamReq.size){ const tc=_bmTamanhos(candText); if(![...tamReq].some(t=>tc.has(t))) return false; }
   const vReq=_bmVolume(reqText);                                      // volume (SERINGA 20ML só casa 20ML)
   if(vReq){ if(vReq!==_bmVolume(candText)) return false; }
-  const sizeReq=(String(reqText).toLowerCase().match(/\d+\s*x\s*\d+/)||[])[0];  // dimensão NxN (23x40)
-  if(sizeReq){ if(!ct.replace(/\s*x\s*/g,'x').includes(sizeReq.replace(/\s*/g,''))) return false; }
-  const cmReq=_bmCm(reqText);                                         // largura CM (atadura/gaze 15CM != 10CM)
-  if(cmReq.size){ const cc=_bmCm(candText); if(![...cmReq].some(x=>cc.has(x))) return false; }
-  const fiosReq=(String(reqText).toUpperCase().match(/(\d+)\s*FIOS/)||[])[1];  // nº de fios (gaze/compressa)
-  if(fiosReq){ const fc=(String(candText).toUpperCase().match(/(\d+)\s*FIOS/)||[])[1]; if(fc && fc!==fiosReq) return false; }
+  // DIMENSÃO NxN (23x40). 28/07: compara os DOIS números em CENTÍMETROS canônicos — "200X90" e
+  // "2MTX90CM" são o MESMO lençol, e antes não casavam (era comparação de texto cru).
+  const _dim=t=>{ const m=String(t).toUpperCase().replace(/,/g,'.').match(/(\d+(?:\.\d+)?)\s*(MT|M|CM)?\s*[X]\s*(\d+(?:\.\d+)?)\s*(MT|M|CM)?/);
+    if(!m) return null; const cv=(v,u)=>{ const n=parseFloat(v); return (u==='M'||u==='MT') ? n*100 : n; };
+    // unidade escrita só no fim vale pros DOIS lados ("1,80X1,40M" = 180x140cm). Quando cada lado
+    // traz a sua ("20CMX4,5M"), cada uma vale na sua.
+    const u1=m[2]||m[4]||'', u2=m[4]||'';
+    return cv(m[1],u1)+'x'+cv(m[3],u2); };
+  const dimReq=_dim(reqText);
+  if(dimReq){ const dc=_dim(candText); if(dc && dc!==dimReq) return false; }
+  // largura CM (atadura/gaze 15CM != 10CM). ADITIVA (28/07): só bloqueia quando os DOIS lados
+  // declaram CM. Antes, pedido com "CM" x candidato sem "CM" reprovava o produto EXATO — foi assim
+  // que a gaze 13 fios que o cliente pediu (e que existe no banco) ficou de fora da proposta.
+  const cmReq=_bmCm(reqText);
+  if(cmReq.size){
+    const cc=_bmCm(candText);
+    if(cc.size){ if(![...cmReq].some(x=>cc.has(x))) return false; }
+    else { const so=_bmNumSolto(candText);          // candidato MUDO: número órfão conta como largura
+           if(so.size && ![...cmReq].some(x=>so.has(x))) return false; }
+  }
+  // nº de FIOS da gaze/compressa. 68574: o banco escreve "11FIO" (singular) e "13F" — o regex só
+  // aceitava "FIOS", então gaze de 13 fios casava compressa de 11 fios.
+  const _fios=t=>(String(t).toUpperCase().replace(/,/g,'.').match(/(\d+)\s*(?:FIOS|FIO|F)\b/)||[])[1];
+  const fiosReq=_fios(reqText);
+  if(fiosReq){ const fc=_fios(candText); if(fc && fc!==fiosReq) return false; }
   const pesoReq=_bmPeso(reqText);                                    // peso GR (algodão 500g != 25g)
   if(pesoReq.size){ const pc=_bmPeso(candText); if(![...pesoReq].some(x=>pc.has(x))) return false; }
+  // METRAGEM (68574): atadura 4,5m != 1,8m; fita 30m != 4,5m. "1,80M" ≡ "180MT" (mesma medida).
+  const metReq=_bmMetros(reqText);
+  if(metReq.size){ const mc=_bmMetros(candText); if(mc.size && !_bmMetrosIgual(metReq,mc)) return false; }
+  // VOLUME em ML como conjunto (68574): pega o "C/100ML" que o _bmVolume deixa passar.
+  const mlReq=_bmMl(reqText);
+  if(mlReq.size){ const mlc=_bmMl(candText); if(mlc.size && ![...mlReq].some(x=>mlc.has(x))) return false; }
   const gReq=_BM_GLOVE.find(g=>_bmNormF(reqText).includes(' '+g+' '));  // material da luva (nitrílica != látex)
   if(gReq){ const gc=_BM_GLOVE.find(g=>ct.includes(' '+g+' ')); if(gc && gc!==gReq) return false; }
-  const ltReq=_bmLuvaTipo(reqText);
+  // TIPO DE LUVA — só quando o pedido É de luva. 68574: "COMPRESSA CIRURGICA CAMPO OPERATORIO"
+  // caía aqui (a palavra "cirúrgica" ligava o discriminador de luva) e o item sumia da proposta.
+  const _ehLuva = rw[0]==='luva' || rw[0]==='luvas';
+  let ltReq=_ehLuva ? _bmLuvaTipo(reqText) : null;
+  // LUVA com tamanho NUMÉRICO 6-9(,5) = cirúrgica IMPLÍCITA (caso real 23/07: "luva estéril
+  // 7.0" x procedimento TAM G). Só quando o pedido não declarou o tipo por extenso.
+  if(!ltReq && _ehLuva && /\b[6-9](?:[.,][05])?\b/.test(String(reqText))) ltReq='cir';
   if(ltReq==='cir'){                                                   // cirúrgica SÓ casa cirúrgica explícita + tamanho numérico igual
     if(_bmLuvaTipo(candText)!=='cir') return false;
     const ns=String(reqText).match(/\b([6-9](?:[.,]\d)?)\b/);
@@ -1080,17 +1655,58 @@ function _bmMatchMat(reqText, candText){
   if(eReq){ const ec=_bmEsteril(candText); if(ec && ec!==eReq) return false; }
   if(_bmNegConflito(reqText, candText)) return false;               // com/sem conflitante (s/agulha, s/clor...)
   // se nenhuma característica-chave no pedido, exige um qualificador em comum
-  if(!tamReq.size && !vReq && !sizeReq && !cmReq.size && !fiosReq && !pesoReq.size){
+  // (luva cirúrgica já validada por tipo+tamanho numérico conta como característica — o
+  // candidato abrevia "EST." e o qualificador 'esteril' nunca casaria por texto)
+  if(!tamReq.size && !vReq && !dimReq && !cmReq.size && !fiosReq && !pesoReq.size && ltReq!=='cir'){
     const quals=rw.slice(1);
-    if(quals.length>0 && !quals.some(q=>q.length>2 && ct.includes(q))) return false;
+    // o qualificador também vale pelo de-para de abreviação (desc <-> descartavel)
+    if(quals.length>0 && !quals.some(function(q){
+      if(q.length<=2) return false;
+      if(ct.includes(q)) return true;
+      var qs=q.replace(/(?:es|s)$/,'');                    // plural do pedido no de-para
+      return !!((_BM_ABREV[q] && ct.includes(_BM_ABREV[q])) || (_BM_ABREV[qs] && ct.includes(_BM_ABREV[qs])));
+    })) return false;
   }
   return true;
 }
-function _bmFormaCand(prod){
+// PROPORÇÃO de associação (15617): "3+3", "5+2MG/ML", "400+57MG" -> par "maior+menor" (ordem
+// robusta). Exige DÍGITO dos dois lados do + (PIPERACILINA+TAZOBACTAM não vira proporção).
+// VASO (23526): 'COM'|'SEM'|null — S/V, S/VASO, SEM VASO x C/V, C/VASO, COM VASO CONST.
+function _bmVaso(t){
+  var u=' '+String(t||'').toUpperCase()+' ';
+  // >>> O VASOCONSTRITOR PELO NOME (bug #5): o cliente escreve "LIDOCAINA + EPINEFRINA", não
+  //     "C/VASO". Sem isso o pedido COM vaso podia receber a versão SEM vaso — que é outro
+  //     procedimento, não outro preço. Vale nos dois sentidos: "S/ EPINEFRINA" é SEM.
+  if(/\sS\/?\s?V(ASO)?\b|SEM VASO|\sS\/\s?(?:ADREN|EPINEF|NORADREN)|SEM\s+(?:ADRENALINA|EPINEFRINA)/.test(u)) return 'SEM';
+  if(/\sC\/?\s?V(ASO)?\b|COM VASO|VASO CONST|ADRENALINA|EPINEFRINA/.test(u)) return 'COM';
+  return null;
+}
+function _bmProp(t){
+  var m=String(t||'').toUpperCase().replace(/,/g,'.').match(/(\d+(?:\.\d+)?)\s*(?:MG(?:\/ML)?|MCG|G|UI)?\s*\+\s*(\d+(?:\.\d+)?)/);
+  if(!m) return null;
+  var a=parseFloat(m[1]), b=parseFloat(m[2]);
+  if(!(a>0)||!(b>0)) return null;
+  return Math.max(a,b)+'+'+Math.min(a,b);
+}
+function _bmFormaCand(prod){ return _bmMemo('fc', String(prod == null ? '' : prod), () => _bmFormaCandCalc(prod)); }
+function _bmFormaCandCalc(prod){
   var f=_bmForma(prod); if(f) return f;
   var up=_bmStrip(String(prod).toUpperCase());
-  if(/\/\s*ML\b/.test(up) || /\d\s*ML\b/.test(up)) return 'LIQUIDO_ORAL';  // sem palavra de forma mas com concentração/volume ML -> líquido (ex.: LACTULOSE 667MG/ML 120ML)
-  return 'SOLIDO_ORAL';                                                    // senão, sólido oral
+  // >>> ESTA LINHA TAMBÉM ERA UM CHUTE, e mordia o mesmo pedido de oncologia: "DOCETAXEL 80MG/4ML
+  //     CX/1FRS GENERICO BLAU" (R$65,45) tem "/ML" e virava LIQUIDO_ORAL — um frasco-ampola de
+  //     quimioterápico classificado como xarope, e barrado contra um pedido injetável.
+  //     Ter ML no nome diz que é LÍQUIDO; não diz se é oral ou injetável. Então: não sei.
+  //     (null não bloqueia nada, então um pedido de líquido oral continua alcançando a LACTULOSE
+  //     667MG/ML 120ML — o que se perde é só a capacidade de BARRAR com base num palpite.)
+  // >>> ANTES ISTO DEVOLVIA 'SOLIDO_ORAL' — um CHUTE, e a barreira de forma o tratava como fato.
+  //     Era o que matava o pedido de oncologia: "PEMETREXEDE DISSODICO 100MG CX/1FRS GENERICO
+  //     BLAU" não tem palavra de forma no nome nem ML, então era adivinhado COMPRIMIDO — e o
+  //     pedido, que diz "PÓ PARA SOLUÇÃO INJETÁVEL", batia numa barreira dura contra um chute.
+  //     Frasco-ampola de quimioterápico virando comprimido por omissão do cadastro.
+  //     Agora: null = NÃO SEI. Quem não sabe não vota — a barreira só age quando os DOIS lados
+  //     nomeiam a forma e elas divergem, que é a mesma filosofia das outras barreiras da casa
+  //     (sub-forma oral, vasoconstritor, subtipo de insulina e de penicilina).
+  return null;
 }
 // Insulinas NUNCA cruzam subtipo (NPH != Regular != Lispro != Glargina != Aspart != Degludeca != Detemir)
 const _BM_INSU = {nph:['nph'],regular:['regular'],lispro:['lispro','humalog'],aspart:['aspart','asparte','novorapid','fiasp'],glargina:['glargina','lantus','basaglar','toujeo'],degludeca:['degludeca','tresiba'],detemir:['detemir','levemir'],glulisina:['glulisina','apidra']};
@@ -1143,12 +1759,148 @@ function bpAlerta(c){
   return null;
 }
 
-function buscarMelhorProduto(linha) {
+// EAN-13 VÁLIDO dentro de um texto (29/07). Exige dígito verificador certo (módulo 10, pesos 1/3):
+// código errado é tratado como SEM ean — nunca casa por código. 12 ou 14 dígitos também não é
+// EAN-13 (o 14 é DUN de caixa de embarque, o 15 é GGREM).
+function _bmEanDoTexto(texto){
+  const m = String(texto == null ? '' : texto).match(/(?<!\d)(\d{13})(?!\d)/g);
+  if (!m) return null;
+  for (const cand of m) {
+    let soma = 0;
+    for (let i = 0; i < 12; i++) soma += parseInt(cand[i], 10) * (i % 2 === 0 ? 1 : 3);
+    if (((10 - (soma % 10)) % 10) === parseInt(cand[12], 10)) return cand;
+  }
+  return null;
+}
+// ══ ÍNDICE DE CANDIDATOS — visitar 200 linhas em vez de 20.000 ═══════════════════════════════
+// Depois de memoizar tudo que era função pura, a busca ainda custava ~100ms por item: sobrou o
+// custo IRREDUTÍVEL de tocar 20.705 linhas, ~5µs cada. A única forma de ganhar de verdade é NÃO
+// VISITAR a maioria delas. É o que este índice faz — e o risco dele é o oposto do risco de
+// lentidão: um índice que perde uma linha tira produto da busca EM SILÊNCIO.
+//
+// >>> POR ISSO ELE É UM SUPERCONJUNTO PROVADO, não uma heurística. O filtro do motor é o paOK:
+//         _bmFuzzy(w, t)  para w em {principal, subAlvo, sinônimos}  e t em {paN, prodN}
+//     e o _bmFuzzy aceita de dois jeitos, então o índice cobre os dois:
+//       (a) t.includes(w)  — SUBSTRING, podendo cair no meio de uma palavra maior.
+//           Cobertura: se t contém w (|w|>=4), t contém os 4 primeiros caracteres de w como
+//           substring. Indexando TODOS os 4-gramas de t, o balde do 4-grama inicial de w é
+//           garantidamente um superconjunto. (4-grama, não token: é o que sobrevive à substring
+//           no meio da palavra, que um índice de tokens perderia.)
+//       (b) algum token k de t com |k|>=5, k[0]===w[0] e distância de edição 1 pra w.
+//           Distância 1 força |k| em {|w|-1, |w|, |w|+1}. Indexando cada token por
+//           (primeira letra, comprimento), os três baldes cobrem todos os k possíveis.
+//     E o classMatch, que não depende de w nenhum: as linhas de classe COMPLEXO_B ficam num
+//     conjunto próprio, somado quando o pedido é dessa classe.
+//
+// >>> QUANDO ELE NÃO SABE, ELE DESISTE: se o principal tem menos de 4 caracteres, se algum
+//     sinônimo é curto demais, ou se o índice ainda não foi construído, devolve null e o motor
+//     varre tudo como antes. Desistir é barato; errar é invisível.
+// A equivalência é verificada contra o banco REAL em tools/prova_indice.js e travada na suíte
+// tests/testa_indice.js — os dois caminhos têm que devolver EXATAMENTE o mesmo produto.
+let _bmIdx = null;
+function _bmIdxConstroi(rows){
+  const g4 = new Map(), fl = new Map(), classeB = [];
+  for (let i = 0; i < rows.length; i++) {
+    const c = rows[i];
+    // o MESMO texto que o paOK olha: prodN e paN. Marca não entra porque o paOK não a consulta.
+    const t = _bmNorm(c.produto || '') + ' ' + _bmNorm(c.principio_ativo || '');
+    for (let j = 0; j + 4 <= t.length; j++) {
+      const k = t.substr(j, 4);
+      let a = g4.get(k); if (!a) { a = []; g4.set(k, a); }
+      if (a[a.length - 1] !== c) a.push(c);
+    }
+    const toks = t.split(/\s+/);
+    for (let j = 0; j < toks.length; j++) {
+      const k = toks[j]; if (k.length < 5) continue;
+      const key = k[0] + k.length;
+      let a = fl.get(key); if (!a) { a = []; fl.set(key, a); }
+      if (a[a.length - 1] !== c) a.push(c);
+    }
+    if (_bmClasseFam((c.produto || '') + ' ' + (c.principio_ativo || '')) === 'COMPLEXO_B') classeB.push(c);
+  }
+  return { g4, fl, classeB, n: rows.length, base: rows };
+}
+function _bmIdxGarante(){
+  if (typeof cotacoes === 'undefined' || !cotacoes.length) { _bmIdx = null; return null; }
+  // reconstrói quando o array de cotações trocou (recarga do banco) — comparação por identidade
+  if (!_bmIdx || _bmIdx.base !== cotacoes) _bmIdx = _bmIdxConstroi(cotacoes);
+  return _bmIdx;
+}
+// interruptor: desligado, o motor varre tudo como antes. Existe pra que a prova de equivalência
+// (tools/prova_indice.js) possa rodar os DOIS caminhos no mesmo processo e comparar resultado a
+// resultado — sem isso, "o índice é um superconjunto" seria só uma afirmação minha.
+let _bmIdxOff = false;
+function _bmIdxCandidatos(principal, subAlvo, sinonimos, reqClasse){
+  if (_bmIdxOff) return null;
+  const ix = _bmIdxGarante(); if (!ix) return null;
+  const palavras = [principal].concat(subAlvo ? [subAlvo] : []).concat(sinonimos || []);
+  const vistos = new Set(), out = [];
+  const junta = arr => { if (!arr) return; for (let i = 0; i < arr.length; i++)
+    if (!vistos.has(arr[i])) { vistos.add(arr[i]); out.push(arr[i]); } };
+  for (const w of palavras) {
+    if (!w || w.length < 4) return null;                 // não sei cobrir: varre tudo
+    junta(ix.g4.get(w.substr(0, 4)));                    // (a) substring
+    if (w.length >= 5) for (let L = w.length - 1; L <= w.length + 1; L++) junta(ix.fl.get(w[0] + L));  // (b) fuzzy
+  }
+  if (reqClasse === 'COMPLEXO_B') junta(ix.classeB);
+  return out;
+}
+
+// ── CANAL DE ALTERNATIVA COM AVISO (aprovado pelo Lemuel) ────────────────────────────────────
+// Até aqui a busca só sabia dizer duas coisas: "achei" e "nada". Faltava a terceira, que é a
+// resposta honesta na maior parte dos casos difíceis: "achei parecido, olha a diferença".
+// Sem ela, todo caso limítrofe virava uma escolha ruim — casar calado (e mandar o produto errado)
+// ou devolver nada (e perder a venda de um item que a casa tem na prateleira).
+// COMO FUNCIONA: só roda DEPOIS que a busca normal devolveu null, e afrouxa UMA barreira por vez,
+// registrando qual foi. O motivo vira o texto do aviso âmbar na tela, com [Aceitar] e [Recusar].
+// Nunca substitui um match limpo, e nunca entra calada.
+const _BM_RELAX = [
+  { chave: 'volume', texto: 'volume diferente do pedido — confira a apresentação' },
+  { chave: 'forma',  texto: 'apresentação diferente (pó/liofilizado x solução) — confira' },
+];
+function buscarAlternativa(linha){
+  for (const r of _BM_RELAX) {
+    const opt = {}; opt[r.chave] = true;
+    const c = buscarMelhorProduto(linha, opt);
+    if (c) return { c, motivo: r.texto };
+  }
+  return null;
+}
+// aviso de equivalência IMPERFEITA vindo do dicionário (LUMAZENIL x FLUMAZENIL): o match acontece,
+// mas o vendedor tem que ver a diferença antes de fechar.
+function _bmAvisoPedido(linha){
+  const pal = _bmPalavras(linha);
+  for (const w of pal) { const a = _bmDicAviso.get(w); if (a) return a; }
+  return null;
+}
+function buscarMelhorProduto(linha, _rx) {
+  _rx = _rx || {};
   linha = (linha == null ? '' : String(linha));   // blindagem: aceita qualquer tipo sem quebrar
   if (!linha.trim()) return null;
+  // ── CAMADA 1: EAN (29/07) ─────────────────────────────────────────────────────────────────
+  // Quando os DOIS lados têm EAN-13 VÁLIDO e ele bate, é identificação perfeita (produto +
+  // apresentação + laboratório) e pula todas as barreiras de texto. A estreia mediu 63,1% de
+  // batida contra a CMED. Qualquer outra situação — um lado sem EAN, EAN diferente, dígito
+  // verificador errado — cai no motor de sempre, sem mudança nenhuma.
+  const _eanReq = _bmEanDoTexto(linha);
+  if (_eanReq) {
+    const _porEan = cotacoes.filter(c => c.ean && String(c.ean).trim() === _eanReq && pv(c));
+    if (_porEan.length) {
+      _porEan.sort((a,b) => (ehGlobalComEstoque(b) - ehGlobalComEstoque(a)) || (pv(a) - pv(b)));
+      return _porEan[0];
+    }
+  }
   // ── MATERIAL ──
   if (_bmMaterial(linha)) {
-    const cands = cotacoes.filter(c => pv(c) && _bmMatchMat(linha, c.produto||''));
+    // de-para de PALAVRA aplicado nos DOIS lados: "DRENO SUCTOR 4.8" e "DRENO SUCCAO ... 4,8" são
+    // o mesmo dreno escrito com outra palavra e outra vírgula. Sem dicionário carregado, o
+    // _bmCanonPal só normaliza o texto e o comportamento é o de antes.
+    const _lm = _bmCanonPal(linha);
+    // o de-para de palavra aproxima produtos parecidos — e é justamente por isso que a barreira do
+    // número discriminador tem que vir JUNTO: sem ela, "DRENO SUCTOR 4.8" alcança e casa a cânula
+    // de 6,4. Calibre, vias e medida barram antes de qualquer escolha por preço.
+    const cands = cotacoes.filter(c => pv(c) && _bmMatchMat(_lm, _bmCanonPal(c.produto||''))
+      && !_bmDiscrimConflito(linha, c.produto||'', true));   // true = decimal solto conta como calibre
     if (!cands.length) return null;
     cands.sort((a,b)=> (ehGlobalComEstoque(b)-ehGlobalComEstoque(a)) || (pv(a) - pv(b)));  // GLOBAL c/ estoque 1º
     return cands[0];
@@ -1168,28 +1920,148 @@ function buscarMelhorProduto(linha) {
   // CMED: se a palavra principal é uma MARCA que resolve pra 1 substância (não-combo, não-ambígua),
   // o candidato também casa pelo PA = substância. FORMA e DOSE seguem barreiras duras.
   const subAlvo = _bmCmed.get(principal) || null;
+  // PROPORÇÃO de associação "N+N" (15617: BETAMETASONA 3+3 != BETATRINTA 5+2): par numérico
+  // normalizado (maior+menor); barreira quando OS DOIS lados têm proporção e ela difere.
+  const reqProp = _bmProp(linha);
   // forma dose-crítica (cpr/inj/líquido) sem dose no pedido = não dá pra confirmar = NÃO ENCONTRADO
-  if (reqDoses.size === 0 && reqForma && _BM_DOSE_CRIT[reqForma]) return null;
+  // (proporção presente conta como dose: "3+3" identifica a associação mesmo sem unidade)
+  // forma dose-crítica (cpr/inj/líquido) sem dose no pedido: normalmente NÃO dá pra confirmar. MAS
+  // MARCA DE COMBO FIXO (TORSILAX/DORFLEX CPR) se identifica PELA MARCA, não por dose. Regra segura
+  // (sem dicionário): quando o pedido não tem dose, só casa candidato que TAMBÉM não tem dose no nome
+  // — genérico com dose (DIPIRONA 500MG) segue travado (dose ambígua). Marcado abaixo no loop.
+  const formaSemDose = (reqDoses.size === 0 && reqForma && _BM_DOSE_CRIT[reqForma] && !reqProp);
   // sem massa absoluta (só % / MG/ML, ou nenhum mg) -> o VOLUME entra: ALCOOL 70% 1000ML != 50ML; AGUA OX 1000ML != 100ML
   const reqVol = [...reqDoses].every(d=>d.endsWith('/ML')||d.endsWith('%')) ? _bmVolume(linha) : null;
+  // volumes do pedido como CONJUNTO (pega "C/50ML", que o _bmVolume ignora) — ver a barreira abaixo
+  const reqSoConc = reqDoses.size > 0 && [...reqDoses].every(d=>d.endsWith('/ML'));
+  const reqMl = reqSoConc ? _bmMl(linha) : new Set();
+  const reqMlTodos = _bmMl(linha);   // volume do pedido SEMPRE — usado no desempate do pedido-sem-dose
   const reqInsu = _bmInsulinaSub(linha);   // se o pedido é insulina, exige mesmo subtipo (NPH != Lispro...)
+  const reqPeni = _bmPeniSub(linha);       // penicilina: benzatina != procaína != cristalica (bug #5)
+  const reqSoro = _bmSoroTipo(linha);      // ringer SIMPLES != ringer LACTATO (bug #5)
+  const reqFolin = _bmFolinico(linha);     // acido FOLINICO != acido FOLICO (oncologia, 03/08)
+  const reqClasse = _bmClasseFam(linha);   // CLASSE intercambiável CMED (COMPLEXO_B): pedido complexo B casa outro complexo B
+  const _sinMolPre = _bmSinonMol(principal);   // calculado uma vez: o índice precisa dele antes do loop
+  const reqComposto = /\bcompost[oa]\b/.test(_bmNorm(linha));   // pedido "X COMPOSTO" = associação; não casa monodroga (23530)
+  const reqSubForma = _bmSubFormaOral(linha);   // efervescente x liberação prolongada (23530)
   const cands = [];
-  cotacoes.forEach(c => {
+  // candidatos adiados: passaram TUDO menos "o pedido não trouxe dose". Julgados depois do loop,
+  // quando dá pra medir se há de fato mais de uma dose possível. Ver o comentário na barreira.
+  const _semDose = [];
+  // ÍNDICE: em vez de visitar as 20 mil linhas, visita só as que PODEM passar no paOK. O
+  // _bmIdxCandidatos devolve null quando não consegue garantir cobertura — e aí varre tudo,
+  // como sempre. Ver a prova de superconjunto na definição, logo acima do índice.
+  const _univ = _bmIdxCandidatos(principal, subAlvo, _sinMolPre, reqClasse) || cotacoes;
+  _univ.forEach(c => {
     if (!pv(c)) return;
     const prod = c.produto||'', pa = c.principio_ativo||'';
     const paN = _bmNorm(pa), prodN = _bmNorm(prod);
+    const classMatch = !!(reqClasse && _bmClasseFam(prod+' '+pa) === reqClasse);   // ambos da MESMA classe (ex.: Santiplex <-> Complexo B)
+    // sinônimo de MOLÉCULA (28/07): butilbrometo de escopolamina = hioscina — mesma substância,
+    // de-para direto nos dois sentidos, sem contexto (ao contrário de fita<->tira)
+    const _sinMol = _sinMolPre;
     const paOK = _bmFuzzy(principal, paN) || _bmFuzzy(principal, prodN)
-              || _bmTemSub(subAlvo, paN) || _bmTemSub(subAlvo, prodN);   // PA direto OU substância do CMED
+              || _bmTemSub(subAlvo, paN) || _bmTemSub(subAlvo, prodN)   // PA direto OU substância do CMED
+              || _sinMol.some(s => _bmFuzzy(s, paN) || _bmFuzzy(s, prodN))
+              || classMatch;                                            // OU mesma classe terapêutica (barreiras de forma/dose/volume seguem valendo abaixo)
     if (!paOK) return;
+    // SUBTIPO DA PENICILINA: benzatina != procaína != cristalica (só quando os DOIS nomeiam).
+    // É a contrapartida obrigatória do de-para benzilpenicilina <-> penicilina G <-> benzetacil.
+    if (reqPeni) { const cp = _bmPeniSub(prod + ' ' + pa); if (cp && cp !== reqPeni) return; }
+    // SORO: ringer SIMPLES não é ringer LACTATO (a 68036 pede simples, o estoque tem lactato)
+    if (reqSoro) { const cs = _bmSoroTipo(prod + ' ' + pa); if (cs && cs !== reqSoro) return; }
+    // FOLÍNICO x FÓLICO: nunca cruzam. Vem antes de qualquer pontuação/fuzzy, de propósito.
+    if (reqFolin) { const cf = _bmFolinico(prod + ' ' + pa); if (cf && cf !== reqFolin) return; }
+    // NÚMERO DISCRIMINADOR (calibre / nº de vias / medida) — vale nos DOIS caminhos, não só no de
+    // material: "TUBO ENDOTRAQUEAL 7,0" e "PAPEL LENÇOL 50X70" nem sempre caem na trilha de
+    // material, e o número é o produto do mesmo jeito.
+    if (_bmDiscrimConflito(linha, prod)) return;
+    // (o pedido-sem-dose foi movido pra DEPOIS da barreira de forma — ver _semDose logo abaixo)
+    // COMPOSTO não é substituído por SIMPLES (23530 caso 1): pedido "X COMPOSTO" (associação) só casa
+    // candidato que também é composto — PA com '+' OU nome traz "composto". Mono (escopolamina pura) fora.
+    if (reqComposto && pa.indexOf('+') < 0 && !/\bcompost[oa]\b/.test(prodN)) return;
+    // SUB-FORMA oral (23530 caso 2): efervescente x liberação prolongada nomeados e diferentes -> fora
+    if (reqSubForma) { const sfc = _bmSubFormaOral(prod); if (sfc && sfc !== reqSubForma) return; }
+    // COMBO NÃO SUBSTITUI SIMPLES (caso real 23/07: NEOMICINA POMADA -> EMSCORT combo): PA do
+    // candidato é COMBO (+) e o NOME do produto não traz o principal -> só casa se OUTRA palavra
+    // do pedido casar o resto do PA (pedido de combo por extenso). Precisão > cobertura.
+    if (pa.indexOf('+') >= 0 && !_bmFuzzy(principal, prodN) && !classMatch) {   // '+' no PA CRU (o _bmNorm come o sinal); classe intercambiável dispensa (complexo B é combo por natureza)
+      const outrosPed = pal.slice(1).filter(w => w.length >= 4);
+      if (!outrosPed.some(w => paN.includes(w))) return;
+    }
     if (principal === 'agua') { const grReq = _bmAguaGrau(linha); if (grReq && _bmAguaGrau(prod) !== grReq) return; }  // água injetável(paciente) != água autoclave/equipamento
     if (principalGenerico && distintivasReq.length && !distintivasReq.some(w=>paN.includes(w)||prodN.includes(w))) return;  // genérico sem palavra distintiva em comum
-    if (reqForma && _bmFormaCand(prod) !== reqForma) return;                                 // FORMA (barreira dura)
+    const _fc = _bmFormaCand(prod);
+    if (!_rx.forma && reqForma && _fc && _fc !== reqForma) return;    // FORMA: barreira dura, mas só quando o candidato DECLARA a forma
+    // PEDIDO SEM DOSE (movido pra cá em 03/08 — caso TRANSAMIN do pedido cirúrgico de 37 linhas).
+    // A regra: pedido sem dose numa forma dose-crítica só casava candidato TAMBÉM sem dose,
+    // porque "candidato com dose = ambíguo". "TRANSAMIN INJETAVEL" caía aqui e ficava sem match,
+    // mesmo com o banco tendo "TRANSAMIN INJ. IV 50MG/ML CX5 AMP 5ML" no estoque próprio.
+    // >>> MAS AMBÍGUO É COISA QUE SE MEDE, NÃO QUE SE PRESUME. Estes candidatos ficam de lado e
+    //     são julgados DEPOIS do loop: se todos os que sobraram (mesmo PA, mesma forma) tiverem a
+    //     MESMA dose, não há ambiguidade nenhuma — é um produto só, e casa. Se houver duas doses
+    //     diferentes, aí sim o pedido é ambíguo de verdade e continua sem match.
+    //     Ficou DEPOIS da barreira de forma de propósito: assim o TRANSAMIN comprimido de 250MG
+    //     não entra na conta da ambiguidade do TRANSAMIN INJETÁVEL — são formas diferentes.
+    //     E SÓ VALE QUANDO O PEDIDO NOMEIA UMA MARCA, não uma molécula. É a diferença entre
+    //     "TRANSAMIN INJETAVEL" (a marca tem uma apresentação injetável só) e "DIPIRONA CPR"
+    //     (a molécula existe em 500MG, 1G, ...). Contar as doses do banco não bastaria: o banco
+    //     de hoje pode ter uma dose só e o de amanhã ter duas, e aí o MESMO pedido mudaria de
+    //     resposta sozinho. O sinal de marca é estável: a palavra do pedido está no NOME do
+    //     produto mas NÃO é o princípio ativo dele.
+    if (formaSemDose && _bmDoses(prod).size > 0) {
+      // ehMarca de duas formas: (1) a palavra do pedido está no NOME do candidato mas não é o
+      // princípio ativo dele (TRANSAMIN); (2) o pedido só alcançou este candidato ATRAVÉS do
+      // dicionário marca<->PA — e passar pelo dicionário já é a prova de que o pedido nomeou uma
+      // marca, não a molécula ("PRECEDEX INJETAVEL" chegando na DEXMEDETOMIDINA).
+      const _viaDic = _sinMol.length > 0 && _sinMol.some(s => _bmFuzzy(s, paN) || _bmFuzzy(s, prodN));
+      _semDose.push({ c: c, ehMarca: (!_bmFuzzy(principal, paN) && _bmFuzzy(principal, prodN)) || _viaDic });
+      return;
+    }
     if (reqDoses.size && !_bmDoseEq(reqDoses, _bmDoses(prod))) {                              // DOSE (barreira dura)
       // 2ª chance: injetável reconstituído (pó) -> 40MG == 40MG/ML (mesmo produto). NÃO vale p/ solução (DIMORF 10MG != 10MG/ML)
-      if (!(reqForma==='INJETAVEL' && _bmReconst(prod) && _bmDoseEqIgnMl(reqDoses, _bmDoses(prod)))) return;
+      // 3ª chance: dose TOTAL do frasco == CONCENTRAÇÃO × VOLUME (oncológicos do 63622), só com o
+      // mesmo volume declarado dos dois lados e a conta fechando exata.
+      if (!(reqForma==='INJETAVEL' && _bmReconst(prod) && _bmDoseEqIgnMl(reqDoses, _bmDoses(prod)))
+       && !_bmDoseTotalEqSemVol(reqDoses, _bmMl(linha), _bmDoses(prod), _bmMl(prod))
+       // com o volume afrouxado (canal de alternativa), a pergunta passa a ser só "é a MESMA DOSE
+       // TOTAL noutro frasco?" — 100MG em 20ML e 100MG em 50ML são a mesma quantidade de droga.
+       // A dose continua tendo que fechar EXATA; o que se afrouxou foi o tamanho do frasco.
+       && !(_rx.volume && _bmDoseTotKey(linha) === _bmDoseTotKey(prod))) return;
     }
-    if (reqVol && reqVol !== _bmVolume(prod)) return;                                        // VOLUME (quando só há concentração)
+    if (reqProp) { const cp2=_bmProp(prod); if (cp2 && cp2!==reqProp) return; }              // PROPORÇÃO N+N: 3+3 != 5+2 (barreira dos dois lados)
+    // VOLUME (quando só há concentração). >>> RELAXADO EM 03/08 — era a MESMA doença do
+    // _bmFormaCand: ausência tratada como divergência. O candidato cadastrado só pela massa
+    // ("PACLITAXEL 100,2MG CX/1FRS BERGAMO TAXILAN", R$61,77) não declara volume nenhum, e era
+    // barrado como se declarasse um volume DIFERENTE. Agora só barra quando o candidato DECLARA.
+    // O caso que a barreira existe pra proteger continua protegido: em "ALCOOL 70% 1000ML" x
+    // "ALCOOL 70% 50ML" os DOIS lados declaram, e a divergência barra como sempre.
+    // A conta não fica solta: quem não declara volume ainda precisa fechar a dose total pela
+    // regra concentração × volume (_bmDoseTotalEqSemVol), logo acima.
+    if (!_rx.volume && reqVol && _bmVolume(prod) != null && reqVol !== _bmVolume(prod)) return;
+    // VOLUME DA APRESENTAÇÃO (pedido de oncologia, 03/08) — a barreira acima usa _bmVolume, que
+    // tem lookbehind e IGNORA "C/50ML" e "50MG/50ML" (a barra antes do número). Nesses formatos —
+    // que são justamente como o pedido de onco e o banco escrevem — ela nunca agia, e a cisplatina
+    // de 50MG/50ML ficava indistinguível da de 100MG/100ML: as duas viram 1MG/ML depois da
+    // aritmética, e o que separa as apresentações passa a ser SÓ o volume do frasco.
+    // Usa o CONJUNTO de volumes (_bmMl), e só barra quando os DOIS lados declaram e não há
+    // nenhum volume em comum — candidato que não declara volume (o cadastro só pela massa total,
+    // "OXALIPLATINA 100MG CX/1FRS") continua passando.
+    if (reqSoConc && !_rx.volume) {
+      const _vc = _bmMl(prod);
+      if (reqMl.size && _vc.size && ![...reqMl].some(v => _vc.has(v))) return;
+    }
     if (_bmNegConflito(linha, prod)) return;                                                 // com/sem conflitante (s/clor vs c/cloranfenicol)
+    // VASOCONSTRITOR (23526): anestésico local COM vaso != SEM vaso — só age com marcador
+    // explícito nos DOIS lados e principal anestésico (lidocaína/xylestesin/hypocaina...).
+    // NOVABUPI/LEVOBUPIVACAINA entraram em 03/08: o pedido cirúrgico pede "NOVABUPI COM VASO" e
+    // recebia "NOVABUPI 0,5% S/V" — a versão SEM vasoconstritor. A guarda existia e não agia
+    // porque a marca não estava nesta lista de anestésicos. Com vaso e sem vaso são procedimentos
+    // diferentes; oferecer um pelo outro é erro clínico, não diferença de preço.
+    if (/lidocaina|xylestesin|xilestesin|hypocaina|bupivacaina|levobupivacaina|novabupi|mepivacaina|prilocaina|articaina|anestesic/i.test(linha + ' ' + prod + ' ' + pa)) {
+      const vReq2 = _bmVaso(linha), vCand = _bmVaso(prod);
+      if (vReq2 && vCand && vReq2 !== vCand) return;
+    }
     if (reqInsu !== undefined) {                                                             // INSULINA: subtipo tem que bater (NPH != Lispro...)
       const ci = _bmInsulinaSub(prod);
       if (ci === undefined) return;                                                          // pedido é insulina, candidato não é
@@ -1201,9 +2073,78 @@ function buscarMelhorProduto(linha) {
     for (let i=1;i<pal.length;i++){ if(paN.includes(pal[i])) sc+=2; if(prodN.includes(pal[i])) sc+=1; }
     cands.push({c, sc});
   });
+  // ── OS ADIADOS: "pedido sem dose" só é ambíguo se houver MAIS DE UMA dose possível ────────────
+  // Medido, não presumido: se todos os candidatos que sobraram (mesmo PA, mesma forma) têm a
+  // MESMA dose, o pedido sem dose identifica um produto só e casa. Duas doses diferentes = o
+  // pedido é ambíguo de verdade e continua sem match — que era o motivo da regra existir.
+  // Só entra quando NÃO houve candidato normal: quem trouxe dose declarada sempre tem prioridade.
+  if (!cands.length && _semDose.length) {
+    // >>> O VOLUME DO PEDIDO É UM DISCRIMINADOR, e estava sendo ignorado aqui. "CIPROFLOXACINO
+    //     INJETAVEL 100 ML" e "HEPARINA INJETAVEL SODICA 5 ML" não trazem dose, mas trazem o
+    //     FRASCO — e é ele que separa o cipro de 100ML do de 200ML, e a heparina de 5ML da
+    //     subcutânea de 0,25ML (Hemofol). Sem este filtro, tudo virava "ambíguo" e o item saía
+    //     sem match tendo o produto certo no banco.
+    let pool = _semDose, filtrouPorVolume = false;
+    if (reqMlTodos.size) {
+      // SÓ quem declara o volume pedido. Aqui o pedido não deu dose NENHUMA — o frasco é a única
+      // coisa que ele disse, então candidato que não declara volume não tem como ser conferido e
+      // vira ruído que quebra a unanimidade da dose.
+      // >>> E se ninguém sobrar, sobra NADA — não se volta pro pool inteiro. Cair de volta era o
+      //     bug: o pedido de 100ML acabava recebendo o frasco de 200ML, e o de 5ML recebia a
+      //     ampola subcutânea de 0,25ML. Pedido que diz o frasco quer AQUELE frasco.
+      pool = pool.filter(x => { const v = _bmMl(x.c.produto||'');
+        return v.size && [...reqMlTodos].some(w => v.has(w)); });
+      filtrouPorVolume = true;
+    }
+    // O FILTRO DE VOLUME VEM ANTES DA PERGUNTA "é marca?" — e a ordem importa. Checando o pool
+    // inteiro, um irmão de OUTRO frasco (o cipro de 200ML, cadastrado com o PA no campo próprio)
+    // derrubava a regra e o item saía sem match mesmo com o frasco certo no banco.
+    // E quando o pedido DECLARA o volume, ele já disse qual frasco quer: aí a exigência de "ser
+    // marca" não é mais necessária — o volume é o discriminador, e a dose total logo abaixo
+    // continua tendo que ser unânime.
+    if (!filtrouPorVolume && !pool.every(x => x.ehMarca)) pool = [];
+    if (pool.length) {
+      // AMBIGUIDADE MEDIDA PELA DOSE TOTAL, não pelo texto da dose: "200MG em 100ML" e "2MG/ML em
+      // 100ML" são o MESMO produto escrito de dois jeitos (2 × 100 = 200). Comparar as strings
+      // faria o motor achar que há duas forças diferentes e recusar por ambiguidade inexistente.
+      // >>> QUANDO O PEDIDO DÁ SÓ O VOLUME, "5000UI" e "5000UI/ML" NO MESMO FRASCO SÃO A MESMA
+      //     COISA. Medido no banco: as 9 heparinas de 5ML custam de R$17 a R$27 e 7 delas escrevem
+      //     "5000UI/ML" enquanto 2 escrevem "5000UI" — inclusive o MESMO PARINEX, cadastrado das
+      //     duas formas por fornecedores diferentes. Não são duas forças: é a marca do "por
+      //     mililitro" que um cadastro escreve e o outro omite.
+      //     O RISCO, declarado: um produto que fosse mesmo "5000UI no frasco inteiro de 5ML"
+      //     (1000UI/ML) seria confundido. Isso só vale AQUI, no caminho em que o pedido não
+      //     declarou dose nenhuma e o volume bate exato — nunca na barreira de dose, que continua
+      //     comparando "/ML" e massa absoluta como coisas diferentes.
+      // DUAS LEITURAS, e basta UMA delas ser unânime pra não haver ambiguidade:
+      //   total  — concentração × volume ("200MG em 100ML" == "2MG/ML em 100ML" == 200MG). É o que
+      //            resolve o ciprofloxacino, cadastrado ora pela massa, ora pela concentração.
+      //   rotulo — o número como está escrito, ignorando o "/ML" ("5000UI" == "5000UI/ML"). É o
+      //            que resolve a heparina, onde o MESMO PARINEX aparece das duas formas.
+      const kTotal  = x => _bmDoseTotKey(x.c.produto||'');
+      const kRotulo = x => [..._bmDoses(x.c.produto||'')].map(d => d.replace(/\/ML$/, '')).sort().join('|');
+      const unanime = k => { const k0 = k(pool[0]); return pool.every(x => k(x) === k0); };
+      if (unanime(kTotal) || unanime(kRotulo)) {
+        const u = pool.map(x => x.c).sort((a,b)=> (ehGlobalComEstoque(b)-ehGlobalComEstoque(a)) || (pv(a) - pv(b)));
+        return u[0];
+      }
+    }
+  }
   if (!cands.length) return null;
   cands.sort((a,b)=> (ehGlobalComEstoque(b.c)-ehGlobalComEstoque(a.c)) || (b.sc - a.sc) || (pv(a.c) - pv(b.c)));  // GLOBAL c/ estoque 1º
-  return cands[0].c;
+  // ── DESEMPATE POR PREÇO ENTRE APRESENTAÇÕES IDÊNTICAS (decisão do Lemuel, 03/08) ─────────────
+  // O score mede RELEVÂNCIA DE TEXTO — quantas palavras do pedido aparecem no candidato. Entre
+  // produtos DIFERENTES isso é o critério certo. Entre o MESMO produto escrito de dois jeitos,
+  // não é: foi assim que a cisplatina 50MG/50ML saiu a R$278,66 (FAULDCISPLA) tendo a de
+  // R$144,79 (BLAU C-PLATIN) no banco, com a MESMA dose e o MESMO volume. Quem escreve o nome
+  // mais parecido com o pedido não é quem vende mais barato.
+  // Então: mesma tripla (dose + volume) = mesmo produto = ganha o MAIS BARATO. Tripla diferente =
+  // são produtos diferentes e o score continua mandando. GLOBAL com estoque segue na frente.
+  const _trip = c => [..._bmDoses(c.produto||'')].sort().join('|') + '#' + [..._bmMl(c.produto||'')].sort().join('|');
+  const _top = cands[0], _kTop = _trip(_top.c), _gTop = ehGlobalComEstoque(_top.c);
+  let _melhor = _top.c;
+  cands.forEach(x => { if (ehGlobalComEstoque(x.c) === _gTop && _trip(x.c) === _kTop && pv(x.c) < pv(_melhor)) _melhor = x.c; });
+  return _melhor;
 }
 
 // ─── SCORE DE CONFIANÇA (FASE 3) — mesmos critérios adversariais da auditoria ───────────
@@ -1223,6 +2164,10 @@ function _confPeerMediana(c){
 }
 function _bmConfianca(pedido, c){
   if(!c || !pedido) return {nivel:'alta', motivos:[]};
+  // CAMADA 1 (29/07): casou por EAN = identificação perfeita. Nível ALTA com o motivo 'EAN'
+  // explícito, pra dar pra distinguir na tela o que veio de código do que veio de texto.
+  const _e = _bmEanDoTexto(pedido);
+  if (_e && c.ean && String(c.ean).trim() === _e) return { nivel:'alta', motivos:['casou por EAN '+_e] };
   const cp=c.produto||'', pa=c.principio_ativo||''; const motivos=[]; let forte=false, medio=false;
   // (a) família/subtipo divergente
   const FAMS=[_BM_FAM_SUBTIPO,_BM_FAM_MATERIAL,_BM_FAM_IDADE,_BM_FAM_TESTE,_BM_FAM_ANALITO];
@@ -1238,11 +2183,85 @@ function _bmConfianca(pedido, c){
   const principal=wq[0], paN=_bmNorm(pa), prodN=_bmNorm(cp);
   const soMarca=!!principal && _bmCmed.has(principal) && !paN.includes(principal) && !prodN.includes(principal);
   if(wq.length>=2 && inter.length<=1){ motivos.push(soMarca?'casou pela marca (dicionário)':'poucas palavras em comum'); medio=true; }
+  // ── ÁRBITRO CMED (FASE 2, 23/07): o dicionário oficial decide quando conhece a marca do
+  // pedido. Substância do pedido (via _bmCmed) INCOMPATÍVEL com o PA/nome do candidato ->
+  // BAIXA na hora (a trava do PDF que já existe segura; aviso ⚠ visível, nunca bloqueio mudo).
+  // Compatível -> aprova: remove o rebaixamento "casou pela marca" (o árbitro confirma o match).
+  const subArb = principal ? (_bmCmed.get(principal)||null) : null;
+  if (subArb) {
+    const subOk = _bmTemSub(subArb, paN) || _bmTemSub(subArb, prodN)
+               || paN.includes(subArb) || prodN.includes(subArb)
+               || subArb.split(' ').some(t=>t.length>=5 && (paN.includes(t)||prodN.includes(t)));
+    if (!subOk) { motivos.push('CMED: substâncias divergem — pedido é '+subArb.toLowerCase()+', item escolhido não é'); forte=true; }
+    else {
+      const iSo = motivos.indexOf('casou pela marca (dicionário)');
+      if (iSo>=0) { motivos.splice(iSo,1); if(!motivos.length) medio=false; }   // árbitro aprovou: marca->substância confirmada
+    }
+  }
   const nivel = forte ? 'baixa' : (medio ? 'media' : 'alta');
   return {nivel, motivos};
 }
 // confirma um match sinalizado (destrava aquele item p/ o PDF)
 function confirmarMatch(id){ const it=itens.find(i=>i.id===id); if(it){ it._confOK=true; renderItens(); } }
+// ── ACEITAR / RECUSAR A ALTERNATIVA ──────────────────────────────────────────────────────────
+// Aceitar tira o âmbar e GRAVA o de-para no dicionário do banco — é assim que ele evolui: o que
+// o vendedor confirmou uma vez o motor já sabe da próxima. Recusar tira o item da proposta e o
+// devolve pra lista de não encontrados, que é de onde ele vai pra fila de cotação.
+function aceitarAlternativa(id){
+  const it = itens.find(i => i.id === id); if (!it) return;
+  const pedido = it._pedido, oferta = it.produto;
+  it._alt = null; it._altAceita = true; renderItens();
+  // o log só reforça o dicionário; se falhar, a decisão do vendedor na tela continua valendo
+  try {
+    fetch(`${SUPA_URL}/rest/v1/dicionario_marca_pa?on_conflict=tipo,de,para`, { method:'POST',
+      headers:{ 'apikey':SUPA_KEY, 'Authorization':'Bearer '+SUPA_KEY, 'Content-Type':'application/json',
+                'Prefer':'resolution=merge-duplicates' },
+      body: JSON.stringify([{ tipo:'marca', de:String(pedido||'').slice(0,120),
+        para:String(oferta||'').slice(0,120), aviso:null, origem:'aceite do vendedor na tela' }])
+    }).catch(()=>{});
+  } catch(e){}
+  toast('Alternativa aceita — o de-para foi aprendido');
+}
+function recusarAlternativa(id){
+  const it = itens.find(i => i.id === id); if (!it) return;
+  const pedido = it._pedido || it.produto;
+  itens = itens.filter(i => i.id !== id);
+  if (typeof naoEncontrados !== 'undefined' && naoEncontrados.indexOf(pedido) < 0) naoEncontrados.push(pedido);
+  renderItens(); calcTotal();
+  if (typeof renderNaoEncontrados === 'function') renderNaoEncontrados();
+  toast('Alternativa recusada — item voltou pra lista de não encontrados', 'error');
+}
+
+// ── FASE 3 do árbitro CMED (23/07): VALIDAÇÃO DE DOSE. Pedido com MARCA conhecida + dose que
+// NÃO existe na CMED pra aquela marca ("VENVANSE 40MG") = provável erro de digitação do cliente
+// -> rebaixa a confiança (alta->media) com o aviso "existem: 30/50/70MG". Async (consulta
+// cmed_pf com cache por marca), roda DEPOIS do add: anexa motivo e re-renderiza. Nunca bloqueia.
+var _doseCmedCache = {};
+async function _bmDoseCmedCheck(item, pedido){
+  try{
+    const wq = _bmPalavras(pedido||''); const principal = wq[0];
+    if (!principal || !_bmCmed.has(principal)) return;                 // só age quando a MARCA é conhecida
+    const dosePed = doseKey(pedido||''); if (!dosePed) return;         // sem dose no pedido: nada a validar
+    let doses = _doseCmedCache[principal];
+    if (!doses) {
+      const r = await fetch(`${SUPA_URL}/rest/v1/cmed_pf?select=dose_key&marca_norm=ilike.${encodeURIComponent(principal.toUpperCase()+'*')}&limit=400`, { headers: H });
+      const d = await r.json();
+      doses = [...new Set((Array.isArray(d)?d:[]).map(x=>x.dose_key).filter(Boolean))];
+      _doseCmedCache[principal] = doses;
+    }
+    if (!doses.length) return;                                         // marca sem linha na cmed_pf: não opina
+    const massa = k => String(k||'').split('+')[0];                    // compara pela 1ª massa (30MG de "30MG+..." etc)
+    const existe = doses.some(k => massa(k) === massa(dosePed));
+    if (!existe) {
+      const lista = [...new Set(doses.map(massa))].slice(0,8).join(' / ');
+      const it = itens.find(i=>i.id===item.id); if (!it || it._confOK) return;
+      it._conf = it._conf || { nivel:'alta', motivos:[] };
+      it._conf.motivos.push('dose não existe na CMED p/ esta marca — existem: '+lista);
+      if (it._conf.nivel === 'alta') it._conf.nivel = 'media';         // trava do PDF que já existe segura
+      renderItens();
+    }
+  }catch(e){ /* silencioso: validação é bônus, nunca trava o fluxo */ }
+}
 
 /* ─── busca antiga (criativa demais) — substituída pela versão rigorosa acima ───
 function buscarMelhorProdutoOLD(linha) {

@@ -10,6 +10,9 @@ segredos.local.txt
 # dependencias (package.json + lock ficam versionados; node_modules nao)
 node_modules/
 
+# previas geradas pelos portes (artefato de build, nao fonte)
+tools/_previa_*.html
+
 # scripts gerados com chave embutida
 restore_*.js
 apply_*.js
