@@ -188,13 +188,22 @@ Auditoria de 22/07: banco confirmado limpo após teste do upload de PDF (preview
    views com `security_invoker` (`db_rls.sql`). Testado: anon bloqueada (INSERT 401 / SELECT vazio),
    `authenticated` funciona. Como o repo vai público com a anon dentro, isso era essencial.
 
+## 🩺 SAÚDE DO SISTEMA (rodada 04/08/2026)
+- Suíte: **110 asserts verdes / 0 falhas** em 6 suítes (`node tests/run_all.js`).
+- Smoke test no ar: **10/10 páginas HTTP 200** em `fpmed-hospitalar.github.io/fpmed/`, todas
+  limpas (zero GlobalMed, zero banco antigo, zero placeholder, zero telefone antigo).
+- Banco: 11 tabelas respondendo; `cotacoes` 7.451 linhas, as outras 10 vazias (esperado — a FPMED
+  ainda não carregou estoque próprio, clientes nem compras).
+
 ## 📌 Decisões/observações
 - **Porta de entrada (22/07)**: link/splash abre DIRETO o `fpmed_sistema_final.html` (menu lateral
   completo). Painel virou acesso secundário via seção "Sistemas" do menu (com Giovana, Vendas,
   Viabilidade). Standalones têm pill "← Sistema" na topfaixa (à esquerda, p/ não colidir com o
   badge do gm-auth). `vendas.html` tolera ausência da tabela `prospects` (Prospecção fora do pacote).
 - **gm-auth.js**: nome de arquivo mantido (include interno, sem prefixo `globalmed_`). Decidir
-  se renomeia p/ `fp-auth.js`.
+  se renomeia p/ `fp-auth.js`. **Recomendação (04/08): NÃO renomear** — "gm" não aparece em nada
+  visível pro cliente, e o rename mexe no `<script src>` das 10 páginas + no versionamento `?v=`
+  que já causou skew de cache uma vez. Risco real, ganho zero. Fechar como "fica assim".
 - **competitividade_dark**: REMOVIDA em 22/07 (decisão do Lemuel) — redundante com a Competitividade
   clara do sistema_final. A Competitividade interna foi convertida pro tema claro na mesma data.
 - **PDFs via `window.open` no sistema_final**: ✅ RESOLVIDO 23/07 — logo agora entra com URL
