@@ -1,4 +1,4 @@
-# 🔒 COMPLIANCE DE PROTEÇÃO DE DADOS — REGRA MASTER INVIOLÁVEL
+﻿# 🔒 COMPLIANCE DE PROTEÇÃO DE DADOS — REGRA MASTER INVIOLÁVEL
 
 > Decisão do Lemuel, **04/08/2026**. Vale para sempre e para as duas direções.
 > GlobalMed e FPMED Hospitalar são **empresas distintas**. Dado comercial de uma não pertence
@@ -44,21 +44,26 @@ Estado da tabela `cotacoes` da FPMED no momento do congelamento:
 
 | Origem | Linhas |
 |---|---|
-| **Herdadas da GlobalMed** (distribuidor, `fornecedor <> '1'`) | **20.857** |
+| **Herdadas da GlobalMed** (distribuidor, `fornecedor <> '1'`) | **7.451** |
 | Estoque próprio FPMED (`fornecedor = '1'`, do `Pasta1.xlsx`) | **1.381** |
-| **TOTAL** | **22.238** |
+| **TOTAL** | **8.832** |
 
 `created_at` mais antigo: 2026-05-12 · mais recente: 2026-08-04.
 
 **Como as herdadas entraram** (procedência, para auditoria futura):
-- Seed de 22/07/2026 — 7.451 linhas
-- Sync de 04/08/2026 — 13.406 novas + 149 atualizadas
+- **Seed de 22/07/2026 — 7.451 linhas.** É a única origem que permanece.
+- ~~Sync de 04/08/2026 — 13.406 novas + 149 atualizadas~~ → **REVERTIDO no mesmo dia**, por
+  decisão final do Lemuel. As 13.406 inseridas foram apagadas e as 149 alteradas restauradas
+  ao valor anterior, **por `id`**, contra o backup completo tirado imediatamente antes do sync
+  (`backups/backup_2026-08-04_1528/cotacoes.json`, 8.832 linhas). Nada foi identificado por
+  data, lote ou heurística. Conferência pós-reversão: **0 faltando, 0 sobrando, 0 com valor
+  diferente** — estado idêntico ao pré-sync.
 
 Em ambos, os filtros master valeram: **excluído** `fornecedor='1'` e `tipo='global'` (estoque
 próprio da GlobalMed), **só** a tabela `cotacoes` — nunca clientes, prospects, compras ou
 orçamentos — e sanitização (`venda_loja`, `global_venda1/2` zerados, datas para ISO, id novo).
 
-> **Qualquer crescimento de `fornecedor <> '1'` acima de 20.857 depois de 04/08/2026 tem que ser
+> **Qualquer crescimento de `fornecedor <> '1'` acima de 7.451 depois de 04/08/2026 tem que ser
 > explicável por import próprio da FPMED.** É o que o guard verifica.
 
 ---
@@ -69,11 +74,11 @@ orçamentos — e sanitização (`venda_loja`, `global_venda1/2` zerados, datas 
 |---|---|---|
 | **Abort do sync de dados** | `tools/sync_cotacoes_global.js` | Sai com código 1 na primeira linha. Só passa com `FPMED_COMPLIANCE_OVERRIDE=JURIDICO-APROVADO`, que existe para ser auditável, não para ser usado. |
 | **Guard de referência cruzada** | `tests/testa_compliance.js` | Falha se qualquer arquivo do projeto referenciar a base da GlobalMed fora de comentário histórico. Roda na **suíte padrão**. |
-| **Guard do congelamento** | `tests/db/testa_congelamento.js` | Falha se as linhas herdadas passarem de 20.857 sem justificativa. Precisa de banco, roda separado. |
+| **Guard do congelamento** | `tests/db/testa_congelamento.js` | Falha se as linhas herdadas passarem de 7.451 sem justificativa. Precisa de banco, roda separado. |
 | **Hook anti-destrutivo** | `.claude/hooks/block-destructive.js` | Já existente; barra DELETE/DROP/TRUNCATE sem OK. |
 
 **Por que o arquivo do sync continua no repo:** ele é o **registro da procedência**. A lógica de
-filtro, dedup e sanitização documenta como as 20.857 linhas entraram. Apagá-lo destruiria a
+filtro, dedup e sanitização documenta como as 7.451 linhas entraram. Apagá-lo destruiria a
 trilha de auditoria — o certo é mantê-lo morto e explicado.
 
 ---

@@ -1,4 +1,4 @@
-// GUARD DO MARCO DE CONGELAMENTO — compliance de proteção de dados (COMPLIANCE.md).
+﻿// GUARD DO MARCO DE CONGELAMENTO — compliance de proteção de dados (COMPLIANCE.md).
 // Precisa de banco, então roda separado da suíte offline:  node tests/db/testa_congelamento.js
 //
 // A REGRA: em 04/08/2026 as cotações herdadas da GlobalMed foram CONGELADAS em 20.857 linhas
@@ -16,9 +16,9 @@ const path = require('path');
 // ── MARCO OFICIAL (não editar sem atualizar o COMPLIANCE.md) ──
 const CONGELAMENTO = {
   data: '2026-08-04',
-  herdadas_distribuidor: 20857,   // fornecedor <> '1' no momento do congelamento
+  herdadas_distribuidor: 7451,    // fornecedor <> '1' — SEED de 22/07; o sync de 04/08 foi REVERTIDO
   estoque_proprio: 1381,          // fornecedor = '1' (Pasta1.xlsx da própria FPMED)
-  total: 22238,
+  total: 8832,
 };
 
 // ── crescimento autorizado DEPOIS do congelamento (cada linha exige origem própria) ──
