@@ -1629,6 +1629,23 @@ function compToggle(chave, tr) {
   compAtualizarFloatingBar();
 }
 
+// MELHOR FONTE de compra: menor custo GERAL, com uma tolerância pra indústria.
+// A indústria vence o distribuidor se for a mais barata OU até 5% acima (o preço de tabela dela
+// costuma vir com prazo/condição melhor, e 5% é a régua que a Global calibrou). Acima disso,
+// ganha o distribuidor. Sem nenhum dos dois, cai no estoque próprio.
+// Portado da Global em 04/08/2026 — ver o comentário no ponto de uso.
+function _cmpMelhorFonte(menorInd, menorDist, globalMin){
+  var hasI = menorInd != null, hasD = menorDist != null;
+  if (hasI && hasD) {
+    if (menorInd <= menorDist * 1.05) return { custo: menorInd, tipo: 'ind' };
+    return { custo: menorDist, tipo: 'dist' };
+  }
+  if (hasI) return { custo: menorInd, tipo: 'ind' };
+  if (hasD) return { custo: menorDist, tipo: 'dist' };
+  if (globalMin != null) return { custo: globalMin, tipo: 'global' };
+  return null;
+}
+
 function compSelecionarTodos() {
   compLista.forEach(g => compSelecionados.add(g.chave));
   renderComparativo();
@@ -1654,7 +1671,15 @@ function compGerarPDF() {
     const mediaMercado = vendasDist.length >= 2 ? vendasDist.reduce((a,b)=>a+b,0)/vendasDist.length : null;
     const menorInd = indOps.length ? Math.min(...indOps.map(o=>o.compra)) : null;
     const menorDist = distOps.length ? Math.min(...distOps.map(o=>o.compra)) : null;
-    const melhorFonte = menorInd ? indOps.find(o=>o.compra===menorInd) : menorDist ? distOps.find(o=>o.compra===menorDist) : null;
+    // MELHOR FONTE = menor custo GERAL. A indústria só ganha do distribuidor se for a mais barata
+    // OU competitiva (até 5% acima) — o preço de tabela dela costuma vir com prazo/condição melhor.
+    // BUG PORTADO DA GLOBAL (04/08/2026): a versão antiga era `menorInd ? ind : dist`, ou seja, a
+    // indústria vencia SEMPRE que existisse, mesmo custando muito mais. A tela recomendava comprar
+    // na fonte cara tendo distribuidor mais barato na mesma linha — e ainda mostrava margem
+    // negativa, porque o `seuPreco` sai da média do mercado e o custo vinha da fonte errada.
+    const _mf = _cmpMelhorFonte(menorInd, menorDist);
+    const melhorFonte = !_mf ? null
+      : (_mf.tipo === 'ind' ? indOps.find(o=>o.compra===menorInd) : distOps.find(o=>o.compra===menorDist));
     const seuPreco = mediaMercado ? mediaMercado * 0.95 : (melhorFonte ? melhorFonte.compra * 1.32 : null);
     const margem = (seuPreco && melhorFonte) ? ((seuPreco - melhorFonte.compra) / seuPreco * 100) : null;
     const isPromo = mediaMercado != null && margem !== null && margem >= 15;
