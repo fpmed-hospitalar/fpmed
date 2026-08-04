@@ -8,6 +8,11 @@ ultimo_sync: e7501e0
 (`ultimo_sync` = último commit da GlobalMed já considerado. `490e856` = estado da Global
 no momento do clone da FPMED, 21/07/2026 20:29 — 4 min antes do 1º commit da FPMED.)
 
+> ⚠️ **`ultimo_sync` NÃO foi avançado em 04/08, de propósito.** O porte do motor (abaixo) pegou
+> o MOTOR do head `49f0189`, mas **não** os Blocos 2, 3 e 4 da curadoria. Marcar `49f0189` faria
+> esses blocos sumirem do preview do `sync_da_global.js` — eles seriam dados como "já
+> considerados" sem nunca terem sido portados. O marcador só avança quando o bloco inteiro entrar.
+
 ## Fluxo de SYNC DE CÓDIGO
 1. `node tools/sync_da_global.js` → relatório dos commits pendentes da Global, mapeados
    pros arquivos da FPMED, com aviso de divergência local.
@@ -61,6 +66,45 @@ console limpo. Commit 7af9021.
 > **Nada foi portado.** Esta é a lista do passo 2 do fluxo — o Lemuel escolhe os blocos.
 > Divergência acumulada hoje: giovana **+2.007** linhas na Global · sistema_final **+3.580** ·
 > viabilidade +100 · vendas +34 · painel +25. A Global também criou `motor_busca.js` (não existe aqui).
+
+## ✅ BLOCO 1 (parte MOTOR) — PORTADO 04/08. Suíte da FPMED: 110 → **339 asserts**.
+
+**A Opção B abaixo estava errada na conta, e o porte foi feito de outro jeito.** Medi antes:
+a `giovana` da Global é **tema ESCURO**, com 146+ cores escuras cravadas no CSS (`#0d1b2a` 16×,
+`#1e3048` 30×, `#29b8ff` 40×) contra 89 cores no arquivo inteiro da FPMED. Adotá-la inteira
+escureceria a tela de Propostas — exatamente o que o **Bloco 5 proíbe**. Os "49 marcadores"
+contavam os valores FPMED presentes no arquivo da FPMED, não as cores escuras presentes no
+arquivo da Global; são coisas diferentes.
+
+**O que foi feito:** portadas só as **duas fatias do motor** — as mesmas que o
+`gera_motor_busca.js` da Global extrai. Medido: essas 1.456 linhas têm **ZERO** cor hex, ZERO
+"GlobalMed", ZERO URL do Supabase deles, ZERO e-mail hardcoded, ZERO telefone e ZERO nome de
+modelo de IA. É lógica pura — o risco de rebrand é nulo **por construção**, não por revisão.
+- `tools/porta_motor_da_global.js` — faz o porte, confere rebrand nos dois sentidos (nada da
+  Global entrou / nada da FPMED sumiu) e **se recusa a aplicar** se algo estiver errado.
+- `tools/confere_previa_motor.js` — valida a prévia ANTES de gravar: sintaxe dos blocos, as
+  fatias carregando com ambiente mínimo, e 10 verificações funcionais das melhorias portadas.
+- `tools/confere_refs.js` — todo símbolo usado no boot existe. Nasceu de um susto real: as
+  chamadas de `_fpOpcional` entraram antes da função, e o boot teria estourado na 1ª abertura
+  sem nenhum teste acusar (as suítes fatiam o motor, não passam pelo boot).
+- **Preservado**: o fallback `venda_unit_forn` no `pv()` (view `cotacoes_vendedor` — vendedor não
+  recebe custo). É a ÚNICA lógica própria da FPMED no motor; o resto da fatia dela era só a
+  versão antiga da Global. O porte reinjeta esse trecho a cada sync.
+- **Suítes portadas** (8, via `tools/porta_suites_da_global.js`, que só grava as que passam):
+  bug5_concentracao, mono_x_combo, num_discriminador, tripla_onco, pedido_sem_dose,
+  caixa_sem_pack, dose_total, indice. Ficaram de fora as que testam a CASCA da Global
+  (cabeçalho, abas, gerarPDF) e as que dependem de `_parseLinhaQtd`/`_addLinhaAoOrcamento`, que
+  vivem numa 3ª região do arquivo e **não** foram portados.
+- Testado: 339/339 verde, tela abre com título FPMED, console limpo, `:root` claro intacto,
+  0 cores escuras da Global, 0 "GlobalMed", 0 URL do Supabase deles.
+
+**O que do Bloco 1 NÃO veio** (fica pra próxima rodada, é camada de tela, não motor):
+o portão de qualidade, o canal de alternativa com aviso (botões [Aceitar]/[Recusar]), o rótulo de
+progresso da carga + retry no cabeçalho, a caixa OBS DO PEDIDO e o painel de conferência.
+E o **de-para marca↔PA**: a função `carregarDicMarcaPa` veio e já está ligada no boot, mas a
+tabela `dicionario_marca_pa` **não existe no banco da FPMED** e não há token `sbp_` no
+`segredos.local.txt` daqui pra criar. Hoje ela falha em silêncio e a busca segue sem o de-para;
+no dia em que a tabela for criada, passa a funcionar sozinha.
 
 ### 🟢 BLOCO 1 — Motor de busca / tela Propostas (~55 commits) — **RECOMENDO ENTRAR**
 É a tela que a equipe inteira usa, e o bloco tem **bug de faturamento**, não só melhoria:
