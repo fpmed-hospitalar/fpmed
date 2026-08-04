@@ -219,8 +219,9 @@ const FORN_NOMES = {
 };
 function nomeForn(cod){
   const c = (cod==null ? '' : String(cod)).trim();
-  if(!c) return 'GLOBAL';
-  return /^\d+$/.test(c) ? (FORN_NOMES[c] || c) : c;
+  if(!c || c === '1') return 'FPMED';   // rotulo de exibicao do estoque proprio (dado interno segue '1')
+  const n = /^\d+$/.test(c) ? (FORN_NOMES[c] || c) : c;
+  return n === 'GLOBAL' ? 'FPMED' : n;
 }
 
 async function renderFornecedores(){

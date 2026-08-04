@@ -2496,9 +2496,14 @@ const FORN_NOMES = {
   '14':'OUTROS','15':'BIOCHIMICO','16':'PROMEFARMA','17':'BRASIL MEDICAMENTOS',
   '18':'MCW','19':'SUPERMED','20':'SUPERMAX INDUSTRIA'
 };
+// ROTULO DE EXIBICAO. O dado interno segue sendo fornecedor='1' / tipo='global' — so o que o
+// usuario LE muda. Corrigido em 04/08/2026: o card de Propostas mostrava o badge "GLOBAL",
+// vazando o nome da outra empresa numa tela que o cliente ve.
+// Distribuidor com "GLOBAL" no nome real (ex.: GLOBAL HOSPITALAR) chega como TEXTO, nao como
+// codigo numerico, entao cai no ultimo return e continua intacto — e dado, nao rotulo.
 function nomeForn(cod){
   const c = (cod==null ? '' : String(cod)).trim();
-  if(!c) return 'GLOBAL';
+  if(!c || c === '1') return 'FPMED';              // estoque proprio
   return /^\d+$/.test(c) ? (FORN_NOMES[c] || c) : c;
 }
 
