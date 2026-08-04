@@ -96,9 +96,12 @@ Auditoria de 22/07: banco confirmado limpo após teste do upload de PDF (preview
       0 linhas GLOBAL no lote, só a tabela `cotacoes`. Novos por fornecedor: SANTA CRUZ 8.743 ·
       MCW 2.501 · EB FARMACEUTICA 1.885 · SUPERMEDICA 161 · resto ~110. **NADA foi gravado** —
       gravar exige OK do Lemuel: `node tools/sync_cotacoes_global.js --gravar`.
-- [ ] ⏸ **Sync de CÓDIGO — 169 commits pendentes da Global** (base `e7501e0` → head `5547d61`),
-      preview rodado 04/08. Exige curadoria + OK do Lemuel (regra: nunca portar às cegas).
-      Lista curada no checkpoint / `SYNC_GLOBAL.md`.
+- [ ] ⏸ **Sync de CÓDIGO — 169 commits pendentes da Global** (base `e7501e0` → head `5547d61`,
+      22/07→03/08). Preview + **curadoria em 5 blocos FEITA 04/08** (`SYNC_GLOBAL.md`), esperando
+      o Lemuel escolher os blocos. Resumo: 🟢1 motor/Propostas (~55 commits, tem bug de faturamento)
+      · 🟢2 telas de análise (~25) · 🟡3 CMED (~10, decisão) · 🟡4 Alvos de Compra Direta (~6,
+      decisão de negócio) · 🔴5 não portar (rebrand DARK da Global + dado do banco deles).
+      Divergência medida: giovana +2.007 linhas, sistema_final +3.580.
 - [x] **Porte manual da Competitividade + Comparativo** (24/07, commit `7af9021`): upgrades da
       Global (005cb75/7cc5b87/e7501e0) portados com tema claro reaplicado — giro/impacto R$/mês,
       botão "fila de cotação", curadoria+regra revisar; Comparativo com heatmap/scorecard win-rate/

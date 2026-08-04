@@ -104,9 +104,19 @@ Criado em 21/07/2026 copiando SO os arquivos do app do C:\globalmed.
   LIMITACAO: markup fixo 32% -> preco de venda de distribuidor deixa deduzir o custo (venda/1,32);
   o que fica opaco e fornecedor/intel/escrita. Custo 100% opaco = markup variavel (mudar se o Lemuel pedir).
 
-Proximos passos (quando o Lemuel mandar): (a) sync de dados quando a Global tiver cotacoes
-novas; (b) porte manual da Competitividade (SYNC_GLOBAL.md); (c) vendedoras quando a equipe
-for definida; (d) dominio sistema.fpmed.com.br pos-venda. Placar completo: TAREFAS_FPMED.md.
+>>> CHECKPOINT ABERTO (04/08/2026) — 2 syncs previewados, NADA gravado/portado, esperando OK:
+  (1) DADOS: a Global cresceu p/ 20.826 linhas de distribuidor. Preview do
+      tools/sync_cotacoes_global.js: 13.403 NOVOS + 148 ATUALIZADOS + 7.268 identicos, 0 linha
+      GLOBAL no lote, so a tabela cotacoes. Novos: SANTA CRUZ 8.743, MCW 2.501, EB 1.885,
+      SUPERMEDICA 161, resto ~110. Gravar exige OK: node tools/sync_cotacoes_global.js --gravar
+  (2) CODIGO: 169 commits pendentes (e7501e0 -> 5547d61). Curadoria em 5 blocos escrita no
+      SYNC_GLOBAL.md. Recomendacao: bloco 1 (motor/Propostas — tem BUG DE FATURAMENTO: unidade
+      virava caixa, preco de caixa virava unitario) entra pela Opcao B (adotar a giovana da Global
+      e reaplicar os 49 marcadores de rebrand). Bloco 5 (rebrand DARK da Global) NAO entra —
+      a FPMED e tema claro.
+
+Proximos passos (quando o Lemuel mandar): (a) OK dos 2 syncs acima; (b) vendedoras quando a
+equipe for definida; (c) dominio sistema.fpmed.com.br pos-venda. Placar: TAREFAS_FPMED.md.
 
 ========================================
 BLUEPRINT DO SISTEMA (mapeado do GlobalMed, 21/07/2026)
