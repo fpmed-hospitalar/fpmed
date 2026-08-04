@@ -107,13 +107,57 @@ async function tudo(filtro, cols) {
     return null;
   }
 
+  // --- camada C: CMED (25.702 apresentacoes da ANVISA) — de-para MARCA -> SUBSTANCIA ---
+  // Entrou 04/08 com o Bloco 3. Resolve o que o vocabulario interno nao alcanca: medicamento
+  // real que nenhum distribuidor nosso cotou com PA (SORO FISIOLOGICO, PENICILINA, MORFINA...).
+  // Mesma regra de ouro: so casa contra o dado oficial, nunca inventa.
+  const { norm: cmedNorm } = require('./carrega_cmed_pf');
+  let cmed = [], offC = 0;
+  for (;;) {
+    const r = await fetch(`${SB}/rest/v1/cmed_pf?select=subst_norm,marca_norm&limit=1000&offset=${offC}`, { headers: H });
+    const d = await r.json();
+    if (!Array.isArray(d) || !d.length) break;
+    cmed = cmed.concat(d); if (d.length < 1000) break; offC += 1000;
+  }
+  const porMarca = new Map();     // marca_norm -> substancia
+  const substSet = new Set();     // substancias conhecidas
+  for (const c of cmed) {
+    const s = String(c.subst_norm || '').trim();
+    if (!s || s.includes('+')) { if (s) substSet.add(s); continue; }   // combo nao vira PA de item simples
+    const m = String(c.marca_norm || '').trim();
+    if (m && !porMarca.has(m)) porMarca.set(m, s);
+    substSet.add(s);
+  }
+  console.log(`CMED: ${cmed.length} apresentacoes · ${porMarca.size} marcas · ${substSet.size} substancias\n`);
+
+  // Palavras de embalagem/forma que NUNCA sao PA — evita casar lixo contra o vocabulario.
+  const RUIDO = new Set(('INJ INJETAVEL SOL SOLUCAO SUSP XPE XAROPE CPR COMP COMPRIMIDO CAPS CAPSULA ' +
+    'PO POMADA CREME GEL GTS GOTAS AMP AMPOLA FR FRASCO FA CX CAIXA UND UNIDADE ML MG MCG UI ' +
+    'ORAL TOPICO IV IM SC VO SIMPLES COMPOSTO INFANTIL ADULTO GENERICO SULF CLORIDRATO SODICO ' +
+    'SODIO POTASSIO CALCIO ACETATO FOSFATO SULFATO NITRATO BROMETO CLORETO DIL EST').split(' '));
+
+  function porCmed(nome) {
+    const cands = [];
+    (String(nome || '').match(/\(([^)]*)\)/g) || []).forEach(x => {     // marca entre parenteses
+      const t = cmedNorm(x.replace(/[()]/g, ''));
+      if (t.length >= 4 && !RUIDO.has(t)) cands.push(t);
+    });
+    const w = cmedNorm(limpaPrefixo(nome)).split(' ').filter(s => s.length >= 4 && !/\d/.test(s) && !RUIDO.has(s));
+    if (w[0] && w[1]) cands.push(w[0] + ' ' + w[1]);
+    for (const t of w) cands.push(t);   // TODO token vale: "SULF GENTAMICINA" -> GENTAMICINA
+    for (const c of cands) if (substSet.has(c)) return c;               // ja e a substancia
+    for (const c of cands) if (porMarca.has(c)) return porMarca.get(c); // marca -> substancia
+    return null;
+  }
+
   const plano = [];
-  const contas = { A: 0, B: 0, nao: 0 };
+  const contas = { A: 0, B: 0, C: 0, nao: 0 };
   const naoResolvidos = [];
   for (const g of alvo) {
     const nomeN = _gmNorm(limpaPrefixo(g.produto));
     let pa = porProduto.get(nomeN) || null, via = 'A';
     if (!pa) { pa = porNome(g.produto); via = 'B'; }
+    if (!pa) { pa = porCmed(g.produto); via = 'C'; }
     if (!pa) { contas.nao++; if (naoResolvidos.length < 8) naoResolvidos.push(g.produto.slice(0, 58)); continue; }
     contas[via]++;
     plano.push({ id: g.id, pa, via, produto: g.produto });
@@ -122,6 +166,7 @@ async function tudo(filtro, cols) {
   console.log('── RESOLUCAO ──');
   console.log(`  A) mesmo produto ja cotado por distribuidor ... ${contas.A}`);
   console.log(`  B) nome bate num PA do vocabulario ........... ${contas.B}`);
+  console.log(`  C) CMED: marca/substancia da ANVISA .......... ${contas.C}`);
   console.log(`  nao resolvido (fica NULL, nao chuta) ......... ${contas.nao}`);
   console.log(`  TOTAL a gravar: ${plano.length}\n`);
   console.log('  amostra A: ' + plano.filter(p => p.via === 'A').slice(0, 3).map(p => `${p.produto.slice(0,42)} -> ${p.pa}`).join(' | '));
