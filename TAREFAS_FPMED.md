@@ -91,11 +91,13 @@ Auditoria de 22/07: banco confirmado limpo após teste do upload de PDF (preview
       do banco antigo, sintaxe JS validada). URL `https://xzdowrksuswekwffoluk.supabase.co`.
 
 ## ⬜ PENDENTES (na ordem)
-- [ ] ⏸ **Sync de dados — PREVIEW RODADO 04/08, ESPERANDO OK**: a Global cresceu (21.393 linhas /
-      20.826 de distribuidor). Preview: **➕ 13.403 novos · 🔄 148 atualizados · ⏭ 7.268 idênticos**,
-      0 linhas GLOBAL no lote, só a tabela `cotacoes`. Novos por fornecedor: SANTA CRUZ 8.743 ·
-      MCW 2.501 · EB FARMACEUTICA 1.885 · SUPERMEDICA 161 · resto ~110. **NADA foi gravado** —
-      gravar exige OK do Lemuel: `node tools/sync_cotacoes_global.js --gravar`.
+- [x] **Sync de dados EXECUTADO (04/08, com OK do Lemuel)**: **13.406 novos + 149 atualizados +
+      7.267 pulados**. Backup completo antes (`backups/backup_2026-08-04_1528`). Filtros master
+      íntegros: **0 linhas GLOBAL no lote**, só a tabela `cotacoes`, zero cliente/prospect.
+      Banco: 8.832 → **22.238 cotações** (1.381 estoque próprio + 20.857 distribuidor, 50
+      fornecedores). Auditoria pós-sync: `tipo='global'` indevido em linha de distribuidor = **0**.
+      Suíte 371 verde. Novos por fornecedor: SANTA CRUZ 8.743 · MCW 2.501 · EB 1.885 · SUPERMEDICA
+      161 · resto ~116.
 - [ ] ⏸ **Sync de CÓDIGO — 169 commits pendentes da Global** (base `e7501e0` → head `5547d61`,
       22/07→03/08). Preview + **curadoria em 5 blocos FEITA 04/08** (`SYNC_GLOBAL.md`), esperando
       o Lemuel escolher os blocos. Resumo: 🟢1 motor/Propostas (~55 commits, tem bug de faturamento)
@@ -248,6 +250,15 @@ Spec completa em **`LICITACOES_SPEC.md`** (estudo do SIGA Pregão + plano V1/V2)
   precisa degradar com cache + aviso, nunca tela branca.
 - **Ordem**: entra DEPOIS de normalização por unidade → sync de dados → Blocos 2/4.
   Mostrar screenshot do protótipo busca+lista ANTES de construir o cruzamento.
+
+## 📦 REGRA PERMANENTE — ESTOQUE 0 VIRA 1 (decisão do Lemuel, 04/08/2026)
+Item que vier com **estoque 0** no relatório entra/atualiza com **estoque = 1**.
+**Por quê:** com estoque 0 o item some da Competitividade e das Vendas Ativas, e junto some o
+**histórico de preço** dele — que é o que permite comparar depois. Com 1 ele fica visível na
+comparação sem fingir que há saldo relevante.
+- Aplicada no seed de 04/08: **781 linhas** (750 zeradas + 31 que já eram 1).
+- ⬜ **PENDENTE gravar no FLUXO**: tela Atualizar Estoque + `tools/le_estoque_fpmed.js` + teste.
+  (Item 4 da fila.)
 
 ## 🩺 SAÚDE DO SISTEMA (rodada 04/08/2026)
 - Suíte: **110 asserts verdes / 0 falhas** em 6 suítes (`node tests/run_all.js`).
