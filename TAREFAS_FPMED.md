@@ -188,6 +188,31 @@ Auditoria de 22/07: banco confirmado limpo após teste do upload de PDF (preview
    views com `security_invoker` (`db_rls.sql`). Testado: anon bloqueada (INSERT 401 / SELECT vazio),
    `authenticated` funciona. Como o repo vai público com a anon dentro, isso era essencial.
 
+## 📦 ESTOQUE PRÓPRIO FPMED IMPORTADO (04/08/2026) — 1.381 linhas, com 2 pendências
+Origem: `Pasta1.xlsx` (CODIGO, NOME_PRODUTO, UNIDADE, MARCA, ESTOQUE, PRECO_MINIMO1).
+Gravado como `fornecedor='1'` / `tipo='global'` / `global_venda1=PRECO_MINIMO1`. Total do banco
+7.451 → **8.832**. Regra do Lemuel aplicada: **estoque 0 → 1** (750 zeradas + 31 que já eram 1 = 781).
+
+**Auditoria do que ficou gravado:**
+- ✅ 1.381 linhas, 0 sem preço, 0 sem marca, 0 com custo (é venda, correto).
+- ✅ 474 linhas "duplicadas" **vêm da própria planilha** (469 chaves código+produto repetidas) — não
+  foi insert duplo. Decidir se deduplica (a Competitividade soma saldo de linhas irmãs).
+- ⚠️ `und` NULL em 1.381/1.381. **Medido: não muda o pack em nenhuma linha** (CX/UND/PCT não
+  carregam número; `qtdEmbalagem` cai no nome). É perda de informação de tela, não de preço.
+- ⚠️ `codigo` perdeu o zero à esquerda (`0000010` → `10`) em 1.381/1.381. Risco no PRÓXIMO import:
+  se o relatório vier com 7 dígitos, a chave não casa e duplica. Corrigir = UPDATE → **espera OK**.
+- ⚠️ `principio_ativo` NULL em 1.381/1.381 → **é o que deixa a Competitividade vazia** (abaixo).
+
+**Telas conferidas no ar (04/08):**
+- ✅ **Vendas Ativas popula**: 200 produtos, itens com badge FPMED e estoque 1.
+- ✅ Dashboard: "1381 no estoque FPMED", 8.832 cotações.
+- ❌ **Competitividade continua ZERO.** Funil medido com a função real (`tools/diag_competitividade.js`):
+  `_cpzKey` exige PA com ≥3 chars **e** dose — com `principio_ativo` vazio, **1.381 de 1.381** morrem
+  no 1º portão. Não é bug de tela: é dado faltando. Potencial se o PA for preenchido: **767** das 1.381
+  têm dose legível no nome, contra **1.564** chaves distintas do lado concorrente.
+  Caminho: rodar `resolvePA` no import (a Global usa a tabela `cmed_pf` pra isso — Bloco 3 do sync,
+  ainda NÃO portado; é por isso que aqui não roda igual lá).
+
 ## 🩺 SAÚDE DO SISTEMA (rodada 04/08/2026)
 - Suíte: **110 asserts verdes / 0 falhas** em 6 suítes (`node tests/run_all.js`).
 - Smoke test no ar: **10/10 páginas HTTP 200** em `fpmed-hospitalar.github.io/fpmed/`, todas

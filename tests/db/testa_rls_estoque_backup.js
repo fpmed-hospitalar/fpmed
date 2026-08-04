@@ -84,6 +84,27 @@ async function contaBackups() {
       const vTxt = await r.text();
       t('vendedor INSERT 403 (RLS barra)', r.status === 403 && /row-level security/i.test(vTxt), `HTTP ${r.status} ${vTxt.slice(0,120)}`);
     }
+
+    // ---- COTACOES: a outra gravacao do import de estoque (a linha em si) ----
+    // O backup e so metade do caminho: se a cotacoes barrar, o import tambem morre.
+    const prod = `[TESTE RLS ${marca}] produto descartavel`;
+    let rc = await fetch(`${SB}/rest/v1/cotacoes`, { method: 'POST',
+      headers: { ...comoUsuario(tkD), Prefer: 'return=representation' },
+      body: JSON.stringify({ fornecedor: '1', tipo: 'global', produto: prod, estoque: 1, global_venda1: 1.23 }) });
+    const cCriado = rc.ok ? await rc.json() : await rc.text();
+    t('diretor INSERT em cotacoes (gravacao do estoque)', rc.status === 201, `HTTP ${rc.status} ${String(cCriado).slice(0,140)}`);
+    const cotId = rc.status === 201 ? cCriado[0].id : null;
+
+    rc = await fetch(`${SB}/rest/v1/cotacoes`, { method: 'POST', headers: comoUsuario(tkV),
+      body: JSON.stringify({ fornecedor: '1', tipo: 'global', produto: prod + ' (vendedor)', estoque: 1 }) });
+    const cvTxt = await rc.text();
+    t('vendedor INSERT em cotacoes 403', rc.status === 403 && /row-level security/i.test(cvTxt), `HTTP ${rc.status} ${cvTxt.slice(0,120)}`);
+
+    if (cotId) {
+      rc = await fetch(`${SB}/rest/v1/cotacoes?id=eq.${cotId}`, { method: 'DELETE', headers: comoUsuario(tkD) });
+      t('diretor DELETE em cotacoes + limpeza da linha', rc.status === 204, `HTTP ${rc.status}`);
+      if (rc.status !== 204) await fetch(`${SB}/rest/v1/cotacoes?id=eq.${cotId}`, { method: 'DELETE', headers: adm });
+    }
   } catch (e) {
     fail++; console.log('  FALHA (excecao): ' + e.message);
   } finally {
@@ -100,7 +121,10 @@ async function contaBackups() {
   }
 
   const depois = await contaBackups();
-  t(`contagem volta ao original (${antes})`, depois === antes, `depois=${depois}`);
+  t(`estoque_backup volta ao original (${antes})`, depois === antes, `depois=${depois}`);
+  const sobrou = await fetch(`${SB}/rest/v1/cotacoes?select=id&produto=like.*TESTE%20RLS*`, { headers: adm });
+  const restos = await sobrou.json();
+  t('nenhuma cotacao de teste sobrou no banco', Array.isArray(restos) && restos.length === 0, JSON.stringify(restos).slice(0,120));
   console.log(`\n───────────────────────────────\n${ok} ok, ${fail} falha(s)`);
   console.log(fail ? '>>> VERMELHO' : '>>> TUDO VERDE');
   process.exit(fail ? 1 : 0);
