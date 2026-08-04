@@ -13,6 +13,12 @@ node_modules/
 # previas geradas pelos portes (artefato de build, nao fonte)
 tools/_previa_*.html
 
+# tools/_* = scratch/operacional, NUNCA versionado (acessos temporarios, previas, rascunhos).
+# 04/08/2026: o _acesso_temp.js entrou no repo publico porque esta regra nao existia — ela
+# so cobria _previa_*.html. Nenhum segredo vazou (o script le a service_role do
+# segredos.local.txt em runtime), mas a regra agora e larga de proposito.
+tools/_*
+
 # scripts gerados com chave embutida
 restore_*.js
 apply_*.js
