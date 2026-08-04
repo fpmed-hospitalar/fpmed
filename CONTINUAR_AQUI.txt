@@ -25,6 +25,14 @@ Criado em 21/07/2026 copiando SO os arquivos do app do C:\globalmed.
     BACKUP PROPRIO FEITO (04/08): .claude/hooks/backup_tabelas.js — so GET, service_role lida do
     segredos.local.txt, pagina em 1000 (limite do PostgREST da FPMED), grava JSON em backups/
     (gitignored), 11 tabelas. O ABRIR_CLAUDE_TOTAL.bat roda ele sozinho antes de cada rodada.
+>>> FILA EM ORDEM (04/08/2026 — regra do Lemuel): TUDO que ele mandar entra no FIM DA FILA
+    e e feito em ordem. NUNCA largar a tarefa atual no meio pra atender o que acabou de chegar.
+    UNICA excecao: se ele escrever URGENCIA, ai fura a fila e atende na hora.
+    Ao receber pedido novo no meio de algo: dizer numa linha que entrou na fila, CONTINUAR o que
+    estava fazendo, e mostrar a fila no relatorio de cada etapa.
+    (Excecao de SEGURANCA, nao de prioridade: se continuar for destrutivo ou inseguro, parar e
+    avisar — isso e a regra de ouro do projeto, nao furo de fila.)
+
 >>> PADRAO DO PROJETO (21/07/2026): TODA rodada da FPMED usa uma TASK LIST — arquivo
     TAREFAS_FPMED.md na raiz. Marcar concluida na hora que fechar cada etapa. Commit por etapa.
 >>> DEPLOY (21/07/2026): o deploy da FPMED vai numa ORGANIZATION nova do GitHub chamada
