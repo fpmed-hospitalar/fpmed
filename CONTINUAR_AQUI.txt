@@ -35,6 +35,19 @@ Criado em 21/07/2026 copiando SO os arquivos do app do C:\globalmed.
     registrados no COMPLIANCE.md ANTES de qualquer codigo. Politica completa: COMPLIANCE.md.
     Guards: tests/testa_compliance.js (suite padrao) + tests/db/testa_congelamento.js (banco).
 
+>>> MODO AUTOMATICO (04/08/2026 — regra permanente do Lemuel). Atalho: ABRIR_FILA.bat
+    Ao receber "continua a fila": trabalhar a fila INTEIRA em sequencia, SEM parar entre itens
+    e SEM pedir confirmacao pra seguir. Terminou um item -> commit -> proximo, direto.
+    Relatorio CURTO ao fim de cada item (o que fez, numeros, fila restante) e segue sem esperar.
+    SO INTERROMPER em 3 casos:
+      a) decisao de NEGOCIO que so o Lemuel toma (preco, regra comercial, remover dado);
+      b) operacao DESTRUTIVA em producao (delete/update em massa) -> preview e espera OK;
+      c) o screenshot de aprovacao que a spec exigir (ex.: prototipo do Licitacoes).
+    Todo o resto: decidir sozinho pelo padrao do projeto e REGISTRAR a decisao no relatorio.
+    CONTEXTO ACABANDO: nao esperar ele mandar — fecha o item atual, commita, atualiza
+    CONTINUAR_AQUI/TAREFAS com o ponto exato de retomada e avisa
+    "sessao esgotada, abre nova e manda continua a fila".
+
 >>> FILA EM ORDEM (04/08/2026 — regra do Lemuel): TUDO que ele mandar entra no FIM DA FILA
     e e feito em ordem. NUNCA largar a tarefa atual no meio pra atender o que acabou de chegar.
     UNICA excecao: se ele escrever URGENCIA, ai fura a fila e atende na hora.

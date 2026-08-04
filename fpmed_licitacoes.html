@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FPMED — Licitações</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%232CA9E0'/%3E%3Cpath d='M13 6h6v7h7v6h-7v7h-6v-7H6v-6h7z' fill='white'/%3E%3C/svg%3E">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--azul:#2CA9E0;--navy:#173A5E;--verde:#8DC63F;--muted:#7a8a99;--linha:#e3e9ef;--bg:#f4f7fa;--vermelho:#c0392b;--ambar:#e67e22}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);font-family:Inter,system-ui,sans-serif;color:var(--navy)}
+.topfaixa{background:var(--azul);color:#fff;padding:8px 18px;font-size:13px;display:flex;gap:14px;align-items:center}
+.topfaixa a{color:#fff;text-decoration:none;background:rgba(255,255,255,.18);padding:3px 10px;border-radius:20px;font-size:12px}
+header{background:#fff;border-bottom:1px solid var(--linha);padding:14px 22px;display:flex;align-items:center;gap:14px}
+header h1{font-family:Montserrat;font-size:19px;margin:0;color:var(--navy)}
+.wrap{max-width:1400px;margin:0 auto;padding:20px 22px 60px}
+.card{background:#fff;border:1px solid var(--linha);border-radius:12px;padding:18px;margin-bottom:18px}
+label{display:block;font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:5px}
+input,select{width:100%;padding:9px 11px;border:1px solid var(--linha);border-radius:8px;font-family:inherit;font-size:13px;color:var(--navy);background:#fff}
+.filtros{display:grid;grid-template-columns:1fr 1fr 1.6fr 1fr;gap:14px;align-items:end}
+.btn{background:var(--azul);color:#fff;border:0;border-radius:8px;padding:10px 20px;font-weight:600;font-size:13px;cursor:pointer;font-family:inherit}
+.btn:hover{filter:brightness(.94)}
+.btn.sec{background:#fff;color:var(--navy);border:1px solid var(--linha)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin-bottom:18px}
+.kpi{background:#fff;border:1px solid var(--linha);border-radius:12px;padding:16px}
+.kpi .n{font-family:Montserrat;font-size:30px;font-weight:700;color:var(--navy);line-height:1.1}
+.kpi .l{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-top:5px}
+.lic{background:#fff;border:1px solid var(--linha);border-left:4px solid var(--azul);border-radius:10px;padding:15px 17px;margin-bottom:11px}
+.lic .org{font-family:Montserrat;font-weight:600;font-size:13px;color:var(--azul)}
+.lic .obj{margin:7px 0 10px;font-size:13.5px;line-height:1.45}
+.lic .meta{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:11.5px;color:var(--muted)}
+.tag{background:#eef6fc;color:var(--navy);padding:2px 9px;border-radius:20px;font-size:11px;font-weight:500}
+.tag.v{background:#eef8e3;color:#4a7c14}
+.tag.a{background:#fdf2e4;color:#9a5b12}
+.tag.r{background:#fdecea;color:var(--vermelho)}
+.lic a.edital{color:var(--azul);font-size:11.5px;text-decoration:none;font-weight:600}
+.aviso{padding:26px;text-align:center;border-radius:10px;background:#fff;border:1px solid var(--linha)}
+.aviso.err{border-color:#f0c4be;background:#fdf7f6;color:var(--vermelho)}
+.hint{font-size:11.5px;color:var(--muted);margin-top:6px}
+</style>
+</head>
+<body>
+<div class="topfaixa">
+  <a href="fpmed_sistema_final.html">← Sistema</a>
+  <span>📞 (62) 3290-4241</span><span>·</span><span>Compromisso com qualidade!</span>
+</div>
+<header>
+  <img src="logo_fpmed.png" alt="FPMED" style="height:34px">
+  <h1>Licitações <span style="font-weight:400;color:var(--muted);font-size:14px">· busca no PNCP</span></h1>
+</header>
+
+<div class="wrap">
+  <div class="card">
+    <div class="filtros">
+      <div><label>UF</label><select id="f-uf"><option value="GO" selected>GO</option><option value="">Todas</option>
+        <option>AC</option><option>AL</option><option>AM</option><option>AP</option><option>BA</option><option>CE</option>
+        <option>DF</option><option>ES</option><option>MA</option><option>MG</option><option>MS</option><option>MT</option>
+        <option>PA</option><option>PB</option><option>PE</option><option>PI</option><option>PR</option><option>RJ</option>
+        <option>RN</option><option>RO</option><option>RR</option><option>RS</option><option>SC</option><option>SE</option>
+        <option>SP</option><option>TO</option></select></div>
+      <div><label>Modalidade</label><select id="f-mod">
+        <option value="6" selected>Pregão eletrônico</option>
+        <option value="8">Dispensa eletrônica</option>
+        <option value="4">Concorrência eletrônica</option>
+        <option value="9">Inexigibilidade</option>
+      </select></div>
+      <div><label>Palavras-chave do objeto (separadas por ;)</label>
+        <input id="f-kw" value="medicamento; hospitalar; material médico; farmac; soro; correlatos"></div>
+      <div><label>Data de publicação</label><input type="date" id="f-data"></div>
+    </div>
+    <div style="margin-top:14px;display:flex;gap:10px;align-items:center">
+      <button class="btn" onclick="buscar()">🔎 Buscar</button>
+      <button class="btn sec" onclick="document.getElementById('f-kw').value=''">Limpar palavras</button>
+      <span class="hint" id="status"></span>
+    </div>
+    <div class="hint">A API do PNCP recebe só filtros públicos (UF, data, modalidade). Nenhum dado da FPMED sai daqui.</div>
+  </div>
+
+  <div class="kpis" id="kpis" style="display:none">
+    <div class="kpi"><div class="n" id="k-total">—</div><div class="l">Publicadas no dia (UF+modalidade)</div></div>
+    <div class="kpi"><div class="n" id="k-filtro">—</div><div class="l">Batem nas palavras-chave</div></div>
+    <div class="kpi"><div class="n" id="k-valor">—</div><div class="l">Valor estimado somado</div></div>
+    <div class="kpi"><div class="n" id="k-prazo">—</div><div class="l">Com proposta ainda aberta</div></div>
+  </div>
+
+  <div id="lista"><div class="aviso">Escolha os filtros e clique em <b>Buscar</b>.</div></div>
+</div>
+
+<script>
+const API = 'https://pncp.gov.br/api/consulta/v1/contratacoes/publicacao';
+const CACHE_MIN = 15;                       // cache local: não abusar da API pública
+const cache = new Map();                    // chave -> {quando, dados}
+
+const brl = n => (Number(n)||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL',maximumFractionDigits:0});
+const dt = s => { if(!s) return null; const d=new Date(s); return isNaN(d)?null:d; };
+const fmtDt = s => { const d=dt(s); return d ? d.toLocaleDateString('pt-BR')+' '+d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}) : '—'; };
+const esc = s => String(s==null?'':s).replace(/[<>&]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]));
+const semAcento = s => String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase();
+
+function ymd(d){ const p=n=>String(n).padStart(2,'0'); return d.getFullYear()+p(d.getMonth()+1)+p(d.getDate()); }
+
+// dia útil anterior como default (a publicação do dia corrente costuma vir vazia de manhã)
+(function(){
+  const d=new Date(); d.setDate(d.getDate()-1);
+  const i=document.getElementById('f-data');
+  i.value=d.toISOString().slice(0,10);
+})();
+
+async function puxarPagina(params, pagina){
+  const q = new URLSearchParams({...params, pagina:String(pagina), tamanhoPagina:'50'});
+  const r = await fetch(API+'?'+q, {headers:{'Accept':'application/json'}});
+  if(!r.ok) throw new Error('PNCP respondeu '+r.status);
+  return r.json();
+}
+
+async function buscar(){
+  const uf = document.getElementById('f-uf').value;
+  const mod = document.getElementById('f-mod').value;
+  const data = document.getElementById('f-data').value.replace(/-/g,'');
+  const kws = document.getElementById('f-kw').value.split(';').map(s=>semAcento(s.trim())).filter(Boolean);
+  const st = document.getElementById('status');
+  const lista = document.getElementById('lista');
+  if(!data){ st.textContent='Escolha a data.'; return; }
+
+  const chave = [uf,mod,data].join('|');
+  const emCache = cache.get(chave);
+  const fresco = emCache && (Date.now()-emCache.quando) < CACHE_MIN*60000;
+
+  st.textContent = fresco ? 'usando cache…' : 'consultando o PNCP…';
+  lista.innerHTML = '<div class="aviso">Buscando…</div>';
+
+  let todos;
+  try {
+    if (fresco) { todos = emCache.dados; }
+    else {
+      const params = {dataInicial:data, dataFinal:data, codigoModalidadeContratacao:mod};
+      if(uf) params.uf = uf;
+      const p1 = await puxarPagina(params,1);
+      todos = p1.data || [];
+      const tp = Math.min(p1.totalPaginas||1, 10);          // teto de 10 páginas por busca
+      for(let p=2;p<=tp;p++){ const px = await puxarPagina(params,p); todos = todos.concat(px.data||[]); }
+      cache.set(chave,{quando:Date.now(),dados:todos});
+      if((p1.totalPaginas||1) > 10) st.dataset.truncou = String(p1.totalPaginas);
+    }
+  } catch(e){
+    // DEGRADAR COM ELEGÂNCIA: nunca tela branca. Se houver cache velho, mostra com aviso.
+    if(emCache){
+      st.textContent = '';
+      render(emCache.dados, kws, 'A API do PNCP não respondeu ('+e.message+'). Mostrando a última busca de '
+        + new Date(emCache.quando).toLocaleTimeString('pt-BR'));
+      return;
+    }
+    lista.innerHTML = '<div class="aviso err"><b>⚠️ Não consegui falar com o PNCP</b><div class="hint" style="margin-top:8px">'
+      + esc(e.message) + '</div><button class="btn" style="margin-top:14px" onclick="buscar()">Tentar de novo</button></div>';
+    document.getElementById('kpis').style.display='none';
+    st.textContent=''; return;
+  }
+  st.textContent='';
+  render(todos, kws, null);
+}
+
+function render(todos, kws, aviso){
+  const casa = l => { if(!kws.length) return true; const t=semAcento(l.objetoCompra||''); return kws.some(k=>t.includes(k)); };
+  const hits = todos.filter(casa);
+  const agora = new Date();
+  const abertas = hits.filter(l=>{ const d=dt(l.dataEncerramentoProposta); return d && d>agora; });
+  const soma = hits.reduce((s,l)=>s+(Number(l.valorTotalEstimado)||0),0);
+
+  document.getElementById('kpis').style.display='';
+  document.getElementById('k-total').textContent = todos.length;
+  document.getElementById('k-filtro').textContent = hits.length;
+  document.getElementById('k-valor').textContent = brl(soma);
+  document.getElementById('k-prazo').textContent = abertas.length;
+
+  const lista = document.getElementById('lista');
+  let h = aviso ? '<div class="aviso err" style="margin-bottom:14px;text-align:left">⚠️ '+esc(aviso)+'</div>' : '';
+  if(!hits.length){
+    h += '<div class="aviso">Nenhuma licitação bate nas palavras-chave.<div class="hint">'
+       + todos.length + ' publicada(s) no dia com esses filtros. Tente limpar as palavras-chave.</div></div>';
+    lista.innerHTML = h; return;
+  }
+  // ordena por quem encerra primeiro (prazo é o que decide se dá pra participar)
+  hits.sort((a,b)=>{ const x=dt(a.dataEncerramentoProposta), y=dt(b.dataEncerramentoProposta);
+                     return (x?x.getTime():9e15)-(y?y.getTime():9e15); });
+
+  for(const l of hits){
+    const fim = dt(l.dataEncerramentoProposta);
+    const dias = fim ? Math.ceil((fim-agora)/86400000) : null;
+    const tagPrazo = dias==null ? '<span class="tag">prazo não informado</span>'
+      : dias<0 ? '<span class="tag r">encerrada</span>'
+      : dias<=2 ? '<span class="tag a">encerra em '+dias+'d</span>'
+      : '<span class="tag v">encerra em '+dias+'d</span>';
+    h += '<div class="lic">'
+      + '<div class="org">'+esc((l.orgaoEntidade||{}).razaoSocial||'—')
+      + ' <span style="color:var(--muted);font-weight:400">· '+esc((l.unidadeOrgao||{}).municipioNome||'')+'/'+esc((l.unidadeOrgao||{}).ufSigla||'')+'</span></div>'
+      + '<div class="obj">'+esc(l.objetoCompra||'')+'</div>'
+      + '<div class="meta">'
+      +   '<span class="tag">'+esc(l.modalidadeNome||'')+'</span>'
+      +   tagPrazo
+      +   '<span><b>'+brl(l.valorTotalEstimado)+'</b> estimado</span>'
+      +   '<span>· disputa: '+fmtDt(l.dataAberturaProposta)+'</span>'
+      +   '<span>· encerra: '+fmtDt(l.dataEncerramentoProposta)+'</span>'
+      +   '<span>· '+esc(l.numeroControlePNCP||'')+'</span>'
+      +   (l.linkSistemaOrigem?' <a class="edital" href="'+esc(l.linkSistemaOrigem)+'" target="_blank" rel="noopener">abrir edital ↗</a>':'')
+      + '</div></div>';
+  }
+  lista.innerHTML = h;
+}
+</script>
+</body>
+</html>
