@@ -4930,6 +4930,17 @@ function egMarcarAusentes(val){ document.querySelectorAll('.eg-aus-chk').forEach
 // Normaliza código removendo zeros à esquerda (relatório traz '0001964', banco '1964').
 // Sem isso, NENHUM código do relatório casa com o banco → import zera tudo (BUG 12).
 function egNormCod(c) { return String(c == null ? '' : c).trim().replace(/^0+/, '') || '0'; }
+// egNormCod = chave de COMPARAÇÃO (tira zeros, aplicada nos DOIS lados: relatório e banco).
+// egCodGravar = o que vai GRAVADO: o código do ERP como ele é, 7 dígitos com zeros (0000010).
+// Por que separado (04/08/2026): gravar o código já sem zero fez as 1.381 linhas do estoque
+// nascerem como "10" em vez de "0000010" — o ERP mostra com zero e o relatório vem com zero.
+// A comparação segue na versão sem zero, então linha antiga ("10") e nova ("0000010") casam
+// igual e a transição não duplica nada.
+function egCodGravar(c) {
+  const s = String(c == null ? '' : c).trim();
+  if (!s || !/^[0-9]+$/.test(s)) return s;          // não-numérico passa intacto
+  return s.length >= 7 ? s : s.padStart(7, '0');    // >7 dígitos também passa intacto
+}
 
 // BLINDAGEM contra linha grudada do relatório: o "juntar linhas quebradas" (abaixo) cola linhas SEM código de
 // 7 dígitos na anterior — então o rodapé "Emitido em: DATA HORA", um nome que quebrou, ou 2 produtos vizinhos
@@ -5369,7 +5380,7 @@ async function egExecutarReal() {
         // INSERT (guarda o id criado p/ o Desfazer poder remover)
         const criado = await sbPost('cotacoes', {
           fornecedor: '1',
-          codigo: p.codigo,
+          codigo: egCodGravar(p.codigo),
           produto: p.produto,
           marca: p.marca,
           estoque: p.estoque,

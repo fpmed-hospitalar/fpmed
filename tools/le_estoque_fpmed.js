@@ -35,6 +35,19 @@ function num(v) {
   return isFinite(n) ? n : null;
 }
 
+// CODIGO do ERP e string de 7 digitos com zeros a esquerda (0000010), NUNCA numero.
+// O xlsx entrega a celula como number quando ela e so digito, e ai o zero some — foi assim que
+// o import de 04/08 gravou 1.381 codigos truncados (0000010 -> 10) e quebraria a chave do
+// proximo import (nao casaria e duplicaria). Normaliza SEMPRE, na leitura.
+// Codigo com mais de 7 digitos ou nao-numerico passa intacto (nao inventa formato).
+const COD_LARGURA = 7;
+function normCodigo(v) {
+  const s = String(v == null ? '' : v).trim();
+  if (!s) return '';
+  if (!/^[0-9]+$/.test(s)) return s;
+  return s.length >= COD_LARGURA ? s : s.padStart(COD_LARGURA, '0');
+}
+
 function mapaColunas(header) {
   const idx = {};
   (header || []).forEach((h, i) => { const n = norm(h); if (n && idx[n] === undefined) idx[n] = i; });
@@ -64,7 +77,7 @@ function lerEstoque(caminho) {
     const r = grade[i] || [];
     const get = k => (col[k] === undefined ? '' : r[col[k]]);
     const produto = String(get('produto') == null ? '' : get('produto')).trim();
-    const codigo  = String(get('codigo')  == null ? '' : get('codigo')).trim();
+    const codigo  = normCodigo(get('codigo'));
     if (!produto && !codigo) continue;                                  // linha em branco: ignora calada
     if (!produto) { descartadas.push({ linha: i + 1, codigo, motivo: 'sem NOME_PRODUTO' }); continue; }
 
@@ -83,4 +96,4 @@ function lerEstoque(caminho) {
   return { linhas, col, aba, header: grade[hIdx], descartadas };
 }
 
-module.exports = { lerEstoque, num, norm, semAcento, mapaColunas };
+module.exports = { lerEstoque, num, norm, semAcento, mapaColunas, normCodigo, COD_LARGURA };
