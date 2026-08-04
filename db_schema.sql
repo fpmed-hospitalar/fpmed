@@ -162,6 +162,19 @@ create table if not exists public.notas (
   created_at timestamptz default now()
 );
 
+-- ESTOQUE_BACKUP (snapshots do "Atualizar Estoque" — o desfazer da tela; guarda 5)
+-- Registrada aqui em 04/08/2026: existia no banco desde 22/07 mas nasceu FORA deste arquivo,
+-- e foi justamente por isso que ficou de fora do db_rls_cargos.sql e quebrou em produção
+-- (RLS ligada, zero policies). Tabela nova = entra no schema E no RLS, sempre nos dois.
+create table if not exists public.estoque_backup (
+  id         bigint generated always as identity primary key,
+  criado_em  timestamptz default now(),
+  resumo     text,
+  snapshot   jsonb,        -- linhas de cotacoes ANTES do import (contém CUSTO -> gestor-only)
+  inseridos  jsonb,        -- ids criados pelo import, p/ o desfazer remover
+  restaurado boolean default false
+);
+
 -- CMED_DICIONARIO (marca -> substancia/PA)
 create table if not exists public.cmed_dicionario (
   id         bigint generated always as identity primary key,

@@ -58,7 +58,8 @@ declare t text;
 begin
   foreach t in array array[
     'fornecedores','cotacoes','clientes','compras','compra_itens',
-    'orcamentos','itens_a_cotar','pedidos_compra','notas','cmed_dicionario'
+    'orcamentos','itens_a_cotar','pedidos_compra','notas','cmed_dicionario',
+    'estoque_backup'
   ] loop execute format('alter table public.%I enable row level security', t); end loop;
 end $$;
 
@@ -118,6 +119,22 @@ create policy cme_sel on public.cmed_dicionario for select to authenticated usin
 create policy cme_ins on public.cmed_dicionario for insert to authenticated with check (public.cargo_gestor());
 create policy cme_upd on public.cmed_dicionario for update to authenticated using (public.cargo_gestor()) with check (public.cargo_gestor());
 create policy cme_del on public.cmed_dicionario for delete to authenticated using (public.cargo_gestor());
+
+-- === ESTOQUE_BACKUP: snapshots do "Atualizar Estoque" (desfazer) — TUDO GESTOR.
+-- ⚠️ HOTFIX 04/08/2026. A tabela foi criada fora do SQL versionado (não está no db_schema.sql),
+-- então ficou de fora deste script. Como o bloco acima faz `drop policy` em TODO o schema public,
+-- a rodada de 24/07 apagou a policy `authenticated` que ela tinha do db_rls.sql e não recriou
+-- nenhuma: a tabela ficou com RLS LIGADA e ZERO policies = nega tudo, inclusive pro diretor.
+-- Sintoma em produção: "new row violates row-level security policy for table estoque_backup"
+-- no backup do import de estoque. O desfazer (select/patch) e a poda dos 5 snapshots (delete)
+-- estavam quebrados pelo mesmo motivo — por isso as 4 operações entram, não só o INSERT.
+-- O snapshot guarda linhas de `cotacoes` COM CUSTO, então é gestor-only e o anon perde o grant.
+create policy ebk_sel on public.estoque_backup for select to authenticated using (public.cargo_gestor());
+create policy ebk_ins on public.estoque_backup for insert to authenticated with check (public.cargo_gestor());
+create policy ebk_upd on public.estoque_backup for update to authenticated using (public.cargo_gestor()) with check (public.cargo_gestor());
+create policy ebk_del on public.estoque_backup for delete to authenticated using (public.cargo_gestor());
+revoke all on public.estoque_backup from anon;
+grant select, insert, update, delete on public.estoque_backup to authenticated;
 
 -- PostgREST: recarrega o cache de schema (pega a view nova).
 notify pgrst, 'reload schema';

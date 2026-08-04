@@ -7,6 +7,9 @@ segredos.local.txt
 *.key
 *.pem
 
+# dependencias (package.json + lock ficam versionados; node_modules nao)
+node_modules/
+
 # scripts gerados com chave embutida
 restore_*.js
 apply_*.js
