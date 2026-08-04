@@ -19,11 +19,12 @@ Criado em 21/07/2026 copiando SO os arquivos do app do C:\globalmed.
    NUNCA adicionar o remote do GlobalMed.
 
 >>> STATUS (21/07/2026): pasta base criada + git init. NAO rebrandado, NAO aponta banco ainda.
->>> MODO TOTAL (21/07/2026): Modo total permitido — hook ativo. Quando o Supabase da FPMED
-    existir, criar backup proprio antes de rodadas.
+>>> MODO TOTAL (21/07/2026 · backup fechado 04/08/2026): Modo total permitido — hook ativo.
     (Hook PreToolUse em .claude/settings.json -> .claude/hooks/block-destructive.js, espelhado
-    do GlobalMed, texto rebrandado p/ FPMED. NAO copiado o backup_tabelas.js: e de banco, criar
-    o proprio da FPMED quando o Supabase existir.)
+    do GlobalMed, texto rebrandado p/ FPMED.)
+    BACKUP PROPRIO FEITO (04/08): .claude/hooks/backup_tabelas.js — so GET, service_role lida do
+    segredos.local.txt, pagina em 1000 (limite do PostgREST da FPMED), grava JSON em backups/
+    (gitignored), 11 tabelas. O ABRIR_CLAUDE_TOTAL.bat roda ele sozinho antes de cada rodada.
 >>> PADRAO DO PROJETO (21/07/2026): TODA rodada da FPMED usa uma TASK LIST — arquivo
     TAREFAS_FPMED.md na raiz. Marcar concluida na hora que fechar cada etapa. Commit por etapa.
 >>> DEPLOY (21/07/2026): o deploy da FPMED vai numa ORGANIZATION nova do GitHub chamada

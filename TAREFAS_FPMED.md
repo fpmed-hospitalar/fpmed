@@ -6,7 +6,7 @@
 > **Escopo do pacote FPMED = sistema completo SEM Prospecção e SEM Loja Pública**
 > (decisões de escopo do Lemuel).
 
-Última atualização: 2026-07-23
+Última atualização: 2026-08-04
 
 ## 🔐 CONTROLE DE ACESSO POR CARGO (24/07) — RLS no banco, não só no front
 > Decisão do Lemuel: gate de tela não basta (F12 burla a REST). O controle real é **RLS por
@@ -91,8 +91,14 @@ Auditoria de 22/07: banco confirmado limpo após teste do upload de PDF (preview
       do banco antigo, sintaxe JS validada). URL `https://xzdowrksuswekwffoluk.supabase.co`.
 
 ## ⬜ PENDENTES (na ordem)
-- [ ] **Sync de dados**: preview rodado 22/07 → 0 novos / 0 atualizados / 7.451 pulados (seed
-      já cobriu tudo). Próxima rodada quando a Global tiver cotações novas; gravar SÓ com OK.
+- [ ] ⏸ **Sync de dados — PREVIEW RODADO 04/08, ESPERANDO OK**: a Global cresceu (21.393 linhas /
+      20.826 de distribuidor). Preview: **➕ 13.403 novos · 🔄 148 atualizados · ⏭ 7.268 idênticos**,
+      0 linhas GLOBAL no lote, só a tabela `cotacoes`. Novos por fornecedor: SANTA CRUZ 8.743 ·
+      MCW 2.501 · EB FARMACEUTICA 1.885 · SUPERMEDICA 161 · resto ~110. **NADA foi gravado** —
+      gravar exige OK do Lemuel: `node tools/sync_cotacoes_global.js --gravar`.
+- [ ] ⏸ **Sync de CÓDIGO — 169 commits pendentes da Global** (base `e7501e0` → head `5547d61`),
+      preview rodado 04/08. Exige curadoria + OK do Lemuel (regra: nunca portar às cegas).
+      Lista curada no checkpoint / `SYNC_GLOBAL.md`.
 - [x] **Porte manual da Competitividade + Comparativo** (24/07, commit `7af9021`): upgrades da
       Global (005cb75/7cc5b87/e7501e0) portados com tema claro reaplicado — giro/impacto R$/mês,
       botão "fila de cotação", curadoria+regra revisar; Comparativo com heatmap/scorecard win-rate/
@@ -146,6 +152,12 @@ Auditoria de 22/07: banco confirmado limpo após teste do upload de PDF (preview
       zero placeholder/GlobalMed no ar, login renderizando, zero erro de console, splash→painel
       redirecionando. Pendente pós-venda: domínio `sistema.fpmed.com.br` (CNAME).
 
+- [x] **Backup próprio da FPMED** (04/08): `.claude/hooks/backup_tabelas.js` criado (era a pendência
+      aberta desde 21/07 — "criar o próprio quando o Supabase existir"). Só GET, service_role lida
+      do `segredos.local.txt`, pagina em **1000** (limite do PostgREST da FPMED), grava JSON em
+      `backups/` (gitignored). 11 tabelas cobertas. Testado: cotacoes 7.451 + 10 tabelas vazias,
+      zero erro. `ABRIR_CLAUDE_TOTAL.bat` passa a rodar o backup sozinho antes de cada rodada total.
+
 ## ✅ DESBLOQUEADA (22/07/2026)
 - [x] **Dados de registro da FPMED aplicados**: FPMED DISTRIBUIDORA DE PRODUTOS HOSPITALARES
       LTDA · CNPJ 47.110.418/0001-15 · IE 10.947.387-9 · RUA 09, S/N, QUADRA 55 A, LOTE 0002,
@@ -159,12 +171,16 @@ Auditoria de 22/07: banco confirmado limpo após teste do upload de PDF (preview
 1. ✅ FEITO (22/07): dados REAIS da FPMED no lugar; **zero placeholder / zero GlobalMed**
    confirmado por varredura (globalmed, 54.379.172, 20.131.542, conde francisco, 99612).
 2. ✅ FEITO (22/07): URLs do GitHub (painel raw/zip + gm-auth recover) → `fpmed-hospitalar/fpmed`.
-3. **URL + ANON do Supabase** trocados pela instância da FPMED (não subir apontando p/ o banco do GlobalMed).
+3. ✅ FEITO: **URL + ANON do Supabase** = instância da FPMED. Reconferido 04/08: 14 ocorrências de
+   `supabase.co` nos *.html/*.js, **um único host** (`xzdowrksuswekwffoluk`) e **uma única anon key**
+   (JWT decodificado: `ref=xzdowrksuswekwffoluk`, `role=anon`). Zero resquício do banco do GlobalMed.
 4. ✅ FEITO (22/07): `dashboard_clientes.html` ERA dado real do GlobalMed (33 clientes/CNPJs).
    Substituído por 10 clientes 100% fictícios (CNPJs prefixo 00., inválidos; marcas fictícias).
    Varredura: zero dos 33 nomes/CNPJs reais remanescente.
-5. **Pix/WhatsApp**: dados de pagamento antigos existiam só na loja (removida). Conferir que
-   nenhum Pix/WhatsApp da GlobalMed sobrou.
+5. ✅ FEITO (varredura 04/08): **zero Pix / chave / agência / banco** em qualquer *.html/*.js
+   (os dados de pagamento só existiam na loja, removida) e **zero** ocorrência de
+   `99612`/`globalmed`/`vikewlbhkrikcalzsbeb`/CNPJ-endereço da Global. Único WhatsApp no sistema
+   é o comercial da FPMED `(62) 98147-9532`.
 6. **Segurança do banco (RLS)** — ✅ FEITO: RLS ligada em todas as tabelas + policy `authenticated`,
    views com `security_invoker` (`db_rls.sql`). Testado: anon bloqueada (INSERT 401 / SELECT vazio),
    `authenticated` funciona. Como o repo vai público com a anon dentro, isso era essencial.
