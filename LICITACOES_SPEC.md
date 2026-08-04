@@ -1,150 +1,116 @@
-# 📋 Módulo LICITAÇÕES — estudo de referência + spec da v1
+# 📋 Módulo LICITAÇÕES — estudo de referência + plano
 
-> Estudo de **funcionamento/UX** do SIGA Pregão (conta do Lemuel, navegação **somente leitura**,
-> 04/08/2026). Nenhum dado deles foi copiado pro nosso banco — **nossa fonte é o PNCP**.
-> Nada foi criado, alterado ou excluído na conta durante o estudo.
+> Estudo de **funcionamento/UX** do SIGA Pregão (conta do Lemuel). Nenhum dado deles foi copiado
+> pro nosso banco — **nossa fonte é o PNCP**. Nada foi criado/alterado/excluído na conta.
 
 ---
 
-## 1. O que o SIGA Pregão faz
+## 1. ESTUDO — SIGA Pregão
 
-### 1.1 Home / Dashboard
-KPIs do topo: **Negócios ativos** (6) · **Empresas cadastradas** (1) · **Licitações publicadas
-hoje** (972) · **Eventos na agenda** (1). Abaixo, dois painéis: "Licitações publicadas hoje"
-(com **itens publicados hoje: 23.610**) e "Agenda da semana". Dois CTAs grandes:
-*Pesquisar oportunidades* e *Abrir meus negócios*.
+**Conceito:** agregador/monitor de licitações públicas (pregões, dispensas) + CRM de negócios em volta.
 
-**Leitura:** o número que eles vendem é **volume do dia** (licitações + itens). É o mesmo par de
-KPIs que faz sentido pra gente — com a diferença de que nós podemos cruzar com estoque.
+### 1.1 Fontes que eles integram
+Comprasnet · Portal de Compras Públicas · Licitações-e (BB) · Licitações Caixa · Banrisul ·
+Compras RS / Bahia / Amazonas / RJ / Recife / MG · **Comprasnet Goiás** · **Licitanet** ·
+BLL Compras · e-LIC SC · Procergs · Banpará · PE Integrado · BNC · e **"Outros/PNCP"**
+(a API pública oficial).
 
-### 1.2 Menu principal
-`Oportunidades` · `Negócios` · `Análise` · `Disputa` · `Jurídico`
+> 🔑 **A vantagem real deles sobre nós:** são ~18 portais. Nós começamos com **1** (PNCP).
+> O PNCP é obrigatório por lei para todo ente público, então a cobertura é boa — mas a
+> publicação lá pode atrasar em relação ao portal de origem. Os dois que mais importam pra GO
+> (**Comprasnet Goiás** e **Licitanet**) estão na V2.
 
-Fluxo implícito: **achar** (Oportunidades) → **qualificar/analisar** (Análise) → **virar negócio**
-(Negócios) → **agenda/disputa** (Disputa) → **pós** (Jurídico).
+### 1.2 Filtros da busca
+Período / data de abertura · intervalo · tipo de item (material/serviço) · modo de disputa ·
+estados (multisseleção das 27 UFs) · **portais de origem** · modalidade (pregão eletrônico,
+dispensa). Palavras-chave separadas por `;`, com refino **Excluir** / **Limitar**.
 
-### 1.3 Busca de Oportunidades — filtros (o mais relevante pra nós)
-Barra de busca livre + três atalhos: **Pesquisa avançada**, **Meus jornais**, **Encontrar por Nº**.
+**"Jornais" = buscas salvas com alerta recorrente.** É a feature de retenção deles.
 
-Painel de **Pesquisa avançada**:
+### 1.3 Anatomia do card (observado na tela)
+`MODALIDADE Nº <número>/<ano> - <ÓRGÃO> / <UF>` · objeto · **tags de categoria** automáticas
+do objeto · `Abertura em DD/MM/AAAA às HH:MM` · modo de disputa · **`Fonte:`** = portal de
+origem · badge de modalidade · contador de itens.
 
-| Filtro | Como funciona |
+### 1.4 Módulos
+| Módulo | O que faz |
 |---|---|
-| Palavras-chave | Livres, **separadas por `;`** — múltiplos termos numa busca só |
-| **Excluir** / **Limitar** | Refino do texto: termos que *não* podem aparecer e termos que *restringem*. É o que separa "material hospitalar" de ruído |
-| Período | Dropdown do **tipo de data**: `Data de abertura` (e outras opções, ex. publicação) |
-| Intervalo | Faixa de datas (default 2 semanas à frente: 04/08 – 18/08) |
-| Tipo de item | `material` / `serviço` / Todos |
-| Modo de disputa | Dropdown (aberto, fechado, dispensa com disputa…) |
-| **Estados** | **Multisseleção das 27 UFs** em grade |
+| **Oportunidades** | Busca + filtros + jornais |
+| **Negócios** | Funil / kanban / agenda |
+| **Análise** | Mercado, histórico de compras, concorrentes |
+| **Disputa** | Acompanhar Comprasnet ao vivo |
+| **Jurídico** | Templates de impugnação, recurso etc. |
 
-Ações do painel: **Buscar** e **Criar jornal**.
-
-> **"Jornal" = busca salva que vira alerta recorrente.** É a feature de retenção deles: você
-> monta o filtro uma vez e recebe o resultado todo dia. Vale copiar o conceito na v2.
-
-### 1.4 O card de cada licitação
-Campos observados:
-- **Título**: `MODALIDADE Nº <número>/<ano> - <ÓRGÃO> / <UF>`
-- **Objeto** (texto do edital)
-- **Tags de categoria** do objeto (ex.: `Material esportivo`, `Equipamentos para atividades
-  físicas`, `Acessórios esportivos`) — classificação automática do objeto
-- **Abertura em DD/MM/AAAA às HH:MM**
-- **Modo de disputa** (ex.: "Dispensa Com Disputa")
-- **`Fonte:`** o **portal de origem** (ex.: *Secretaria do Planejamento e Gestão do Ceará*)
-- **Badge de modalidade** (ex.: `Dispensa eletrônica`)
-- Contador numérico à direita (aparenta ser **nº de itens**)
-
-### 1.5 De quais portais eles puxam
-O campo **`Fonte:`** no card mostra o portal originador. No exemplo capturado veio de uma
-**secretaria estadual (CE)** — ou seja, eles agregam **múltiplos portais** (PNCP, ComprasNet,
-BLL, BNC, Licitações-e, portais estaduais/municipais), não só o PNCP.
-**Essa é a vantagem real deles sobre nós na v1** — cobertura de fonte.
-
-### 1.6 Pago vs básico
-⚠️ **Não verificado.** Não abri tela de planos/pagamento (a instrução era não tocar em botões de
-ação/pagamento). Fica como lacuna declarada — dá pra levantar pela página pública de preços.
+### 1.5 Volume (referência de escala)
+Dashboard deles em 04/08/2026: **972 licitações** e **23.610 itens** publicados no dia.
 
 ---
 
-## 2. ⚠️ Cobertura honesta deste estudo
+## 2. NOSSO MÓDULO — V1 (a construir)
 
-Percorri em profundidade: **Home/Dashboard** e **Oportunidades (busca + pesquisa avançada + card)**.
+### 2.1 Fonte de dados
+API pública do PNCP — sem chave, sem custo:
 
-**NÃO percorri**: `Negócios`, `Análise`, `Disputa`, `Agenda` e `Jurídico`. O detalhamento do fluxo
-pós-busca (itens do edital, planilha de proposta, sala de disputa, agenda) está descrito acima
-apenas como **inferência a partir da estrutura do menu**, não como observação.
-→ **Pendente:** segunda passada cobrindo essas 5 telas antes de fechar a v2.
+```
+https://pncp.gov.br/api/consulta/v1/contratacoes/publicacao
+  ?dataInicial=yyyyMMdd&dataFinal=yyyyMMdd
+  &codigoModalidadeContratacao=<cod>&uf=GO
+  &pagina=1&tamanhoPagina=<até 500>
+```
 
----
+> ⚠️ **Status verificado em 04/08/2026 ~14h: API FORA DO AR.** `504 Gateway Time-out` sem filtro
+> de UF e `503 Service Unavailable` com `uf=GO`. Não é erro de parâmetro — o host não respondeu.
+> **Requisito que isso cria:** o módulo degrada com elegância (cache + aviso *"PNCP indisponível,
+> mostrando a última busca de HH:MM"*), nunca tela branca.
 
-## 3. Proposta do NOSSO módulo — v1
+### 2.2 Escopo V1
+1. **Busca**: UF (default **GO**), palavra-chave do objeto (default: `medicamento, hospitalar,
+   material médico, farmac, soro, correlatos`), modalidade, período.
+   **Proxy via edge function se der CORS, com cache de 15 min.**
+2. **Lista**: órgão, objeto, valor estimado, modalidade, data da disputa, prazo de proposta,
+   link pro edital / portal de origem.
+3. **🎯 DIFERENCIAL — cruzamento com o nosso banco**: casar os itens do edital com nossos
+   produtos pelo **matching PA + dose que já existe** (`_cpzKey`, `doseKey`, barreiras do
+   Bloco 1) → **"X itens no nosso estoque / Y com preço competitivo"**, e **ordenar a lista
+   por aderência** (não por data).
+4. **"Jornal" simples**: busca salva + card **"Próximas disputas"** no Dashboard.
+   Tabela `licitacoes_acompanhadas` — RLS: **gestor grava, todo logado lê**.
 
-### 3.1 Fonte de dados
-**API pública do PNCP** — `https://pncp.gov.br/api/consulta/v1/contratacoes/publicacao`
-Parâmetros: `dataInicial` / `dataFinal` (yyyyMMdd) · `codigoModalidadeContratacao` ·
-`uf` · `pagina` · `tamanhoPagina` (até 500). Sem chave, sem custo.
+### 2.3 Por que o cruzamento é nosso e não deles
+Eles classificam o objeto por categoria genérica. Nós respondemos **item a item** as duas
+perguntas que decidem se vale disputar — *"tenho isso em estoque?"* e *"meu preço ganha do
+valor de referência?"*. Só é possível porque já temos no banco: estoque próprio (1.381 linhas,
+com PA preenchido), 7.451 cotações de distribuidor e a régua da CMED (25.702 apresentações).
 
-> ⚠️ **Status em 04/08/2026 14h: a API estava FORA DO AR** — `504 Gateway Time-out` sem filtro de
-> UF e `503 Service Unavailable` com `uf=GO`. Não é erro de parâmetro: o host não respondeu.
-> Isso já define um requisito: **o módulo tem que degradar com elegância** (cache + aviso
-> "PNCP indisponível, mostrando a última busca de HH:MM"), nunca tela branca.
-
-### 3.2 Escopo v1 (o que replicamos)
-- **Busca do dia** com: UF (multisseleção, default **GO**), palavras-chave do objeto
-  (default: `medicamento; hospitalar; material médico; farmac; soro; correlatos`),
-  modalidade, período.
-- **Excluir / Limitar** copiado do SIGA — sem isso o ruído inviabiliza a triagem.
-- **Lista**: órgão, objeto, valor estimado, data/hora da disputa, prazo de proposta, link do
-  edital/portal, badge de modalidade.
-- **KPIs**: publicadas hoje (com os filtros) · itens somados · quantas com aderência ao estoque.
-- **Agenda**: botão *acompanhar* → tabela `licitacoes_acompanhadas` (RLS: gestor grava, todo
-  logado lê) + card **"próximas disputas"** no Dashboard.
-- **Acesso**: menu em FERRAMENTAS, liberado pra **gestor + vendedor**.
-- **Tema claro** padrão do sistema.
-
-### 3.3 🎯 O diferencial (o que eles NÃO têm)
-**Cruzamento com o nosso estoque e os nossos preços.** O SIGA classifica o objeto por categoria
-genérica (`Material esportivo`…); nós casamos **item a item** com o motor que já existe aqui
-(PA + dose — `_cpzKey`, `doseKey`, as barreiras do Bloco 1) e respondemos duas perguntas que
-nenhum agregador responde:
-
-1. **"X itens desta licitação estão no nosso estoque"**
-2. **"Y itens onde o nosso preço ≤ o valor de referência do edital"** ← decide se vale disputar
-
-E ordenamos a lista **por aderência**, não por data. Isso só é possível porque o estoque próprio
-(1.381 linhas) e as 7.451 cotações de distribuidor já estão no banco, com PA preenchido e a
-régua da CMED (25.702 apresentações) pra validar o preço de referência.
-
-### 3.4 Fica pra v2
-- **Outras fontes** além do PNCP (ComprasNet, BLL, BNC, portais estaduais) — é a cobertura que o
-  SIGA tem e nós não.
-- **"Jornais"** (busca salva recorrente + alerta diário no WhatsApp, reaproveitando o disparo da
-  tela Vendas Ativas).
-- Fluxo pós-busca: análise de itens → proposta → sala de disputa → jurídico.
-- Classificação automática do objeto por categoria (as tags coloridas deles).
-
-### 3.5 Privacidade (regra fixa)
-A API do PNCP **só recebe filtros públicos** (UF, datas, modalidade, palavras-chave genéricas).
-**Nenhum dado nosso sai** — produto, preço, custo, cliente e estoque ficam no navegador/banco.
-O cruzamento acontece **do nosso lado**, sobre o retorno público.
-
-### 3.6 CORS
-Se o browser barrar a chamada direta, entra **edge function proxy leve** no Supabase da FPMED,
-com **cache de 15 min** por combinação de filtros (não abusar da API pública) e a mesma trava de
-origem já usada na `ler-pedido`.
+### 2.4 Regras fixas
+- Tema **claro** padrão do sistema.
+- **Dados nossos nunca saem**: a API só recebe filtros públicos (UF, datas, modalidade,
+  palavras-chave genéricas). Produto, preço, custo, cliente e estoque ficam do nosso lado —
+  o cruzamento acontece **aqui**, sobre o retorno público.
+- Acesso: menu em **FERRAMENTAS**, liberado pra **gestor + vendedor**.
+- **Testes + commit por etapa** (parser da API com fixture de um dia real, versionada;
+  matching item × produto reaproveitando as suítes do motor).
 
 ---
 
-## 4. Plano de execução
+## 3. V2 — registrado, NÃO construir agora
+- **Comprasnet Goiás** e **Licitanet** (os dois portais mais relevantes pra GO).
+- **Funil kanban** de negócios.
+- **Templates jurídicos** (impugnação, recurso).
+- Jornais com alerta recorrente por WhatsApp (reaproveitando o disparo da tela Vendas Ativas).
+
+---
+
+## 4. Plano de execução (entra DEPOIS da fila atual)
+
+Ordem definida pelo Lemuel: **normalização por unidade → sync de dados → Blocos 2/4 → Licitações**.
 
 | Etapa | Entrega | Estado |
 |---|---|---|
-| 0 | Estudo do SIGA + esta spec | ✅ (com a lacuna da §2) |
-| 1 | **Protótipo busca + lista** com 1 dia real do PNCP + screenshot | ⏸ **bloqueado: API do PNCP fora do ar** |
+| 0 | Estudo + esta spec | ✅ |
+| 1 | **Protótipo busca + lista** com dados reais do PNCP + **screenshot pro Lemuel** | ⏸ aguarda a fila · **e a API voltar** |
 | 2 | Cruzamento com estoque/preços (o diferencial) | — |
-| 3 | Agenda + `licitacoes_acompanhadas` + card no Dashboard | — |
+| 3 | `licitacoes_acompanhadas` + jornal + card "Próximas disputas" | — |
 | 4 | KPIs + ordenação por aderência | — |
 
-Testes por etapa: **parser do retorno da API** (fixture de um dia real, versionada) e
-**matching item × nosso produto** (reaproveita as suítes do motor).
+> Regra do Lemuel: **mostrar o screenshot do protótipo busca+lista ANTES** de construir o cruzamento.

@@ -236,6 +236,19 @@ sozinha) são todos do mesmo formato `pack N vs 1` — nosso preço é da CAIXA 
 UNIDADE (ex.: IPRATROPIO nosso R$ 596,41 vs R$ 1,31 · +45602%). É granularidade do lado concorrente,
 não erro do nosso preço. Vale uma conferência item a item.
 
+## 🏛️ MÓDULO LICITAÇÕES (04/08/2026) — spec pronta, construção na fila
+Spec completa em **`LICITACOES_SPEC.md`** (estudo do SIGA Pregão + plano V1/V2).
+- **V1**: busca no PNCP (UF default GO, palavras-chave de saúde, modalidade, período) → lista
+  (órgão, objeto, valor, disputa, prazo, link) → **cruzamento dos itens do edital com o nosso
+  banco** (matching PA+dose que já existe) → jornal salvo + card "Próximas disputas".
+  Tabela nova `licitacoes_acompanhadas` (RLS: gestor grava, logado lê). Tema claro.
+- **V2 (não fazer agora)**: portais **Comprasnet Goiás** e **Licitanet** (os mais relevantes
+  pra GO), funil kanban, templates jurídicos.
+- ⚠️ **API do PNCP estava FORA DO AR em 04/08 ~14h** (504 sem UF / 503 com `uf=GO`). O módulo
+  precisa degradar com cache + aviso, nunca tela branca.
+- **Ordem**: entra DEPOIS de normalização por unidade → sync de dados → Blocos 2/4.
+  Mostrar screenshot do protótipo busca+lista ANTES de construir o cruzamento.
+
 ## 🩺 SAÚDE DO SISTEMA (rodada 04/08/2026)
 - Suíte: **110 asserts verdes / 0 falhas** em 6 suítes (`node tests/run_all.js`).
 - Smoke test no ar: **10/10 páginas HTTP 200** em `fpmed-hospitalar.github.io/fpmed/`, todas
