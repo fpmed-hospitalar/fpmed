@@ -1,4 +1,4 @@
-// Restaura a coluna `und` (UNIDADE do relatorio) nas linhas de estoque proprio.
+﻿// Restaura a coluna `und` (UNIDADE do relatorio) nas linhas de estoque proprio.
 //   node tools/restaura_und_global.js            -> PREVIEW
 //   node tools/restaura_und_global.js --gravar   -> grava
 //
@@ -27,7 +27,7 @@ const H = { apikey: SR, Authorization: 'Bearer ' + SR, 'Content-Type': 'applicat
   }
   // planilha: chave codigo+produto (o codigo repete — 907 codigos p/ 1.381 linhas)
   const plan = new Map();
-  for (const x of lerEstoque('C:/Users/lemue/Downloads/Pasta1.xlsx').linhas) {
+  for (const x of lerEstoque('C:/fpmed/Pasta1.xlsx').linhas) {
     const k = x.codigo + '|' + x.produto.trim().toUpperCase();
     if (!plan.has(k) && x.und) plan.set(k, x.und);
   }

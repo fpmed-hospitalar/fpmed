@@ -1,4 +1,4 @@
-// Prova, contra o BANCO REAL (só leitura), que o próximo import do estoque casa as linhas
+﻿// Prova, contra o BANCO REAL (só leitura), que o próximo import do estoque casa as linhas
 // existentes em vez de duplicá-las — que era o risco do código sem zero à esquerda.
 // Simula o que a tela faz: egNormCod nos dois lados (relatório e banco) e conta os
 // códigos do relatório que NÃO acham par no banco (esses virariam INSERT = duplicata).
@@ -23,7 +23,7 @@ const seg = fs.readFileSync(path.join(RAIZ, 'segredos.local.txt'), 'utf8');
 const SB = 'https://xzdowrksuswekwffoluk.supabase.co';
 const SR = seg.match(/SERVICE_ROLE\s*[:=]\s*(eyJ[A-Za-z0-9._-]+)/i)[1];
 const H = { apikey: SR, Authorization: 'Bearer ' + SR };
-const PLANILHA = 'C:/Users/lemue/Downloads/Pasta1.xlsx';
+const PLANILHA = 'C:/fpmed/Pasta1.xlsx';
 
 let p = 0, f = 0;
 const ok = (n, c, got) => { if (c) { p++; console.log('  ok   ' + n); } else { f++; console.log('  FALHA ' + n + (got !== undefined ? ' [' + JSON.stringify(got) + ']' : '')); } };

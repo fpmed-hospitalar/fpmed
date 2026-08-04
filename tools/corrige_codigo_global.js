@@ -1,4 +1,4 @@
-// Repoe os zeros a esquerda no codigo das linhas de estoque proprio (fornecedor='1').
+﻿// Repoe os zeros a esquerda no codigo das linhas de estoque proprio (fornecedor='1').
 //   node tools/corrige_codigo_global.js            -> PREVIEW
 //   node tools/corrige_codigo_global.js --gravar   -> grava (SO com OK do Lemuel)
 //
@@ -11,7 +11,7 @@ const fs = require('fs');
 const { normCodigo, lerEstoque } = require('./le_estoque_fpmed');
 
 const GRAVAR = process.argv.includes('--gravar');
-const PLANILHA = 'C:/Users/lemue/Downloads/Pasta1.xlsx';
+const PLANILHA = 'C:/fpmed/Pasta1.xlsx';
 const seg = fs.readFileSync('C:/fpmed/segredos.local.txt', 'utf8');
 const SB = 'https://xzdowrksuswekwffoluk.supabase.co';
 const SR = seg.match(/SERVICE_ROLE\s*[:=]\s*(eyJ[A-Za-z0-9._-]+)/i)[1];

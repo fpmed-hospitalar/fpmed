@@ -39,5 +39,23 @@ ok('qtdEmb default 1', qtdEmbalagem('','PANTOPRAZOL 40MG')===1, qtdEmbalagem('',
 ok('qtdEmbDiv divergencia detectada', /diverge/.test(qtdEmbDiv('30','X C/10')||''), qtdEmbDiv('30','X C/10'));
 ok('qtdEmbDiv sem divergencia = null', qtdEmbDiv('10','X C/10')===null, qtdEmbDiv('10','X C/10'));
 
+// ── FRASCO-AMPOLA (04/08/2026) ────────────────────────────────────────────────────────
+// Bug real: 23 dos 39 itens que caiam em "Em revisao" na Competitividade tinham a contagem
+// escrita no nome e o detector devolvia 1. A lista do mU tem 'FR' mas exige \b logo depois
+// (o S de "FRS" mata o limite) e "F/A" nem estava la. Prova de que era preco de CAIXA:
+// CEFALOTINA 100FRS/AMP 475,25 / 100 = 4,75 contra 4,74 do mercado.
+ok('F/A: 25F/A=25',             _qtdDoNome('CLARITROMICINA 500MG 25F/A (CLARILIB)')===25, _qtdDoNome('CLARITROMICINA 500MG 25F/A (CLARILIB)'));
+ok('F/A com espaco: 50 F/A=50', _qtdDoNome('CEFTRIAXONA 1G IV 50 F/A S/D (GEN)')===50, _qtdDoNome('CEFTRIAXONA 1G IV 50 F/A S/D (GEN)'));
+ok('FRS/AMP: 100FRS/AMP=100',   _qtdDoNome('CEFALOTINA 1000MG PO IV IM 100FRS/AMP')===100, _qtdDoNome('CEFALOTINA 1000MG PO IV IM 100FRS/AMP'));
+ok('FR/AMP: 20FR/AMP=20',       _qtdDoNome('OMEPRAZOL 40MG PO 20FR/AMP+DIL')===20, _qtdDoNome('OMEPRAZOL 40MG PO 20FR/AMP+DIL'));
+ok('FRA/AMP (grafia torta)=50', _qtdDoNome('CETOPROFENO 100MG IV 50FRA/AMP')===50, _qtdDoNome('CETOPROFENO 100MG IV 50FRA/AMP'));
+ok('FRS solto: 50FRS 60ML=50',  _qtdDoNome('CEFALEXINA 250MG/5ML PO 50FRS 60ML (G)')===50, _qtdDoNome('CEFALEXINA 250MG/5ML PO 50FRS 60ML (G)'));
+ok('BISNAGAS: 50BISNAGAS=50',   _qtdDoNome('LIDOCAINA 20MG/G GEL 30GR 50BISNAGAS')===50, _qtdDoNome('LIDOCAINA 20MG/G GEL 30GR 50BISNAGAS'));
+ok('5F/A pequeno=5',            _qtdDoNome('PROPOFOL 10MG/ML 20ML 5F/A (PROVIVE)')===5, _qtdDoNome('PROPOFOL 10MG/ML 20ML 5F/A (PROVIVE)'));
+ok('CRP (CPR trocado): 60CRP=60', _qtdDoNome('ARISTAB 10MG 60CRP (C1)')===60, _qtdDoNome('ARISTAB 10MG 60CRP (C1)'));
+// CONTROLES — nao podem regredir com o padrao novo:
+ok('FR sem numero segue 1',     _qtdDoNome('XPE FR C/240ML')===1, _qtdDoNome('XPE FR C/240ML'));
+ok('medida nao vira contagem',  _qtdDoNome('ALGODAO PCT 50G')===1, _qtdDoNome('ALGODAO PCT 50G'));
+
 console.log('\nRESULTADO: '+p+' ok, '+f+' falha(s)');
 process.exitCode=f?1:0;

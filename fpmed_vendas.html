@@ -470,7 +470,13 @@ function _qtdDoNome(produto){
   // ("C/240ML" nao pode casar so "24") e o segundo barra numero colado em unidade de medida
   // ("FR C/240ML" = 1 frasco de 240ml, nao 240 unidades; "PCT 50G" = 1 pacote de 50g).
   const mC = nome.match(/(?:C\/|CX\/|CX|PCT\/?)\s*(\d{1,4})(?!\d)(?!\s*(?:ML|MG|MCG|UI|G|L|GR|GRS)\b)/); if (mC) { const n=parseInt(mC[1]); if(n>1&&n<=5000) return n; }
-  const mU = nome.match(/(\d{1,4})\s*(?:CPR|CAPS|CAP|CPS|CP|COMP|DRG|AMP|FR|ENV|BLS|UND|UN|PASTILHA|PAST|SACHES|SACHE)\b/); if (mU) { const n=parseInt(mU[1]); if(n>1&&n<=5000) return n; }
+  // FRASCO-AMPOLA: "25F/A", "50FRS/AMP", "20FR/AMP", "50FRA/AMP", "50FRS", "50BISNAGAS".
+  // O detector perdia TODOS: a lista do mU tem 'FR' mas exige \b logo depois, e "FRS"/"F/A"
+  // quebram esse limite. Eram 23 dos 39 itens que caiam em "Em revisao" por pack nao detectado
+  // (CEFALOTINA 100FRS/AMP: 475,25 / 100 = 4,75 contra 4,74 do mercado - bate na 3a casa).
+  const mFA = nome.match(/(\d{1,4})\s*(?:F\s*\/\s*A|FR[SA]?\s*\/\s*AMP|FRS|FRA|BISNAGAS?)\b/);
+  if (mFA) { const n=parseInt(mFA[1]); if(n>1&&n<=5000) return n; }
+  const mU = nome.match(/(\d{1,4})\s*(?:CPR|CRP|CAPS|CAP|CPS|CP|COMP|DRG|AMP|FR|ENV|BLS|UND|UN|PASTILHA|PAST|SACHES|SACHE)\b/); if (mU) { const n=parseInt(mU[1]); if(n>1&&n<=5000) return n; }
   // RECIPIENTE: "10 SER", "50FA", "6 BOLS", "5 AMPOLAS", "5 REFIS", "4 CAN". Pega o PRIMEIRO recipiente e NUNCA soma
   // (MOUNJARO "4 SER 0,5ML+4CAN" = 4 canetas, não 8; TRESIBA "5 REFIS + 5 SIST" = 5). O "+" marca ACESSÓRIO e é
   // ignorado (Sandimmun "sol oral 50ML + 2 seringas dosadoras" = 1 frasco; as seringas não são o produto).
