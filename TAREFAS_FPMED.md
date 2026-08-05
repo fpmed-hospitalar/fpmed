@@ -229,7 +229,52 @@ qualquer um, e a configuração da Global **não serve** (os nomes são de lá).
       4. Normalizar o `numeroCompra` no título: `"(6128) | 32-0/2026"` → `"32/2026"`.
       5. **Rodar a suíte inteira antes do commit.**
       (As 5 regras acima foram cumpridas — ver o bloco ✅ logo acima.)
-1B. 🔜 **PRÓXIMO DA FILA — TELA "TABELA CMED"** (novo, 04/08) — menu FERRAMENTAS, gestor+vendedor, tema claro.
+1B. ✅ **CONCLUÍDO 05/08 — TELA "TABELA CMED" NO AR** (commits `5c6a52f` → `9176688`).
+   **O que ficou pronto e foi conferido no navegador real, logado como diretor:**
+   - `cmed_precos` (tabela NOVA, aditiva, `ggrem` PK) com **25.702 linhas**: PMVG 19% GO em
+     **100%**, PF 100%, PMC 21.824, CAP=Sim 2.722, isentos de ICMS 1.120, restrição
+     hospitalar 3.884, sob análise recursal 147. Grade das **26 alíquotas** de cada régua
+     (PF/PMC/PMVG) em JSONB. **Zero DELETE/UPDATE** — tabela nova + INSERT em tabela vazia.
+   - **Decisão registrada**: PMVG numa tabela SEPARADA em vez de colunas na `cmed_pf`, porque
+     (a) vem de outra publicação da ANVISA, com cadência própria; (b) a carga da `cmed_pf`
+     **apaga a edição anterior por desenho** — PMVG morando lá seria zerado em silêncio a cada
+     recarga de PF; (c) `ggrem` é 100% preenchido e único, chave de junção 1:1 confiável.
+   - **Duas conferências independentes do parse**: o PF aparece nas duas listas e bate nas
+     25.702 linhas; e o desconto médio PMVG/PF deu **21,53% EXATO** — o CAP da Resolução
+     CMED 5/2020. Se a coluna lida fosse a vizinha da grade, esse número não fecharia.
+   - View `cmed_regua` (identificação × preços) já entrega o **unitário** e o `teto_gov_unit`,
+     que aplica a regra da própria lista: **com CAP o teto é o PMVG, sem CAP é o PF**. CAP não
+     sabido cai no PF — teto conservador, nunca desconto inventado.
+   - **Tela** (menu Ferramentas, tema claro): busca no servidor por substância/marca/
+     laboratório/GGREM/EAN/registro; filtros só-com-PMVG, só-CAP, só-restrição-hospitalar e
+     por tipo; card com PF/PMVG/PMC de GO + unitário, badges regulatórios, e "ver todas as
+     alíquotas" com a coluna de 19% destacada.
+   - **O cruzamento com o nosso estoque** (é o que faz a tela valer): **179** chaves nossas
+     têm equivalente na CMED e **28 estão ACIMA do teto legal** — METILPREDNISOLONA 40MG/ML
+     R$ 23,33 contra teto R$ 22,25 (+4,9%), ALTEPLASE 50MG R$ 3.668,45 contra R$ 3.538,25.
+     Isso não aparecia em lugar nenhum do sistema. Sem pack no nome → "⚠ conferir emb." e a
+     tela **não compara** (regra de 04/08).
+   - `cmed_dicionario`: **6.283 pares marca→PA** derivados da própria `cmed_pf` (5.879 marcas,
+     **2.243 substâncias** contra as 938 do vocabulário tirado das cotações). A tabela estava
+     VAZIA desde sempre — era por isso que o `resolvePA` das 3 telas devolvia vazio em 100%
+     das chamadas. Não era bug de código, era tabela nunca carregada.
+   - **Defeito corrigido na giovana**: `carregarCmed` paginava de 2000 em 2000 e o PostgREST
+     daqui corta em 1000 — teria lido 1.000 das 6.283 linhas achando que leu tudo.
+   - Suíte nova `testa_cmed_precos` (34 asserts) tranca as 4 armadilhas de parse, incluindo a
+     silenciosa: célula já numérica passando pelo replace de milhar viraria 653327 no lugar de
+     6533,27 — cem vezes o teto, sem sinal de erro. **Total: 549 asserts / 0 falhas / 21 suítes.**
+   - View `cmed_teto` criada (`ddl/cmed_teto.sql`): teto legal agregado por PA+dose, 4.875
+     chaves — é o que a integração com Licitações vai consumir sem baixar 25.702 linhas.
+   ⬜ **FICOU PARA O ITEM 6** (decisão registrada, não é pendência esquecida): as integrações
+     "teto legal R$ X · nosso R$ Y" no Licitações e "ver na CMED" na Competitividade exigem
+     casar o NOSSO estoque com a CMED pelo `doseKey`, que só existe no `sistema_final`.
+     Duplicar essa função numa terceira tela seria o começo de três versões divergentes da
+     mesma regra. O item 6 (Pack via CMED) precisa exatamente do mesmo casamento — então ele
+     faz o cruzamento UMA vez, gravado, e Licitações e Competitividade passam a ler dali.
+   ⬜ **Recarga mensal**: `tools/carrega_cmed_precos.js` (baixar as DUAS listas da ANVISA →
+     rodar). Regravar por cima exige `--merge`, que é UPDATE e **espera OK do Lemuel**.
+
+1B-old. (histórico da auditoria, mantido) — menu FERRAMENTAS, gestor+vendedor, tema claro.
    - ✅ **AUDITORIA FEITA (05/08)** — primeira etapa do item, medida contra o banco e contra a
      planilha oficial `xls_conformidade_site_20260721.xlsx` (12,4 MB, já em `C:\fpmed`):
      · **Banco**: `cmed_pf` tem **25.702 linhas** e **25 colunas** (não 23). Preenchimento numa

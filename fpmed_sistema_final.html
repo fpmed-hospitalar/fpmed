@@ -5893,8 +5893,10 @@ function cmedAliq(i){
       return String(a).length - String(b).length;   // "19" antes de "19 ALC"
     });
   const cel = (o,k) => (o && o[k] != null) ? cmedFmt(o[k]) : '—';
+  // rótulo: o '%' vai colado no NÚMERO, não no fim — "19 ALC" vira "19% ALC", não "19 ALC%"
+  const rot = k => cmedEsc(String(k).replace(/^([\d,]+)(.*)$/, '$1%$2'));
   box.innerHTML = `<table>
-    <tr><th>Alíquota</th>${chaves.map(k=>`<th class="${k==='19'?'go':''}">${cmedEsc(k)}%</th>`).join('')}<th>Sem imposto</th></tr>
+    <tr><th>Alíquota</th>${chaves.map(k=>`<th class="${k==='19'?'go':''}">${rot(k)}</th>`).join('')}<th>Sem imposto</th></tr>
     <tr><td>PF</td>${chaves.map(k=>`<td class="${k==='19'?'go':''}">${cel(x.pf_aliq,k)}</td>`).join('')}<td>${cel(x.pf_aliq,'SEM_IMPOSTO')}</td></tr>
     <tr><td>PMVG</td>${chaves.map(k=>`<td class="${k==='19'?'go':''}">${cel(x.pmvg_aliq,k)}</td>`).join('')}<td>${cel(x.pmvg_aliq,'SEM_IMPOSTO')}</td></tr>
     <tr><td>PMC</td>${chaves.map(k=>`<td class="${k==='19'?'go':''}">${cel(x.pmc_aliq,k)}</td>`).join('')}<td>${cel(x.pmc_aliq,'SEM_IMPOSTO')}</td></tr>

@@ -160,7 +160,28 @@ Criado em 21/07/2026 copiando SO os arquivos do app do C:\globalmed.
   FALTA da etapa (nao bloqueia, entra depois da fila): agenda/acompanhar
   (licitacoes_acompanhadas, RLS gestor grava / logado le) e os KPIs de acompanhamento.
 
->>> ITEM 1B (Tabela CMED) -- AUDITORIA JA FEITA em 05/08, o resto continua na fila:
+>>> ITEM 1B (Tabela CMED) -- **CONCLUIDO em 05/08** (commits 5c6a52f -> 9176688, no ar).
+  cmed_precos: 25.702 linhas, PMVG 19% GO em 100%, CAP=Sim 2.722, grade das 26 aliquotas em
+  JSONB. Tabela NOVA e aditiva (zero DELETE/UPDATE) -- o PMVG NAO foi pra dentro da cmed_pf
+  de proposito: a carga da cmed_pf apaga a edicao anterior por desenho e zeraria o PMVG em
+  silencio a cada recarga de PF. Junta 1:1 por ggrem (100% preenchido e unico).
+  DUAS CONFERENCIAS do parse: PF bate nas duas listas nas 25.702 linhas, e o desconto medio
+  PMVG/PF deu 21,53% EXATO -- o CAP da Resolucao CMED 5/2020.
+  Tela no menu Ferramentas, validada no navegador logado como diretor: busca no servidor,
+  filtros, PF/PMVG/PMC de GO com unitario, grade das 26 aliquotas com a de 19% destacada.
+  CRUZAMENTO COM O NOSSO ESTOQUE: 179 chaves nossas tem equivalente na CMED e 28 estao
+  ACIMA do teto legal (METILPREDNISOLONA 40MG/ML R$ 23,33 x teto R$ 22,25).
+  cmed_dicionario: 6.283 pares marca->PA derivados da cmed_pf (2.243 substancias contra as
+  938 de antes). Estava VAZIA desde sempre -- era a causa do resolvePA nunca resolver nada.
+  Defeito corrigido de quebra: a giovana paginava o dicionario em 2000 e o PostgREST daqui
+  corta em 1000 -- teria lido 1.000 das 6.283 achando que leu tudo.
+  Suite nova testa_cmed_precos (34 asserts). Total: 549 asserts / 0 falhas / 21 suites.
+  FICOU PRO ITEM 6 (decisao, nao esquecimento): as integracoes com Licitacoes/Competitividade
+  precisam casar o nosso estoque com a CMED pelo doseKey, que so existe no sistema_final.
+  O item 6 (Pack via CMED) precisa do MESMO casamento -- ele faz uma vez, gravado, e as duas
+  telas leem dali. View cmed_teto (4.875 chaves PA+dose) ja criada pra isso.
+
+>>> ITEM 1B -- auditoria original (historico):
   Banco: cmed_pf com 25.702 linhas / 25 colunas; pmvg SEMPRE NULL; cmed_dicionario VAZIA.
   Planilha oficial (xls_conformidade_site_20260721.xlsx, ja esta em C:\fpmed): 74 colunas, o
   loader usa 19. TUDO que a spec pediu esta la e e so mapear -- CNPJ, REGIME DE PRECO, PF e PMC
