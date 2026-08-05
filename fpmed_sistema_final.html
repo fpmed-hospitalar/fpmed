@@ -208,6 +208,10 @@ select.filter{padding:8px 12px;border:1px solid var(--borda);border-radius:9px;f
   <div class="nav-item" onclick="showPage('competitividade',this)" id="nav-competitividade">
     <span class="icon">🎯</span> Competitividade
   </div>
+  <div class="nav-item" onclick="showPage('cmed',this)" id="nav-cmed">
+    <span class="icon">⚖️</span> Tabela CMED
+    <span style="background:#8DC63F;color:#243d06;border-radius:10px;font-size:8px;font-weight:800;padding:1px 5px;margin-left:auto">NOVA</span>
+  </div>
   <div class="nav-item" onclick="showPage('pedidos-compra',this)" id="nav-pedidos">
     <span class="icon">🛒</span> Pedidos de Compra
     <span id="badge-pedidos" style="background:#e03e3e;color:white;border-radius:10px;font-size:9px;padding:1px 6px;margin-left:auto;display:none">0</span>
@@ -1002,6 +1006,115 @@ select.filter{padding:8px 12px;border:1px solid var(--borda);border-radius:9px;f
       </div>
     </div>
 
+    <!-- TABELA CMED — a régua oficial de preço da ANVISA -->
+    <div class="page" id="page-cmed">
+      <div id="cmed-root">
+        <div class="cmed-hero">
+          <div>
+            <div class="cmed-kicker">ANVISA · CMED</div>
+            <h2>Tabela CMED</h2>
+            <p>O teto legal de preço. <b>PF</b> é o máximo no mercado; <b>PMVG</b> é o máximo
+               numa venda ao governo — e é ele que vale nas licitações dos itens marcados com CAP.</p>
+          </div>
+          <div class="cmed-edicao" id="cmed-edicao">—</div>
+        </div>
+
+        <div class="cmed-busca">
+          <input type="text" id="cmed-q" placeholder="Substância, produto, marca, laboratório, GGREM ou EAN…"
+                 onkeydown="if(event.key==='Enter')cmedBuscar()" autocomplete="off">
+          <button class="cmed-btn-go" onclick="cmedBuscar()">Buscar</button>
+        </div>
+
+        <div class="cmed-filtros">
+          <label class="cmed-chip"><input type="checkbox" id="cmed-f-pmvg" onchange="cmedBuscar()"> Só com PMVG</label>
+          <label class="cmed-chip"><input type="checkbox" id="cmed-f-cap" onchange="cmedBuscar()"> Só CAP (desconto obrigatório)</label>
+          <label class="cmed-chip"><input type="checkbox" id="cmed-f-rh" onchange="cmedBuscar()"> Só restrição hospitalar</label>
+          <select id="cmed-f-tipo" class="cmed-sel" onchange="cmedBuscar()">
+            <option value="">Todos os tipos</option>
+            <option value="Genérico">Genérico</option>
+            <option value="Similar">Similar</option>
+            <option value="Novo">Novo (referência)</option>
+            <option value="Biológico">Biológico</option>
+            <option value="Específico">Específico</option>
+            <option value="Fitoterápico">Fitoterápico</option>
+          </select>
+          <span class="cmed-cont" id="cmed-cont"></span>
+        </div>
+
+        <div id="cmed-lista">
+          <div class="cmed-vazio">Busque por substância, marca ou laboratório para ver o teto legal.</div>
+        </div>
+      </div>
+    </div>
+    <style>
+      /* Tabela CMED — tema claro FPMED (#2CA9E0 azul · #173A5E navy · #8DC63F verde) */
+      #cmed-root{max-width:1080px;margin:0 auto;font-family:'Inter',-apple-system,'Segoe UI',Roboto,sans-serif;color:#1E2A36}
+      #cmed-root .cmed-hero{display:flex;justify-content:space-between;align-items:flex-start;gap:18px;
+        padding-bottom:18px;border-bottom:1px solid #E3EAF1;margin-bottom:18px;flex-wrap:wrap}
+      #cmed-root .cmed-kicker{font-size:10.5px;letter-spacing:2.4px;text-transform:uppercase;color:#2CA9E0;font-weight:700}
+      #cmed-root .cmed-hero h2{font-family:'Montserrat',sans-serif;font-weight:800;font-size:26px;color:#173A5E;margin:6px 0 8px;letter-spacing:-.4px}
+      #cmed-root .cmed-hero p{font-size:13px;color:#4A5B6B;max-width:620px;line-height:1.55}
+      #cmed-root .cmed-hero p b{color:#173A5E}
+      #cmed-root .cmed-edicao{background:#EAF6FD;border:1px solid #B9E0F5;color:#1B6E97;border-radius:10px;
+        padding:9px 14px;font-size:11.5px;font-weight:600;white-space:nowrap}
+      #cmed-root .cmed-busca{display:flex;gap:10px;margin-bottom:12px}
+      #cmed-root .cmed-busca input{flex:1;padding:13px 18px;border:2px solid #D3DEE9;border-radius:12px;
+        font-size:14px;font-family:'Inter',sans-serif;outline:none;box-sizing:border-box}
+      #cmed-root .cmed-busca input:focus{border-color:#2CA9E0;box-shadow:0 0 0 3px rgba(44,169,224,.13)}
+      #cmed-root .cmed-btn-go{background:#2CA9E0;color:#fff;border:none;border-radius:12px;padding:0 26px;
+        font-size:14px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif}
+      #cmed-root .cmed-btn-go:hover{background:#1B8DC4}
+      #cmed-root .cmed-filtros{display:flex;gap:9px;align-items:center;flex-wrap:wrap;margin-bottom:16px}
+      #cmed-root .cmed-chip{display:flex;align-items:center;gap:6px;font-size:12px;color:#4A5B6B;cursor:pointer;
+        padding:7px 13px;border:1px solid #D3DEE9;border-radius:20px;background:#fff;font-weight:500;user-select:none}
+      #cmed-root .cmed-chip:hover{border-color:#2CA9E0;color:#173A5E}
+      #cmed-root .cmed-chip input{width:14px;height:14px;cursor:pointer;accent-color:#2CA9E0;margin:0}
+      #cmed-root .cmed-sel{padding:7px 12px;border:1px solid #D3DEE9;border-radius:20px;font-size:12px;
+        font-family:'Inter',sans-serif;color:#4A5B6B;background:#fff;cursor:pointer;outline:none}
+      #cmed-root .cmed-cont{margin-left:auto;font-size:12px;color:#8496A6}
+      #cmed-root .cmed-vazio{text-align:center;padding:48px 20px;color:#8496A6;font-size:13.5px;
+        background:#F8FAFC;border:1px dashed #D3DEE9;border-radius:14px}
+      #cmed-root .cmed-card{background:#fff;border:1px solid #E3EAF1;border-radius:14px;padding:16px 18px;
+        margin-bottom:11px;box-shadow:0 2px 8px rgba(23,58,94,.05)}
+      #cmed-root .cmed-card .lin1{display:flex;justify-content:space-between;gap:14px;align-items:flex-start;flex-wrap:wrap}
+      #cmed-root .cmed-marca{font-family:'Montserrat',sans-serif;font-weight:700;font-size:15.5px;color:#173A5E}
+      #cmed-root .cmed-subst{font-size:12.5px;color:#2CA9E0;font-weight:600;margin-top:2px}
+      #cmed-root .cmed-apres{font-size:12.5px;color:#4A5B6B;margin-top:6px;line-height:1.5}
+      #cmed-root .cmed-meta{font-size:11.5px;color:#8496A6;margin-top:5px}
+      #cmed-root .cmed-badges{display:flex;gap:6px;flex-wrap:wrap;margin-top:9px}
+      #cmed-root .bdg{font-size:10px;font-weight:700;border-radius:20px;padding:3px 9px;letter-spacing:.3px}
+      #cmed-root .bdg-cap{background:#FFF3E0;color:#B25E00;border:1px solid #FFD9A8}
+      #cmed-root .bdg-rh{background:#FDEAEA;color:#B02A2A;border:1px solid #F5C2C2}
+      #cmed-root .bdg-icms{background:#EAF6FD;color:#1B6E97;border:1px solid #B9E0F5}
+      #cmed-root .bdg-rec{background:#F3EAFD;color:#6B3FA0;border:1px solid #DCC6F5}
+      #cmed-root .bdg-tipo{background:#F0F4F8;color:#4A5B6B;border:1px solid #DDE5ED}
+      #cmed-root .bdg-verde{background:#F1F9E6;color:#4E7A16;border:1px solid #CFE9A8}
+      #cmed-root .cmed-precos{display:flex;gap:9px;flex-wrap:wrap;align-items:stretch}
+      #cmed-root .pbox{border:1px solid #E3EAF1;border-radius:11px;padding:9px 13px;background:#F8FAFC;min-width:104px}
+      #cmed-root .pbox .rot{font-size:9.5px;letter-spacing:1.2px;text-transform:uppercase;color:#8496A6;font-weight:700}
+      #cmed-root .pbox .val{font-family:'Montserrat',sans-serif;font-weight:800;font-size:16px;color:#173A5E;margin-top:3px;line-height:1}
+      #cmed-root .pbox .un{font-size:10.5px;color:#8496A6;margin-top:4px}
+      #cmed-root .pbox.teto{background:#F1F9E6;border-color:#CFE9A8}
+      #cmed-root .pbox.teto .rot{color:#4E7A16}
+      #cmed-root .pbox.teto .val{color:#3E6412}
+      #cmed-root .pbox.nulo .val{color:#B9C4CE;font-size:13px;font-weight:600}
+      #cmed-root .cmed-nosso{margin-top:11px;padding:10px 13px;border-radius:11px;font-size:12.5px;line-height:1.5}
+      #cmed-root .cmed-nosso.ok{background:#F1F9E6;border:1px solid #CFE9A8;color:#3E6412}
+      #cmed-root .cmed-nosso.risco{background:#FDEAEA;border:1px solid #F5C2C2;color:#8E1F1F}
+      #cmed-root .cmed-nosso b{font-weight:700}
+      #cmed-root .cmed-verm{color:#B02A2A;font-weight:700}
+      #cmed-root .cmed-maisaliq{margin-top:10px;font-size:11.5px;color:#2CA9E0;cursor:pointer;font-weight:600;
+        background:none;border:none;padding:0;font-family:'Inter',sans-serif}
+      #cmed-root .cmed-maisaliq:hover{text-decoration:underline}
+      #cmed-root .cmed-tabaliq{margin-top:10px;overflow-x:auto}
+      #cmed-root .cmed-tabaliq table{border-collapse:collapse;font-size:11.5px;min-width:100%}
+      #cmed-root .cmed-tabaliq th,#cmed-root .cmed-tabaliq td{border:1px solid #E3EAF1;padding:5px 9px;text-align:right;white-space:nowrap}
+      #cmed-root .cmed-tabaliq th{background:#F8FAFC;color:#4A5B6B;font-weight:600}
+      #cmed-root .cmed-tabaliq td:first-child,#cmed-root .cmed-tabaliq th:first-child{text-align:left;font-weight:600;color:#173A5E}
+      #cmed-root .cmed-tabaliq .go{background:#EAF6FD;font-weight:700;color:#1B6E97}
+      #cmed-root .cmed-erro{background:#FDEAEA;border:1px solid #F5C2C2;color:#8E1F1F;border-radius:12px;padding:14px 16px;font-size:13px}
+      @media(max-width:760px){#cmed-root .cmed-busca{flex-direction:column}#cmed-root .cmed-btn-go{padding:12px}}
+    </style>
 
   </div>
 </div>
@@ -1130,7 +1243,8 @@ const pageConfig = {
   comparativo:  { title:'Comparativo de Fornecedores', btn:'🔄 Atualizar', btnAction:()=>recarregarCotacoes(true).then(()=>renderComparativo(undefined,true)) },
   competitividade: { title:'Competitividade de Preço', btn:'', btnAction:null },
   'estoque-global': { title:'Atualizar Estoque FPMED', btn:'', btnAction:null },
-  'pedidos-compra':  { title:'Pedidos de Compra', btn:'', btnAction:null }
+  'pedidos-compra':  { title:'Pedidos de Compra', btn:'', btnAction:null },
+  cmed:         { title:'Tabela CMED — teto legal de preço', btn:'', btnAction:null }
 };
 async function showPage(name, el) {
   if((name==='importar-espelho'||name==='compras-cliente'||name==='itens-a-cotar'||name==='clientes-dash'||name==='competitividade') && typeof espPodeVer==='function' && !espPodeVer()){ name='dashboard'; el=document.querySelector('.nav-item[onclick*="dashboard"]'); }
@@ -1144,7 +1258,7 @@ async function showPage(name, el) {
   if (cfg.btn) { hBtn.textContent = cfg.btn; hBtn.style.display=''; }
   else hBtn.style.display='none';
   // Estoque/preço sempre atual: recarrega cotações (cache 60s) ANTES de renderizar abas que usam estoque
-  if (['dashboard','comparativo','competitividade','relatorios','importar','orcamento','cotacoes'].includes(name)) { await recarregarCotacoes(); }
+  if (['dashboard','comparativo','competitividade','relatorios','importar','orcamento','cotacoes','cmed'].includes(name)) { await recarregarCotacoes(); }
   if (name === 'relatorios') renderRelatorios();
   if (name === 'dashboard') renderDashboard();
   if (name === 'importar') initImport();
@@ -1155,6 +1269,7 @@ async function showPage(name, el) {
   if (name === 'compras-cliente') { cpcInit(); }
   if (name === 'clientes-dash') { cdInit(); }
   if (name === 'itens-a-cotar') { iacCarregar(); }
+  if (name === 'cmed') { cmedInit(); }
 }
 function headerBtnAction() { const name = document.querySelector('.page.active')?.id.replace('page-',''); const cfg = pageConfig[name]; if(cfg?.btnAction) cfg.btnAction(); }
 
@@ -5575,6 +5690,217 @@ async function pcAtualizarCardDash(){
   try{ const linhas = await pcCarregar(); const nCheg = linhas.filter(l=>l.chegou).length;
     v.textContent = linhas.length; document.getElementById('m-aguardando-sub').textContent = `${nCheg} chegaram · ${linhas.length-nCheg} aguardando`;
   }catch(e){}
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// TABELA CMED — a régua oficial da ANVISA (item 1B, 05/08/2026)
+//
+// POR QUE ESTA TELA EXISTE: até aqui o sistema sabia se um preço era competitivo (contra
+// concorrente) mas não se ele era LEGAL. Numa licitação isso é o que desclassifica:
+//   PF   = teto no mercado em geral
+//   PMVG = teto numa venda ao governo, = PF × (1 − CAP de 21,53%)
+//   PMC  = teto ao consumidor (informativo pro B2B, mas passar dele é risco regulatório)
+// Regra da própria lista da CMED: nos itens marcados **CAP** o teto OBRIGATÓRIO é o PMVG;
+// nos demais é o PF. A view cmed_regua já materializa isso em `teto_gov_unit`.
+//
+// Lê da view `cmed_regua` (cmed_pf × cmed_precos por GGREM). Busca no SERVIDOR — são 25.702
+// apresentações, baixar tudo pro browser seria varrer 25 mil linhas a cada tecla.
+// ═══════════════════════════════════════════════════════════════════════════════
+let _cmedEstoque = null;      // índice PA|dose -> nossas linhas de estoque próprio
+let _cmedUltima = [];         // último resultado (pro toggle de alíquotas não refazer a busca)
+const _CMED_TIMEOUT = 20000;  // mesmo AbortController estrutural do Licitações/Dashboard
+
+function cmedFmt(v){ return (v==null||!isFinite(v)) ? '—' : 'R$ ' + Number(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function cmedFmtU(v){ return (v==null||!isFinite(v)) ? '—' : 'R$ ' + Number(v).toLocaleString('pt-BR',{minimumFractionDigits:v<1?4:2,maximumFractionDigits:4}); }
+function cmedEsc(s){ return String(s==null?'':s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+// Índice do NOSSO estoque próprio por PA+dose — a mesma chave da Competitividade.
+// Só fornecedor='1' (estoque FPMED): é o preço que a gente de fato pratica. Preço de
+// distribuidor aqui seria custo, e comparar custo com teto de venda não quer dizer nada.
+function cmedIndexEstoque(){
+  const ix = new Map();
+  for (const c of (cotacoes||[])) {
+    if (String(c.fornecedor) !== '1') continue;
+    const pa = _cpzPaNorm(c.principio_ativo||''); const dk = doseKey(c.produto||'');
+    if (pa.length < 3 || !dk) continue;
+    const qtd = qtdEmbalagem(c.und, c.produto);
+    const bruto = parseFloat(c.global_venda1 || c.venda_unit_calculada || c.global_venda2 || 0);
+    if (!(bruto > 0)) continue;
+    const k = pa + '|' + dk;
+    if (!ix.has(k)) ix.set(k, []);
+    // preço da CAIXA dividido pelo pack SÓ NA EXIBIÇÃO (regra de 04/08: nunca no banco).
+    // qtd=1 pode significar "unidade" ou "não sei o pack" — a tela avisa em vez de fingir.
+    ix.get(k).push({ produto: c.produto, unit: bruto / qtd, qtd, incerto: qtd === 1 && /\b(CX|CAIXA|PCT|PACOTE|FD|FARDO)\b/i.test(c.produto||'') });
+  }
+  return ix;
+}
+
+async function cmedInit(){
+  _cmedEstoque = cmedIndexEstoque();
+  const el = document.getElementById('cmed-edicao');
+  if (el && el.textContent === '—') {
+    try {
+      const r = await fetch(SUPA_URL2 + '/rest/v1/cmed_regua?select=publicada&limit=1', { headers: SH });
+      const d = await r.json();
+      if (Array.isArray(d) && d[0] && d[0].publicada) {
+        const [a,m] = d[0].publicada.split('-');
+        const MES = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+        el.textContent = 'Edição vigente: ' + MES[parseInt(m)-1] + '/' + a;
+      } else el.textContent = 'Edição não identificada';
+    } catch(e){ el.textContent = 'Edição não identificada'; }
+  }
+  const q = document.getElementById('cmed-q'); if (q) q.focus();
+}
+
+// PostgREST: vírgula, parêntese e ponto são ESTRUTURAIS dentro de or=(...). Termo com
+// vírgula viraria dois filtros e a query quebraria (ou pior, filtraria outra coisa).
+function cmedSanitiza(s){ return String(s||'').replace(/[(),.*"'\\]/g,' ').replace(/\s+/g,' ').trim(); }
+const cmedNormBusca = s => String(s||'').toUpperCase().normalize('NFD').replace(/\p{M}/gu,'');
+
+async function cmedBuscar(){
+  const lista = document.getElementById('cmed-lista');
+  const cont = document.getElementById('cmed-cont');
+  const bruto = cmedSanitiza(document.getElementById('cmed-q').value);
+  const fPmvg = document.getElementById('cmed-f-pmvg').checked;
+  const fCap  = document.getElementById('cmed-f-cap').checked;
+  const fRh   = document.getElementById('cmed-f-rh').checked;
+  const fTipo = document.getElementById('cmed-f-tipo').value;
+  if (!bruto && !fPmvg && !fCap && !fRh && !fTipo) {
+    lista.innerHTML = '<div class="cmed-vazio">Busque por substância, marca ou laboratório para ver o teto legal.</div>';
+    cont.textContent = ''; return;
+  }
+  if (!_cmedEstoque) _cmedEstoque = cmedIndexEstoque();
+  lista.innerHTML = '<div class="loading"><div class="spinner"></div> Consultando a CMED…</div>';
+  cont.textContent = '';
+
+  const COLS = 'ggrem,subst_norm,marca_norm,apresentacao,qtd_apres,laboratorio,tipo_produto,tarja,' +
+    'classe_terapeutica,ean1,registro,cnpj,regime_preco,publicada,pf_go19,pmc_go19,pmvg_go19,' +
+    'pf_aliq,pmc_aliq,pmvg_aliq,cap,confaz87,icms0,restricao_hosp,analise_recursal,lista_pis_cofins,' +
+    'destinacao,pf_unit,pmc_unit,pmvg_unit,teto_gov_unit,dose_key';
+  const qs = ['select=' + COLS, 'limit=60', 'order=subst_norm.asc,marca_norm.asc'];
+  if (bruto) {
+    const n = cmedNormBusca(bruto);
+    const ors = [`subst_norm.ilike.*${n}*`, `marca_norm.ilike.*${n}*`, `laboratorio.ilike.*${bruto}*`];
+    if (/^\d{6,}$/.test(bruto)) { ors.push(`ggrem.eq.${bruto}`, `ean1.eq.${bruto}`, `registro.eq.${bruto}`); }
+    qs.push('or=(' + ors.join(',') + ')');
+  }
+  if (fPmvg) qs.push('pmvg_go19=not.is.null');
+  if (fCap)  qs.push('cap=is.true');
+  if (fRh)   qs.push('restricao_hosp=is.true');
+  if (fTipo) qs.push('tipo_produto=eq.' + encodeURIComponent(fTipo));
+
+  const ac = new AbortController();
+  const to = setTimeout(() => ac.abort(), _CMED_TIMEOUT);
+  try {
+    const r = await fetch(SUPA_URL2 + '/rest/v1/cmed_regua?' + qs.join('&'),
+      { headers: { ...SH, Prefer: 'count=exact' }, signal: ac.signal });
+    clearTimeout(to);
+    if (!r.ok) throw new Error('HTTP ' + r.status + ' — ' + (await r.text()).slice(0,140));
+    const rows = await r.json();
+    const total = parseInt(((r.headers.get('content-range')||'').split('/')[1])||'0') || rows.length;
+    _cmedUltima = rows;
+    cont.textContent = total ? (rows.length < total ? `${rows.length} de ${total} apresentações` : `${total} apresentação(ões)`) : '';
+    cmedRender(rows);
+  } catch(e) {
+    clearTimeout(to);
+    const msg = e.name === 'AbortError' ? 'A consulta passou de 20 s e foi cancelada.' : cmedEsc(e.message);
+    lista.innerHTML = `<div class="cmed-erro"><b>Não consegui consultar a CMED.</b><br>${msg}
+      <br><br><button class="cmed-btn-go" onclick="cmedBuscar()">Tentar de novo</button></div>`;
+  }
+}
+
+function cmedRender(rows){
+  const lista = document.getElementById('cmed-lista');
+  if (!rows.length) { lista.innerHTML = '<div class="cmed-vazio">Nada encontrado com esses critérios.</div>'; return; }
+  lista.innerHTML = rows.map((x,i) => {
+    // TETO QUE VALE: com CAP é o PMVG; sem CAP é o PF. CAP desconhecido cai no PF (conservador).
+    const tetoU = x.teto_gov_unit != null ? +x.teto_gov_unit : null;
+    const badges = [];
+    if (x.cap) badges.push('<span class="bdg bdg-cap">CAP · desconto obrigatório p/ governo</span>');
+    if (x.restricao_hosp) badges.push('<span class="bdg bdg-rh">Restrição hospitalar</span>');
+    if (x.icms0) badges.push('<span class="bdg bdg-icms">Isento de ICMS</span>');
+    if (x.analise_recursal && !/^-$/.test(x.analise_recursal)) badges.push('<span class="bdg bdg-rec">Sob análise recursal</span>');
+    if (x.tipo_produto) badges.push('<span class="bdg bdg-tipo">' + cmedEsc(x.tipo_produto) + '</span>');
+    if (x.regime_preco) badges.push('<span class="bdg bdg-tipo">' + cmedEsc(x.regime_preco) + '</span>');
+
+    const pbox = (rot, vCx, vUn, teto) =>
+      `<div class="pbox${teto?' teto':''}${vCx==null?' nulo':''}">
+         <div class="rot">${rot}</div>
+         <div class="val">${vCx==null?'não se aplica':cmedFmt(vCx)}</div>
+         <div class="un">${vUn==null?'&nbsp;':cmedFmtU(vUn) + ' / un'}</div>
+       </div>`;
+
+    // ── comparação com o NOSSO preço ────────────────────────────────────────
+    let nosso = '';
+    // Mesma chave da Competitividade: PA normalizado + doseKey. A cmed_pf já grava o dose_key
+    // com a MESMA função doseKey da tela (o loader extrai por âncora, não recopia).
+    const meus = (_cmedEstoque && x.dose_key) ? (_cmedEstoque.get(_cpzPaNorm(x.subst_norm||'') + '|' + x.dose_key) || []) : [];
+    if (meus.length) {
+      const m = meus.slice().sort((a,b)=>b.unit-a.unit)[0];   // o nosso MAIS CARO é o que corre risco
+      const acimaTeto = tetoU != null && m.unit > tetoU;
+      const acimaPmc  = x.pmc_unit != null && m.unit > +x.pmc_unit;
+      const dif = tetoU ? ((m.unit/tetoU - 1) * 100) : null;
+      if (m.incerto) {
+        nosso = `<div class="cmed-nosso ok">📦 Temos <b>${cmedEsc(m.produto.slice(0,52))}</b> — mas o pack não está no nome
+          (<b>⚠ conferir emb.</b>), então o unitário não dá pra afirmar. Sem isso não comparo com o teto.</div>`;
+      } else if (acimaTeto || acimaPmc) {
+        nosso = `<div class="cmed-nosso risco">⚠️ <b>Nosso preço passa do teto.</b>
+          ${cmedEsc(m.produto.slice(0,52))}: <b>${cmedFmtU(m.unit)}/un</b>${m.qtd>1?` (÷${m.qtd})`:''}
+          ${acimaTeto?` · teto ${x.cap?'PMVG':'PF'} <b>${cmedFmtU(tetoU)}</b> <span class="cmed-verm">+${dif.toFixed(1)}%</span>`:''}
+          ${acimaPmc?` · acima do PMC (${cmedFmtU(x.pmc_unit)})`:''}</div>`;
+      } else {
+        nosso = `<div class="cmed-nosso ok">✅ ${cmedEsc(m.produto.slice(0,52))}: <b>${cmedFmtU(m.unit)}/un</b>${m.qtd>1?` (÷${m.qtd})`:''}
+          ${tetoU!=null?` · dentro do teto ${x.cap?'PMVG':'PF'} de ${cmedFmtU(tetoU)}${dif!=null?` (${dif.toFixed(1)}%)`:''}`:''}</div>`;
+      }
+    }
+
+    return `<div class="cmed-card">
+      <div class="lin1">
+        <div style="flex:1;min-width:260px">
+          <div class="cmed-marca">${cmedEsc(x.marca_norm||'—')}</div>
+          <div class="cmed-subst">${cmedEsc(x.subst_norm||'')}</div>
+          <div class="cmed-apres">${cmedEsc(x.apresentacao||'')}${x.qtd_apres>1?` <b>· ${x.qtd_apres} un/emb.</b>`:''}</div>
+          <div class="cmed-meta">${cmedEsc(x.laboratorio||'')}${x.classe_terapeutica?' · '+cmedEsc(x.classe_terapeutica):''}</div>
+          <div class="cmed-meta">GGREM ${cmedEsc(x.ggrem)}${x.ean1?' · EAN '+cmedEsc(x.ean1):''}${x.tarja?' · '+cmedEsc(x.tarja):''}</div>
+        </div>
+        <div class="cmed-precos">
+          ${pbox('PF 19% GO', x.pf_go19, x.pf_unit, !x.cap)}
+          ${pbox('PMVG 19% GO', x.pmvg_go19, x.pmvg_unit, !!x.cap)}
+          ${pbox('PMC 19% GO', x.pmc_go19, x.pmc_unit, false)}
+        </div>
+      </div>
+      <div class="cmed-badges">${badges.join('')}</div>
+      ${nosso}
+      <button class="cmed-maisaliq" onclick="cmedAliq(${i})">Ver todas as alíquotas de ICMS ▾</button>
+      <div class="cmed-tabaliq" id="cmed-aliq-${i}" style="display:none"></div>
+    </div>`;
+  }).join('');
+}
+
+// Grade completa de alíquotas. A CMED publica todas porque cabe ao comprador conferir a do
+// estado de DESTINO — GO em destaque, mas o edital pode ser de outro estado.
+function cmedAliq(i){
+  const box = document.getElementById('cmed-aliq-' + i);
+  if (!box) return;
+  if (box.style.display !== 'none') { box.style.display = 'none'; return; }
+  const x = _cmedUltima[i]; if (!x) return;
+  const chaves = [...new Set([].concat(
+    Object.keys(x.pf_aliq||{}), Object.keys(x.pmc_aliq||{}), Object.keys(x.pmvg_aliq||{})))]
+    .filter(k => k !== 'SEM_IMPOSTO')
+    .sort((a,b) => {
+      const na = parseFloat(String(a).replace(',','.')), nb = parseFloat(String(b).replace(',','.'));
+      if (na !== nb) return na - nb;
+      return String(a).length - String(b).length;   // "19" antes de "19 ALC"
+    });
+  const cel = (o,k) => (o && o[k] != null) ? cmedFmt(o[k]) : '—';
+  box.innerHTML = `<table>
+    <tr><th>Alíquota</th>${chaves.map(k=>`<th class="${k==='19'?'go':''}">${cmedEsc(k)}%</th>`).join('')}<th>Sem imposto</th></tr>
+    <tr><td>PF</td>${chaves.map(k=>`<td class="${k==='19'?'go':''}">${cel(x.pf_aliq,k)}</td>`).join('')}<td>${cel(x.pf_aliq,'SEM_IMPOSTO')}</td></tr>
+    <tr><td>PMVG</td>${chaves.map(k=>`<td class="${k==='19'?'go':''}">${cel(x.pmvg_aliq,k)}</td>`).join('')}<td>${cel(x.pmvg_aliq,'SEM_IMPOSTO')}</td></tr>
+    <tr><td>PMC</td>${chaves.map(k=>`<td class="${k==='19'?'go':''}">${cel(x.pmc_aliq,k)}</td>`).join('')}<td>${cel(x.pmc_aliq,'SEM_IMPOSTO')}</td></tr>
+  </table>
+  <div class="cmed-meta" style="margin-top:6px">ALC = Área de Livre Comércio. Coluna em azul = 19%, a alíquota modal de GOIÁS.</div>`;
+  box.style.display = 'block';
 }
 
 // ─── START ────────────────────────────────────────────────────────────────────

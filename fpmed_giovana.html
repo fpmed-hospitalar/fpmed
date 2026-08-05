@@ -657,7 +657,10 @@ document.addEventListener('visibilitychange', () => { if (!document.hidden) auto
 // CMED: marca_norm -> substancia (só não-combo e não-ambíguo). Usado p/ resolver marca no pedido.
 async function carregarCmed() {
   try {
-    let rows = [], from = 0; const page = 2000;
+    // 1000, não 2000: o PostgREST da FPMED corta em 1000 por página. Com page=2000 o laço pedia
+    // 0-1999, recebia 1000, via 1000 < 2000 e parava — carregando 1.000 das 6.283 linhas do
+    // dicionário e achando que tinha lido tudo. Enquanto a tabela estava vazia isso não aparecia.
+    let rows = [], from = 0; const page = 1000;
     while (true) {
       const r = await fetch(`${SUPA_URL}/rest/v1/cmed_dicionario?select=marca_norm,substancia,is_combo&order=id`, {
         headers: { 'apikey': SUPA_KEY, 'Authorization': 'Bearer ' + SUPA_KEY, 'Range': `${from}-${from+page-1}` }
