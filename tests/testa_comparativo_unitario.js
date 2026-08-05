@@ -146,20 +146,22 @@ const L = o => Object.assign({ produto:'', und:null, compra_unit:null, compra_ca
 // A regra exige EVIDENCIA DUPLA: o nome declara o pack E o preco dividido por ele cai em
 // cima do mercado. Aqui esta ela isolada, na mesma forma que roda dentro do buildGrupos.
 function resgata(opcoes){
-  const outros = opcoes.filter(o => !o.incerto && o.compra > 0);
-  if (outros.length < 2) return opcoes;
-  opcoes.forEach(o => {
-    if (o.incerto || o.pack > 1 || !(o.compra > 0)) return;
+  const foto = opcoes.filter(o => !o.incerto && o.compra > 0).map(o => ({ o, v: o.compra }));
+  if (foto.length < 2) return opcoes;
+  const mediana = arr => { const s = arr.slice().sort((a,b)=>a-b); const m = s.length>>1;
+                           return s.length % 2 ? s[m] : (s[m-1]+s[m])/2; };
+  for (const { o } of foto) {
+    if (o.pack > 1) continue;
     const packNome = qtdEmbalagem(o.und, o.produto);
-    if (!(packNome > 1)) return;
-    const ref = outros.filter(x => x !== o).map(x => x.compra);
-    if (!ref.length) return;
-    const pmin = Math.min(...ref);
-    if (!(o.compra / pmin >= 3)) return;
+    if (!(packNome > 1)) continue;
+    const ref = foto.filter(x => x.o !== o).map(x => x.v);
+    if (!ref.length) continue;
+    const pref = mediana(ref);
+    if (!(pref > 0) || !(o.compra / pref >= 3)) continue;
     const corr = o.compra / packNome;
-    if (corr < pmin * 0.4 || corr > pmin * 2.5) return;
+    if (corr < pref * 0.4 || corr > pref * 2.5) continue;
     o.bruto = o.compra; o.compra = corr; o.pack = packNome; o.eraCaixa = true;
-  });
+  }
   return opcoes;
 }
 const O = (forn, produto, compra, und) => ({ forn, produto, compra, und: und||null, pack:1, incerto:false });
@@ -226,6 +228,37 @@ const O = (forn, produto, compra, und) => ({ forn, produto, compra, und: und||nu
   ]);
   ok('43. 900 ÷10 = 90 nao bate com o mercado (~2) -> nao corrige, fica visivel como esta',
     g.find(o=>o.forn==='C').compra === 900, g.find(o=>o.forn==='C').compra);
+}
+// ── OS DOIS DEFEITOS QUE A 1ª VERSAO DESTA REGRA TINHA (pegos no ar em 05/08) ─────────────
+{
+  // CASCATA: a 1a versao lia o preco dos vizinhos DEPOIS de ja ter corrigido alguns. Como a
+  // correcao divide por 100, o preco corrigido virava a nova "referencia de mercado" e puxava
+  // o vizinho seguinte junto. Medido: 107 linhas resgatadas, entre elas uma ampola de dipirona
+  // de R$ 0,56 virando R$ 0,0056. A regra comendo o proprio rabo.
+  const g = resgata([
+    O('A','DIPIRONA 500MG/ML 2ML 100 AMP', 0.56, 'CX'),
+    O('B','DIPIRONA 500MG/ML 2ML 100 AMP', 0.69, 'CX'),
+    O('C','DIPIRONA 500MG/ML 2ML 100 AMP', 0.83, 'CX'),
+    O('D','DIPIRONA CX C/100 AMP 2ML',    75.00, 'CX'),   // esta SIM e preco de caixa
+  ]);
+  ok('45. a caixa de verdade (75,00 ÷100 = 0,75) e corrigida', Math.abs(g.find(o=>o.forn==='D').compra - 0.75) < 1e-9, g.find(o=>o.forn==='D').compra);
+  ok('46. *** e as 3 ampolas de preco unitario legitimo NAO sao tocadas (sem cascata) ***',
+    g.filter(o=>['A','B','C'].includes(o.forn)).every(o => !o.eraCaixa),
+    g.filter(o=>['A','B','C'].includes(o.forn)).map(o=>o.compra));
+}
+{
+  // MINIMO x MEDIANA: com min, UMA linha ja errada pra baixo entrega a referencia inteira e
+  // faz todo o resto do grupo parecer "3x acima do mercado". A mediana precisa que METADE do
+  // grupo esteja errada pra ser enganada.
+  const g = resgata([
+    O('ERRADA','ITEM C/100 UND',  0.02, 'CX'),   // linha ja furada pra baixo no banco
+    O('BOA1',  'ITEM C/100 UND',  2.00, 'CX'),
+    O('BOA2',  'ITEM C/100 UND',  2.10, 'CX'),
+    O('BOA3',  'ITEM C/100 UND',  2.20, 'CX'),
+  ]);
+  ok('47. uma linha furada pra baixo nao arrasta o grupo (mediana ~2,10, nao min 0,02)',
+    g.filter(o=>o.forn.startsWith('BOA')).every(o => !o.eraCaixa),
+    g.filter(o=>o.forn.startsWith('BOA')).map(o=>o.compra));
 }
 {
   // quem ja veio dividido pelo cmpUnitario nao e mexido de novo (divisao dupla)

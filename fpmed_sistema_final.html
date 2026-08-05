@@ -2473,23 +2473,32 @@ function buildGrupos(filtro) {
   // Uma coisa só não basta: marca cara de verdade satisfaz (1) e falha (2); nome sem pack
   // falha (1). As duas juntas por acaso exigiriam a coincidência de o pack explicar a razão.
   Object.values(grupos).forEach(g => {
-    const outros = g.opcoes.filter(o => !o.incerto && o.compra > 0);
-    if (outros.length >= 2) {
-      g.opcoes.forEach(o => {
-        if (o.incerto || o.pack > 1 || !(o.compra > 0)) return;      // já dividido, ou sem preço
-        const packNome = qtdEmbalagem(o.und, o.produto);
-        if (!(packNome > 1)) return;                                  // (1) nome não declara pack
-        const ref = outros.filter(x => x !== o).map(x => x.compra);
-        if (!ref.length) return;
-        const pmin = Math.min(...ref);
-        if (!(o.compra / pmin >= 3)) return;                          // não destoa: é preço mesmo
-        const corr = o.compra / packNome;
-        if (corr < pmin * 0.4 || corr > pmin * 2.5) return;           // (2) a divisão NÃO explica
-        o.bruto = o.compra; o.compra = corr; o.pack = packNome; o.eraCaixa = true;
-        console.warn('[cmp] preço de caixa resgatado: ' + o.forn + ' ' + o.produto +
-                     ' R$' + o.bruto.toFixed(2) + ' ÷' + packNome + ' = R$' + corr.toFixed(4) +
-                     ' (mercado ~R$' + pmin.toFixed(4) + ')');
-      });
+    // FOTOGRAFIA ANTES DE QUALQUER MUTAÇÃO. A 1ª versão lia os preços dos vizinhos DEPOIS de
+    // já ter corrigido alguns — e como a correção divide por 100, o preço corrigido virava a
+    // nova referência "de mercado" e puxava o vizinho seguinte pra baixo junto. Em CASCATA.
+    // Medido no ar antes do conserto: 107 linhas "resgatadas", entre elas uma ampola de
+    // dipirona de R$ 0,56 virando R$ 0,0056 — a regra comendo o próprio rabo.
+    const foto = g.opcoes.filter(o => !o.incerto && o.compra > 0).map(o => ({ o, v: o.compra }));
+    if (foto.length < 2) return;
+    // MEDIANA, não mínimo. O mínimo entrega a referência de mercado inteira a UM valor: basta
+    // uma linha já errada pra baixo no grupo pra tudo o mais parecer "3x acima do mercado".
+    // A mediana precisa que METADE do grupo esteja errada pra ser enganada.
+    const mediana = arr => { const s = arr.slice().sort((a,b)=>a-b); const m = s.length>>1;
+                             return s.length % 2 ? s[m] : (s[m-1]+s[m])/2; };
+    for (const { o } of foto) {
+      if (o.pack > 1) continue;                                       // já dividido pelo cmpUnitario
+      const packNome = qtdEmbalagem(o.und, o.produto);
+      if (!(packNome > 1)) continue;                                  // (1) nome não declara pack
+      const ref = foto.filter(x => x.o !== o).map(x => x.v);           // ← preços da FOTO, não os atuais
+      if (!ref.length) continue;
+      const pref = mediana(ref);
+      if (!(pref > 0) || !(o.compra / pref >= 3)) continue;           // não destoa: é preço mesmo
+      const corr = o.compra / packNome;
+      if (corr < pref * 0.4 || corr > pref * 2.5) continue;           // (2) a divisão NÃO explica
+      o.bruto = o.compra; o.compra = corr; o.pack = packNome; o.eraCaixa = true;
+      console.warn('[cmp] preço de caixa resgatado: ' + o.forn + ' ' + o.produto +
+                   ' R$' + o.bruto.toFixed(2) + ' ÷' + packNome + ' = R$' + corr.toFixed(4) +
+                   ' (mediana do grupo ~R$' + pref.toFixed(4) + ')');
     }
   });
 
