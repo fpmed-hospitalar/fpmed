@@ -13,7 +13,7 @@ function bloco(ini, fim) {
 const ctx = (new Function(
   bloco('const semAcento =', 'const ymd =') +
   bloco('const CATEGORIAS =', 'function categorias') +
-  bloco('function categorias', '// ── ADERÊNCIA') +
+  bloco('function categorias', '// ══ PACK') +      // âncora movida: o bloco da ADERÊNCIA virou o cruzamento por item
   bloco('function ultimoDiaUtil', '(function(){ const d=ultimoDiaUtil') +
   'return { categorias, ultimoDiaUtil, semAcento };'))();
 const { categorias, ultimoDiaUtil } = ctx;

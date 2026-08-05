@@ -6,6 +6,11 @@
 <title>FPMED — Licitações</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%232CA9E0'/%3E%3Cpath d='M13 6h6v7h7v6h-7v7h-6v-7H6v-6h7z' fill='white'/%3E%3C/svg%3E">
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<!-- gm-auth: login + injeção do JWT nas chamadas /rest/v1/. Entrou aqui porque o CRUZAMENTO POR
+     ITEM lê o estoque próprio da tabela `cotacoes`, e a RLS exige usuário autenticado. Efeito
+     colateral desejado: Licitações é tela de INTELIGÊNCIA, então vendedor/propostas caem no
+     "Sem permissão" do próprio gm-auth (mesma regra da Competitividade). -->
+<script src="gm-auth.js?v=cargos"></script>
 <style>
 /* ══ TEMA ESCURO — só esta tela (decisão do Lemuel: Licitações é a "tela premium";
    o resto do sistema segue claro). A disposição espelha o SIGA, mas a IDENTIDADE é FPMED:
@@ -86,6 +91,7 @@ select:focus,input:focus{outline:none;border-color:var(--azul)}
 .etiquetas{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:14px}
 .etq{background:var(--verde);color:var(--verde-esc);padding:5px 13px;border-radius:20px;font-size:11.5px;font-weight:700;letter-spacing:.1px}
 .etq.alvo{background:var(--azul);color:#06263a}
+.etq.zero{background:#22374f;color:#a9bdd2;font-weight:600}
 .sessao{font-size:13px;color:#b3c4d6;margin-bottom:14px;line-height:1.6}
 .sessao b{color:#fff;font-weight:600}
 .rodape{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding-top:14px;border-top:1px solid var(--linha)}
@@ -117,6 +123,31 @@ select:focus,input:focus{outline:none;border-color:var(--azul)}
 }
 .aviso{padding:34px;text-align:center;border-radius:14px;background:var(--painel);border:1px solid var(--linha);box-shadow:var(--sombra);color:var(--muted)}
 .aviso.err{border-color:#5a2622;background:#2a1614;color:#f2a99f}
+.aviso.mini{padding:12px 16px;text-align:left;font-size:12.5px;margin-bottom:14px}
+
+/* ── CRUZAMENTO POR ITEM ── a tabela dos itens do edital, com o que casou no nosso estoque ── */
+.acoes{display:flex;gap:9px;flex-wrap:wrap;align-items:center;margin-top:12px}
+.btn.mini{padding:7px 14px;font-size:12px}
+.itens{margin-top:14px;border-top:1px solid var(--linha);padding-top:12px;overflow-x:auto}
+.itens table{width:100%;border-collapse:collapse;font-size:12.5px;min-width:640px}
+.itens th{text-align:left;color:var(--muted);font-weight:600;font-size:10.5px;text-transform:uppercase;
+  letter-spacing:.4px;padding:6px 8px;border-bottom:1px solid var(--linha);white-space:nowrap}
+.itens td{padding:9px 8px;border-bottom:1px solid rgba(34,55,79,.55);vertical-align:top;color:#c3d1e0;line-height:1.5}
+.itens tr.casou td{background:rgba(141,198,63,.06)}
+.itens .desc{min-width:280px}
+.match{margin-top:7px;padding:7px 11px;border-left:3px solid var(--verde);background:rgba(141,198,63,.09);border-radius:0 7px 7px 0}
+.match+.match{margin-top:5px}
+.match b{color:#fff;font-weight:600}
+.conf{font-size:9.5px;padding:1px 7px;border-radius:9px;font-weight:700;margin-left:6px;vertical-align:1px}
+.conf.alta{background:var(--verde);color:var(--verde-esc)}
+.conf.media{background:#523a17;color:#f0c483}
+.delta{font-weight:700}
+.delta.bom{color:#b7e07a}
+.delta.ruim{color:#f2a99f}
+.nowrap{white-space:nowrap}
+.packbdg{font-size:10px;color:var(--muted);font-weight:500;margin-left:5px}
+.conferir{color:#f0c483;font-weight:600}
+.progresso{font-size:12px;color:var(--muted)}
 .hint{font-size:11.5px;color:var(--muted)}
 .btn{background:var(--azul);color:#fff;border:0;border-radius:8px;padding:10px 20px;font-weight:600;font-size:13px;cursor:pointer;font-family:inherit}
 .btn.sec{background:var(--painel2);color:var(--texto);border:1px solid var(--linha)}
@@ -191,6 +222,7 @@ select:focus,input:focus{outline:none;border-color:var(--azul)}
     <div class="kpi"><b id="k-aderencia">—</b><span>🎯 com aderência ao nosso estoque</span></div>
   </div>
 
+  <div id="estoque-status" class="hint" style="min-height:18px;margin:10px 0 2px"></div>
   <div id="status" class="hint" style="min-height:18px;margin-bottom:8px"></div>
   <div id="lista"><div class="aviso">Ajuste os filtros e clique na lupa para buscar.</div></div>
 </div>
@@ -239,13 +271,273 @@ function categorias(objeto){
   return CATEGORIAS.filter(c => c.termos.some(x => t.includes(x))).map(c => c.rotulo);
 }
 
-// ── ADERÊNCIA AO NOSSO ESTOQUE (preparado p/ o cruzamento) ────────────────────────────────
-// Hoje devolve null: o PNCP desta consulta traz só o OBJETO, não os itens do edital. O
-// cruzamento real (matching PA+dose contra as 1.381 linhas do estoque) entra na próxima etapa
-// consumindo os itens; a estrutura do card já está pronta pra receber o número.
+// ══ PACK / PREÇO UNITÁRIO ═════════════════════════════════════════════════════════════════
+// REGRA MASTER DO PROJETO (04/08): comparação SEMPRE unitária, e a divisão pelo pack acontece
+// na TELA — nunca no banco. Aqui ela precisa acontecer nos DOIS lados: o nosso `global_venda1`
+// é preço de CAIXA, e o `valorUnitarioEstimado` do edital às vezes também é (unidadeMedida
+// "Caixa 100 UN" com unit 8,65 = R$ 0,0865 por agulha). Comparar sem unitarizar os dois lados
+// dá erro de 100x — é o mesmo bug de faturamento que a Global teve.
+// _undNum e _qtdDoNome são cópia fiel do fpmed_giovana.html (mesmo detector das outras telas).
+function _undNum(und){ const m = String(und||'').match(/\d+/); if(!m) return 0; const n=parseInt(m[0]); return (n>=1 && n<=5000)?n:0; }
+function _qtdDoNome(produto){
+  const nome = (produto || '').toUpperCase();
+  const mX = nome.match(/(\d{1,4})\s*X\s*\d+(?:[.,]\d+)?\s*ML\b/);        if (mX) { const n=parseInt(mX[1]); if(n>1&&n<=5000) return n; }
+  const mXc = nome.match(/(\d{1,3})\s*X\s*(\d{1,3})\s*(?:CPR|COMP|CAP|CAPS|COM|DRG)\b/); if (mXc) { const n=parseInt(mXc[1])*parseInt(mXc[2]); if(n>1&&n<=5000) return n; }
+  const mC = nome.match(/(?:C\/|CX\/|CX|PCT\/?)\s*(\d{1,4})(?!\d)(?!\s*(?:ML|MG|MCG|UI|G|L|GR|GRS)\b)/); if (mC) { const n=parseInt(mC[1]); if(n>1&&n<=5000) return n; }
+  const mFA = nome.match(/(\d{1,4})\s*(?:F\s*\/\s*A|FR[SA]?\s*\/\s*AMP|FRS|FRA|BISNAGAS?)\b/);
+  if (mFA) { const n=parseInt(mFA[1]); if(n>1&&n<=5000) return n; }
+  const mU = nome.match(/(\d{1,4})\s*(?:CPR|CRP|CAPS|CAP|CPS|CP|COMP|DRG|AMP|FR|ENV|BLS|UND|UN|PASTILHA|PAST|SACHES|SACHE)\b/); if (mU) { const n=parseInt(mU[1]); if(n>1&&n<=5000) return n; }
+  const reR = /(\+\s*)?(\d{1,4})\s*(?:SERINGAS|SERINGA|SER|AMPOLAS|AMPOLA|BOLSAS|BOLSA|BOLS|CANETAS|CANETA|CAN|SISTEMAS|SISTEMA|SIST|REFIS|REFIL|FA)\b/g;
+  let mR; while ((mR = reR.exec(nome))) { if (mR[1]) continue; const n=parseInt(mR[2]); if(n>1&&n<=5000) return n; }
+  const m2 = nome.match(/(?:AMP|FR|CP|CPR|CAPS)\s*\/?\s*(\d+)\b(?!\s*(?:ML|MG|MCG|UI|G)\b)/); if (m2) { const n=parseInt(m2[1]); if(n>1) return n; }
+  return 1;
+}
+// CALIBRE FRENCH ≠ PACK. "SONDA URETRAL DESC 22FR" tem 22 de CALIBRE, não 22 frascos — mas o
+// _qtdDoNome lista `FR` entre as unidades contáveis (por causa de "50FR" = 50 frascos) e dividia
+// o preço por 22. MEDIDO no cruzamento de 03/08: virava R$ 0,03 por sonda e um Δ de −99,9% contra
+// o edital. Em produto de calibre (sonda/cateter/dreno/cânula) o token NNFR é apagado antes da
+// detecção: fica sem pack conhecido → "⚠ conferir emb.", que é a verdade. O soro "500ML S/F 16FR"
+// não é dessa classe e segue lendo 16 frascos normalmente.
+const _CALIBRE = /\b(sonda|cateter|dreno|canula|tubo endo|traqueo|gastrostomia|uretral|nasogastrica|nasoenteral|foley|aspiracao traqueal)\b/;
+function _semCalibre(produto){
+  const p = String(produto||'');
+  return _CALIBRE.test(semAcento(p)) ? p.replace(/\b\d{1,3}\s*FR\b/gi,' ') : p;
+}
+function qtdEmbalagem(und, produto){ const u=_undNum(und); return u>=1 ? u : _qtdDoNome(_semCalibre(produto)); }
+
+// UND do NOSSO estoque: "AMP"/"FR"/"UND" já é a unidade de venda (pack 1 sabido); "CX"/"PCT" é
+// agregador — sem contagem no nome não dá pra unitarizar e a célula vira "⚠ conferir emb."
+// (mesma regra do Comparativo). O silêncio (und NULL) também é "não sei", nunca 1 por otimismo.
+const _UND_UNITARIA  = /^(und|un|unid|unidade|amp|ampola|fa|fr|frasco|cpr|comp|cp|caps|cap|lt|litro|pc|par|tb|tubo|bg|bisnaga|rl|rolo|gl|sc|kg|mt)$/;
+const _UND_AGREGADORA= /^(cx|caixa|ct|cart|pct|pacote|fd|fardo|dp|display|kit|cj|conj|bls|blister|env)$/;
+function unitarioNosso(c){
+  const base = parseFloat(c.global_venda1||0) || parseFloat(c.venda_unit_calculada||0);
+  if(!(base>0)) return {status:'sem-preco'};
+  const qtd = qtdEmbalagem(c.und, c.produto);
+  if(qtd>1) return {status:'ok', valor:base/qtd, pack:qtd, bruto:base};
+  const u = semAcento(c.und||'').replace(/[^a-z]/g,'');
+  if(_UND_UNITARIA.test(u)) return {status:'ok', valor:base, pack:1, bruto:base};
+  if(_UND_AGREGADORA.test(u) || !u) return {status:'conferir', bruto:base};  // caixa sem contagem
+  return {status:'ok', valor:base, pack:1, bruto:base};
+}
+
+// unidadeMedida do EDITAL: "Caixa 100 UN"→100 · "Embalagem 10 UN"→10 · "Unidade"→1
+// "Frasco 1000 ML"→1 e "Galão 5 L"→1 (o número é MEDIDA, não contagem — mesmo cuidado do
+// _qtdDoNome, que barra "FR C/240ML"). "Caixa" sem número → null (não sei: ⚠ conferir emb.).
+const _MEDIDA     = /^(ml|l|g|kg|mg|mcg|m|cm|mm|litro|litros|grama|gramas|metro|metros)$/;
+const _AGREGADOR  = /(caixa|cx|embalagem|emb|pacote|pct|fardo|kit|conjunto|maco|saco|display|cartucho)/;
+function unidadePack(u){
+  const t = semAcento(u||'').trim();
+  if(!t) return 1;
+  const m = t.match(/(\d+(?:[.,]\d+)?)\s*([a-z]+)?/);
+  if(m){
+    const n = parseFloat(m[1].replace(',','.')), unidade = m[2]||'';
+    if(_MEDIDA.test(unidade)) return 1;
+    return (n>1 && n<=100000) ? n : 1;
+  }
+  return _AGREGADOR.test(t) ? null : 1;
+}
+function unitarioEdital(it){
+  if(it.orcamentoSigiloso) return {status:'sigiloso'};
+  const v = Number(it.valorUnitarioEstimado)||0;
+  if(!(v>0)) return {status:'sem-preco'};
+  const pack = unidadePack(it.unidadeMedida);
+  if(pack==null) return {status:'conferir', bruto:v};
+  return {status:'ok', valor:v/pack, pack, bruto:v};
+}
+
+// ══ MATCHING edital × nosso estoque ═══════════════════════════════════════════════════════
+// Duas assinaturas por texto: TERMOS (palavras) e DOSES (número+unidade). O portão é o TERMO
+// ÂNCORA — a 1ª palavra significativa do nosso produto tem que aparecer na descrição do edital.
+// A DOSE é o discriminador: quando os DOIS lados declaram dose e nenhuma coincide, o par é
+// REJEITADO (é o que separa DIPIRONA 500MG de DIPIRONA 1G, e AGULHA 22G de AGULHA 23G).
+// Quando só um lado declara dose (típico de material: luva, gaze, seringa), o par entra como
+// confiança MÉDIA — aparece pro operador conferir, mas não se afirma que é o mesmo item.
+// STOP inclui os SAIS e as FORMAS FARMACÊUTICAS de propósito: "cloridrato", "sódico", "solução",
+// "injetável" aparecem em centenas de produtos diferentes e não identificam nada. Deixá-los valendo
+// fazia "cloridrato de X" casar com "cloridrato de Y" só pela palavra do sal.
+const STOP = new Set(('de,da,do,das,dos,para,com,sem,tipo,material,aquisicao,registro,precos,marca,'+
+  'conforme,demais,itens,item,uso,unico,cor,tamanho,adicional,caracteristicas,componente,apresentacao,'+
+  'esterilidade,dimensao,capacidade,modelo,aplicacao,und,unid,unidade,unidades,cx,caixa,pct,pacote,'+
+  'generico,similar,referencia,embalagem,individual,descartavel,esteril,estéril,produto,produtos,'+
+  'cloridrato,dicloridrato,sodico,sodica,sodio,potassio,calcio,magnesio,sulfato,fosfato,acetato,'+
+  'citrato,tartarato,besilato,maleato,mesilato,succinato,bromidrato,hemifumarato,monoidratado,anidro,'+
+  'solucao,solucoes,injetavel,injetaveis,comprimido,comprimidos,revestido,revestidos,liofilizado,'+
+  'ampola,ampolas,frasco,frascos,pote,bisnaga,seringa preenchida,oral,topico,estimado,total,valor,'+
+  'fornecimento,parcelada,parcelado,futura,eventual,contratacao,empresa,especializada,menor,preco').split(','));
+function termos(s){
+  return semAcento(s).replace(/[^a-z0-9]+/g,' ').split(' ')
+    .filter(t => t.length>=4 && !STOP.has(t) && !/^\d+$/.test(t));
+}
+function doses(s){
+  const t = semAcento(s).replace(/,/g,'.');
+  const out = new Set(); let m;
+  const re = /(\d+(?:\.\d+)?)\s*(mg\/ml|mcg\/ml|ui\/ml|g\/ml|mg|mcg|ui|ml|%|g\b)/g;
+  while((m = re.exec(t))){
+    const n = parseFloat(m[1]);                    // 03ml -> 3ml · 0.100mg -> 0.1mg
+    if(!isFinite(n)) continue;
+    out.add(n + m[2].trim());
+  }
+  // GAUGE de agulha: o nosso nome escreve "22GX1" (o `g` colado no `x` não fecha \b e escapava
+  // do laço acima) e o edital escreve "23 g x 1". Sem isto, 22G e 23G casavam como se fossem a
+  // mesma agulha — que é exatamente o erro que o discriminador de dose existe pra impedir.
+  const reG = /(\d{1,2})\s*g\s*x\s*\d/g;
+  while((m = reG.exec(t))) out.add(parseFloat(m[1]) + 'g');
+  // CATMAT escreve a medida como "capacidade: 3" (sem unidade) onde o nosso nome escreve "3ML".
+  // Sem isto, a seringa de 60 ml casava com o item de 3 ml, porque o lado do edital não tinha
+  // dose nenhuma pra discordar. Só vale quando o número vem PELADO — "capacidade: 100 litros"
+  // traz unidade e é ignorado de propósito (bebedouro não é seringa).
+  const reC = /capacidade\s*:?\s*(\d+(?:\.\d+)?)(?!\s*[a-z0-9])/g;
+  while((m = reC.exec(t))) out.add(parseFloat(m[1]) + 'ml');
+  return out;
+}
+
+// Índice do estoque: termo -> linhas. Só os 4 primeiros termos do nome entram (a cabeça é a
+// identidade do produto; a cauda é embalagem/marca e geraria par com meio mundo).
+let ESTOQUE = [], IDX = new Map(), ESTOQUE_ERRO = null;
+function indexaEstoque(linhas){
+  ESTOQUE = linhas; IDX = new Map();
+  for(const c of linhas){
+    const tNome = termos(c.produto), tPa = termos(c.principio_ativo||'');
+    c._t = [...new Set(tNome.concat(tPa))];
+    // ÂNCORAS: o substantivo-cabeça do nosso nome + o princípio ativo. O PA entra porque muito
+    // item nosso é MARCA ("ATENSINA") e o edital sempre escreve o genérico ("clonidina").
+    c._ancoras = [...new Set((tNome[0] ? [tNome[0]] : []).concat(tPa))];
+    c._doses = doses(c.produto);
+    c._un = unitarioNosso(c);
+    for(const k of new Set(tNome.slice(0,4).concat(tPa))){
+      if(!IDX.has(k)) IDX.set(k,[]); IDX.get(k).push(c);
+    }
+  }
+  return IDX.size;
+}
+// Cruza UM item do edital contra o estoque. Devolve no máximo `teto` pares, do melhor pro pior.
+// DOIS PORTÕES, e os dois existem por causa de erro MEDIDO na rodada de 03/08:
+//  1) âncora presente — sem isso "TELA CIRÚRGICA" casava com "cadeira com TELA mesh";
+//  2) evidência além da âncora — ou a dose bate, ou há ≥2 palavras em comum. Com uma palavra só,
+//     "APARELHO de ar condicionado" casava com "APARELHO de barbear" e "SACO de adubo" com
+//     "SACO de lixo". Uma palavra em comum não é um produto em comum.
+function cruzaItem(item, teto){
+  if(!ESTOQUE.length) return [];
+  const desc = String(item.descricao||'');
+  const tD = new Set(termos(desc)), dD = doses(desc);
+  const cand = new Set();
+  for(const t of tD) for(const c of (IDX.get(t)||[])) cand.add(c);
+  const pares = [];
+  for(const c of cand){
+    if(!c._ancoras.some(a => tD.has(a))) continue;                    // portão 1
+    let comuns = 0; for(const d of c._doses) if(dD.has(d)) comuns++;
+    if(c._doses.size && dD.size && !comuns) continue;                 // doses divergem -> rejeita
+    let nT = 0; for(const t of c._t) if(tD.has(t)) nT++;
+    if(!comuns && nT < 2) continue;                                   // portão 2
+    pares.push({ c, conf: comuns ? 'alta' : 'media', score: comuns*10 + nT });
+  }
+  pares.sort((a,b)=> b.score-a.score || (a.c._un.valor||9e9)-(b.c._un.valor||9e9));
+  // O estoque tem 474 linhas irmãs (vêm repetidas da própria planilha de origem, auditado 04/08).
+  // Sem dedup, os 3 melhores pares viravam o MESMO produto três vezes.
+  const vistos = new Set();
+  return pares.filter(p => {
+    const k = semAcento(p.c.produto) + '|' + (p.c._un.valor||'');
+    if(vistos.has(k)) return false;
+    vistos.add(k); return true;
+  }).slice(0, teto||3);
+}
+
+// ADERÊNCIA: quantos itens do edital casaram. null = ainda não cruzado (o card mostra o botão).
+const CRUZ = new Map();                     // chaveLic -> {itens, casados, quando, truncado}
+const chaveLic = l => [(l.orgaoEntidade||{}).cnpj, l.anoCompra, l.sequencialCompra].join('/');
 function aderencia(lic){
-  if (!window.FPMED_ESTOQUE) return null;      // o cruzamento popula isto
-  return null;
+  const r = CRUZ.get(chaveLic(lic));
+  return r ? r.casados : null;
+}
+
+// numeroCompra do PNCP vem em 3 formatos MEDIDOS na consulta de GO: "90", "0262026" e
+// "(20410) | 33-0". Regra do Lemuel: "(6128) | 32-0/2026" -> "32/2026".
+function numCompra(numero, ano){
+  let s = String(numero==null?'':numero).trim();
+  s = s.replace(/^\([^)]*\)\s*\|?\s*/,'').split('|').pop().trim();     // fora o "(20410) | "
+  const comAno = s.match(/^(\d+)(?:\s*-\s*\d+)?\s*\/\s*(\d{4})$/);     // "33-0/2026"
+  if(comAno) return comAno[1]+'/'+comAno[2];
+  const so = s.match(/^(\d+)(?:\s*-\s*\d+)?$/);                        // "33-0", "90" ou "0262026"
+  if(so){
+    let n = so[1], a = String(ano||'');
+    if(a && n.length > a.length && n.endsWith(a)) n = n.slice(0, -a.length);  // "0262026" -> "026"
+    n = n.replace(/^0+(?=\d)/,'');
+    return n + (ano ? '/'+ano : '');
+  }
+  return s + (ano && !/\/\d{4}$/.test(s) ? '/'+ano : '');
+}
+
+// ══ ESTOQUE PRÓPRIO FPMED ═════════════════════════════════════════════════════════════════
+// 1.381 linhas (tipo='global'). O PostgREST da FPMED pagina em 1000 — não em 2000 como o do
+// GlobalMed. O Bearer aqui é a anon; o gm-auth troca pelo JWT do usuário antes de sair.
+const SB_URL = 'https://xzdowrksuswekwffoluk.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh6ZG93cmtzdXN3ZWt3ZmZvbHVrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ2NzE2MTMsImV4cCI6MjEwMDI0NzYxM30.Pk-SlV_pZdniESyrajDdfHdHcnmyCwCMtP_TrShh75Y';
+const SB_H  = { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY };
+const COLS  = 'produto,principio_ativo,und,marca,estoque,codigo,global_venda1,venda_unit_calculada';
+
+async function carregarEstoque(){
+  let out = [], off = 0;
+  for(;;){
+    const r = await fetch(SB_URL+'/rest/v1/cotacoes?tipo=eq.global&select='+COLS+'&limit=1000&offset='+off, {headers:SB_H});
+    if(!r.ok) throw new Error('o banco respondeu '+r.status);
+    const j = await r.json();
+    out = out.concat(j);
+    if(j.length < 1000 || off > 20000) break;
+    off += 1000;
+  }
+  return out;
+}
+document.addEventListener('gm-auth-ready', async () => {
+  const el = document.getElementById('estoque-status');
+  el.innerHTML = 'carregando o estoque FPMED para o cruzamento…';
+  try{
+    const linhas = await carregarEstoque();
+    indexaEstoque(linhas);
+    const comPreco = linhas.filter(c => c._un.status === 'ok').length;
+    el.innerHTML = '🎯 estoque FPMED pronto: <b>'+linhas.length.toLocaleString('pt-BR')+'</b> itens ('
+                 + comPreco.toLocaleString('pt-BR')+' com preço unitário calculável)';
+  }catch(e){
+    ESTOQUE_ERRO = e.message;
+    el.innerHTML = '<span class="conferir">⚠️ não consegui ler o estoque FPMED ('+esc(e.message)
+                 + '). A busca funciona; o cruzamento fica indisponível.</span>';
+  }
+});
+
+// ══ ITENS DO EDITAL ═══════════════════════════════════════════════════════════════════════
+// Endpoint confirmado pelo Lemuel. MEDIDO em 04/08: aceita tamanhoPagina até 500 e responde em
+// ~200 ms, mas o DEFAULT é 10 — sem paginar, a licitação de 65 itens entregava só os 10
+// primeiros e o cruzamento mentiria por omissão. Teto de 5 páginas (500 itens) com aviso.
+const ITENS_TAM = 100, ITENS_TETO_PAG = 5;
+async function puxarItens(lic){
+  const k = chaveLic(lic);
+  const antes = CRUZ.get(k);
+  if(antes && (Date.now()-antes.quando) < CACHE_MIN*60000) return antes;   // cache de 15 min por licitação
+  const cnpj = (lic.orgaoEntidade||{}).cnpj;
+  if(!cnpj || !lic.anoCompra || lic.sequencialCompra==null) throw new Error('esta licitação não traz CNPJ/ano/sequencial no PNCP');
+  const base = 'https://pncp.gov.br/api/pncp/v1/orgaos/'+cnpj+'/compras/'+lic.anoCompra+'/'+lic.sequencialCompra+'/itens';
+  let itens = [], truncado = false;
+  for(let p=1; p<=ITENS_TETO_PAG; p++){
+    const ctrl = new AbortController();
+    const t = setTimeout(()=>ctrl.abort(), TIMEOUT_MS);
+    let lote;
+    try{
+      const r = await fetch(base+'?pagina='+p+'&tamanhoPagina='+ITENS_TAM, {headers:{'Accept':'application/json'}, signal:ctrl.signal});
+      if(!r.ok) throw new Error('o PNCP respondeu '+r.status+' na lista de itens');
+      lote = await r.json();
+    }catch(e){
+      if(e.name==='AbortError') throw new Error('o PNCP não respondeu em '+(TIMEOUT_MS/1000)+'s');
+      throw e;
+    }finally{ clearTimeout(t); }
+    if(!Array.isArray(lote) || !lote.length) break;
+    itens = itens.concat(lote);
+    if(lote.length < ITENS_TAM) break;
+    if(p === ITENS_TETO_PAG) truncado = true;
+  }
+  const cruzados = itens.map(it => ({ it, pares: cruzaItem(it, 3) }));
+  const res = { itens:cruzados, casados:cruzados.filter(x=>x.pares.length).length, quando:Date.now(), truncado };
+  CRUZ.set(k, res);
+  return res;
 }
 
 window.addEventListener('scroll', () => {
@@ -336,7 +628,7 @@ function render(todos, kws, excl, aviso){
   const soma = hits.reduce((s,l)=>s+(Number(l.valorTotalEstimado)||0),0);
   const comAlvo = hits.filter(l=>aderencia(l)).length;
 
-  document.getElementById('kpis').style.display='flex';
+  document.getElementById('kpis').style.display='grid';   // era 'flex' e anulava o grid-template do CSS
   document.getElementById('k-total').textContent   = todos.length;
   document.getElementById('k-filtro').textContent  = hits.length;
   document.getElementById('k-valor').textContent   = brl(soma);
@@ -352,10 +644,15 @@ function render(todos, kws, excl, aviso){
   }
   hits.sort((a,b)=>{ const x=dt(a.dataEncerramentoProposta), y=dt(b.dataEncerramentoProposta);
                      return (x?x.getTime():9e15)-(y?y.getTime():9e15); });
-  h += '<div class="contagem"><b>'+hits.length+'</b> '+(hits.length===1?'licitação encontrada':'licitações encontradas')
-     + ' · ordenadas por quem <b>encerra primeiro</b></div>';
+  h += '<div class="contagem" style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">'
+     + '<span><b>'+hits.length+'</b> '+(hits.length===1?'licitação encontrada':'licitações encontradas')
+     + ' · ordenadas por quem <b>encerra primeiro</b></span>'
+     + '<button class="btn sec mini" id="bt-todos" onclick="cruzarTodos()" '
+     +   'title="lê os itens de cada edital em lotes de 3 e marca os que temos">🎯 Cruzar todas com o estoque</button>'
+     + '</div>';
 
-  for(const l of hits){
+  window._hits = hits;                       // os cards chamam verItens(i) por índice
+  hits.forEach((l, i) => {
     const org = (l.orgaoEntidade||{}).razaoSocial||'—';
     const un  = l.unidadeOrgao||{};
     const fim = dt(l.dataEncerramentoProposta);
@@ -366,19 +663,17 @@ function render(todos, kws, excl, aviso){
       : '<span class="bdg v">encerra em '+dias+'d</span>';
     const cats = categorias(l.objetoCompra);
     const alvo = aderencia(l);
-    const titulo = esc(l.modalidadeNome||'') + ' Nº ' + esc(l.numeroCompra||'') + '/' + esc(l.anoCompra||'')
+    const titulo = esc(l.modalidadeNome||'') + ' Nº ' + esc(numCompra(l.numeroCompra, l.anoCompra))
                  + ' — ' + esc(org) + ' / ' + esc(un.ufSigla||'');
     h += '<div class="lic">'
       + (l.linkSistemaOrigem
           ? '<a class="titulo" href="'+esc(l.linkSistemaOrigem)+'" target="_blank" rel="noopener">'+titulo+' ↗</a>'
           : '<span class="titulo">'+titulo+'</span>')
       + '<div class="obj">'+esc(l.objetoCompra||'')+'</div>'
-      + (cats.length || alvo
-          ? '<div class="etiquetas">'
-            + cats.map(c=>'<span class="etq">'+esc(c)+'</span>').join('')
-            + (alvo ? '<span class="etq alvo">🎯 '+alvo+' itens no nosso estoque</span>' : '')
-            + '</div>'
-          : '')
+      + '<div class="etiquetas" id="etq-'+i+'">'
+        + cats.map(c=>'<span class="etq">'+esc(c)+'</span>').join('')
+        + (alvo ? '<span class="etq alvo">🎯 '+alvo+' itens no nosso estoque</span>' : '')
+      + '</div>'
       + '<div class="sessao"><b>Abertura em '+fmtDt(l.dataAberturaProposta)+'</b>'
       +   (l.modoDisputaNome ? ' &nbsp;·&nbsp; Modo de disputa: '+esc(l.modoDisputaNome) : '')
       +   (fim ? ' &nbsp;·&nbsp; Encerra em '+fmtDt(l.dataEncerramentoProposta) : '')
@@ -389,9 +684,137 @@ function render(todos, kws, excl, aviso){
       +   prazo
       +   '<span class="bdg cinza" title="Número de controle PNCP">'+esc(l.numeroControlePNCP||'')+'</span>'
       +   '<span class="valor">'+brl(l.valorTotalEstimado)+'</span>'
-      + '</div></div>';
-  }
+      + '</div>'
+      + '<div class="acoes"><button class="btn sec mini" id="bt-'+i+'" onclick="verItens('+i+')">'
+      +   '🎯 Cruzar com nosso estoque</button></div>'
+      + '<div class="itens" id="itens-'+i+'" style="display:none"></div>'
+      + '</div>';
+  });
   lista.innerHTML = h;
+}
+
+// ══ UI DO CRUZAMENTO ══════════════════════════════════════════════════════════════════════
+const brlU = n => 'R$ ' + Number(n||0).toLocaleString('pt-BR',{minimumFractionDigits:2, maximumFractionDigits:4});
+
+function celPreco(u){
+  if(u.status==='sigiloso')  return '<span class="conferir nowrap">orçamento sigiloso</span>';
+  if(u.status==='sem-preco') return '<span class="hint">sem preço</span>';
+  // REGRA DO PROJETO: valor com cara de caixa e sem pack identificável NÃO vira número unitário —
+  // vira aviso. Preço que não se sabe não entra em comparação nenhuma.
+  if(u.status==='conferir')  return '<span class="conferir nowrap" title="a unidade não declara quantas unidades vêm na embalagem">⚠ conferir emb.</span>'
+                                  + '<div class="hint nowrap">'+brlU(u.bruto)+' / emb.</div>';
+  return '<b class="nowrap">'+brlU(u.valor)+'</b>'
+       + (u.pack>1 ? '<span class="packbdg nowrap">un · cx'+u.pack+'</span>' : '');
+}
+
+function celMatch(par, uEdital){
+  const c = par.c, un = c._un;
+  let delta = '';
+  // Δ SÓ NO MATCH DE DOSE CONFERIDA. No "aproximado" os dois lados podem ser produtos diferentes
+  // da mesma família (sonda uretral 20FR × sonda de gastrostomia 20FR) — ali um "−98% vs edital"
+  // não é vantagem competitiva, é comparação de coisas distintas. Mostra o nosso preço e cala
+  // sobre a diferença; quem decide se é o mesmo item é o operador.
+  if(par.conf==='alta' && un.status==='ok' && uEdital.status==='ok' && uEdital.valor>0){
+    const d = (un.valor - uEdital.valor) / uEdital.valor * 100;
+    delta = ' · <span class="delta '+(d<=0?'bom':'ruim')+'">'+(d>0?'+':'')
+          + d.toLocaleString('pt-BR',{maximumFractionDigits:1})+'% vs edital</span>';
+  }
+  return '<div class="match"><b>'+esc(c.produto)+'</b>'
+       + '<span class="conf '+par.conf+'" title="'+(par.conf==='alta'
+            ? 'a dose/medida do edital bate com a do nosso produto'
+            : 'mesma família, mas a dose/medida não foi confirmada — confira antes de usar o preço')
+       + '">'+(par.conf==='alta'?'dose confere':'aproximado')+'</span>'
+       + '<div class="hint" style="margin-top:3px">nosso unitário: '+celPreco(un)
+       + (c.estoque!=null ? ' · saldo '+esc(c.estoque) : '')
+       + (c.marca ? ' · '+esc(c.marca) : '') + delta + '</div></div>';
+}
+
+function tabelaItens(r){
+  if(!r.itens.length) return '<div class="aviso mini">O PNCP não devolveu itens para esta licitação.</div>';
+  let h = '';
+  if(r.truncado) h += '<div class="aviso err mini">⚠️ Li '+r.itens.length+' itens (teto por licitação). Pode haver mais no edital.</div>';
+  if(!ESTOQUE.length) h += '<div class="aviso mini">'+(ESTOQUE_ERRO
+      ? '⚠️ estoque FPMED indisponível ('+esc(ESTOQUE_ERRO)+') — os itens abaixo são do edital, sem cruzamento.'
+      : 'estoque FPMED ainda carregando — os itens abaixo são do edital, sem cruzamento.')+'</div>';
+  h += '<div class="progresso" style="margin-bottom:8px"><b>'+r.casados+'</b> de <b>'+r.itens.length
+     + '</b> itens do edital têm produto equivalente no nosso estoque · comparação sempre <b>unitária</b></div>';
+  h += '<table><thead><tr><th>Nº</th><th class="desc">Item do edital</th><th>Quantidade</th><th>Unitário do edital</th></tr></thead><tbody>';
+  for(const x of r.itens){
+    const it = x.it, uE = unitarioEdital(it);
+    const d = String(it.descricao||'').replace(/\s+/g,' ').trim();
+    h += '<tr class="'+(x.pares.length?'casou':'')+'">'
+       + '<td class="nowrap">'+esc(it.numeroItem)+'</td>'
+       + '<td class="desc">'+esc(d.length>230 ? d.slice(0,230)+'…' : d)
+       +   x.pares.map(p=>celMatch(p, uE)).join('')
+       + '</td>'
+       + '<td class="nowrap">'+Number(it.quantidade||0).toLocaleString('pt-BR')
+       +   '<div class="hint">'+esc(it.unidadeMedida||'')+'</div></td>'
+       + '<td>'+celPreco(uE)+'</td></tr>';
+  }
+  return h + '</tbody></table>';
+}
+
+function atualizaBadge(i){
+  const l = (window._hits||[])[i]; if(!l) return;
+  const n = aderencia(l), cx = document.getElementById('etq-'+i);
+  if(cx){
+    let el = cx.querySelector('.etq.alvo');
+    if(n){
+      if(!el){ el = document.createElement('span'); el.className='etq alvo'; cx.appendChild(el); }
+      el.textContent = '🎯 '+n+' '+(n===1?'item':'itens')+' no nosso estoque';
+    }else{
+      if(el) el.remove();
+      if(!cx.querySelector('.etq.zero')){
+        const z = document.createElement('span'); z.className='etq zero';
+        z.textContent = 'nenhum item nosso neste edital'; cx.appendChild(z);
+      }
+    }
+  }
+  const cruzadas = (window._hits||[]).filter(x => aderencia(x));
+  document.getElementById('k-aderencia').textContent = cruzadas.length || '—';
+}
+
+async function verItens(i, forcar){
+  const l = (window._hits||[])[i]; if(!l) return;
+  const box = document.getElementById('itens-'+i), bt = document.getElementById('bt-'+i);
+  if(!forcar && box.dataset.aberto==='1'){                       // 2º clique fecha (não refaz a chamada)
+    box.style.display='none'; box.dataset.aberto='0';
+    bt.innerHTML='🎯 Cruzar com nosso estoque'; return;
+  }
+  box.style.display='block'; box.dataset.aberto='1';
+  bt.innerHTML='ocultar itens';
+  if(!box.innerHTML || forcar) box.innerHTML='<div class="progresso">buscando os itens do edital no PNCP…</div>';
+  try{
+    box.innerHTML = tabelaItens(await puxarItens(l));
+    atualizaBadge(i);
+  }catch(e){
+    box.innerHTML = '<div class="aviso err mini">⚠️ '+esc(e.message)
+      + ' <button class="btn mini" style="margin-left:10px" onclick="verItens('+i+',1)">Tentar de novo</button></div>';
+  }
+}
+
+// CRUZAR TODAS: regra do Lemuel — no MÁXIMO 3 chamadas simultâneas ao PNCP, nunca as 41 de uma
+// vez. Cada uma respeita o mesmo AbortController de 20 s e o cache de 15 min.
+async function cruzarTodos(){
+  const hits = window._hits || [];
+  if(!hits.length) return;
+  if(!ESTOQUE.length){
+    document.getElementById('status').innerHTML = '<span class="conferir">o estoque FPMED não carregou — sem ele o cruzamento não tem contra o quê comparar.</span>';
+    return;
+  }
+  const bt = document.getElementById('bt-todos'), st = document.getElementById('status');
+  bt.disabled = true;
+  let ok = 0, erros = 0;
+  const LOTE = 3;
+  for(let i=0; i<hits.length; i+=LOTE){
+    st.textContent = 'cruzando itens… '+Math.min(i+LOTE, hits.length)+'/'+hits.length+' licitações';
+    await Promise.all(hits.slice(i, i+LOTE).map((l, j) =>
+      puxarItens(l).then(()=>{ ok++; atualizaBadge(i+j); }).catch(()=>{ erros++; })));
+  }
+  st.innerHTML = '✅ cruzamento concluído: <b>'+ok+'</b> licitações lidas'
+               + (erros ? ' · <span class="conferir">'+erros+' não responderam</span>' : '')
+               + ' · abra um card para ver os itens.';
+  bt.disabled = false;
 }
 </script>
 </body>
