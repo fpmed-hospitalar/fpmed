@@ -80,6 +80,67 @@ A **única IA** deles é o *"Converse com o edital"* (chat limitado).
 
 ---
 
+## 1C. ESTUDO PARTE 3 — exploração a fundo (Lemuel, 04/08/2026)
+
+> Navegação só de leitura. **Duas marcas deixadas na conta dele**, a limpar: um jornal de teste
+> "TESTE Documentação Medicamentos" (consumiu a cota de 1/1 do plano) e 1 das 12 perguntas
+> diárias do chat de edital.
+
+### 1C.1 FICHA DA LICITAÇÃO (painel lateral expansível, `/oportunidade/{id}`)
+Blocos: **fonte** (portal de origem) → modalidade+número → órgão+UASG → **objeto** →
+**tags automáticas por categoria** (Medicamentos Orais, Injetáveis, Controle Especial,
+Produtos Farmacêuticos, Curativos…) → badges de valor e "Registro de preço" → abertura (verde)
+e modo de disputa.
+
+**Botões:** `Acessar` (portal oficial) · `Arquivos do edital` (lista os anexos do .zip com nome
+amigável: edital, TR, estudo técnico, relação de itens, modelos de proposta/ARP) ·
+`Converse com o edital` (RAG — baixa e processa o PDF antes de liberar, mostra "X de 12 perguntas
+diárias", 4 perguntas sugeridas) · `Adicionar aos meus negócios`.
+
+**Itens do edital** em accordion com busca. Campos por item: descrição completa · tipo
+(material/serviço) · unidade · quantidade · valor de referência unitário · total.
+**4 sub-abas de inteligência por item:** Histórico · Concorrência Potencial (vencedores ×
+concorrentes, razão social+CNPJ, vitórias, valor) · Marcas Relevantes · **Preços Praticados**
+(histograma de valores já pagos, com slider de faixa). Mais um `Encontrar fornecedor` com IA.
+
+### 1C.2 NEGÓCIOS — funil, quadros, agenda
+**5 estágios:** Oportunidade → Qualificação → Disputa → Classificação → Contrato.
+Duas visões da mesma coleção: **lista** (abas por estágio) e **kanban** (drag-and-drop).
+Negócio é entidade separada do edital, vinculada a **1 CNPJ** da conta.
+
+**Checklist padrão de 15 tarefas** pré-criado por estágio (editável) — Oportunidade 3,
+Qualificação 3, Disputa 4, Classificação 4, Contrato 1. O card mostra o progresso ("0/15").
+Mais: anotações livres, repositório de documentos **do negócio**, arquivar (soft-delete
+reversível, em "Meus arquivos").
+
+**Agenda** = dois tipos de evento: 🔵 abertura de sessão dos negócios acompanhados ·
+🔴 vencimento de documento da empresa. Exporta pro Google Calendar.
+
+### 1C.3 DISPUTA — não é web
+`Disputa > Comprasnet` **não** é painel ao vivo: é o download de um **app desktop Windows**
+("Máquina de Lances" / SIGA Client) — a ajuda deles chama de **robô de lances**. Só Windows 10
+64-bit, i5 4 núcleos, 8 GB. Só modos Aberto e Aberto/Fechado; **não automatiza grupos/lotes**.
+
+### 1C.4 PESQUISA AVANÇADA — o formulário completo
+Palavras-chave (`;`) com **Excluir** e **Limitar** · Período (abertura/publicação) · Intervalo ·
+Tipo de item · Modo de disputa (Aberto/Fechado/Aberto-Fechado/Fechado-Aberto/Dispensa com
+disputa) · **27 UFs** · **20 portais** · modalidades · órgão (exige 1 portal selecionado) ·
+**faixas de valor** (compra e item) + "valores sigilosos" · **ME/EPP** · "excluir registro de
+preços". Ordenação padrão: mais recentes.
+
+**Jornal = pesquisa avançada salva com nome.** Frequência **fixa diária**, sem seletor.
+WhatsApp obrigatório no cadastro + e-mail adicional. **Limite: 1 jornal** no plano testado.
+
+### 1C.5 DEMAIS
+**Notificações**: sessão em D-1/D-0 + vencimento de documento. **Meus documentos**: mini-Drive
+com **validade por arquivo** — é ela que alimenta agenda e notificações. **Planos** com limites
+por recurso (empresas, jornais, negócios, perguntas de IA/dia) via Hotmart.
+**Análise de Mercado**: heatmap por UF, série mensal, valor contratado, 6 ângulos
+(correspondências, catálogo, estados, órgãos, empresas, marcas). **Análise de Empresas** por
+CNPJ: cadastral + participação + gráficos. **Jurídico**: biblioteca de peças reais, não gerador.
+
+---
+
 ## 2. NOSSO MÓDULO — V1 (a construir)
 
 ### 2.1 Fonte de dados
