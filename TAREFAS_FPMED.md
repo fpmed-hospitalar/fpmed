@@ -401,7 +401,24 @@ qualquer um, e a configuração da Global **não serve** (os nomes são de lá).
    apresentação oficial da `cmed_pf` (camada 1) e busca web (camada 2). Tabela
    `pack_confirmado` (produto → pack, fonte, data). **Não alterar preço no banco** — a tela
    usa o pack e divide só na exibição. Preview antes de ativar.
-7. ⬜ **PDF de proposta** — portar da Global: caixa "⚠ OBSERVAÇÕES" (IA + estoque rotativo)
+7. ✅ **CONCLUÍDO 05/08 — PDF de proposta**.
+   - **Bug da coluna PREÇO UNIT corrigido**: saía cru (`0.2556`) porque era `precoUnit.toFixed(4)`.
+     ⚠️ **A Global tem o MESMO bug** — não havia o que portar, a formatação foi decidida aqui.
+   - **`fmtBRLUnit()` existe separado do `fmtBRL` por conferência, não estética**: item que vem em
+     caixa grande tem unitário de centavos (agulha a R$ 0,0056). Arredondado pra 2 casas vira
+     "R$ 0,01" e **a linha para de fechar na frente do cliente** — 0,01 × 100 = R$ 1,00, mas o
+     Preço CAIXA impresso na mesma linha diz R$ 0,56. Quem vê a inconsistência é ele.
+     Regra: 2 casas a partir de R$ 0,10 (o caso normal, e o que o Lemuel pediu: 0,2556 → R$ 0,26);
+     abaixo disso até 4 casas cortando zero à direita ("R$ 0,082", não "R$ 0,0820").
+   - **Quadro "⚠ OBSERVAÇÕES" portado da Global**: IA + estoque rotativo, entre a nota "* Preço
+     Unit" e o "Prazo para entrega a combinar". O aviso vive no CÓDIGO, não no banco — se
+     dependesse de um registro, uma proposta nova sairia sem ele, que é o caso em que mais importa.
+   - Campo de **observação adicional** do vendedor na tela, com o aviso padrão visível ao lado
+     (ele precisa saber o que vai sair). O texto entra por `textContent`, nunca `innerHTML`.
+   - Suíte nova `testa_pdf_proposta` (32 asserts, 2 deles guardando a REGRA DE OURO: o PDF do
+     cliente não mostra fornecedor nem custo). **Total: 647 asserts / 0 falhas / 24 suítes.**
+
+7-old. (spec original) — portar da Global: caixa "⚠ OBSERVAÇÕES" (IA + estoque rotativo)
    antes do "Prazo para entrega a combinar", conferir rodapés e a nota "* Preço Unit".
    **Bug conhecido**: a coluna PREÇO UNIT sai crua (`0.2556`) em vez de `R$ 0,26` — formatar
    em pt-BR como na Global. Testar com 1 item e com vários.
