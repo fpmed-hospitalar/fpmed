@@ -56,14 +56,32 @@
   // Roda como script BLOQUEANTE no <head>, antes do corpo pintar - senao a tela aparece com a cor
   // do molde e troca na frente do usuario. E so ESCREVE as variaveis: a folha de estilo de cada
   // tela continua sendo a dona do layout.
+  // >>> TELA QUE DECLARA O PRÓPRIO TEMA MANDA NELE. `data-tema` no <html> da tela significa
+  //     "esta tela é dona da própria paleta — não escreva cor aqui".
+  //
+  //     POR QUE ISTO PRECISOU EXISTIR (regressão medida no ar em 05/08, 20h25): o setProperty
+  //     abaixo escreve as variáveis como STYLE INLINE no <html>, e style inline VENCE qualquer
+  //     `:root{}` de folha de estilo. A tela de Licitações é a única escura do sistema e declara
+  //     `:root{--bg:#0B1622}` — que era silenciosamente trocado pelo #F5F9FC do cliente. O
+  //     resultado no ar: fundo branco, "Encontrar" branco-no-branco ilegível e os painéis
+  //     escuros boiando num fundo claro. Nas telas claras ninguém percebeu porque o --bg delas
+  //     (#F4F7FA) e o do cliente (#F5F9FC) são quase a mesma cor — o defeito existia em todas,
+  //     mas só uma tinha contraste pra denunciar.
+  //
+  //     Fazer a tela escura brigar com `!important` seria tratar o sintoma e deixar a armadilha
+  //     montada pro próximo nome de variável que colidir. Aqui a regra fica explícita e vale pra
+  //     qualquer cliente do molde que um dia tenha uma tela de paleta própria.
   function aplicaTema() {
     if (typeof document === 'undefined') return;
-    var m = cfg().marca || {}, c = m.cores || {};
+    var m = cfg().marca || {};
+    var el = document.documentElement;
+    // o produto é identidade, não cor: entra mesmo na tela de tema próprio
+    if (m.produto) el.setAttribute('data-limedtec-produto', m.produto);
+    if (el.getAttribute('data-tema')) return;          // a tela declarou tema — não sobrescreve
+    var c = m.cores || {};
     var mapa = { bg: '--bg', painel: '--panel', painel2: '--panel2', destaque: '--ciano',
       destaque2: '--ciano2', texto: '--txt', borda: '--borda' };
-    var el = document.documentElement;
     Object.keys(mapa).forEach(function (k) { if (c[k]) el.style.setProperty(mapa[k], c[k]); });
-    if (m.produto) el.setAttribute('data-limedtec-produto', m.produto);
   }
 
   raiz.LIMEDTEC = { cfg: cfg, banco: banco, urlBanco: urlBanco, chaveBanco: chaveBanco,

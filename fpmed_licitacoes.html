@@ -1,5 +1,9 @@
 ﻿<!DOCTYPE html>
-<html lang="pt-BR">
+<!-- data-tema="dark": esta tela é dona da própria paleta e o aplicaTema NÃO escreve cor aqui.
+     Sem isso, o --bg do cliente (claro) entrava como style inline no <html> e vencia o
+     :root{--bg:#0B1622} logo abaixo — fundo branco, hero ilegível, painéis escuros boiando.
+     Regressão medida no ar em 05/08 20h25. A regra vive no limedtec-config.js (aplicaTema). -->
+<html lang="pt-BR" data-tema="dark">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
