@@ -5143,6 +5143,7 @@ document.querySelectorAll('.modal-overlay').forEach(el => el.addEventListener('c
 // ─── ATUALIZAR ESTOQUE GLOBAL ─────────────────────────────────────────────────
 let egProdutos = []; // produtos parseados do relatório
 let egAusentes = []; // globais c/ estoque>0 ausentes do relatório (candidatos a zerar, individual)
+let egZeroVirou1 = 0; // quantos vieram com estoque 0 e entram como 1 (regra permanente de 04/08)
 
 // ══ UPLOAD DE PDF (caminho principal) ═════════════════════════════════════════
 // Camada A: pdf.js (CDN, grátis, no navegador) extrai o texto agrupando itens por
@@ -5447,6 +5448,19 @@ function egProcessar() {
     egProdutos.push({ codigo, produto: nome, marca, venda1, venda2, estoque });
   }
 
+  // ── REGRA PERMANENTE: ESTOQUE 0 VIRA 1 (decisão do Lemuel, 04/08) ────────────────────────
+  // POR QUÊ: com estoque 0 o item some da Competitividade e das Vendas Ativas — e junto some
+  // o HISTÓRICO DE PREÇO dele, que é justamente o que permite comparar depois. Com 1 ele fica
+  // visível na comparação sem fingir que há saldo relevante.
+  // A regra já valia no DADO (781 linhas no seed de 04/08); faltava valer no FLUXO, que é o
+  // que garante que o próximo relatório não desfaça o que o seed fez.
+  // Aplicada AQUI, num ponto só, depois dos dois caminhos de parse (formato novo e antigo) —
+  // se ficasse dentro de cada parser, o dia em que entrar um terceiro formato ela escapa.
+  // NÃO se aplica à zeragem de AUSENTES: lá o operador marca item por item e confirma num
+  // diálogo que diz "vai ZERAR". Transformar aquilo em 1 faria a tela mentir sobre o que fez.
+  egZeroVirou1 = 0;
+  egProdutos.forEach(p => { if (p.estoque === 0) { p.estoque = 1; p._zeroVirou1 = true; egZeroVirou1++; } });
+
   // BLINDAGEM: marca cada produto com nome suspeito de linha grudada (âmbar no preview + bloqueia gravar)
   egProdutos.forEach(p => { p._suspeito = egNomeSuspeito(p.produto); });
 
@@ -5464,7 +5478,8 @@ function egProcessar() {
   const codigosRelatorioSet = new Set(egProdutos.map(p => p.codigo));
   const aZerar = cotacoes.filter(c => c.fornecedor==='1' && !codigosRelatorioSet.has(egNormCod(c.codigo)) && (parseInt(c.estoque)||0) > 0).length;
   document.getElementById('eg-novos-label').textContent =
-    `${existentes} atualizações · ${novos} novos` + (aZerar > 0 ? ` · ⚠️ ${aZerar} serão ZERADOS` : '');
+    `${existentes} atualizações · ${novos} novos` + (aZerar > 0 ? ` · ⚠️ ${aZerar} serão ZERADOS` : '')
+    + (egZeroVirou1 > 0 ? ` · 1️⃣ ${egZeroVirou1} vieram com 0 e entram com 1` : '');
   // BLINDAGEM: alerta ÂMBAR se algum nome parece linha grudada (rodapé/data, palavra dobrada, 2 fármacos)
   const suspeitos = egProdutos.filter(p => p._suspeito);
   const stEl = document.getElementById('eg-status-proc');

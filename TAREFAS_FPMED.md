@@ -379,8 +379,24 @@ qualquer um, e a configuração da Global **não serve** (os nomes são de lá).
 4. ⬜ **Blocos 2 e 4** do sync de código. Bloco 2 peça 1/N já entrou (`091ece8`, bug da Melhor
    Fonte). Faltam: filtro "Só Estoque GLOBAL", `estoque_em` (tem DDL), dropdown/filtro de
    fornecedor em Cotações, Comparativo por família, Itens a Cotar, vacina de cache.
-5. ⬜ **Estoque 0 → 1 no FLUXO** — a regra já vale no dado (781 linhas no seed); falta gravar
-   na tela Atualizar Estoque + `tools/le_estoque_fpmed.js` + teste.
+5. ✅ **CONCLUÍDO 05/08 — Estoque 0 → 1 no FLUXO**. A regra valia no DADO desde 04/08 (781
+   linhas no seed) mas não no FLUXO — o próximo relatório de estoque desfazia tudo em silêncio,
+   e as 781 voltavam a 0 no primeiro import. Regressão que ninguém vê acontecer.
+   - **Tela Atualizar Estoque**: aplicada num ponto só, DEPOIS dos dois parsers (formato novo e
+     antigo). Dentro de cada parser, o dia em que entrar um terceiro formato ela escapa.
+   - **Visível no preview**: "1️⃣ N vieram com 0 e entram com 1". Regra silenciosa é regra que
+     ninguém confere.
+   - `tools/le_estoque_fpmed.js`: helper `estoqueGravar()` exportado; `estoqueBruto` fica
+     intacto ao lado, pra auditoria responder "o relatório dizia 0 ou dizia 1?".
+   - **NEGATIVO também vira 1** (saldo negativo é erro de inventário, não "menos que zero de
+     item"). **`null`/vazio NÃO vira 1**: "não informado" ≠ "informou zero" — devolve null e o
+     campo fica intacto no banco em vez de virar 1 por otimismo.
+   - **NÃO se aplica à zeragem de ausentes**: lá o operador marca item por item e confirma num
+     diálogo que diz "vai ZERAR". Transformar aquilo em 1 faria a tela mentir sobre o que fez.
+   - **Defeito pego pelo próprio teste**: `0,4` truncava para 0 e escapava da regra pela porta
+     dos fundos — a ordem estava invertida (testava `<= 0` antes de truncar).
+   - Suíte nova `testa_estoque_zero_um` (17 asserts, 4 deles lendo o HTML pra provar que a
+     regra está na TELA e no lugar certo do fluxo). **Total: 615 asserts / 0 falhas / 23 suítes.**
 6. ⬜ **Pack via CMED/web** — resolver o pack dos itens sem contagem no nome casando com a
    apresentação oficial da `cmed_pf` (camada 1) e busca web (camada 2). Tabela
    `pack_confirmado` (produto → pack, fonte, data). **Não alterar preço no banco** — a tela

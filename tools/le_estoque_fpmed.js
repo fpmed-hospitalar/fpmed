@@ -90,10 +90,32 @@ function lerEstoque(caminho) {
       und: String(get('und') == null ? '' : get('und')).trim() || null,
       marca: String(get('marca') == null ? '' : get('marca')).trim() || null,
       estoqueBruto: estoqueBruto == null ? 0 : estoqueBruto,
+      // `estoque` = o que VAI PRO BANCO, com a regra 0->1 aplicada. `estoqueBruto` fica
+      // intacto ao lado, pra auditoria poder responder "o relatorio dizia 0 ou dizia 1?".
+      estoque: estoqueGravar(estoqueBruto),
       preco,
     });
   }
   return { linhas, col, aba, header: grade[hIdx], descartadas };
 }
 
-module.exports = { lerEstoque, num, norm, semAcento, mapaColunas, normCodigo, COD_LARGURA };
+// ── REGRA PERMANENTE: ESTOQUE 0 VIRA 1 (decisao do Lemuel, 04/08/2026) ──────────────────────
+// POR QUE: com estoque 0 o item some da Competitividade e das Vendas Ativas, e junto some o
+// HISTORICO DE PRECO dele -- que e justamente o que permite comparar depois. Com 1 ele fica
+// visivel na comparacao sem fingir que ha saldo relevante.
+// A regra ja valia no DADO (781 linhas no seed de 04/08). Aqui ela passa a valer no FLUXO,
+// que e o que impede o proximo relatorio de desfazer o que o seed fez.
+// NEGATIVO tambem vira 1: saldo negativo e erro de inventario, nao "menos que zero de item".
+// null/vazio NAO vira 1 -- "nao informado" e diferente de "informou zero"; devolve null e quem
+// grava decide (o campo fica intacto no banco em vez de virar 1 por otimismo).
+function estoqueGravar(bruto) {
+  if (bruto === null || bruto === undefined || bruto === '') return null;
+  const n = Number(bruto);
+  if (!isFinite(n)) return null;
+  // TRUNCA PRIMEIRO, aplica a regra depois. Na ordem inversa o 0,4 passava pelo teste de
+  // "e <= 0?" (nao e), ia pro trunc e virava 0 -- escapando da regra pela porta dos fundos.
+  const t = Math.trunc(n);
+  return t <= 0 ? 1 : t;
+}
+
+module.exports = { lerEstoque, num, norm, semAcento, mapaColunas, normCodigo, COD_LARGURA, estoqueGravar };
