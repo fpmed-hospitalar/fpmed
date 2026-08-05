@@ -145,8 +145,30 @@ Auditoria de 22/07: banco confirmado limpo após teste do upload de PDF (preview
       - **Tema claro FPMED** — não copiar o dark do SIGA: cards brancos, sombra suave, azul
         FPMED nos títulos, verde nas etiquetas.
       ✅ **Aprovação antecipada dada pelo Lemuel**: screenshot é só registro; **não parar**.
-   ⬜ Depois: cruzamento com o estoque (matching PA+dose), agenda/acompanhar
-      (`licitacoes_acompanhadas`, RLS gestor grava / logado lê), KPIs — até fechar a V1.
+   ✅ **REDESIGN + TEMA ESCURO** no ar (`92b1a74`, `3e7a3ba`). Hero "Encontrar", régua de KPIs,
+      cards com etiquetas verdes cheias, skeleton, hover, voltar-ao-topo, responsivo.
+      Marca própria (cruz FPMED em CSS — o `logo_fpmed.png` é de fundo claro).
+
+   ⬜ **CRUZAMENTO POR ITEM — endpoint CONFIRMADO pelo Lemuel (testado por ele):**
+      ```
+      GET https://pncp.gov.br/api/pncp/v1/orgaos/{cnpj}/compras/{ano}/{sequencial}/itens
+      cnpj = orgaoEntidade.cnpj · ano = anoCompra · sequencial = sequencialCompra
+      ```
+      Os 3 parâmetros **já vêm em cada licitação** da busca atual — não precisa de consulta extra.
+      Resposta: `numeroItem, descricao, materialOuServico, quantidade, unidadeMedida,`
+      `valorUnitarioEstimado, valorTotal, situacaoCompraItemNome, dataInclusao`.
+
+      **Regras de execução (do Lemuel):**
+      1. **NÃO** buscar os itens das 41 licitações de uma vez — **sob demanda** (ao expandir o
+         card) ou em lotes de **no máx. 3 simultâneos**, com o mesmo `AbortController` de 20 s
+         e **cache de 15 min por licitação**.
+      2. Match contra o estoque: normalizar `descricao` (maiúscula, sem acento) e casar por
+         princípio ativo / nome. O badge 🎯 mostra "X itens no nosso estoque" **e lista quais**.
+      3. Comparação de preço **SEMPRE unitário**: `valorUnitarioEstimado` do edital × nosso
+         preço unitário (**dividido pelo pack na TELA, nunca no banco** — regra de 04/08).
+      4. Normalizar o `numeroCompra` no título: `"(6128) | 32-0/2026"` → `"32/2026"`.
+      5. **Rodar a suíte inteira antes do commit.**
+      Depois: agenda/acompanhar (`licitacoes_acompanhadas`, RLS gestor grava / logado lê) e KPIs.
 1B. ⬜ **TELA "TABELA CMED"** (novo, 04/08) — menu FERRAMENTAS, gestor+vendedor, tema claro.
    - **Auditar o loader primeiro**: a `cmed_pf` tem 23 colunas; a planilha oficial traz mais.
      Conferir e **estender** se faltar: PF e PMC em **todas as alíquotas** (0/12/17/17,5/18/19/20%),
