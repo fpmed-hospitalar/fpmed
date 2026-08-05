@@ -1,0 +1,25 @@
+{
+  "name": "LIMEDTEC",
+  "short_name": "LIMEDTEC",
+  "description": "Cotacao, comparativo, licitacoes e proposta para distribuidoras hospitalares.",
+  "lang": "pt-BR",
+  "dir": "ltr",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
+  "orientation": "any",
+  "background_color": "#F5F9FC",
+  "theme_color": "#2CA9E0",
+  "categories": ["business", "productivity", "medical"],
+  "icons": [
+    { "src": "icones/limedtec-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icones/limedtec-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icones/limedtec-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Propostas", "url": "./fpmed_giovana.html", "icons": [{ "src": "icones/limedtec-192.png", "sizes": "192x192" }] },
+    { "name": "Licitacoes", "url": "./fpmed_licitacoes.html" },
+    { "name": "Painel", "url": "./fpmed_painel.html" }
+  ]
+}

@@ -5,7 +5,11 @@
 //   node tests/testa_cruzamento_licitacoes.js
 'use strict';
 const fs = require('fs'), path = require('path');
-const src = fs.readFileSync(path.join(__dirname, '..', 'fpmed_licitacoes.html'), 'utf8');
+// NORMALIZA CRLF -> LF. O git deste repo grava CRLF no working copy (`core.autocrlf`), entao
+// depois de qualquer `git checkout` as ancoras que contem "\n\n" param de casar e a suite morre
+// com "ancora sumiu do HTML" — sem que uma linha de codigo do app tenha mudado. Aconteceu em
+// 05/08 e custou uma investigacao; normalizar na leitura mata a classe inteira do problema.
+const src = fs.readFileSync(path.join(__dirname, '..', 'fpmed_licitacoes.html'), 'utf8').replace(/\r\n/g, '\n');
 
 function bloco(ini, fim) {
   const s = src.indexOf(ini); const e = src.indexOf(fim, s);

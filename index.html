@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>FPMED Hospitalar — Sistema de Gestão</title>
+<title>LIMEDTEC — FPMED</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 44 44'%3E%3Crect x='15' y='2' width='14' height='14' rx='3' fill='%238DC63F'/%3E%3Crect x='15' y='28' width='14' height='14' rx='3' fill='%23173A5E'/%3E%3Crect x='2' y='15' width='14' height='14' rx='3' fill='%232CA9E0'/%3E%3Crect x='28' y='15' width='14' height='14' rx='3' fill='%232CA9E0'/%3E%3Crect x='15' y='15' width='14' height='14' rx='3' fill='%231B8DC4'/%3E%3C/svg%3E">
 <meta http-equiv="refresh" content="2; url=fpmed_sistema_final.html">
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
@@ -25,6 +25,14 @@
   a.btn{display:inline-block;margin-top:18px;background:var(--azul);color:#fff;text-decoration:none;font-weight:600;font-size:14px;padding:11px 26px;border-radius:9px}
   .rodape{position:fixed;bottom:14px;font-size:11px;color:var(--dim)}
 </style>
+<!-- LIMEDTEC = o produto; FPMED = o cliente. Padrão do molde: "LIMEDTEC — {cliente}". -->
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="icones/limedtec-192.png">
+<link rel="apple-touch-icon" href="icones/limedtec-192.png">
+<script src="cliente.config.js"></script>
+<script src="limedtec-config.js"></script>
+<script src="limedtec-tema.js"></script>
+<script src="limedtec-licenca.js"></script>
 </head>
 <body>
   <div class="faixa"><div>📞 <b>(62) 3290-4241</b> &nbsp;·&nbsp; Compromisso com qualidade!</div><div>FPMED HOSPITALAR</div></div>
@@ -38,5 +46,6 @@
   </div>
   <div class="rodape">Compromisso com qualidade!</div>
   <script>setTimeout(function(){ location.replace('fpmed_sistema_final.html'); }, 1500);</script>
+<script src="limedtec-pwa.js" defer></script>
 </body>
 </html>

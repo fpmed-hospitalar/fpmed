@@ -350,8 +350,12 @@ Auditoria de 22/07: banco confirmado limpo após teste do upload de PDF (preview
     2. Coletor `tools/coleta_pncp.js`: busca GO (e UFs vizinhas), modalidades que usamos,
        **upsert por (cnpj, anoCompra, sequencial)**. Tolerante a queda: retry e, se o PNCP estiver
        fora, **mantém o que já tem** (nunca apaga).
-    3. Agendar via **GitHub Actions** (cron 3×/dia, `service_role` nos **Secrets do repo, NUNCA no
-       código**) ou no `ABRIR_FILA.bat` como fallback.
+    3. Agendar via **GitHub Actions** (cron 3×/dia) ou no `ABRIR_FILA.bat` como fallback.
+       ✅ **DECIDIDO PELO LEMUEL (05/08)**: a gravação é feita por uma **EDGE FUNCTION**, chamada
+       pelo Actions com um **segredo dedicado e descartável**. **A `service_role` NUNCA vai pro
+       CI.** Se o segredo do Actions vazar, o estrago é só o que a função sabe fazer (gravar
+       licitação pública) — não o banco inteiro. Precedente pronto: a `ler-pedido` já está no ar
+       com trava de origem desde 22/07.
     4. A tela passa a **LER DO SUPABASE** (instantâneo, nunca cai) com aviso "dados coletados às
        HH:MM". Botão **"Atualizar agora"** tenta o PNCP ao vivo e, se falhar, avisa sem travar.
     5. Cruzamento continua igual, rodando sobre os dados do banco.
@@ -361,11 +365,7 @@ Auditoria de 22/07: banco confirmado limpo após teste do upload de PDF (preview
     20 s + o cache de 15 min já fazem ela mostrar "⚠️ Não consegui falar com o PNCP" com botão
     "Tentar de novo", e ela reaproveita a última busca em cache quando existe. O que o item 10
     muda é ela deixar de ficar **inútil** quando o PNCP cai — passa a ter dado sempre.
-    ⚠️ **Um ponto pra decidir antes de implementar o passo 3**: o repo é **PÚBLICO**. Secret de
-    Actions não vaza pra PR de fork, mas a `service_role` **ignora toda a RLS** — se vazar, é o
-    banco inteiro. Alternativa mais segura: uma **edge function** que grava, chamada pelo Actions
-    com um segredo dedicado e descartável, em vez de mandar a `service_role` pro CI. Custa uma
-    função a mais e tira a chave-mestra do pipeline. **Decisão do Lemuel.**
+    ✅ *(A dúvida de segurança que estava aberta aqui foi resolvida — ver o passo 3.)*
 
 ## ⬜ PENDENTES (na ordem)
 - [x] **Sync de dados EXECUTADO (04/08, com OK do Lemuel)**: **13.406 novos + 149 atualizados +

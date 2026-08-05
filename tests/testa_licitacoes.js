@@ -3,7 +3,8 @@
 //   node tests/testa_licitacoes.js
 'use strict';
 const fs = require('fs'), path = require('path');
-const src = fs.readFileSync(path.join(__dirname, '..', 'fpmed_licitacoes.html'), 'utf8');
+// CRLF -> LF: mesma razao explicada no testa_cruzamento_licitacoes.js.
+const src = fs.readFileSync(path.join(__dirname, '..', 'fpmed_licitacoes.html'), 'utf8').replace(/\r\n/g, '\n');
 
 function bloco(ini, fim) {
   const s = src.indexOf(ini); const e = src.indexOf(fim, s);

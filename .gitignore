@@ -43,6 +43,10 @@ FPMED_Estoque_texto_para_colar.txt
 *.png
 # EXCECAO: o logo oficial da FPMED PODE (e deve) ser versionado — o deploy precisa dele
 !logo_fpmed.png
+# EXCECAO: os icones do app instalavel (LIMEDTEC). Sem eles no repo, o manifest aponta pra 404
+# e o navegador nao oferece a instalacao — o app simplesmente nao instala.
+!icones/
+!icones/*.png
 auditoria_*.txt
 varredura_*.txt
 scan_*.txt

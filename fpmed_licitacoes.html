@@ -3,13 +3,21 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>FPMED — Licitações</title>
+<title>LIMEDTEC — FPMED · Licitações</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%232CA9E0'/%3E%3Cpath d='M13 6h6v7h7v6h-7v7h-6v-7H6v-6h7z' fill='white'/%3E%3C/svg%3E">
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <!-- gm-auth: login + injeção do JWT nas chamadas /rest/v1/. Entrou aqui porque o CRUZAMENTO POR
      ITEM lê o estoque próprio da tabela `cotacoes`, e a RLS exige usuário autenticado. Efeito
      colateral desejado: Licitações é tela de INTELIGÊNCIA, então vendedor/propostas caem no
      "Sem permissão" do próprio gm-auth (mesma regra da Competitividade). -->
+<!-- LIMEDTEC = o produto; FPMED = o cliente. Padrão do molde: "LIMEDTEC — {cliente}". -->
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="icones/limedtec-192.png">
+<link rel="apple-touch-icon" href="icones/limedtec-192.png">
+<script src="cliente.config.js"></script>
+<script src="limedtec-config.js"></script>
+<script src="limedtec-tema.js"></script>
+<script src="limedtec-licenca.js"></script>
 <script src="gm-auth.js?v=cargos"></script>
 <style>
 /* ══ TEMA ESCURO — só esta tela (decisão do Lemuel: Licitações é a "tela premium";
@@ -154,7 +162,7 @@ select:focus,input:focus{outline:none;border-color:var(--azul)}
 </style>
 </head>
 <body>
-<div class="topfaixa">
+<div class="topfaixa" data-limedtec-instalar>
   <a href="fpmed_sistema_final.html">← Sistema</a>
   <span>📞 (62) 3290-4241</span><span>·</span><span>Compromisso com qualidade!</span>
 </div>
@@ -876,5 +884,6 @@ async function cruzarTodos(){
   bt.disabled = false;
 }
 </script>
+<script src="limedtec-pwa.js" defer></script>
 </body>
 </html>
