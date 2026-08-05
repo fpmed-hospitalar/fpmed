@@ -515,6 +515,26 @@ e um atalho de um clique.
 ### 6.2 ABA 2 — NEGÓCIOS ⭐ (o funil)
 Submenu: *Funil de Licitações · Quadros · Agenda*
 
+#### 6.2.0-Z 🔓 AUTORIZAÇÃO PERMANENTE DE CONSULTA AO SIGA (Lemuel, 05/08)
+
+O SIGA fica **aberto e logado numa aba do Chrome**. Durante a construção do funil e do resto do
+módulo, **posso ir lá sozinho quando faltar detalhe** — navegar, abrir telas, passar o mouse,
+inspecionar layout e comportamento, tirar screenshot e registrar aqui. Sem pedir.
+
+**Regras da visita — invioláveis:**
+1. **SÓ OLHAR, modo leitura.** Nunca criar, editar, excluir ou salvar nada na conta dele
+   (jornal, negócio, empresa, alerta, arquivo). Navegação e hover são livres; **clique que
+   GRAVA, não.**
+2. **JAMAIS tocar na aba DISPUTA** em sessão de pregão ao vivo — nada de lance, nem por engano.
+   É dinheiro real e processo público em andamento.
+3. **Referência de comportamento e layout apenas**: nunca copiar código, assets ou textos, nem
+   consumir endpoint deles no nosso sistema. (Mesmo limite já registrado na seção 2.0.)
+4. **O que descobrir, registrar na seção certa DESTE arquivo antes de implementar.**
+
+> Isso resolve a lacuna que existia: até aqui a spec vinha só de prints e descrições, e detalhe
+> de interação (o que acontece no hover, como o drag responde, o que a coluna vazia mostra)
+> não se transmite por texto sem perder precisão.
+
 #### 6.2.0 🎨 REFERÊNCIA VISUAL — nível de acabamento cobrado (prints do Lemuel, 05/08)
 > Isto **não é sugestão de layout**: é o padrão de acabamento que ele quer ver entregue.
 > Tema **escuro**, mesmo padrão da tela de Licitações (`data-tema="dark"`, ver seção 2.0).
@@ -547,12 +567,28 @@ negócios para cá". **Drag-and-drop** entre fases. Scroll horizontal.
 A tela de Licitações já tem esse vocabulário pronto (`.lic:hover` levanta 2px com sombra
 dupla; `.topfaixa a:hover` levanta 1px) — **reaproveitar, não reinventar**.
 
-> ⚠️ **Ponto a decidir com ele antes de construir**: o seletor *"Todas as empresas"* e o badge
-> de empresa no card existem porque o SIGA é multi-empresa (uma assinatura atende várias CNPJs).
-> **A FPMED é uma empresa só.** Manter o seletor mostra um filtro que nunca filtra nada, e o
-> badge repete a mesma palavra em todo card. Recomendação: **deixar o campo `empresa` no modelo
-> de dados** (custa nada e evita migração se um dia houver outra CNPJ) e **esconder os dois na
-> interface** enquanto houver uma só. Não é decisão minha — é dele.
+#### 6.2.0-A ✅ DECIDIDO — empresa pré-cadastrada, e o badge FICA VISÍVEL
+
+**Eu levantei a dúvida e ele decidiu o contrário da minha recomendação. Vale a dele.**
+Registro os dois lados para que ninguém reabra isto por engano:
+
+- **Minha recomendação (05/08)**: esconder o seletor *"Todas as empresas"* e o badge da empresa
+  enquanto houver uma CNPJ só — um filtro que nunca filtra e um badge que repete a mesma
+  palavra em todo card.
+- **DECISÃO DO LEMUEL (05/08, corrigindo)**: **MOSTRAR, igual ao SIGA.** O seletor e o badge
+  ficam **visíveis mesmo com uma empresa só**. Visual idêntico ao dos prints.
+
+**Como a empresa entra** (decisão dele, mesma data): ela **já nasce cadastrada**. O cliente não
+abre o sistema numa tela vazia pedindo "adicione sua empresa" — esse dado veio no cadastro dele
+e quem instala já tem como preencher.
+- fonte da verdade: **`cliente.config.js` → `empresas: []`** (lista, não objeto: o molde pode ter
+  cliente com 2 CNPJs — matriz e filial, ou duas razões sociais disputando a mesma licitação);
+- tabela `empresas` (`ddl/empresas.sql`), semeada por `tools/semeia_empresa.js`, que lê do config;
+- API do molde: `LIMEDTEC.empresas()` e `LIMEDTEC.empresaPrincipal()`;
+- **sem tela de gestão por enquanto** — é registro semeado, e só;
+- 📌 **vale pro molde**: cliente novo do LIMEDTEC nasce com a empresa dele cadastrada porque o
+  `cria_cliente` escreve o `cliente.config.js`, e o seeder lê de lá. Não depende de ninguém
+  lembrar de rodar um insert à mão.
 
 **Modelo de dados central:**
 ```

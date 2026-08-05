@@ -30,6 +30,36 @@
       anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh6ZG93cmtzdXN3ZWt3ZmZvbHVrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ2NzE2MTMsImV4cCI6MjEwMDI0NzYxM30.Pk-SlV_pZdniESyrajDdfHdHcnmyCwCMtP_TrShh75Y',
     },
 
+    // ── EMPRESA(S) DO CLIENTE ────────────────────────────────────────────────────────────────
+    // Decisao do Lemuel (05/08): a empresa do cliente ja NASCE CADASTRADA. Ele nao abre o
+    // sistema numa tela vazia pedindo pra "adicionar sua empresa" — isso e trabalho que o
+    // fornecedor do software ja tem como fazer, porque o dado veio no cadastro dele.
+    //
+    // POR QUE MORA AQUI E NAO SO NO BANCO: este arquivo e o unico que o cria_cliente escreve.
+    // Com a empresa aqui, cliente novo do LIMEDTEC nasce com a empresa dele cadastrada SEM
+    // ninguem lembrar de rodar nada — o seeder (tools/semeia_empresa.js) le daqui. Se o dado
+    // vivesse so no banco, cada instalacao nova dependeria de alguem lembrar de inserir.
+    //
+    // LISTA, e nao objeto, de proposito: o molde pode ter cliente com 2 CNPJs (matriz e filial,
+    // ou duas razoes sociais disputando licitacao). `principal: true` marca a que aparece por
+    // padrao. Hoje a FPMED tem uma so, e NAO existe tela de gestao — e registro semeado, so.
+    //
+    // ⚠️ DUPLICACAO CONHECIDA, registrada em vez de escondida: a razao social, o CNPJ e a IE
+    //    TAMBEM estao escritos a mao no cabecalho do PDF de proposta (fpmed_giovana.html) e no
+    //    sistema_final, desde o rebrand de 22/07. Sao duas fontes da mesma verdade. Unificar
+    //    exige mexer no documento que vai pro cliente, o que e mudanca de outra natureza —
+    //    fica como item proprio, nao como efeito colateral deste.
+    empresas: [
+      {
+        razaoSocial: 'FPMED DISTRIBUIDORA DE PRODUTOS HOSPITALARES LTDA',
+        cnpj: '47.110.418/0001-15',
+        ie: '10.947.387-9',
+        cidade: 'APARECIDA DE GOIANIA',
+        uf: 'GO',
+        principal: true,
+      },
+    ],
+
     // ── LICENCA ──────────────────────────────────────────────────────────────────────────────
     // Decisao do Lemuel (04/08): avisar a partir de 10 dias antes; vencida = MODO LEITURA
     // (consulta funciona, gerar documento bloqueado). NUNCA apagar nada, NUNCA travar o acesso

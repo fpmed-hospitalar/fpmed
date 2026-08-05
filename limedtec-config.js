@@ -47,6 +47,23 @@
   function rest(caminho) { return banco().url + '/rest/v1/' + caminho; }
 
   function nome() { return cfg().nome || ''; }
+
+  // ── EMPRESAS DO CLIENTE ───────────────────────────────────────────────────────────────────
+  // Sempre devolve LISTA. O molde pode ter cliente com 2 CNPJs (matriz e filial, ou duas razoes
+  // sociais disputando licitacao) e quem consome nao deve precisar saber quantas sao.
+  function empresas() {
+    var e = cfg().empresas;
+    return Array.isArray(e) ? e : (e ? [e] : []);
+  }
+  // A que o funil mostra por padrao. Sem `principal` marcada, cai na primeira — e se nao houver
+  // nenhuma, devolve null em vez de um objeto vazio: quem chama tem que decidir o que fazer com
+  // "cliente sem empresa cadastrada", nao receber um badge em branco achando que esta tudo certo.
+  function empresaPrincipal() {
+    var l = empresas();
+    if (!l.length) return null;
+    for (var i = 0; i < l.length; i++) if (l[i] && l[i].principal) return l[i];
+    return l[0];
+  }
   function tituloJanela(sufixo) {
     var p = (cfg().marca && cfg().marca.produto) || 'LIMEDTEC';
     return p + ' — ' + nome() + (sufixo ? ' · ' + sufixo : '');
@@ -85,6 +102,7 @@
   }
 
   raiz.LIMEDTEC = { cfg: cfg, banco: banco, urlBanco: urlBanco, chaveBanco: chaveBanco,
-    edge: edge, rest: rest, nome: nome, tituloJanela: tituloJanela, aplicaTema: aplicaTema };
+    edge: edge, rest: rest, nome: nome, tituloJanela: tituloJanela, aplicaTema: aplicaTema,
+    empresas: empresas, empresaPrincipal: empresaPrincipal };
   if (typeof module !== 'undefined' && module.exports) module.exports = raiz.LIMEDTEC;
 })(typeof window !== 'undefined' ? window : globalThis);
