@@ -49,5 +49,31 @@ ok('último dia útil nunca é sábado', d.getDay() !== 6, d.getDay());
 ok('último dia útil nunca é domingo', d.getDay() !== 0, d.getDay());
 ok('último dia útil é no passado', d < new Date(), d.toISOString());
 
+// ══════════ A TELA PRECISA SER ALCANCAVEL ══════════
+// Achado de 05/08: o modulo estava COMPLETO e NO AR desde a rodada anterior, mas nao tinha
+// link nenhum a partir do sistema_final. Estava no service worker e nos atalhos do manifest,
+// e so — quem nao soubesse a URL de cor nao chegava nele. Funcionalidade pronta e invisivel
+// nao existe pra quem usa, e e uma falha que nenhum teste de logica pega: tudo passa verde.
+{
+  const sf = require('fs').readFileSync(require('path').join(__dirname, '..', 'fpmed_sistema_final.html'), 'utf8');
+  ok('*** existe item de menu apontando pro fpmed_licitacoes.html ***',
+    /nav-item[^>]*onclick="location\.href='fpmed_licitacoes\.html'"/.test(sf));
+  ok('...na secao Sistemas, junto das outras telas standalone',
+    sf.indexOf("nav-section\">Sistemas") < sf.indexOf("fpmed_licitacoes.html'\"") &&
+    sf.indexOf("fpmed_licitacoes.html'\"") < sf.indexOf("fpmed_painel.html"));
+  // a tela le a tabela cotacoes (RLS) — vendedor/propostas cairiam no "Sem permissao" do
+  // gm-auth. Link que rejeita e pior que link ausente: some junto com os outros restritos.
+  ok('...e some pra quem nao pode ver (mesmo gate da Competitividade)',
+    /'competitividade','licitacoes'/.test(sf) || /'licitacoes'/.test(sf.slice(sf.indexOf('function espAplicaPermissao'), sf.indexOf('function espAplicaPermissao') + 600)));
+  // continua na casca do PWA e nos atalhos do app instalado
+  const sw = require('fs').readFileSync(require('path').join(__dirname, '..', 'sw.js'), 'utf8');
+  ok('...e continua na casca do service worker (abre offline)', sw.includes("'./fpmed_licitacoes.html'"));
+  const mf = require('fs').readFileSync(require('path').join(__dirname, '..', 'manifest.webmanifest'), 'utf8');
+  ok('...e no atalho do aplicativo instalado', mf.includes('fpmed_licitacoes.html'));
+  // e o caminho de volta, pra nao virar beco sem saida
+  ok('a tela de Licitacoes tem o pill "← Sistema" de volta',
+    /<a href="fpmed_sistema_final\.html">/.test(src));
+}
+
 console.log('\nRESULTADO: ' + p + ' ok, ' + f + ' falha(s)');
 process.exitCode = f ? 1 : 0;
