@@ -1,43 +1,81 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>FPMED — Licitações</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%232CA9E0'/%3E%3Cpath d='M13 6h6v7h7v6h-7v7h-6v-7H6v-6h7z' fill='white'/%3E%3C/svg%3E">
-<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-:root{--azul:#2CA9E0;--navy:#173A5E;--verde:#8DC63F;--muted:#7a8a99;--linha:#e3e9ef;--bg:#f4f7fa;--vermelho:#c0392b;--ambar:#e67e22}
+:root{--azul:#2CA9E0;--navy:#173A5E;--verde:#8DC63F;--verde-esc:#4a7c14;--muted:#7a8a99;
+      --linha:#e3e9ef;--bg:#f4f7fa;--vermelho:#c0392b;--ambar:#e67e22;--sombra:0 1px 3px rgba(23,58,94,.07),0 4px 14px rgba(23,58,94,.05)}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);font-family:Inter,system-ui,sans-serif;color:var(--navy)}
 .topfaixa{background:var(--azul);color:#fff;padding:8px 18px;font-size:13px;display:flex;gap:14px;align-items:center}
 .topfaixa a{color:#fff;text-decoration:none;background:rgba(255,255,255,.18);padding:3px 10px;border-radius:20px;font-size:12px}
-header{background:#fff;border-bottom:1px solid var(--linha);padding:14px 22px;display:flex;align-items:center;gap:14px}
-header h1{font-family:Montserrat;font-size:19px;margin:0;color:var(--navy)}
-.wrap{max-width:1400px;margin:0 auto;padding:20px 22px 60px}
-.card{background:#fff;border:1px solid var(--linha);border-radius:12px;padding:18px;margin-bottom:18px}
-label{display:block;font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:5px}
-input,select{width:100%;padding:9px 11px;border:1px solid var(--linha);border-radius:8px;font-family:inherit;font-size:13px;color:var(--navy);background:#fff}
-.filtros{display:grid;grid-template-columns:1fr 1fr 1.6fr 1fr;gap:14px;align-items:end}
-.btn{background:var(--azul);color:#fff;border:0;border-radius:8px;padding:10px 20px;font-weight:600;font-size:13px;cursor:pointer;font-family:inherit}
-.btn:hover{filter:brightness(.94)}
-.btn.sec{background:#fff;color:var(--navy);border:1px solid var(--linha)}
-.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin-bottom:18px}
-.kpi{background:#fff;border:1px solid var(--linha);border-radius:12px;padding:16px}
-.kpi .n{font-family:Montserrat;font-size:30px;font-weight:700;color:var(--navy);line-height:1.1}
-.kpi .l{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-top:5px}
-.lic{background:#fff;border:1px solid var(--linha);border-left:4px solid var(--azul);border-radius:10px;padding:15px 17px;margin-bottom:11px}
-.lic .org{font-family:Montserrat;font-weight:600;font-size:13px;color:var(--azul)}
-.lic .obj{margin:7px 0 10px;font-size:13.5px;line-height:1.45}
-.lic .meta{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:11.5px;color:var(--muted)}
-.tag{background:#eef6fc;color:var(--navy);padding:2px 9px;border-radius:20px;font-size:11px;font-weight:500}
-.tag.v{background:#eef8e3;color:#4a7c14}
-.tag.a{background:#fdf2e4;color:#9a5b12}
-.tag.r{background:#fdecea;color:var(--vermelho)}
-.lic a.edital{color:var(--azul);font-size:11.5px;text-decoration:none;font-weight:600}
-.aviso{padding:26px;text-align:center;border-radius:10px;background:#fff;border:1px solid var(--linha)}
+header{background:#fff;border-bottom:1px solid var(--linha);padding:12px 22px;display:flex;align-items:center;gap:14px}
+header h1{font-family:Montserrat;font-size:18px;margin:0}
+.wrap{max-width:1180px;margin:0 auto;padding:0 22px 70px}
+
+/* ── barra de período, canto direito (estilo SIGA) ── */
+.periodo{display:flex;justify-content:flex-end;gap:18px;padding:18px 0 6px;flex-wrap:wrap}
+.periodo .campo{min-width:190px}
+.periodo label{display:block;font-size:11px;font-weight:600;color:var(--muted);margin-bottom:5px}
+select,input[type=date],input[type=text]{width:100%;padding:9px 11px;border:1px solid var(--linha);border-radius:8px;
+  font-family:inherit;font-size:13px;color:var(--navy);background:#fff}
+.intervalo{display:flex;gap:6px;align-items:center}
+
+/* ── hero central ── */
+.hero{text-align:center;padding:30px 0 22px}
+.hero h2{font-family:Montserrat;font-weight:800;font-size:40px;margin:0 0 8px;letter-spacing:-.5px}
+.hero p{margin:0 0 22px;color:var(--muted);font-size:14.5px}
+.buscabox{max-width:640px;margin:0 auto;position:relative}
+.buscabox input{width:100%;padding:15px 52px 15px 46px;font-size:15px;border-radius:32px;border:1px solid var(--linha);
+  box-shadow:var(--sombra);background:#fff}
+.buscabox input:focus{outline:none;border-color:var(--azul);box-shadow:0 0 0 4px rgba(44,169,224,.12)}
+.buscabox .lupa{position:absolute;left:18px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:16px}
+.buscabox .go{position:absolute;right:7px;top:50%;transform:translateY(-50%);background:var(--azul);color:#fff;border:0;
+  width:38px;height:38px;border-radius:50%;cursor:pointer;font-size:15px}
+.links{margin-top:14px;display:flex;gap:22px;justify-content:center;flex-wrap:wrap}
+.links a{color:var(--azul);font-size:13px;text-decoration:none;cursor:pointer;font-weight:500}
+.links a:hover{text-decoration:underline}
+
+/* ── pesquisa avançada (expansível) ── */
+#avancada{display:none;background:#fff;border:1px solid var(--linha);border-radius:12px;padding:18px;margin-top:18px;box-shadow:var(--sombra)}
+#avancada.open{display:block}
+.grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px}
+.grid3 label{display:block;font-size:11px;font-weight:600;color:var(--muted);margin-bottom:5px;text-transform:uppercase;letter-spacing:.3px}
+
+/* ── KPIs discretos ── */
+.kpis{display:flex;gap:10px;flex-wrap:wrap;margin:22px 0 14px}
+.kpi{background:#fff;border:1px solid var(--linha);border-radius:9px;padding:9px 15px;display:flex;align-items:baseline;gap:8px}
+.kpi b{font-family:Montserrat;font-size:19px;font-weight:700}
+.kpi span{font-size:11.5px;color:var(--muted)}
+
+/* ── cards ── */
+.lic{background:#fff;border:1px solid var(--linha);border-radius:12px;padding:17px 19px;margin-bottom:12px;box-shadow:var(--sombra)}
+.lic .titulo{font-family:Montserrat;font-weight:600;font-size:14px;color:var(--azul);text-decoration:none;display:inline-block;line-height:1.4}
+.lic .titulo:hover{text-decoration:underline}
+.lic .obj{margin:9px 0 11px;font-size:13.5px;line-height:1.5;color:#33475b;
+  display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.etiquetas{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:11px}
+.etq{background:#eef8e3;color:var(--verde-esc);padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600}
+.etq.alvo{background:#e8f4fd;color:#1a6fa3;border:1px solid #bfe0f5}
+.sessao{font-size:12.5px;color:#33475b;margin-bottom:11px}
+.sessao b{color:var(--navy)}
+.rodape{display:flex;flex-wrap:wrap;gap:7px;align-items:center;padding-top:11px;border-top:1px solid var(--linha)}
+.bdg{padding:3px 10px;border-radius:6px;font-size:11px;font-weight:500}
+.bdg.cinza{background:#f0f3f6;color:#5b6b7c}
+.bdg.azul{background:#e8f4fd;color:#1a6fa3}
+.bdg.v{background:#eef8e3;color:var(--verde-esc)}
+.bdg.a{background:#fdf2e4;color:#9a5b12}
+.bdg.r{background:#fdecea;color:var(--vermelho)}
+.valor{margin-left:auto;font-family:Montserrat;font-weight:700;font-size:14px}
+.aviso{padding:34px;text-align:center;border-radius:12px;background:#fff;border:1px solid var(--linha);box-shadow:var(--sombra)}
 .aviso.err{border-color:#f0c4be;background:#fdf7f6;color:var(--vermelho)}
-.hint{font-size:11.5px;color:var(--muted);margin-top:6px}
+.hint{font-size:11.5px;color:var(--muted)}
+.btn{background:var(--azul);color:#fff;border:0;border-radius:8px;padding:10px 20px;font-weight:600;font-size:13px;cursor:pointer;font-family:inherit}
+.btn.sec{background:#fff;color:var(--navy);border:1px solid var(--linha)}
 </style>
 </head>
 <body>
@@ -46,185 +84,257 @@ input,select{width:100%;padding:9px 11px;border:1px solid var(--linha);border-ra
   <span>📞 (62) 3290-4241</span><span>·</span><span>Compromisso com qualidade!</span>
 </div>
 <header>
-  <img src="logo_fpmed.png" alt="FPMED" style="height:34px">
-  <h1>Licitações <span style="font-weight:400;color:var(--muted);font-size:14px">· busca no PNCP</span></h1>
+  <img src="logo_fpmed.png" alt="FPMED" style="height:32px">
+  <h1>Licitações</h1>
 </header>
 
 <div class="wrap">
-  <div class="card">
-    <div class="filtros">
-      <div><label>UF</label><select id="f-uf"><option value="GO" selected>GO</option><option value="">Todas</option>
-        <option>AC</option><option>AL</option><option>AM</option><option>AP</option><option>BA</option><option>CE</option>
-        <option>DF</option><option>ES</option><option>MA</option><option>MG</option><option>MS</option><option>MT</option>
-        <option>PA</option><option>PB</option><option>PE</option><option>PI</option><option>PR</option><option>RJ</option>
-        <option>RN</option><option>RO</option><option>RR</option><option>RS</option><option>SC</option><option>SE</option>
-        <option>SP</option><option>TO</option></select></div>
-      <div><label>Modalidade</label><select id="f-mod">
-        <option value="6" selected>Pregão eletrônico</option>
-        <option value="8">Dispensa eletrônica</option>
-        <option value="4">Concorrência eletrônica</option>
-        <option value="9">Inexigibilidade</option>
+  <!-- Período + Intervalo, canto direito -->
+  <div class="periodo">
+    <div class="campo"><label>Período</label>
+      <select id="f-tipoData">
+        <option value="publicacao" selected>Data de publicação</option>
+        <option value="abertura">Data de abertura</option>
+        <option value="encerramento">Data de encerramento</option>
       </select></div>
-      <div><label>Palavras-chave do objeto (separadas por ;)</label>
-        <input id="f-kw" value="medicamento; hospitalar; material médico; farmac; soro; correlatos"></div>
-      <div><label>Data de publicação</label><input type="date" id="f-data"></div>
+    <div class="campo"><label>Intervalo</label>
+      <div class="intervalo"><input type="date" id="f-de"><span style="color:var(--muted)">–</span><input type="date" id="f-ate"></div>
     </div>
-    <div style="margin-top:14px;display:flex;gap:10px;align-items:center">
-      <button class="btn" onclick="buscar()">🔎 Buscar</button>
-      <button class="btn sec" onclick="document.getElementById('f-kw').value=''">Limpar palavras</button>
-      <span class="hint" id="status"></span>
+  </div>
+
+  <!-- Hero -->
+  <div class="hero">
+    <h2>Encontrar</h2>
+    <p>Busque oportunidades de dispensas, pregões…</p>
+    <div class="buscabox">
+      <span class="lupa">🔍</span>
+      <input id="f-kw" value="medicamento; hospitalar; material médico; farmac; soro; correlatos"
+             placeholder="Pesquisar por objeto… (separe termos por ;)"
+             onkeydown="if(event.key==='Enter')buscar()">
+      <button class="go" onclick="buscar()" title="Buscar">🔎</button>
     </div>
-    <div class="hint">A API do PNCP recebe só filtros públicos (UF, data, modalidade). Nenhum dado da FPMED sai daqui.</div>
+    <div class="links">
+      <a onclick="document.getElementById('avancada').classList.toggle('open')">Pesquisa avançada</a>
+      <a onclick="alert('Meus alertas entra na V1.5: a busca atual vira um alerta diário salvo.')">Meus alertas</a>
+      <a onclick="porNumero()">Encontrar por Nº</a>
+    </div>
+
+    <div id="avancada">
+      <div class="grid3">
+        <div><label>UF</label><select id="f-uf">
+          <option value="GO" selected>GO</option><option value="">Todas</option>
+          <option>AC</option><option>AL</option><option>AM</option><option>AP</option><option>BA</option><option>CE</option>
+          <option>DF</option><option>ES</option><option>MA</option><option>MG</option><option>MS</option><option>MT</option>
+          <option>PA</option><option>PB</option><option>PE</option><option>PI</option><option>PR</option><option>RJ</option>
+          <option>RN</option><option>RO</option><option>RR</option><option>RS</option><option>SC</option><option>SE</option>
+          <option>SP</option><option>TO</option></select></div>
+        <div><label>Modalidade</label><select id="f-mod">
+          <option value="6" selected>Pregão eletrônico</option>
+          <option value="8">Dispensa eletrônica</option>
+          <option value="4">Concorrência eletrônica</option>
+          <option value="9">Inexigibilidade</option></select></div>
+        <div><label>Excluir (termos que NÃO podem aparecer)</label>
+          <input type="text" id="f-excluir" placeholder="ex.: veículo; combustível"></div>
+      </div>
+      <div style="margin-top:14px;text-align:right"><button class="btn" onclick="buscar()">Aplicar e buscar</button></div>
+    </div>
   </div>
 
   <div class="kpis" id="kpis" style="display:none">
-    <div class="kpi"><div class="n" id="k-total">—</div><div class="l">Publicadas no dia (UF+modalidade)</div></div>
-    <div class="kpi"><div class="n" id="k-filtro">—</div><div class="l">Batem nas palavras-chave</div></div>
-    <div class="kpi"><div class="n" id="k-valor">—</div><div class="l">Valor estimado somado</div></div>
-    <div class="kpi"><div class="n" id="k-prazo">—</div><div class="l">Com proposta ainda aberta</div></div>
+    <div class="kpi"><b id="k-total">—</b><span>publicadas no dia</span></div>
+    <div class="kpi"><b id="k-filtro">—</b><span>batem na busca</span></div>
+    <div class="kpi"><b id="k-valor">—</b><span>estimado somado</span></div>
+    <div class="kpi"><b id="k-prazo">—</b><span>com proposta aberta</span></div>
+    <div class="kpi"><b id="k-aderencia">—</b><span>🎯 com aderência ao nosso estoque</span></div>
   </div>
 
-  <div id="lista"><div class="aviso">Escolha os filtros e clique em <b>Buscar</b>.</div></div>
+  <div id="status" class="hint" style="min-height:18px;margin-bottom:8px"></div>
+  <div id="lista"><div class="aviso">Ajuste os filtros e clique na lupa para buscar.</div></div>
 </div>
 
 <script>
 const API = 'https://pncp.gov.br/api/consulta/v1/contratacoes/publicacao';
-const CACHE_MIN = 15;                       // cache local: não abusar da API pública
-const cache = new Map();                    // chave -> {quando, dados}
+const CACHE_MIN = 15;
+const cache = new Map();
+
+// tamanhoPagina=10: MEDIDO em 04/08/2026. Com 50 o PNCP NÃO RESPONDE (fetch pendurada >45s e a
+// tela travava em "Buscando…"); com 10 responde em ~450ms. O mínimo aceito pela API é 10.
+const TAM_PAGINA = 10, TIMEOUT_MS = 20000, TETO_PAGINAS = 20;
 
 const brl = n => (Number(n)||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL',maximumFractionDigits:0});
-const dt = s => { if(!s) return null; const d=new Date(s); return isNaN(d)?null:d; };
-const fmtDt = s => { const d=dt(s); return d ? d.toLocaleDateString('pt-BR')+' '+d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}) : '—'; };
-const esc = s => String(s==null?'':s).replace(/[<>&]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]));
-const semAcento = s => String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase();
+const dt  = s => { if(!s) return null; const d=new Date(s); return isNaN(d)?null:d; };
+const fmtDt = s => { const d=dt(s); return d ? d.toLocaleDateString('pt-BR')+' às '+d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}) : '—'; };
+const esc = s => String(s==null?'':s).replace(/[<>&"]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c]));
+const semAcento = s => { let o=''; for(const c of String(s||'').normalize('NFD')){ const k=c.codePointAt(0); if(k>=0x300&&k<=0x36f) continue; o+=c; } return o.toLowerCase(); };
+const ymd = d => { const p=n=>String(n).padStart(2,'0'); return d.getFullYear()+p(d.getMonth()+1)+p(d.getDate()); };
+const iso = d => d.toISOString().slice(0,10);
 
-function ymd(d){ const p=n=>String(n).padStart(2,'0'); return d.getFullYear()+p(d.getMonth()+1)+p(d.getDate()); }
+// ÚLTIMO DIA ÚTIL: a publicação do dia corrente só aparece ao longo do dia, então abrir em "hoje"
+// deixava a tela vazia de manhã. Domingo->sexta, segunda->sexta, sábado->sexta.
+function ultimoDiaUtil(){
+  const d = new Date(); d.setHours(12,0,0,0);
+  do { d.setDate(d.getDate()-1); } while (d.getDay()===0 || d.getDay()===6);
+  return d;
+}
+(function(){ const d=ultimoDiaUtil(); document.getElementById('f-de').value=iso(d); document.getElementById('f-ate').value=iso(d); })();
 
-// dia útil anterior como default (a publicação do dia corrente costuma vir vazia de manhã)
-(function(){
-  const d=new Date(); d.setDate(d.getDate()-1);
-  const i=document.getElementById('f-data');
-  i.value=d.toISOString().slice(0,10);
-})();
+// ── CATEGORIAS: etiquetas verdes do que casou no objeto ───────────────────────────────────
+// Taxonomia do ramo da FPMED. A etiqueta mostra POR QUE a licitação apareceu na lista —
+// sem isso o usuário lê 3 linhas de objeto pra descobrir se interessa.
+const CATEGORIAS = [
+  { rotulo:'Medicamentos',        termos:['medicamento','farmac','remedio','comprimido','injetavel','ampola','solucao injetavel'] },
+  { rotulo:'Material hospitalar', termos:['hospitalar','material medico','correlato','seringa','luva','gaze','cateter','sonda','agulha','curativo'] },
+  { rotulo:'Insumos laboratoriais',termos:['laboratori','reagente','insumo laboratorial','exame'] },
+  { rotulo:'Soros e soluções',    termos:['soro','solucao fisiologica','glicosad','ringer'] },
+  { rotulo:'Odontológico',        termos:['odontolog','dentari'] },
+  { rotulo:'Equipamentos',        termos:['equipamento','mobiliario hospitalar','instrumental'] },
+  { rotulo:'Controle especial',   termos:['controle especial','psicotropic','entorpecente','portaria 344'] },
+];
+function categorias(objeto){
+  const t = semAcento(objeto);
+  return CATEGORIAS.filter(c => c.termos.some(x => t.includes(x))).map(c => c.rotulo);
+}
 
-// tamanhoPagina=10: MEDIDO em 04/08/2026. Com 50 o PNCP simplesmente NÃO RESPONDE (a fetch fica
-// pendurada >45s e a tela travava em "Buscando…"); com 10 responde em ~450ms. O mínimo aceito
-// pela API é 10 — abaixo disso devolve 400 "must be greater than or equal to 10".
-const TAM_PAGINA = 10;
-const TIMEOUT_MS = 20000;
+// ── ADERÊNCIA AO NOSSO ESTOQUE (preparado p/ o cruzamento) ────────────────────────────────
+// Hoje devolve null: o PNCP desta consulta traz só o OBJETO, não os itens do edital. O
+// cruzamento real (matching PA+dose contra as 1.381 linhas do estoque) entra na próxima etapa
+// consumindo os itens; a estrutura do card já está pronta pra receber o número.
+function aderencia(lic){
+  if (!window.FPMED_ESTOQUE) return null;      // o cruzamento popula isto
+  return null;
+}
 
-// Toda chamada tem prazo. Sem isso, uma resposta que nunca chega vira "Carregando…" eterno —
-// foi exatamente o que aconteceu aqui e no Dashboard no mesmo dia.
 async function puxarPagina(params, pagina){
   const q = new URLSearchParams({...params, pagina:String(pagina), tamanhoPagina:String(TAM_PAGINA)});
   const ctrl = new AbortController();
-  const t = setTimeout(() => ctrl.abort(), TIMEOUT_MS);
-  try {
+  const t = setTimeout(()=>ctrl.abort(), TIMEOUT_MS);
+  try{
     const r = await fetch(API+'?'+q, {headers:{'Accept':'application/json'}, signal:ctrl.signal});
     if(!r.ok) throw new Error('PNCP respondeu '+r.status);
     return await r.json();
-  } catch(e){
-    if (e.name === 'AbortError') throw new Error('o PNCP não respondeu em ' + (TIMEOUT_MS/1000) + 's');
+  }catch(e){
+    if(e.name==='AbortError') throw new Error('o PNCP não respondeu em '+(TIMEOUT_MS/1000)+'s');
     throw e;
-  } finally { clearTimeout(t); }
+  }finally{ clearTimeout(t); }
+}
+
+function porNumero(){
+  const n = prompt('Número de controle PNCP (ex.: 05106805000138-1-000010/2026):');
+  if(!n) return;
+  document.getElementById('f-kw').value = '';
+  window._filtroNumero = n.trim();
+  buscar();
 }
 
 async function buscar(){
-  const uf = document.getElementById('f-uf').value;
-  const mod = document.getElementById('f-mod').value;
-  const data = document.getElementById('f-data').value.replace(/-/g,'');
-  const kws = document.getElementById('f-kw').value.split(';').map(s=>semAcento(s.trim())).filter(Boolean);
-  const st = document.getElementById('status');
-  const lista = document.getElementById('lista');
-  if(!data){ st.textContent='Escolha a data.'; return; }
+  const uf   = document.getElementById('f-uf').value;
+  const mod  = document.getElementById('f-mod').value;
+  const de   = document.getElementById('f-de').value.replace(/-/g,'');
+  const ate  = (document.getElementById('f-ate').value || document.getElementById('f-de').value).replace(/-/g,'');
+  const kws  = document.getElementById('f-kw').value.split(';').map(s=>semAcento(s.trim())).filter(Boolean);
+  const excl = document.getElementById('f-excluir').value.split(';').map(s=>semAcento(s.trim())).filter(Boolean);
+  const st = document.getElementById('status'), lista = document.getElementById('lista');
+  if(!de){ st.textContent='Escolha o intervalo de datas.'; return; }
 
-  const chave = [uf,mod,data].join('|');
+  const chave = [uf,mod,de,ate].join('|');
   const emCache = cache.get(chave);
   const fresco = emCache && (Date.now()-emCache.quando) < CACHE_MIN*60000;
-
-  st.textContent = fresco ? 'usando cache…' : 'consultando o PNCP…';
+  st.textContent = fresco ? 'usando o resultado em cache…' : 'consultando o PNCP…';
   lista.innerHTML = '<div class="aviso">Buscando…</div>';
 
-  let todos; let truncadoEm = null;
-  try {
-    if (fresco) { todos = emCache.dados; }
-    else {
-      const params = {dataInicial:data, dataFinal:data, codigoModalidadeContratacao:mod};
+  let todos, truncado=null;
+  try{
+    if(fresco){ todos = emCache.dados; }
+    else{
+      const params = {dataInicial:de, dataFinal:ate, codigoModalidadeContratacao:mod};
       if(uf) params.uf = uf;
       const p1 = await puxarPagina(params,1);
-      todos = p1.data || [];
-      // teto de 20 páginas (200 itens) por busca — com tamanhoPagina=10, 20 chamadas de ~450ms
-      const TETO = 20;
-      const tp = Math.min(p1.totalPaginas||1, TETO);
+      todos = p1.data||[];
+      const tp = Math.min(p1.totalPaginas||1, TETO_PAGINAS);
       for(let p=2;p<=tp;p++){
         st.textContent = 'consultando o PNCP… página '+p+'/'+tp;
-        const px = await puxarPagina(params,p);
-        todos = todos.concat(px.data||[]);
+        todos = todos.concat((await puxarPagina(params,p)).data||[]);
       }
       cache.set(chave,{quando:Date.now(),dados:todos});
-      // NUNCA truncar em silêncio: se houver mais páginas que o teto, o usuário precisa saber.
-      truncadoEm = (p1.totalPaginas||1) > TETO ? {lidas:tp, total:p1.totalPaginas} : null;
+      if((p1.totalPaginas||1) > TETO_PAGINAS) truncado = {lidas:tp, total:p1.totalPaginas};
     }
-  } catch(e){
-    // DEGRADAR COM ELEGÂNCIA: nunca tela branca. Se houver cache velho, mostra com aviso.
-    if(emCache){
-      st.textContent = '';
-      render(emCache.dados, kws, 'A API do PNCP não respondeu ('+e.message+'). Mostrando a última busca de '
-        + new Date(emCache.quando).toLocaleTimeString('pt-BR'));
-      return;
-    }
-    lista.innerHTML = '<div class="aviso err"><b>⚠️ Não consegui falar com o PNCP</b><div class="hint" style="margin-top:8px">'
-      + esc(e.message) + '</div><button class="btn" style="margin-top:14px" onclick="buscar()">Tentar de novo</button></div>';
-    document.getElementById('kpis').style.display='none';
-    st.textContent=''; return;
+  }catch(e){
+    if(emCache){ st.textContent=''; render(emCache.dados,kws,excl,
+      'A API do PNCP não respondeu ('+e.message+'). Mostrando a última busca de '+new Date(emCache.quando).toLocaleTimeString('pt-BR')); return; }
+    lista.innerHTML = '<div class="aviso err"><b>⚠️ Não consegui falar com o PNCP</b>'
+      + '<div class="hint" style="margin-top:8px">'+esc(e.message)+'</div>'
+      + '<button class="btn" style="margin-top:14px" onclick="buscar()">Tentar de novo</button></div>';
+    document.getElementById('kpis').style.display='none'; st.textContent=''; return;
   }
   st.textContent='';
-  render(todos, kws, truncadoEm ? ('Li ' + truncadoEm.lidas + ' de ' + truncadoEm.total + ' paginas (teto por busca). Refine os filtros para nao perder licitacao.') : null);
+  render(todos, kws, excl, truncado ? ('Li '+truncado.lidas+' de '+truncado.total+' páginas (teto por busca). Refine os filtros para não perder licitação.') : null);
 }
 
-function render(todos, kws, aviso){
-  const casa = l => { if(!kws.length) return true; const t=semAcento(l.objetoCompra||''); return kws.some(k=>t.includes(k)); };
+function render(todos, kws, excl, aviso){
+  const num = window._filtroNumero; window._filtroNumero = null;
+  const casa = l => {
+    if(num) return String(l.numeroControlePNCP||'').includes(num);
+    const t = semAcento(l.objetoCompra||'');
+    if(excl.length && excl.some(x=>t.includes(x))) return false;
+    return !kws.length || kws.some(k=>t.includes(k));
+  };
   const hits = todos.filter(casa);
   const agora = new Date();
   const abertas = hits.filter(l=>{ const d=dt(l.dataEncerramentoProposta); return d && d>agora; });
   const soma = hits.reduce((s,l)=>s+(Number(l.valorTotalEstimado)||0),0);
+  const comAlvo = hits.filter(l=>aderencia(l)).length;
 
-  document.getElementById('kpis').style.display='';
-  document.getElementById('k-total').textContent = todos.length;
-  document.getElementById('k-filtro').textContent = hits.length;
-  document.getElementById('k-valor').textContent = brl(soma);
-  document.getElementById('k-prazo').textContent = abertas.length;
+  document.getElementById('kpis').style.display='flex';
+  document.getElementById('k-total').textContent   = todos.length;
+  document.getElementById('k-filtro').textContent  = hits.length;
+  document.getElementById('k-valor').textContent   = brl(soma);
+  document.getElementById('k-prazo').textContent   = abertas.length;
+  document.getElementById('k-aderencia').textContent = comAlvo || '—';
 
   const lista = document.getElementById('lista');
-  let h = aviso ? '<div class="aviso err" style="margin-bottom:14px;text-align:left">⚠️ '+esc(aviso)+'</div>' : '';
+  let h = aviso ? '<div class="aviso err" style="margin-bottom:14px;text-align:left;padding:14px 18px">⚠️ '+esc(aviso)+'</div>' : '';
   if(!hits.length){
-    h += '<div class="aviso">Nenhuma licitação bate nas palavras-chave.<div class="hint">'
-       + todos.length + ' publicada(s) no dia com esses filtros. Tente limpar as palavras-chave.</div></div>';
-    lista.innerHTML = h; return;
+    h += '<div class="aviso">Nenhuma licitação bate na busca.<div class="hint" style="margin-top:6px">'
+       + todos.length+' publicada(s) no período com esses filtros. Tente limpar as palavras-chave.</div></div>';
+    lista.innerHTML=h; return;
   }
-  // ordena por quem encerra primeiro (prazo é o que decide se dá pra participar)
   hits.sort((a,b)=>{ const x=dt(a.dataEncerramentoProposta), y=dt(b.dataEncerramentoProposta);
                      return (x?x.getTime():9e15)-(y?y.getTime():9e15); });
 
   for(const l of hits){
+    const org = (l.orgaoEntidade||{}).razaoSocial||'—';
+    const un  = l.unidadeOrgao||{};
     const fim = dt(l.dataEncerramentoProposta);
     const dias = fim ? Math.ceil((fim-agora)/86400000) : null;
-    const tagPrazo = dias==null ? '<span class="tag">prazo não informado</span>'
-      : dias<0 ? '<span class="tag r">encerrada</span>'
-      : dias<=2 ? '<span class="tag a">encerra em '+dias+'d</span>'
-      : '<span class="tag v">encerra em '+dias+'d</span>';
+    const prazo = dias==null ? '<span class="bdg cinza">prazo não informado</span>'
+      : dias<0  ? '<span class="bdg r">encerrada</span>'
+      : dias<=2 ? '<span class="bdg a">encerra em '+dias+'d</span>'
+      : '<span class="bdg v">encerra em '+dias+'d</span>';
+    const cats = categorias(l.objetoCompra);
+    const alvo = aderencia(l);
+    const titulo = esc(l.modalidadeNome||'') + ' Nº ' + esc(l.numeroCompra||'') + '/' + esc(l.anoCompra||'')
+                 + ' — ' + esc(org) + ' / ' + esc(un.ufSigla||'');
     h += '<div class="lic">'
-      + '<div class="org">'+esc((l.orgaoEntidade||{}).razaoSocial||'—')
-      + ' <span style="color:var(--muted);font-weight:400">· '+esc((l.unidadeOrgao||{}).municipioNome||'')+'/'+esc((l.unidadeOrgao||{}).ufSigla||'')+'</span></div>'
+      + (l.linkSistemaOrigem
+          ? '<a class="titulo" href="'+esc(l.linkSistemaOrigem)+'" target="_blank" rel="noopener">'+titulo+' ↗</a>'
+          : '<span class="titulo">'+titulo+'</span>')
       + '<div class="obj">'+esc(l.objetoCompra||'')+'</div>'
-      + '<div class="meta">'
-      +   '<span class="tag">'+esc(l.modalidadeNome||'')+'</span>'
-      +   tagPrazo
-      +   '<span><b>'+brl(l.valorTotalEstimado)+'</b> estimado</span>'
-      +   '<span>· disputa: '+fmtDt(l.dataAberturaProposta)+'</span>'
-      +   '<span>· encerra: '+fmtDt(l.dataEncerramentoProposta)+'</span>'
-      +   '<span>· '+esc(l.numeroControlePNCP||'')+'</span>'
-      +   (l.linkSistemaOrigem?' <a class="edital" href="'+esc(l.linkSistemaOrigem)+'" target="_blank" rel="noopener">abrir edital ↗</a>':'')
+      + (cats.length || alvo
+          ? '<div class="etiquetas">'
+            + cats.map(c=>'<span class="etq">'+esc(c)+'</span>').join('')
+            + (alvo ? '<span class="etq alvo">🎯 '+alvo+' itens no nosso estoque</span>' : '')
+            + '</div>'
+          : '')
+      + '<div class="sessao"><b>Abertura em '+fmtDt(l.dataAberturaProposta)+'</b>'
+      +   (l.modoDisputaNome ? ' &nbsp;·&nbsp; Modo de disputa: '+esc(l.modoDisputaNome) : '')
+      +   (fim ? ' &nbsp;·&nbsp; Encerra em '+fmtDt(l.dataEncerramentoProposta) : '')
+      + '</div>'
+      + '<div class="rodape">'
+      +   '<span class="bdg cinza">Fonte: PNCP — '+esc(un.municipioNome||org)+'</span>'
+      +   '<span class="bdg azul">'+esc(l.modalidadeNome||'')+'</span>'
+      +   prazo
+      +   '<span class="bdg cinza" title="Número de controle PNCP">'+esc(l.numeroControlePNCP||'')+'</span>'
+      +   '<span class="valor">'+brl(l.valorTotalEstimado)+'</span>'
       + '</div></div>';
   }
   lista.innerHTML = h;
