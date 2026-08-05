@@ -6,7 +6,7 @@
 > **Escopo do pacote FPMED = sistema completo SEM Prospecção e SEM Loja Pública**
 > (decisões de escopo do Lemuel).
 
-Última atualização: 2026-08-04
+Última atualização: 2026-08-05
 
 ## 🔐 CONTROLE DE ACESSO POR CARGO (24/07) — RLS no banco, não só no front
 > Decisão do Lemuel: gate de tela não basta (F12 burla a REST). O controle real é **RLS por
@@ -149,7 +149,38 @@ Auditoria de 22/07: banco confirmado limpo após teste do upload de PDF (preview
       cards com etiquetas verdes cheias, skeleton, hover, voltar-ao-topo, responsivo.
       Marca própria (cruz FPMED em CSS — o `logo_fpmed.png` é de fundo claro).
 
-   ⬜ **CRUZAMENTO POR ITEM — endpoint CONFIRMADO pelo Lemuel (testado por ele):**
+   ✅ **CRUZAMENTO POR ITEM — NO AR** (05/08, commits `36c8b53`→`a5e5580`). Validado no navegador
+      real, logado como diretor, contra as 1.381 linhas do estoque: **estoque pronto 1.381 (1.266
+      com preço unitário calculável)**, busca de 04/08 → 52 publicadas / 9 batem / R$ 21,4 mi,
+      "Cruzar todas" leu **9 licitações** e marcou **7 com aderência**. Card de Uruaçu: **280 de
+      500 itens** com equivalente nosso (o edital tem mais de 500 → aviso de teto na tela).
+      - Itens sob demanda ao expandir, ou lote de 3, AbortController 20 s, cache 15 min.
+      - **Paginação dos itens**: o endpoint entrega 10 por default — sem paginar, a licitação de
+        65 itens devolvia 10 e o cruzamento mentiria por omissão. Vai de 100 em 100, teto 500.
+      - **Unitário dos DOIS lados**: "Caixa 100 UN" a R$ 8,20 = R$ 0,082/agulha; "Frasco 1000 ML"
+        é medida, não contagem; "Caixa"/"PCT" sem número → **⚠ conferir emb.** (nunca inventa).
+        Orçamento sigiloso nunca vira R$ 0,00.
+      - **Δ% só no match de dose conferida.** No "aproximado" mostra o nosso preço e cala.
+      - 4 defeitos achados e corrigidos (3 deles só apareceram rodando com dado real):
+        1. **calibre French virava pack** — "SONDA URETRAL 22FR" tinha o preço dividido por 22
+           (R$ 0,03/sonda, −99,9% contra o edital). O soro "16FR" segue lendo 16 frascos.
+        2. **match por 1 palavra** — "APARELHO de ar condicionado" × "APARELHO de barbear",
+           "SACO de adubo" × "SACO de lixo". Ruído caiu de 411 p/ 242 pares em 789 itens reais.
+        3. **volume confundido com concentração** — ACETILCISTEÍNA 40MG/ML casava com a nossa de
+           20MG só porque as duas dizem 120ML. Entrou forma farmacêutica junto (comprimido não é
+           injetável) e a redução "50MG/5ML = 10mg/ml".
+        4. **corrida com o gm-auth** — o `gm-auth-ready` dispara ainda dentro do `<head>` quando o
+           token está fresco; quem só escutava o evento perdia a carga do estoque de forma
+           INTERMITENTE. Agora checa `window.gmAuth` antes de escutar.
+      - Suíte nova `tests/testa_cruzamento_licitacoes.js` (63 asserts, fixtures de dado real).
+        **Total do projeto: 515 asserts verdes, 0 falhas em 20 suítes.**
+      ⬜ **Falta desta etapa** (entra depois da fila atual, não é bloqueio): agenda/acompanhar
+        (`licitacoes_acompanhadas`, RLS gestor grava / logado lê) e os KPIs de acompanhamento.
+      ⚠️ **Limite honesto do matching**: sem a CMED (item 1B) o vocabulário de princípio ativo
+        tem 938 entradas e 937 linhas do estoque estão sem PA — o que casa por nome continua
+        casando, mas medicamento cujo PA não existe no vocabulário depende do nome bater.
+
+   <s>⬜ **CRUZAMENTO POR ITEM — endpoint CONFIRMADO pelo Lemuel (testado por ele):**</s>
       ```
       GET https://pncp.gov.br/api/pncp/v1/orgaos/{cnpj}/compras/{ano}/{sequencial}/itens
       cnpj = orgaoEntidade.cnpj · ano = anoCompra · sequencial = sequencialCompra
@@ -168,8 +199,8 @@ Auditoria de 22/07: banco confirmado limpo após teste do upload de PDF (preview
          preço unitário (**dividido pelo pack na TELA, nunca no banco** — regra de 04/08).
       4. Normalizar o `numeroCompra` no título: `"(6128) | 32-0/2026"` → `"32/2026"`.
       5. **Rodar a suíte inteira antes do commit.**
-      Depois: agenda/acompanhar (`licitacoes_acompanhadas`, RLS gestor grava / logado lê) e KPIs.
-1B. ⬜ **TELA "TABELA CMED"** (novo, 04/08) — menu FERRAMENTAS, gestor+vendedor, tema claro.
+      (As 5 regras acima foram cumpridas — ver o bloco ✅ logo acima.)
+1B. 🔜 **PRÓXIMO DA FILA — TELA "TABELA CMED"** (novo, 04/08) — menu FERRAMENTAS, gestor+vendedor, tema claro.
    - **Auditar o loader primeiro**: a `cmed_pf` tem 23 colunas; a planilha oficial traz mais.
      Conferir e **estender** se faltar: PF e PMC em **todas as alíquotas** (0/12/17/17,5/18/19/20%),
      **PMVG**, laboratório com CNPJ/razão, regime de preço, análise recursal, lista de concessão

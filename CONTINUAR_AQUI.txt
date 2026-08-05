@@ -146,6 +146,24 @@ Criado em 21/07/2026 copiando SO os arquivos do app do C:\globalmed.
       e reaplicar os 49 marcadores de rebrand). Bloco 5 (rebrand DARK da Global) NAO entra —
       a FPMED e tema claro.
 
+>>> LICITACOES V1 COMPLETO (05/08/2026, commits 36c8b53 -> a5e5580, tudo pushado e NO AR):
+  Busca no PNCP + redesign escuro + CRUZAMENTO POR ITEM contra o estoque proprio.
+  Validado no navegador real, logado como diretor: estoque 1.381 (1.266 com unitario
+  calculavel), busca 04/08 -> 52 publicadas / 9 batem / R$ 21,4 mi, "Cruzar todas" leu 9
+  licitacoes e marcou 7 com aderencia; card de Uruacu 280 de 500 itens com equivalente nosso.
+  Comparacao SEMPRE unitaria dos DOIS lados; "conferir emb." quando o pack nao e sabido;
+  delta % so quando a dose confere. 4 defeitos corrigidos (calibre French virando pack, match
+  por 1 palavra so, volume confundido com concentracao, corrida com o gm-auth). Suite nova
+  testa_cruzamento_licitacoes.js -- 515 asserts verdes / 0 falhas em 20 suites.
+  ATENCAO: a tela agora EXIGE login (le a tabela cotacoes, RLS). Vendedor/propostas caem no
+  "Sem permissao" do gm-auth de proposito -- Licitacoes e tela de inteligencia.
+  FALTA da etapa (nao bloqueia, entra depois da fila): agenda/acompanhar
+  (licitacoes_acompanhadas, RLS gestor grava / logado le) e os KPIs de acompanhamento.
+
+>>> PROXIMO DA FILA: item 1B -- TELA "TABELA CMED" (auditar o loader antes, a cmed_pf tem 23
+  colunas e a planilha oficial traz mais; PMVG e outro arquivo da ANVISA que o Lemuel precisa
+  baixar). Detalhes no TAREFAS_FPMED.md.
+
 Proximos passos (quando o Lemuel mandar): (a) OK dos 2 syncs acima; (b) vendedoras quando a
 equipe for definida; (c) dominio sistema.fpmed.com.br pos-venda. Placar: TAREFAS_FPMED.md.
 
