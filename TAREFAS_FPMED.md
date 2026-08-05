@@ -147,6 +147,23 @@ Auditoria de 22/07: banco confirmado limpo após teste do upload de PDF (preview
       ✅ **Aprovação antecipada dada pelo Lemuel**: screenshot é só registro; **não parar**.
    ⬜ Depois: cruzamento com o estoque (matching PA+dose), agenda/acompanhar
       (`licitacoes_acompanhadas`, RLS gestor grava / logado lê), KPIs — até fechar a V1.
+1B. ⬜ **TELA "TABELA CMED"** (novo, 04/08) — menu FERRAMENTAS, gestor+vendedor, tema claro.
+   - **Auditar o loader primeiro**: a `cmed_pf` tem 23 colunas; a planilha oficial traz mais.
+     Conferir e **estender** se faltar: PF e PMC em **todas as alíquotas** (0/12/17/17,5/18/19/20%),
+     **PMVG**, laboratório com CNPJ/razão, regime de preço, análise recursal, lista de concessão
+     de crédito, ICMS 0%. Hoje o loader pega só `pf_0`, `pf_go19`, `pmc` e deixa `pmvg` NULL
+     (a lista CAP/PMVG é **outro arquivo** da ANVISA — o Lemuel precisa baixar).
+   - **Tela**: busca por substância/produto/marca/laboratório/GGREM/EAN; resultado com
+     apresentação, laboratório, tipo, PF/PMC/PMVG por alíquota (destaque no ICMS de GO),
+     restrição hospitalar, CAP. Filtros: só com PMVG · só restrição hospitalar ·
+     genérico/similar/referência.
+   - **Destacar o PMVG** — é o teto legal de venda ao governo nas licitações.
+   - **Integrações** (é o que faz valer): no Licitações, mostrar "teto legal R$ X · nosso R$ Y"
+     junto do cruzamento por item; link "ver na CMED" na Competitividade e nas Propostas;
+     **alerta se preço nosso > PMC** (risco regulatório).
+   - **Atualização mensal**: documentar `baixar xls da ANVISA → node tools/carrega_cmed_pf.js`
+     e exibir a edição vigente na tela ("dados CMED de julho/2026").
+
 2. ✅ ~~Investigação do "Carregando…"~~ — **JÁ FEITO** (commit `aa6177d`): eram 2 cargas
    concorrentes de `cotacoes` (18 requests p/ 9 páginas) + `recarregarCotacoes` que não
    re-renderizava. Promise em voo compartilhada + erro visível + timeout de 25s.
