@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
@@ -7,14 +7,28 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%232CA9E0'/%3E%3Cpath d='M13 6h6v7h7v6h-7v7h-6v-7H6v-6h7z' fill='white'/%3E%3C/svg%3E">
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-:root{--azul:#2CA9E0;--navy:#173A5E;--verde:#8DC63F;--verde-esc:#4a7c14;--muted:#7a8a99;
-      --linha:#e3e9ef;--bg:#f4f7fa;--vermelho:#c0392b;--ambar:#e67e22;--sombra:0 1px 3px rgba(23,58,94,.07),0 4px 14px rgba(23,58,94,.05)}
+/* ══ TEMA ESCURO — só esta tela (decisão do Lemuel: Licitações é a "tela premium";
+   o resto do sistema segue claro). A disposição espelha o SIGA, mas a IDENTIDADE é FPMED:
+   azul #2CA9E0 como destaque, verde #8DC63F nas etiquetas, cruz FPMED no lugar do logo deles.
+   Nada visual proprietário do SIGA foi copiado — só a organização e o clima. ══ */
+:root{--azul:#2CA9E0;--azul-claro:#5CC3F0;--verde:#8DC63F;--verde-esc:#2c4a08;--muted:#8fa3b8;
+      --bg:#0B1622;--painel:#132234;--painel2:#182B41;--linha:#22374f;--texto:#e6edf5;
+      --vermelho:#e5675a;--ambar:#e0a04a;
+      --sombra:0 1px 3px rgba(0,0,0,.35),0 8px 26px rgba(0,0,0,.28)}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);font-family:Inter,system-ui,sans-serif;color:var(--navy)}
-.topfaixa{background:var(--azul);color:#fff;padding:8px 18px;font-size:13px;display:flex;gap:14px;align-items:center}
-.topfaixa a{color:#fff;text-decoration:none;background:rgba(255,255,255,.18);padding:3px 10px;border-radius:20px;font-size:12px}
-header{background:#fff;border-bottom:1px solid var(--linha);padding:12px 22px;display:flex;align-items:center;gap:14px}
-header h1{font-family:Montserrat;font-size:18px;margin:0}
+body{margin:0;background:var(--bg);font-family:Inter,system-ui,sans-serif;color:var(--texto)}
+.topfaixa{background:var(--painel2);color:var(--texto);padding:8px 18px;font-size:13px;display:flex;gap:14px;
+  align-items:center;border-bottom:1px solid var(--linha)}
+.topfaixa a{color:var(--azul-claro);text-decoration:none;background:rgba(44,169,224,.14);padding:3px 10px;
+  border-radius:20px;font-size:12px;transition:background .16s}
+.topfaixa a:hover{background:rgba(44,169,224,.26)}
+header{background:var(--painel);border-bottom:1px solid var(--linha);padding:13px 22px;display:flex;align-items:center;gap:13px}
+header h1{font-family:Montserrat;font-size:18px;margin:0;color:#fff;font-weight:700;letter-spacing:.3px}
+header .marca{display:flex;align-items:center;gap:9px}
+header .cruz{width:30px;height:30px;border-radius:7px;background:var(--azul);display:grid;place-items:center;
+  color:#fff;font-size:19px;font-weight:700;line-height:1}
+header .nome{font-family:Montserrat;font-weight:800;font-size:17px;color:#fff;letter-spacing:.6px}
+header .nome small{display:block;font-size:8px;letter-spacing:2.6px;color:var(--muted);font-weight:600;margin-top:-2px}
 .wrap{max-width:1180px;margin:0 auto;padding:0 22px 70px}
 
 /* ── barra de período, canto direito (estilo SIGA) ── */
@@ -22,73 +36,76 @@ header h1{font-family:Montserrat;font-size:18px;margin:0}
 .periodo .campo{min-width:190px}
 .periodo label{display:block;font-size:11px;font-weight:600;color:var(--muted);margin-bottom:5px}
 select,input[type=date],input[type=text]{width:100%;padding:9px 11px;border:1px solid var(--linha);border-radius:8px;
-  font-family:inherit;font-size:13px;color:var(--navy);background:#fff}
+  font-family:inherit;font-size:13px;color:var(--texto);background:var(--painel2)}
+select:focus,input:focus{outline:none;border-color:var(--azul)}
 .intervalo{display:flex;gap:6px;align-items:center}
 
-/* ── hero central ── */
-.hero{text-align:center;padding:30px 0 22px}
-.hero h2{font-family:Montserrat;font-weight:800;font-size:40px;margin:0 0 8px;letter-spacing:-.5px}
-.hero p{margin:0 0 22px;color:var(--muted);font-size:14.5px}
-.buscabox{max-width:640px;margin:0 auto;position:relative}
-.buscabox input{width:100%;padding:15px 52px 15px 46px;font-size:15px;border-radius:32px;border:1px solid var(--linha);
-  box-shadow:var(--sombra);background:#fff}
-.buscabox input:focus{outline:none;border-color:var(--azul);box-shadow:0 0 0 4px rgba(44,169,224,.12)}
-.buscabox .lupa{position:absolute;left:18px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:16px}
+/* ── hero central ── a busca fica CLARA sobre o fundo escuro, como no SIGA ── */
+.hero{text-align:center;padding:34px 0 24px}
+.hero h2{font-family:Montserrat;font-weight:800;font-size:44px;margin:0 0 10px;letter-spacing:-.8px;color:#fff}
+.hero p{margin:0 0 24px;color:var(--muted);font-size:14.5px}
+.buscabox{max-width:660px;margin:0 auto;position:relative}
+.buscabox input{width:100%;padding:16px 54px 16px 48px;font-size:15px;border-radius:34px;border:1px solid var(--linha);
+  box-shadow:var(--sombra);background:#f7fafd;color:#173A5E;transition:box-shadow .18s,border-color .18s}
+.buscabox input::placeholder{color:#8a9bad}
+.buscabox input:focus{outline:none;border-color:var(--azul);box-shadow:0 0 0 4px rgba(44,169,224,.22)}
+.buscabox .lupa{position:absolute;left:19px;top:50%;transform:translateY(-50%);color:#8a9bad;font-size:16px}
 .buscabox .go{position:absolute;right:7px;top:50%;transform:translateY(-50%);background:var(--azul);color:#fff;border:0;
-  width:38px;height:38px;border-radius:50%;cursor:pointer;font-size:15px}
-.links{margin-top:14px;display:flex;gap:22px;justify-content:center;flex-wrap:wrap}
-.links a{color:var(--azul);font-size:13px;text-decoration:none;cursor:pointer;font-weight:500}
-.links a:hover{text-decoration:underline}
+  width:40px;height:40px;border-radius:50%;cursor:pointer;font-size:15px;transition:filter .16s,transform .16s}
+.buscabox .go:hover{filter:brightness(1.12);transform:translateY(-50%) scale(1.06)}
+.links{margin-top:16px;display:flex;gap:24px;justify-content:center;flex-wrap:wrap}
+.links a{color:var(--azul-claro);font-size:13px;text-decoration:none;cursor:pointer;font-weight:500;transition:color .16s}
+.links a:hover{color:#fff;text-decoration:underline}
 
 /* ── pesquisa avançada (expansível) ── */
-#avancada{display:none;background:#fff;border:1px solid var(--linha);border-radius:12px;padding:18px;margin-top:18px;box-shadow:var(--sombra)}
+#avancada{display:none;background:var(--painel);border:1px solid var(--linha);border-radius:12px;padding:18px;margin-top:18px;box-shadow:var(--sombra);text-align:left}
 #avancada.open{display:block}
 .grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px}
 .grid3 label{display:block;font-size:11px;font-weight:600;color:var(--muted);margin-bottom:5px;text-transform:uppercase;letter-spacing:.3px}
 
 /* ── KPIs ── régua elegante, não chips soltos ── */
-.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));background:#fff;border-radius:14px;
-  box-shadow:var(--sombra);overflow:hidden;margin:26px 0 8px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));background:var(--painel);border-radius:14px;
+  box-shadow:var(--sombra);overflow:hidden;margin:26px 0 8px;border:1px solid var(--linha)}
 .kpi{padding:15px 18px;border-right:1px solid var(--linha)}
 .kpi:last-child{border-right:0}
-.kpi b{font-family:Montserrat;font-size:23px;font-weight:700;display:block;line-height:1.15}
+.kpi b{font-family:Montserrat;font-size:23px;font-weight:700;display:block;line-height:1.15;color:#fff}
 .kpi span{font-size:11px;color:var(--muted);letter-spacing:.2px}
 .contagem{font-size:12.5px;color:var(--muted);margin:16px 0 10px}
-.contagem b{color:var(--navy)}
+.contagem b{color:var(--azul-claro)}
 
-/* ── cards ── sem borda: separados por respiro e sombra, como no SIGA ── */
-.lic{background:#fff;border:0;border-radius:14px;padding:22px 24px;margin-bottom:16px;box-shadow:var(--sombra);
-  transition:box-shadow .18s ease, transform .18s ease}
-.lic:hover{box-shadow:0 2px 6px rgba(23,58,94,.09),0 10px 28px rgba(23,58,94,.10);transform:translateY(-1px)}
-.lic .titulo{font-family:Montserrat;font-weight:700;font-size:14.5px;color:var(--azul);text-decoration:none;
-  display:inline-block;line-height:1.45;text-transform:uppercase;letter-spacing:.2px}
-.lic .titulo:hover{text-decoration:underline}
-.lic .obj{margin:11px 0 14px;font-size:14px;line-height:1.6;color:#42566b;
+/* ── cards ── sem borda dura: separados por respiro e sombra, como no SIGA ── */
+.lic{background:var(--painel);border:1px solid var(--linha);border-radius:14px;padding:22px 24px;margin-bottom:16px;
+  box-shadow:var(--sombra);transition:border-color .18s ease, transform .18s ease, box-shadow .18s ease}
+.lic:hover{border-color:rgba(44,169,224,.5);transform:translateY(-2px);box-shadow:0 4px 10px rgba(0,0,0,.4),0 14px 34px rgba(0,0,0,.3)}
+.lic .titulo{font-family:Montserrat;font-weight:700;font-size:14.5px;color:var(--azul-claro);text-decoration:none;
+  display:inline-block;line-height:1.45;text-transform:uppercase;letter-spacing:.2px;transition:color .16s}
+.lic .titulo:hover{color:#fff;text-decoration:underline}
+.lic .obj{margin:11px 0 14px;font-size:14px;line-height:1.6;color:#c3d1e0;
   display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
-/* etiquetas CHEIAS (o SIGA usa fundo saturado; as pálidas somem na página) */
+/* etiquetas CHEIAS — verde FPMED saturado, legível sobre o escuro */
 .etiquetas{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:14px}
-.etq{background:var(--verde);color:#2c4a08;padding:5px 13px;border-radius:20px;font-size:11.5px;font-weight:600;letter-spacing:.1px}
-.etq.alvo{background:var(--azul);color:#fff}
-.sessao{font-size:13px;color:#42566b;margin-bottom:14px;line-height:1.6}
-.sessao b{color:var(--navy);font-weight:600}
-.rodape{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding-top:14px;border-top:1px solid #eef2f6}
+.etq{background:var(--verde);color:var(--verde-esc);padding:5px 13px;border-radius:20px;font-size:11.5px;font-weight:700;letter-spacing:.1px}
+.etq.alvo{background:var(--azul);color:#06263a}
+.sessao{font-size:13px;color:#b3c4d6;margin-bottom:14px;line-height:1.6}
+.sessao b{color:#fff;font-weight:600}
+.rodape{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding-top:14px;border-top:1px solid var(--linha)}
 .bdg{padding:4px 11px;border-radius:5px;font-size:11.5px;font-weight:600}
-.bdg.cinza{background:#eef1f5;color:#56687b}
-.bdg.azul{background:var(--azul);color:#fff}
-.bdg.v{background:#e6f5d4;color:#3d6a10}
-.bdg.a{background:#fcefd9;color:#8a4f0a}
-.bdg.r{background:#fbe0dd;color:#a5301f}
-.valor{margin-left:auto;font-family:Montserrat;font-weight:700;font-size:16px;color:var(--navy)}
+.bdg.cinza{background:#22374f;color:#a9bdd2}
+.bdg.azul{background:var(--azul);color:#06263a}
+.bdg.v{background:#2c4a1a;color:#b7e07a}
+.bdg.a{background:#523a17;color:#f0c483}
+.bdg.r{background:#5a2622;color:#f2a99f}
+.valor{margin-left:auto;font-family:Montserrat;font-weight:700;font-size:16px;color:#fff}
 
 /* ── skeleton de carregamento ── */
-.skel{background:#fff;border-radius:14px;padding:22px 24px;margin-bottom:16px;box-shadow:var(--sombra)}
-.skel div{background:linear-gradient(90deg,#eef2f6 25%,#f7f9fb 50%,#eef2f6 75%);background-size:200% 100%;
+.skel{background:var(--painel);border:1px solid var(--linha);border-radius:14px;padding:22px 24px;margin-bottom:16px}
+.skel div{background:linear-gradient(90deg,#1b2f45 25%,#24405c 50%,#1b2f45 75%);background-size:200% 100%;
   animation:brilho 1.3s infinite;border-radius:6px;height:13px;margin-bottom:10px}
 @keyframes brilho{0%{background-position:200% 0}100%{background-position:-200% 0}}
 
 /* ── voltar ao topo ── */
-#aoTopo{position:fixed;right:26px;bottom:26px;width:42px;height:42px;border-radius:50%;border:0;background:var(--navy);
-  color:#fff;font-size:17px;cursor:pointer;box-shadow:0 4px 14px rgba(23,58,94,.28);display:none;z-index:9}
+#aoTopo{position:fixed;right:26px;bottom:26px;width:42px;height:42px;border-radius:50%;border:0;background:var(--azul);
+  color:#06263a;font-size:17px;font-weight:700;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,.45);display:none;z-index:9}
 #aoTopo.ver{display:block}
 
 @media(max-width:720px){
@@ -98,11 +115,11 @@ select,input[type=date],input[type=text]{width:100%;padding:9px 11px;border:1px 
   .lic{padding:18px 16px}
   .valor{margin-left:0;width:100%;margin-top:8px}
 }
-.aviso{padding:34px;text-align:center;border-radius:12px;background:#fff;border:1px solid var(--linha);box-shadow:var(--sombra)}
-.aviso.err{border-color:#f0c4be;background:#fdf7f6;color:var(--vermelho)}
+.aviso{padding:34px;text-align:center;border-radius:14px;background:var(--painel);border:1px solid var(--linha);box-shadow:var(--sombra);color:var(--muted)}
+.aviso.err{border-color:#5a2622;background:#2a1614;color:#f2a99f}
 .hint{font-size:11.5px;color:var(--muted)}
 .btn{background:var(--azul);color:#fff;border:0;border-radius:8px;padding:10px 20px;font-weight:600;font-size:13px;cursor:pointer;font-family:inherit}
-.btn.sec{background:#fff;color:var(--navy);border:1px solid var(--linha)}
+.btn.sec{background:var(--painel2);color:var(--texto);border:1px solid var(--linha)}
 </style>
 </head>
 <body>
@@ -111,8 +128,7 @@ select,input[type=date],input[type=text]{width:100%;padding:9px 11px;border:1px 
   <span>📞 (62) 3290-4241</span><span>·</span><span>Compromisso com qualidade!</span>
 </div>
 <header>
-  <img src="logo_fpmed.png" alt="FPMED" style="height:32px">
-  <h1>Licitações</h1>
+  <div class="marca"><div class="cruz">✚</div><div class="nome">FPMED<small>HOSPITALAR</small></div></div><h1 style="margin-left:6px;font-weight:600;color:#b3c4d6">Licitações</h1>
 </header>
 
 <div class="wrap">
