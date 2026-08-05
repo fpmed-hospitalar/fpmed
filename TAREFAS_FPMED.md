@@ -90,6 +90,35 @@ Auditoria de 22/07: banco confirmado limpo após teste do upload de PDF (preview
 - [x] **URL + ANON trocados** em todos os arquivos → Supabase da FPMED (12 anon + 16 URL, 0 resquício
       do banco antigo, sintaxe JS validada). URL `https://xzdowrksuswekwffoluk.supabase.co`.
 
+## 🔑 PAPÉIS DE ACESSO — padrão LIMEDTEC (05/08) — ⏸ ESPERANDO 2 COISAS DO LEMUEL
+
+**Feito nesta sessão (só leitura, nada aplicado):**
+- Puxados do molde (só código): `limedtec-papeis.js` + `ddl/papeis.sql`.
+- 🔍 **MAPA DE POLICIES DESTE BANCO IMPRESSO** — era a pré-condição, e ele **confirma o alerta**:
+  **48 policies · 12 tabelas · 4 por tabela (SELECT/INSERT/UPDATE/DELETE) · 100% PERMISSIVE**,
+  todas para `authenticated`. Como toda policy existente é PERMISSIVE, **qualquer policy nova
+  permissiva seria somada com OR** às que já estão lá — a restrição não restringiria nada e a
+  segurança seria só aparência. **Portanto: as policies de custo/escrita entram `AS RESTRICTIVE`,
+  sem exceção.** (É o mesmo achado da Global, agora *verificado contra o mapa daqui*.)
+- ✅ **A RLS por cargo de 24/07 ESTÁ VIVA** (não foi perdida): `cot_sel`, `cot_upd` e `cot_del` da
+  `cotacoes` usam `USING cargo_gestor()`, e as funções `cargo_gestor()` e `jwt_cargo()` existem no
+  banco. O sistema novo de papéis **convive com isso** — não pode simplesmente derrubar as
+  policies atuais, ou o gate de custo que já passou nos testes de burla some junto.
+
+**⏸ BLOQUEIO 1 — a lista de quem é quem.** O próprio Lemuel mandou perguntar antes de rebaixar
+qualquer um, e a configuração da Global **não serve** (os nomes são de lá). Hoje a FPMED tem
+**2 usuários**: `lemuelempresas7@outlook.com` e `comercial@fpmed.com.br`, ambos `diretor`.
+**⏸ BLOQUEIO 2 — o token `sbp_` do Supabase DA FPMED** (cada banco tem o seu), na hora de aplicar.
+
+**Migração aprovada (executar nesta ordem, quando destravar):**
+1. `--etapa 1`: estrutura, sem ligar nada.
+2. `--perfis`: **todos os usuários atuais entram como `gestor_geral`** — nada muda na virada.
+3. `--etapa 2`: liga a RLS com a trava "ninguém sem perfil".
+4. **Red tests com 3 usuários de teste**: vendedor **não lê custo por REST direto** (barrado *pelo
+   banco*, não pela tela), sem papel = negado, desativado não entra.
+5. Só então aplicar a lista real do Lemuel.
+📌 Registrar no molde/`cria_cliente` que **papéis fazem parte do padrão de todo cliente novo**.
+
 ## 📋 FILA ATUAL (ordem definida pelo Lemuel em 04/08/2026, fim do dia)
 > Regra: pedido novo entra no FIM da fila. Só "URGÊNCIA" fura. Ver `CONTINUAR_AQUI.txt`.
 
