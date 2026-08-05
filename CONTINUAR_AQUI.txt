@@ -198,10 +198,54 @@ Criado em 21/07/2026 copiando SO os arquivos do app do C:\globalmed.
   RETOMADA do 1B: estender tools/carrega_cmed_pf.js + DDL da cmed_pf, depois a tela.
 
 ========================================
->>> ONDE PARAMOS — 05/08/2026, fim da sessao. LEIA ISTO PRIMEIRO.
+>>> ONDE PARAMOS — 05/08/2026, RODADA 2 (a da fila). LEIA ISTO PRIMEIRO.
 ========================================
 
-TUDO commitado e pushado. Ultimo commit: c2aacb4. Suite: 515 asserts verdes / 0 falhas / 20 suites.
+TUDO commitado e pushado. Ultimo commit: 8ac1a3a.
+Suite: 658 asserts verdes / 0 falhas / 24 suites (eram 515 em 20 no inicio da rodada).
+
+--- FILA: 5 ITENS FECHADOS NESTA RODADA ---
+  [OK] 1B Tabela CMED ....... PMVG no banco (25.702 tetos legais) + tela + dicionario CMED
+  [OK] 3  Comparativo ....... simplificado, e parou de mostrar preco de caixa como unitario
+  [OK] 5  Estoque 0->1 ...... a regra passou a valer no FLUXO, nao so no dado
+  [OK] 7  PDF de proposta ... preco unitario formatado + quadro de OBSERVACOES
+  [OK] 6  Pack (parcial) .... "1 + recipiente" no nome vale como pack 1; CMED por PA+dose
+                              DESCARTADO com razao medida (ver TAREFAS, item 6)
+
+--- FALTA NA FILA (nada bloqueado por mim) ---
+  4  Blocos 2/4 do sync ... ESPERA o Lemuel escolher os blocos (SYNC_GLOBAL.md)
+  8  Calendario FASE 2 .... ESPERA OK dele (gravar as 2.578 linhas)
+  9  SIGA completo ........ NAO COMECADO. Item grande. Ordem recomendada na secao 6.7 do
+                            LICITACOES_SPEC.md: comecar pelo NEGOCIOS/Funil, que nao depende
+                            de nada externo. O Calendario 2025.xlsm (item 8) semeia ele com
+                            2.578 linhas reais — vale destravar o 8 ANTES de comecar o 9.
+  10 Coleta agendada PNCP .. NAO COMECADO. Decisao de seguranca ja tomada (edge function com
+                            segredo dedicado; a service_role nunca vai pro CI).
+
+--- 3 COISAS QUE PRECISAM DELE (nenhuma e bloqueio tecnico) ---
+  (a) ITEM 4: quais blocos do sync de codigo portar (169 commits, curadoria em 5 blocos).
+  (b) ITEM 8: OK pra FASE 2 do Calendario (gravar em licitacoes_acompanhadas).
+  (c) ITEM 6: as 85 linhas que seguem sem pack sao material cirurgico e dose unica. Ou
+      capturar EAN/GGREM no cadastro (resolve de vez e serve pra outras coisas), ou conferir
+      as 85 na mao uma vez e gravar com fonte='manual' na pack_confirmado.
+
+--- O QUE NAO FIZ, DE PROPOSITO ---
+  APLICAR OS PAPEIS (limedtec-papeis.js + ddl/papeis.sql) ficou PARADO. A migracao liga uma
+  RLS restritiva na tabela cotacoes com a trava "ninguem sem perfil": se ela subir e os
+  perfis nao gravarem, NINGUEM entra no sistema. E os red tests exigem criar 3 usuarios de
+  teste e APAGAR depois. Nesta rodada a instrucao era nao executar DELETE/DROP/UPDATE de
+  dado sem OK, entao pulei e anotei — como mandava a regra.
+  >>> A PRE-CONDICAO QUE ESTAVA ABERTA EU CONFERI, e ela esta OK: a view cotacoes_vendedor
+      esta com security_invoker=FALSE. Se estivesse ON, a papeis.sql tirava o sistema inteiro
+      do vendedor (a restritiva bloqueia a tabela e a view herdaria o bloqueio). Nao herda.
+      Sobra so a decisao ja registrada: unificar os dois gates ou o cria_usuario escrever nos
+      dois (cargo no app_metadata E perfil na tabela).
+
+========================================
+>>> RODADA ANTERIOR — 05/08/2026 (LIMEDTEC/PWA + Licitacoes V1)
+========================================
+
+Ultimo commit daquela rodada: c2aacb4. Suite: 515 asserts verdes / 0 falhas / 20 suites.
 
 --- 1. FEITO NESTA SESSAO ---
 (a) LICITACOES V1 COMPLETO e no ar: busca no PNCP + tema escuro + CRUZAMENTO POR ITEM contra o
@@ -266,9 +310,23 @@ cotacoes sem mensagem clara. Decidir depois: unificar os gates ou o cria_usuario
 
 >>> FILA EM 05/08/2026 (ordem, detalhes no TAREFAS_FPMED.md):
   [OK] 1B Tabela CMED . [OK] 3 Comparativo simplificado . 4 Blocos 2/4 do sync (ESPERA o Lemuel
-  escolher os blocos) . 5 Estoque 0->1 no fluxo . 6 Pack via CMED/web . 7 PDF de proposta .
-  8 Calendario FASE 2 (ESPERA OK) . 9 SIGA completo, 5 abas (comecar pelo FUNIL) .
-  10 Coleta agendada do PNCP + banco proprio.
+  escolher os blocos) . [OK] 5 Estoque 0->1 no fluxo . [PARCIAL] 6 Pack (ver TAREFAS) .
+  [OK] 7 PDF de proposta . 8 Calendario FASE 2 (ESPERA OK) . 9 SIGA completo, 5 abas (comecar
+  pelo FUNIL) . 10 Coleta agendada do PNCP + banco proprio.
+
+>>> DEFEITOS ACHADOS E CORRIGIDOS NESTA RODADA (todos so visiveis com dado real):
+  1. giovana paginava o dicionario CMED em 2000; o PostgREST daqui corta em 1000 -- teria
+     lido 1.000 das 6.283 linhas achando que leu tudo.
+  2. precoUnitario dividia por qtdEmbalagem sempre; com pack nao detectado o divisor valia 1
+     e o preco da CAIXA ia pra celula do unitario, sem sinal. 112 linhas. Funcao REMOVIDA.
+  3. _qtdDoNome lia o "3" de "3,5ML" como pack 3 (faltava o lookahead de decimal que o mC ja
+     tinha). Afetava o pack em TODAS as telas.
+  4. calibre French (SONDA 22FR) dividia o preco por 22 no Comparativo -- a correcao existia
+     so no Licitacoes.
+  5. o PDF do cliente imprimia o preco unitario CRU ("0.2556"). A Global tem o MESMO bug.
+  6. estoqueGravar: 0,4 truncava pra 0 e escapava da regra 0->1 (ordem invertida).
+  7. duas versoes minhas da regra "parece caixa" (cascata e minimo como referencia) --
+     achadas rodando contra o banco inteiro no navegador, antes de virarem verdade na tela.
 
 >>> ITEM 10 -- porque existe: o PNCP caiu de novo em 05/08 (timeout confirmado de fora). A tela
   NAO trava (AbortController de 20s + cache de 15 min + erro visivel com "Tentar de novo"), mas
