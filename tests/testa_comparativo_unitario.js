@@ -140,5 +140,99 @@ const L = o => Object.assign({ produto:'', und:null, compra_unit:null, compra_ca
   ok('33. media so das certas = 0,48 (com a caixa dentro daria 23,99)', Math.abs(media - 0.48) < 1e-9, media);
 }
 
+// ══════════ 10. RESGATE DO PREÇO DE CAIXA GRAVADO EM compra_unit ══════════
+// CASO REAL medido no ar em 05/08: ELLO "CEFARISTON 1GR CX C/100" com compra_unit = 493,75
+// contra STOCK MED a 4,4989 pelo mesmo item. A media de mercado do grupo ia a R$ 328,84.
+// A regra exige EVIDENCIA DUPLA: o nome declara o pack E o preco dividido por ele cai em
+// cima do mercado. Aqui esta ela isolada, na mesma forma que roda dentro do buildGrupos.
+function resgata(opcoes){
+  const outros = opcoes.filter(o => !o.incerto && o.compra > 0);
+  if (outros.length < 2) return opcoes;
+  opcoes.forEach(o => {
+    if (o.incerto || o.pack > 1 || !(o.compra > 0)) return;
+    const packNome = qtdEmbalagem(o.und, o.produto);
+    if (!(packNome > 1)) return;
+    const ref = outros.filter(x => x !== o).map(x => x.compra);
+    if (!ref.length) return;
+    const pmin = Math.min(...ref);
+    if (!(o.compra / pmin >= 3)) return;
+    const corr = o.compra / packNome;
+    if (corr < pmin * 0.4 || corr > pmin * 2.5) return;
+    o.bruto = o.compra; o.compra = corr; o.pack = packNome; o.eraCaixa = true;
+  });
+  return opcoes;
+}
+const O = (forn, produto, compra, und) => ({ forn, produto, compra, und: und||null, pack:1, incerto:false });
+
+{
+  const g = resgata([
+    O('STOCK MED', 'CEFALOTINA 1GR IV/IM 100 F/A', 4.4989, 'FA'),
+    O('ELLO',      'CEFARISTON 1GR CX C/100',      493.75, null),
+  ]);
+  const ello = g.find(o=>o.forn==='ELLO');
+  ok('34. *** ELLO 493,75 vira 4,9375 (o caso real do ar) ***', Math.abs(ello.compra - 4.9375) < 1e-9, ello.compra);
+  ok('35. ...com pack 100 registrado', ello.pack === 100, ello.pack);
+  ok('36. ...marcado como eraCaixa (a tela avisa que corrigiu)', ello.eraCaixa === true);
+  ok('37. ...e o bruto do banco preservado', ello.bruto === 493.75);
+  ok('38. o preco certo do STOCK MED nao foi tocado', g.find(o=>o.forn==='STOCK MED').compra === 4.4989);
+  const media = g.reduce((a,o)=>a+o.compra,0)/g.length;
+  ok('39. media do grupo cai de 249,12 p/ 4,72', Math.abs(media - 4.71820) < 0.001, media);
+}
+
+// ── E AGORA O QUE ELA NÃO PODE FAZER ──────────────────────────────────────────────────────
+// Uma marca cara de verdade tambem custa 3x o generico. Se a regra so olhasse "destoa do
+// grupo", ela dividiria preco legitimo por 100 e faria a marca premium parecer a mais barata
+// da tela — o erro oposto, e pior, porque leva a comprar errado.
+{
+  const g = resgata([
+    O('GENERICO A', 'DIPIRONA 500MG C/100 CPR', 0.30, 'CX'),
+    O('GENERICO B', 'DIPIRONA 500MG C/100 CPR', 0.35, 'CX'),
+    O('MARCA CARA', 'NOVALGINA 500MG C/100 CPR', 1.80, 'CX'),
+  ]);
+  ok('40. marca 6x mais cara NAO e dividida: 1,80 ÷100 = 0,018 nao bate com o mercado (0,30)',
+    g.find(o=>o.forn==='MARCA CARA').compra === 1.80, g.find(o=>o.forn==='MARCA CARA').compra);
+}
+{
+  // sem pack no nome, nao ha (1) — a regra nem tenta, por mais que o preco destoe
+  const g = resgata([
+    O('A', 'SORO FISIOLOGICO 500ML', 5.10, 'FR'),
+    O('B', 'SORO FISIOLOGICO 500ML', 5.40, 'FR'),
+    O('C', 'SORO FISIOLOGICO 500ML', 300.00, 'FR'),
+  ]);
+  ok('41. preco absurdo mas SEM pack no nome fica como esta (a tela nao inventa divisor)',
+    g.find(o=>o.forn==='C').compra === 300, g.find(o=>o.forn==='C').compra);
+}
+{
+  // UM PEER SÓ BASTA — e isto e deliberado, nao descuido. O caso real da ELLO tem exatamente
+  // dois fornecedores no grupo, ou seja UM peer. Exigir dois deixaria o defeito que motivou a
+  // regra sem correcao. O que sustenta a decisao com um peer so nao e a quantidade de amostras
+  // e sim a COINCIDENCIA: o nome dizer "C/100" E o valor dividido por 100 cair em cima desse
+  // peer sao dois fatos independentes. Bater por acaso exigiria o pack explicar a razao exata.
+  const g = resgata([ O('A','X 1G C/100', 4.50, 'FA'), O('B','X 1G CX C/100', 450, null) ]);
+  ok('42. com um peer só a regra AGE, desde que a divisão caia em cima dele',
+    g.find(o=>o.forn==='B').compra === 4.5, g.find(o=>o.forn==='B').compra);
+}
+{
+  // ...e o contraprova: um peer so, mas a divisao NAO cai nele -> nao corrige.
+  const g = resgata([ O('A','X 1G C/100', 4.50, 'FA'), O('B','X 1G CX C/100', 9000, null) ]);
+  ok('42b. um peer e divisão que NÃO cai nele (9000÷100=90 vs 4,50) -> fica como está',
+    g.find(o=>o.forn==='B').compra === 9000, g.find(o=>o.forn==='B').compra);
+}
+{
+  // a divisao tem que CAIR no mercado: pack errado no nome nao pode ser usado
+  const g = resgata([
+    O('A','ITEM C/10 UND', 2.00,'CX'), O('B','ITEM C/10 UND', 2.20,'CX'),
+    O('C','ITEM C/10 UND', 900.00,'CX'),   // ÷10 = 90, longe dos ~2
+  ]);
+  ok('43. 900 ÷10 = 90 nao bate com o mercado (~2) -> nao corrige, fica visivel como esta',
+    g.find(o=>o.forn==='C').compra === 900, g.find(o=>o.forn==='C').compra);
+}
+{
+  // quem ja veio dividido pelo cmpUnitario nao e mexido de novo (divisao dupla)
+  const o = { forn:'A', produto:'X 100FRS/AMP', compra:4.75, und:'CX', pack:100, incerto:false, bruto:475 };
+  const g = resgata([ o, O('B','X 100FRS/AMP', 4.80,'FA'), O('C','X 100FRS/AMP', 4.90,'FA') ]);
+  ok('44. opcao com pack>1 ja resolvido nao passa pela regra de novo', o.compra === 4.75, o.compra);
+}
+
 console.log('\nRESULTADO: ' + p + ' ok, ' + f + ' falha(s)');
 process.exitCode = f ? 1 : 0;

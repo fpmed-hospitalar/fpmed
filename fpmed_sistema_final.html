@@ -2459,6 +2459,40 @@ function buildGrupos(filtro) {
     }
   });
 
+  // ── RESGATE DO PREÇO DE CAIXA GRAVADO COMO UNITÁRIO ────────────────────────────────────
+  // `compra_unit` vem do importador e é tratado como unitário — mas às vezes é o preço da
+  // CAIXA que foi digitado no campo errado, e aí ele atravessa toda a tela intacto.
+  // CASO REAL (05/08, visível no ar): ELLO "CEFARISTON 1GR CX C/100" a R$ 493,75 contra
+  // STOCK MED a R$ 4,50 pelo mesmo item. A média de mercado do grupo ia a R$ 328,84 e o
+  // "Δ vs melhor" marcava +10.874,9% — número que ninguém acredita, mas que estava lá.
+  // O confirm do pareceCaixaPeer só existe na HORA DE GRAVAR; linha já no banco passava batido.
+  //
+  // A EVIDÊNCIA TEM QUE SER DUPLA, senão isto vira um divisor solto quebrando preço legítimo:
+  //   1. o NOME declara o pack ("CX C/100"), e
+  //   2. o preço ÷ pack CAI EM CIMA do que os outros do mesmo grupo cobram.
+  // Uma coisa só não basta: marca cara de verdade satisfaz (1) e falha (2); nome sem pack
+  // falha (1). As duas juntas por acaso exigiriam a coincidência de o pack explicar a razão.
+  Object.values(grupos).forEach(g => {
+    const outros = g.opcoes.filter(o => !o.incerto && o.compra > 0);
+    if (outros.length >= 2) {
+      g.opcoes.forEach(o => {
+        if (o.incerto || o.pack > 1 || !(o.compra > 0)) return;      // já dividido, ou sem preço
+        const packNome = qtdEmbalagem(o.und, o.produto);
+        if (!(packNome > 1)) return;                                  // (1) nome não declara pack
+        const ref = outros.filter(x => x !== o).map(x => x.compra);
+        if (!ref.length) return;
+        const pmin = Math.min(...ref);
+        if (!(o.compra / pmin >= 3)) return;                          // não destoa: é preço mesmo
+        const corr = o.compra / packNome;
+        if (corr < pmin * 0.4 || corr > pmin * 2.5) return;           // (2) a divisão NÃO explica
+        o.bruto = o.compra; o.compra = corr; o.pack = packNome; o.eraCaixa = true;
+        console.warn('[cmp] preço de caixa resgatado: ' + o.forn + ' ' + o.produto +
+                     ' R$' + o.bruto.toFixed(2) + ' ÷' + packNome + ' = R$' + corr.toFixed(4) +
+                     ' (mercado ~R$' + pmin.toFixed(4) + ')');
+      });
+    }
+  });
+
   Object.values(grupos).forEach(g => {
     // incerto vai pro fim: ele não concorre por "mais barato", só informa que existe cotação
     g.opcoes.sort((a,b) => (a.incerto?1:0) - (b.incerto?1:0) || a.compra - b.compra);
@@ -2828,7 +2862,11 @@ function renderComparativo(termo, manterLimite) {
 // caixa de 100 dividida — e a diferença aparece só na hora do faturamento.
 function cmpBadgePack(op){
   if (!op || !(op.pack > 1)) return '';
-  return `<div style="font-size:8.5px;color:#7a8a7a;letter-spacing:.2px" title="preço da embalagem ${fmtBRL(op.bruto)} dividido por ${op.pack}">un · cx${op.pack}</div>`;
+  // `eraCaixa` = o valor estava gravado em compra_unit como se fosse unitário e a tela
+  // corrigiu. Marcar isso é obrigação: o número exibido diverge do que está no banco.
+  return op.eraCaixa
+    ? `<div style="font-size:8.5px;color:#B25E00;font-weight:700;letter-spacing:.2px" title="o banco tem ${fmtBRL(op.bruto)} em compra_unit, mas o nome declara ${op.pack} un e o valor dividido bate com o mercado — corrigido só na exibição">↺ un · cx${op.pack}</div>`
+    : `<div style="font-size:8.5px;color:#7a8a7a;letter-spacing:.2px" title="preço da embalagem ${fmtBRL(op.bruto)} dividido por ${op.pack}">un · cx${op.pack}</div>`;
 }
 function cmpAvisoConferir(op){
   return `<div style="font-size:10px;font-weight:700;color:#8A6D00" title="a unidade é agregadora (caixa/pacote) e o nome não declara quantas unidades vêm — dividir seria chutar">⚠ conferir emb.</div>
