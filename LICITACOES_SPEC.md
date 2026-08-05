@@ -139,6 +139,34 @@ por recurso (empresas, jornais, negócios, perguntas de IA/dia) via Hotmart.
 (correspondências, catálogo, estados, órgãos, empresas, marcas). **Análise de Empresas** por
 CNPJ: cadastral + participação + gráficos. **Jurídico**: biblioteca de peças reais, não gerador.
 
+### 1C.6 DELTA da parte 4 (só o que as partes 1B/1C ainda não cobriam)
+
+**Converter oportunidade → negócio: modal de 3 passos.**
+Passo 1 confirma a oportunidade · Passo 2 **seleciona os itens de interesse** · Passo 3 dá nome
+ao negócio e associa a uma empresa (CNPJ) do usuário.
+→ O passo 2 é o encaixe natural do **nosso cruzamento**: os itens que casam com o estoque já
+vêm pré-marcados.
+
+**Os 20 portais, lista fechada:** Comprasnet · Portal de Compras Públicas · Licitações-e ·
+Licitações Caixa · Banrisul · COMPRAS RS · COMPRAS BAHIA · COMPRAS AMAZONAS ·
+**COMPRASNET GOIÁS** · COMPRAS RJ · COMPRAS RECIFE · **Licitanet** · BLL COMPRAS ·
+PORTAL e-LIC SANTA CATARINA · PROCERGS · COMPRAS MINAS GERAIS · BANPARÁ · PE Integrado ·
+BNC · **Outros/PNCP**.
+> ⚠️ **O calcanhar de Aquiles deles é técnico**: cada portal tem estrutura própria, então são
+> ~19 conectores/scrapers a manter. Nós começamos com **1 API oficial e estável** — cobertura
+> menor, manutenção quase zero. É um trade-off a favor da gente no curto prazo.
+
+**Filtros da busca avançada que ainda faltam no nosso:** faixa de **valor da compra** (mín/máx) ·
+**valor do item** (mín/máx) · qtd máxima de itens · toggle "compras com valores sigilosos" ·
+toggle **participação exclusiva ME/EPP** · toggle **excluir registros de preço**.
+
+**Jurídico — submenu real:** Impugnação · Esclarecimento · **Intenção de recurso** · Recurso ·
+Contrarrazões. Cada um é uma busca de modelos, filtrável por órgão, com "somente nova lei"
+(Lei 14.133/2021). Confirma de novo: **é biblioteca, não gerador** → nosso V2-diferencial segue de pé.
+
+**Tarefas do funil:** o checklist de 15 é fullscreen, mostra **percentual** e permite
+**criar seções customizadas** (+Seção), não só marcar as fixas.
+
 ---
 
 ## 2. NOSSO MÓDULO — V1 (a construir)
