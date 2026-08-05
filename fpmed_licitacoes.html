@@ -469,8 +469,8 @@ function numCompra(numero, ano){
 }
 
 // ══ ESTOQUE PRÓPRIO FPMED ═════════════════════════════════════════════════════════════════
-// 1.381 linhas (tipo='global'). O PostgREST da FPMED pagina em 1000 — não em 2000 como o do
-// GlobalMed. O Bearer aqui é a anon; o gm-auth troca pelo JWT do usuário antes de sair.
+// 1.381 linhas (tipo='global'). O PostgREST desta instância pagina em 1000 — qualquer laço que
+// suponha 2000 perde metade. O Bearer aqui é a anon; o gm-auth troca pelo JWT antes de sair.
 const SB_URL = 'https://xzdowrksuswekwffoluk.supabase.co';
 const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh6ZG93cmtzdXN3ZWt3ZmZvbHVrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ2NzE2MTMsImV4cCI6MjEwMDI0NzYxM30.Pk-SlV_pZdniESyrajDdfHdHcnmyCwCMtP_TrShh75Y';
 const SB_H  = { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY };
