@@ -270,3 +270,87 @@ Ordem definida pelo Lemuel: **normalização por unidade → sync de dados → B
 | 7 | V2-DIFERENCIAL — gerador de minuta jurídica com IA | — |
 
 > Regra do Lemuel: **mostrar o screenshot do protótipo busca+lista ANTES** de construir o cruzamento.
+
+---
+
+## 5. ADENDO — MÓDULO "ANÁLISE" do SIGA (estudo do Lemuel, 05/08/2026)
+
+> Menu "Análise" (só aparece em algumas páginas do SIGA). 4 itens, todos testados por ele com o
+> termo "medicamentos". **Entrou como item 9 da fila** — ler isto antes de estimar.
+
+### 5.1 Análise de Mercado (`/analise-mercado`)
+Filtro de **Período** + barra de busca (mesma lógica de Oportunidades/Histórico). Ao buscar:
+**mapa do Brasil (heatmap por UF)** + gráfico de barras mensal + **valor total contratado**, tudo
+já filtrado pelo termo. Abaixo, **7 "Ângulos de Análise"**, cada um um card com contador e botão
+"Analisar" que abre uma tela cheia/drawer:
+
+| ângulo | o que mostra |
+|---|---|
+| **Correspondências** | tabela dos itens de licitações ENCERRADAS que casam com o termo (Portal, Órgão, Número, Nº do item, UF, Modalidade), paginada; a linha abre a **ficha da licitação** (tag nova observada: "Orçamento sigiloso") |
+| **Catálogo** | termos/categorias de catálogo relacionados, com contagem de "itens disputados" por sugestão + link p/ o Histórico filtrado por ela |
+| **Estados** | ranking de UF por nº de disputas e valor homologado (tabela ordenável) |
+| **Órgãos** | ranking de órgãos por disputas e valor gasto, alternância Tabela/Gráfico |
+| **Empresas** | ranking por CNPJ+razão social, vitórias e valor, abas **Vencedores/Concorrentes**, Tabela/Gráfico |
+| **Marcas** | ranking de marcas, mesmas abas e alternância |
+| **Contratação Futura** | painel DIFERENTE: **Consulta PCA** (Plano de Contratações Anual), 3 sub-abas — Produtos/Serviços (valor previsto no ano, qtd de itens, unidades compradoras, gráfico de gastos previstos, ranking de "Principais Unidades"), Órgãos (por nome) e Contratação Anual (por CNPJ do órgão) |
+
+⚠️ Os 6 primeiros ângulos usam **disputas encerradas**; o 7º usa **planejamento futuro** (PCA) —
+é outra fonte de dados.
+
+### 5.2 Histórico de Compras (`/historico-compras`)
+Feed pesquisável (termos separados por `;` + "Pesquisa avançada") com todos os itens de licitações
+encerradas, cartão a cartão: portal+órgão+nº do processo, tag de UF, nº/título do item, **tag de
+situação colorida** (FRACASSADO/DESERTO/REVOGADO em vermelho, ACEITO E HABILITADO em verde),
+descrição, abertura/quantidade/unidade e — quando houve vencedor — **CNPJ+razão social do
+vencedor, valor unitário homologado e valor total homologado**. É a mesma base que alimenta
+"Histórico" e "Preços Praticados" dentro da ficha do item, exposta como feed geral.
+
+### 5.3 Análise de Empresas (`/analise-empresa`)
+Busca por **CNPJ ou nome fantasia** (autocomplete) + Período. Painel com 3 abas:
+- **Visão geral / Participação**: participações (total, vencidas, não vencidas), valores (total
+  disputado / vencido / não vencido), vitórias por modalidade (P.E. × Dispensa), **penalidades**
+  (desclassificações, inabilitações).
+- **Gráficos**: vitórias × derrotas (% vencido), valor homologado × disputado, desclassificações ×
+  inabilitações, com **lista de motivos**.
+- Link "Histórico de compras" filtrado pela empresa.
+
+É um **dossiê de reputação/performance de qualquer concorrente (ou da própria FPMED)**.
+
+### 5.4 Encontrar fornecedor com IA
+Painel "Prospecção de fornecedores": texto livre ("descrição do produto...") → cards por empresa
+sugerida com **nome, Aderência (% de match), Contato (tel/e-mail), Site, Localização** e um
+parágrafo de "Análise" justificando. **Consome a MESMA cota diária** do "Converse com o edital"
+(contador único "X de 12 perguntas diárias" compartilhado).
+
+### 5.5 Extras confirmados
+- **Minhas Empresas** (`/minhas-empresas`): lista simples nome/CNPJ + "Adicionar empresa". Sem
+  tela de detalhe (o link do nome não abre nada visível).
+- **Peças Jurídicas** (`/pecas-juridicas`): base de pesquisa de **documentos jurídicos REAIS**
+  extraídos de licitações públicas (impugnações, esclarecimentos, intenções de recurso, recursos,
+  contrarrazões já protocolados). Busca por termo, toggle "Limitar por órgão", toggle "Somente
+  nova lei" (Lei 14.133/2021), abas por tipo de peça com marcar/desmarcar todos. Cada resultado
+  mostra o pregão de origem, um trecho do documento e "Abrir no portal". É um **banco de modelos
+  reais** pra inspirar a redação de novas peças.
+
+### 5.6 PARA REPLICAR — o que isso exige de nós
+1. **Um motor de busca textual único** sobre itens de licitação (encerradas E futuras),
+   reaproveitado em Oportunidades, Análise de Mercado e Histórico de Compras.
+2. **Agregações pré-calculadas** sobre esse índice em 6 dimensões: item, categoria de catálogo,
+   UF, órgão, empresa (vencedora/concorrente) e marca — cada uma com ranking, Tabela/Gráfico e
+   período.
+3. **Fonte separada para o PCA** (planejamento anual), pesquisável por objeto, órgão ou CNPJ —
+   provavelmente outro dataset público (PCA/PNCP), distinto do de disputas encerradas.
+4. **Perfil agregado por CNPJ**: taxa de vitória, valores movimentados, penalidades e motivos.
+5. **Assistente de IA de prospecção** que recebe descrição em linguagem natural e devolve
+   candidatos com score, contato e link — mesmo motor de busca + LLM pro texto. Cota compartilhada
+   com o chat de edital.
+
+### 5.7 ⚠️ O QUE FALTA NA NOSSA BASE (ler antes de estimar)
+Tudo em 5.1–5.3 depende de uma coisa que **ainda não temos**: o **histórico de RESULTADOS** das
+disputas — quem venceu, por quanto, com que CNPJ, e a situação de cada item. A busca que já está
+no ar (`/contratacoes/publicacao`) traz o EDITAL, não o RESULTADO. Antes de qualquer tela deste
+módulo é preciso achar e validar o endpoint de **resultados/atas do PNCP** (é a etapa 5 do plano,
+"V1.5 — histórico de resultados"), do mesmo jeito que o endpoint de ITENS foi confirmado.
+🟢 **Boa notícia**: o `Calendario 2025.xlsm` (item 8) traz **2.578 linhas do nosso próprio
+histórico de participação, com VALOR GANHO** — dá pra fazer o "Análise de Empresas" da PRÓPRIA
+FPMED antes e independente do PNCP.

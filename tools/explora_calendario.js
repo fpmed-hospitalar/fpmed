@@ -9,8 +9,16 @@ const ARQ = 'C:/fpmed/Calendario 2025.xlsm';
 console.log('\n══ EXPLORACAO (so leitura) ══');
 console.log('arquivo: ' + ARQ + '  ·  ' + (fs.statSync(ARQ).size/1048576).toFixed(1) + ' MB\n');
 
-// bookSheets:false pra ter o workbook completo, mas sem calcular formula
-const wb = XLSX.readFile(ARQ, { cellFormula:false, cellHTML:false, cellStyles:false, sheetStubs:false });
+// LIMITE DE LINHAS — medido em 05/08: ler o workbook inteiro deste arquivo (49,7 MB, com macro)
+// passa de 15 MINUTOS sem terminar. O custo está no parse de CÉLULA, não no unzip. Com
+// sheetRows a leitura para na linha N de cada aba e o arquivo abre em segundos.
+// A dimensão VERDADEIRA não se perde: quando sheetRows trunca, o SheetJS guarda o range
+// original em `!fullref` — é de lá que sai a contagem real de linhas/colunas abaixo.
+const AMOSTRA_LINHAS = 25;
+const t0 = Date.now();
+const wb = XLSX.readFile(ARQ, { sheetRows:AMOSTRA_LINHAS, cellFormula:false, cellHTML:false,
+                                cellStyles:false, cellNF:false, cellText:false, sheetStubs:false });
+console.log('lido em ' + ((Date.now()-t0)/1000).toFixed(1) + 's (amostra de ' + AMOSTRA_LINHAS + ' linhas por aba)\n');
 
 console.log('abas: ' + wb.SheetNames.length);
 // abas ocultas ficam no Workbook.Sheets[i].Hidden (0=visivel, 1=oculta, 2=muito oculta)
@@ -22,9 +30,11 @@ wb.SheetNames.forEach((nome, i) => {
   const ws = wb.Sheets[nome];
   const ref = ws['!ref'];
   if (!ref) { console.log(`─ [${i}] "${nome}"  (${oculta(i)})  VAZIA`); return; }
-  const r = XLSX.utils.decode_range(ref);
+  // !fullref = dimensão REAL da aba (existe quando o sheetRows truncou a leitura)
+  const refReal = ws['!fullref'] || ref;
+  const r = XLSX.utils.decode_range(refReal);
   const linhas = r.e.r - r.s.r + 1, colunas = r.e.c - r.s.c + 1;
-  console.log(`─ [${i}] "${nome}"  (${oculta(i)})  ${linhas} linhas × ${colunas} colunas  [${ref}]`);
+  console.log(`─ [${i}] "${nome}"  (${oculta(i)})  ${linhas} linhas × ${colunas} colunas  [${refReal}]`);
 
   // cabecalho: 1a linha nao-vazia
   const grade = XLSX.utils.sheet_to_json(ws, { header:1, defval:'', raw:true, blankrows:false, range:0 });

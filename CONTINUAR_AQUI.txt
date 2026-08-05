@@ -166,9 +166,12 @@ Criado em 21/07/2026 copiando SO os arquivos do app do C:\globalmed.
   loader usa 19. TUDO que a spec pediu esta la e e so mapear -- CNPJ, REGIME DE PRECO, PF e PMC
   em todas as aliquotas (com variante ALC), ICMS 0%, ANALISE RECURSAL, LISTA DE CONCESSAO DE
   CREDITO, DESTINACAO COMERCIAL.
-  ** PENDENCIA DO LEMUEL: o PMVG NAO existe nessa planilha (conferido coluna a coluna). Vem na
-     lista CAP/PMVG, publicacao separada da ANVISA. Sem esse arquivo, "destacar o PMVG" (teto
-     legal de venda ao governo) nao sai do papel. O resto do 1B anda sem ele. **
+  ** PMVG CHEGOU em 05/08 -- 1B DESTRAVADO. Arquivo "xls_conformidade_gov_20260721_164341114
+     (2).xlsx" (13,2 MB) em C:\fpmed. Cabecalho na LINHA 54, dados da 55; 25.702 linhas, MESMA
+     base da cmed_pf, casa 1:1 pelo GGREM (col 3). PMVG por aliquota nas colunas 39-64 (49 = 19%
+     de GOIAS, preenchido em todas). ARMADILHAS: valor vem com ASTERISCO no fim ("6533,27*") --
+     tirar antes de converter; decimal com virgula; CAP="Sim" = desconto obrigatorio pro governo,
+     merece badge na tela CMED e no cruzamento do Licitacoes. Detalhes no TAREFAS_FPMED.md. **
   ACHADO: a cmed_pf tem 25.702 pares principio_ativo x marca -- da pra preencher a
   cmed_dicionario derivando dela e resolver os 302 medicamentos sem PA do estoque.
   RETOMADA do 1B: estender tools/carrega_cmed_pf.js + DDL da cmed_pf, depois a tela.

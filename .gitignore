@@ -31,6 +31,12 @@ backups/
 scratchpad/
 *.xlsx
 *.xls
+# 05/08/2026: a regra cobria .xlsx/.xls mas NAO .xlsm — e o "Calendario 2025.xlsm" (49,7 MB,
+# 2.578 licitacoes da FPMED com VALOR GANHO) estava untracked num repo PUBLICO, a um
+# `git add -A` de virar commit. Buraco fechado.
+*.xlsm
+*.xlsb
+FPMED_Estoque_texto_para_colar.txt
 *.pdf
 *.jpg
 *.jpeg

@@ -211,10 +211,27 @@ Auditoria de 22/07: banco confirmado limpo após teste do upload de PDF (preview
        em TODAS as alíquotas** (0/12/17/17,5/18/19/19,5/20/20,5/21/22/22,5/23, cada uma com a
        variante `ALC`), `ICMS 0%` (68), `ANÁLISE RECURSAL` (69), `LISTA DE CONCESSÃO DE CRÉDITO
        TRIBUTÁRIO (PIS/COFINS)` (70), `DESTINAÇÃO COMERCIAL` (73).
-     · ⛔ **PMVG NÃO EXISTE nesta planilha** — confirmado coluna a coluna. Vem na **lista
-       CAP/PMVG**, publicação separada da ANVISA. **O Lemuel precisa baixar esse arquivo** para
-       o "destacar o PMVG" (teto legal de venda ao governo) sair do papel. O resto do item 1B
-       anda sem ele.
+     · ✅ **PMVG CHEGOU (05/08)** — a pendência foi fechada no mesmo dia. Arquivo
+       `xls_conformidade_gov_20260721_164341114 (2).xlsx` (13,2 MB) em `C:\fpmed`. **O 1B está
+       DESTRAVADO.** Estrutura confirmada pelo Lemuel:
+       - aba única `Planilha1`, **cabeçalho na LINHA 54**, dados a partir da 55
+       - **25.702 linhas — a MESMA base da `cmed_pf`** (edição 21/07/2026), casa **1:1 pelo
+         `CÓDIGO GGREM` (col 3)**
+       - 74 colunas: 0=SUBSTÂNCIA · 1=CNPJ · 2=LABORATÓRIO · 3=GGREM · 4=REGISTRO · 5-7=EAN ·
+         8=PRODUTO · 9=APRESENTAÇÃO · 10=CLASSE TERAPÊUTICA · 11=TIPO · 12=REGIME DE PREÇO ·
+         **13-38=PF por alíquota** · **39-64=PMVG por alíquota** (39=sem imposto, 40=0%,
+         **49=19% ← GOIÁS**) · 65=RESTRIÇÃO HOSPITALAR · 66=CAP · 67=CONFAZ 87 · 68=ICMS 0% ·
+         69=ANÁLISE RECURSAL · 70=LISTA PIS/COFINS · 71=COMERCIALIZAÇÃO 2025 · 72=TARJA ·
+         73=DESTINAÇÃO
+       ⚠️ **Armadilhas de parse (ditadas pelo Lemuel, não descobrir do zero):**
+       1. valores vêm com **ASTERISCO no fim** (`"6533,27*"`) — marcador de nota da CMED,
+          **tirar o `*` antes de converter**;
+       2. decimal com **vírgula** (`"21,53"`);
+       3. **PMVG 19% preenchido nas 25.702 linhas** (ele conferiu) → popular `cmed_pf.pmvg` com a
+          alíquota **19% (GO)** e guardar também **`pmvg_0` e `pmvg_sem_imposto`** se a DDL deixar;
+       4. **`CAP = "Sim"`** = medicamento com **desconto obrigatório pro governo** → merece
+          **badge próprio** na tela CMED **e no cruzamento do Licitações**.
+       5. fila em ordem e **suíte inteira antes do commit**, como sempre.
      · 💡 **Achado de valor colateral**: a `cmed_pf` tem 25.702 pares `subst_norm` (princípio
        ativo) × `marca_norm`. Isso é um vocabulário de PA **muito maior que os 938** tirados das
        cotações, e dá pra **preencher a `cmed_dicionario` (marca→PA) derivando dela**. Resolve os
@@ -273,16 +290,46 @@ Auditoria de 22/07: banco confirmado limpo após teste do upload de PDF (preview
      "muito ocultas"), colunas de cada uma, contagem de linhas, **amostra de linhas** e uma
      **proposta de destino** (qual tabela/tela isso vira, ou se não vira nada). Nada de banco,
      nada de UPDATE, nada de tela — só o relatório.
-     ✅ **A ferramenta da FASE 1 já existe**: `tools/explora_calendario.js` (commit `1e0d525`),
-     100% só leitura, já mapeia aba oculta e detecta macro (`vbaraw`). É rodar e ler:
-     `node tools/explora_calendario.js`. (O projeto lê xlsx/xlsm com a lib `xlsx` do Node, que
-     já está no `package.json` — é o equivalente do `openpyxl read_only` pedido; se preferir
-     Python de verdade, dá pra reescrever, mas o node evita instalar toolchain nova.)
+     ✅ **FASE 1 EXECUTADA (05/08)** com `tools/explora_calendario.js` — nada gravado.
+     ⚙️ O explorador **não abria o arquivo**: ler o workbook inteiro (49,7 MB) passava de **15
+        minutos** sem terminar. O custo é o parse de CÉLULA, não o unzip. Passou a ler com
+        `sheetRows:25` e a tirar a dimensão real do `!fullref` → **abre em 3,9 s** sem perder a
+        contagem de linhas. Sem macro de verdade no arquivo (`vbaraw` ausente).
+     **3 abas:**
+     | aba | estado | tamanho | o que é |
+     |---|---|---|---|
+     | `AGENDA` | visível | **2.578 linhas × 16 col.** | **o achado** — a agenda de licitações da FPMED |
+     | `CADASTRO` | visível | 25 linhas (vazia) | o formulário de entrada que alimenta a AGENDA |
+     | `Planilha1` | **OCULTA** | 10 linhas | rascunho de UM pregão (EBSERH Florianópolis, contraste) |
+
+     **Colunas da AGENDA**: `STATUS` (EM ANALISE / PARTICIPAR / …) · `ABERTURA` (serial do Excel,
+     ex. 46240) · `HORA` (fração do dia) · `MOD.` (P.E. / D.L.) · `Nº COMPRA` · `NUMERO` (nn/aaaa)
+     · `PORTAL` (BLL / COMPRAS PUBLICAS / PROPRIO …) · `CIDADE` · `UF` · `ORGAO` · `OBJETO`
+     · **`VALOR GANHO`** · `OBSERVAÇÃO` · `DIA` · `MÊS` · `ANO`.
+
+     💡 **PROPOSTA DE DESTINO** — isto é exatamente a tabela que faltava no módulo Licitações:
+     as 2.578 linhas são o **histórico próprio de participação** da FPMED (o que acompanhou, o
+     que disputou, em que portal, por qual órgão e **quanto ganhou**). Proposta:
+     1. Vira a **`licitacoes_acompanhadas`** (tabela que já estava prevista no item 1, RLS gestor
+        grava / logado lê), com `origem='calendario_2025'` pra separar do que a tela gravar.
+     2. Alimenta um KPI real na tela de Licitações: **taxa de participação e de vitória por
+        órgão/portal/modalidade** — o embrião do "Análise de Empresas" do SIGA (item 9), só que
+        com o nosso próprio histórico, que é dado que o SIGA não tem.
+     3. Converter na carga: `ABERTURA` serial → data ISO; `HORA` fração → HH:MM; `VALOR GANHO`
+        pt-BR → numérico; `NUMERO` pelo mesmo `numCompra()` já testado no Licitações.
+     ⛔ **Espera OK do Lemuel** — a FASE 2 (gravar) não começou.
+     🔒 `*.xlsm` **entrou no `.gitignore`** (a regra cobria `.xlsx`/`.xls` mas não `.xlsm`: o
+        arquivo com `VALOR GANHO` estava a um `git add -A` de ir pro repo **público**).
    - **FASE 2 — gravar SÓ depois do OK explícito do Lemuel**, em cima da proposta da fase 1.
      Preview antes de qualquer escrita, como em toda carga do projeto.
-   - ⚠️ **Guarda**: o arquivo está **fora do git** (untracked) e o repo é **PÚBLICO**. Se tiver
-     dado comercial/cliente dentro, **não pode ser commitado** — entra no `.gitignore` na
-     fase 1, junto com o relatório. O relatório em si não deve reproduzir dado de cliente.
+   - ✅ **Guarda cumprida**: `*.xlsm`/`*.xlsb` no `.gitignore`; o relatório acima descreve
+     estrutura, não reproduz valor nem cliente.
+
+9. ⬜ **MÓDULO "ANÁLISE" do SIGA** (entrou no fim da fila em 05/08). Estudo completo do Lemuel
+   registrado no `LICITACOES_SPEC.md` (seção 5). São 4 telas: Análise de Mercado (7 ângulos +
+   PCA), Histórico de Compras, Análise de Empresas (dossiê por CNPJ) e Encontrar fornecedor com
+   IA — mais Peças Jurídicas e Minhas Empresas. **Depende de uma base que ainda não temos**: o
+   histórico de RESULTADOS das disputas (quem venceu, por quanto). Ler a spec antes de estimar.
 
 ## ⬜ PENDENTES (na ordem)
 - [x] **Sync de dados EXECUTADO (04/08, com OK do Lemuel)**: **13.406 novos + 149 atualizados +
