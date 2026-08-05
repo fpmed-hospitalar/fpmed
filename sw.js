@@ -17,7 +17,7 @@
  */
 'use strict';
 
-const VERSAO = 'limedtec-fpmed-2026-08-05-2';
+const VERSAO = 'limedtec-fpmed-2026-08-05-3';
 const CACHE = 'limedtec-shell-' + VERSAO;
 
 // A CASCA DA FPMED. Lista MONTADA A MAO conferindo `git ls-files` (= o que o Pages serve),
@@ -45,6 +45,7 @@ const SHELL = [
   './manifest.webmanifest',
   './icones/limedtec-192.png',
   './icones/limedtec-512.png',
+  './icones/limedtec-192-maskable.png',   // logo oficial (cruz com o L) — 4 arquivos desde 05/08
   './icones/limedtec-512-maskable.png',
   './logo_fpmed.png',                  // usado nos PDFs e no cabecalho; e casca, nao dado
   // â”€â”€ FICARAM DE FORA DE PROPOSITO â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -113,4 +114,5 @@ self.addEventListener('fetch', ev => {
     }
   })());
 });
+
 
