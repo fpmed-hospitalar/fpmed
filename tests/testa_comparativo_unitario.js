@@ -29,7 +29,7 @@ function konst(nome) {
   return m[0];
 }
 const ctx = (new Function(`console.warn=function(){};
-  ${konst('_CMP_CALIBRE')} ${konst('_CMP_UND_UNITARIA')} ${konst('_CMP_UND_AGREGADORA')}
+  ${konst('_CMP_CALIBRE')} ${konst('_CMP_UND_UNITARIA')} ${konst('_CMP_UND_AGREGADORA')} ${konst('_CMP_UM_DECLARADO')}
   ${fn('_undNum')} ${fn('_qtdDoNome')} ${fn('_semCalibre')} ${fn('qtdEmbalagem')} ${fn('cmpUnitario')}
   return { qtdEmbalagem, cmpUnitario, _semCalibre, _qtdDoNome };`))();
 const { qtdEmbalagem, cmpUnitario, _qtdDoNome } = ctx;
@@ -279,6 +279,51 @@ const O = (forn, produto, compra, und) => ({ forn, produto, compra, und: und||nu
   const o = { forn:'A', produto:'X 100FRS/AMP', compra:4.75, und:'CX', pack:100, incerto:false, bruto:475 };
   const g = resgata([ o, O('B','X 100FRS/AMP', 4.80,'FA'), O('C','X 100FRS/AMP', 4.90,'FA') ]);
   ok('44. opcao com pack>1 ja resolvido nao passa pela regra de novo', o.compra === 4.75, o.compra);
+}
+
+// ══════════ 11. "1 + RECIPIENTE" DECLARADO NO NOME (item 6, 05/08) ══════════
+// "OMNISCAN 287MG/ML 1FR/AP 10ML" diz com todas as letras que vem UM frasco-ampola. Mas o
+// _qtdDoNome so devolve contagem quando ela e > 1 (senao "1AMP" e "nao achei" ficariam
+// indistinguiveis), entao esses itens caiam em "nao sei". O 1 escrito no nome e INFORMACAO,
+// nao ausencia dela — e e mais especifico que a und "CX" do cadastro, que ali e so o default
+// do ERP. Medido: resolve 27 das 112 linhas sem pack, com ZERO falso positivo entre as 8.720
+// que ja tinham pack > 1.
+{
+  const casos = [
+    ['OMNISCAN 287MG/ML 1FR/AP 10ML IV GE HEALTHCARE DO', 57.14],
+    ['OMNISCAN 287MG/ML 1FR AP COM 15ML IV GE', 48.57],
+    ['FILGRASTINE 600MCG/ML 1SER 0,5ML+SSG', 50.16],
+    ['GENUXAL (CICLOFOSFAMIDA) 1G 1 F/A', 120],
+    ['ALBUMINA HUMANA 20% 1FRS/AMP 50ML ALBUREX CSL', 234.01],
+    ['LIPIODOL UF 480MG/ML 1AMP 10ML', 900],
+    ['IMUNOGLOBULINA HUMANA 50MG 1FR (IMUNOGLOBULIN)', 193.25],
+  ];
+  let n = 48;
+  for (const [nome, preco] of casos) {
+    const u = cmpUnitario(L({ produto: nome, und: 'CX', global_venda1: preco }));
+    ok(`${++n}. "${nome.slice(0, 40)}" -> pack 1, nao "conferir"`,
+      u.status === 'ok' && u.pack === 1 && u.valor === preco, u);
+  }
+}
+// ── E O QUE ELE NAO PODE FAZER ────────────────────────────────────────────────────────────
+{
+  // o [^\d] antes do 1 e o que impede "51FR"/"100AMP" de virarem "1 FR"/"1 AMP"
+  const u = cmpUnitario(L({ produto: 'ACICLOVIR 250MG PO IV C/51FR', und: 'CX', global_venda1: 510 }));
+  ok('56. *** "C/51FR" nao vira pack 1 (o 1 esta colado num 5) ***', u.pack === 51, u);
+}
+{
+  const u = cmpUnitario(L({ produto: 'COMPLEXO B 2ML 100AMP (SANTIPLEX B)', und: 'CX', global_venda1: 87.27 }));
+  ok('57. "100AMP" continua pack 100, nao 1', u.pack === 100, u);
+}
+{
+  // caixa de verdade, sem declaracao nenhuma: continua "nao sei"
+  const u = cmpUnitario(L({ produto: 'LUVA DE PROCEDIMENTO LATEX TAM M', und: 'CX', global_venda1: 38.90 }));
+  ok('58. item sem declaracao nenhuma segue em "conferir emb."', u.status === 'conferir', u);
+}
+{
+  // "1000ML" nao e "1 000ML"; e volume, e o \b depois do recipiente protege
+  const u = cmpUnitario(L({ produto: 'AGUA P/INJECAO 1000ML S/F 15BSA HALEX', und: null, global_venda1: 157.01 }));
+  ok('59. "1000ML" nao e lido como "1 unidade" (15BSA segue sem pack conhecido)', u.status === 'conferir', u);
 }
 
 console.log('\nRESULTADO: ' + p + ' ok, ' + f + ' falha(s)');

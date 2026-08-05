@@ -397,7 +397,33 @@ qualquer um, e a configuração da Global **não serve** (os nomes são de lá).
      dos fundos — a ordem estava invertida (testava `<= 0` antes de truncar).
    - Suíte nova `testa_estoque_zero_um` (17 asserts, 4 deles lendo o HTML pra provar que a
      regra está na TELA e no lugar certo do fluxo). **Total: 615 asserts / 0 falhas / 23 suítes.**
-6. ⬜ **Pack via CMED/web** — resolver o pack dos itens sem contagem no nome casando com a
+6. 🟡 **PARCIAL 05/08 — Pack via CMED**. Entregou a parte sólida e **parou onde o dado não
+   sustenta**; a parte que falta virou decisão do Lemuel, não pendência técnica.
+   - ✅ **"1 + recipiente" declarado no nome vale como pack 1** — `_CMP_UM_DECLARADO` no
+     `sistema_final`. "OMNISCAN 287MG/ML **1FR/AP** 10ML" diz com todas as letras que vem UM
+     frasco-ampola, mas o `_qtdDoNome` só devolve contagem quando é > 1 (senão "1AMP" e "não
+     achei" ficariam indistinguíveis) — então esses itens caíam em "não sei". O 1 escrito no
+     nome é INFORMAÇÃO, e é mais específico que a `und` "CX", que ali é o default do ERP.
+     **Medido: 112 → 85 linhas sem pack. ZERO falso positivo** entre as 8.720 que já tinham
+     pack (o `[^\d]` antes do 1 é o que impede "51FR" de virar "1 FR"). 12 asserts novos.
+   - ✅ Tabela `pack_confirmado` criada (`ddl/pack_confirmado.sql`) com `fonte`
+     (cmed/web/manual), `evidencia` e `confianca` — sem `evidencia`, daqui a três meses
+     ninguém sabe se o pack veio de dado oficial ou de chute. **Vazia por ora.**
+   - ⛔ **O casamento por PA+dose contra a CMED foi DESCARTADO, e o preview com dado real é a
+     razão**: "OMNISCAN 1FR/AP 10ML" recebeu pack **10**, vindo da apresentação "CT 10 FA X
+     10 ML". Essa apresentação é a **caixa do fabricante**; o nosso item é UM frasco. PA+dose
+     descreve o MEDICAMENTO, não a EMBALAGEM que o distribuidor nos vendeu. Aplicar aquilo
+     teria dividido o preço por 10 — exatamente o erro que a tabela existe pra evitar.
+     Determinar pack pela CMED só é seguro por **GGREM ou EAN**, e o nosso cadastro não tem
+     nenhum dos dois. `tools/resolve_pack_cmed.js` fica como ferramenta de CONFERÊNCIA: roda
+     em preview, lista candidatos, e **recusa gravar** sem `--confirmado-pelo-lemuel`.
+   - ⬜ **Camada 2 (busca web)**: não construída.
+   - 📋 **PRO CHECKPOINT**: as 85 restantes são material cirúrgico (pinça, tesoura, porta-agulha,
+     bobina, papel lençol) e itens de dose única. Duas saídas, e as duas são decisão dele:
+     (a) capturar EAN/GGREM no cadastro, que resolve de vez e serve pra outras coisas; ou
+     (b) conferir as 85 na mão uma vez e gravar em `pack_confirmado` com `fonte='manual'`.
+
+6-old. (spec original) — resolver o pack dos itens sem contagem no nome casando com a
    apresentação oficial da `cmed_pf` (camada 1) e busca web (camada 2). Tabela
    `pack_confirmado` (produto → pack, fonte, data). **Não alterar preço no banco** — a tela
    usa o pack e divide só na exibição. Preview antes de ativar.

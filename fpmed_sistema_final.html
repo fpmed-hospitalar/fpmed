@@ -4162,6 +4162,16 @@ function qtdEmbalagem(und, produto){
 // nenhum sinal. Mesma regra já no ar no Licitações (unitarioNosso) e na giovana (pv).
 const _CMP_UND_UNITARIA   = /^(UND|UN|UNID|UNIDADE|AMP|AMPOLA|FA|FR|FRASCO|CPR|COMP|CP|CAPS|CAP|LT|LITRO|PC|PAR|TB|TUBO|BG|BISNAGA|RL|ROLO|GL|SC|KG|MT)$/;
 const _CMP_UND_AGREGADORA = /^(CX|CAIXA|CT|CART|PCT|PACOTE|FD|FARDO|DP|DISPLAY|KIT|CJ|CONJ|BLS|BLISTER|ENV)$/;
+// ── "1 + RECIPIENTE" DECLARADO NO NOME (item 6, 05/08) ──────────────────────────────────────
+// "OMNISCAN 287MG/ML 1FR/AP 10ML" diz, com todas as letras, que vem UM frasco-ampola. Mas o
+// `_qtdDoNome` só devolve contagem quando ela é > 1 (senão "1AMP" e "não achei" ficariam
+// indistinguíveis), então esses itens caíam em "não sei" e a tela mostrava "conferir emb.".
+// O 1 escrito no nome é INFORMAÇÃO, não ausência dela — e é mais específico que a `und`
+// "CX" do cadastro, que nesses casos é só o default do ERP.
+// MEDIDO em 05/08 contra o banco inteiro: resolve 27 das 112 linhas sem pack, e casa em
+// ZERO das 8.720 linhas que já têm pack > 1 (o `[^\d]` antes do 1 é o que impede "51FR"
+// de virar "1 FR").
+const _CMP_UM_DECLARADO = /(?:^|[^\d])1\s*(?:F\s*\/\s*A|FR\s*\/\s*AP|FR\s*\/\s*AMP|FRA|FRS|FR|FA|AMP|AMPOLA|SER|SERINGA|BOLSA|BOLS|BSA|CAN|CANETA|TB|TUBO|BG|UND|UN)\b/i;
 function cmpUnitario(c){
   // compra_unit vem do importador JÁ unitário e é dado confiável — não passa por divisão.
   const unitDireto = parseFloat(c.compra_unit||0);
@@ -4174,6 +4184,9 @@ function cmpUnitario(c){
   if (qtd > 1) return { status:'ok', valor: base/qtd, pack: qtd, bruto: base };
   const u = String(c.und||'').toUpperCase().normalize('NFD').replace(/\p{M}/gu,'').replace(/[^A-Z]/g,'');
   if (_CMP_UND_UNITARIA.test(u)) return { status:'ok', valor: base, pack: 1, bruto: base };
+  // O nome DECLARA "1 frasco / 1 ampola / 1 seringa"? Então é 1, e o nome ganha da `und` do
+  // cadastro — ele é específico daquele item, a und agregadora é o default do ERP.
+  if (_CMP_UM_DECLARADO.test(String(c.produto||''))) return { status:'ok', valor: base, pack: 1, bruto: base };
   // "CX" sem contagem, ou und em branco: o silêncio é "não sei", nunca 1 por otimismo.
   if (_CMP_UND_AGREGADORA.test(u) || !u) return { status:'conferir', bruto: base };
   return { status:'ok', valor: base, pack: 1, bruto: base };
