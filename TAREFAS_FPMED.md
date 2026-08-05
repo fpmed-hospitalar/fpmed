@@ -266,6 +266,23 @@ Auditoria de 22/07: banco confirmado limpo após teste do upload de PDF (preview
    antes do "Prazo para entrega a combinar", conferir rodapés e a nota "* Preço Unit".
    **Bug conhecido**: a coluna PREÇO UNIT sai crua (`0.2556`) em vez de `R$ 0,26` — formatar
    em pt-BR como na Global. Testar com 1 item e com vários.
+8. ⬜ **`Calendario 2025.xlsm`** (entrou no FIM da fila em 05/08, a pedido do Lemuel).
+   Arquivo em `C:\fpmed`, planilha COM MACROS. Regra combinada, em duas fases:
+   - **FASE 1 — SÓ EXPLORAR, não grava nada.** Leitura em modo somente-leitura, sem calcular
+     fórmula e sem executar macro. Entregar: **mapa de abas** (incluindo as **ocultas** e as
+     "muito ocultas"), colunas de cada uma, contagem de linhas, **amostra de linhas** e uma
+     **proposta de destino** (qual tabela/tela isso vira, ou se não vira nada). Nada de banco,
+     nada de UPDATE, nada de tela — só o relatório.
+     ✅ **A ferramenta da FASE 1 já existe**: `tools/explora_calendario.js` (commit `1e0d525`),
+     100% só leitura, já mapeia aba oculta e detecta macro (`vbaraw`). É rodar e ler:
+     `node tools/explora_calendario.js`. (O projeto lê xlsx/xlsm com a lib `xlsx` do Node, que
+     já está no `package.json` — é o equivalente do `openpyxl read_only` pedido; se preferir
+     Python de verdade, dá pra reescrever, mas o node evita instalar toolchain nova.)
+   - **FASE 2 — gravar SÓ depois do OK explícito do Lemuel**, em cima da proposta da fase 1.
+     Preview antes de qualquer escrita, como em toda carga do projeto.
+   - ⚠️ **Guarda**: o arquivo está **fora do git** (untracked) e o repo é **PÚBLICO**. Se tiver
+     dado comercial/cliente dentro, **não pode ser commitado** — entra no `.gitignore` na
+     fase 1, junto com o relatório. O relatório em si não deve reproduzir dado de cliente.
 
 ## ⬜ PENDENTES (na ordem)
 - [x] **Sync de dados EXECUTADO (04/08, com OK do Lemuel)**: **13.406 novos + 149 atualizados +
