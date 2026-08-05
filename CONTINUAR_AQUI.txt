@@ -215,7 +215,16 @@ Suite: 658 asserts verdes / 0 falhas / 24 suites (eram 515 em 20 no inicio da ro
 --- FALTA NA FILA (nada bloqueado por mim) ---
   4  Blocos 2/4 do sync ... ESPERA o Lemuel escolher os blocos (SYNC_GLOBAL.md)
   8  Calendario FASE 2 .... ESPERA OK dele (gravar as 2.578 linhas)
-  9  SIGA completo ........ NAO COMECADO. Item grande. Ordem recomendada na secao 6.7 do
+  9  SIGA completo ........ NAO COMECADO. Item grande. **REFERENCIA VISUAL DETALHADA do funil
+                            recebida do Lemuel em 05/08 e anexada na secao 6.2.0 do
+                            LICITACOES_SPEC.md** — barra de fases com contagem, 3 visualizacoes
+                            (lista/kanban/agenda), anatomia do card, hover em tudo, tema escuro.
+                            E o nivel de acabamento que ele COBRA, nao sugestao.
+                            1 ponto pra decidir com ele la: o seletor "Todas as empresas" e o
+                            badge de empresa no card existem porque o SIGA e multi-empresa. A
+                            FPMED e uma so. Recomendacao registrada: manter o campo no modelo,
+                            esconder na interface.
+                            Ordem recomendada na secao 6.7 do
                             LICITACOES_SPEC.md: comecar pelo NEGOCIOS/Funil, que nao depende
                             de nada externo. O Calendario 2025.xlsm (item 8) semeia ele com
                             2.578 linhas reais — vale destravar o 8 ANTES de comecar o 9.
@@ -223,6 +232,27 @@ Suite: 658 asserts verdes / 0 falhas / 24 suites (eram 515 em 20 no inicio da ro
                             seguranca ja tomada (edge function com segredo dedicado; a
                             service_role nunca vai pro CI) + a arquitetura veio do estudo do
                             Lemuel (05/08, secao 2.0 e 2.0B do LICITACOES_SPEC.md).
+
+>>> REGRESSAO VISUAL CORRIGIDA 05/08 20h25 (URGENCIA) -- o tema do cliente invadia a tela escura
+  SINTOMA: Licitacoes com fundo branco, "Encontrar" branco-no-branco, paineis escuros boiando.
+  CAUSA: o aplicaTema escreve as cores com documentElement.style.setProperty = STYLE INLINE no
+  <html>, e inline vence qualquer :root{} de folha. Só o --bg colidia (os outros nomes do mapa
+  nao batem com os da tela) -- por isso so o fundo virava e os paineis ficavam escuros.
+  O defeito existia em TODAS as telas desde que o tema entrou; nas claras o --bg proprio
+  (#F4F7FA) e o do cliente (#F5F9FC) sao quase a mesma cor e ninguem via.
+  CORRECAO ESTRUTURAL: data-tema no <html> = "esta tela e dona da propria paleta", e o
+  aplicaTema sai do caminho. A regra vive no limedtec-config.js (o MOLDE) -- vale pra qualquer
+  cliente que um dia tenha tela de paleta propria. !important teria tratado o sintoma.
+  >>> ATENCAO NO PROXIMO SYNC: limedtec-config.js e do molde e agora DIVERGE da origem.
+  Suite nova testa_tema_tela_propria (16 asserts), cobrindo as DUAS direcoes: com data-tema
+  nenhuma cor entra; SEM data-tema o tema do cliente CONTINUA aplicado (uma correcao que
+  desligasse o aplicaTema passaria na 1a metade e mataria o white-label em silencio).
+  POLIMENTO junto: topo entrou na MESMA regua de 1180px do conteudo (o logo estava colado na
+  borda e o conteudo comecava 180px adiante -- medido depois: logo e conteudo em x=200, iguais);
+  profundidade desinvertida (topfaixa #08111B recua < corpo #0B1622 < header #132234 elevado);
+  estado vazio virou caixa tracejada em vez de slab solido.
+  ⚠️ FALTOU: ver a tela COM RESULTADOS carregados -- a extensao do Chrome desconectou antes.
+     O tema e o alinhamento foram medidos e tem screenshot; os CARDS nao foram revistos no ar.
 
 >>> ACHADO DO LEMUEL 05/08 -- COMO O SIGA REALMENTE BUSCA (interceptacao de rede + bundles JS)
   Ele abriu o DevTools e trocou o filtro de portal: ZERO requisicao pro pncp.gov.br ou pra

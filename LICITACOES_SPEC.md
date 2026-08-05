@@ -515,6 +515,45 @@ e um atalho de um clique.
 ### 6.2 ABA 2 — NEGÓCIOS ⭐ (o funil)
 Submenu: *Funil de Licitações · Quadros · Agenda*
 
+#### 6.2.0 🎨 REFERÊNCIA VISUAL — nível de acabamento cobrado (prints do Lemuel, 05/08)
+> Isto **não é sugestão de layout**: é o padrão de acabamento que ele quer ver entregue.
+> Tema **escuro**, mesmo padrão da tela de Licitações (`data-tema="dark"`, ver seção 2.0).
+
+**Barra de fases (visão Lista)** — chips lado a lado, cada um com a contagem:
+`Oportunidade (3) · Qualificação (0) · Disputa (2) · Classificação (1) · Contrato (0)`.
+Chip ativo em **verde cheio**. Logo abaixo, os links *Quadros · Agenda · Meus arquivos*.
+
+**3 visualizações do MESMO dado**, trocadas por um botão "Visualização":
+`LISTA` (cards grandes) · `QUADROS` (kanban) · `AGENDA`.
+Menu NEGÓCIOS no topo com: *Funil de Licitações / Quadros / Agenda*.
+
+**Kanban (Quadros)** — uma coluna por fase, cada uma com **bolinha colorida** no topo
+(verde/azul/laranja/roxo) + contagem. Coluna vazia mostra **caixa tracejada** "Arraste
+negócios para cá". **Drag-and-drop** entre fases. Scroll horizontal.
+
+**Card do negócio:**
+- título como **link azul-claro**: portal + modalidade + nº + órgão
+- **badge da EMPRESA** no canto, pill azul-arroxeada
+- órgão + UF
+- `Abertura em DD/MM/AAAA às HH:MM`
+- etiquetas: **fonte** (pill cinza) e **modalidade** (pill verde)
+- progresso de tarefas `☑ 0/15`
+- **no hover** aparecem as ações (remover / arquivar)
+- etiqueta da fase no canto superior (`OPORTUNIDADE`, verde)
+
+**Topo da tela:** seletor *"Todas as empresas"* · *"Ordenar por: Mais recentes"* · link *"Filtrar"*.
+
+**Hover em tudo** — ele citou explicitamente: cards levantam, itens de menu destacam.
+A tela de Licitações já tem esse vocabulário pronto (`.lic:hover` levanta 2px com sombra
+dupla; `.topfaixa a:hover` levanta 1px) — **reaproveitar, não reinventar**.
+
+> ⚠️ **Ponto a decidir com ele antes de construir**: o seletor *"Todas as empresas"* e o badge
+> de empresa no card existem porque o SIGA é multi-empresa (uma assinatura atende várias CNPJs).
+> **A FPMED é uma empresa só.** Manter o seletor mostra um filtro que nunca filtra nada, e o
+> badge repete a mesma palavra em todo card. Recomendação: **deixar o campo `empresa` no modelo
+> de dados** (custa nada e evita migração se um dia houver outra CNPJ) e **esconder os dois na
+> interface** enquanto houver uma só. Não é decisão minha — é dele.
+
 **Modelo de dados central:**
 ```
 Negocio {
