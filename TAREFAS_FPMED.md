@@ -325,11 +325,47 @@ Auditoria de 22/07: banco confirmado limpo após teste do upload de PDF (preview
    - ✅ **Guarda cumprida**: `*.xlsm`/`*.xlsb` no `.gitignore`; o relatório acima descreve
      estrutura, não reproduz valor nem cliente.
 
-9. ⬜ **MÓDULO "ANÁLISE" do SIGA** (entrou no fim da fila em 05/08). Estudo completo do Lemuel
-   registrado no `LICITACOES_SPEC.md` (seção 5). São 4 telas: Análise de Mercado (7 ângulos +
-   PCA), Histórico de Compras, Análise de Empresas (dossiê por CNPJ) e Encontrar fornecedor com
-   IA — mais Peças Jurídicas e Minhas Empresas. **Depende de uma base que ainda não temos**: o
-   histórico de RESULTADOS das disputas (quem venceu, por quanto). Ler a spec antes de estimar.
+9. ⬜ **SIGA COMPLETO — 5 abas** (entrou no fim da fila em 05/08). Estudo do Lemuel registrado no
+   `LICITACOES_SPEC.md`: **seção 5** (módulo Análise em detalhe) + **seção 6** (produto inteiro,
+   aba por aba: Oportunidades · Negócios · Análise · Disputa · Jurídico + telas transversais).
+   **Ler a seção 6.0 antes de estimar** — boa parte da aba 1 JÁ ESTÁ NO AR e não deve ser
+   reconstruída. Ordem recomendada na 6.7:
+   - **1º NEGÓCIOS / Funil + Tarefas** 🟢 zero dependência externa, usa a busca que já existe +
+     nosso banco. Kanban de 5 estágios, 15 tarefas-modelo automáticas, drawer de detalhe. É o que
+     o Lemuel elogiou. O `Calendario 2025.xlsm` (item 8) semeia com 2.578 linhas reais.
+   - **2º Agenda + Notificações** 🟢 eventos DERIVADOS (abertura dos negócios + validade dos
+     documentos), sem tabela de evento manual.
+   - **3º Meus Jornais** 🟡 busca salva + cron; o e-mail exige provedor (**custo, decisão do Lemuel**).
+   - **4º Pesquisa avançada completa + Órgãos + Desertas** 🟡 incremento na tela atual.
+   - **5º ANÁLISE** 🔴 **bloqueado** até achar o endpoint de **resultados/atas do PNCP**.
+   - **6º JURÍDICO** 🔴 é projeto de coleta de acervo, não tela.
+   - **DISPUTA (robô de lances)** ⛔ fora do escopo web (app desktop Windows) — o próprio Lemuel
+     concluiu o mesmo. Antes de qualquer investimento, checar os **termos de uso do Comprasnet**
+     sobre automação de lances: se for vedada, invalida o esforço inteiro.
+
+10. ⬜ **LICITAÇÕES: COLETA AGENDADA + BANCO PRÓPRIO** (decisão do Lemuel, 05/08 — o PNCP caiu de
+    novo, confirmado por fora, timeout até de outro servidor). Resolver como o SIGA resolve.
+    1. Tabela `licitacoes_pncp` no Supabase (campos da busca atual + itens quando já cruzados).
+       **RLS: logado lê, `service_role` grava.**
+    2. Coletor `tools/coleta_pncp.js`: busca GO (e UFs vizinhas), modalidades que usamos,
+       **upsert por (cnpj, anoCompra, sequencial)**. Tolerante a queda: retry e, se o PNCP estiver
+       fora, **mantém o que já tem** (nunca apaga).
+    3. Agendar via **GitHub Actions** (cron 3×/dia, `service_role` nos **Secrets do repo, NUNCA no
+       código**) ou no `ABRIR_FILA.bat` como fallback.
+    4. A tela passa a **LER DO SUPABASE** (instantâneo, nunca cai) com aviso "dados coletados às
+       HH:MM". Botão **"Atualizar agora"** tenta o PNCP ao vivo e, se falhar, avisa sem travar.
+    5. Cruzamento continua igual, rodando sobre os dados do banco.
+    6. Suíte inteira antes do commit. **Compliance: dado do PNCP é público** — pode ficar no banco
+       FPMED sem restrição (não é dado comercial de ninguém, não cruza Global↔FPMED).
+    📌 **Estado atual, pra calibrar a urgência**: a tela **não trava** hoje. O `AbortController` de
+    20 s + o cache de 15 min já fazem ela mostrar "⚠️ Não consegui falar com o PNCP" com botão
+    "Tentar de novo", e ela reaproveita a última busca em cache quando existe. O que o item 10
+    muda é ela deixar de ficar **inútil** quando o PNCP cai — passa a ter dado sempre.
+    ⚠️ **Um ponto pra decidir antes de implementar o passo 3**: o repo é **PÚBLICO**. Secret de
+    Actions não vaza pra PR de fork, mas a `service_role` **ignora toda a RLS** — se vazar, é o
+    banco inteiro. Alternativa mais segura: uma **edge function** que grava, chamada pelo Actions
+    com um segredo dedicado e descartável, em vez de mandar a `service_role` pro CI. Custa uma
+    função a mais e tira a chave-mestra do pipeline. **Decisão do Lemuel.**
 
 ## ⬜ PENDENTES (na ordem)
 - [x] **Sync de dados EXECUTADO (04/08, com OK do Lemuel)**: **13.406 novos + 149 atualizados +

@@ -354,3 +354,193 @@ módulo é preciso achar e validar o endpoint de **resultados/atas do PNCP** (é
 🟢 **Boa notícia**: o `Calendario 2025.xlsm` (item 8) traz **2.578 linhas do nosso próprio
 histórico de participação, com VALOR GANHO** — dá pra fazer o "Análise de Empresas" da PRÓPRIA
 FPMED antes e independente do PNCP.
+
+---
+
+## 6. ESPECIFICAÇÃO FUNCIONAL COMPLETA DO SIGA (estudo do Lemuel, 05/08/2026)
+
+> Levantamento aba por aba do produto inteiro, na ordem do menu: **Oportunidades → Negócios →
+> Análise → Disputa → Jurídico**. A seção 5 acima detalha o módulo Análise; aqui ele aparece
+> resumido para o mapa ficar completo. **Entrou como item 9 da fila.**
+
+### 6.0 ⭐ O QUE JÁ TEMOS — ler ANTES de estimar qualquer coisa
+
+Boa parte da aba 1 já está no ar em `fpmed_licitacoes.html`. Não reconstruir:
+
+| recurso do SIGA | nosso estado |
+|---|---|
+| Busca por texto livre, termos separados por `;` | ✅ pronto |
+| Campo "Excluir" (termos que não podem aparecer) | ✅ pronto |
+| Período (publicação/abertura/encerramento) + intervalo de datas | ✅ pronto |
+| Tags de categoria automáticas a partir do objeto | ✅ pronto (`CATEGORIAS`/`categorias()`, 7 categorias do ramo) |
+| Cards com título, objeto, abertura, modo de disputa, badge de modalidade, portal | ✅ pronto |
+| Pesquisa avançada (modal) | 🟡 parcial — temos UF, modalidade e excluir |
+| Encontrar por Nº | 🟡 temos por nº de controle PNCP; o SIGA usa wizard de 4 passos |
+| Lista de itens do processo | ✅ pronto (endpoint de itens, paginado, cache 15 min) |
+| **Cruzamento item × nosso estoque, com preço unitário dos dois lados** | ✅ **pronto — e o SIGA NÃO TEM ISSO** |
+| Meus Jornais | ⬜ hoje é só um aviso na tela |
+| Órgãos, Oportunidades Desertas, Funil, Análise, Jurídico | ⬜ nada feito |
+
+**Falta na Pesquisa avançada** (o resto do modal do SIGA): tipo de item, modo de disputa, ~19
+portais, órgão, faixa de valores, participação exclusiva ME/EPP, excluir registro de preços.
+
+---
+
+### 6.1 ABA 1 — OPORTUNIDADES
+Submenu: *Encontrar · Meus Jornais · Órgãos · Pesquisa rápida (Encontrar por Nº · Desertas no PCP)*
+
+**Encontrar** (`/oportunidades`) — é a nossa tela atual. O que falta é o modal completo de
+pesquisa avançada e o badge laranja **"OPORTUNIDADE DESERTA"**.
+
+**Meus Jornais** (`/meus-jornais`) — buscas salvas. Cada jornal é editável (reabre a pesquisa
+avançada com os filtros salvos) ou excluível, roda **automaticamente todo dia** e notifica com as
+oportunidades novas. O toggle "receber por e-mail" fica em *Meus Dados*, não no jornal. Quota por
+plano (1 jornal simultâneo no plano testado).
+> **Como fazer aqui**: `jornais { id, usuario, empresa, filtros jsonb, ultima_execucao }` + job
+> diário. Temos Supabase — dá pra usar **pg_cron + edge function** (a `ler-pedido` já é o
+> precedente de edge function no ar). O e-mail exige um provedor (Resend/SES) — **decisão do
+> Lemuel**, tem custo. O delta é `resultados_novos = busca_hoje − vistos_até_ontem`.
+
+**Órgãos** (`/orgaos`) — diretório de órgãos compradores, busca por nome ou UASG, paginado,
+mostrando UASG + nome + ícone do portal. Serve de atalho pra achar o código certo pra usar nos
+outros filtros. → `orgaos { codigo_uasg, nome, portal, uf }`.
+> No PNCP o órgão já vem em cada licitação (`orgaoEntidade.cnpj/razaoSocial` + `unidadeOrgao`).
+> Dá pra **derivar a tabela do que já buscamos**, sem crawler novo.
+
+**Encontrar por Nº** — wizard de 4 passos num modal: portal → tipo (pregão/dispensa) → órgão/UASG
+→ número da licitação (o combobox do número provavelmente carrega depois do órgão).
+
+**Oportunidades Desertas no PCP** — não é tela nova: é um **filtro pré-configurado** da tela
+Encontrar (`?so=1`), mostrando só processos marcados como desertos/fracassados (que podem ser
+republicados e têm chance maior). → basta um campo `situacao_anterior: deserta|fracassada|normal`
+e um atalho de um clique.
+
+---
+
+### 6.2 ABA 2 — NEGÓCIOS ⭐ (o funil)
+Submenu: *Funil de Licitações · Quadros · Agenda*
+
+**Modelo de dados central:**
+```
+Negocio {
+  oportunidade_origem   -> a licitação encontrada em Oportunidades
+  empresa_vinculada     -> uma das empresas de "Minhas Empresas"
+  estagio               -> Oportunidade | Qualificação | Disputa | Classificação | Contrato
+  itens_selecionados    []
+  anotacoes             texto/checklist livre
+  tarefas               checklist com seções
+  documentos_anexos     []
+  arquivado             boolean
+}
+```
+
+**Funil** (`/meus-negocios`) — duas visualizações trocáveis pelo botão "Visualização":
+- **Lista**: abas com contador por estágio.
+- **Kanban**: as 5 colunas lado a lado, **cards arrastáveis** entre estágios.
+
+Card do Kanban: empresa vinculada, título, órgão, data de abertura, badges, **contador de
+checklist ("0/15")**. Clicar abre um **drawer de detalhe** com: seletor de estágio, ações
+"remover dos negócios"/"arquivar", a ficha da licitação (fonte, modalidade/número, órgão, objeto,
+valor, data, modo de disputa) com botões Acessar/Tarefas/Documentação/Arquivos do edital/Converse
+com o edital, **Anotações** (bloco com checkbox) e **Itens** (busca + lista, com opção de
+adicionar item manualmente).
+
+**Tarefas** — modal fullscreen "Tarefas X% / X de 15 concluídas". Ao criar um negócio, **15
+tarefas-modelo são criadas automaticamente**, uma seção por estágio:
+| estágio | tarefas |
+|---|---|
+| Oportunidade | Analisar o edital · Providenciar documentação de habilitação/qualificação · Solicitar esclarecimentos/Impugnar edital |
+| Qualificação | Analisar mercado · Analisar concorrentes · Definir o melhor produto/serviço para a disputa |
+| Disputa | Cadastrar proposta no portal · Fazer composição de preços · Definir a estratégia de preços · Participar da disputa |
+| Classificação | Analisar documentação dos concorrentes · Analisar produto dos concorrentes · Enviar recurso/contrarrazão · Enviar proposta atualizada |
+| Contrato | Assinar contrato |
+Permite adicionar seções/tarefas customizadas. Progresso calculado.
+
+**Quadros** (`/quadros`) — é a MESMA tela do Kanban, só um atalho direto.
+
+**Agenda** (`/minha-agenda`) — mini-calendário + Dia/Semana/Mês. Eventos coloridos:
+🔴 vencimento de documento da empresa · 🔵 abertura de sessão de disputa de um negócio.
+Clicar mostra popup com início/fim/duração, descrição, "Adicionar ao Google Calendar" e "Abrir".
+> **A Agenda não tem dados próprios**: é um **motor de eventos derivados** de (1) datas de
+> abertura dos negócios ativos e (2) validade dos documentos em "Meus Documentos". Não criar
+> tabela de evento manual.
+
+**Meus arquivos** (`/meus-arquivos`) — lista de negócios arquivados. É só `Negocio.arquivado = true`.
+
+---
+
+### 6.3 ABA 3 — ANÁLISE
+Detalhada na **seção 5** deste documento. Resumo: Análise de Mercado (mapa de calor por UF +
+gráfico mensal + 7 ângulos: Correspondências, Catálogo, Estados, Órgãos, Empresas, Marcas,
+Contratação Futura/PCA) · Histórico de Compras · Análise de Empresas (dossiê por CNPJ) ·
+Encontrar fornecedor com IA (cota de 12/dia compartilhada com o "Converse com o edital").
+
+> **Dependência dura, repetida aqui porque é o que trava o módulo**: tudo isso vive de uma base
+> histórica de **resultados** de licitações encerradas (item, vencedor, CNPJ, valores homologados,
+> situação), cruzada por UF/órgão/empresa/marca. É o "big data" do SIGA, montado com anos de
+> coleta. A nossa busca atual traz o **edital**, não o resultado.
+
+---
+
+### 6.4 ABA 4 — DISPUTA (robô de lances)
+Submenu: Comprasnet (única integração hoje). **Não é tela web**: é o download de um app desktop
+Windows ("SIGA Client") que conecta na sessão do Comprasnet e **envia lances automáticos**.
+Detecta sozinho as licitações que o usuário já cadastrou no Compras.gov. Só funciona em modo
+Aberto e Aberto/Fechado **por item** (não por grupo). Requer Windows 10 64-bit, i5 4+ núcleos, 8GB.
+
+> 🔴 **Recomendação: FORA do escopo** — e o Lemuel já chegou à mesma conclusão. É um cliente
+> desktop que automatiza um portal de governo; não tem como sair de uma aplicação web. Além do
+> custo, vale checar os **termos de uso do Comprasnet** sobre automação de lances antes de
+> investir: é o tipo de coisa que, se for vedada, invalida o esforço inteiro. **Decisão de
+> negócio do Lemuel**, não técnica.
+
+---
+
+### 6.5 ABA 5 — JURÍDICO
+Submenu: *Impugnação · Esclarecimento · Intenção de recurso · Recurso · Contrarrazões* — todos
+abrem a MESMA tela (`/pecas-juridicas?t=X`) filtrada por tipo. Busca por termo, toggle "Limitar
+por órgão", toggle "Somente nova lei" (Lei 14.133/2021), abas pra trocar de tipo.
+
+Os resultados são **peças jurídicas REAIS já protocoladas** por empresas em licitações passadas,
+cada uma com o pregão de origem, um trecho do texto e "Abrir no portal". É um banco de modelos
+reais pra inspirar a redação de peças novas.
+
+> **Como isso existe**: esses documentos são anexados aos autos, que são públicos — o SIGA
+> provavelmente faz scraping dos portais. Para nós é um **projeto de coleta de dados**, não uma
+> tela: sem o acervo, a tela não tem o que mostrar. Combina com o gerador de minuta com IA que já
+> está na seção 3 desta spec (o acervo vira o repertório do prompt).
+
+---
+
+### 6.6 TELAS TRANSVERSAIS
+- **Ficha da licitação** (drawer usado em Oportunidades, Negócios e Análise): cabeçalho + botões
+  Acessar/Arquivos do edital/Converse com o edital + lista de itens, cada item com sublinks
+  **Histórico · Concorrência Potencial · Marcas Relevantes · Preços Praticados · Encontrar
+  fornecedor**. *(Os 4 primeiros sublinks dependem da base de resultados — ver 6.3.)*
+- **Notificações** (sininho): abertura de sessão (D-1/D-0) e vencimento de documentos.
+- **Meus Dados**: dados pessoais, toggle do jornal diário, plano, quotas (empresas/jornais/negócios).
+- **Minhas Empresas**: cadastro simples CNPJ/razão social, usado pra vincular negócios.
+- **Meus Documentos**: repositório de arquivos da empresa **com data de validade** — alimenta as
+  Notificações E a Agenda.
+
+---
+
+### 6.7 ORDEM RECOMENDADA (proposta técnica — o Lemuel decide)
+
+Ordenado por **valor entregue ÷ dependência externa**, não pela ordem do menu:
+
+| # | bloco | por quê |
+|---|---|---|
+| **1º** | **NEGÓCIOS / Funil + Tarefas** (6.2) | 🟢 **zero dependência externa**. Usa a busca que já está no ar + o nosso banco. É o que o Lemuel elogiou, é onde o trabalho do dia acontece, e o `Calendario 2025.xlsm` (item 8) já traz **2.578 linhas** pra semear com histórico de verdade em vez de tela vazia. |
+| **2º** | **Agenda + Notificações** (6.2) | 🟢 derivadas do funil, quase de graça depois dele. Um alerta de "abre amanhã" tem valor imediato. |
+| **3º** | **Meus Jornais** (6.1) | 🟡 precisa de cron + provedor de e-mail (custo — decisão do Lemuel). A busca salva em si é trivial. |
+| **4º** | **Pesquisa avançada completa + Órgãos + Desertas** (6.1) | 🟡 incremento na tela que já existe; `orgaos` dá pra derivar do que já buscamos. |
+| **5º** | **ANÁLISE** (6.3) | 🔴 **bloqueado** até achar e validar o endpoint de **resultados/atas do PNCP**. Esse é o próximo endpoint a caçar, do mesmo jeito que fizemos com o de itens. Sem ele, nada dessa aba existe. |
+| **6º** | **JURÍDICO** (6.5) | 🔴 projeto de coleta de acervo, não tela. |
+| **—** | **DISPUTA** (6.4) | ⛔ fora do escopo web. |
+
+> ⚠️ **Nota de escopo honesta**: as abas 3 e 5 são, juntas, **anos de coleta de dados** do SIGA —
+> não são "telas a implementar". O que nos diferencia hoje não é copiar isso, é o que o SIGA não
+> tem: **o cruzamento do edital com o nosso estoque e o nosso preço unitário**, que já está no ar.
+> O funil (6.2) é o que falta pra fechar o ciclo de trabalho em cima disso.
+

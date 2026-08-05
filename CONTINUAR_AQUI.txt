@@ -176,6 +176,22 @@ Criado em 21/07/2026 copiando SO os arquivos do app do C:\globalmed.
   cmed_dicionario derivando dela e resolver os 302 medicamentos sem PA do estoque.
   RETOMADA do 1B: estender tools/carrega_cmed_pf.js + DDL da cmed_pf, depois a tela.
 
+>>> FILA EM 05/08/2026 (ordem, detalhes no TAREFAS_FPMED.md):
+  1B Tabela CMED (DESTRAVADO, o PMVG chegou) . 3 Comparativo simplificado . 4 Blocos 2/4 do sync
+  . 5 Estoque 0->1 no fluxo . 6 Pack via CMED/web . 7 PDF de proposta . 8 Calendario FASE 2
+  (ESPERA OK) . 9 SIGA completo, 5 abas (spec nas secoes 5 e 6 do LICITACOES_SPEC.md; comecar
+  pelo FUNIL, que nao depende de nada externo) . 10 Coleta agendada do PNCP + banco proprio.
+
+>>> ITEM 10 -- porque existe: o PNCP caiu de novo em 05/08 (timeout confirmado de fora). A tela
+  NAO trava (AbortController de 20s + cache de 15 min + erro visivel com "Tentar de novo"), mas
+  fica INUTIL enquanto o PNCP estiver fora. Solucao decidida pelo Lemuel: tabela licitacoes_pncp
+  no Supabase + tools/coleta_pncp.js (upsert por cnpj/ano/sequencial, tolerante a queda) +
+  agendamento (GitHub Actions 3x/dia ou o ABRIR_FILA.bat) + a tela lendo do banco com
+  "dados coletados as HH:MM" e botao "Atualizar agora".
+  DECIDIR ANTES: o repo e PUBLICO e a service_role ignora toda a RLS. Alternativa mais segura a
+  colocar a service_role nos Secrets do Actions: uma edge function que grava, chamada com um
+  segredo dedicado. Tira a chave-mestra do pipeline. -- decisao do Lemuel.
+
 Proximos passos (quando o Lemuel mandar): (a) OK dos 2 syncs acima; (b) vendedoras quando a
 equipe for definida; (c) dominio sistema.fpmed.com.br pos-venda. Placar: TAREFAS_FPMED.md.
 
