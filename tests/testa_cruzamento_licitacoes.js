@@ -99,6 +99,8 @@ const ESTOQUE = [
   { produto:'DIPIRONA 500MG/ML IV/IM 2ML',                  principio_ativo:'DIPIRONA', und:'AMP',global_venda1:0.42  },
   { produto:'DIPIRONA 500MG 200CPR (G)',                    principio_ativo:'DIPIRONA', und:'CX', global_venda1:43.77 },
   { produto:'ATENSINA 0,100MG 30CPR MAWDSLEYS',             principio_ativo:'CLORIDRATO DE CLONIDINA', und:'CX', global_venda1:10.50 },
+  { produto:'ACETILCISTEINA XPE ADL 20MG 120ML 48 FR (CYSTEIN)', principio_ativo:'ACETILCISTEINA', und:'CX', global_venda1:327.31 },
+  { produto:'ACEBROFILINA 50MG/5ML XPE ADL 120ML (G)',      principio_ativo:'ACEBROFILINA', und:'CX', global_venda1:8.70 },
 ];
 indexaEstoque(ESTOQUE);
 const nomes = it => cruzaItem(it, 5).map(x => x.c.produto);
@@ -139,6 +141,28 @@ const itAgulha23 = { descricao:'Agulha Hipodérmica material: aço inoxidável s
 ok('agulha 23G NAO casa com a nossa 22G', nomes(itAgulha23).length === 0, nomes(itAgulha23));
 const itAgulha22 = { descricao:'Agulha Hipodérmica material: aço inoxidável siliconizado, dimensão: 22 g x 1", tipo ponta: bisel curto trifacetado' };
 ok('agulha 22G CASA com a nossa 22G',     nomes(itAgulha22).includes('AGULHA 25X,7 (22GX1) C/100'), nomes(itAgulha22));
+
+// ── CONCENTRACAO x VOLUME (defeito visto NO AR em 05/08, no card de Uruacu) ──
+// "ACETILCISTEINA 40MG/ML XPE 120ML" casava com a nossa de 20MG e ainda dizia "dose confere",
+// so porque os dois falam "120ML". Volume do frasco e EMBALAGEM; concentracao e IDENTIDADE.
+const itAcetil20 = { descricao:'ACETILCISTEINA 20MG/ML XPE INF 120ML' };
+const itAcetil40 = { descricao:'ACETILCISTEINA 40MG/ML XPE ADL 120ML' };
+ok('acetilcisteina 20MG/ML CASA com a nossa de 20MG',
+   nomes(itAcetil20).includes('ACETILCISTEINA XPE ADL 20MG 120ML 48 FR (CYSTEIN)'), nomes(itAcetil20));
+ok('acetilcisteina 40MG/ML NAO casa com a nossa de 20MG (mesmo volume 120ML)',
+   !nomes(itAcetil40).includes('ACETILCISTEINA XPE ADL 20MG 120ML 48 FR (CYSTEIN)'), nomes(itAcetil40));
+const itAcebro25 = { descricao:'ACEBROFILINA XAROPE 25MG/ML PED. 120ML' };
+ok('acebrofilina 25MG/ML NAO casa com a nossa 50MG/5ML (so o 120ML em comum)',
+   !nomes(itAcebro25).includes('ACEBROFILINA 50MG/5ML XPE ADL 120ML (G)'), nomes(itAcebro25));
+
+// ── FORMA FARMACEUTICA ──
+ok('comprimido nao casa com injetavel (dipirona 500)',
+   !nomes({ descricao:'Dipirona 500 mg comprimido' }).includes('DIPIRONA 500MG/ML IV/IM 2ML'),
+   nomes({ descricao:'Dipirona 500 mg comprimido' }));
+// forma desconhecida em UM dos lados nao pode rejeitar: o abaixador nao declara forma nenhuma
+ok('sem forma declarada, o match sobrevive',
+   nomes({ descricao:'ABAIXADOR DE LINGUA em madeira, descartavel' }).includes('ABAIXADOR DE LINGUA MADEIRA 100UND'),
+   nomes({ descricao:'ABAIXADOR DE LINGUA em madeira, descartavel' }));
 
 ok('descricao vazia nao casa nada',       cruzaItem({ descricao:'' }, 3).length === 0);
 ok('descricao nula nao quebra',           cruzaItem({ descricao:null }, 3).length === 0);

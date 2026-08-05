@@ -392,6 +392,37 @@ function doses(s){
   return out;
 }
 
+// CONCENTRAÇÃO ≠ VOLUME. Visto no ar em 05/08: "ACETILCISTEINA 40MG/ML XPE 120ML" do edital casou
+// como "dose confere" com a nossa de 20MG só porque os dois dizem 120ML — o volume do frasco é
+// EMBALAGEM, a concentração é a IDENTIDADE do medicamento. Aqui a concentração vira uma magnitude
+// comparável ("20mg/ml" e "20mg" viram ambos 20mg, que é a mesma coisa dita de dois jeitos) e
+// passa a ser condição de aceite quando os DOIS lados a declaram.
+function concMags(s){
+  const t = semAcento(s).replace(/,/g,'.');
+  const out = new Set(); let m;
+  const re = /(\d+(?:\.\d+)?)\s*(mg\/ml|mcg\/ml|ui\/ml|g\/ml|mg|mcg|ui|%|g\b)/g;
+  while((m = re.exec(t))){
+    const n = parseFloat(m[1]);
+    if(!isFinite(n)) continue;
+    out.add(n + m[2].split('/')[0].trim());          // 500mg/ml -> 500mg
+  }
+  return out;
+}
+
+// FORMA FARMACÊUTICA: comprimido não é injetável, e xarope não é pomada. Sem isto, "DIPIRONA
+// 500MG 200CPR" casava com "dipirona 500 mg/ml solução injetável" — mesmo princípio, mesmo número,
+// produto completamente diferente. null = não deu pra saber, e aí não rejeita nada.
+function forma(s){
+  const t = semAcento(s);
+  if(/injet|ampola|\bamp\b|f\s*\/\s*a|frasco.ampola|\biv\b|\bim\b|infusao|bolsa/.test(t)) return 'INJ';
+  if(/comprimid|\bcpr\b|\bcomp\b|caps|drage|\bdrg\b|revestid/.test(t))                    return 'ORAL_SOL';
+  if(/xarope|\bxpe\b|suspensao|solucao oral|gotas|\bgts\b|elixir|sache/.test(t))          return 'ORAL_LIQ';
+  if(/pomada|creme|\bgel\b|unguento|locao|topic/.test(t))                                  return 'TOPICO';
+  if(/colirio|oftalmic/.test(t))                                                           return 'OFT';
+  if(/spray|aeross?ol|inalat|nebuliz/.test(t))                                             return 'SPRAY';
+  return null;
+}
+
 // Índice do estoque: termo -> linhas. Só os 4 primeiros termos do nome entram (a cabeça é a
 // identidade do produto; a cauda é embalagem/marca e geraria par com meio mundo).
 let ESTOQUE = [], IDX = new Map(), ESTOQUE_ERRO = null;
@@ -404,6 +435,8 @@ function indexaEstoque(linhas){
     // item nosso é MARCA ("ATENSINA") e o edital sempre escreve o genérico ("clonidina").
     c._ancoras = [...new Set((tNome[0] ? [tNome[0]] : []).concat(tPa))];
     c._doses = doses(c.produto);
+    c._mags  = concMags(c.produto);
+    c._forma = forma(c.produto);
     c._un = unitarioNosso(c);
     for(const k of new Set(tNome.slice(0,4).concat(tPa))){
       if(!IDX.has(k)) IDX.set(k,[]); IDX.get(k).push(c);
@@ -420,16 +453,23 @@ function indexaEstoque(linhas){
 function cruzaItem(item, teto){
   if(!ESTOQUE.length) return [];
   const desc = String(item.descricao||'');
-  const tD = new Set(termos(desc)), dD = doses(desc);
+  const tD = new Set(termos(desc)), dD = doses(desc), mD = concMags(desc), fD = forma(desc);
   const cand = new Set();
   for(const t of tD) for(const c of (IDX.get(t)||[])) cand.add(c);
   const pares = [];
   for(const c of cand){
-    if(!c._ancoras.some(a => tD.has(a))) continue;                    // portão 1
+    if(!c._ancoras.some(a => tD.has(a))) continue;                    // portão 1: âncora presente
+    if(c._forma && fD && c._forma !== fD) continue;                   // forma conflitante -> rejeita
+    // CONCENTRAÇÃO manda: quando os dois lados declaram, as magnitudes têm que se encontrar.
+    if(c._mags.size && mD.size){
+      let bate = 0; for(const x of c._mags) if(mD.has(x)) bate++;
+      if(!bate) continue;
+    }
     let comuns = 0; for(const d of c._doses) if(dD.has(d)) comuns++;
-    if(c._doses.size && dD.size && !comuns) continue;                 // doses divergem -> rejeita
+    // Sem concentração dos dois lados, vale a medida crua (ml da seringa, gauge da agulha).
+    if(!(c._mags.size && mD.size) && c._doses.size && dD.size && !comuns) continue;
     let nT = 0; for(const t of c._t) if(tD.has(t)) nT++;
-    if(!comuns && nT < 2) continue;                                   // portão 2
+    if(!comuns && nT < 2) continue;                                   // portão 2: evidência além da âncora
     pares.push({ c, conf: comuns ? 'alta' : 'media', score: comuns*10 + nT });
   }
   pares.sort((a,b)=> b.score-a.score || (a.c._un.valor||9e9)-(b.c._un.valor||9e9));
