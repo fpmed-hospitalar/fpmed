@@ -510,11 +510,27 @@ qualquer um, e a configuração da Global **não serve** (os nomes são de lá).
 
 10. ⬜ **LICITAÇÕES: COLETA AGENDADA + BANCO PRÓPRIO** (decisão do Lemuel, 05/08 — o PNCP caiu de
     novo, confirmado por fora, timeout até de outro servidor). Resolver como o SIGA resolve.
-    1. Tabela `licitacoes_pncp` no Supabase (campos da busca atual + itens quando já cruzados).
-       **RLS: logado lê, `service_role` grava.**
+    1. ~~Tabela `licitacoes_pncp`~~ → **tabela `licitacoes` com coluna `portal`/`origem`**
+       (campos da busca atual + itens quando já cruzados). **RLS: logado lê, `service_role` grava.**
+       📡 **Mudou por causa do achado do Lemuel (05/08, interceptação de rede no SIGA)**: o SIGA
+       atende TODOS os portais com **um endpoint só** (`POST /app/api/oportunidades`), com o
+       portal virando **filtro**, não rota — ou seja, a base deles é uma tabela normalizada com
+       coluna de origem. Nascer `licitacoes_pncp` nos obrigaria a migrar no dia em que entrar
+       Comprasnet Goiás ou Licitanet (V2). Custa nada acertar agora.
+       O coletor precisa **gravar o portal de origem em cada linha**, senão o filtro equivalente
+       não existe do nosso lado. Detalhes na **seção 2.0 do `LICITACOES_SPEC.md`**.
     2. Coletor `tools/coleta_pncp.js`: busca GO (e UFs vizinhas), modalidades que usamos,
        **upsert por (cnpj, anoCompra, sequencial)**. Tolerante a queda: retry e, se o PNCP estiver
        fora, **mantém o que já tem** (nunca apaga).
+       📡 **Requisitos que o achado de 05/08 acrescenta** (bundles `useSuperCrawlRotinas` /
+       `useSuperCrawlRealtime` no SIGA — é serviço de coleta agendada, seção 2.0B do SPEC):
+       · **backoff exponencial** no retry — insistir de imediato numa API que caiu só piora;
+       · **circuit breaker**: PNCP fora → o worker PARA e volta depois, em vez de ficar batendo.
+         Sem isso uma queda longa vira loop e conta de execução;
+       · **sync incremental** pelos filtros de data da própria API — reprocessar tudo toda vez é
+         o jeito garantido de bater em rate limit e ficar mais lento a cada mês.
+       · o `useSuperCrawlRealtime` é a tela de **Disputa** (sessão ao vivo no Comprasnet) —
+         **fora do nosso escopo**, decisão já tomada. Dos dois serviços, só o de rotinas serve.
     3. Agendar via **GitHub Actions** (cron 3×/dia) ou no `ABRIR_FILA.bat` como fallback.
        ✅ **DECIDIDO PELO LEMUEL (05/08)**: a gravação é feita por uma **EDGE FUNCTION**, chamada
        pelo Actions com um **segredo dedicado e descartável**. **A `service_role` NUNCA vai pro
@@ -523,9 +539,25 @@ qualquer um, e a configuração da Global **não serve** (os nomes são de lá).
        com trava de origem desde 22/07.
     4. A tela passa a **LER DO SUPABASE** (instantâneo, nunca cai) com aviso "dados coletados às
        HH:MM". Botão **"Atualizar agora"** tenta o PNCP ao vivo e, se falhar, avisa sem travar.
+       ⚠️ **A linha que compra a estabilidade inteira**: a API que a tela consome lê SÓ do banco
+       próprio e **nunca** chama o PNCP de forma síncrona durante a busca do usuário. É isso que
+       isola o usuário da instabilidade da fonte — não o cache, não o timeout.
+       🔎 Busca textual: **full-text do Postgres** resolve na nossa escala. Elasticsearch/Meilisearch
+       são a resposta certa pro volume do SIGA (~20 fontes, Brasil inteiro) e seriam infra a mais
+       pra manter aqui. Se a busca ficar lenta, o **índice GIN** é o primeiro degrau, não a troca
+       de motor.
     5. Cruzamento continua igual, rodando sobre os dados do banco.
     6. Suíte inteira antes do commit. **Compliance: dado do PNCP é público** — pode ficar no banco
        FPMED sem restrição (não é dado comercial de ninguém, não cruza Global↔FPMED).
+    📡 **A urgência SUBIU com o achado de 05/08**: o SIGA nunca chama portal nenhum do
+    navegador — quem fala com os portais é o backend deles. Somado ao histórico que o produto
+    entrega (desertas, análise de empresas, histórico de compras), é base coletada, não consulta
+    ao vivo. **Ou seja: a fragilidade que a gente sente hoje — tela inútil quando o PNCP cai —
+    é exatamente a que eles já eliminaram, e o item 10 é o que nos tira dela.** Isso não é
+    novidade de rumo: é a confirmação de que a decisão que já estava tomada é a certa.
+    ⚖️ O endpoint deles serve como **referência de arquitetura**, não como fonte: é backend de
+    produto pago de terceiro. A nossa fonte é e continua sendo a API pública do PNCP.
+
     📌 **Estado atual, pra calibrar a urgência**: a tela **não trava** hoje. O `AbortController` de
     20 s + o cache de 15 min já fazem ela mostrar "⚠️ Não consegui falar com o PNCP" com botão
     "Tentar de novo", e ela reaproveita a última busca em cache quando existe. O que o item 10

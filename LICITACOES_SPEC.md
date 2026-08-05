@@ -171,6 +171,101 @@ Contrarrazões. Cada um é uma busca de modelos, filtrável por órgão, com "so
 
 ## 2. NOSSO MÓDULO — V1 (a construir)
 
+### 2.0 ⭐ COMO O SIGA REALMENTE BUSCA (Lemuel, 05/08/2026 — interceptação de rede)
+
+O Lemuel abriu o DevTools e olhou o tráfego enquanto trocava o filtro de portal
+(Comprasnet, PNCP, Licitanet…) e clicava em Buscar. **Resultado: ZERO requisições para
+`pncp.gov.br` ou para qualquer domínio de portal.** Não importa qual portal esteja
+selecionado, a única chamada é sempre a mesma:
+
+```
+POST https://app.sigapregao.com.br/app/api/oportunidades
+```
+
+**O que a interceptação sozinha prova:** que o navegador nunca fala com os portais — quem
+fala é o backend deles. Sozinha, ela **não distingue** entre (a) índice próprio já coletado
+e (b) proxy ao vivo pro portal a cada requisição; de fora os dois se parecem.
+
+**O que fecha a questão a favor do (a) — dois indícios independentes:**
+
+1. **Os nomes dos bundles JS** que a aplicação carrega: `useSuperCrawlRotinas` e
+   `useSuperCrawlRealtime`. "Crawl" + "Rotinas" (= jobs agendados) é serviço de coleta
+   programada; o "Realtime" separado é outra coisa (ver abaixo). São nomes de arquivo, não
+   documentação — mas nomear um módulo de *crawl* com *rotinas* quando não existe crawl
+   agendado seria coincidência muito específica.
+2. **O produto entrega histórico**: licitações encerradas, desertas, análise de empresas por
+   CNPJ, histórico de compras (seções 1B e 5). Nada disso sai de consulta ao vivo — exige
+   base guardada. Este é o indício mais forte, porque é sobre o que o produto FAZ, não sobre
+   como ele parece ser feito.
+
+> 🔬 **Teste que encerraria de vez, se um dia interessar:** abrir o SIGA num momento em que o
+> PNCP esteja fora do ar (aconteceu em 04/08 e de novo em 05/08). Continuou respondendo =
+> índice próprio. Caiu junto = proxy ao vivo.
+
+**Sobre o `useSuperCrawlRealtime`:** é quase certamente a tela de **DISPUTA**, acompanhando a
+sessão ao vivo no Comprasnet. Isso **não entra no nosso escopo** e a decisão já está tomada
+(seção 1C.3 e item 9 da fila): robô de lance é app desktop Windows, não web, e antes de
+qualquer investimento é preciso checar os termos de uso do Comprasnet sobre automação.
+Ou seja: dos dois serviços, **só o de rotinas nos interessa.**
+
+**O que muda pra nós — e é convergência, não novidade:** o item 10 da fila já decidiu
+exatamente isso (tabela própria + coletor + a tela lendo do banco). Este achado confirma
+que é assim que um produto maduro do ramo resolve o problema, e que a fragilidade que a
+gente sente hoje (tela inútil quando o PNCP cai) é justamente a que eles já eliminaram.
+
+**Dois detalhes de desenho que o endpoint entrega de graça:**
+
+1. **O portal é CAMPO, não rota.** Um endpoint só (`/oportunidades`) atende todos os portais,
+   com o portal virando filtro. Ou seja: a base deles é uma tabela normalizada com coluna de
+   origem, não uma tabela por portal. **Consequência prática:** a nossa tabela do item 10 não
+   deve nascer `licitacoes_pncp`, e sim `licitacoes` com uma coluna `portal`/`origem`. Custa
+   nada agora e evita a migração no dia em que entrar Comprasnet Goiás ou Licitanet (V2).
+2. **O filtro roda no servidor deles.** O nosso coletor precisa, então, GRAVAR o portal de
+   origem em cada linha — senão o filtro equivalente não existe do nosso lado.
+
+> ⚖️ **Limite que fica registrado:** o `app.sigapregao.com.br/app/api/oportunidades` é o
+> backend de um produto pago de terceiro. Ele serve como **referência de arquitetura** —
+> é pra isso que está aqui. Consumir aquele endpoint a partir do sistema da FPMED seria uso
+> não autorizado de serviço comercial alheio, e não é caminho. A nossa fonte é e continua
+> sendo a **API pública do PNCP**, que é aberta, sem chave e sem custo (2.1 abaixo).
+
+### 2.0B ARQUITETURA DERIVADA — as duas metades que não podem se tocar
+
+O padrão é o clássico **ETL + índice de busca**, e o que o faz funcionar é a separação: a
+metade que o usuário usa **nunca** entra no ciclo de vida da fonte externa.
+
+**METADE 1 — ingestão (worker/cron, FORA do ciclo de requisição do usuário)**
+- consulta a API pública do PNCP periodicamente;
+- normaliza os campos (órgão, UASG, objeto, itens, datas, valores) pro formato interno;
+- grava no banco próprio, já tratado e indexado;
+- **retry com backoff exponencial** — insistir de imediato numa API que caiu só piora;
+- **circuit breaker**: se o PNCP cair, o worker PARA de insistir e volta depois, em vez de
+  ficar batendo. Sem isso, uma queda longa vira um worker em loop e uma conta de execução;
+- **sincronização incremental**: buscar só o que mudou desde a última rodada, usando os
+  filtros de data que a própria API do PNCP oferece. Reprocessar tudo toda vez é o jeito
+  garantido de bater em rate limit e de a coleta ficar mais lenta a cada mês que passa.
+
+**METADE 2 — a API que a tela consome**
+- lê **exclusivamente** do banco próprio. **Nunca** chama o PNCP de forma síncrona durante a
+  busca do usuário. É esta linha que compra a estabilidade inteira: PNCP lento, fora do ar,
+  instável ou com rate limit deixa de ser problema de quem está usando a tela;
+- mostra **timestamp de última atualização** — "dados coletados às HH:MM". O usuário aceita
+  dado de 3 horas atrás; o que ele não aceita é erro sem explicação;
+- o botão "Atualizar agora" tenta o PNCP ao vivo e, se falhar, **avisa sem travar** — a tela
+  continua servindo o que está no banco.
+
+**Como isso encaixa no que a FPMED já tem** (não é do zero):
+- a **edge function** que grava já está decidida no item 10, com segredo dedicado — a
+  `service_role` nunca vai pro CI. Precedente pronto: a `ler-pedido`, no ar desde 22/07 com
+  trava de origem;
+- o **AbortController de 20 s** e o **cache de 15 min** já existem na tela e continuam
+  valendo pro botão "Atualizar agora";
+- busca textual: **Postgres com full-text search** resolve na nossa escala. Elasticsearch ou
+  Meilisearch são a resposta certa pro volume do SIGA (~20 fontes, Brasil inteiro); pra GO +
+  UFs vizinhas seria infra a mais pra manter, com custo mensal, resolvendo problema que a
+  gente não tem. **Se um dia a busca ficar lenta, o índice GIN do Postgres é o primeiro
+  degrau, não a troca de motor.**
+
 ### 2.1 Fonte de dados
 API pública do PNCP — sem chave, sem custo:
 
