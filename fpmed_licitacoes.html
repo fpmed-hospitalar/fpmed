@@ -528,7 +528,15 @@ async function carregarEstoque(){
   }
   return out;
 }
-document.addEventListener('gm-auth-ready', async () => {
+// CORRIDA COM O gm-auth — medida no ar em 05/08. O `boot()` do gm-auth só é assíncrono quando
+// precisa renovar o token; com sessão fresca ele chama reveal() e dispara `gm-auth-ready` AINDA
+// DENTRO do <script> do <head>, antes deste arquivo existir. Quem só escuta o evento perde a
+// carga do estoque de forma INTERMITENTE (funcionou na 1ª visita, falhou na 2ª). Por isso:
+// se o gmAuth já está pronto, começa na hora; senão espera o evento. Nunca as duas coisas.
+let _estoqueIniciado = false;
+async function iniciarEstoque(){
+  if(_estoqueIniciado) return;
+  _estoqueIniciado = true;
   const el = document.getElementById('estoque-status');
   el.innerHTML = 'carregando o estoque FPMED para o cruzamento…';
   try{
@@ -542,7 +550,9 @@ document.addEventListener('gm-auth-ready', async () => {
     el.innerHTML = '<span class="conferir">⚠️ não consegui ler o estoque FPMED ('+esc(e.message)
                  + '). A busca funciona; o cruzamento fica indisponível.</span>';
   }
-});
+}
+if(window.gmAuth) iniciarEstoque();
+else document.addEventListener('gm-auth-ready', iniciarEstoque, { once:true });
 
 // ══ ITENS DO EDITAL ═══════════════════════════════════════════════════════════════════════
 // Endpoint confirmado pelo Lemuel. MEDIDO em 04/08: aceita tamanhoPagina até 500 e responde em
