@@ -176,6 +176,57 @@ Criado em 21/07/2026 copiando SO os arquivos do app do C:\globalmed.
   cmed_dicionario derivando dela e resolver os 302 medicamentos sem PA do estoque.
   RETOMADA do 1B: estender tools/carrega_cmed_pf.js + DDL da cmed_pf, depois a tela.
 
+========================================
+>>> ONDE PARAMOS — 05/08/2026, fim da sessao. LEIA ISTO PRIMEIRO.
+========================================
+
+TUDO commitado e pushado. Ultimo commit: c2aacb4. Suite: 515 asserts verdes / 0 falhas / 20 suites.
+
+--- 1. FEITO NESTA SESSAO ---
+(a) LICITACOES V1 COMPLETO e no ar: busca no PNCP + tema escuro + CRUZAMENTO POR ITEM contra o
+    estoque proprio. Validado logado como diretor: estoque 1.381 (1.266 com unitario calculavel),
+    busca 04/08 -> 52 publicadas / 9 batem / R$ 21,4 mi, "Cruzar todas" leu 9 e marcou 7 com
+    aderencia; card de Uruacu 280 de 500 itens com equivalente nosso. Comparacao SEMPRE unitaria
+    dos DOIS lados; "conferir emb." quando o pack nao e sabido; delta % so quando a dose confere.
+    4 defeitos corrigidos: calibre French virando pack, match por 1 palavra so, volume confundido
+    com concentracao, e corrida com o gm-auth. Suite nova testa_cruzamento_licitacoes.js.
+(b) LIMEDTEC: a FPMED virou APP INSTALAVEL (PWA). Molde puxado da origem (so codigo). Confirmado
+    no ar: titulo "LIMEDTEC - FPMED", config FPMED, banco daqui, tema claro #2CA9E0, licenca
+    valida 513 dias, service worker ATIVO, icones HTTP 200.
+    RED TEST DO CACHE PASSOU: 21 itens, todos casca, ZERO dado, Supabase e PNCP nao respondiveis
+    pelo cache. 3 defeitos meus corrigidos antes de subir (script injetado no PDF da proposta,
+    <script> inline desalinhando o parser, icones que nao subiriam por causa do .gitignore).
+(c) Logo oficial (cruz com o L): 4 PNG oficiais copiados; manifest passou a ser GERADO do config
+    (tools/gera_manifest.js) -> name "LIMEDTEC - FPMED", short_name "FPMED". sw VERSAO -3.
+(d) AUDITORIA DA CMED e do CALENDARIO (detalhes mais abaixo). Spec do SIGA registrada.
+
+--- 2. O APP ESTA PRONTO PRA INSTALAR (confirmado no ar em 05/08) ---
+Conferido em https://fpmed-hospitalar.github.io/fpmed/ :
+  name "LIMEDTEC - FPMED" . short_name "FPMED" . 4 icones . sw VERSAO limedtec-fpmed-2026-08-05-3
+  os 4 PNG servindo (192=3778b, 512=12057b, 192-maskable=3778b, 512-maskable=4750b)
+>>> O LEMUEL PODE INSTALAR. Abrir a URL acima; o botao "Instalar aplicativo" aparece no rodape.
+    (O beforeinstallprompt exige gesto humano, entao a instalacao em si nunca da pra provar
+     daqui -- quem clica e ele. Todo o resto foi verificado.)
+
+--- 3. PROXIMO ITEM: APLICAR OS PAPEIS (tudo destravado, e so executar) ---
+O Lemuel decidiu: os 2 usuarios atuais entram como GESTOR_GERAL; a lista real fica pra quando a
+equipe existir. O TOKEN JA ESTA NO segredos.local.txt (SUPABASE_ACCESS_TOKEN, valido ~30 dias,
+expira ~04/09/2026 -- ROTACIONAR depois de aplicar; ele passou pelo chat).
+Ja preparado: limedtec-papeis.js e ddl/papeis.sql puxados e commitados.
+MAPA DAS POLICIES DESTE BANCO (impresso, esta no TAREFAS): 48 policies, 12 tabelas, 4 por tabela,
+100% PERMISSIVE. Por isso custo/escrita entram AS RESTRICTIVE -- permissiva seria somada com OR.
+CONFERIDO: o papeis.sql so da "drop policy if exists" nos nomes que ele mesmo cria; NAO derruba
+cot_sel/cot_upd/cot_del (o gate cargo_gestor() de 24/07, que esta VIVO). Conviver, nao derrubar.
+EXECUTAR NESTA ORDEM: --etapa 1 (estrutura) -> --perfis (os 2 como gestor_geral) -> --etapa 2
+(liga RLS com a trava "ninguem sem perfil") -> red tests -> APAGAR os usuarios de teste.
+!! NAO COMECAR SEM CONTEXTO SOBRANDO: se parar entre a --etapa 2 e os red tests, a trava
+   "ninguem sem perfil" fica ligada com os perfis nao gravados e NINGUEM ENTRA no sistema.
+RED TEST 4 (novo, meu achado): com os dois gates vivos o Postgres soma permissiva E restritiva,
+entao ler cotacoes vai exigir cargo_gestor() (JWT app_metadata.role) *E* limedtec_pode('ver_custo')
+(tabela perfis). Os 2 usuarios atuais sao diretor, entao passam nos dois e a virada nao muda nada
+pra eles. MAS um usuario novo criado so com perfil, sem app_metadata.role, fica trancado fora da
+cotacoes sem mensagem clara. Decidir depois: unificar os gates ou o cria_usuario escrever nos dois.
+
 >>> FILA EM 05/08/2026 (ordem, detalhes no TAREFAS_FPMED.md):
   1B Tabela CMED (DESTRAVADO, o PMVG chegou) . 3 Comparativo simplificado . 4 Blocos 2/4 do sync
   . 5 Estoque 0->1 no fluxo . 6 Pack via CMED/web . 7 PDF de proposta . 8 Calendario FASE 2
