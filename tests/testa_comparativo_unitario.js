@@ -1,0 +1,144 @@
+// SUITE testa_comparativo_unitario — O COMPARATIVO NÃO PODE MOSTRAR PREÇO DE CAIXA COMO UNITÁRIO.
+//
+// O CASO QUE O LEMUEL MANDOU TESTAR: CEFALOTINA 1000MG (CEFARISTON) 100FRS/AMP, und "CX",
+// global_venda1 = 475,25. A célula tem que mostrar **4,75 un · cx100**, não 475,25.
+//
+// E O CASO INVERSO, que é o perigoso: quando o pack NÃO está no nome, o `qtdEmbalagem` devolve 1
+// — mas esse 1 não quer dizer "a caixa tem uma unidade", quer dizer "não achei o pack". O
+// precoUnitario() dividia por ele assim mesmo, e o preço da CAIXA ia parar na célula do unitário
+// sem nenhum sinal. Duas cotações lado a lado, "R$ 475,25" e "R$ 4,75", pareciam concorrentes
+// quando eram o mesmo preço em granularidades diferentes.
+//
+// A REGRA (mesma já no ar no Licitações e na giovana): pack sabido -> divide; und unitária
+// (AMP/FR/UND) -> o preço já é de unidade; und agregadora (CX/PCT) ou em branco -> NÃO INVENTA,
+// devolve status 'conferir' e a opção fica FORA de mínimo, média, win rate, PDF e análise.
+//
+//   node tests/testa_comparativo_unitario.js
+const fs = require('fs'), path = require('path');
+const src = fs.readFileSync(path.join(__dirname, '..', 'fpmed_sistema_final.html'), 'utf8');
+function fn(nome) {
+  const m = new RegExp('(?:^|\\n)\\s*(?:async\\s+)?function\\s+' + nome + '\\s*\\(').exec(src);
+  if (!m) throw new Error('nao achei function ' + nome);
+  let i = src.indexOf('{', m.index + m[0].length - 1), n = 0;
+  for (let j = i; j < src.length; j++) { if (src[j] === '{') n++; else if (src[j] === '}') { n--; if (!n) return src.slice(m.index, j + 1); } }
+  throw new Error('chave nao fechou: ' + nome);
+}
+function konst(nome) {
+  const m = new RegExp('(?:^|\\n)\\s*(?:var|const|let)\\s+' + nome + '\\s*=[^;]*;').exec(src);
+  if (!m) throw new Error('nao achei const ' + nome);
+  return m[0];
+}
+const ctx = (new Function(`console.warn=function(){};
+  ${konst('_CMP_CALIBRE')} ${konst('_CMP_UND_UNITARIA')} ${konst('_CMP_UND_AGREGADORA')}
+  ${fn('_undNum')} ${fn('_qtdDoNome')} ${fn('_semCalibre')} ${fn('qtdEmbalagem')} ${fn('cmpUnitario')}
+  return { qtdEmbalagem, cmpUnitario, _semCalibre, _qtdDoNome };`))();
+const { qtdEmbalagem, cmpUnitario, _qtdDoNome } = ctx;
+
+let p = 0, f = 0;
+const ok = (n, c, e) => { if (c) p++; else { f++; console.log('  FALHA ' + n + (e !== undefined ? '  [' + JSON.stringify(e) + ']' : '')); } };
+console.log('SUITE testa_comparativo_unitario — unitario, pack e "nao sei"\n');
+
+const L = o => Object.assign({ produto:'', und:null, compra_unit:null, compra_caixa:null,
+  global_venda1:null, global_venda2:null, venda_unit_calculada:null }, o);
+
+// ══════════ 1. O CASO DO LEMUEL ══════════
+{
+  const c = L({ produto:'CEFALOTINA 1000MG PO IV IM (CEFARISTON) 100FRS/AMP', und:'CX', global_venda1:475.25 });
+  const u = cmpUnitario(c);
+  ok('1. *** CEFALOTINA 475,25 -> 4,75 por frasco ***', Math.abs(u.valor - 4.7525) < 0.0001, u);
+  ok('2. o pack fica registrado (vira o badge "un · cx100")', u.pack === 100, u.pack);
+  ok('3. status ok — o pack veio do nome, nao foi chutado', u.status === 'ok', u.status);
+  ok('4. o bruto e preservado (o badge mostra de onde veio a divisao)', u.bruto === 475.25, u.bruto);
+}
+
+// ══════════ 2. "NÃO SEI" NÃO PODE VIRAR NÚMERO ══════════
+// Sem contagem no nome e com und agregadora, dividir por 1 seria afirmar que a caixa tem
+// uma unidade. A tela precisa dizer "conferir emb." — que e a verdade.
+{
+  const c = L({ produto:'LUVA DE PROCEDIMENTO LATEX TAM M', und:'CX', global_venda1:38.90 });
+  const u = cmpUnitario(c);
+  ok('5. caixa sem contagem no nome -> "conferir", nao 38,90 por luva', u.status === 'conferir', u);
+  ok('6. ...e o valor bruto vai junto, pra tela mostrar "R$ 38,90 / emb."', u.bruto === 38.9, u.bruto);
+  ok('7. ...e NAO devolve `valor` — quem consome nao tem como usar sem querer', u.valor === undefined, u.valor);
+}
+{
+  const c = L({ produto:'SERINGA DESCARTAVEL 3ML', und:null, global_venda1:120 });
+  ok('8. und em BRANCO tambem e "nao sei" (silencio nunca vira 1 por otimismo)',
+    cmpUnitario(c).status === 'conferir', cmpUnitario(c));
+}
+{
+  const c = L({ produto:'PACOTE COMPRESSA CIRURGICA', und:'PCT', compra_caixa:26.93 });
+  ok('9. PCT sem contagem -> "conferir"', cmpUnitario(c).status === 'conferir', cmpUnitario(c));
+}
+
+// ══════════ 3. UND UNITÁRIA: o preço JÁ é de unidade ══════════
+// "AMP", "FR", "UND" nao sao agregadores. Aqui pack=1 significa mesmo 1, e marcar "conferir"
+// esconderia preco bom sem motivo — o erro oposto, igualmente caro.
+{
+  ok('10. und AMP: 2,40 e o preco da ampola', cmpUnitario(L({produto:'DIPIRONA 500MG/ML 2ML', und:'AMP', global_venda1:2.40})).valor === 2.40);
+  ok('11. und FR: preco do frasco', cmpUnitario(L({produto:'SORO FISIOLOGICO 500ML', und:'FR', global_venda1:5.10})).valor === 5.10);
+  ok('12. und UND', cmpUnitario(L({produto:'SONDA FOLEY 3 VIAS N24', und:'UND', global_venda1:3.12})).valor === 3.12);
+  ok('13. und UNIDADE por extenso', cmpUnitario(L({produto:'X', und:'Unidade', global_venda1:9})).valor === 9);
+}
+
+// ══════════ 4. compra_unit é DADO, não cálculo ══════════
+// O importador ja decidiu que aquilo e unitario. Passar por divisao de novo seria dividir duas
+// vezes o mesmo preco.
+{
+  const c = L({ produto:'AMOXICILINA 500MG C/500 CPR', und:'CX', compra_unit:0.3298, compra_caixa:164.90 });
+  const u = cmpUnitario(c);
+  ok('14. compra_unit manda e NAO e dividido pelo pack de 500', u.valor === 0.3298, u.valor);
+  ok('15. ...e o pack reportado e 1 (nao houve divisao)', u.pack === 1, u.pack);
+}
+
+// ══════════ 5. CALIBRE FRENCH ≠ PACK (porte do Licitações) ══════════
+// "SONDA URETRAL 22FR" tem 22 de calibre. O _qtdDoNome lista FR entre as unidades contaveis
+// (por causa de "50FR" = 50 frascos) e dividia o preco por 22 — R$ 0,03 por sonda.
+{
+  ok('16. SONDA URETRAL 22FR nao tem pack 22', qtdEmbalagem(null, 'SONDA URETRAL DESC 22FR') === 1, qtdEmbalagem(null,'SONDA URETRAL DESC 22FR'));
+  ok('17. CATETER 20FR idem', qtdEmbalagem(null, 'CATETER INTRAVENOSO 20FR') === 1);
+  ok('18. e a sonda com und CX vira "conferir", que e a verdade',
+    cmpUnitario(L({produto:'SONDA URETRAL DESC 22FR', und:'CX', global_venda1:66})).status === 'conferir');
+  // o soro NAO e produto de calibre — 16FR continua sendo 16 frascos
+  ok('19. *** SORO 500ML S/F 16FR continua lendo 16 frascos ***', _qtdDoNome('SORO FISIOLOGICO 500ML S/F 16FR') === 16, _qtdDoNome('SORO FISIOLOGICO 500ML S/F 16FR'));
+  ok('20. e o unitario do soro sai dividido por 16', Math.abs(cmpUnitario(L({produto:'SORO FISIOLOGICO 500ML S/F 16FR', und:'CX', global_venda1:80})).valor - 5) < 1e-9);
+}
+
+// ══════════ 6. OUTROS PACKS REAIS DO BANCO ══════════
+{
+  ok('21. "C/500 CPR" -> 500', _qtdDoNome('AMOXICILINA 500MG C/500 CPR') === 500, _qtdDoNome('AMOXICILINA 500MG C/500 CPR'));
+  ok('22. "100AMP" -> 100', _qtdDoNome('COMPLEXO B 2ML 100AMP (SANTIPLEX B)') === 100, _qtdDoNome('COMPLEXO B 2ML 100AMP (SANTIPLEX B)'));
+  ok('23. "60UND" -> 60', _qtdDoNome('METRONIDAZOL 5MG/ML 100ML 60UND (GEN)') === 60, _qtdDoNome('METRONIDAZOL 5MG/ML 100ML 60UND (GEN)'));
+  ok('24. "50FRS" -> 50', _qtdDoNome('ACICLOVIR 250MG PO IV C/50FR') === 50, _qtdDoNome('ACICLOVIR 250MG PO IV C/50FR'));
+  // MEDIDA nao e contagem
+  ok('25. "FR C/240ML" e 1 frasco de 240ml, nao 240 unidades', _qtdDoNome('AMOXICILINA SUSP FR C/240ML') === 1, _qtdDoNome('AMOXICILINA SUSP FR C/240ML'));
+  ok('26. "PCT 50G" e 1 pacote de 50 gramas', _qtdDoNome('ALGODAO PCT 50G') === 1, _qtdDoNome('ALGODAO PCT 50G'));
+}
+
+// ══════════ 7. und NUMÉRICA vinda do import manda ══════════
+{
+  ok('27. und "100" -> pack 100 mesmo sem nada no nome', qtdEmbalagem('100', 'PRODUTO QUALQUER') === 100);
+  ok('28. e o unitario sai dividido', cmpUnitario(L({produto:'PRODUTO QUALQUER', und:'100', global_venda1:250})).valor === 2.5);
+}
+
+// ══════════ 8. SEM PREÇO ══════════
+{
+  ok('29. sem nenhum preco -> sem-preco (a linha nem entra na tela)', cmpUnitario(L({produto:'X', und:'CX'})).status === 'sem-preco');
+  ok('30. preco zero tambem e sem-preco', cmpUnitario(L({produto:'X', und:'AMP', global_venda1:0})).status === 'sem-preco');
+}
+
+// ══════════ 9. O QUE A REGRA IMPEDE, EM NÚMERO ══════════
+// Prova de que o "conferir" nao e preciosismo: sem ele, a caixa de 100 entraria numa media
+// com o unitario e a puxaria pra 100x o valor real.
+{
+  const caixa = cmpUnitario(L({ produto:'DIPIRONA 500MG COMPRIMIDO', und:'CX', global_venda1:47.50 }));
+  const unid  = cmpUnitario(L({ produto:'DIPIRONA 500MG COMPRIMIDO', und:'UND', global_venda1:0.48 }));
+  ok('31. a caixa nao vira 47,50 por comprimido', caixa.status === 'conferir', caixa);
+  ok('32. a unidade continua valendo', unid.valor === 0.48);
+  const certas = [caixa, unid].filter(u => u.status === 'ok');
+  const media = certas.reduce((a,u)=>a+u.valor,0) / certas.length;
+  ok('33. media so das certas = 0,48 (com a caixa dentro daria 23,99)', Math.abs(media - 0.48) < 1e-9, media);
+}
+
+console.log('\nRESULTADO: ' + p + ' ok, ' + f + ' falha(s)');
+process.exitCode = f ? 1 : 0;

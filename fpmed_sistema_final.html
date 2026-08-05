@@ -852,12 +852,14 @@ select.filter{padding:8px 12px;border:1px solid var(--borda);border-radius:9px;f
             🏷️ Oportunidades (margem ≥15%)
           </label>
         </div>
-        <div style="display:flex;gap:12px;flex-wrap:wrap;font-size:11px;color:var(--muted);margin-bottom:10px;padding:8px 12px;background:#f8faf8;border-radius:8px;">
-          <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:2px;background:#D3D1C7;display:inline-block"></span>Estoque FPMED</span>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;font-size:11px;color:var(--muted);margin-bottom:10px;padding:8px 12px;background:#f8faf8;border-radius:8px;align-items:center">
+          <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:2px;background:#DCEEFA;border:1px solid #2CA9E0;display:inline-block"></span>Estoque FPMED <b style="color:#12557E">com saldo</b></span>
           <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:2px;background:#C0DD97;display:inline-block"></span>Distribuidor</span>
           <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:2px;background:#B5D4F4;display:inline-block"></span>Indústria</span>
-          <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:2px;background:#9FE1CB;display:inline-block"></span>Menor preço = comprar aqui</span>
-          <span style="color:#333">Decisão mostra de quem comprar + preço de venda com +32% mkp</span>
+          <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:2px;background:#9FE1CB;display:inline-block"></span>✅ Menor preço</span>
+          <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:2px;background:#FFF8E1;border:1px solid #E0C86A;display:inline-block"></span>⚠ pack desconhecido — fora das contas</span>
+          <span style="color:#333;font-weight:600">Todo preço é UNITÁRIO. <span style="font-weight:400">"un · cx100" = preço da caixa dividido por 100.</span></span>
+          <button id="comp-btn-analise" onclick="compToggleAnalise()" style="margin-left:auto;font-size:11px;padding:5px 12px;border:1px solid #C4B5FD;border-radius:7px;background:#fff;color:#5B21B6;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;white-space:nowrap">📊 ver análise</button>
         </div>
         <div style="display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap">
           <div style="font-size:12px;color:var(--muted)" id="comp-sel-info">0 produtos</div>
@@ -1828,11 +1830,14 @@ function compGerarPDF() {
   const data = new Date().toLocaleDateString('pt-BR');
   let rows = '';
   selecionados.forEach(g => {
-    const globalOps = g.opcoes.filter(o => ehGlobal(o));
-    const distOps = g.opcoes.filter(o => !ehIndustria(o.forn, o) && !ehGlobal(o));
-    const indOps = g.opcoes.filter(o => ehIndustria(o.forn, o));
+    // PDF vai pra fora: opção com pack desconhecido fica FORA de toda conta (o `compra` dela é
+    // preço de embalagem, não unitário — entraria como se fosse 100x o valor real).
+    const certas = g.opcoes.filter(o => !o.incerto);
+    const globalOps = certas.filter(o => ehGlobal(o));
+    const distOps = certas.filter(o => !ehIndustria(o.forn, o) && !ehGlobal(o));
+    const indOps = certas.filter(o => ehIndustria(o.forn, o));
     const globalMin = globalOps.length ? Math.min(...globalOps.map(o=>o.compra)) : null;
-    const globalEst = globalOps.length ? globalOps[0].estoque : 0;
+    const globalEst = g.opcoes.filter(o=>ehGlobal(o))[0]?.estoque || 0;
     const vendasDist = distOps.map(o => o.compra * 1.32);
     const mediaMercado = vendasDist.length >= 2 ? vendasDist.reduce((a,b)=>a+b,0)/vendasDist.length : null;
     const menorInd = indOps.length ? Math.min(...indOps.map(o=>o.compra)) : null;
@@ -1927,27 +1932,13 @@ function extrairQtdEmbalagem(und, produto) {
   return 1;
 }
 
-// Calcula preço UNITÁRIO real
-function precoUnitario(c) {
-  const qtd = qtdEmbalagem(c.und, c.produto);   // unifica com as outras telas (und-primário)
-
-  // Tem compra_unit direto → já é unitário
-  if (c.compra_unit && parseFloat(c.compra_unit) > 0) {
-    return parseFloat(c.compra_unit);
-  }
-  // Tem compra_caixa → dividir pela qtd
-  if (c.compra_caixa && parseFloat(c.compra_caixa) > 0) {
-    return parseFloat(c.compra_caixa) / qtd;
-  }
-  // Fallback: global_venda1 já é unitário
-  if (c.global_venda1 && parseFloat(c.global_venda1) > 0) {
-    return parseFloat(c.global_venda1) / qtd;
-  }
-  if (c.venda_unit_calculada && parseFloat(c.venda_unit_calculada) > 0) {
-    return parseFloat(c.venda_unit_calculada);
-  }
-  return 0;
-}
+// ⚰️ precoUnitario() foi REMOVIDA em 05/08 — não reintroduzir.
+// Ela dividia o preço por `qtdEmbalagem` sempre, e quando o pack não era detectado esse
+// divisor valia 1. Mas 1 ali não significava "a caixa tem uma unidade", significava "não
+// achei o pack" — e o preço da CAIXA saía na célula do unitário sem nenhum sinal. Medido em
+// 05/08: 112 linhas do estoque nessa situação, uma delas mostrando R$ 271,43 como se fosse
+// o preço de um frasco. Quem substitui: cmpUnitario(), lá embaixo, que sabe responder
+// "não sei" (status 'conferir') em vez de responder errado com confiança.
 
 // Extrai concentração padronizada: "1G", "500MG", "50MG/ML", "100UI/ML"
 function extrairConcentracao(produto) {
@@ -2101,9 +2092,11 @@ function renderAnaliseMercado(lista, el) {
   html += '<div style="font-size:12px;color:#3b82f6;margin-top:2px;">Mostra todas as cotações de distribuidores mesmo sem estoque FPMED. Use para precificar compras de indústria.</div></div></div>';
 
   lista.forEach(function(g) {
-    const distOps = g.opcoes.filter(o => !ehIndustria(o.forn, o) && !ehGlobal(o));
-    const indOps = g.opcoes.filter(o => ehIndustria(o.forn, o));
-    const globalOps = g.opcoes.filter(o => ehGlobal(o));
+    // igual ao PDF e ao Comparativo: quem não tem unitário sabido não entra em conta nenhuma
+    const certas = g.opcoes.filter(o => !o.incerto);
+    const distOps = certas.filter(o => !ehIndustria(o.forn, o) && !ehGlobal(o));
+    const indOps = certas.filter(o => ehIndustria(o.forn, o));
+    const globalOps = certas.filter(o => ehGlobal(o));
 
     // Média de mercado baseada nos preços de venda dos distribuidores (compra * 1.32)
     const vendasDist = distOps.filter(o => o.compra > 0).map(o => o.compra * 1.32);
@@ -2288,7 +2281,7 @@ function compAbrirAnalise() {
     var distOps = [], indOps = [];
     ga.itens.forEach(function(g) {
       g.opcoes.forEach(function(o) {
-        if (ehGlobal(o)) return;
+        if (ehGlobal(o) || o.incerto) return;   // pack desconhecido não entra em média nem ranking
         var key = o.forn+'|'+(o.marca||'')+'|'+o.compra;
         if (visto[key]) return; visto[key]=true;
         if (ehIndustria(o.forn,o) && o.compra>0) indOps.push(o);
@@ -2415,8 +2408,13 @@ function buildGrupos(filtro) {
     const tipoNorm = (c.tipo||'').toLowerCase().trim();
     if (tipoNorm === 'global' || tipoNorm === 'estoque próprio' || tipoNorm === 'estoque proprio') forn = 'GLOBAL';
 
-    // Preço UNITÁRIO sempre
-    const compra = precoUnitario(c);
+    // Preço UNITÁRIO sempre — e quando o pack não é sabido, a linha entra marcada como
+    // "conferir" em vez de virar um número inventado. Ela APARECE na tela (o operador precisa
+    // saber que existe cotação) mas fica FORA de mínimo, média e ranking: preço que não se
+    // sabe não pode decidir de quem comprar.
+    const _u = cmpUnitario(c);
+    if (_u.status === 'sem-preco') return;
+    const compra = _u.status === 'ok' ? _u.valor : _u.bruto;
     if (!compra) return;
 
     if (!grupos[chave]) {
@@ -2444,16 +2442,26 @@ function buildGrupos(filtro) {
     }
 
     // Adiciona ou atualiza a opção desse fornecedor+marca (mantém menor unitário)
+    const _tipoOp = (function(t){ t=(t||'').toLowerCase(); if(t==='industria') return 'industria'; if(t==='global'||t==='estoque próprio'||t==='estoque proprio') return 'global'; return 'distribuidor'; })(c.tipo);
+    const _nova = { forn, marca: c.marca||'—', compra, produto: c.produto, und: 'UN',
+                    pack: _u.pack||1, incerto: _u.status==='conferir', bruto: _u.bruto,
+                    estoque: parseInt(c.estoque||0), quando: _cmpQuando(c), tipo: _tipoOp };
     const idx = grupos[chave].opcoes.findIndex(o => o.forn===forn && o.marca===(c.marca||'—'));
     if (idx === -1) {
-      grupos[chave].opcoes.push({ forn, marca: c.marca||'—', compra, produto: c.produto, und: 'UN', estoque: parseInt(c.estoque||0), quando: _cmpQuando(c), tipo: (function(t){ t=(t||'').toLowerCase(); if(t==='industria') return 'industria'; if(t==='global'||t==='estoque próprio'||t==='estoque proprio') return 'global'; return 'distribuidor'; })(c.tipo) });
-    } else if (compra < grupos[chave].opcoes[idx].compra) {
-      grupos[chave].opcoes[idx] = { forn, marca: c.marca||'—', compra, produto: c.produto, und: 'UN', estoque: parseInt(c.estoque||0), quando: _cmpQuando(c), tipo: (function(t){ t=(t||'').toLowerCase(); if(t==='industria') return 'industria'; if(t==='global'||t==='estoque próprio'||t==='estoque proprio') return 'global'; return 'distribuidor'; })(c.tipo) };
+      grupos[chave].opcoes.push(_nova);
+    } else {
+      // preço SABIDO sempre ganha de preço incerto, mesmo sendo maior — entre um número
+      // confiável e um que talvez seja de caixa, o confiável é o que serve pra decidir.
+      const ant = grupos[chave].opcoes[idx];
+      if ((ant.incerto && !_nova.incerto) || (ant.incerto === _nova.incerto && compra < ant.compra)) {
+        grupos[chave].opcoes[idx] = _nova;
+      }
     }
   });
 
   Object.values(grupos).forEach(g => {
-    g.opcoes.sort((a,b) => a.compra - b.compra);
+    // incerto vai pro fim: ele não concorre por "mais barato", só informa que existe cotação
+    g.opcoes.sort((a,b) => (a.incerto?1:0) - (b.incerto?1:0) || a.compra - b.compra);
   });
 
   // Guardar estoque global em cada grupo para ordenação
@@ -2561,8 +2569,9 @@ function renderComparativo(termo, manterLimite) {
   const filtroPromo = document.getElementById('comp-filtro-promo')?.checked;
   if (filtroPromo) {
     compLista = compLista.filter(g => {
-      const distOps = g.opcoes.filter(o => !ehIndustria(o.forn, o) && !ehGlobal(o));
-      const indOps = g.opcoes.filter(o => ehIndustria(o.forn, o));
+      // margem calculada só sobre preço SABIDO — "conferir emb." não vira oportunidade
+      const distOps = g.opcoes.filter(o => !o.incerto && !ehIndustria(o.forn, o) && !ehGlobal(o));
+      const indOps = g.opcoes.filter(o => !o.incerto && ehIndustria(o.forn, o));
       const vendasDist = distOps.map(o => o.compra * 1.32);
       const mediaMercado = vendasDist.length >= 2 ? vendasDist.reduce((a,b)=>a+b,0)/vendasDist.length : null;
       const menorCompra = indOps.length ? Math.min(...indOps.map(o=>o.compra))
@@ -2596,7 +2605,8 @@ function renderComparativo(termo, manterLimite) {
   const winCount = {}, idadeSoma = {}, idadeN = {};
   todosForns.forEach(f => { winCount[f]=0; idadeSoma[f]=0; idadeN[f]=0; });
   compLista.forEach(g => {
-    const dOps = g.opcoes.filter(o => !ehIndustria(o.forn, o) && !ehGlobal(o) && o.compra > 0);
+    // win rate só entre preços sabidos — quem tem "conferir emb." não ganha nem perde disputa
+    const dOps = g.opcoes.filter(o => !o.incerto && !ehIndustria(o.forn, o) && !ehGlobal(o) && o.compra > 0);
     if (dOps.length) { const min = Math.min(...dOps.map(o=>o.compra)); dOps.forEach(o => { if (Math.abs(o.compra-min)<0.001 && winCount[o.forn]!==undefined) winCount[o.forn]++; }); }
     g.opcoes.forEach(o => { if (o.quando && idadeSoma[o.forn]!==undefined) { idadeSoma[o.forn]+=o.quando.dias; idadeN[o.forn]++; } });
   });
@@ -2637,9 +2647,14 @@ function renderComparativo(termo, manterLimite) {
   const totalLinhas = compLista.length;
   const rows = compLista.slice(0, compLimite).map((g, idx) => {
     const isSel = compSelecionados.has(g.chave);
-    const globalOps = g.opcoes.filter(o=>ehGlobal(o));
-    const distOps = g.opcoes.filter(o=>!ehIndustria(o.forn, o) && !ehGlobal(o));
-    const indOps = g.opcoes.filter(o=>ehIndustria(o.forn, o));
+    // >>> `certas` = só o que tem unitário SABIDO. Toda conta (mínimo, média, ranking, margem)
+    //     roda em cima disto. As opções "conferir emb." continuam aparecendo na tela, mas não
+    //     entram em nenhum cálculo — número que não se sabe não decide compra.
+    const certas   = g.opcoes.filter(o=>!o.incerto);
+    const globalOps = certas.filter(o=>ehGlobal(o));
+    const distOps = certas.filter(o=>!ehIndustria(o.forn, o) && !ehGlobal(o));
+    const indOps = certas.filter(o=>ehIndustria(o.forn, o));
+    const globalTodos = g.opcoes.filter(o=>ehGlobal(o));      // inclui o incerto, só p/ exibir
     const globalMin = globalOps.length ? Math.min(...globalOps.map(o=>o.compra)) : null;
 
     // Preços de venda dos distribuidores concorrentes (compra+25%)
@@ -2658,11 +2673,18 @@ function renderComparativo(termo, manterLimite) {
     const seuPreco = mediaMercado ? mediaMercado * 0.95 : (melhorCompra ? melhorCompra * 1.32 : null);
     const margem = (seuPreco && melhorCompra) ? ((seuPreco - melhorCompra) / seuPreco * 100) : null;
 
-    // Célula global
-    const celGlobal = globalOps.length
-      ? `<td style="text-align:center;padding:6px 10px;border-bottom:0.5px solid #f0f0f0;background:#F8F7F4;vertical-align:middle">
-          <div style="font-size:12px;font-weight:600;color:#444">${fmtBRL(globalMin)}</div>
-          <div style="font-size:10px;color:#888">${globalOps[0].estoque>0?globalOps[0].estoque+' un':'Sem estoque'}</div>
+    // ── Célula do NOSSO estoque ────────────────────────────────────────────────────────────
+    // Destaque azul FORTE quando há saldo (spec do Lemuel, 04/08): é a coluna que o operador
+    // procura primeiro — se temos o item, a conversa de compra muda.
+    const opG = globalTodos[0];
+    const temSaldo = globalTodos.some(o => o.estoque > 0);
+    const bgG = temSaldo ? '#DCEEFA' : '#F8F7F4';
+    const celGlobal = opG
+      ? `<td style="text-align:center;padding:6px 10px;border-bottom:0.5px solid #f0f0f0;background:${bgG};vertical-align:middle;${temSaldo?'box-shadow:inset 3px 0 0 #2CA9E0':''}">
+          ${globalMin!=null
+            ? `<div style="font-size:12px;font-weight:700;color:${temSaldo?'#12557E':'#444'}">${fmtBRL(globalMin)}</div>${cmpBadgePack(globalOps[0])}`
+            : cmpAvisoConferir(opG)}
+          <div style="font-size:10px;color:${temSaldo?'#1B6E97':'#888'};font-weight:${temSaldo?'600':'400'}">${temSaldo?opG.estoque+' un':'Sem estoque'}</div>
          </td>`
       : `<td style="text-align:center;padding:6px 10px;border-bottom:0.5px solid #f0f0f0;color:#ccc;font-size:11px">—</td>`;
 
@@ -2704,11 +2726,12 @@ function renderComparativo(termo, manterLimite) {
     };
     const celDist = distribuidores.map(f => {
       const op = g.opcoes.find(o=>o.forn===f);
-      const isMenor = menorDist!=null && op && Math.abs(op.compra-menorDist)<0.001;
+      const isMenor = menorDist!=null && op && !op.incerto && Math.abs(op.compra-menorDist)<0.001;
       return op
-        ? `<td data-forn="${encodeURIComponent(f)}" data-prod="${encodeURIComponent(op.produto||'')}" onclick="_cmpDrill(event,this)" title="clique: histórico de preço" style="cursor:pointer;text-align:center;padding:6px 10px;border-bottom:0.5px solid #f0f0f0;background:${heatBg(op.compra)}">
-            <div style="font-size:11px;font-weight:${isMenor?'700':'400'};color:${isMenor?'#0F6E56':'#27500A'};${isMenor?'text-decoration:underline':''}">${isMenor?'✅ ':''}${fmtBRL(op.compra)}</div>
-            <div style="font-size:9px;color:#aaa">venda: ${fmtBRL(op.compra*1.32)}</div>
+        ? `<td data-forn="${encodeURIComponent(f)}" data-prod="${encodeURIComponent(op.produto||'')}" onclick="_cmpDrill(event,this)" title="clique: histórico de preço" style="cursor:pointer;text-align:center;padding:6px 10px;border-bottom:0.5px solid #f0f0f0;background:${op.incerto?'#FFF8E1':heatBg(op.compra)}">
+            ${op.incerto ? cmpAvisoConferir(op)
+              : `<div style="font-size:11px;font-weight:${isMenor?'700':'400'};color:${isMenor?'#0F6E56':'#27500A'};${isMenor?'text-decoration:underline':''}">${isMenor?'✅ ':''}${fmtBRL(op.compra)}</div>${cmpBadgePack(op)}
+                 <div style="font-size:9px;color:#aaa">venda: ${fmtBRL(op.compra*1.32)}</div>`}
             <div style="font-size:9px;color:#bbb">${op.marca}</div>
             ${op.quando ? `<div style="font-size:9px;color:${_cmpIdadeCor(op.quando.dias)}" title="cotação de ${op.quando.dias} dias atrás">${op.quando.txt}</div>` : ''}
            </td>`
@@ -2718,10 +2741,11 @@ function renderComparativo(termo, manterLimite) {
     // Células por indústria
     const celInd = industrias.map(f => {
       const op = g.opcoes.find(o=>o.forn===f);
-      const isMenor = menorInd!=null && op && Math.abs(op.compra-menorInd)<0.001;
+      const isMenor = menorInd!=null && op && !op.incerto && Math.abs(op.compra-menorInd)<0.001;
       return op
-        ? `<td data-forn="${encodeURIComponent(f)}" data-prod="${encodeURIComponent(op.produto||'')}" onclick="_cmpDrill(event,this)" title="clique: histórico de preço" style="cursor:pointer;text-align:center;padding:6px 10px;border-bottom:0.5px solid #f0f0f0;background:${isMenor?'#DBEAFE':'#F0F7FF'}">
-            <div style="font-size:11px;font-weight:${isMenor?'700':'400'};color:${isMenor?'#1D4ED8':'#0C447C'}">${isMenor?'🏭 ':''}${fmtBRL(op.compra)}</div>
+        ? `<td data-forn="${encodeURIComponent(f)}" data-prod="${encodeURIComponent(op.produto||'')}" onclick="_cmpDrill(event,this)" title="clique: histórico de preço" style="cursor:pointer;text-align:center;padding:6px 10px;border-bottom:0.5px solid #f0f0f0;background:${op.incerto?'#FFF8E1':isMenor?'#DBEAFE':'#F0F7FF'}">
+            ${op.incerto ? cmpAvisoConferir(op)
+              : `<div style="font-size:11px;font-weight:${isMenor?'700':'400'};color:${isMenor?'#1D4ED8':'#0C447C'}">${isMenor?'🏭 ':''}${fmtBRL(op.compra)}</div>${cmpBadgePack(op)}`}
             <div style="font-size:9px;color:#bbb">${op.marca}</div>
             ${op.quando ? `<div style="font-size:9px;color:${_cmpIdadeCor(op.quando.dias)}" title="cotação de ${op.quando.dias} dias atrás">${op.quando.txt}</div>` : ''}
            </td>`
@@ -2730,7 +2754,7 @@ function renderComparativo(termo, manterLimite) {
 
     // Badge PROMO e Vale Comprar
     const isPromo = mediaMercado != null && margem !== null && margem >= 15;
-    const temEstoqueGlobal = globalOps.some(o => o.estoque > 0);
+    const temEstoqueGlobal = temSaldo;
 
     // Vale comprar: tem fornecedor com preço que gera ≥ 15% margem vendendo pelo seuPreco
     const valeComprar = mediaMercado != null && melhorFonte && seuPreco && ((seuPreco - melhorFonte.compra) / seuPreco * 100) >= 15;
@@ -2746,7 +2770,7 @@ function renderComparativo(termo, manterLimite) {
 
     // Δ vs MELHOR (upgrade 22/07): quanto o 2º colocado está acima do melhor preço da linha
     // (dist+indústria, sem GLOBAL) = folga de negociação. 1 cotação só = "único".
-    const todosVals = g.opcoes.filter(o=>!ehGlobal(o) && o.compra>0).map(o=>o.compra).sort((a,b)=>a-b);
+    const todosVals = certas.filter(o=>!ehGlobal(o) && o.compra>0).map(o=>o.compra).sort((a,b)=>a-b);
     const celDelta = todosVals.length >= 2
       ? `<td style="text-align:center;padding:6px 10px;border-bottom:0.5px solid #f0f0f0;vertical-align:middle" title="2º colocado ${fmtBRL(todosVals[1])} vs melhor ${fmtBRL(todosVals[0])} — margem de aperto na negociação">
           <div style="font-size:12px;font-weight:700;color:${((todosVals[1]-todosVals[0])/todosVals[0]*100)>=15?'#0F6E56':'#666'}">+${((todosVals[1]-todosVals[0])/todosVals[0]*100).toFixed(1)}%</div>
@@ -2770,15 +2794,18 @@ function renderComparativo(termo, manterLimite) {
         </div>
         <div style="font-size:10px;color:#aaa;margin-top:2px">${g.opcoes.length} opção(ões)${g.marcaGlobal ? ' · <span style="color:#7C3AED;font-weight:500">'+g.marcaGlobal+'</span>' : ''}</div>
       </td>
-      ${celGlobal}${celMedia}${celSeuPreco}${celFonte}${celDelta}${celValeComprar}${celDist}${celInd}
+      ${celGlobal}${compAnalise ? celMedia+celSeuPreco+celFonte+celDelta+celValeComprar : ''}${celDist}${celInd}
     </tr>`;
   }).join('');
 
   // header da coluna Δ vs melhor + SCORECARD (linha extra sob o cabeçalho: cobertura + win rate + idade média)
   const thDelta = `<th style="text-align:center;min-width:80px;padding:8px 10px;background:#F3F4F6;color:#374151;font-size:10px;font-weight:600;border-bottom:0.5px solid #D1D5DB;white-space:nowrap">📐 Δ vs melhor<br><span style="font-weight:400;font-size:9px">folga de negociação</span></th>`;
   const scoreTd = (f, bg) => { const im = idadeMed(f); return `<th style="text-align:center;padding:4px 6px;background:${bg};border-bottom:0.5px solid #e0e8e0;font-weight:400;font-size:9px;color:#555;white-space:nowrap" title="${cobertura[f]} itens cotados · ganha em ${winCount[f]} (${winRate(f)}% win rate)${im!=null?' · cotações com ~'+im+' dias':''}">${cobertura[f]} itens<br><b style="color:${winRate(f)>=30?'#0F6E56':'#555'}">🏆 ${winRate(f)}%</b>${im!=null?`<br><span style="color:${_cmpIdadeCor(im)}">~${im}d</span>`:''}</th>`; };
+  // a 1ª coluna do scorecard cobre: checkbox + produto + estoque (3) e mais 5 se a análise
+  // estiver aberta. Errar esse colspan desalinha a tabela inteira.
+  const colspanFixo = 3 + (compAnalise ? 5 : 0);
   const scoreRow = `<tr>
-      <th colspan="7" style="text-align:right;padding:4px 10px;background:#fcfcfa;border-bottom:0.5px solid #e0e8e0;font-size:9px;color:#999;font-weight:400">scorecard → itens cotados · 🏆 win rate (mais barato) · idade média</th>
+      <th colspan="${colspanFixo}" style="text-align:right;padding:4px 10px;background:#fcfcfa;border-bottom:0.5px solid #e0e8e0;font-size:9px;color:#999;font-weight:400">scorecard → itens cotados · 🏆 win rate (mais barato) · idade média</th>
       ${distribuidores.map(f=>scoreTd(f,'#F4F9EC')).join('')}${industrias.map(f=>scoreTd(f,'#EFF6FD')).join('')}
     </tr>`;
 
@@ -2787,12 +2814,36 @@ function renderComparativo(termo, manterLimite) {
   <table style="width:100%;border-collapse:collapse;font-size:12px">
     <thead><tr style="background:#f8faf8">
       <th style="width:36px;border-bottom:0.5px solid #e0e8e0"></th>
-      <th style="text-align:left;padding:9px 12px;border-bottom:0.5px solid #e0e8e0;min-width:200px;font-size:10px;font-weight:600;color:#555">Princípio Ativo</th>
-      ${thGlobal}${thMediaMercado}${thSeuPreco}${thFonteIdeal}${thDelta}${thValeComprar}${thDist}${thInd}
+      <th style="text-align:left;padding:9px 12px;border-bottom:0.5px solid #e0e8e0;min-width:200px;font-size:10px;font-weight:600;color:#555">Produto / Princípio Ativo</th>
+      ${thGlobal}${compAnalise ? thMediaMercado+thSeuPreco+thFonteIdeal+thDelta+thValeComprar : ''}${thDist}${thInd}
     </tr>${scoreRow}</thead>
     <tbody>${rows}</tbody>
   </table></div>${compMontarBotaoMais(totalLinhas)}`;
   _mkTopScroll('comp-hst','comp-tsc');
+}
+
+// ── Badge do pack e aviso de embalagem (spec do Lemuel, 04/08) ─────────────────────────────
+// O badge existe pra que ninguém precise adivinhar se o número da célula veio dividido. Sem
+// ele, "R$ 4,75" e "R$ 4,75" parecem a mesma coisa, mas um é preço de unidade e o outro é uma
+// caixa de 100 dividida — e a diferença aparece só na hora do faturamento.
+function cmpBadgePack(op){
+  if (!op || !(op.pack > 1)) return '';
+  return `<div style="font-size:8.5px;color:#7a8a7a;letter-spacing:.2px" title="preço da embalagem ${fmtBRL(op.bruto)} dividido por ${op.pack}">un · cx${op.pack}</div>`;
+}
+function cmpAvisoConferir(op){
+  return `<div style="font-size:10px;font-weight:700;color:#8A6D00" title="a unidade é agregadora (caixa/pacote) e o nome não declara quantas unidades vêm — dividir seria chutar">⚠ conferir emb.</div>
+          <div style="font-size:9px;color:#A98B22">${fmtBRL(op.bruto)} / emb.</div>`;
+}
+
+// "Ver análise": as 5 colunas de inteligência (média de mercado, seu preço, melhor fonte,
+// Δ vs melhor, vale comprar) somem por padrão. A tela vira o que o Lemuel pediu — comparativo
+// de PREÇO — e a análise continua a um clique, sem nada removido do código.
+var compAnalise = false;
+function compToggleAnalise(){
+  compAnalise = !compAnalise;
+  const b = document.getElementById('comp-btn-analise');
+  if (b) { b.textContent = compAnalise ? '📊 ocultar análise' : '📊 ver análise'; b.style.background = compAnalise ? '#EDE9FE' : '#fff'; }
+  renderComparativo(undefined, true);
 }
 
 // Rodapé com botão de paginação
@@ -4026,11 +4077,48 @@ function _qtdDoNome(produto){
   const m2 = nome.match(/(?:AMP|FR|CP|CPR|CAPS)\s*\/?\s*(\d+)\b(?!\s*(?:ML|MG|MCG|UI|G)\b)/); if (m2) { const n=parseInt(m2[1]); if(n>1) return n; }
   return 1;
 }
+// CALIBRE FRENCH ≠ PACK — porte do fpmed_licitacoes.html (defeito medido no ar em 05/08).
+// "SONDA URETRAL DESC 22FR" tem 22 de CALIBRE, não 22 frascos; como o _qtdDoNome lista `FR`
+// entre as unidades contáveis (por causa de "50FR" = 50 frascos), o preço saía dividido por 22
+// — R$ 0,03 por sonda. Em produto de calibre o token NNFR é apagado antes da detecção: fica
+// sem pack conhecido, que é a verdade. O soro "500ML S/F 16FR" não é dessa classe e segue
+// lendo 16 frascos. O Comparativo tinha o MESMO defeito; a correção estava só no Licitações.
+const _CMP_CALIBRE = /\b(SONDA|CATETER|DRENO|CANULA|TUBO ENDO|TRAQUEO|GASTROSTOMIA|URETRAL|NASOGASTRICA|NASOENTERAL|FOLEY|ASPIRACAO TRAQUEAL)\b/;
+function _semCalibre(produto){
+  const p = String(produto||'');
+  const semAc = p.toUpperCase().normalize('NFD').replace(/\p{M}/gu,'');
+  return _CMP_CALIBRE.test(semAc) ? p.replace(/\b\d{1,3}\s*FR\b/gi,' ') : p;
+}
 // UNIÃO: und com número manda (import confiável); senão nome; default 1. Diverge -> und prevalece + loga.
 function qtdEmbalagem(und, produto){
-  const u = _undNum(und), n = _qtdDoNome(produto);
+  const u = _undNum(und), n = _qtdDoNome(_semCalibre(produto));
   if (u >= 1){ if (n > 1 && n !== u) console.warn('[qtdEmb] und "'+String(und||'').trim()+'" ('+u+') diverge do nome ('+n+') — '+produto); return u; }
   return n;
+}
+
+// ── UNITÁRIO DO COMPARATIVO (05/08) — uma regra só, e ela sabe dizer "não sei" ──────────────
+// A REGRA DO PROJETO: preço com cara de CAIXA e sem pack identificável NÃO vira número unitário
+// — vira aviso. Era o que faltava aqui: o precoUnitario() dividia por `qtd`, e quando o pack não
+// era detectado o `qtd` valia 1 — mas esse 1 não significa "a caixa tem uma unidade", significa
+// "não achei o pack". O resultado era o preço da CAIXA ocupando a célula do unitário, sem
+// nenhum sinal. Mesma regra já no ar no Licitações (unitarioNosso) e na giovana (pv).
+const _CMP_UND_UNITARIA   = /^(UND|UN|UNID|UNIDADE|AMP|AMPOLA|FA|FR|FRASCO|CPR|COMP|CP|CAPS|CAP|LT|LITRO|PC|PAR|TB|TUBO|BG|BISNAGA|RL|ROLO|GL|SC|KG|MT)$/;
+const _CMP_UND_AGREGADORA = /^(CX|CAIXA|CT|CART|PCT|PACOTE|FD|FARDO|DP|DISPLAY|KIT|CJ|CONJ|BLS|BLISTER|ENV)$/;
+function cmpUnitario(c){
+  // compra_unit vem do importador JÁ unitário e é dado confiável — não passa por divisão.
+  const unitDireto = parseFloat(c.compra_unit||0);
+  if (unitDireto > 0) return { status:'ok', valor: unitDireto, pack: 1, bruto: unitDireto };
+  // o resto é preço de EMBALAGEM: compra_caixa (distribuidor) ou global_venda1 (estoque FPMED).
+  const base = parseFloat(c.compra_caixa||0) || parseFloat(c.global_venda1||0)
+            || parseFloat(c.venda_unit_calculada||0) || parseFloat(c.global_venda2||0);
+  if (!(base > 0)) return { status:'sem-preco' };
+  const qtd = qtdEmbalagem(c.und, c.produto);
+  if (qtd > 1) return { status:'ok', valor: base/qtd, pack: qtd, bruto: base };
+  const u = String(c.und||'').toUpperCase().normalize('NFD').replace(/\p{M}/gu,'').replace(/[^A-Z]/g,'');
+  if (_CMP_UND_UNITARIA.test(u)) return { status:'ok', valor: base, pack: 1, bruto: base };
+  // "CX" sem contagem, ou und em branco: o silêncio é "não sei", nunca 1 por otimismo.
+  if (_CMP_UND_AGREGADORA.test(u) || !u) return { status:'conferir', bruto: base };
+  return { status:'ok', valor: base, pack: 1, bruto: base };
 }
 function qtdEmbDiv(und, produto){
   const u = _undNum(und); if (u < 1) return null; const n = _qtdDoNome(produto);
