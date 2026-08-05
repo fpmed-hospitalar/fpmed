@@ -398,8 +398,17 @@ function doses(s){
 // comparável ("20mg/ml" e "20mg" viram ambos 20mg, que é a mesma coisa dita de dois jeitos) e
 // passa a ser condição de aceite quando os DOIS lados a declaram.
 function concMags(s){
-  const t = semAcento(s).replace(/,/g,'.');
+  let t = semAcento(s).replace(/,/g,'.');
   const out = new Set(); let m;
+  // "50MG/5ML" é 10 mg por ml, NÃO 50 — e o edital escreve a mesma coisa como "10MG/ML".
+  // Visto no ar em 05/08: sem esta redução, a nossa ACEBROFILINA 50MG/5ML aparecia como
+  // "dose confere" num item de 50MG/ML, que é cinco vezes mais concentrado. O trecho é
+  // consumido aqui pra não ser relido lá embaixo como um "50mg" solto.
+  t = t.replace(/(\d+(?:\.\d+)?)\s*(mg|mcg|g|ui)\s*\/\s*(\d+(?:\.\d+)?)\s*ml/g, (todo, n, u, d) => {
+    const por = parseFloat(n) / parseFloat(d);
+    if(isFinite(por) && por > 0) out.add(+por.toFixed(4) + u);
+    return ' ';
+  });
   const re = /(\d+(?:\.\d+)?)\s*(mg\/ml|mcg\/ml|ui\/ml|g\/ml|mg|mcg|ui|%|g\b)/g;
   while((m = re.exec(t))){
     const n = parseFloat(m[1]);

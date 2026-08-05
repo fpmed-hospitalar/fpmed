@@ -154,6 +154,13 @@ ok('acetilcisteina 40MG/ML NAO casa com a nossa de 20MG (mesmo volume 120ML)',
 const itAcebro25 = { descricao:'ACEBROFILINA XAROPE 25MG/ML PED. 120ML' };
 ok('acebrofilina 25MG/ML NAO casa com a nossa 50MG/5ML (so o 120ML em comum)',
    !nomes(itAcebro25).includes('ACEBROFILINA 50MG/5ML XPE ADL 120ML (G)'), nomes(itAcebro25));
+// "50MG/5ML" sao 10 mg por ml. Sem reduzir, casava com "50MG/ML" -- 5x mais concentrado.
+const itAcebro50 = { descricao:'ACEBROFILINA XAROPE 50MG/ML ADL. 120ML' };
+ok('acebrofilina 50MG/ML NAO casa com a nossa 50MG/5ML (10mg/ml)',
+   !nomes(itAcebro50).includes('ACEBROFILINA 50MG/5ML XPE ADL 120ML (G)'), nomes(itAcebro50));
+const itAcebro10 = { descricao:'ACEBROFILINA XAROPE 10MG/ML ADL. 120ML' };
+ok('acebrofilina 10MG/ML CASA com a nossa 50MG/5ML (e a mesma coisa)',
+   nomes(itAcebro10).includes('ACEBROFILINA 50MG/5ML XPE ADL 120ML (G)'), nomes(itAcebro10));
 
 // ── FORMA FARMACEUTICA ──
 ok('comprimido nao casa com injetavel (dipirona 500)',
