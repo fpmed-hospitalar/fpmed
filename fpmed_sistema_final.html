@@ -2495,8 +2495,14 @@ function buildGrupos(filtro) {
       if (!(pref > 0) || !(o.compra / pref >= 3)) continue;           // não destoa: é preço mesmo
       const corr = o.compra / packNome;
       if (corr < pref * 0.4 || corr > pref * 2.5) continue;           // (2) a divisão NÃO explica
-      o.bruto = o.compra; o.compra = corr; o.pack = packNome; o.eraCaixa = true;
-      console.warn('[cmp] preço de caixa resgatado: ' + o.forn + ' ' + o.produto +
+      // >>> SINALIZA, NÃO CORRIGE. Trocar o número em silêncio é tentador e é o erro caro:
+      //     num falso positivo, um preço legítimo passaria a parecer 100x mais barato e
+      //     viraria "o menor da linha" — mandando comprar no fornecedor errado. Marcado como
+      //     incerto, ele sai de mínimo/média/ranking (some a distorção, que era o problema)
+      //     e a tela mostra a divisão sugerida como HIPÓTESE, pra pessoa conferir e corrigir
+      //     no cadastro. A tela não tem autoridade pra reescrever preço; o operador tem.
+      o.bruto = o.compra; o.incerto = true; o.pareceCaixa = { pack: packNome, corr };
+      console.warn('[cmp] preço parece de CAIXA: ' + o.forn + ' ' + o.produto +
                    ' R$' + o.bruto.toFixed(2) + ' ÷' + packNome + ' = R$' + corr.toFixed(4) +
                    ' (mediana do grupo ~R$' + pref.toFixed(4) + ')');
     }
@@ -2871,13 +2877,15 @@ function renderComparativo(termo, manterLimite) {
 // caixa de 100 dividida — e a diferença aparece só na hora do faturamento.
 function cmpBadgePack(op){
   if (!op || !(op.pack > 1)) return '';
-  // `eraCaixa` = o valor estava gravado em compra_unit como se fosse unitário e a tela
-  // corrigiu. Marcar isso é obrigação: o número exibido diverge do que está no banco.
-  return op.eraCaixa
-    ? `<div style="font-size:8.5px;color:#B25E00;font-weight:700;letter-spacing:.2px" title="o banco tem ${fmtBRL(op.bruto)} em compra_unit, mas o nome declara ${op.pack} un e o valor dividido bate com o mercado — corrigido só na exibição">↺ un · cx${op.pack}</div>`
-    : `<div style="font-size:8.5px;color:#7a8a7a;letter-spacing:.2px" title="preço da embalagem ${fmtBRL(op.bruto)} dividido por ${op.pack}">un · cx${op.pack}</div>`;
+  return `<div style="font-size:8.5px;color:#7a8a7a;letter-spacing:.2px" title="preço da embalagem ${fmtBRL(op.bruto)} dividido por ${op.pack}">un · cx${op.pack}</div>`;
 }
 function cmpAvisoConferir(op){
+  // Dois motivos diferentes de "não dá pra usar este número", e a tela distingue os dois
+  // porque a AÇÃO é diferente: um pede conferir a embalagem, o outro pede corrigir o cadastro.
+  if (op.pareceCaixa) {
+    return `<div style="font-size:10px;font-weight:700;color:#B25E00" title="o cadastro tem ${fmtBRL(op.bruto)} como preço UNITÁRIO, mas o nome declara ${op.pareceCaixa.pack} un e esse valor dividido por ${op.pareceCaixa.pack} cai em cima do que os outros cobram. Parece preço de caixa no campo errado — corrigir no cadastro.">⚠ parece caixa</div>
+            <div style="font-size:9px;color:#A96B22">${fmtBRL(op.bruto)} · ÷${op.pareceCaixa.pack} = ${fmtBRL(op.pareceCaixa.corr)}?</div>`;
+  }
   return `<div style="font-size:10px;font-weight:700;color:#8A6D00" title="a unidade é agregadora (caixa/pacote) e o nome não declara quantas unidades vêm — dividir seria chutar">⚠ conferir emb.</div>
           <div style="font-size:9px;color:#A98B22">${fmtBRL(op.bruto)} / emb.</div>`;
 }
@@ -4121,7 +4129,10 @@ function _qtdDoNome(produto){
   // ignorado (Sandimmun "sol oral 50ML + 2 seringas dosadoras" = 1 frasco; as seringas não são o produto).
   const reR = /(\+\s*)?(\d{1,4})\s*(?:SERINGAS|SERINGA|SER|AMPOLAS|AMPOLA|BOLSAS|BOLSA|BOLS|CANETAS|CANETA|CAN|SISTEMAS|SISTEMA|SIST|REFIS|REFIL|FA)\b/g;
   let mR; while ((mR = reR.exec(nome))) { if (mR[1]) continue; const n=parseInt(mR[2]); if(n>1&&n<=5000) return n; }
-  const m2 = nome.match(/(?:AMP|FR|CP|CPR|CAPS)\s*\/?\s*(\d+)\b(?!\s*(?:ML|MG|MCG|UI|G)\b)/); if (m2) { const n=parseInt(m2[1]); if(n>1) return n; }
+  // O `(?![.,]\d)` é o mesmo cuidado que o mC já tinha e este não: sem ele, "1AMP 3,5ML" lia
+  // o "3" de "3,5ML" como pack de 3 e dividia o preço por 3. Pego no ar em 05/08 numa
+  // CEFTRIAXONA de R$ 13,26 que virava R$ 4,42. Número decimal é MEDIDA, nunca contagem.
+  const m2 = nome.match(/(?:AMP|FR|CP|CPR|CAPS)\s*\/?\s*(\d+)\b(?![.,]\d)(?!\s*(?:ML|MG|MCG|UI|G)\b)/); if (m2) { const n=parseInt(m2[1]); if(n>1) return n; }
   return 1;
 }
 // CALIBRE FRENCH ≠ PACK — porte do fpmed_licitacoes.html (defeito medido no ar em 05/08).

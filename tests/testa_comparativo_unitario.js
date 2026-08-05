@@ -160,25 +160,38 @@ function resgata(opcoes){
     if (!(pref > 0) || !(o.compra / pref >= 3)) continue;
     const corr = o.compra / packNome;
     if (corr < pref * 0.4 || corr > pref * 2.5) continue;
-    o.bruto = o.compra; o.compra = corr; o.pack = packNome; o.eraCaixa = true;
+    o.bruto = o.compra; o.incerto = true; o.pareceCaixa = { pack: packNome, corr };
   }
   return opcoes;
 }
 const O = (forn, produto, compra, und) => ({ forn, produto, compra, und: und||null, pack:1, incerto:false });
 
+// >>> A REGRA SINALIZA, NAO CORRIGE. Trocar o numero em silencio e tentador e e o erro caro:
+//     num falso positivo, um preco legitimo passaria a parecer 100x mais barato e viraria "o
+//     menor da linha", mandando comprar no fornecedor errado. Marcado como incerto ele sai de
+//     minimo/media/ranking — some a distorcao, que era o problema — e a divisao aparece como
+//     HIPOTESE na tela. A tela nao tem autoridade pra reescrever preco; o operador tem.
 {
   const g = resgata([
     O('STOCK MED', 'CEFALOTINA 1GR IV/IM 100 F/A', 4.4989, 'FA'),
     O('ELLO',      'CEFARISTON 1GR CX C/100',      493.75, null),
   ]);
   const ello = g.find(o=>o.forn==='ELLO');
-  ok('34. *** ELLO 493,75 vira 4,9375 (o caso real do ar) ***', Math.abs(ello.compra - 4.9375) < 1e-9, ello.compra);
-  ok('35. ...com pack 100 registrado', ello.pack === 100, ello.pack);
-  ok('36. ...marcado como eraCaixa (a tela avisa que corrigiu)', ello.eraCaixa === true);
-  ok('37. ...e o bruto do banco preservado', ello.bruto === 493.75);
+  ok('34. *** ELLO 493,75 e marcada como "parece caixa" (o caso real do ar) ***', ello.incerto === true, ello);
+  ok('35. ...com a divisao sugerida como hipotese: ÷100 = 4,9375', ello.pareceCaixa && Math.abs(ello.pareceCaixa.corr - 4.9375) < 1e-9, ello.pareceCaixa);
+  ok('36. ...e o preco NAO foi reescrito (o banco continua mandando)', ello.compra === 493.75, ello.compra);
+  ok('37. ...com o bruto guardado pra exibicao', ello.bruto === 493.75);
   ok('38. o preco certo do STOCK MED nao foi tocado', g.find(o=>o.forn==='STOCK MED').compra === 4.4989);
-  const media = g.reduce((a,o)=>a+o.compra,0)/g.length;
-  ok('39. media do grupo cai de 249,12 p/ 4,72', Math.abs(media - 4.71820) < 0.001, media);
+  // e o efeito que importava: a media do grupo deixa de ser envenenada
+  const certas = g.filter(o=>!o.incerto);
+  const media = certas.reduce((a,o)=>a+o.compra,0)/certas.length;
+  ok('39. media so das certas = 4,4989 (com a ELLO dentro daria 249,12)', Math.abs(media - 4.4989) < 1e-9, media);
+}
+{
+  // "1AMP 3,5ML": o "3" e MEDIDA, nao contagem. Sem o lookahead de decimal, o _qtdDoNome
+  // devolvia 3 e a CEFTRIAXONA de R$ 13,26 aparecia como "parece caixa, ÷3 = R$ 4,42".
+  ok('39b. *** "CEFTRIAXONA 1G PO INJ 1AMP 3,5ML" nao tem pack 3 ***',
+    _qtdDoNome('#G.CEFTRIAXONA I/M 1G PO INJ 1AMP 3,5ML') === 1, _qtdDoNome('#G.CEFTRIAXONA I/M 1G PO INJ 1AMP 3,5ML'));
 }
 
 // ── E AGORA O QUE ELA NÃO PODE FAZER ──────────────────────────────────────────────────────
@@ -212,13 +225,13 @@ const O = (forn, produto, compra, und) => ({ forn, produto, compra, und: und||nu
   // peer sao dois fatos independentes. Bater por acaso exigiria o pack explicar a razao exata.
   const g = resgata([ O('A','X 1G C/100', 4.50, 'FA'), O('B','X 1G CX C/100', 450, null) ]);
   ok('42. com um peer só a regra AGE, desde que a divisão caia em cima dele',
-    g.find(o=>o.forn==='B').compra === 4.5, g.find(o=>o.forn==='B').compra);
+    g.find(o=>o.forn==='B').incerto === true, g.find(o=>o.forn==='B'));
 }
 {
   // ...e o contraprova: um peer so, mas a divisao NAO cai nele -> nao corrige.
   const g = resgata([ O('A','X 1G C/100', 4.50, 'FA'), O('B','X 1G CX C/100', 9000, null) ]);
-  ok('42b. um peer e divisão que NÃO cai nele (9000÷100=90 vs 4,50) -> fica como está',
-    g.find(o=>o.forn==='B').compra === 9000, g.find(o=>o.forn==='B').compra);
+  ok('42b. um peer e divisão que NÃO cai nele (9000÷100=90 vs 4,50) -> nem sinaliza',
+    !g.find(o=>o.forn==='B').incerto, g.find(o=>o.forn==='B'));
 }
 {
   // a divisao tem que CAIR no mercado: pack errado no nome nao pode ser usado
@@ -241,9 +254,10 @@ const O = (forn, produto, compra, und) => ({ forn, produto, compra, und: und||nu
     O('C','DIPIRONA 500MG/ML 2ML 100 AMP', 0.83, 'CX'),
     O('D','DIPIRONA CX C/100 AMP 2ML',    75.00, 'CX'),   // esta SIM e preco de caixa
   ]);
-  ok('45. a caixa de verdade (75,00 ÷100 = 0,75) e corrigida', Math.abs(g.find(o=>o.forn==='D').compra - 0.75) < 1e-9, g.find(o=>o.forn==='D').compra);
+  ok('45. a caixa de verdade (75,00) e sinalizada, com ÷100 = 0,75 como hipotese',
+    g.find(o=>o.forn==='D').incerto === true && Math.abs(g.find(o=>o.forn==='D').pareceCaixa.corr - 0.75) < 1e-9, g.find(o=>o.forn==='D'));
   ok('46. *** e as 3 ampolas de preco unitario legitimo NAO sao tocadas (sem cascata) ***',
-    g.filter(o=>['A','B','C'].includes(o.forn)).every(o => !o.eraCaixa),
+    g.filter(o=>['A','B','C'].includes(o.forn)).every(o => !o.incerto),
     g.filter(o=>['A','B','C'].includes(o.forn)).map(o=>o.compra));
 }
 {
@@ -257,7 +271,7 @@ const O = (forn, produto, compra, und) => ({ forn, produto, compra, und: und||nu
     O('BOA3',  'ITEM C/100 UND',  2.20, 'CX'),
   ]);
   ok('47. uma linha furada pra baixo nao arrasta o grupo (mediana ~2,10, nao min 0,02)',
-    g.filter(o=>o.forn.startsWith('BOA')).every(o => !o.eraCaixa),
+    g.filter(o=>o.forn.startsWith('BOA')).every(o => !o.incerto),
     g.filter(o=>o.forn.startsWith('BOA')).map(o=>o.compra));
 }
 {
