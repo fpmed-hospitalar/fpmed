@@ -160,9 +160,18 @@ Criado em 21/07/2026 copiando SO os arquivos do app do C:\globalmed.
   FALTA da etapa (nao bloqueia, entra depois da fila): agenda/acompanhar
   (licitacoes_acompanhadas, RLS gestor grava / logado le) e os KPIs de acompanhamento.
 
->>> PROXIMO DA FILA: item 1B -- TELA "TABELA CMED" (auditar o loader antes, a cmed_pf tem 23
-  colunas e a planilha oficial traz mais; PMVG e outro arquivo da ANVISA que o Lemuel precisa
-  baixar). Detalhes no TAREFAS_FPMED.md.
+>>> ITEM 1B (Tabela CMED) -- AUDITORIA JA FEITA em 05/08, o resto continua na fila:
+  Banco: cmed_pf com 25.702 linhas / 25 colunas; pmvg SEMPRE NULL; cmed_dicionario VAZIA.
+  Planilha oficial (xls_conformidade_site_20260721.xlsx, ja esta em C:\fpmed): 74 colunas, o
+  loader usa 19. TUDO que a spec pediu esta la e e so mapear -- CNPJ, REGIME DE PRECO, PF e PMC
+  em todas as aliquotas (com variante ALC), ICMS 0%, ANALISE RECURSAL, LISTA DE CONCESSAO DE
+  CREDITO, DESTINACAO COMERCIAL.
+  ** PENDENCIA DO LEMUEL: o PMVG NAO existe nessa planilha (conferido coluna a coluna). Vem na
+     lista CAP/PMVG, publicacao separada da ANVISA. Sem esse arquivo, "destacar o PMVG" (teto
+     legal de venda ao governo) nao sai do papel. O resto do 1B anda sem ele. **
+  ACHADO: a cmed_pf tem 25.702 pares principio_ativo x marca -- da pra preencher a
+  cmed_dicionario derivando dela e resolver os 302 medicamentos sem PA do estoque.
+  RETOMADA do 1B: estender tools/carrega_cmed_pf.js + DDL da cmed_pf, depois a tela.
 
 Proximos passos (quando o Lemuel mandar): (a) OK dos 2 syncs acima; (b) vendedoras quando a
 equipe for definida; (c) dominio sistema.fpmed.com.br pos-venda. Placar: TAREFAS_FPMED.md.

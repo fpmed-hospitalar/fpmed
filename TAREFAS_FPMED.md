@@ -201,11 +201,26 @@ Auditoria de 22/07: banco confirmado limpo após teste do upload de PDF (preview
       5. **Rodar a suíte inteira antes do commit.**
       (As 5 regras acima foram cumpridas — ver o bloco ✅ logo acima.)
 1B. 🔜 **PRÓXIMO DA FILA — TELA "TABELA CMED"** (novo, 04/08) — menu FERRAMENTAS, gestor+vendedor, tema claro.
-   - **Auditar o loader primeiro**: a `cmed_pf` tem 23 colunas; a planilha oficial traz mais.
-     Conferir e **estender** se faltar: PF e PMC em **todas as alíquotas** (0/12/17/17,5/18/19/20%),
-     **PMVG**, laboratório com CNPJ/razão, regime de preço, análise recursal, lista de concessão
-     de crédito, ICMS 0%. Hoje o loader pega só `pf_0`, `pf_go19`, `pmc` e deixa `pmvg` NULL
-     (a lista CAP/PMVG é **outro arquivo** da ANVISA — o Lemuel precisa baixar).
+   - ✅ **AUDITORIA FEITA (05/08)** — primeira etapa do item, medida contra o banco e contra a
+     planilha oficial `xls_conformidade_site_20260721.xlsx` (12,4 MB, já em `C:\fpmed`):
+     · **Banco**: `cmed_pf` tem **25.702 linhas** e **25 colunas** (não 23). Preenchimento numa
+       amostra de 1.000: `pf_0` e `pf_go19` 100%, `pmc` 837/1000, **`pmvg` 0/1000 (sempre NULL)**.
+       `cmed_dicionario` está **VAZIA (0 linhas)** — é a causa do `resolvePA` não resolver nada.
+     · **Planilha oficial**: **74 colunas**, o loader usa **19**. Tudo o que a spec pediu ESTÁ lá
+       e é só mapear: `CNPJ` (col 1), `REGIME DE PREÇO` (12), `PF Sem Impostos` (13), **PF e PMC
+       em TODAS as alíquotas** (0/12/17/17,5/18/19/19,5/20/20,5/21/22/22,5/23, cada uma com a
+       variante `ALC`), `ICMS 0%` (68), `ANÁLISE RECURSAL` (69), `LISTA DE CONCESSÃO DE CRÉDITO
+       TRIBUTÁRIO (PIS/COFINS)` (70), `DESTINAÇÃO COMERCIAL` (73).
+     · ⛔ **PMVG NÃO EXISTE nesta planilha** — confirmado coluna a coluna. Vem na **lista
+       CAP/PMVG**, publicação separada da ANVISA. **O Lemuel precisa baixar esse arquivo** para
+       o "destacar o PMVG" (teto legal de venda ao governo) sair do papel. O resto do item 1B
+       anda sem ele.
+     · 💡 **Achado de valor colateral**: a `cmed_pf` tem 25.702 pares `subst_norm` (princípio
+       ativo) × `marca_norm`. Isso é um vocabulário de PA **muito maior que os 938** tirados das
+       cotações, e dá pra **preencher a `cmed_dicionario` (marca→PA) derivando dela**. Resolve os
+       **302 medicamentos sem PA** do estoque (limite honesto registrado em 04/08) e melhora de
+       tabela o matching do Licitações. Vale fazer junto com o loader.
+   - ⬜ **Estender o loader** (`tools/carrega_cmed_pf.js`) com as colunas acima + DDL da `cmed_pf`.
    - **Tela**: busca por substância/produto/marca/laboratório/GGREM/EAN; resultado com
      apresentação, laboratório, tipo, PF/PMC/PMVG por alíquota (destaque no ICMS de GO),
      restrição hospitalar, CAP. Filtros: só com PMVG · só restrição hospitalar ·
