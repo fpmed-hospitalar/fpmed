@@ -328,7 +328,39 @@ qualquer um, e a configuração da Global **não serve** (os nomes são de lá).
    re-renderizava. Promise em voo compartilhada + erro visível + timeout de 25s.
    Sobrou 1 ponto: `autoRefreshEstoque` manda `force=true` e ignora o cache de 60s — cortar
    isso elimina as 9 requests extras, mas é decisão de negócio (a Competitividade quer fresco).
-3. ⬜ **Comparativo SIMPLIFICADO** — spec do Lemuel (04/08):
+3. ✅ **CONCLUÍDO 05/08 — Comparativo SIMPLIFICADO** (commits `e64335d` → `611b002`, no ar).
+   - As 5 colunas de análise (média de mercado, seu preço, melhor fonte, Δ vs melhor, vale
+     comprar) saem por padrão; voltam no botão **"ver análise"**. Nada removido do código.
+   - Célula do estoque FPMED **com saldo** ganhou fundo azul forte + faixa lateral.
+   - **Teste que o Lemuel mandou fazer: PASSA.** CEFALOTINA 1000MG (CEFARISTON) 100FRS/AMP,
+     und "CX", R$ 475,25 → **R$ 4,75 · un · cx100**. Conferido no navegador.
+   - **O defeito de fundo**: `precoUnitario()` dividia por `qtdEmbalagem` sempre, e quando o
+     pack não era detectado o divisor valia 1 — mas esse 1 significava "não achei o pack", não
+     "a caixa tem uma unidade". O preço da CAIXA ia pra célula do unitário sem sinal nenhum.
+     **112 linhas** estavam assim. `precoUnitario` foi REMOVIDA (com lápide explicando por que
+     não voltar); quem substitui é `cmpUnitario()`, que sabe responder "não sei".
+   - **Dois avisos distintos**, porque a ação é diferente: **"⚠ conferir emb."** (82 linhas —
+     unidade agregadora sem contagem no nome: olhar a embalagem) e **"⚠ parece caixa"**
+     (55 linhas — o cadastro tem preço de caixa no campo unitário: corrigir o cadastro).
+     Os dois saem de mínimo, média, win rate, PDF e análise.
+   - A regra do "parece caixa" **SINALIZA, não corrige**. Num falso positivo, corrigir em
+     silêncio faria um preço legítimo parecer 100x mais barato, virar "o menor da linha" e
+     mandar comprar no fornecedor errado. Exige **evidência dupla**: o nome declara o pack E o
+     preço dividido por ele cai em cima da **mediana** do grupo.
+   - **3 defeitos meus corrigidos antes de fechar, os 3 só visíveis com dado real:**
+     1. cascata — eu lia o preço dos vizinhos depois de já ter corrigido alguns, e a correção
+        virava a nova "referência de mercado" (uma ampola de dipirona de R$ 0,56 → R$ 0,0056);
+     2. **mínimo** como referência — uma linha já errada pra baixo entregava o grupo todo;
+        virou **mediana**;
+     3. `_qtdDoNome` lia o "3" de "3,5ML" como pack de 3 (CEFTRIAXONA R$ 13,26 → R$ 4,42):
+        faltava no `m2` o lookahead de decimal que o `mC` já tinha. **Isso afetava o pack em
+        todas as telas**, não só aqui.
+   - Porte do **calibre French** do Licitações: "SONDA URETRAL 22FR" tinha o preço dividido
+     por 22 no Comparativo. O soro "500ML S/F 16FR" segue lendo 16 frascos.
+   - Suíte nova `testa_comparativo_unitario` (49 asserts, 8 deles do que a regra **não** pode
+     fazer). **Total: 598 asserts / 0 falhas / 22 suítes.**
+
+3-old. (spec original, mantida como referência) — spec do Lemuel (04/08):
    - **A tela vira só comparativo de preço**: `PRODUTO/PA | NOSSO (estoque FPMED) | preço de
      cada FORNECEDOR | menor preço em verde`. Recolher para uma expansão opcional
      **"ver análise"**: "Seu preço sugerido", "Melhor fonte", "Δ vs melhor", "Vale comprar"

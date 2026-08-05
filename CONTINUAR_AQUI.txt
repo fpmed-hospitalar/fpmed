@@ -248,11 +248,27 @@ entao ler cotacoes vai exigir cargo_gestor() (JWT app_metadata.role) *E* limedte
 pra eles. MAS um usuario novo criado so com perfil, sem app_metadata.role, fica trancado fora da
 cotacoes sem mensagem clara. Decidir depois: unificar os gates ou o cria_usuario escrever nos dois.
 
+>>> ITEM 3 (Comparativo simplificado) -- **CONCLUIDO em 05/08** (e64335d -> 611b002, no ar).
+  As 5 colunas de analise recolhidas atras do botao "ver analise"; celula do estoque com saldo
+  em azul forte. O teste do Lemuel passa: CEFALOTINA 475,25 -> 4,75 un · cx100 (conferido no
+  navegador). Defeito de fundo: o precoUnitario dividia por qtdEmbalagem sempre, e quando o
+  pack nao era detectado o divisor valia 1 -- preco de CAIXA na celula do unitario, sem sinal.
+  precoUnitario REMOVIDA (com lapide); entrou cmpUnitario, que sabe dizer "nao sei".
+  Dois avisos, porque a acao e diferente: "conferir emb." (82 linhas) e "parece caixa" (55).
+  Os dois saem de minimo/media/win rate/PDF/analise.
+  A regra do "parece caixa" SINALIZA, NAO corrige -- corrigir em silencio faria preco legitimo
+  parecer 100x mais barato e mandaria comprar errado. Exige evidencia dupla (nome declara o
+  pack E a divisao cai na MEDIANA do grupo).
+  3 defeitos meus corrigidos antes de fechar, os 3 so visiveis com dado real: cascata (a
+  correcao virava a referencia do vizinho), minimo como referencia (virou mediana), e o
+  _qtdDoNome lendo o "3" de "3,5ML" como pack 3 -- este ultimo afetava TODAS as telas.
+  Suite nova testa_comparativo_unitario (49 asserts). Total: 598 / 0 falhas / 22 suites.
+
 >>> FILA EM 05/08/2026 (ordem, detalhes no TAREFAS_FPMED.md):
-  1B Tabela CMED (DESTRAVADO, o PMVG chegou) . 3 Comparativo simplificado . 4 Blocos 2/4 do sync
-  . 5 Estoque 0->1 no fluxo . 6 Pack via CMED/web . 7 PDF de proposta . 8 Calendario FASE 2
-  (ESPERA OK) . 9 SIGA completo, 5 abas (spec nas secoes 5 e 6 do LICITACOES_SPEC.md; comecar
-  pelo FUNIL, que nao depende de nada externo) . 10 Coleta agendada do PNCP + banco proprio.
+  [OK] 1B Tabela CMED . [OK] 3 Comparativo simplificado . 4 Blocos 2/4 do sync (ESPERA o Lemuel
+  escolher os blocos) . 5 Estoque 0->1 no fluxo . 6 Pack via CMED/web . 7 PDF de proposta .
+  8 Calendario FASE 2 (ESPERA OK) . 9 SIGA completo, 5 abas (comecar pelo FUNIL) .
+  10 Coleta agendada do PNCP + banco proprio.
 
 >>> ITEM 10 -- porque existe: o PNCP caiu de novo em 05/08 (timeout confirmado de fora). A tela
   NAO trava (AbortController de 20s + cache de 15 min + erro visivel com "Tentar de novo"), mas
