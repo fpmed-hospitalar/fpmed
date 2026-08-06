@@ -192,6 +192,17 @@ escrever uma versão rebrandada com checagem por coerência interna (`ref` do co
 próprio roteiro documenta — rodar da fábrica passando a pasta do cliente como argumento.
 
 #### 🚨 ACHADOS QUE VOLTAM PRO KIT (defeitos do produto, não da FPMED)
+0. 🔴 **GRAVE — `ddl/03` deixa a tabela `perfis` aberta pro `anon`** (achado e corrigido 06/08).
+   Ele cria a tabela e **não liga RLS, não cria policy e não revoga o `anon`**. No Supabase,
+   tabela nova em `public` já nasce com `GRANT ALL TO anon`. **Medido pela internet, com a anon
+   real: `GET /rest/v1/perfis` → HTTP 200 com os e-mails da equipe**; os GRANTs davam
+   INSERT/UPDATE/DELETE também. As policies de `perfis` só chegam no `05`, que é a migração
+   parada — ou seja, **todo cliente instalado por este roteiro fica com a lista de usuários
+   exposta no intervalo entre o 03 e o 05**, e o 05 pode nunca ser rodado.
+   *Correção sugerida ao kit: as 3 policies de `perfis` + `revoke all from anon` pertencem ao
+   **03**, junto com a tabela. Fechadura e porta se instalam no mesmo dia.*
+   Aqui foi resolvido com `ddl/perfis_fecha_anon.sql` (a metade segura do 05, mesmos nomes de
+   policy). Ver o commit `ca50056`.
 1. **O verificador e o red test carregam o `ref` do projeto Supabase da GlobalMed hardcoded.**
    Copiei os dois pra cá e o `testa_compliance` ficou **vermelho na hora** (3 falhas). O repo da
    FPMED é **público**: commitar aquilo publicaria o ref da Global. **Removi antes de commitar**

@@ -201,6 +201,24 @@ Criado em 21/07/2026 copiando SO os arquivos do app do C:\globalmed.
 >>> ONDE PARAMOS — 06/08/2026, RODADA 6. LEIA ISTO PRIMEIRO.
 ========================================
 
+>>> !! SEGURANCA CORRIGIDA 06/08 — a tabela `perfis` estava LEGIVEL PELA INTERNET !!
+    4o DEFEITO DO KIT, e o grave. O ddl/03 cria `perfis` e nao liga RLS, nao cria policy e nao
+    tira o anon — e no Supabase tabela nova em public ja nasce com GRANT ALL TO anon. A chave
+    anon da FPMED esta no HTML de um repo PUBLICO.
+    MEDIDO antes da correcao, pela internet, com a anon real:
+      GET /rest/v1/perfis?select=email,papel,ativo -> HTTP 200 + os 2 e-mails da equipe.
+    Os GRANTs mostravam INSERT/UPDATE/DELETE tambem. NAO testei escrita de proposito.
+    PIOR DO QUE PARECE: hoje o portao ainda e o cargo_gestor() do app_metadata, mas o ddl/05 do
+    kit (PARADO esperando OK) transforma `perfis` NO portao — subiria com a tabela aberta.
+    CORRECAO: ddl/perfis_fecha_anon.sql (rodado 2x) = a METADE (a) do 05, as 3 policies de perfis
+    com os MESMOS nomes (pra o 05 substituir depois, nao duplicar) + o `revoke all from anon` que
+    nem o 05 tem. A metade (b) do 05 (restritiva em cotacoes) CONTINUA PARADA esperando OK.
+    PROVADO: anon 401 · gestor logado le 2 · logado sem perfil le 0 (impersonacao com rollback).
+    >>> E O DEFEITO DE PROCESSO: o guard que pega exatamente isso (tests/db/testa_rls_cobertura,
+        "nenhuma tabela sem RLS") JA EXISTIA e estava verde por nunca ter sido chamado — o
+        run_all so varre tests/*.js e as de banco moram em tests/db/. O run_all agora LISTA as 4
+        que ele nao roda. Rodar `node tests/db/testa_rls_cobertura.js` faz parte de conferir.
+
 ITEM 9, 3o PEDACO FECHADO (06/08): MEUS JORNAIS — a pesquisa avancada SALVA COM NOME.
   Secao 9.4 do TAREFAS. Tabela nova `jornais` (ddl/jornais.sql), aditiva, rodada 2x.
   Suite nova testa_meus_jornais (74) -> 1.379 asserts / 0 falhas / 41 suites.
