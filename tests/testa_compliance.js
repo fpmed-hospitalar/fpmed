@@ -46,6 +46,9 @@ const PERMITIDOS = [
   { arq: 'TAREFAS_FPMED.md', motivo: 'registro da varredura' },
   // o detector do porte de codigo: a ref e o PADRAO que ele procura pra barrar
   { arq: 'tools/porta_motor_da_global.js', motivo: 'detector: a ref e o padrao procurado' },
+  // idem, 05/08: o verificador de rebrand precisa NOMEAR a ref pra proibi-la em todo porte manual
+  { arq: 'tools/confere_rebrand.js', motivo: 'detector: a ref e o padrao procurado' },
+  { arq: 'tests/testa_rebrand.js', motivo: 'red test do detector: planta a ref pra provar que ele pega' },
   // sync de DADOS morto: a constante fica como registro de procedencia, mas o arquivo aborta
   // na primeira linha (verificado pelo teste (c) abaixo) — nao ha caminho de acesso vivo
   { arq: 'tools/sync_cotacoes_global.js', motivo: 'desativado por abort no topo; constante e registro historico' },
