@@ -3360,12 +3360,43 @@ async function iacAddManual(){
 function _iacNorm(s){ return String(s==null?'':s).normalize('NFD').replace(/[̀-ͯ]/g,'').toUpperCase().replace(/[^A-Z0-9 .\/%]/g,' ').replace(/\s+/g,' ').trim(); }
 
 // texto pronto pro WhatsApp do fornecedor
+// ── LISTA PROFISSIONAL PRA COTAR (Bloco 2 do sync, 05/08) ───────────────────────────────────
+// A lista antiga dizia "podem me passar preço?". O fornecedor respondia na granularidade DELE —
+// às vezes por unidade, às vezes pela caixa — e ninguém registrava qual era.
+//
+// >>> É AQUI QUE NASCE O PACK AMBÍGUO. Todo o trabalho de 05/08 no Comparativo ("⚠ conferir
+//     emb.", "⚠ parece caixa", o resgate por mediana) é conserto a jusante de uma pergunta mal
+//     feita a montante. 112 linhas do banco não têm pack conhecido, e 85 continuam sem depois
+//     do item 6. Pedir explicitamente "preço da EMBALAGEM FECHADA + quantas unidades vêm nela"
+//     mata a ambiguidade na ENTRADA, que é o único lugar onde ela morre de graça.
+//
+// Separa MEDICAMENTO de MATERIAL porque quem cota costuma ser gente diferente do outro lado, e
+// porque a pergunta do princípio ativo só faz sentido num dos dois blocos.
+function iacTextoLista(itens){
+  const med = [], mat = [];
+  (itens||[]).forEach(x => (typeof _sMaterial === 'function' && _sMaterial(x.descricao) ? mat : med).push(x));
+  const linha = (x,i) => {
+    const vez = (x.vezes||1) > 1 ? `  (pedido ${x.vezes}x)` : '';
+    const pa  = x.pa && !String(x.descricao||'').toUpperCase().includes(String(x.pa).toUpperCase())
+                ? `  [PA: ${x.pa}]` : '';
+    return `${i+1}. ${x.descricao}${pa}${vez}`;
+  };
+  let t = 'Bom dia! Preciso de cotação dos itens abaixo.\n\n';
+  if (med.length) t += `MEDICAMENTOS (${med.length})\n` + med.map(linha).join('\n') + '\n\n';
+  if (mat.length) t += `MATERIAL / CORRELATOS (${mat.length})\n` + mat.map(linha).join('\n') + '\n\n';
+  t += 'Para cada item, por favor:\n'
+    +  '• preço da EMBALAGEM FECHADA (caixa/pacote), não o unitário\n'
+    +  '• quantas unidades vêm na embalagem (ex.: CX c/ 100 AMP)\n'
+    +  '• marca/fabricante\n'
+    +  '• validade e prazo de entrega\n\n'
+    +  'Se só tiver o preço por unidade, me diga isso na resposta — assim não erro a conta.\n\n'
+    +  'Obrigado! — FPMED';
+  return t;
+}
 function iacCopiar(){
   const l = iacFiltrados().filter(x=>x.status!=='resolvido');
   if(!l.length){ toast('Nada aberto pra copiar','error'); return; }
-  const txt = 'Bom dia! Vocês têm esses itens? Podem me passar preço e prazo?\n\n'
-    + l.map((x,i)=>`${i+1}. ${x.descricao}${(x.vezes||1)>1?`  (pedido ${x.vezes}x)`:''}`).join('\n')
-    + '\n\nObrigado! — FPMED';
+  const txt = iacTextoLista(l);
   navigator.clipboard.writeText(txt)
     .then(()=>toast(`${l.length} item(ns) copiados — cole no WhatsApp`))
     .catch(()=>{ // clipboard bloqueia sem HTTPS/gesto: cai pro prompt em vez de falhar calado
@@ -4294,7 +4325,18 @@ function pareceCaixaPeer(produto, und, pa, unit){
 }
 // BLINDAGEM peer-INDEPENDENT (sanidade absoluta): unit alto + ÷qtd barato p/ forma/material = preço de CAIXA (sem peer).
 const _S_MATKW=['agulha','seringa','luva','gaze','swab','cateter','equipo','compressa','algodao','esparadrapo','atadura','sonda','scalp','lanceta','micropore','avental','touca','abaixador','espatula','garrote','eletrodo','preservativo','dreno','curativo','coletor','fralda','absorvente','lamina','capote','prope','clamp'];
-function _sTemDose(p){ return /\d+\s*(mg|mcg|ui|g)\b|\d+\s*%/i.test((p||'').normalize('NFD').replace(/[̀-ͯ]/g,'')); }
+// CALIBRE GAUGE ≠ DOSE (05/08) — mesma família do calibre French corrigido hoje no pack.
+// "CATETER INTRAVENOSO 20G" tem 20 de CALIBRE; o `\d+\s*g\b` do _sTemDose lia isso como 20
+// GRAMAS de dose, concluía "tem dose logo é medicamento" e o cateter deixava de ser material.
+// Efeito: a blindagem de sanidade de preço usa limiares diferentes pra material, e o cateter
+// escapava deles. O token só é apagado em produto que USA gauge (agulha/cateter/scalp/jelco),
+// e só com 1-2 dígitos — "ALGODAO 500G" segue sendo 500 gramas, "CEFALOTINA 1G" segue dose.
+const _S_GAUGE = /\b(agulha|cateter|scalp|jelco|abocath|butterfly)\b/;
+function _semGauge(p){
+  const t = String(p||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
+  return _S_GAUGE.test(t) ? t.replace(/\b\d{1,2}\s*g\b/g, ' ') : t;
+}
+function _sTemDose(p){ return /\d+\s*(mg|mcg|ui|g)\b|\d+\s*%/i.test(_semGauge(p)); }
 function _sMaterial(p){ const t=' '+String(p||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]/g,' ').replace(/\s+/g,' ').trim()+' '; return _S_MATKW.some(k=>t.includes(' '+k)) && !_sTemDose(p); }
 const _S_LIMIAR={SOLIDO_ORAL:20,LIQUIDO_ORAL:20,INJETAVEL:50,TOPICO:40,OFTALMICO:40,SPRAY:60,MATERIAL:10};
 const _S_TETO  ={SOLIDO_ORAL:12,LIQUIDO_ORAL:20,INJETAVEL:40,TOPICO:40,OFTALMICO:40,SPRAY:60,MATERIAL:5};
