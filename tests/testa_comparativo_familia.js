@@ -36,7 +36,7 @@ function konstLinha(nome) {
 const ctx = (new Function(`
   ${konst('CPZ_SALT')} ${konst('_GM_SAL_RE')} ${konst('_BM_CATS')}
   ${fn('_gmNorm')} ${fn('normPA')} ${fn('_cpzPaNorm')}
-  ${konstLinha('_bmStrip')} ${konstLinha('_bmNormF')} ${konstLinha('_bmForma')}
+  ${konstLinha('_bmStrip')} ${konstLinha('_bmNormF')} ${konstLinha('_bmSemGelatina')} ${konstLinha('_bmForma')}
   return { _cpzPaNorm, _bmForma };`))();
 const { _cpzPaNorm, _bmForma } = ctx;
 
@@ -116,6 +116,28 @@ const G = (pa, prod) => ({ principioAtivo: pa, principio: pa, produtoOriginal: p
   ok('15. e diz na propria tela que a comparacao e por dose', /a comparação é por dose/.test(bloco));
   ok('16. o motivo esta escrito no codigo, nao so aqui', /dose nunca se mistura/i.test(src));
 }
+
+// ══════════ 5B. "CAPS GEL DURA" E CAPSULA, NAO POMADA ══════════
+// Achado no ar em 05/08: "Omeprazol 40MG CX 56CAPS GEL DURAS" era classificado como TOPICO,
+// porque 'gel' esta na lista de palavras de pomada. GEL DURA = GELATINOSA dura.
+// NAO E SO ROTULO: o _bmForma decide quem e PEER na blindagem de preco de caixa ("formas
+// diferentes nunca sao peer") e o casamento de forma no cruzamento do Licitacoes. Um omeprazol
+// classificado como pomada perde os peers dele e deixa de casar com "capsula" no edital.
+ok('16b. *** "CX 56CAPS GEL DURAS" e SOLIDO_ORAL, nao TOPICO ***',
+  _bmForma('Omeprazol 40MG CX 56CAPS GEL DURAS - (OMOPREL)') === 'SOLIDO_ORAL',
+  _bmForma('Omeprazol 40MG CX 56CAPS GEL DURAS - (OMOPREL)'));
+ok('16c. "CT C/ 490 CAPS GEL DURA" idem',
+  _bmForma('OMEPRAZOL 20MG (GEN) CT C/ 490 CAPS GEL DURA/GEOLAB') === 'SOLIDO_ORAL',
+  _bmForma('OMEPRAZOL 20MG (GEN) CT C/ 490 CAPS GEL DURA/GEOLAB'));
+ok('16d. "CAPS GEL MOLE" tambem', _bmForma('VITAMINA E 400UI 30 CAPS GEL MOLES') === 'SOLIDO_ORAL',
+  _bmForma('VITAMINA E 400UI 30 CAPS GEL MOLES'));
+// e o que o conserto NAO pode comer: gel de verdade continua topico
+ok('16e. *** GEL de verdade continua TOPICO ***', _bmForma('DICLOFENACO GEL 60G') === 'TOPICO', _bmForma('DICLOFENACO GEL 60G'));
+ok('16f. gel dermatologico idem', _bmForma('CLINDAMICINA GEL DERMATOLOGICO 30G') === 'TOPICO');
+ok('16g. e as duas capsulas agora sao a MESMA familia (era o efeito visivel do defeito)',
+  familiaDe(G('OMEPRAZOL','Omeprazol 40MG CX 56CAPS GEL DURAS'))
+  === familiaDe(G('OMEPRAZOL','OMEPRAZOL 20MG CT C/ 490 CAPS GEL DURA')),
+  [familiaDe(G('OMEPRAZOL','Omeprazol 40MG CX 56CAPS GEL DURAS'))]);
 
 // ══════════ 6. O COLSPAN ACOMPANHA AS COLUNAS ══════════
 // Errar isso desalinha a tabela inteira, e o numero de colunas MUDA com o toggle de analise

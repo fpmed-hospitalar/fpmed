@@ -4388,7 +4388,15 @@ const _BM_CATS = [
   ['LIQUIDO_ORAL',['xarope','xpe','suspensao','susp','solucao oral','sol oral','gotas','gts','elixir','sacaroleo','solucao','sol']],
   ['SOLIDO_ORAL',['comprimido','comprimidos','cpr','cp','comp','dragea','drageas','revestido','rev','capsula','caps','cap','cps','pastilha','pilula','tablete','lib prol','lp','xr','er','mr']],
 ];
-const _bmForma = texto => { const t=_bmNormF(texto); for(const [cat,kws] of _BM_CATS) for(const kw of kws) if(t.includes(' '+kw+' ')) return cat; if(/\d\s+com\b/.test(t)) return 'SOLIDO_ORAL'; return null; };  // "10 COM" = comprimidos (S3MED)
+// "CAPS GEL DURA" = cápsula GELATINOSA dura, que é SÓLIDO ORAL. O 'gel' da lista de TOPICO
+// capturava isso e o omeprazol em cápsula virava pomada — visto no ar em 05/08 ("Omeprazol
+// 40MG CX 56CAPS GEL DURAS" classificado como TOPICO).
+// Não é só rótulo: o _bmForma decide quem é PEER na blindagem de preço de caixa ("formas
+// diferentes nunca são peer") e o casamento de forma no cruzamento do Licitações. Um omeprazol
+// classificado como pomada perde os peers dele e deixa de casar com "cápsula" no edital.
+const _bmSemGelatina = t => t.replace(/\s(caps?|capsulas?)\s+gel(\s+(duras?|moles?))?\s/g, ' $1 ')
+                             .replace(/\sgel\s+(duras?|moles?)\s/g, ' ');
+const _bmForma = texto => { const t=_bmSemGelatina(_bmNormF(texto)); for(const [cat,kws] of _BM_CATS) for(const kw of kws) if(t.includes(' '+kw+' ')) return cat; if(/\d\s+com\b/.test(t)) return 'SOLIDO_ORAL'; return null; };  // "10 COM" = comprimidos (S3MED)
 function pareceCaixaPeer(produto, und, pa, unit){
   unit=parseFloat(unit); if(!(unit>0)) return null;
   const qtd=qtdEmbalagem(und,produto)||1; if(qtd<=1) return null;
