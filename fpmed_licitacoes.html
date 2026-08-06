@@ -94,6 +94,24 @@ select:focus,input:focus{outline:none;border-color:var(--azul)}
 .grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px}
 .grid3 label{display:block;font-size:11px;font-weight:600;color:var(--muted);margin-bottom:5px;text-transform:uppercase;letter-spacing:.3px}
 
+/* ── ÓRGÃOS (painel derivado do índice próprio) ── mesma caixa da pesquisa avançada ── */
+#orgaos{display:none;background:var(--painel);border:1px solid var(--linha);border-radius:12px;padding:18px;margin-top:18px;box-shadow:var(--sombra);text-align:left}
+#orgaos.open{display:block}
+.org{display:flex;gap:12px;align-items:center;padding:9px 11px;border-radius:9px;border:1px solid transparent;
+  cursor:pointer;transition:background .14s,border-color .14s,transform .14s}
+.org:hover{background:var(--painel2);border-color:rgba(44,169,224,.4);transform:translateY(-1px)}
+.org .nome{font-size:13px;color:var(--texto);font-weight:600;line-height:1.35}
+.org .sub{font-size:11.5px;color:var(--muted)}
+.org .n{margin-left:auto;text-align:right;white-space:nowrap}
+.org .n b{font-family:Montserrat;color:var(--azul-claro);font-size:14px}
+/* filtro de refino ATIVO: o operador precisa ver que a lista está cortada, senão lê "só tem
+   3 licitações hoje" quando na verdade é "3 passaram no refino que eu mesmo deixei ligado". */
+.refino{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px;font-size:12.5px}
+.pill{background:rgba(44,169,224,.16);color:var(--azul-claro);border:1px solid rgba(44,169,224,.35);
+  padding:4px 11px;border-radius:20px;font-size:11.5px;font-weight:600}
+.etq.deserta{background:var(--ambar);color:#3a2708}
+.bdg.laranja{background:#523a17;color:#f0c483}
+
 /* ── KPIs ── régua elegante, não chips soltos ── */
 .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));background:var(--painel);border-radius:14px;
   box-shadow:var(--sombra);overflow:hidden;margin:26px 0 8px;border:1px solid var(--linha)}
@@ -224,6 +242,8 @@ select:focus,input:focus{outline:none;border-color:var(--azul)}
     </div>
     <div class="links">
       <a onclick="document.getElementById('avancada').classList.toggle('open')">Pesquisa avançada</a>
+      <a onclick="abrirOrgaos()">Órgãos</a>
+      <a onclick="soDesertas()" id="lk-desertas" title="processos que não seguiram: desertos/fracassados, revogados, anulados ou suspensos — costumam ser republicados">Desertas e republicáveis</a>
       <a onclick="alert('Meus alertas entra na V1.5: a busca atual vira um alerta diário salvo.')">Meus alertas</a>
       <a onclick="porNumero()">Encontrar por Nº</a>
     </div>
@@ -244,8 +264,56 @@ select:focus,input:focus{outline:none;border-color:var(--azul)}
           <option value="9">Inexigibilidade</option></select></div>
         <div><label>Excluir (termos que NÃO podem aparecer)</label>
           <input type="text" id="f-excluir" placeholder="ex.: veículo; combustível"></div>
+
+        <!-- ── FILTROS DE REFINO (06/08) ────────────────────────────────────────────────────
+             Só campos que o PNCP REALMENTE entrega — conferidos nos registros já coletados,
+             não supostos pela documentação. Estes filtram o RESULTADO (não a consulta): o
+             caminho ao vivo não aceita nenhum deles como parâmetro, e uma segunda implementação
+             server-side divergiria da primeira com o tempo. Ver comentário em `refina()`. -->
+        <div><label>Portal de origem</label><select id="f-portal" onchange="rerender()">
+          <option value="">Todos os portais</option></select>
+          <div class="hint" style="margin-top:4px">preenchido com os portais que aparecem na busca</div></div>
+        <div><label>Modo de disputa</label><select id="f-modo" onchange="rerender()">
+          <option value="">Todos</option>
+          <option>Aberto</option><option>Aberto-Fechado</option><option>Fechado</option><option>Fechado-Aberto</option>
+        </select></div>
+        <div><label>Situação</label><select id="f-sit" onchange="rerender()">
+          <option value="">Todas</option>
+          <option>Divulgada no PNCP</option><option>Revogada</option><option>Anulada</option><option>Suspensa</option>
+        </select></div>
+        <div><label>Órgão / unidade / município contém</label>
+          <input type="text" id="f-orgao" onchange="rerender()" placeholder="ex.: uruaçu; secretaria de saúde"></div>
+        <div><label>Registro de preços (SRP)</label><select id="f-srp" onchange="rerender()">
+          <option value="">Tanto faz</option>
+          <option value="so">Só registro de preços</option>
+          <option value="nao">Excluir registro de preços</option></select></div>
+        <div><label>Valor estimado (R$)</label>
+          <div class="intervalo">
+            <input type="number" id="f-vmin" onchange="rerender()" placeholder="mínimo" min="0" step="1000">
+            <span style="color:var(--muted)">–</span>
+            <input type="number" id="f-vmax" onchange="rerender()" placeholder="máximo" min="0" step="1000">
+          </div>
+          <div class="hint" style="margin-top:4px">licitação sem valor estimado entra sempre</div></div>
       </div>
-      <div style="margin-top:14px;text-align:right"><button class="btn" onclick="buscar()">Aplicar e buscar</button></div>
+      <div style="margin-top:14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+        <span class="hint">o refino filtra o que já está na tela — não custa nova consulta ao PNCP</span>
+        <button class="btn sec" style="margin-left:auto" onclick="limparRefino()">Limpar refino</button>
+        <button class="btn" onclick="buscar()">Aplicar e buscar</button>
+      </div>
+    </div>
+
+    <!-- ── ÓRGÃOS ── diretório DERIVADO do que já coletamos (nenhum crawler novo, como a spec
+         pediu). É por isso que ele diz quantas licitações conhece: um diretório que finge
+         conhecer o Brasil inteiro faria alguém concluir "esse órgão não compra" quando a
+         verdade é "ainda não coletamos". -->
+    <div id="orgaos">
+      <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:12px">
+        <b style="font-family:Montserrat;font-size:15px;color:#fff">Órgãos compradores</b>
+        <span class="hint" id="org-resumo">carregando…</span>
+        <button class="btn sec mini" style="margin-left:auto" onclick="document.getElementById('orgaos').classList.remove('open')">fechar</button>
+      </div>
+      <input type="text" id="f-orgbusca" placeholder="filtrar por nome, município ou CNPJ…" oninput="pintaOrgaos()">
+      <div id="org-lista" style="margin-top:12px;max-height:420px;overflow:auto"></div>
     </div>
   </div>
 
@@ -629,7 +697,11 @@ async function puxarItens(lic){
     if(p === ITENS_TETO_PAG) truncado = true;
   }
   const cruzados = itens.map(it => ({ it, pares: cruzaItem(it, 3) }));
-  const res = { itens:cruzados, casados:cruzados.filter(x=>x.pares.length).length, quando:Date.now(), truncado };
+  // situação DECLARADA do item (campo `situacaoCompraItemNome`, confirmado no contrato do
+  // endpoint). É daqui que sai a marca "DESERTA/FRACASSADA" — dado do PNCP, não inferência
+  // nossa. Se o campo não vier, `desertos` fica 0 e a tela simplesmente não afirma nada.
+  const desertos = itens.filter(it => /deser|fracass/.test(semAcento(it.situacaoCompraItemNome||''))).length;
+  const res = { itens:cruzados, casados:cruzados.filter(x=>x.pares.length).length, desertos, quando:Date.now(), truncado };
   CRUZ.set(k, res);
   return res;
 }
@@ -698,6 +770,184 @@ async function carimboColeta(){
 // continua servindo, porque veio do banco e não da API.
 function atualizarAgora(){ buscar(true); }
 
+// ══ REFINO — pesquisa avançada completa (item 9, 4º pedaço · 06/08) ═══════════════════════
+// >>> DECISÃO: o refino filtra o RESULTADO, no navegador, e não vira parâmetro de consulta.
+//     Dois motivos, e o segundo é o que decide:
+//     1. o PNCP não aceita nenhum destes como filtro — portal, modo de disputa, faixa de valor
+//        e SRP não existem na query dele. No caminho ao vivo não haveria o que empurrar;
+//     2. empurrar só no caminho do banco criaria DOIS filtros com a mesma intenção e
+//        implementações diferentes — e o que diverge com o tempo é sempre esse par. A tela já
+//        carrega o resultado inteiro na memória; filtrar 1.000 objetos é instantâneo.
+//     Se um dia a janela crescer a ponto de doer, o lugar de resolver é a consulta ao NOSSO
+//     banco (que aceita tudo isso como coluna), não a duplicação do critério.
+//
+// >>> E TODO CRITÉRIO ATIVO APARECE EM PILL acima da lista. Filtro invisível é como se lê
+//     "só tem 3 licitações hoje" quando a verdade é "3 passaram no refino que eu deixei ligado".
+const _CAMPOS_REFINO = ['f-portal','f-modo','f-sit','f-orgao','f-srp','f-vmin','f-vmax'];
+function refino(){
+  const v = id => { const e = document.getElementById(id); return e ? String(e.value||'').trim() : ''; };
+  const n = id => { const x = parseFloat(v(id).replace(',','.')); return isFinite(x) ? x : null; };
+  return {
+    portal: v('f-portal'), modo: v('f-modo'), sit: v('f-sit'), srp: v('f-srp'),
+    // `;` = OU, a mesma convenção do campo de palavras-chave desta tela. Duas convenções
+    // diferentes na mesma tela é como o operador aprende a não confiar em nenhuma.
+    orgao: v('f-orgao').split(';').map(s=>semAcento(s.trim())).filter(Boolean),
+    vmin: n('f-vmin'), vmax: n('f-vmax'),
+    desertas: !!window._soDesertas,
+  };
+}
+const _ehSrp = l => l.srp === true || String(l.srp) === 'true';
+function casaRefino(l, r){
+  if(r.portal && String(l.usuarioNome||'').trim() !== r.portal) return false;
+  if(r.modo && semAcento(l.modoDisputaNome||'') !== semAcento(r.modo)) return false;
+  if(r.sit  && semAcento(l.situacaoCompraNome||'') !== semAcento(r.sit)) return false;
+  if(r.srp === 'so'  && !_ehSrp(l)) return false;
+  if(r.srp === 'nao' &&  _ehSrp(l)) return false;
+  if(r.orgao.length){
+    const o = l.orgaoEntidade||{}, u = l.unidadeOrgao||{};
+    const alvo = semAcento([o.razaoSocial, u.nomeUnidade, u.municipioNome, o.cnpj].filter(Boolean).join(' '));
+    if(!r.orgao.some(x => alvo.includes(x))) return false;
+  }
+  // >>> licitação SEM valor estimado NÃO é cortada pela faixa. Dispensa costuma vir sem
+  //     estimado, e sumir com ela em silêncio esconderia justamente a oportunidade pequena
+  //     que a FPMED disputa. Faixa de valor filtra quem TEM valor.
+  const v = Number(l.valorTotalEstimado)||0;
+  if(v > 0 && r.vmin != null && v < r.vmin) return false;
+  if(v > 0 && r.vmax != null && v > r.vmax) return false;
+  if(r.desertas && !desertaDe(l)) return false;
+  return true;
+}
+function pillsRefino(r){
+  const p = [];
+  if(r.portal) p.push('portal: '+r.portal);
+  if(r.modo)   p.push('disputa: '+r.modo);
+  if(r.sit)    p.push('situação: '+r.sit);
+  if(r.orgao.length) p.push('órgão: '+r.orgao.join(' ou '));
+  if(r.srp==='so')  p.push('só registro de preços');
+  if(r.srp==='nao') p.push('sem registro de preços');
+  if(r.vmin!=null) p.push('≥ '+brl(r.vmin));
+  if(r.vmax!=null) p.push('≤ '+brl(r.vmax));
+  if(r.desertas) p.push('só desertas/republicáveis');
+  return p;
+}
+function limparRefino(){
+  _CAMPOS_REFINO.forEach(id => { const e = document.getElementById(id); if(e) e.value=''; });
+  window._soDesertas = false; marcaDesertas();
+  rerender();
+}
+// O portal (`usuarioNome`) é o sistema em que a licitação foi publicada — BNC, BLL, Licitanet,
+// Compras.gov.br, Licitar Digital… Nos 70 registros já coletados apareceram 14 portais
+// diferentes. Vale MUITO pra FPMED: o item 8 mediu a taxa de vitória dela POR PORTAL
+// (BNC 23,0% · LICITANET 22,9% · BLL 19,6% · GOV.BR 13,0%), então dá pra procurar oportunidade
+// onde a empresa historicamente ganha mais.
+// A lista de opções sai do próprio resultado — fixar 19 portais na mão envelheceria sozinha.
+function populaPortais(todos){
+  const s = document.getElementById('f-portal'); if(!s) return;
+  const atual = s.value;
+  const nomes = [...new Set(todos.map(l => String(l.usuarioNome||'').trim()).filter(Boolean))]
+                  .sort((a,b)=>a.localeCompare(b,'pt-BR'));
+  s.innerHTML = '<option value="">Todos os portais</option>'
+              + nomes.map(n=>'<option'+(n===atual?' selected':'')+'>'+esc(n)+'</option>').join('');
+  // portal escolhido que não existe NESTE resultado: o select volta pra "Todos" — e o filtro
+  // volta junto. Manter o valor zeraria a lista por um critério que sumiu da tela.
+  if(atual && !nomes.includes(atual)) s.value = '';
+}
+
+// ══ DESERTAS / REPUBLICÁVEIS ══════════════════════════════════════════════════════════════
+// A spec pedia "processos marcados como desertos/fracassados, que podem ser republicados e têm
+// chance maior". Duas fontes, as DUAS de dado declarado — nenhuma inferência:
+//   (a) `situacaoCompraNome` da própria busca: Revogada / Anulada / Suspensa;
+//   (b) `situacaoCompraItemNome` dos ITENS (endpoint que a tela já lê pro cruzamento): quando
+//       o PNCP marca item como Deserto ou Fracassado, isso é fato, não palpite.
+//
+// >>> O QUE EU **NÃO** FIZ, DE PROPÓSITO: inferir "deserta" de "encerrou e não tem
+//     `valorTotalHomologado`". Homologação leva semanas — essa regra encheria a lista de
+//     processos que só estão EM ANDAMENTO e mandaria alguém atrás de licitação viva achando
+//     que caducou. Um filtro que erra assim é pior que filtro nenhum: ele custa o dia de quem
+//     confiou nele.
+//
+// Consequência honesta, dita na tela: a marca (b) só aparece DEPOIS de ler os itens daquela
+// licitação (botão "Cruzar"). Antes disso a tela não sabe — e não finge saber.
+const _SIT_PARADA = {'revogada':'REVOGADA','anulada':'ANULADA','suspensa':'SUSPENSA'};
+function desertaDe(l){
+  const s = semAcento(l.situacaoCompraNome||'').trim();
+  for(const k in _SIT_PARADA) if(s === k) return {rotulo:_SIT_PARADA[k], motivo:'situação declarada no PNCP: '+(l.situacaoCompraNome||'')};
+  const r = CRUZ.get(chaveLic(l));
+  if(r && r.desertos) return {rotulo:'DESERTA/FRACASSADA',
+    motivo: r.desertos+' de '+r.itens.length+' itens marcados como deserto/fracassado no PNCP'};
+  return null;
+}
+function marcaDesertas(){
+  const a = document.getElementById('lk-desertas'); if(!a) return;
+  a.style.color = window._soDesertas ? '#fff' : '';
+  a.style.textDecoration = window._soDesertas ? 'underline' : '';
+}
+function soDesertas(){
+  window._soDesertas = !window._soDesertas;
+  marcaDesertas();
+  rerender();
+}
+
+// ══ ÓRGÃOS ════════════════════════════════════════════════════════════════════════════════
+// Diretório DERIVADO do índice próprio (view v_orgaos_licitantes) — a spec pediu exatamente
+// isso: "dá pra derivar do que já buscamos, sem crawler novo".
+let ORGAOS = null;
+async function abrirOrgaos(){
+  const p = document.getElementById('orgaos');
+  p.classList.add('open');
+  if(!ORGAOS) await carregarOrgaos();
+  pintaOrgaos();
+}
+async function carregarOrgaos(){
+  const el = document.getElementById('org-resumo');
+  el.textContent = 'lendo o nosso banco…';
+  try{
+    const r = await fetch(`${SB_URL}/rest/v1/v_orgaos_licitantes?select=*&order=licitacoes.desc&limit=1000`, {headers:SB_H});
+    if(!r.ok) throw new Error('o banco respondeu '+r.status);
+    const j = await r.json();
+    ORGAOS = Array.isArray(j) ? j : [];
+  }catch(e){
+    ORGAOS = [];
+    el.textContent = 'não consegui ler o diretório ('+e.message+')';
+  }
+}
+function pintaOrgaos(){
+  const el = document.getElementById('org-lista'), res = document.getElementById('org-resumo');
+  if(!ORGAOS){ el.innerHTML=''; return; }
+  const somaLic = ORGAOS.reduce((s,o)=>s+(Number(o.licitacoes)||0),0);
+  // >>> a frase é deliberada: o diretório conhece o que NÓS coletamos, não o Brasil inteiro.
+  //     Sem isso alguém conclui "esse órgão não compra isso" quando a verdade é "não coletamos".
+  res.textContent = ORGAOS.length
+    ? `${ORGAOS.length} órgão(s), derivados das ${somaLic} licitações que já coletamos — não é um cadastro nacional`
+    : 'o índice próprio ainda está vazio: rode uma coleta (o diretório nasce dela)';
+  const q = semAcento((document.getElementById('f-orgbusca')||{}).value||'').trim();
+  const vis = q ? ORGAOS.filter(o => semAcento([o.orgao,o.municipio,o.uf,o.cnpj].filter(Boolean).join(' ')).includes(q)) : ORGAOS;
+  if(!vis.length){ el.innerHTML = '<div class="hint" style="padding:12px">nenhum órgão bate com "'+esc(q)+'".</div>'; return; }
+  el.innerHTML = vis.slice(0,300).map(o =>
+      '<div class="org" onclick="filtrarPorOrgao('+JSON.stringify(String(o.orgao||'')).replace(/"/g,'&quot;')+')" '
+    +      'title="clique pra filtrar a busca por este órgão">'
+    +   '<div><div class="nome">'+esc(o.orgao||'—')+'</div>'
+    +     '<div class="sub">'+esc(o.municipio||'')+(o.uf?'/'+esc(o.uf):'')
+    +       ' · CNPJ '+esc(o.cnpj||'')+(o.unidades>1?' · '+o.unidades+' unidades':'')+'</div></div>'
+    +   '<div class="n"><b>'+o.licitacoes+'</b><div class="sub">'+brl(o.valor_estimado)+'</div></div>'
+    + '</div>').join('')
+    + (vis.length>300 ? '<div class="hint" style="padding:10px">mostrando 300 de '+vis.length+' — refine a busca acima.</div>' : '');
+}
+function filtrarPorOrgao(nome){
+  const e = document.getElementById('f-orgao'); if(e) e.value = nome;
+  document.getElementById('orgaos').classList.remove('open');
+  document.getElementById('avancada').classList.add('open');
+  rerender();
+}
+
+// Refino não vai à rede: ele re-renderiza o que já está na memória. Trocar "só SRP" não pode
+// custar uma consulta ao PNCP — ainda mais numa fonte que caiu 6 vezes em 3 dias.
+function rerender(){
+  const u = window._ultimoRender;
+  if(u) render(u.todos, u.kws, u.excl, u.aviso, u.procedencia);
+  else buscar();
+}
+
 async function buscar(aoVivo){
   const uf   = document.getElementById('f-uf').value;
   const mod  = document.getElementById('f-mod').value;
@@ -763,11 +1013,17 @@ async function buscar(aoVivo){
 }
 
 function render(todos, kws, excl, aviso, procedencia){
+  window._ultimoRender = {todos, kws, excl, aviso, procedencia};   // pro refino re-renderizar sem rede
   const num = window._filtroNumero; window._filtroNumero = null;
+  populaPortais(todos);                 // antes do refino(): o select pode zerar um portal ausente
+  const r = refino();
   const casa = l => {
+    // "Encontrar por Nº" ignora o refino de propósito: quem digitou um número quer AQUELA
+    // licitação, e sumir com ela por um filtro esquecido pareceria "não existe no PNCP".
     if(num) return String(l.numeroControlePNCP||'').includes(num);
     const t = semAcento(l.objetoCompra||'');
     if(excl.length && excl.some(x=>t.includes(x))) return false;
+    if(!casaRefino(l, r)) return false;
     return !kws.length || kws.some(k=>t.includes(k));
   };
   const hits = todos.filter(casa);
@@ -795,9 +1051,20 @@ function render(todos, kws, excl, aviso, procedencia){
        + '<button class="btn sec mini" style="margin-left:auto" onclick="atualizarAgora()">↻ Atualizar agora</button>'
        + '</div>';
   }
+  // CRITÉRIOS DE REFINO ATIVOS, em pill, ANTES da lista — inclusive quando o resultado é zero.
+  const pills = pillsRefino(r);
+  if(pills.length){
+    h += '<div class="refino"><span class="hint">refino ativo:</span>'
+       + pills.map(x=>'<span class="pill">'+esc(x)+'</span>').join('')
+       + '<a class="hint" style="cursor:pointer;text-decoration:underline;color:var(--azul-claro)" onclick="limparRefino()">limpar</a></div>';
+  }
   if(!hits.length){
     h += '<div class="aviso">Nenhuma licitação bate na busca.<div class="hint" style="margin-top:6px">'
-       + todos.length+' publicada(s) no período com esses filtros. Tente limpar as palavras-chave.</div></div>';
+       + todos.length+' publicada(s) no período com esses filtros.'
+       + (pills.length ? ' <b>Há refino ligado</b> — talvez seja ele, e não a busca.' : ' Tente limpar as palavras-chave.')
+       + (r.desertas ? '<br>A marca de <b>deserta por item</b> só existe depois de ler os itens daquela licitação'
+                     + ' (botão “Cruzar”): antes disso o PNCP não conta essa situação na busca.' : '')
+       + '</div></div>';
     lista.innerHTML=h; return;
   }
   hits.sort((a,b)=>{ const x=dt(a.dataEncerramentoProposta), y=dt(b.dataEncerramentoProposta);
@@ -821,6 +1088,7 @@ function render(todos, kws, excl, aviso, procedencia){
       : '<span class="bdg v">encerra em '+dias+'d</span>';
     const cats = categorias(l.objetoCompra);
     const alvo = aderencia(l);
+    const des  = desertaDe(l);
     const titulo = esc(l.modalidadeNome||'') + ' Nº ' + esc(numCompra(l.numeroCompra, l.anoCompra))
                  + ' — ' + esc(org) + ' / ' + esc(un.ufSigla||'');
     h += '<div class="lic">'
@@ -831,6 +1099,8 @@ function render(todos, kws, excl, aviso, procedencia){
       + '<div class="etiquetas" id="etq-'+i+'">'
         + cats.map(c=>'<span class="etq">'+esc(c)+'</span>').join('')
         + (alvo ? '<span class="etq alvo">🎯 '+alvo+' itens no nosso estoque</span>' : '')
+        // o selo NUNCA vem sem o motivo no title: "DESERTA" sem porquê vira boato dentro da tela
+        + (des ? '<span class="etq deserta" title="'+esc(des.motivo)+'">⚠️ '+esc(des.rotulo)+'</span>' : '')
       + '</div>'
       + '<div class="sessao"><b>Abertura em '+fmtDt(l.dataAberturaProposta)+'</b>'
       +   (l.modoDisputaNome ? ' &nbsp;·&nbsp; Modo de disputa: '+esc(l.modoDisputaNome) : '')
@@ -838,7 +1108,11 @@ function render(todos, kws, excl, aviso, procedencia){
       + '</div>'
       + '<div class="rodape">'
       +   '<span class="bdg cinza">Fonte: PNCP — '+esc(un.municipioNome||org)+'</span>'
+      // o PORTAL é onde a disputa acontece — e a FPMED tem taxa de vitória MEDIDA por portal
+      // (item 8: BNC 23,0% · LICITANET 22,9% · BLL 19,6% · GOV.BR 13,0%). Merece estar no card.
+      +   (l.usuarioNome ? '<span class="bdg cinza" title="portal em que foi publicada">🖥️ '+esc(l.usuarioNome)+'</span>' : '')
       +   '<span class="bdg azul">'+esc(l.modalidadeNome||'')+'</span>'
+      +   (_ehSrp(l) ? '<span class="bdg laranja" title="Sistema de Registro de Preços: a ata vale por até 12 meses e a compra é parcelada">SRP</span>' : '')
       +   prazo
       +   '<span class="bdg cinza" title="Número de controle PNCP">'+esc(l.numeroControlePNCP||'')+'</span>'
       +   '<span class="valor">'+brl(l.valorTotalEstimado)+'</span>'
@@ -927,6 +1201,16 @@ function atualizaBadge(i){
         z.textContent = 'nenhum item nosso neste edital'; cx.appendChild(z);
       }
     }
+  }
+  // a situação DESERTA/FRACASSADA só é sabida depois de ler os itens — é aqui que ela aparece,
+  // sem re-renderizar a lista inteira (o operador pode ter rolado a página).
+  if(cx){
+    const des = desertaDe(l);
+    let d = cx.querySelector('.etq.deserta');
+    if(des){
+      if(!d){ d = document.createElement('span'); d.className='etq deserta'; cx.appendChild(d); }
+      d.textContent = '⚠️ '+des.rotulo; d.title = des.motivo;
+    }else if(d) d.remove();
   }
   const cruzadas = (window._hits||[]).filter(x => aderencia(x));
   document.getElementById('k-aderencia').textContent = cruzadas.length || '—';
