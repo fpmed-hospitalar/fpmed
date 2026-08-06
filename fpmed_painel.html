@@ -370,8 +370,13 @@ async function delNota(id){
   }catch(e){ console.error(e); }
 }
 
-carregarTudo();
-carregarNotas();
+// CORRIDA COM O gm-auth (07/08): o `boot()` dele é assíncrono quando o token precisa ser
+// renovado. Chamar direto faz a consulta sair como `anon` — a RLS não devolve nada e o painel
+// nasce vazio sem dizer por quê. Mesma correção da raiz das travadas do sistema_final.
+function _painelBoot(){ carregarTudo(); carregarNotas(); }
+if (window.gmAuth) _painelBoot();
+else { let d=false; const go=()=>{ if(d) return; d=true; _painelBoot(); };
+       document.addEventListener('gm-auth-ready', go, { once:true }); setTimeout(go, 12000); }
 
 // ===== BAIXAR ARQUIVO COMPLETO (.txt) =====
 // Baixa o PROJETO COMPLETO (todos os sistemas + CONTINUAR_AQUI + README) como .zip do GitHub

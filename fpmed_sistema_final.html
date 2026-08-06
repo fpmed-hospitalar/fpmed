@@ -1436,7 +1436,28 @@ function headerBtnAction() { const name = document.querySelector('.page.active')
 
 
 // ─── INIT ─────────────────────────────────────────────────────────────────────
+// >>> "VERIFIQUE SE AS TABELAS FORAM CRIADAS" SÓ QUANDO O BANCO DISSER ISSO (07/08/2026).
+//     Era um `toast` fixo no catch: QUALQUER falha — aborto de navegação, timeout, sessão
+//     expirada, Wi-Fi — acusava o banco de estar sem as tabelas. O Lemuel viu essa mensagem 3
+//     vezes em 15 minutos com o banco intacto e as 22 tabelas no lugar. Mensagem errada não é
+//     só ruído: ela manda a pessoa procurar no lugar errado, e no dia da entrega ela diz ao
+//     cliente que o sistema não foi instalado direito.
+//     Agora cada causa tem a sua frase, e a de tabela inexistente exige o código do Postgres
+//     (42P01) ou o 404 do PostgREST — que é o banco RESPONDENDO isso, não a gente supondo.
+function _mensagemDeFalha(e){
+  const m = String((e && e.message) || e || '');
+  if (/42P01|não encontrada \(HTTP 404\)|does not exist/i.test(m))
+    return { txt: 'O banco respondeu que a tabela não existe. Verifique se o DDL foi aplicado.', tabela: true };
+  if (/sessão expirou|não tem permissão|HTTP 401|HTTP 403/i.test(m))
+    return { txt: 'Sua sessão expirou. Entre novamente para carregar os dados.' };
+  if (/demorou|timeout|abort/i.test(m))
+    return { txt: 'O banco demorou para responder. Tentando de novo…' };
+  return { txt: 'Não consegui falar com o banco agora: ' + m };
+}
+
+let _tentouDeNovo = false;
 async function iniciar() {
+  _armaGuardaCarga();                       // relógio novo a cada carga (ver o bloco do pageshow)
   try {
     await carregarFornecedores();
     await carregarCotacoes();
@@ -1445,11 +1466,27 @@ async function iniciar() {
     //     escrevendo no selo é exatamente como ele passou a mentir: o boot dava a opinião dele
     //     uma vez e ninguém mais corrigia.
     renderDashboard();
+    _cancelaGuardaCarga();                  // carregou: o relógio não tem mais o que vigiar
+    _tentouDeNovo = false;
   } catch(e) {
-    toast('Erro ao conectar com Supabase: ' + e.message, 'error');
+    _cancelaGuardaCarga();
     console.error(e);
-    // Tentar criar tabelas se necessário
-    toast('Verifique se as tabelas foram criadas no Supabase.', 'error');
+    // ABORTO DE SAÍDA NÃO É FALHA. A pessoa mudou de tela e o navegador cortou a consulta —
+    // avisar aqui pintaria um erro numa página que ninguém está mais olhando, e o aviso ficaria
+    // preso esperando ela voltar. É o caso do "voltar do Licitações".
+    if (_ehAbortoDeSaida(e)) return;
+    // RETRY AUTOMÁTICO, UMA VEZ. A falha mais comum aqui é transitória (a renovação de sessão,
+    // um pico de rede). Uma segunda tentativa silenciosa resolve sem o operador fazer nada —
+    // e UMA só, porque laço de retry esconde problema de verdade e martela o banco.
+    if (!_tentouDeNovo) {
+      _tentouDeNovo = true;
+      await new Promise(r => setTimeout(r, 1200));
+      return iniciar();
+    }
+    _tentouDeNovo = false;
+    const f = _mensagemDeFalha(e);
+    toast(f.txt, 'error');
+    _falhaCarga(f.txt);                     // com botão "Tentar de novo" na própria tela
   }
 }
 
@@ -1546,7 +1583,10 @@ async function carregarCotacoes() {
     await _puxarCotacoes();                 // compartilha a carga em voo (sem duplicar requests)
   } catch (e) {
     // ERRO VISÍVEL, nunca "Carregando..." pra sempre — era o que a tela fazia até 04/08/2026.
-    _falhaCarga('Não consegui carregar as cotações: ' + (e && e.message ? e.message : e));
+    // >>> MENOS quando a consulta foi ABORTADA porque a pessoa saiu da página (07/08): aí não há
+    //     erro nenhum pra mostrar, e pintar aqui é o que deixava a tela vermelha esperando ela
+    //     voltar do Licitações. Quem trata a volta é o `pageshow`.
+    if (!_ehAbortoDeSaida(e)) _falhaCarga('Não consegui carregar as cotações: ' + (e && e.message ? e.message : e));
     throw e;
   }
   // o filtro de fornecedor nasce das cotações, então só pode ser montado DEPOIS delas
@@ -1563,18 +1603,82 @@ function _falhaCarga(msg){
     el.innerHTML = '<div style="padding:24px;text-align:center;color:var(--vermelho,#c0392b)">'
       + '<div style="font-size:15px;font-weight:600;margin-bottom:6px">⚠️ ' + String(msg).replace(/</g,'&lt;') + '</div>'
       + '<div style="font-size:12px;color:var(--muted,#777);margin-bottom:12px">O banco não respondeu. Os dados podem estar desatualizados.</div>'
-      + '<button onclick="location.reload()" style="padding:8px 16px;border-radius:6px;border:0;background:var(--azul,#2CA9E0);color:#fff;cursor:pointer">Tentar de novo</button>'
+      // `_recarregarTudo()` e não `location.reload()`: recarregar a página inteira joga fora a
+      // sessão em memória e o que já foi lido, e numa falha transitória isso custa 8s por nada.
+      + '<button onclick="_recarregarTudo()" style="padding:8px 16px;border-radius:6px;border:0;background:var(--azul,#2CA9E0);color:#fff;cursor:pointer">Tentar de novo</button>'
       + '</div>';
   });
 }
 
-// GUARDA DE TIMEOUT: se depois de 25s a tela ainda estiver no placeholder, avisa em vez de
-// deixar o usuário olhando "Carregando…" sem fim (aconteceu 3x em 04/08 e parecia travamento).
-setTimeout(() => {
-  const preso = [...document.querySelectorAll('#tabela-recentes, #cot-lista')]
-    .some(el => el && /Carregando/i.test(el.textContent || ''));
-  if (preso) _falhaCarga('A carga demorou demais (mais de 25s)');
-}, 25000);
+// ══ VOLTAR PELO HISTÓRICO NÃO PODE DEVOLVER A TELA CONGELADA ══════════════════════════════
+// DEFEITO CORRIGIDO EM 07/08/2026, reproduzido pelo Lemuel nos DOIS ambientes (app instalado e
+// navegador): Dashboard carrega normal → entra em Licitações → aperta VOLTAR → o Dashboard volta
+// travado, com os cartões em "Carregando…" para sempre e a mensagem vermelha das tabelas.
+//
+// ERAM TRÊS COISAS, e as três vinham do mesmo engano — tratar o boot como se acontecesse UMA VEZ:
+//   1. `iniciar()` é chamado uma única vez, inline, no fim do script. Ao voltar pelo histórico o
+//      navegador restaura a página do **bfcache**: nenhum script roda de novo, então nada
+//      recarrega. A tela volta exatamente no estado em que saiu — e ela saiu no meio da carga.
+//   2. A GUARDA DE 25s era armada UMA VEZ, na análise do script. Sair aos 3s e voltar aos 40s
+//      fazia o timer velho carimbar "A carga demorou demais" numa tela que nunca teve chance de
+//      carregar. O relógio contava enquanto a pessoa estava em OUTRA página.
+//   3. Sair da página ABORTA as consultas em voo, e o `catch` tratava isso como falha do banco —
+//      pintando "Verifique se as tabelas foram criadas no Supabase". **Aborto de navegação não é
+//      tabela inexistente**, do mesmo jeito que piscada de rede não é sessão morta (a lição do
+//      gm-auth em 06/08). É a mesma família de defeito: um erro genérico virando a acusação errada.
+//
+// >>> LIÇÃO PRO MOLDE: o carregador do dashboard é código de molde. Todo cliente LIMEDTEC com
+//     uma tela que sai e volta tem este mesmo defeito. Registrado pra fábrica no TAREFAS.
+const _PLACEHOLDER_CARGA = '<div class="loading"><div class="spinner"></div> Carregando do Supabase...</div>';
+let _saindoDaPagina = false;
+let _guardaCarga = null;
+
+function _telaPresa(){
+  return [...document.querySelectorAll('#tabela-recentes, #cot-lista')]
+    .some(el => el && /Carregando|demorou demais|não consegui carregar/i.test(el.textContent || ''));
+}
+// A guarda passa a ser armada A CADA CARGA e desarmada quando a carga termina. Um relógio que
+// continua correndo enquanto a pessoa está em outra tela mede a coisa errada.
+function _armaGuardaCarga(){
+  clearTimeout(_guardaCarga);
+  _guardaCarga = setTimeout(() => {
+    if (_saindoDaPagina) return;                 // saiu da página: o relógio não vale mais
+    const preso = [...document.querySelectorAll('#tabela-recentes, #cot-lista')]
+      .some(el => el && /Carregando/i.test(el.textContent || ''));
+    if (preso) _falhaCarga('A carga demorou demais (mais de 25s)');
+  }, 25000);
+}
+function _cancelaGuardaCarga(){ clearTimeout(_guardaCarga); _guardaCarga = null; }
+
+// aborto por navegação: a consulta não falhou, ela foi INTERROMPIDA porque a pessoa saiu.
+function _ehAbortoDeSaida(e){
+  if (_saindoDaPagina) return true;
+  const m = (e && (e.name || '')) + ' ' + (e && (e.message || ''));
+  return /AbortError|aborted|abort|cancel/i.test(m);
+}
+// devolve os placeholders que o `_falhaCarga` sobrescreveu, pra tela voltar a poder carregar
+function _zeraEstadoCarga(){
+  ['tabela-recentes','cot-lista'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el && !/Carregando/i.test(el.textContent || '')) el.innerHTML = _PLACEHOLDER_CARGA;
+  });
+}
+async function _recarregarTudo(){
+  _zeraEstadoCarga();
+  _cotTs = 0;                                    // invalida o cache de 60s: quero dado de agora
+  try { await iniciar(); } catch(e){ /* o próprio iniciar já avisa na tela */ }
+}
+
+// pagehide/pageshow e NÃO unload: `unload` desliga o bfcache no Chrome, e desligar o bfcache
+// "consertaria" o sintoma tornando a volta mais lenta pra todo mundo. O certo é voltar rápido
+// E recarregar.
+window.addEventListener('pagehide', () => { _saindoDaPagina = true; _cancelaGuardaCarga(); });
+window.addEventListener('pageshow', (ev) => {
+  _saindoDaPagina = false;
+  // `ev.persisted` = veio do bfcache (o caso do Lemuel). O `_telaPresa()` cobre o resto: volta
+  // pelo histórico SEM bfcache, F5 que morreu no meio, aba restaurada depois de dormir.
+  if (ev.persisted || _telaPresa()) _recarregarTudo();
+});
 // Recarrega cotações do banco só se o cache tiver +60s (ou force=true) — evita estoque/preço velho
 // nas abas sem puxar 6.400 linhas a cada troca. Atualiza os arrays em memória (sem re-render aqui).
 // DE-DUPLICAÇÃO DE CARGA (04/08/2026). Sintoma medido no ar: 18 requests em `cotacoes` para
@@ -6651,7 +6755,36 @@ function cmedAliq(i){
 }
 
 // ─── START ────────────────────────────────────────────────────────────────────
-iniciar();
+// >>> A CAUSA RAIZ DAS TRAVADAS DE 07/08 — CORRIDA COM O gm-auth. MEDIDO NO AR:
+//     `cotacoes` em memória = 0 com a tela presa em "Carregando…", enquanto a MESMA consulta
+//     chamada à mão no console trazia as 8.832 linhas em 5 segundos. Não era rede, não era o
+//     banco, não era permissão: era ORDEM.
+//
+//     Esta linha chamava `iniciar()` direto, no fim do parse. O `boot()` do gm-auth só é
+//     síncrono quando a sessão está fresca; quando o token precisa ser RENOVADO (a cada ~1h, e
+//     em toda reabertura do app) ele é ASSÍNCRONO — e o `iniciar()` disparava antes, com o
+//     `window.fetch` ainda não trocado. As consultas saíam como **anon**, a RLS devolvia nada,
+//     e o dashboard ficava carregando para sempre.
+//
+//     Isso explica os três sintomas de uma vez: intermitência ("às vezes trava"), o gatilho ser
+//     navegação/reabertura (é quando o token é renovado), e o F5 não recuperar (o F5 cai na
+//     MESMA corrida). E explica por que piorou hoje: com o `anon` revogado, o que antes voltava
+//     `200 []` — dashboard vazio, mas sem erro — passou a voltar 401, que a tela mostra em
+//     vermelho. A revogação não criou o defeito; ela **tirou o silêncio de cima dele**.
+//
+//     As outras telas já faziam isso certo desde 05/08 (fpmed_licitacoes.html tem o mesmo
+//     comentário). Esta era a única que não esperava — a mais usada do sistema.
+let _bootDisparado = false;
+function _bootUmaVez(){ if (_bootDisparado) return; _bootDisparado = true; iniciar(); }
+if (window.gmAuth) _bootUmaVez();
+else {
+  document.addEventListener('gm-auth-ready', _bootUmaVez, { once: true });
+  // REDE DE SEGURANÇA: se o `gm-auth-ready` nunca vier (gm-auth velho no cache do app instalado,
+  // erro dentro dele), esperar para sempre seria trocar "trava às vezes" por "trava sempre".
+  // Depois de 12s tenta assim mesmo: pior caso, cai no erro tratado — que agora tem retry e
+  // botão. Nunca em "Carregando…" eterno.
+  setTimeout(_bootUmaVez, 12000);
+}
 </script>
 
 

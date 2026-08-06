@@ -723,7 +723,12 @@ function renderRecompra() {
   document.getElementById('rc-lista').innerHTML = html;
 }
 
-init();
+// CORRIDA COM O gm-auth (07/08): o `boot()` dele é assíncrono quando o token precisa ser
+// renovado. Chamar `init()` direto faz a consulta sair como `anon` — a RLS não devolve nada e a
+// tela nasce vazia sem dizer por quê. Mesma correção da raiz das travadas do sistema_final.
+if (window.gmAuth) init();
+else { let d=false; const go=()=>{ if(d) return; d=true; init(); };
+       document.addEventListener('gm-auth-ready', go, { once:true }); setTimeout(go, 12000); }
 </script>
 <script src="limedtec-pwa.js" defer></script>
 </body>
