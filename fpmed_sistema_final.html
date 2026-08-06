@@ -1226,20 +1226,61 @@ const SUPA_URL2 = 'https://xzdowrksuswekwffoluk.supabase.co';
 const SUPA_KEY2 = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh6ZG93cmtzdXN3ZWt3ZmZvbHVrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ2NzE2MTMsImV4cCI6MjEwMDI0NzYxM30.Pk-SlV_pZdniESyrajDdfHdHcnmyCwCMtP_TrShh75Y';
 const SH = { 'Content-Type': 'application/json', 'apikey': SUPA_KEY2, 'Authorization': 'Bearer ' + SUPA_KEY2 };
 
+// ─── O SELO DE STATUS DIZ O QUE A ÚLTIMA CONSULTA DEU ────────────────────────────────────────
+// DEFEITO CORRIGIDO EM 06/08/2026 (o Lemuel viu no ar): o rodapé mostrava "Sem conexão"
+// enquanto o dashboard exibia dados recém-carregados do próprio Supabase. O selo mentia.
+//
+// Eram DOIS defeitos, e o segundo é o que deixava o primeiro invisível:
+//   1. `setDbStatus()` só era chamado no `iniciar()`. Uma única falha no boot — a piscada de
+//      rede do refresh de sessão, por exemplo — pintava "Sem conexão" e NUNCA MAIS atualizava.
+//      Todas as consultas seguintes funcionavam e o selo continuava vermelho, para sempre.
+//   2. `sbGet` NÃO OLHAVA `r.ok`. Um 401/403/5xx devolve um objeto de erro, que não é array,
+//      então o `break` mandava `[]` de volta. Para quem chamava, "não consegui perguntar" e
+//      "não tem nada" eram a MESMA resposta — e o selo nunca ficava sabendo da falha.
+//      É o mesmo defeito que fechamos no banco hoje, do lado de cá: lista vazia em silêncio.
+//
+// Agora todo caminho de dados passa por `_marcaDb()`: cada consulta que volta bem acende o
+// selo, cada uma que falha apaga e guarda O MOTIVO (visível ao passar o mouse). O selo deixa de
+// ser uma opinião do boot e passa a ser o resultado da última consulta de verdade.
+let _dbUltimoOk = null;                 // hora da última consulta que funcionou
+function _marcaDb(ok, motivo) {
+  if (ok) _dbUltimoOk = new Date();
+  if (typeof setDbStatus === 'function') setDbStatus(ok, motivo);
+}
+// Erro em linguagem de gente. "Failed to fetch" e "42501" não dizem nada a quem está vendendo.
+function _motivoDb(r, corpo) {
+  if (!r) return 'não consegui falar com o servidor';
+  if (r.status === 401 || r.status === 403) return 'sua sessão expirou ou não tem permissão (HTTP ' + r.status + ')';
+  if (r.status === 404) return 'tabela não encontrada (HTTP 404)';
+  if (r.status >= 500) return 'o servidor do banco respondeu ' + r.status;
+  const m = corpo && (corpo.message || corpo.hint);
+  return m ? String(m).slice(0, 90) : ('HTTP ' + r.status);
+}
+
 async function sbGet(table, filter='') {
   let allData = [];
   let from = 0;
   const pageSize = 500;
-  while(true) {
-    const to = from + pageSize - 1;
-    const url = `${SUPA_URL2}/rest/v1/${table}?select=*${filter ? '&' + filter : ''}`;
-    const r = await fetch(url, { headers: { ...SH, 'Range': `${from}-${to}` } });
-    const data = await r.json();
-    if (!Array.isArray(data) || data.length === 0) break;
-    allData = allData.concat(data);
-    if (data.length < pageSize) break;
-    from += pageSize;
+  try {
+    while(true) {
+      const to = from + pageSize - 1;
+      const url = `${SUPA_URL2}/rest/v1/${table}?select=*${filter ? '&' + filter : ''}`;
+      const r = await fetch(url, { headers: { ...SH, 'Range': `${from}-${to}` } });
+      const data = await r.json().catch(() => null);
+      // >>> ESTA LINHA É A CORREÇÃO. Sem ela, erro do servidor virava lista vazia e ninguém
+      //     — nem o selo, nem a tela, nem quem estava olhando — ficava sabendo.
+      if (!r.ok) { const motivo = _motivoDb(r, data); _marcaDb(false, motivo); throw new Error(motivo); }
+      if (!Array.isArray(data) || data.length === 0) break;
+      allData = allData.concat(data);
+      if (data.length < pageSize) break;
+      from += pageSize;
+    }
+  } catch(e) {
+    // exceção de rede (offline, DNS, TLS, timeout) não tem `r`: o fetch nem chegou a responder
+    if (!/HTTP|sessão|servidor|tabela/.test(e.message)) _marcaDb(false, 'não consegui falar com o servidor (' + e.message + ')');
+    throw e;
   }
+  _marcaDb(true);
   return allData;
 }
 async function sbPost(table, body) {
@@ -1249,7 +1290,8 @@ async function sbPost(table, body) {
     body: JSON.stringify(body)
   });
   const data = await r.json();
-  if (!r.ok) throw new Error(data.message || r.statusText);
+  if (!r.ok) { const motivo = _motivoDb(r, data); _marcaDb(false, motivo); throw new Error(data.message || r.statusText); }
+  _marcaDb(true);
   return Array.isArray(data) ? data[0] : data;
 }
 async function sbPatch(table, filter, body) {
@@ -1260,7 +1302,8 @@ async function sbPatch(table, filter, body) {
     body: JSON.stringify(body)
   });
   const data = await r.json();
-  if (!r.ok) throw new Error(data.message || r.statusText);
+  if (!r.ok) { const motivo = _motivoDb(r, data); _marcaDb(false, motivo); throw new Error(data.message || r.statusText); }
+  _marcaDb(true);
   return Array.isArray(data) ? data[0] : data;
 }
 async function sbDelete(table, filter) {
@@ -1269,7 +1312,8 @@ async function sbDelete(table, filter) {
     method: 'DELETE',
     headers: SH
   });
-  if (!r.ok) { const data = await r.json(); throw new Error(data.message || r.statusText); }
+  if (!r.ok) { const data = await r.json().catch(()=>null); const motivo = _motivoDb(r, data); _marcaDb(false, motivo); throw new Error((data && data.message) || r.statusText); }
+  _marcaDb(true);
   return true;
 }
 
@@ -1324,9 +1368,22 @@ const COD_POR_NOME = Object.fromEntries(
 );
 
 // ─── STATUS DB ────────────────────────────────────────────────────────────────
-function setDbStatus(online) {
-  document.getElementById('db-dot').className = 'db-dot' + (online ? ' online' : '');
-  document.getElementById('db-status-text').textContent = online ? 'Supabase Online' : 'Sem conexão';
+// Quem chama é o `_marcaDb()`, no funil das consultas — não o boot. Ver o comentário grande
+// em `sbGet`. O MOTIVO fica no `title` (passar o mouse) porque o rodapé tem largura de rodapé:
+// "Sem conexão" sozinho manda a pessoa reiniciar o computador; "sua sessão expirou" manda ela
+// fazer login de novo, que é o que resolve.
+function setDbStatus(online, motivo) {
+  const dot = document.getElementById('db-dot');
+  const txt = document.getElementById('db-status-text');
+  if (!dot || !txt) return;
+  dot.className = 'db-dot' + (online ? ' online' : '');
+  txt.textContent = online ? 'Supabase Online' : 'Sem conexão';
+  const hora = _dbUltimoOk ? _dbUltimoOk.toLocaleTimeString('pt-BR') : null;
+  const cx = txt.closest('.db-status') || txt;
+  cx.title = online
+    ? 'Última consulta ao banco funcionou' + (hora ? ' às ' + hora : '')
+    : 'A última consulta ao banco falhou: ' + (motivo || 'motivo não informado')
+      + (hora ? '\nA última que funcionou foi às ' + hora : '\nNenhuma consulta funcionou nesta sessão.');
 }
 
 // ─── NAVEGAÇÃO ────────────────────────────────────────────────────────────────
@@ -1383,10 +1440,12 @@ async function iniciar() {
   try {
     await carregarFornecedores();
     await carregarCotacoes();
-    setDbStatus(true);
+    // >>> SEM `setDbStatus()` À MÃO AQUI, e isso é o conserto. Quem acende e apaga o selo é o
+    //     funil das consultas (`_marcaDb`, em sbGet/sbPost/sbPatch/sbDelete). Um segundo lugar
+    //     escrevendo no selo é exatamente como ele passou a mentir: o boot dava a opinião dele
+    //     uma vez e ninguém mais corrigia.
     renderDashboard();
   } catch(e) {
-    setDbStatus(false);
     toast('Erro ao conectar com Supabase: ' + e.message, 'error');
     console.error(e);
     // Tentar criar tabelas se necessário
@@ -1539,6 +1598,15 @@ function _puxarCotacoes(){
       // o dropdown ficava com "Todos fornecedores" e mais nada. Medido no ar em 05/08.
       try { preencherFiltroFornecedor(); } catch(_e){}
       return dados;
+    } catch(e) {
+      // >>> RECARGA QUE FALHA NÃO PODE ESVAZIAR A TELA. Agora que o `sbGet` estoura em vez de
+      //     devolver `[]`, uma falha aqui derrubaria a troca de aba (o showPage aguarda esta
+      //     promise). O dado que já está em memória continua sendo o melhor que temos: ele foi
+      //     lido do banco e não ficou errado só porque a rede piscou agora.
+      //     O selo JÁ acusou a falha (o `sbGet` marcou), então nada some em silêncio — a tela
+      //     segue com o último dado bom e o rodapé diz que a última consulta não foi.
+      if (Array.isArray(cotacoes) && cotacoes.length) { console.warn('recarga falhou, mantendo o último dado bom:', e.message); return cotacoes; }
+      throw e;                                   // sem dado nenhum: quem chamou precisa saber
     } finally { _cotInflight = null; }
   })();
   return _cotInflight;

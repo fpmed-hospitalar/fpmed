@@ -136,8 +136,14 @@ console.log('SUITE testa_usuarios_acessos — porte da tela de Usuarios e o port
   ok('27. entrou no cache do app instalado', /'\.\/limedtec-usuarios\.html'/.test(sw));
   ok('28. ...com as duas dependencias que so ela usa',
     /'\.\/limedtec-sessao\.js'/.test(sw) && /'\.\/limedtec-papeis\.js'/.test(sw));
-  ok('29. a versao do service worker subiu (senao o navegador serve a lista velha)',
-    /limedtec-fpmed-2026-08-06-4/.test(sw));
+  // >>> NAO CRAVAR O NUMERO DA VERSAO AQUI. A primeira redacao deste assert exigia
+  //     `limedtec-fpmed-2026-08-06-4` e ficou VERMELHA no dia seguinte, quando outra correcao
+  //     subiu o sw pra -5 — reprovando uma mudanca CERTA. Teste que quebra com o trabalho
+  //     normal treina todo mundo a ignorar o vermelho. O que importa e a REGRA: existe versao,
+  //     e ela carrega a data (e por ela que se sabe se a casca no ar e a de hoje).
+  ok('29. o service worker tem versao datada (senao o navegador serve a lista velha)',
+    /const VERSAO = 'limedtec-fpmed-\d{4}-\d{2}-\d{2}-\d+'/.test(sw),
+    (sw.match(/const VERSAO = '[^']+'/) || [])[0]);
   // a tela do molde pede as cores com prefixo (--lt-*); o config da FPMED so escrevia os nomes
   // crus. Sem isto a unica tela ESCURA do sistema seria a de Usuarios, por acidente.
   ok('30. *** o config passou a OFERECER as cores com prefixo, que e o que a tela do molde pede ***',
