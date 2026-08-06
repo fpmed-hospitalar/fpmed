@@ -1452,6 +1452,11 @@ function _puxarCotacoes(){
       cotacoes = dados;
       cotacoesCache = [...dados];
       _cotTs = Date.now();
+      // O filtro de fornecedor nasce DAS COTAÇÕES, então tem que ser remontado aqui: este é o
+      // único ponto por onde TODA carga passa. Estava em carregarCotacoes(), e o
+      // recarregarCotacoes() — que é o caminho do showPage e do auto-refresh — não passa por lá:
+      // o dropdown ficava com "Todos fornecedores" e mais nada. Medido no ar em 05/08.
+      try { preencherFiltroFornecedor(); } catch(_e){}
       return dados;
     } finally { _cotInflight = null; }
   })();

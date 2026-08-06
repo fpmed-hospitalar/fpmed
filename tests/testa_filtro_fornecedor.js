@@ -95,8 +95,14 @@ const BASE = [
   ok('18. o filtro casa por fornecedor_nome, nao mais por c.fornecedor',
     /\(!f \|\| \(c\.fornecedor_nome \|\| 'FPMED'\) === f\)/.test(src));
   ok('19. ...e o `c.fornecedor === f` antigo saiu de vez', !/!f \|\| c\.fornecedor === f/.test(src));
-  ok('20. o filtro e remontado DEPOIS da carga das cotacoes (senao nasce vazio)',
-    /preencherFiltroFornecedor\(\);\s*\n\s*renderCotacoes\(cotacoes\)/.test(src));
+  // >>> Achado no ar em 05/08: eu tinha posto a remontagem em carregarCotacoes(), e o
+  //     recarregarCotacoes() -- que e o caminho do showPage e do auto-refresh de 60s -- NAO
+  //     passa por la. O dropdown continuava com "Todos fornecedores" e mais nada.
+  //     O lugar certo e o _puxarCotacoes: e o unico ponto por onde TODA carga passa.
+  ok('20. *** o filtro e remontado dentro do _puxarCotacoes (o unico ponto por onde toda carga passa) ***',
+    /function _puxarCotacoes\(\)[\s\S]{0,900}preencherFiltroFornecedor\(\)/.test(src));
+  ok('20b. ...e protegido por try/catch (falha ao montar filtro nao pode derrubar a carga)',
+    /try \{ preencherFiltroFornecedor\(\); \} catch/.test(src));
   ok('21. o FORMULARIO de nova cotacao continua vindo da tabela fornecedores (precisa do codigo p/ gravar)',
     /getElementById\('cot-fornecedor'\)[\s\S]{0,300}fornecedores\.map/.test(src));
   ok('22. a escolha do usuario e preservada entre recargas', /const sel = s\.value;/.test(src));
