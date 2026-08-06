@@ -208,6 +208,9 @@ select.filter{padding:8px 12px;border:1px solid var(--borda);border-radius:9px;f
   <div class="nav-item" onclick="showPage('competitividade',this)" id="nav-competitividade">
     <span class="icon">🎯</span> Competitividade
   </div>
+  <div class="nav-item" onclick="showPage('compra-direta',this)" id="nav-compra-direta">
+    <span class="icon">🏭</span> Compra Direta
+  </div>
   <div class="nav-item" onclick="showPage('cmed',this)" id="nav-cmed">
     <span class="icon">⚖️</span> Tabela CMED
     <span style="background:#8DC63F;color:#243d06;border-radius:10px;font-size:8px;font-weight:800;padding:1px 5px;margin-left:auto">NOVA</span>
@@ -1028,6 +1031,70 @@ select.filter{padding:8px 12px;border:1px solid var(--borda);border-radius:9px;f
       </div>
     </div>
 
+    <!-- ALVOS DE COMPRA DIRETA (Bloco 4 do sync) -->
+    <div class="page" id="page-compra-direta">
+      <div id="cdir-root">
+        <div class="cd-hero">
+          <div>
+            <div class="cd-kicker">FABRICANTES</div>
+            <h2>Alvos de Compra Direta</h2>
+            <p>Onde vale tentar comprar <b>direto do fabricante</b> em vez de pelo distribuidor.
+               O sinal mais forte é o <b>spread</b>: quando o mesmo produto varia muito de preço
+               entre distribuidores, a diferença é margem de intermediário — e é ela que a
+               compra direta captura.</p>
+          </div>
+          <div class="cd-fonte" id="cdir-fonte">—</div>
+        </div>
+        <div class="cd-filtros">
+          <input type="text" id="cdir-busca" placeholder="Filtrar fabricante…" oninput="cdirRender()">
+          <label class="cd-chip"><input type="checkbox" id="cdir-so-sem-contato" onchange="cdirRender()"> Só sem contato</label>
+          <select id="cdir-ordem" class="cd-sel" onchange="cdirRender()">
+            <option value="spread">Ordenar por spread (margem em jogo)</option>
+            <option value="itens">Ordenar por nº de itens</option>
+            <option value="forns">Ordenar por nº de distribuidores</option>
+          </select>
+          <span class="cd-cont" id="cdir-cont"></span>
+        </div>
+        <div id="cdir-lista"><div class="cd-vazio">Carregando…</div></div>
+      </div>
+    </div>
+    <style>
+      #cdir-root{max-width:1080px;margin:0 auto;font-family:'Inter',-apple-system,'Segoe UI',Roboto,sans-serif;color:#1E2A36}
+      #cdir-root .cd-hero{display:flex;justify-content:space-between;align-items:flex-start;gap:18px;
+        padding-bottom:18px;border-bottom:1px solid #E3EAF1;margin-bottom:18px;flex-wrap:wrap}
+      #cdir-root .cd-kicker{font-size:10.5px;letter-spacing:2.4px;text-transform:uppercase;color:#2CA9E0;font-weight:700}
+      #cdir-root .cd-hero h2{font-family:'Montserrat',sans-serif;font-weight:800;font-size:26px;color:#173A5E;margin:6px 0 8px;letter-spacing:-.4px}
+      #cdir-root .cd-hero p{font-size:13px;color:#4A5B6B;max-width:640px;line-height:1.55}
+      #cdir-root .cd-hero p b{color:#173A5E}
+      #cdir-root .cd-fonte{background:#FFF8E1;border:1px solid #E6C86A;color:#8A6D00;border-radius:10px;
+        padding:9px 13px;font-size:11.5px;font-weight:600;max-width:300px;line-height:1.45}
+      #cdir-root .cd-filtros{display:flex;gap:9px;align-items:center;flex-wrap:wrap;margin-bottom:16px}
+      #cdir-root .cd-filtros input[type=text]{flex:1;min-width:200px;padding:9px 13px;border:1px solid #D3DEE9;border-radius:9px;font-size:13px;font-family:'Inter',sans-serif;outline:none}
+      #cdir-root .cd-chip{display:flex;align-items:center;gap:6px;font-size:12px;color:#4A5B6B;cursor:pointer;
+        padding:7px 13px;border:1px solid #D3DEE9;border-radius:20px;background:#fff;user-select:none}
+      #cdir-root .cd-sel{padding:8px 12px;border:1px solid #D3DEE9;border-radius:9px;font-size:12px;font-family:'Inter',sans-serif;background:#fff;cursor:pointer;outline:none}
+      #cdir-root .cd-cont{margin-left:auto;font-size:12px;color:#8496A6}
+      #cdir-root .cd-vazio{text-align:center;padding:44px 20px;color:#8496A6;font-size:13.5px;background:#F8FAFC;border:1px dashed #D3DEE9;border-radius:14px}
+      #cdir-root .cd-card{background:#fff;border:1px solid #E3EAF1;border-radius:14px;padding:15px 18px;margin-bottom:10px;
+        box-shadow:0 2px 8px rgba(23,58,94,.05);display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap;transition:border-color .16s,transform .16s}
+      #cdir-root .cd-card:hover{border-color:#B9E0F5;transform:translateY(-1px)}
+      #cdir-root .cd-marca{font-family:'Montserrat',sans-serif;font-weight:700;font-size:15px;color:#173A5E}
+      #cdir-root .cd-sinais{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+      #cdir-root .sn{border:1px solid #E3EAF1;border-radius:10px;padding:6px 11px;background:#F8FAFC;min-width:92px}
+      #cdir-root .sn .r{font-size:9px;letter-spacing:1px;text-transform:uppercase;color:#8496A6;font-weight:700}
+      #cdir-root .sn .v{font-family:'Montserrat',sans-serif;font-weight:800;font-size:15px;color:#173A5E;margin-top:2px;line-height:1}
+      #cdir-root .sn.alvo{background:#F1F9E6;border-color:#CFE9A8}
+      #cdir-root .sn.alvo .v{color:#3E6412}
+      #cdir-root .cd-dir{margin-left:auto;text-align:right;min-width:190px}
+      #cdir-root .cd-sem{font-size:11px;font-weight:700;color:#B25E00;background:#FFF3E0;border:1px solid #FFD9A8;border-radius:20px;padding:3px 10px;display:inline-block}
+      #cdir-root .cd-tem{font-size:12px;color:#1E2A36}
+      #cdir-root .cd-tem a{color:#1B8DC4;text-decoration:none}
+      #cdir-root .cd-tem a:hover{text-decoration:underline}
+      #cdir-root .cd-st{margin-top:6px;padding:5px 9px;border:1px solid #D3DEE9;border-radius:8px;font-size:11.5px;font-family:'Inter',sans-serif;background:#fff}
+      #cdir-root .cd-btn{margin-top:6px;font-size:11.5px;padding:5px 12px;border:1px solid #B9E0F5;border-radius:8px;background:#fff;color:#1B6E97;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif}
+      #cdir-root .cd-btn:hover{background:#EAF6FD}
+    </style>
+
     <!-- TABELA CMED — a régua oficial de preço da ANVISA -->
     <div class="page" id="page-cmed">
       <div id="cmed-root">
@@ -1266,7 +1333,8 @@ const pageConfig = {
   competitividade: { title:'Competitividade de Preço', btn:'', btnAction:null },
   'estoque-global': { title:'Atualizar Estoque FPMED', btn:'', btnAction:null },
   'pedidos-compra':  { title:'Pedidos de Compra', btn:'', btnAction:null },
-  cmed:         { title:'Tabela CMED — teto legal de preço', btn:'', btnAction:null }
+  cmed:         { title:'Tabela CMED — teto legal de preço', btn:'', btnAction:null },
+  'compra-direta': { title:'Alvos de Compra Direta', btn:'', btnAction:null }
 };
 async function showPage(name, el) {
   if((name==='importar-espelho'||name==='compras-cliente'||name==='itens-a-cotar'||name==='clientes-dash'||name==='competitividade') && typeof espPodeVer==='function' && !espPodeVer()){ name='dashboard'; el=document.querySelector('.nav-item[onclick*="dashboard"]'); }
@@ -1280,7 +1348,7 @@ async function showPage(name, el) {
   if (cfg.btn) { hBtn.textContent = cfg.btn; hBtn.style.display=''; }
   else hBtn.style.display='none';
   // Estoque/preço sempre atual: recarrega cotações (cache 60s) ANTES de renderizar abas que usam estoque
-  if (['dashboard','comparativo','competitividade','relatorios','importar','orcamento','cotacoes','cmed'].includes(name)) { await recarregarCotacoes(); }
+  if (['dashboard','comparativo','competitividade','relatorios','importar','orcamento','cotacoes','cmed','compra-direta'].includes(name)) { await recarregarCotacoes(); }
   if (name === 'relatorios') renderRelatorios();
   if (name === 'dashboard') renderDashboard();
   if (name === 'importar') initImport();
@@ -1292,6 +1360,7 @@ async function showPage(name, el) {
   if (name === 'clientes-dash') { cdInit(); }
   if (name === 'itens-a-cotar') { iacCarregar(); }
   if (name === 'cmed') { cmedInit(); }
+  if (name === 'compra-direta') { cdirInit(); }
 }
 function headerBtnAction() { const name = document.querySelector('.page.active')?.id.replace('page-',''); const cfg = pageConfig[name]; if(cfg?.btnAction) cfg.btnAction(); }
 
@@ -3519,7 +3588,7 @@ function espAplicaPermissao(){
   var mostra = espPodeVer();
   // 'licitacoes' casa pelo location.href do item de menu — a tela é de inteligência (lê a
   // tabela cotacoes com RLS) e vendedor/propostas seriam barrados pelo gm-auth ao chegar lá.
-  ['importar-espelho','compras-cliente','itens-a-cotar','clientes-dash','competitividade','licitacoes'].forEach(function(n){ var nav=document.querySelector('.nav-item[onclick*="'+n+'"]'); if(nav) nav.style.display = mostra ? '' : 'none'; });
+  ['importar-espelho','compras-cliente','itens-a-cotar','clientes-dash','competitividade','licitacoes','compra-direta'].forEach(function(n){ var nav=document.querySelector('.nav-item[onclick*="'+n+'"]'); if(nav) nav.style.display = mostra ? '' : 'none'; });
   if(!mostra){ var pg=document.querySelector('.page.active');
     if(pg && (pg.id==='page-importar-espelho'||pg.id==='page-compras-cliente') && typeof showPage==='function') showPage('dashboard', document.querySelector('.nav-item[onclick*="dashboard"]')); }
 }
@@ -6135,6 +6204,157 @@ async function pcAtualizarCardDash(){
   try{ const linhas = await pcCarregar(); const nCheg = linhas.filter(l=>l.chegou).length;
     v.textContent = linhas.length; document.getElementById('m-aguardando-sub').textContent = `${nCheg} chegaram · ${linhas.length-nCheg} aguardando`;
   }catch(e){}
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// ALVOS DE COMPRA DIRETA (Bloco 4 do sync, 05/08/2026)
+//
+// A tela da Global ranqueia fabricantes pelo HISTÓRICO DE COMPRA. A FPMED não tem esse dado:
+// a tabela `compras` está vazia. Portar o patch daria uma tela sem uma linha.
+//
+// >>> O QUE FOI PORTADO É A IDEIA, NÃO A CONSULTA — que é a regra escrita no SYNC_GLOBAL.md
+//     pros arquivos de porte manual. O objetivo (comprar direto do fabricante em vez do
+//     distribuidor) vale igual; o que muda é de onde sai o sinal. Aqui ele sai das 7.195 linhas
+//     de cotação de distribuidor, com 473 fabricantes e zero sem marca (medido em 05/08).
+//
+// >>> E ISSO PRECISA ESTAR ESCRITO NA TELA. O número aqui NÃO é "quanto compramos da EMS" —
+//     é "quanto do nosso catálogo passa pela EMS via distribuidor". Alguém que leia como
+//     histórico de compra tira a conclusão errada, e o aviso amarelo no topo existe pra isso.
+//
+// OS TRÊS SINAIS, e por que estes:
+//   1. SPREAD — o mesmo produto+marca variando de preço entre distribuidores. É a margem que o
+//      intermediário está capturando, e é o único dos três que aponta DINHEIRO EM JOGO. Por
+//      isso é o padrão de ordenação.
+//   2. ITENS — tamanho da dependência. Fabricante com 330 itens no catálogo pesa mais que um
+//      com 3, mesmo com spread parecido.
+//   3. DISTRIBUIDORES — quantos intermedeiam. Poucos = concentrado, negociação mais direta;
+//      muitos = commodity, o fabricante tem menos motivo pra falar com a gente.
+let _cdContatos = [];
+function cdirChave(m){ return String(m||'').trim().toUpperCase(); }
+
+// Spread por marca: para cada PRODUTO daquela marca com ≥2 distribuidores, (max−min)/min.
+// A média desses spreads é o sinal. Produto com um distribuidor só não entra — sem dois preços
+// não há spread, e contar 0% ali diluiria a média de quem realmente varia.
+function cdirRanking(){
+  const porProdMarca = new Map();
+  for (const c of (cotacoes||[])) {
+    if (String(c.fornecedor) === '1' || (c.tipo||'').toLowerCase() === 'industria') continue;
+    const marca = cdirChave(c.marca); if (!marca) continue;
+    const u = cmpUnitario(c); if (u.status !== 'ok' || !(u.valor > 0)) continue;   // incerto não entra
+    const k = marca + '|' + _gmNorm(String(c.produto||'').replace(/^[*#+>&@.\s]+/,'')).slice(0,44);
+    if (!porProdMarca.has(k)) porProdMarca.set(k, { marca, precos: [], forns: new Set() });
+    const e = porProdMarca.get(k);
+    e.precos.push(u.valor); e.forns.add(c.fornecedor);
+  }
+  const acc = new Map();
+  for (const e of porProdMarca.values()) {
+    if (!acc.has(e.marca)) acc.set(e.marca, { marca: e.marca, itens: 0, forns: new Set(), spreads: [], precos: [] });
+    const a = acc.get(e.marca);
+    a.itens++; e.forns.forEach(f => a.forns.add(f));
+    a.precos.push(...e.precos);
+    if (e.forns.size >= 2 && e.precos.length >= 2) {
+      const min = Math.min(...e.precos), max = Math.max(...e.precos);
+      if (min > 0) a.spreads.push((max - min) / min * 100);
+    }
+  }
+  return [...acc.values()].map(a => ({
+    marca: a.marca, itens: a.itens, forns: a.forns.size,
+    comSpread: a.spreads.length,
+    spread: a.spreads.length ? a.spreads.reduce((x,y)=>x+y,0) / a.spreads.length : null,
+    precoMedio: a.precos.length ? a.precos.reduce((x,y)=>x+y,0) / a.precos.length : null,
+  }));
+}
+
+async function cdirInit(){
+  const el = document.getElementById('cdir-fonte');
+  if (el) el.innerHTML = '⚠️ Este ranking NÃO é histórico de compra — é o quanto do nosso <b>catálogo de cotações</b> passa por cada fabricante via distribuidor. A tabela de compras da FPMED ainda está vazia.';
+  try { _cdContatos = await sbGet('contatos_industria', 'select=*') || []; }
+  catch(e){ _cdContatos = []; }   // sem permissão (não-gestor) ou tabela nova: a tela ainda serve
+  cdirRender();
+}
+
+function cdirRender(){
+  const box = document.getElementById('cdir-lista'); if (!box) return;
+  const busca = (document.getElementById('cdir-busca').value||'').trim().toUpperCase();
+  const soSem = document.getElementById('cdir-so-sem-contato').checked;
+  const ordem = document.getElementById('cdir-ordem').value;
+  const contatoDe = m => _cdContatos.find(x => cdirChave(x.marca) === cdirChave(m)) || null;
+
+  let l = cdirRanking();
+  if (busca) l = l.filter(x => x.marca.includes(busca));
+  if (soSem) l = l.filter(x => !contatoDe(x.marca));
+  // marca com 1 item só não é alvo de negociação — é ruído no topo de uma lista de 473
+  l = l.filter(x => x.itens >= 2);
+  l.sort((a,b) => ordem === 'itens' ? b.itens - a.itens
+                : ordem === 'forns' ? b.forns - a.forns
+                : (b.spread ?? -1) - (a.spread ?? -1) || b.itens - a.itens);
+
+  document.getElementById('cdir-cont').textContent = `${l.length} fabricante(s)`;
+  if (!l.length) { box.innerHTML = '<div class="cd-vazio">Nenhum fabricante com esses filtros.</div>'; return; }
+
+  const ST = { nao_contatado:'Não contatado', contatado:'Contatado', negociando:'Negociando', comprando:'Comprando', descartado:'Descartado' };
+  box.innerHTML = l.slice(0, 80).map(x => {
+    const c = contatoDe(x.marca);
+    const alvo = x.spread != null && x.spread >= 30;
+    return `<div class="cd-card">
+      <div style="flex:1;min-width:230px">
+        <div class="cd-marca">${cmedEsc(x.marca)}</div>
+        <div class="cd-sinais">
+          <div class="sn${alvo?' alvo':''}"><div class="r">Spread</div><div class="v">${x.spread==null?'—':x.spread.toFixed(0)+'%'}</div></div>
+          <div class="sn"><div class="r">Itens</div><div class="v">${x.itens}</div></div>
+          <div class="sn"><div class="r">Distribuid.</div><div class="v">${x.forns}</div></div>
+          <div class="sn"><div class="r">Preço médio</div><div class="v" style="font-size:13px">${x.precoMedio==null?'—':fmtBRL(x.precoMedio)}</div></div>
+        </div>
+        <div style="font-size:10.5px;color:#8496A6;margin-top:7px">${x.comSpread
+          ? `spread medido em ${x.comSpread} produto(s) com 2+ distribuidores`
+          : 'sem produto com 2+ distribuidores — não dá pra medir spread'}</div>
+      </div>
+      <div class="cd-dir">
+        ${c ? `<div class="cd-tem"><b>${cmedEsc(c.contato||c.empresa||'contato cadastrado')}</b>
+                 ${c.telefone?`<div><a href="https://wa.me/55${String(c.telefone).replace(/\D/g,'')}" target="_blank" rel="noopener">📱 ${cmedEsc(c.telefone)}</a></div>`:''}
+                 ${c.email?`<div><a href="mailto:${cmedEsc(c.email)}">✉️ ${cmedEsc(c.email)}</a></div>`:''}</div>
+               <select class="cd-st" onchange="cdirStatus('${cmedEsc(x.marca).replace(/'/g,"\\'")}',this.value)">
+                 ${Object.entries(ST).map(([k,v])=>`<option value="${k}"${c.status===k?' selected':''}>${v}</option>`).join('')}
+               </select>`
+             : `<span class="cd-sem">sem contato</span>
+                <div><button class="cd-btn" onclick="cdirAddContato('${cmedEsc(x.marca).replace(/'/g,"\\'")}')">+ cadastrar contato</button></div>`}
+        <div><button class="cd-btn" onclick="cdirAbordagem('${cmedEsc(x.marca).replace(/'/g,"\\'")}',${x.itens},${x.forns},${x.spread==null?'null':x.spread.toFixed(0)})">✍️ texto de abordagem</button></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// Texto de abordagem — ele existe pra que a conversa comece com NÚMERO, não com "vocês vendem
+// direto?". O número é o que faz o fabricante responder.
+function cdirAbordagem(marca, itens, forns, spread){
+  const t = `Bom dia! Aqui é da FPMED Hospitalar (Aparecida de Goiânia/GO), distribuidora de produtos hospitalares.\n\n`
+    + `Trabalhamos hoje com ${itens} itens da linha ${marca}, comprados através de ${forns} distribuidor(es) diferente(s).`
+    + (spread != null ? ` Entre eles, o mesmo item chega a variar ${spread}% de preço.` : '')
+    + `\n\nGostaríamos de avaliar a compra DIRETA com vocês. Podem me passar a tabela de preços, a política de pedido mínimo e as condições de pagamento?\n\n`
+    + `Obrigado! — FPMED Hospitalar · comercial@fpmed.com.br · (62) 3290-4241`;
+  navigator.clipboard.writeText(t).then(()=>toast('Texto copiado — cole no e-mail ou WhatsApp'))
+    .catch(()=>window.prompt('Copie o texto (Ctrl+C):', t));
+}
+
+async function cdirAddContato(marca){
+  if(!espPodeVer()){ toast('Sem permissão','error'); return; }
+  const contato = prompt(`Contato na ${marca} (nome da pessoa):`); if(contato===null) return;
+  const telefone = prompt('Telefone / WhatsApp (opcional):') || null;
+  const email = prompt('E-mail (opcional):') || null;
+  try {
+    await sbPost('contatos_industria', { marca, contato: contato.trim()||null, telefone, email, status:'contatado' });
+    _cdContatos = await sbGet('contatos_industria', 'select=*') || [];
+    cdirRender(); toast('Contato cadastrado');
+  } catch(e){ toast('Erro: '+e.message, 'error'); }
+}
+async function cdirStatus(marca, status){
+  if(!espPodeVer()){ toast('Sem permissão','error'); return; }
+  try {
+    await sbPatch('contatos_industria', `marca_norm=eq.${encodeURIComponent(cdirChave(marca))}`,
+                  { status, atualizado_em: new Date().toISOString() });
+    const c = _cdContatos.find(x => cdirChave(x.marca) === cdirChave(marca)); if (c) c.status = status;
+    toast('Status atualizado');
+  } catch(e){ toast('Erro: '+e.message, 'error'); }
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
