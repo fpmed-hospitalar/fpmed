@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex,nofollow">
+<title>LIMEDTEC — Usuários e acessos</title>
+<!-- TELA DO MOLDE, NAO DO CLIENTE. Por isso o nome comeca com limedtec- e nao com o nome de
+     nenhuma empresa: ela nasce igual em todo cliente e o cria_cliente a copia sem tocar. O que
+     muda de cliente pra cliente e a LISTA DE PESSOAS, que e dado e mora no banco de cada um. -->
+<link rel="icon" type="image/png" sizes="192x192" href="icones/limedtec-192.png">
+<script src="cliente.config.js"></script>
+<script src="limedtec-config.js"></script>
+<script>LIMEDTEC.aplicaTema();</script>
+<script src="limedtec-licenca.js"></script>
+<script src="gm-auth.js"></script>
+<script src="limedtec-papeis.js"></script>
+<!-- >>> O PORTAO DE VERDADE NAO E ESTE ATRIBUTO. Ele so evita que alguem sem permissao veja a
+         tela pintada. Quem impede de verdade e a policy `perfis_gestor_escreve`: sem
+         gerir_usuarios, todo PATCH daqui volta negado pelo banco. Os dois existem e fazem coisas
+         diferentes — se um dia discordarem, quem manda e a RLS. -->
+<script src="limedtec-sessao.js" data-exige="gerir_usuarios"></script>
+<style>
+  /* AS CORES VEM DO cliente.config.js pelo LIMEDTEC.aplicaTema(), que escreve --lt-bg/--lt-panel/
+     --lt-ciano etc no <html> antes desta folha valer. A tela PEDE cada uma com var(--lt-*), e o
+     segundo argumento e o VALOR DE RESERVA pra ela nao abrir preta se o config nao trouxer cor —
+     reserva NEUTRA de proposito: escrever a cor da marca aqui seria uma segunda copia dela fora
+     do config, exatamente o que a catraca do testa_produtizacao existe pra impedir.
+     >>> O PEDIDO E EXPLICITO (var(--lt-*)) e nao herdado: ate 05/08 o tema escrevia --bg direto
+         no <html>, e como inline vence `:root{}`, ele pintou de escuro telas CLARAS que usavam
+         --bg com outro sentido. Quem oferece nao pode decidir por quem usa. */
+  :root{ --bg:var(--lt-bg,#0f1620); --panel:var(--lt-panel,#161f2b); --panel2:var(--lt-panel2,#141b26);
+         --ciano:var(--lt-ciano,#4aa8c0); --ciano2:var(--lt-ciano2,#6fc4d8);
+         --txt:var(--lt-txt,#e8eef5); --muted:#8b98a8; --borda:var(--lt-borda,rgba(140,160,180,.28)); }
+  *{ margin:0; padding:0; box-sizing:border-box; }
+  body{ background:var(--bg); color:var(--txt); font-family:system-ui,'Segoe UI',Arial,sans-serif;
+        min-height:100vh; padding:26px 18px 60px; }
+  .capa{ max-width:1080px; margin:0 auto; }
+  h1{ font-size:19px; font-weight:800; letter-spacing:.3px; }
+  .sub{ color:var(--muted); font-size:12.5px; margin:5px 0 20px; line-height:1.6; }
+  .caixa{ background:var(--panel); border:1px solid var(--borda); border-radius:14px;
+          padding:16px 16px 6px; margin-bottom:16px; }
+  .caixa h2{ font-size:14px; font-weight:700; margin-bottom:4px; }
+  .caixa .dica{ color:var(--muted); font-size:11.5px; line-height:1.6; margin-bottom:12px; }
+  table{ width:100%; border-collapse:collapse; font-size:13px; }
+  th{ text-align:left; color:var(--muted); font-size:11px; text-transform:uppercase;
+      letter-spacing:.6px; padding:8px 8px; border-bottom:1px solid var(--borda); }
+  td{ padding:9px 8px; border-bottom:1px solid color-mix(in srgb, var(--ciano) 10%, transparent); vertical-align:middle; }
+  tr.inativo td{ opacity:.45; }
+  select,input[type=text],input[type=email]{ background:var(--panel2); color:var(--txt);
+      border:1px solid var(--borda); border-radius:8px; padding:7px 9px; font-size:13px;
+      font-family:inherit; }
+  button{ background:var(--ciano); color:#04222c; border:none; border-radius:8px; padding:7px 13px;
+          font-weight:700; font-size:12.5px; cursor:pointer; font-family:inherit; }
+  button.fraco{ background:transparent; color:var(--ciano); border:1px solid var(--borda); }
+  button:disabled{ opacity:.45; cursor:not-allowed; }
+  .chaves{ display:flex; flex-wrap:wrap; gap:9px; }
+  .chaves label{ font-size:11.5px; color:var(--muted); display:flex; align-items:center; gap:4px; }
+  .aviso{ background:rgba(230,168,23,.09); border:1px solid rgba(230,168,23,.35); color:#e6a817;
+          border-radius:10px; padding:10px 12px; font-size:12.5px; line-height:1.6; margin-bottom:14px; }
+  .erro{ color:#f87171; } .ok{ color:#34d399; }
+  .linha-msg{ font-size:11.5px; min-height:15px; }
+  .novo{ display:grid; grid-template-columns:1fr 170px auto; gap:9px; align-items:end; }
+  @media(max-width:720px){ .novo{ grid-template-columns:1fr; } table,thead,tbody,tr,td,th{ display:block; }
+    th{ display:none; } td{ border:none; padding:4px 0; } tr{ border-bottom:1px solid var(--borda); padding:10px 0; } }
+</style>
+</head>
+<body>
+<div class="capa">
+  <h1>Usuários e acessos</h1>
+  <div class="sub">Quem entra no sistema, com qual papel, e o que cada papel alcança.
+    <b>Ninguém é apagado aqui</b> — quem sai é <b>desativado</b>, para o histórico de quem fez cada
+    cotação continuar de pé. Apagar um usuário apagaria a autoria de meses de proposta.</div>
+
+  <div id="avisos"></div>
+
+  <div class="caixa">
+    <h2>Cadastrar</h2>
+    <div class="dica">A pessoa recebe um e-mail para confirmar o endereço. A senha abaixo é
+      <b>provisória</b> e aparece uma vez só: passe para ela e peça que troque no 🔑 do canto
+      superior direito assim que entrar.</div>
+    <div class="novo">
+      <div><label class="dica">E-MAIL</label><br>
+        <input type="email" id="novo-email" placeholder="pessoa@empresa.com.br" style="width:100%"></div>
+      <div><label class="dica">PAPEL</label><br>
+        <select id="novo-papel" style="width:100%"></select></div>
+      <div><button id="btn-novo">Cadastrar</button></div>
+    </div>
+    <div id="msg-novo" class="linha-msg" style="margin:10px 0 12px"></div>
+  </div>
+
+  <div class="caixa">
+    <h2>Quem tem acesso</h2>
+    <div class="dica">Os ajustes finos (as caixinhas) valem <b>só para o gerente</b>: são as chaves
+      que o gestor pode ligar e desligar sem trocar o papel de ninguém. Chave de gestor
+      (gerir usuários, configurar, importar) não aparece aqui de propósito — ligar uma delas seria
+      promover alguém por configuração, sem aparecer na lista de gestores.</div>
+    <table><thead><tr>
+      <th style="width:32%">Pessoa</th><th style="width:16%">Papel</th>
+      <th>Ajustes (só gerente)</th><th style="width:9%">Ativo</th><th style="width:12%"></th>
+    </tr></thead><tbody id="corpo"><tr><td colspan="5" style="color:var(--muted)">Carregando…</td></tr></tbody></table>
+  </div>
+
+  <div class="caixa">
+    <h2>O que cada papel alcança</h2>
+    <div class="dica">Esta tabela é lida do próprio produto (limedtec-papeis.js) — ela não é um
+      desenho, é o que o sistema faz.</div>
+    <table><thead><tr id="matriz-cab"></tr></thead><tbody id="matriz"></tbody></table>
+  </div>
+</div>
+
+<script>
+const SB = LIMEDTEC.urlBanco(), ANON = LIMEDTEC.chaveBanco();
+const P = window.LimedtecPapeis;
+// as chaves que o gestor pode mexer no gerente = todas menos as de gestor. A lista de PROIBIDAS
+// vive no limedtec-papeis.js (e no limedtec_pode() do banco); aqui só se pergunta a ele, para não
+// existir uma terceira cópia da regra que um dia discorde das outras duas.
+const PROIBIDAS = { gerir_usuarios:1, configurar:1, importar:1 };
+const AJUSTAVEIS = P.CHAVES.filter(k => !PROIBIDAS[k]);
+const H = { apikey: ANON, 'Content-Type':'application/json' };
+let perfis = [], eu = null;
+
+const esc = s => String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+function avisa(txt){ document.getElementById('avisos').innerHTML =
+  txt ? '<div class="aviso">' + txt + '</div>' : ''; }
+
+async function carregar(){
+  const r = await fetch(SB + '/rest/v1/perfis?select=id,email,papel,ativo,permissoes,criado_em&order=email', { headers: H });
+  if(!r.ok){ document.getElementById('corpo').innerHTML =
+      '<tr><td colspan="5" class="erro">Não consegui ler a lista (HTTP ' + r.status + ').</td></tr>'; return; }
+  perfis = await r.json();
+  eu = (window.gmAuth && window.gmAuth.user) || null;
+  pinta();
+}
+
+// >>> A TRAVA QUE IMPEDE O SISTEMA DE FICAR SEM DONO. Escrever em `perfis` exige gerir_usuarios,
+//     que só o gestor_geral tem. Se o último gestor ativo se rebaixar ou se desativar, ninguém —
+//     nem ele — consegue desfazer pela tela: só com acesso direto ao banco. É o único erro desta
+//     tela que não tem volta pelo produto, então ele é barrado antes do clique.
+//     (O banco tem a mesma trava por trigger; esta aqui existe pra explicar, não pra proteger.)
+function gestoresAtivosDepois(id, papel, ativo){
+  return perfis.filter(p => {
+    const pa = (p.id === id) ? papel : p.papel;
+    const at = (p.id === id) ? ativo : p.ativo;
+    return pa === 'gestor_geral' && at;
+  }).length;
+}
+
+function pinta(){
+  const corpo = document.getElementById('corpo');
+  if(!perfis.length){ corpo.innerHTML = '<tr><td colspan="5" style="color:var(--muted)">Ninguém cadastrado.</td></tr>'; return; }
+  corpo.innerHTML = perfis.map(p => {
+    const perm = p.permissoes || {};
+    const souEu = eu && p.id === eu.id;
+    return '<tr class="' + (p.ativo ? '' : 'inativo') + '" data-id="' + esc(p.id) + '">'
+      + '<td><div>' + esc(p.email) + (souEu ? ' <span style="color:var(--ciano);font-size:11px">(você)</span>' : '') + '</div>'
+      +     '<div class="linha-msg" id="msg-' + esc(p.id) + '"></div></td>'
+      + '<td><select class="f-papel">' + P.papeis().filter(x => x !== 'dono_produto').map(x =>
+              '<option value="' + x + '"' + (x === p.papel ? ' selected' : '') + '>' + x + '</option>').join('')
+      +     '</select></td>'
+      + '<td><div class="chaves">' + AJUSTAVEIS.map(k =>
+              '<label><input type="checkbox" class="f-chave" data-k="' + k + '"'
+              + ((k in perm ? !!perm[k] : !!P.PADRAO[p.papel][k]) ? ' checked' : '')
+              + (p.papel === 'gerente' ? '' : ' disabled') + '>' + k + '</label>').join('')
+      +     '</div></td>'
+      + '<td><input type="checkbox" class="f-ativo"' + (p.ativo ? ' checked' : '') + '></td>'
+      + '<td><button class="fraco f-salvar">Salvar</button></td></tr>';
+  }).join('');
+
+  corpo.querySelectorAll('tr').forEach(tr => {
+    const id = tr.getAttribute('data-id');
+    const selPapel = tr.querySelector('.f-papel');
+    // trocar o papel na tela re-habilita/desabilita as caixinhas na hora: caixinha clicável num
+    // vendedor faria parecer que dá pra ajustar o vendedor, e não dá — o ajuste é só do gerente.
+    selPapel.onchange = () => {
+      const g = selPapel.value === 'gerente';
+      tr.querySelectorAll('.f-chave').forEach(c => {
+        c.disabled = !g;
+        if(!g) c.checked = !!P.PADRAO[selPapel.value][c.getAttribute('data-k')];
+      });
+    };
+    tr.querySelector('.f-salvar').onclick = () => salvar(id, tr);
+  });
+}
+
+async function salvar(id, tr){
+  const msg = document.getElementById('msg-' + id);
+  const papel = tr.querySelector('.f-papel').value;
+  const ativo = tr.querySelector('.f-ativo').checked;
+  const permissoes = {};
+  if(papel === 'gerente') tr.querySelectorAll('.f-chave').forEach(c => { permissoes[c.getAttribute('data-k')] = c.checked; });
+
+  if(gestoresAtivosDepois(id, papel, ativo) === 0){
+    msg.className = 'linha-msg erro';
+    msg.textContent = 'Isso deixaria o sistema sem nenhum gestor ativo — e só o gestor consegue '
+      + 'mexer nesta tela. Promova outra pessoa antes.';
+    return;
+  }
+  const btn = tr.querySelector('.f-salvar'); btn.disabled = true; btn.textContent = 'Salvando…';
+  msg.className = 'linha-msg'; msg.textContent = '';
+  try{
+    const r = await fetch(SB + '/rest/v1/perfis?id=eq.' + encodeURIComponent(id), {
+      method: 'PATCH', headers: Object.assign({ Prefer: 'return=representation' }, H),
+      body: JSON.stringify({ papel: papel, ativo: ativo, permissoes: permissoes,
+                             atualizado_em: new Date().toISOString() }) });
+    const d = await r.json().catch(() => null);
+    // >>> 200 COM LISTA VAZIA É FALHA, NÃO SUCESSO. Quando a RLS barra um UPDATE, o PostgREST
+    //     devolve 200 e zero linha: "atualizei nada". Sem este teste a tela diria "salvo" e a
+    //     pessoa sairia achando que trocou o papel de alguém que continua exatamente como estava.
+    if(!r.ok) throw new Error((d && (d.message || d.hint)) || ('HTTP ' + r.status));
+    if(!Array.isArray(d) || !d.length) throw new Error('o banco não deixou (nenhuma linha mudou)');
+    msg.className = 'linha-msg ok'; msg.textContent = 'Salvo.';
+    await carregar();
+  }catch(e){ msg.className = 'linha-msg erro'; msg.textContent = 'Não salvou: ' + e.message; }
+  btn.disabled = false; btn.textContent = 'Salvar';
+}
+
+// ── CADASTRAR ────────────────────────────────────────────────────────────────────────────────
+// Sem service_role no navegador (ela é a chave que ignora toda a RLS — no HTML seria o mesmo que
+// publicá-la). O caminho é o cadastro normal do Auth: cria o usuário, o Auth manda o e-mail de
+// confirmação, e o perfil é gravado aqui com o papel escolhido.
+function senhaProvisoria(){
+  const a = new Uint8Array(9); crypto.getRandomValues(a);
+  return 'Lmt' + Array.from(a).map(x => 'abcdefghijkmnpqrstuvwxyz23456789ABCDEFGHJKLMNPQRSTUVWXYZ'[x % 55]).join('') + '!7';
+}
+document.getElementById('btn-novo').onclick = async function(){
+  const msg = document.getElementById('msg-novo');
+  const email = (document.getElementById('novo-email').value || '').trim().toLowerCase();
+  const papel = document.getElementById('novo-papel').value;
+  msg.className = 'linha-msg';
+  if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){ msg.className = 'linha-msg erro'; msg.textContent = 'E-mail inválido.'; return; }
+  if(perfis.some(p => (p.email || '').toLowerCase() === email)){
+    msg.className = 'linha-msg erro'; msg.textContent = 'Esse e-mail já está na lista abaixo.'; return; }
+  this.disabled = true; this.textContent = 'Cadastrando…';
+  const senha = senhaProvisoria();
+  try{
+    const r = await fetch(SB + '/auth/v1/signup', { method: 'POST',
+      headers: { apikey: ANON, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: email, password: senha }) });
+    const d = await r.json();
+    if(!r.ok) throw new Error(d.msg || d.error_description || d.error || ('HTTP ' + r.status));
+    const uid = d.id || (d.user && d.user.id);
+    if(!uid) throw new Error('o Auth não devolveu o id do usuário');
+    // >>> O PERFIL VEM DEPOIS, NUNCA ANTES. Sem perfil a pessoa já entra NEGADA (a RLS não devolve
+    //     nada e a tela avisa) — então a ordem errada aqui é inofensiva, e a ordem certa evita um
+    //     perfil órfão apontando pra um usuário que não chegou a existir.
+    const r2 = await fetch(SB + '/rest/v1/perfis', { method: 'POST',
+      headers: Object.assign({ Prefer: 'return=representation' }, H),
+      body: JSON.stringify({ id: uid, email: email, papel: papel,
+                             criado_por: (eu && eu.id) || null }) });
+    const d2 = await r2.json().catch(() => null);
+    if(!r2.ok) throw new Error('usuário criado, mas o perfil não: ' + ((d2 && d2.message) || ('HTTP ' + r2.status)));
+    msg.className = 'linha-msg ok';
+    msg.innerHTML = 'Cadastrado como <b>' + esc(papel) + '</b>. Senha provisória (aparece uma vez): '
+      + '<b style="font-family:monospace;font-size:14px">' + esc(senha) + '</b><br>'
+      + 'Peça para a pessoa confirmar o e-mail que acabou de chegar e trocar a senha ao entrar.';
+    document.getElementById('novo-email').value = '';
+    await carregar();
+  }catch(e){ msg.className = 'linha-msg erro'; msg.textContent = 'Não cadastrou: ' + e.message; }
+  this.disabled = false; this.textContent = 'Cadastrar';
+};
+
+// ── A MATRIZ, lida do produto ────────────────────────────────────────────────────────────────
+(function matriz(){
+  const papeis = P.papeis();
+  document.getElementById('matriz-cab').innerHTML = '<th>chave</th>' + papeis.map(x => '<th>' + x + '</th>').join('');
+  document.getElementById('matriz').innerHTML = P.CHAVES.map(k => '<tr><td>' + k + '</td>'
+    + papeis.map(pp => '<td>' + (P.pode({ papel: pp, ativo: true }, k)
+        ? '<span class="ok">sim</span>' : '<span style="color:var(--muted)">—</span>') + '</td>').join('')
+    + '</tr>').join('');
+  document.getElementById('novo-papel').innerHTML = papeis.filter(x => x !== 'dono_produto')
+    .map(x => '<option value="' + x + '"' + (x === 'vendedor' ? ' selected' : '') + '>' + x + '</option>').join('');
+})();
+
+// só carrega depois de saber quem é quem: sem isso a lista pediria dados antes do perfil chegar e
+// levaria um 403 do próprio portão.
+document.addEventListener('limedtec-sessao-pronta', function(ev){
+  if(ev.detail && ev.detail.estado === 'ok') carregar();
+});
+if(window.LimedtecSessao) LimedtecSessao.pronta().then(function(e){ if(e === 'ok') carregar(); });
+</script>
+</body>
+</html>

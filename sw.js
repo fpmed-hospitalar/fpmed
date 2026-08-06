@@ -17,7 +17,7 @@
  */
 'use strict';
 
-const VERSAO = 'limedtec-fpmed-2026-08-06-3';
+const VERSAO = 'limedtec-fpmed-2026-08-06-4';
 const CACHE = 'limedtec-shell-' + VERSAO;
 
 // A CASCA DA FPMED. Lista MONTADA A MAO conferindo `git ls-files` (= o que o Pages serve),
@@ -35,6 +35,7 @@ const SHELL = [
   './fpmed_competitividade.html',      // aqui ELA ENTRA (na instalacao de origem estava fora por
                                        // ficar no .gitignore; na FPMED e versionada e vai pro ar)
   './dashboard_clientes.html',         // demo 100% ficticio (nao ha dado real dentro)
+  './limedtec-usuarios.html',          // Usuarios e acessos (tela do MOLDE) — entrou 06/08
   './reset-senha.html',
   './gm-auth.js',                      // motor de autenticacao compartilhado
   './cliente.config.js',
@@ -42,6 +43,8 @@ const SHELL = [
   './limedtec-tema.js',                // faltava: o red test de 05/08 mostrou 21 itens sem ele,
                                        // e sem ele o tema do cliente nao pinta offline (404).
   './limedtec-licenca.js',
+  './limedtec-papeis.js',              // a matriz de papeis que a tela de Usuarios imprime
+  './limedtec-sessao.js',              // portao de perfil da tela de Usuarios (so ela o carrega)
   './limedtec-pwa.js',
   './manifest.webmanifest',
   './icones/limedtec-192.png',

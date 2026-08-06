@@ -88,17 +88,38 @@
   //     Fazer a tela escura brigar com `!important` seria tratar o sintoma e deixar a armadilha
   //     montada pro próximo nome de variável que colidir. Aqui a regra fica explícita e vale pra
   //     qualquer cliente do molde que um dia tenha uma tela de paleta própria.
+  // >>> AS MESMAS CORES SÃO ESCRITAS DUAS VEZES, e isso é uma passagem, não um descuido (06/08).
+  //     A origem do molde resolveu a colisão acima de um jeito melhor que o `data-tema`: em vez de
+  //     a tela pedir pra ser deixada em paz, o molde passou a OFERECER com prefixo (`--lt-bg`) e
+  //     cada tela ESCOLHE (`--bg: var(--lt-bg, #0f1620)`). Nome prefixado não colide com o `--bg`
+  //     que a tela já tinha — o problema deixa de existir em vez de ser contornado.
+  //     Aqui os DOIS conjuntos são escritos porque as telas da FPMED (7 telas, escritas antes
+  //     disso) ainda recebem o tema pelos nomes crus. Trocar só o mapa mudaria a cor das 7 de uma
+  //     vez, num porte que era pra ser "entrou uma tela nova" — e regressão de cor é o tipo de
+  //     coisa que só aparece no ar, com alguém tentando trabalhar.
+  //     >>> PENDÊNCIA REGISTRADA: a virada (largar os nomes crus e converter as 7 telas pra
+  //         `var(--lt-*)`) é item de SYNC com teste próprio, não efeito colateral deste porte.
+  var CORES_CRUAS = { bg: '--bg', painel: '--panel', painel2: '--panel2', destaque: '--ciano',
+    destaque2: '--ciano2', texto: '--txt', borda: '--borda' };
+  var CORES_LT = { bg: '--lt-bg', painel: '--lt-panel', painel2: '--lt-panel2', destaque: '--lt-ciano',
+    destaque2: '--lt-ciano2', texto: '--lt-txt', borda: '--lt-borda' };
+
   function aplicaTema() {
     if (typeof document === 'undefined') return;
     var m = cfg().marca || {};
     var el = document.documentElement;
+    var c = m.cores || {};
     // o produto é identidade, não cor: entra mesmo na tela de tema próprio
     if (m.produto) el.setAttribute('data-limedtec-produto', m.produto);
+    // >>> O `data-tema` continua cortando OS DOIS conjuntos, e não só os nomes crus. Escrever
+    //     `--lt-*` numa tela de paleta própria seria inerte (ela não pede por eles) — mas a
+    //     garantia que o `testa_tema_tela_propria` protege é justamente a mais simples de
+    //     verificar: "nesta tela o tema do cliente NÃO ESCREVE NADA". Trocar isso por "escreve,
+    //     mas é inofensivo" custa a asserção e não compra nada. Quando as 7 telas migrarem pro
+    //     `var(--lt-*)`, aí a regra muda junto com elas — e com teste novo.
     if (el.getAttribute('data-tema')) return;          // a tela declarou tema — não sobrescreve
-    var c = m.cores || {};
-    var mapa = { bg: '--bg', painel: '--panel', painel2: '--panel2', destaque: '--ciano',
-      destaque2: '--ciano2', texto: '--txt', borda: '--borda' };
-    Object.keys(mapa).forEach(function (k) { if (c[k]) el.style.setProperty(mapa[k], c[k]); });
+    Object.keys(CORES_LT).forEach(function (k) { if (c[k]) el.style.setProperty(CORES_LT[k], c[k]); });
+    Object.keys(CORES_CRUAS).forEach(function (k) { if (c[k]) el.style.setProperty(CORES_CRUAS[k], c[k]); });
   }
 
   raiz.LIMEDTEC = { cfg: cfg, banco: banco, urlBanco: urlBanco, chaveBanco: chaveBanco,

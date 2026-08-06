@@ -201,6 +201,20 @@ Criado em 21/07/2026 copiando SO os arquivos do app do C:\globalmed.
 >>> ONDE PARAMOS — 06/08/2026, RODADA 6. LEIA ISTO PRIMEIRO.
 ========================================
 
+PORTE FECHADO (06/08): USUARIOS E ACESSOS — 2 dos 8 arquivos que faltavam do molde.
+  Secao 12.1 do TAREFAS. limedtec-usuarios.html + limedtec-sessao.js (molde puro, so leitura da
+  origem). SEM ESSA TELA, depois do 1o gestor o resto era SQL na mao — era a maior das 8.
+  Suite nova testa_usuarios_acessos (42) -> 1.421 asserts / 0 falhas / 42 suites.
+  A DECISAO DO PORTE: o portao de sessao entrou SO NESTA TELA. Ele patcheia o window.fetch e
+  devolve 403 em TODA leitura enquanto o perfil nao esta confirmado — isso pertence ao ddl/05,
+  que esta PARADO esperando OK. Ligar nas 7 telas que funcionam, de carona, derrubaria tudo se
+  o `perfis` estivesse incompleto. A suite trava: as 8 telas existentes nao carregam o portao.
+  AJUSTE DE MOLDE JUNTO: a origem passou a OFERECER as cores com prefixo (--lt-*) e cada tela
+  ESCOLHE; a tela portada pede --lt-* e o config daqui so escrevia os nomes crus — ela abriria
+  ESCURA num sistema claro. O config agora escreve OS DOIS. A virada completa (largar os nomes
+  crus e converter as 7 telas) e item de SYNC com teste proprio, nao efeito colateral.
+  >>> FALTAM 6 DOS 8, e 2 deles sao DECISAO (nao digitacao) — ver "O QUE FICOU PRO LEMUEL".
+
 >>> !! SEGURANCA CORRIGIDA 06/08 — a tabela `perfis` estava LEGIVEL PELA INTERNET !!
     4o DEFEITO DO KIT, e o grave. O ddl/03 cria `perfis` e nao liga RLS, nao cria policy e nao
     tira o anon — e no Supabase tabela nova em public ja nasce com GRANT ALL TO anon. A chave

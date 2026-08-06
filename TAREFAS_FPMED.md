@@ -228,6 +228,51 @@ gestor o resto é SQL na mão), o **importador de estoque por PDF** (`limedtec-e
 `icones/limedtec.ico`. **Portar isso é SYNC com rebrand** (`SYNC_GLOBAL.md`, "nunca às cegas") —
 entra na fila, não sai de efeito colateral da instalação.
 
+### 12.1 — PORTE: USUÁRIOS E ACESSOS ✅ (06/08/2026) — 2 dos 8 arquivos que faltavam do molde
+
+`limedtec-usuarios.html` + `limedtec-sessao.js`, puxados do molde (`C:\globalmed`, **só leitura**).
+São **telas do molde**, não do cliente — nascem iguais em toda instalação; o que muda é a lista de
+pessoas, que é dado e mora no banco de cada um. Varredura: zero GlobalMed, zero ref de Supabase
+cravado, zero telefone/e-mail da origem. **Sem esta tela, depois do 1º gestor o resto era SQL na
+mão** — era a maior das 8 pendências.
+
+**A pré-condição teve que ser resolvida ANTES**: a `perfis` estava aberta pro `anon` (achado
+acima). Portar a tela que grava nela sem fechar a porta seria construir em cima do buraco.
+
+**A decisão do porte — o portão de sessão entrou SÓ nesta tela.** O `limedtec-sessao.js` aplica um
+patch no `window.fetch` que (a) devolve **403 em toda leitura** `/rest/v1/` enquanto o perfil não
+estiver confirmado e (b) troca `cotacoes` por `cotacoes_vendedor` para quem não tem `ver_custo`.
+Isso pertence à migração restritiva (`ddl/05`), que está **parada esperando OK**. Soltá-lo nas 7
+telas que funcionam hoje, de carona num porte de tela nova, é o efeito colateral que este projeto
+não aceita — um `perfis` incompleto derrubaria o sistema inteiro de uma vez. A suíte trava isso:
+**as 8 telas existentes não podem carregar o portão**.
+
+**Um ajuste no molde veio junto, e ele é uma passagem, não um retoque.** A origem trocou a forma
+de aplicar o tema: em vez de a tela pedir para ser deixada em paz (`data-tema`, a correção da
+FPMED de 05/08), o molde passou a **oferecer com prefixo** (`--lt-bg`) e cada tela **escolhe**
+(`--bg: var(--lt-bg, …)`). Nome prefixado não colide — o problema deixa de existir em vez de ser
+contornado. A tela portada pede `--lt-*`; o config daqui só escrevia os nomes crus, então ela
+abriria **escura** (o valor de reserva) dentro de um sistema claro. O config agora escreve **os
+dois conjuntos**: as 7 telas de hoje não mudam de cor, e as telas do molde ganham as cores da
+FPMED. ⬜ A virada completa (largar os nomes crus e converter as 7) é item de sync, com teste
+próprio — não efeito colateral deste porte.
+> Tentei primeiro escrever `--lt-*` **também** nas telas de paleta própria (é inerte lá). O
+> `testa_tema_tela_propria` reprovou, e com razão: a garantia que ele protege é a mais simples de
+> verificar — *"nesta tela o tema do cliente não escreve NADA"*. Trocá-la por *"escreve, mas é
+> inofensivo"* custa a asserção e não compra nada. Voltei atrás.
+
+Suíte nova `testa_usuarios_acessos` (**42 asserts**). Total: **1.421 / 0 falhas / 42 suítes**,
+mais `tests/db/testa_rls_cobertura` e `testa_congelamento` verdes contra o banco.
+> E o `testa_compliance` me pegou cometendo **o mesmo defeito que eu tinha devolvido pro kit**:
+> escrevi o ref do Supabase da origem dentro da suíte nova, num repo público. A checagem virou
+> coerência interna — *"algum ref cravado no arquivo?"* — em vez de citar o projeto de outra
+> empresa.
+
+⬜ **Faltam 6 dos 8**: o importador de estoque por PDF (`limedtec-estoque.html`,
+`limedtec-estoque-leitor.js`, `le_pdf_estoque.js`, `importa_estoque_erp.js`, `IMPORTAR_ESTOQUE.bat`,
+`cria_atalho_estoque.ps1`, `vendor/pdfjs/*`), `motor_busca.js` e `icones/limedtec.ico`.
+**Os dois primeiros exigem decisão, não digitação** — ver "o que ficou de fora" no `CONTINUAR`.
+
 ### 9.4 — MEUS JORNAIS ✅ (3ª das 6 etapas do item 9, 06/08/2026)
 
 **O que é**: a pesquisa avançada **salva com nome**. Abre com um clique e mostra **o que chegou

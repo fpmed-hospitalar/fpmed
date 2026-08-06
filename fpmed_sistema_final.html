@@ -241,6 +241,14 @@ select.filter{padding:8px 12px;border:1px solid var(--borda);border-radius:9px;f
   <div class="nav-item" onclick="location.href='fpmed_viabilidade.html'">
     <span class="icon">🔍</span> Viabilidade de Compra
   </div>
+  <!-- Usuários e acessos: tela do MOLDE (por isso o nome começa com limedtec- e não com fpmed_).
+       Ela nasce igual em todo cliente; o que muda é a LISTA DE PESSOAS, que é dado e mora no
+       banco de cada um. Entrou 06/08 — antes dela, depois do 1º gestor o resto era SQL na mão.
+       O portão de verdade é a RLS de `perfis` (gerir_usuarios): quem não pode, não grava, e o
+       banco recusa mesmo que a tela abra. -->
+  <div class="nav-item" id="nav-usuarios" onclick="location.href='limedtec-usuarios.html'">
+    <span class="icon">👥</span> Usuários e acessos
+  </div>
   <div class="nav-item" onclick="location.href='fpmed_painel.html'">
     <span class="icon">🗒️</span> Painel / Notas
   </div>
