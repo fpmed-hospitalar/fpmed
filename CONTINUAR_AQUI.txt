@@ -201,6 +201,27 @@ Criado em 21/07/2026 copiando SO os arquivos do app do C:\globalmed.
 >>> ONDE PARAMOS — 06/08/2026, RODADA 5. LEIA ISTO PRIMEIRO.
 ========================================
 
+>>> URGENCIA ATENDIDA 06/08 (fura-fila do Lemuel): "o sistema perde o banco de vez em quando,
+    mensagem vermelha dizendo que as tabelas nao estao la". NAO ERA O BANCO NEM A REDE.
+    Medido: as 20 tabelas/views respondem 200 logado e 401 sem sessao, com o corpo
+    "42501 ... GRANT SELECT ON public.X TO anon" -- e ISSO que a tela pintava de vermelho.
+    Rede conferida e boa: DNS ja no 8.8.8.8, IPv4 401 em 0,24s, os 2 IPs da Cloudflare um a um,
+    consulta real de 1.000 linhas em 70-137ms pelo proprio navegador. IPv6 nao existe pro host
+    (falha em 10ms, nao pendura) -> NAO mexer no adaptador.
+    CAUSA, no gm-auth.js (que TODAS as telas carregam):
+      1. refresh() devolvia `false` tanto pra "servidor recusou o refresh_token" quanto pra
+         "nao consegui falar com o servidor". Piscada de Wi-Fi de 2s no instante do refresh
+         (a cada ~1h, em CADA aba) derrubava a sessao -> tudo virava anon -> 401.
+      2. refresh SEM timeout, e ele e aguardado ANTES de cada consulta -> refresh pendurado
+         travava a tela inteira. E o "ora carrega, ora fica girando".
+      3. nenhuma tela tratava o 401: imprimia o status cru.
+    CORRECAO: refreshEstado() = 'ok'|'morta'|'rede' (so 'morta' derruba pro login) · timeout de
+    12s · 2a chance no 401 de sessao (renova UMA vez e repete a chamada) · boot com rede fora
+    NAO pede senha. Cache quebrado nas 7 telas (gm-auth.js?v=sessao-06ago) + sw VERSAO -2.
+    Suite nova testa_sessao_rede (35) roda o gm-auth DE VERDADE num window de mentira; mutei o
+    codigo de volta pro comportamento antigo pra provar que ela pega (2 falhas).
+    >>> FALTA CONFERIR NO AR: depende do deploy do Pages (ver bloqueio abaixo).
+
 ITEM 10 FECHADO (06/08). A coleta do PNCP roda SOZINHA 3x/dia. Detalhes na secao 10.1 do TAREFAS.
   - edge function `coletar-licitacoes` NO AR (v2, verify_jwt=false, secret COLETA_TOKEN setado),
     deployada por tools/deploy_edge.js (Management API — nao precisou instalar CLI nenhuma).
