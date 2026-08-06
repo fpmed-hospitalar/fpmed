@@ -230,8 +230,21 @@ ok('403 no PATCH explica que só gestor grava', /só gestor grava no funil/.test
 // ══════════════════════════════════════════════════════════════════════════════════════════
 {
   const sf = fs.readFileSync(path.join(raiz, 'fpmed_sistema_final.html'), 'utf8');
-  ok('*** existe item de menu apontando pro fpmed_negocios.html ***',
-    /nav-item[^>]*onclick="location\.href='fpmed_negocios\.html'"/.test(sf));
+  // >>> A ROTA MUDOU EM 08/08 (decisao do Lemuel), e o teste muda junto porque quem mudou foi a
+  //     DECISAO: o menu lateral tem UMA entrada -- "Licitacoes" -- e Negocios e uma ABA dentro
+  //     dela. Duas entradas pro mesmo modulo faziam o operador escolher a porta antes de saber o
+  //     que ia fazer, e voltar ao menu toda vez que quisesse ir da busca pro funil.
+  //     A tela continua tendo que ser ALCANCAVEL (a licao de "pronta e invisivel nao existe") --
+  //     o que mudou e POR ONDE.
+  ok('*** Negocios NAO tem entrada propria no menu lateral (uma porta so pro modulo) ***',
+    !/nav-item[^>]*onclick="location\.href='fpmed_negocios\.html'"/.test(sf));
+  const lic = fs.readFileSync(path.join(raiz, 'fpmed_licitacoes.html'), 'utf8');
+  ok('*** ...e e alcancavel pela barra do PORTAL, dentro de Licitacoes ***',
+    /<nav class="portal">[\s\S]{0,400}href="fpmed_negocios\.html"/.test(lic));
+  ok('*** e o caminho de volta existe: a aba Negocios leva pro Encontrar ***',
+    /<nav class="portal">[\s\S]{0,400}href="fpmed_licitacoes\.html"/.test(fs.readFileSync(path.join(raiz, 'fpmed_negocios.html'), 'utf8')));
+  ok('link antigo nao morre: ?aba=negocios cai na aba certa',
+    /aba === 'negocios'[\s\S]{0,80}location\.replace\('fpmed_negocios\.html'\)/.test(lic));
   ok('...e some pra quem não pode ver (mesmo gate da Competitividade e do Licitações)',
     /'licitacoes','compra-direta','negocios'/.test(sf) || /'negocios'/.test(sf.slice(sf.indexOf('function espAplicaPermissao'), sf.indexOf('function espAplicaPermissao') + 800)));
   const sw = fs.readFileSync(path.join(raiz, 'sw.js'), 'utf8');
@@ -240,9 +253,12 @@ ok('403 no PATCH explica que só gestor grava', /só gestor grava no funil/.test
   //     atalho de app abre JANELA NOVA por padrao do sistema operacional, e o Lemuel relatou
   //     exatamente isso ("abre em outra janela independente"). A entrada da tela e o MENU, na
   //     mesma janela. Guardado pelo tests/testa_navegacao_janela.js.
-  const menu = fs.readFileSync(path.join(raiz, 'fpmed_sistema_final.html'), 'utf8');
-  ok('...e tem entrada no MENU, abrindo na mesma janela',
-    menu.includes("onclick=\"location.href='fpmed_negocios.html'\""));
+  // (esta linha ja mudou DUAS vezes em 2 dias, e as duas por decisao de produto, nao por
+  //  defeito: 07/08 o atalho do manifest saiu; 08/08 a entrada de menu virou aba do portal.
+  //  O que ela protege desde sempre e o mesmo: a tela tem que ser ALCANCAVEL de algum lugar.)
+  ok('...e e alcancavel pela barra do portal, na mesma janela',
+    /<nav class="portal">[\s\S]{0,400}href="fpmed_negocios\.html"/.test(
+      fs.readFileSync(path.join(raiz, 'fpmed_licitacoes.html'), 'utf8')));
   ok('a tela de Negócios tem o pill "← Sistema" de volta', /<a href="fpmed_sistema_final\.html">/.test(src));
   ok('...e o caminho pro Licitações, que é o irmão dela no módulo', /<a href="fpmed_licitacoes\.html">/.test(src));
 }

@@ -44,12 +44,32 @@ console.log('SUITE testa_navegacao_janela — uma janela so, navegacao por cima\
   ok('4. os itens que trocam de tela usam location.href (mesma janela)', cruzam.length >= 6, cruzam.length);
 
   // e as telas da secao SISTEMAS, uma a uma
-  for (const tela of ['fpmed_licitacoes.html', 'fpmed_negocios.html', 'fpmed_giovana.html',
+  // `fpmed_negocios.html` saiu desta lista em 08/08: ele deixou de ser entrada de menu e virou
+  // ABA do portal de Licitacoes. Quem guarda essa rota agora e o testa_funil_negocios.
+  for (const tela of ['fpmed_licitacoes.html', 'fpmed_giovana.html',
                       'fpmed_vendas.html', 'fpmed_viabilidade.html', 'fpmed_painel.html',
                       'limedtec-usuarios.html']) {
     const re = new RegExp("nav-item[^>]*onclick=\"location\\.href='" + tela.replace('.', '\\.') + "'\"");
     ok('5.' + tela + ' abre na mesma janela', re.test(nav), tela);
   }
+}
+
+// ══════════ 1B. A BARRA DO PORTAL — as duas telas sao UM lugar so (08/08) ══════════
+// O menu lateral tem UMA entrada pro modulo. A troca entre Encontrar e Negocios acontece na
+// barra do portal, na MESMA janela -- por isso ela e <a href> e nao window.open.
+{
+  const lic = ler('fpmed_licitacoes.html'), neg = ler('fpmed_negocios.html');
+  const barra = s => (s.match(/<nav class="portal">[\s\S]*?<\/nav>/) || [''])[0];
+  ok('17. a aba Encontrar tem a barra do portal', !!barra(lic));
+  ok('18. a aba Negocios tem a MESMA barra (senao viram dois sistemas parecidos)', !!barra(neg));
+  ok('19. *** a barra nao abre janela nova em nenhuma das duas ***',
+    !/target=|window\.open/.test(barra(lic)) && !/target=|window\.open/.test(barra(neg)));
+  ok('20. de Encontrar da pra ir pra Negocios', /href="fpmed_negocios\.html"/.test(barra(lic)));
+  ok('21. ...e de Negocios da pra voltar pro Encontrar', /href="fpmed_licitacoes\.html"/.test(barra(neg)));
+  ok('22. cada tela marca a PROPRIA aba como ativa (senao ninguem sabe onde esta)',
+    /<a class="on"[^>]*>Encontrar</.test(barra(lic)) && /<a class="on"[^>]*>Negocios|<a class="on"[^>]*>Negócios/.test(barra(neg)));
+  ok('23. o menu lateral ficou com UMA entrada pro modulo (sem badge PNCP/FUNIL)',
+    !/nav-negocios/.test(sistema) && !/>PNCP</.test(sistema) && !/>FUNIL</.test(sistema));
 }
 
 // ══════════ 2. A VOLTA TAMBEM ══════════

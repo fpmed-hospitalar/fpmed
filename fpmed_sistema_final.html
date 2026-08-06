@@ -224,13 +224,13 @@ select.filter{padding:8px 12px;border:1px solid var(--borda);border-radius:9px;f
        daqui — só dava pra chegar digitando a URL ou pelo atalho do app instalado. Módulo pronto
        e invisível. Fica escondido pra vendedor/propostas de propósito: a tela lê a tabela
        `cotacoes` (RLS) e eles cairiam no "Sem permissão" — link que rejeita é pior que link ausente. -->
+  <!-- UMA ENTRADA SÓ (decisão do Lemuel, 08/08). "Negócios" saiu do menu lateral: ele é uma ABA
+       DENTRO do portal de Licitações, junto com Encontrar e as futuras (Análise…). Duas entradas
+       para o mesmo módulo faziam o operador escolher a porta antes de saber o que ia fazer — e
+       voltar ao menu toda vez que quisesse ir da busca pro funil.
+       O link direto `fpmed_negocios.html` continua valendo: ele É a aba Negócios do portal. -->
   <div class="nav-item" id="nav-licitacoes" onclick="location.href='fpmed_licitacoes.html'">
     <span class="icon">🏛️</span> Licitações
-    <span style="background:#8DC63F;color:#243d06;border-radius:10px;font-size:8px;font-weight:800;padding:1px 5px;margin-left:auto">PNCP</span>
-  </div>
-  <div class="nav-item" id="nav-negocios" onclick="location.href='fpmed_negocios.html'">
-    <span class="icon">📈</span> Negócios
-    <span style="background:#8DC63F;color:#243d06;border-radius:10px;font-size:8px;font-weight:800;padding:1px 5px;margin-left:auto">FUNIL</span>
   </div>
   <div class="nav-item" onclick="location.href='fpmed_giovana.html'">
     <span class="icon">📄</span> Propostas

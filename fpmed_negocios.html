@@ -41,7 +41,10 @@ header .nome small{display:block;font-size:8px;letter-spacing:2.6px;color:var(--
 header .sep{width:1px;height:22px;background:var(--linha);margin:0 4px}
 header h1{font-family:Montserrat;font-size:18px;margin:0;color:#b3c4d6;font-weight:600}
 /* submenu NEGOCIOS, como no SIGA */
-header nav{margin-left:auto;display:flex;gap:4px}
+/* a barra do PORTAL empurra tudo pra direita; o submenu vem colado nela, sem novo margin-left
+   (dois `margin-left:auto` no mesmo flex separariam as duas barras nas pontas da tela) */
+header nav.portal{margin-left:auto;display:flex;gap:4px}
+header nav{display:flex;gap:4px}
 header nav a{color:var(--muted);text-decoration:none;font-size:12.5px;padding:6px 13px;border-radius:8px;cursor:pointer;transition:background .16s,color .16s}
 header nav a:hover{background:var(--painel2);color:var(--texto)}
 header nav a.on{background:rgba(44,169,224,.16);color:var(--azul-claro);font-weight:600}
@@ -221,6 +224,16 @@ textarea.anot:focus{border-color:var(--azul)}
     <div class="marca"><div class="cruz">✚</div><div class="nome">FPMED<small>HOSPITALAR</small></div></div>
     <div class="sep"></div>
     <h1>Negócios</h1>
+    <!-- ══ A BARRA DO PORTAL (08/08) ══ idêntica à da aba Encontrar. É ela que faz as duas
+         telas serem um lugar só. O menu lateral do sistema tem UMA entrada — "Licitações" — e a
+         troca entre as abas acontece por aqui, na mesma janela.
+         Ela vem ANTES do submenu (Funil/Quadros/Agenda) porque são dois níveis diferentes:
+         em cima, em que ABA do módulo você está; embaixo, como você olha o funil. -->
+    <nav class="portal">
+      <a href="fpmed_licitacoes.html" title="Buscar oportunidades no PNCP">Encontrar</a>
+      <a class="on" title="Funil, quadros e agenda">Negócios</a>
+    </nav>
+    <div class="sep"></div>
     <nav>
       <a class="on" onclick="setVis('lista')">Funil de Licitações</a>
       <a onclick="setVis('quadros')">Quadros</a>

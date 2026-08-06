@@ -60,6 +60,13 @@ header .nome{font-family:Montserrat;font-weight:800;font-size:17px;color:#fff;le
 header .nome small{display:block;font-size:8px;letter-spacing:2.6px;color:var(--muted);font-weight:600;margin-top:-2px}
 /* separador entre a marca e o nome da tela — sem ele os dois viram um título só */
 header .sep{width:1px;height:22px;background:var(--linha);margin:0 4px}
+/* ── A BARRA DO PORTAL ── as MESMAS regras da aba Negócios, de propósito: se as duas telas são
+   um lugar só, a barra que as liga não pode ter dois desenhos. */
+header nav.portal{margin-left:auto;display:flex;gap:4px}
+header nav.portal a{color:var(--muted);text-decoration:none;font-size:12.5px;padding:6px 13px;
+  border-radius:8px;cursor:pointer;transition:background .16s,color .16s}
+header nav.portal a:hover{background:var(--painel2);color:var(--texto)}
+header nav.portal a.on{background:rgba(44,169,224,.16);color:var(--azul-claro);font-weight:600}
 .wrap{max-width:1180px;margin:0 auto;padding:0 22px 70px}
 
 /* ── barra de período, canto direito (estilo SIGA) ── */
@@ -225,6 +232,20 @@ select:focus,input:focus{outline:none;border-color:var(--azul)}
     <div class="marca"><div class="cruz">✚</div><div class="nome">FPMED<small>HOSPITALAR</small></div></div>
     <div class="sep"></div>
     <h1 style="font-weight:600;color:#b3c4d6">Licitações</h1>
+    <!-- ══ A BARRA DO PORTAL (08/08) ══════════════════════════════════════════════════════════
+         Licitações virou o portal do módulo: o menu lateral do sistema tem UMA entrada só, e é
+         daqui que se chega a tudo. A MESMA barra existe, idêntica, na aba Negócios — é ela que
+         faz as duas telas serem um lugar só em vez de dois sistemas parecidos.
+         >>> POR QUE NÃO É IFRAME NEM UMA TELA GIGANTE: o funil são ~1.500 linhas com boot,
+             sessão e sino próprios. Enfiar isso aqui no dia da entrega trocaria um problema de
+             navegação por um risco de regressão nas duas telas. Com a barra repetida, trocar de
+             aba é navegação normal na mesma janela — o operador vê um portal, o código continua
+             sendo dois arquivos que já funcionam. Se um dia virar uma tela só, a barra já está
+             no lugar certo e ninguém percebe a mudança. -->
+    <nav class="portal">
+      <a class="on" title="Buscar oportunidades no PNCP">Encontrar</a>
+      <a href="fpmed_negocios.html" title="Funil, quadros e agenda — o que a FPMED está disputando">Negócios</a>
+    </nav>
   </div>
 </header>
 
@@ -363,6 +384,20 @@ select:focus,input:focus{outline:none;border-color:var(--azul)}
 <button id="aoTopo" onclick="window.scrollTo({top:0,behavior:'smooth'})" title="Voltar ao topo">↑</button>
 
 <script>
+// ── ?aba=negocios ── o portal atende pelas DUAS portas (08/08) ────────────────────────────
+// `fpmed_negocios.html` continua valendo — ele É a aba Negócios, com a mesma barra de portal em
+// cima. E quem chegar por `fpmed_licitacoes.html?aba=negocios` (link salvo, favorito, algo que
+// um dia aponte pro portal pedindo a aba) cai no mesmo lugar. Duas URLs, um destino: link que
+// alguém guardou não pode morrer porque a navegação mudou de desenho.
+// `replace` e não `href`: senão o VOLTAR do navegador devolve pra cá e redireciona de novo,
+// prendendo a pessoa num pingue-pongue.
+(function(){
+  try{
+    const aba = new URLSearchParams(location.search).get('aba');
+    if(aba === 'negocios'){ location.replace('fpmed_negocios.html'); }
+  }catch(e){}
+})();
+
 const API = 'https://pncp.gov.br/api/consulta/v1/contratacoes/publicacao';
 const CACHE_MIN = 15;
 const cache = new Map();
@@ -1015,6 +1050,55 @@ function filtrarPorOrgao(nome){
   rerender();
 }
 
+// ══ A PONTE ENCONTRAR → NEGÓCIOS (08/08) ══════════════════════════════════════════════════
+// Achar a oportunidade e decidir disputar são o mesmo gesto. Antes, quem achasse algo aqui
+// tinha que abrir o funil e redigitar órgão, número, objeto, abertura e valor — e é redigitando
+// que o número sai errado.
+//
+// >>> NASCE EM "OPORTUNIDADE", NUNCA JÁ QUALIFICADO. Mandar pro funil é dizer "isto merece ser
+//     olhado", não "vamos disputar". Quem qualifica é gente, no funil.
+// >>> E NÃO DUPLICA: antes de gravar, procura pelo número de controle do PNCP. Clicar duas vezes
+//     no mesmo card (ou dois vendedores no mesmo dia) tem que dar UM negócio, não dois — funil
+//     com a mesma licitação duas vezes faz duas pessoas trabalharem a mesma coisa sem saber.
+async function mandarProFunil(i){
+  const l = (window._hits||[])[i]; if(!l) return;
+  const bt = document.getElementById('bf-'+i);
+  const numero = String(l.numeroControlePNCP || numCompra(l.numeroCompra, l.anoCompra) || '').trim();
+  if(bt){ bt.disabled = true; bt.textContent = 'mandando…'; }
+  try{
+    if(numero){
+      const q = await fetch(`${SB_URL}/rest/v1/negocios?select=id,estagio&numero=eq.${encodeURIComponent(numero)}&limit=1`, {headers:SB_H});
+      if(q.ok){ const j = await q.json();
+        if(Array.isArray(j) && j.length){
+          if(bt){ bt.disabled=false; bt.textContent='já está no funil ↗'; bt.onclick = () => location.href='fpmed_negocios.html'; }
+          return;
+        } }
+    }
+    const o = l.orgaoEntidade||{}, u = l.unidadeOrgao||{};
+    const corpo = {
+      estagio: 'oportunidade', arquivado: false, origem: 'licitacoes',
+      titulo: (l.modalidadeNome||'Licitação') + ' Nº ' + numCompra(l.numeroCompra, l.anoCompra),
+      orgao: o.razaoSocial || null, municipio: u.municipioNome || null, uf: u.ufSigla || null,
+      portal: l.usuarioNome || 'PNCP', modalidade: l.modalidadeNome || null,
+      numero: numero || null, objeto: l.objetoCompra || null,
+      abertura: l.dataAberturaProposta || null,
+      valor_estimado: (Number(l.valorTotalEstimado) || null),
+    };
+    const r = await fetch(`${SB_URL}/rest/v1/negocios`, {method:'POST',
+      headers: Object.assign({'Content-Type':'application/json','Prefer':'return=representation'}, SB_H),
+      body: JSON.stringify(corpo)});
+    if(!r.ok){
+      const t = await r.text();
+      throw new Error(r.status===401||r.status===403 ? 'só gestor pode criar negócio' : ('HTTP '+r.status+' '+t.slice(0,60)));
+    }
+    if(bt){ bt.textContent = '✓ no funil — abrir ↗'; bt.disabled = false;
+            bt.onclick = () => location.href='fpmed_negocios.html'; }
+  }catch(e){
+    if(bt){ bt.disabled = false; bt.textContent = '＋ Mandar pro funil'; }
+    alert('Não consegui mandar pro funil: ' + e.message);
+  }
+}
+
 // ══ MEUS JORNAIS ══ buscas salvas (item 9, 3º pedaço · 06/08) ═════════════════════════════
 // Um jornal é a pesquisa avançada SALVA COM NOME. O que ele entrega, e que um atalho não
 // entrega, é o DELTA: "8 novas desde a última vez que você olhou". Sem isso, reabrir a busca
@@ -1389,7 +1473,11 @@ function render(todos, kws, excl, aviso, procedencia){
       +   '<span class="valor">'+brl(l.valorTotalEstimado)+'</span>'
       + '</div>'
       + '<div class="acoes"><button class="btn sec mini" id="bt-'+i+'" onclick="verItens('+i+')">'
-      +   '🎯 Cruzar com nosso estoque</button></div>'
+      +   '🎯 Cruzar com nosso estoque</button>'
+      // A PONTE ENCONTRAR -> NEGÓCIOS. Achar a oportunidade e decidir disputar são o mesmo
+      // gesto; antes disso, quem achasse algo aqui tinha que ir pro funil e digitar de novo.
+      +   ' <button class="btn sec mini" id="bf-'+i+'" onclick="mandarProFunil('+i+')" '
+      +     'title="cria o negócio no funil, na fase Oportunidade">＋ Mandar pro funil</button></div>'
       + '<div class="itens" id="itens-'+i+'" style="display:none"></div>'
       + '</div>';
   });
