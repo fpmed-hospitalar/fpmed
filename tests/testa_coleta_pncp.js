@@ -141,5 +141,25 @@ const X = {
     /create table if not exists public\.coleta_status/.test(ddl));
 }
 
+// ══════════ 6. A TELA LÊ DO BANCO PRIMEIRO ══════════
+// Era o ponto do item 10: enquanto a tela consultasse o PNCP a cada busca, ela continuaria
+// inutil nos dias em que ele cai -- que foram 4 em dois dias.
+{
+  const fs = require('fs'), path = require('path');
+  const tela = fs.readFileSync(path.join(__dirname, '..', 'fpmed_licitacoes.html'), 'utf8');
+  ok('37. *** a busca tenta o NOSSO banco antes do PNCP ***',
+    /if\(!aoVivo\)\{\s*\n\s*const doBanco = await buscarNoBanco/.test(tela));
+  ok('38. o banco devolve o `bruto`, que e a MESMA forma que o render ja consome',
+    /select=bruto/.test(tela) && /j\.map\(x => x\.bruto\)/.test(tela));
+  // sem isso haveria um segundo caminho de codigo pra divergir do primeiro com o tempo
+  ok('39. *** banco vazio ou fora CAI pro ao vivo (nunca mostra vazio dizendo que nao ha licitacao) ***',
+    /if\(doBanco && doBanco\.length\)\{/.test(tela) && /catch\(e\)\{ return null; \}/.test(tela));
+  ok('40. a tela diz DE ONDE veio o que esta nela', /do nosso banco/.test(tela) && /ao vivo do PNCP/.test(tela));
+  ok('41. ...e de QUANDO (o carimbo da coleta)', /coletados em \$\{/.test(tela) || /coletados em /.test(tela));
+  ok('42. avisa quando a ultima coleta falhou', /a última coleta falhou/.test(tela));
+  ok('43. e tem o botao "Atualizar agora", que forca o ao vivo',
+    /function atualizarAgora\(\)\{ buscar\(true\); \}/.test(tela) && /onclick="atualizarAgora\(\)"/.test(tela));
+}
+
 console.log('\nRESULTADO: ' + p + ' ok, ' + f + ' falha(s)');
 process.exitCode = f ? 1 : 0;

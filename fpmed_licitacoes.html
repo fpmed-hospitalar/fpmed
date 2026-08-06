@@ -660,7 +660,45 @@ function porNumero(){
   buscar();
 }
 
-async function buscar(){
+// ══ ÍNDICE PRÓPRIO (item 10, 05/08) ═══════════════════════════════════════════════════════
+// A tela passa a LER DO NOSSO BANCO primeiro. O PNCP caiu 4 vezes em dois dias — depender dele
+// em tempo real é o que deixava esta tela inútil justamente nos dias em que ela importa.
+//
+// >>> O `bruto` da tabela é a resposta do PNCP como veio. Por isso o banco devolve exatamente
+//     a mesma forma que o `render()` já consome: não há tradução de formato, e não há um
+//     segundo caminho de código pra divergir do primeiro com o tempo.
+//
+// O PNCP não sai de cena: ele vira ATUALIZAÇÃO, no botão. E quando o banco não tem aquela
+// janela (como agora, que a coleta ainda não rodou com a API no ar), a tela cai pro modo ao
+// vivo sozinha — nunca mostra vazio dizendo que não há licitação.
+async function buscarNoBanco(uf, mod, de, ate){
+  const iso = s => s.slice(0,4)+'-'+s.slice(4,6)+'-'+s.slice(6,8);
+  let q = `${SB_URL}/rest/v1/licitacoes?select=bruto&data_publicacao=gte.${iso(de)}&data_publicacao=lte.${iso(ate)}`
+        + `&order=data_publicacao.desc&limit=1000`;
+  if (uf)  q += `&uf=eq.${encodeURIComponent(uf)}`;
+  if (mod) q += `&modalidade_cod=eq.${encodeURIComponent(mod)}`;
+  const ctrl = new AbortController();
+  const t = setTimeout(()=>ctrl.abort(), TIMEOUT_MS);
+  try{
+    const r = await fetch(q, {headers:SB_H, signal:ctrl.signal});
+    if(!r.ok) return null;                       // banco fora ou sem permissão: cai pro ao vivo
+    const j = await r.json();
+    return Array.isArray(j) ? j.map(x => x.bruto).filter(Boolean) : null;
+  }catch(e){ return null; }
+  finally{ clearTimeout(t); }
+}
+async function carimboColeta(){
+  try{
+    const r = await fetch(`${SB_URL}/rest/v1/coleta_status?fonte=eq.PNCP&select=ultima_ok,ultimo_erro`, {headers:SB_H});
+    const j = await r.json();
+    return (Array.isArray(j) && j[0]) ? j[0] : null;
+  }catch(e){ return null; }
+}
+// "Atualizar agora": vai no PNCP ao vivo. Se falhar, AVISA sem travar — o que está na tela
+// continua servindo, porque veio do banco e não da API.
+function atualizarAgora(){ buscar(true); }
+
+async function buscar(aoVivo){
   const uf   = document.getElementById('f-uf').value;
   const mod  = document.getElementById('f-mod').value;
   const de   = document.getElementById('f-de').value.replace(/-/g,'');
@@ -679,6 +717,20 @@ async function buscar(){
   lista.innerHTML = Array.from({length:3}, () =>
     '<div class="skel"><div style="width:52%;height:15px"></div><div style="width:96%"></div>'
     + '<div style="width:88%"></div><div style="width:30%;margin-top:16px"></div></div>').join('');
+
+  // ── 1º: o NOSSO banco. Instantâneo e não cai. Só é pulado no "Atualizar agora". ──
+  if(!aoVivo){
+    const doBanco = await buscarNoBanco(uf, mod, de, ate);
+    if(doBanco && doBanco.length){
+      const c = await carimboColeta();
+      const q = c && c.ultima_ok ? new Date(c.ultima_ok) : null;
+      st.textContent='';
+      render(doBanco, kws, excl, null,
+        `📦 ${doBanco.length} do nosso banco` + (q ? ` · coletados em ${q.toLocaleDateString('pt-BR')} às ${q.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}` : '')
+        + (c && c.ultimo_erro ? ' · ⚠️ a última coleta falhou' : ''));
+      return;
+    }
+  }
 
   let todos, truncado=null;
   try{
@@ -705,10 +757,12 @@ async function buscar(){
     document.getElementById('kpis').style.display='none'; st.textContent=''; return;
   }
   st.textContent='';
-  render(todos, kws, excl, truncado ? ('Li '+truncado.lidas+' de '+truncado.total+' páginas (teto por busca). Refine os filtros para não perder licitação.') : null);
+  render(todos, kws, excl,
+    truncado ? ('Li '+truncado.lidas+' de '+truncado.total+' páginas (teto por busca). Refine os filtros para não perder licitação.') : null,
+    fresco ? '⚡ do cache desta sessão' : '🌐 ao vivo do PNCP · agora');
 }
 
-function render(todos, kws, excl, aviso){
+function render(todos, kws, excl, aviso, procedencia){
   const num = window._filtroNumero; window._filtroNumero = null;
   const casa = l => {
     if(num) return String(l.numeroControlePNCP||'').includes(num);
@@ -731,6 +785,16 @@ function render(todos, kws, excl, aviso){
 
   const lista = document.getElementById('lista');
   let h = aviso ? '<div class="aviso err" style="margin-bottom:14px;text-align:left;padding:14px 18px">⚠️ '+esc(aviso)+'</div>' : '';
+  // PROCEDÊNCIA: de onde veio o que está na tela, e de quando. Sem isso o operador não tem
+  // como saber se está olhando dado de agora ou de ontem — e é justamente essa dúvida que o
+  // índice próprio cria ao deixar de consultar o PNCP a cada busca.
+  if(procedencia){
+    h += '<div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:14px;padding:10px 14px;'
+       + 'background:var(--painel);border:1px solid var(--linha);border-radius:10px;font-size:12.5px;color:var(--muted)">'
+       + '<span>'+esc(procedencia)+'</span>'
+       + '<button class="btn sec mini" style="margin-left:auto" onclick="atualizarAgora()">↻ Atualizar agora</button>'
+       + '</div>';
+  }
   if(!hits.length){
     h += '<div class="aviso">Nenhuma licitação bate na busca.<div class="hint" style="margin-top:6px">'
        + todos.length+' publicada(s) no período com esses filtros. Tente limpar as palavras-chave.</div></div>';
