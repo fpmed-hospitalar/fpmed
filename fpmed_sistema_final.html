@@ -706,6 +706,8 @@ select.filter{padding:8px 12px;border:1px solid var(--borda);border-radius:9px;f
       <div class="section-header">
         <h2>📦 Atualizar Estoque FPMED</h2>
       </div>
+      <div id="eg-aviso-idade" style="display:none;border:1px solid;border-radius:10px;padding:11px 14px;
+           margin-bottom:16px;font-size:13px;line-height:1.5;background:#fff"></div>
       <div class="table-wrap" style="padding:24px;margin-bottom:20px">
         <h3 style="font-family:'Montserrat',sans-serif;font-size:15px;font-weight:700;margin-bottom:8px">1. Envie o PDF do relatório de estoque</h3>
         <div id="eg-dropzone" onclick="document.getElementById('eg-pdf-input').click()"
@@ -720,6 +722,15 @@ select.filter{padding:8px 12px;border:1px solid var(--borda);border-radius:9px;f
           <summary style="font-size:13px;color:var(--muted);cursor:pointer">Opção B — colar o texto manualmente (Ctrl+A no PDF, copiar e colar)</summary>
           <textarea id="eg-texto" placeholder="Cole aqui o texto do relatório de estoque..." style="width:100%;height:180px;padding:12px;border:1px solid var(--borda);border-radius:10px;font-size:12px;font-family:'Inter',sans-serif;resize:vertical;outline:none;box-sizing:border-box;margin-top:10px"></textarea>
         </details>
+        <!-- DATA DO RELATÓRIO (Bloco 2 do sync, 05/08). Existe como CAMPO e não como
+             "carimba hoje" porque relatório impresso na sexta e importado na segunda tem 3 dias
+             de idade, e é essa idade que interessa. Default hoje, que é o caso comum. -->
+        <div style="margin-top:12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;
+                    background:#F4F9FD;border:1px solid #CDE4F2;border-radius:9px;padding:9px 12px">
+          <label style="font-size:12.5px;font-weight:600;color:#12557E">📅 Data do relatório</label>
+          <input type="date" id="eg-data-relatorio" style="padding:6px 10px;border:1px solid var(--borda);border-radius:7px;font-family:'Inter',sans-serif;font-size:12.5px">
+          <span style="font-size:11.5px;color:var(--muted)">é a data em que esse saldo foi visto — não a de hoje, se o relatório for antigo</span>
+        </div>
         <div style="margin-top:12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
           <button class="btn btn-primary" onclick="egProcessar()">🔍 Processar Relatório</button>
           <button class="btn btn-outline" onclick="egLimpar()">🗑 Limpar</button>
@@ -1275,7 +1286,7 @@ async function showPage(name, el) {
   if (name === 'comparativo') renderComparativo();
   if (name === 'competitividade') renderCompetitividade();
   if (name === 'pedidos-compra') { carregarPedidos(); }
-  if (name === 'estoque-global') { pcRenderAguardando(); }
+  if (name === 'estoque-global') { pcRenderAguardando(); egPrepararData(); egAvisoEstoqueVelho(); }
   if (name === 'compras-cliente') { cpcInit(); }
   if (name === 'clientes-dash') { cdInit(); }
   if (name === 'itens-a-cotar') { iacCarregar(); }
@@ -2484,7 +2495,8 @@ function buildGrupos(filtro) {
     const _tipoOp = (function(t){ t=(t||'').toLowerCase(); if(t==='industria') return 'industria'; if(t==='global'||t==='estoque próprio'||t==='estoque proprio') return 'global'; return 'distribuidor'; })(c.tipo);
     const _nova = { forn, marca: c.marca||'—', compra, produto: c.produto, und: 'UN',
                     pack: _u.pack||1, incerto: _u.status==='conferir', bruto: _u.bruto,
-                    estoque: parseInt(c.estoque||0), quando: _cmpQuando(c), tipo: _tipoOp };
+                    estoque: parseInt(c.estoque||0), estoqueEm: c.estoque_em || null,
+                    quando: _cmpQuando(c), tipo: _tipoOp };
     const idx = grupos[chave].opcoes.findIndex(o => o.forn===forn && o.marca===(c.marca||'—'));
     if (idx === -1) {
       _nova.linhas = 1;
@@ -2785,6 +2797,8 @@ function renderComparativo(termo, manterLimite) {
             : cmpAvisoConferir(opG)}
           <div style="font-size:10px;color:${temSaldo?'#1B6E97':'#888'};font-weight:${temSaldo?'600':'400'}"
                ${opG.linhas>1?`title="saldo somado de ${opG.linhas} linhas irmãs do mesmo item (o cadastro tem apresentações repetidas)"`:''}>${temSaldo?opG.estoque+' un':'Sem estoque'}${opG.linhas>1?' <span style="font-weight:400;color:#7fa8c4">Σ'+opG.linhas+'</span>':''}</div>
+          ${temSaldo ? `<div style="font-size:9px;color:${egEstoqueVelho(opG.estoqueEm)?'#B02A2A':opG.estoqueEm?'#7fa8c4':'#b8c4cc'};font-weight:${egEstoqueVelho(opG.estoqueEm)?'700':'400'}"
+               title="${opG.estoqueEm?'saldo visto em '+opG.estoqueEm.split('-').reverse().join('/'):'este saldo não tem data — foi importado antes de o sistema registrar a idade do relatório'}">${egEstoqueVelho(opG.estoqueEm)?'🔴 ':''}${egIdadeTxt(opG.estoqueEm)}</div>` : ''}
          </td>`
       : `<td style="text-align:center;padding:6px 10px;border-bottom:0.5px solid #f0f0f0;color:#ccc;font-size:11px">—</td>`;
 
@@ -5207,6 +5221,71 @@ let egProdutos = []; // produtos parseados do relatório
 let egAusentes = []; // globais c/ estoque>0 ausentes do relatório (candidatos a zerar, individual)
 let egZeroVirou1 = 0; // quantos vieram com estoque 0 e entram como 1 (regra permanente de 04/08)
 
+// ── IDADE DO ESTOQUE (Bloco 2 do sync, 05/08) ───────────────────────────────────────────────
+// A data que vai pro banco é a do RELATÓRIO, não a de hoje: relatório impresso na sexta e
+// importado na segunda tem 3 dias de idade, e é essa idade que interessa. Carimbar "hoje"
+// seria inventar frescura — exatamente o que a coluna existe pra impedir.
+function _egDataRelatorio(){
+  const el = document.getElementById('eg-data-relatorio');
+  const v = el && el.value ? el.value : '';
+  if (/^\d{4}-\d{2}-\d{2}$/.test(v)) return v;
+  const h = new Date();   // data LOCAL, nunca toISOString (em UTC-3 de madrugada dá o dia errado)
+  return `${h.getFullYear()}-${String(h.getMonth()+1).padStart(2,'0')}-${String(h.getDate()).padStart(2,'0')}`;
+}
+// "há N dias" a partir de uma data ISO. NULL não vira "hoje": vira "idade desconhecida", que é
+// a verdade das 1.381 linhas que já estavam no banco antes desta coluna existir.
+function egIdade(iso){
+  if (!iso) return null;
+  const d = new Date(iso + 'T12:00:00');           // meio-dia evita a virada por fuso
+  if (isNaN(d)) return null;
+  const h = new Date(); h.setHours(12,0,0,0);
+  return Math.round((h - d) / 86400000);
+}
+function egIdadeTxt(iso){
+  const n = egIdade(iso);
+  if (n === null) return 'sem data';
+  if (n <= 0) return 'hoje';
+  if (n === 1) return 'ontem';
+  return `há ${n} dias`;
+}
+// >3 dias = espelho velho (limiar do Bloco 2). Saldo velho é pior que saldo ausente: com "sem
+// estoque" o vendedor vai atrás do fornecedor; com "12 un" de três semanas atrás ele PROMETE
+// ao cliente e descobre na separação que não tem. O número velho não parece velho.
+const EG_DIAS_VELHO = 3;
+function egEstoqueVelho(iso){ const n = egIdade(iso); return n !== null && n > EG_DIAS_VELHO; }
+
+// data do relatório nasce em HOJE (o caso comum); quem importa relatório antigo corrige à mão
+function egPrepararData(){
+  const el = document.getElementById('eg-data-relatorio');
+  if (el && !el.value) el.value = _egDataRelatorio();
+}
+// Aviso de espelho velho no topo da tela de estoque. Olha a data MAIS RECENTE do estoque
+// próprio: se nem ela é fresca, tudo o que a tela mostra está velho.
+function egAvisoEstoqueVelho(){
+  const box = document.getElementById('eg-aviso-idade');
+  if (!box) return;
+  const proprio = (cotacoes||[]).filter(c => String(c.fornecedor)==='1');
+  if (!proprio.length) { box.style.display='none'; return; }
+  const comData = proprio.map(c => c.estoque_em).filter(Boolean).sort();
+  const semData = proprio.length - comData.length;
+  const maisNova = comData.length ? comData[comData.length-1] : null;
+
+  let cor, txt;
+  if (!maisNova) {
+    // as 1.381 linhas de antes desta coluna. NULL é "idade desconhecida", nunca "hoje".
+    cor = '#8A6D00'; txt = `⚠️ <b>Idade do estoque desconhecida.</b> As ${proprio.length.toLocaleString('pt-BR')} linhas foram importadas antes de o sistema passar a registrar a data do relatório. O próximo import já grava.`;
+  } else if (egEstoqueVelho(maisNova)) {
+    cor = '#B02A2A'; txt = `🔴 <b>Espelho velho:</b> o relatório mais recente é de <b>${egIdadeTxt(maisNova)}</b> (${maisNova.split('-').reverse().join('/')}). Saldo velho vira promessa que a separação não cumpre — vale reimportar.`;
+  } else {
+    cor = '#1E7A4E'; txt = `✅ Estoque conferido <b>${egIdadeTxt(maisNova)}</b> (${maisNova.split('-').reverse().join('/')}).`;
+  }
+  if (semData && maisNova) txt += ` <span style="opacity:.75">${semData.toLocaleString('pt-BR')} linha(s) ainda sem data.</span>`;
+  box.style.display = '';
+  box.style.color = cor;
+  box.style.borderColor = cor + '55';
+  box.innerHTML = txt;
+}
+
 // ══ UPLOAD DE PDF (caminho principal) ═════════════════════════════════════════
 // Camada A: pdf.js (CDN, grátis, no navegador) extrai o texto agrupando itens por
 // posição Y da página (senão as colunas embaralham). Joga o texto no MESMO parser
@@ -5791,6 +5870,7 @@ async function egExecutarReal() {
         if (existente) {
           await sbPatch('cotacoes', String(existente.id), {
             estoque: p.estoque,
+            estoque_em: _egDataRelatorio(),      // quando esse saldo foi VISTO
             global_venda1: p.venda1,
             global_venda2: p.venda2
           });
@@ -5804,6 +5884,7 @@ async function egExecutarReal() {
           produto: p.produto,
           marca: p.marca,
           estoque: p.estoque,
+          estoque_em: _egDataRelatorio(),
           global_venda1: p.venda1,
           global_venda2: p.venda2,
           tipo: 'global'

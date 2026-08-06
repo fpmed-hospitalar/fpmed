@@ -149,6 +149,17 @@ de negócio** (o bloco 4, "Alvos de Compra Direta", foi marcado 🟡 justamente 
 alta). ⚠️ E agora o `limedtec-config.js` também **diverge do molde de origem** (a correção do
 `data-tema` de 05/08) — conferir antes de sobrescrever.
 
+| **11** | **ABRIR_FILA.bat inicia o Claude já com "continua a fila"** | 🆕 entrou 05/08, fim da fila |
+
+**Item 11 — o que ele pediu**: 2 cliques = fila rodando. Além do backup que já roda, o `.bat`
+deve iniciar o Claude Code **já com o comando** (`claude "continua a fila"` ou equivalente que a
+sintaxe do CLI aceitar), sem ele digitar nada.
+⚠️ **Restrição real, registrada pra não virar teste falso**: ele pediu "fechar tudo, dar 2
+cliques e confirmar que retoma sozinho". Isso **não dá pra validar de dentro de uma sessão em
+andamento** — lançar o `.bat` de dentro do Claude abriria uma sessão aninhada, que é justamente
+o cenário que o teste NÃO quer provar. É trabalho de fronteira: fazer a alteração, e a validação
+real acontece no próximo boot dele (ou ele mesmo dá os 2 cliques e me conta).
+
 ### Histórico da ordem anterior (04/08, fim do dia)
 
 1. 🔄 **LICITAÇÕES V1 — EM ANDAMENTO** (commit `71d313f`). Spec: `LICITACOES_SPEC.md`.
