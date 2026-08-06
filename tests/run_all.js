@@ -25,4 +25,22 @@ for (const s of suites) {
 console.log('\n───────────────────────────────');
 console.log('TOTAL: ' + totalOk + ' asserts ok, ' + totalFail + ' falha(s) em ' + suites.length + ' suites');
 console.log(suitesFail ? '>>> ' + suitesFail + ' SUITE(S) COM FALHA' : '>>> TUDO VERDE');
+
+// >>> AS SUITES DE BANCO NAO RODAM AQUI, E ISSO PRECISA APARECER (06/08/2026).
+//     Elas exigem rede + a DB_PASSWORD do segredos.local.txt, entao este runner, que e offline,
+//     nunca as chamou. O problema nao era esse — era o SILENCIO: em 06/08 a tabela `perfis`
+//     ficou SEM RLS e LEGIVEL PELA ANON num repo publico, e o guard que pega exatamente isso
+//     (tests/db/testa_rls_cobertura.js) ja existia e estava verde por nao ter sido chamado.
+//     "TUDO VERDE" sem esta lista se le como "conferi tudo", e nao era verdade.
+try {
+  const dbDir = path.join(dir, 'db');
+  const dbs = fs.readdirSync(dbDir).filter(f => /^testa_.*\.js$/.test(f)).sort();
+  if (dbs.length) {
+    console.log('\n>>> NAO RODADAS AQUI (exigem banco + segredos): ' + dbs.length + ' suite(s) em tests/db/');
+    for (const d of dbs) console.log('      node tests/db/' + d);
+    console.log('    Rode-as antes de dizer que o sistema esta conferido — em especial a');
+    console.log('    testa_rls_cobertura, que e a que pega tabela aberta pro anon.');
+  }
+} catch (e) { console.log('\n>>> nao consegui listar tests/db (' + e.message + ')'); }
+
 process.exitCode = suitesFail ? 1 : 0;
