@@ -201,6 +201,46 @@ Criado em 21/07/2026 copiando SO os arquivos do app do C:\globalmed.
 >>> ONDE PARAMOS — 06/08/2026, RODADA 6. LEIA ISTO PRIMEIRO.
 ========================================
 
+>>> !! INVESTIGACAO 06/08 — "por que so a FPMED cai?" RESPOSTA MEDIDA: ela nao e a unica que
+    cai, e a unica que AVISA. NAO era rede, NAO era cota, NAO era compute. !!
+    O defeito da sessao existe IDENTICO no gm-auth da Global (refresh devolvendo false pros dois
+    casos, sem timeout, boot pedindo senha com rede fora). O que difere e o SINAL:
+      - `revoke ... from anon` aparece 0 vez nos .sql da Global e 14 vezes nos da FPMED;
+      - tabela COM grant pro anon, sessao caida -> HTTP 200 com [] (tela vazia, em silencio);
+      - tabela SEM grant, sessao caida -> HTTP 401 (a mensagem vermelha).
+      - a FPMED tinha DUAS geracoes: 12 novas revogadas (401) + 10 antigas com grant (200 []).
+    Por isso o mesmo defeito parecia dois problemas, e por isso a Global "nao cai": la ele
+    falha calado. TELA VAZIA E PIOR QUE ERRO VERMELHO — "0 produtos" alguem acredita e compra
+    em cima. CORRIGIDO: ddl/fecha_anon_tabelas_antigas.sql fecha as 10 (anon 200 [] -> 401).
+    Provado: anon 401 · authenticated com grant nas 10 · diretor real le as 8.832 cotacoes.
+    NUMEROS (medidos, nao supostos):
+      latencia: FPMED 43,3ms de media x GLOBAL 52,5ms — a FPMED e a MAIS RAPIDA
+      gateway 24h: 1.355 requisicoes, ~49 erros (3,6%), TODOS classificados e ZERO 5xx.
+        25 sao `/rest/v1/` 401 = as MINHAS sondas de latencia de hoje. 8 sao 400 no licitacoes.
+        3 sao /auth/v1/token 400 (esse e o sintoma da sessao). 3 sao 404 de tabela que nao existe
+        (dicionario_marca_pa — o ddl/01 do kit nao foi rodado; a giovana ja degrada de proposito).
+      postgres 48h: so checkpoint e os meus DDLs. ZERO erro, ZERO OOM, ZERO cancelamento.
+      consultas reais cronometradas: a mais pesada (view cmed_teto, group by sobre 25.702) = 206ms.
+        Nenhuma passa de 220ms. NAO ha consulta lenta nem indice faltando.
+    >>> CONCLUSAO: o compute Nano NAO e gargalo de nada medido. Micro (~US$10/mes, coberto pelo
+        credito de compute do Pro) vale como FOLGA DE RAM (0,5GB -> 1GB), nao como correcao.
+        A troca REINICIA o banco (1-2 min): so no horario que ele escolher.
+    >>> A correcao da sessao no gm-auth DA GLOBAL esta disponivel pra reaplicar quando ele quiser
+        (o arquivo de la esta no estado original).
+
+>>> !! BACKUP — DEFEITO GRAVE ACHADO E CORRIGIDO (06/08) !!
+    A tarefa LIMEDTEC-backup-002 rodava, gravava "saida=0" e ficava VERDE salvando 11 das 22
+    tabelas. As 11 de fora eram as construidas de 04/08 em diante (licitacoes, negocios,
+    cmed_precos, cmed_pf, perfis, jornais, empresas, pack_confirmado, contatos_industria,
+    licitacoes_acompanhadas, coleta_status): 56.586 das 71.703 linhas SEM COPIA NENHUMA.
+    CAUSA: lista de nomes escrita a mao, copiada do db_schema.sql de 22/07.
+    CORRECAO: o backup agora DESCOBRE as tabelas no proprio banco (indice do PostgREST) — tabela
+    criada semana que vem entra sozinha. E tabela que falha faz sair com codigo 2, pra tarefa
+    agendada ficar VERMELHA. Rodado: 22 tabelas, 71.703 linhas, exit 0.
+    Suite nova testa_backup_cobertura (18) -> 1.439 asserts / 0 falhas / 43 suites.
+    BACKUP DO SUPABASE: com o Pro, os diarios estao ATIVOS (8 listados, o ultimo 06/08 07:56
+    COMPLETED, walg_enabled=true). PITR segue desligado (e addon pago a parte).
+
 PORTE FECHADO (06/08): USUARIOS E ACESSOS — 2 dos 8 arquivos que faltavam do molde.
   Secao 12.1 do TAREFAS. limedtec-usuarios.html + limedtec-sessao.js (molde puro, so leitura da
   origem). SEM ESSA TELA, depois do 1o gestor o resto era SQL na mao — era a maior das 8.
