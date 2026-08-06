@@ -1524,6 +1524,7 @@ async function salvarCotacao() {
   }
   // BLINDAGEM (Adicionar Manualmente): preço parece de CAIXA? (mercado por peer OU sanidade absoluta sem peer)
   const _und = document.getElementById('cot-unidade').value;
+  if (!_podeGravar('o salvamento desta cotação')) return;
   const _pc = pareceCaixaPeer(produto, _und, document.getElementById('cot-principio').value, preco) || pareceCaixaSanidade(produto, _und, preco);
   if (_pc && !confirm(`🔴 O preço unitário R$${preco.toFixed(4)} PARECE PREÇO DE CAIXA — ÷${_pc.qtd} = R$${_pc.corr} por unidade${_pc.pmin!=null?` (mercado ~R$${_pc.pmin.toFixed(4)})`:` (${_pc.forma})`}.\n\nOK = salvar assim mesmo · Cancelar = corrigir p/ ÷qtd`)) return;
   const fornId = document.getElementById('cot-fornecedor').value;
@@ -5840,8 +5841,22 @@ async function egDesfazer() {
   } catch(e) { alert('❌ Desfazer falhou: ' + e.message); }
 }
 
+// Guarda de aba velha. Fica num helper com queda pra `true` porque o limedtec-pwa.js só carrega
+// em HTTPS: em file:// ou localhost ele não existe, e a ausência dele não pode travar a tela.
+function _podeGravar(acao){
+  try { return !window.LIMEDTEC_PWA || !window.LIMEDTEC_PWA.confirmarSeAbaVelha
+              || window.LIMEDTEC_PWA.confirmarSeAbaVelha(acao); } catch(e){ return true; }
+}
+
 async function egExecutarReal() {
   if (egProdutos.length === 0) return;
+  // A escrita em massa do estoque é o pior lugar pra rodar código velho: são até 1.381 linhas
+  // num único clique. Se a aba está desatualizada, pergunta antes (não bloqueia).
+  if (!_podeGravar('a atualização do estoque')) {
+    document.getElementById('eg-status-proc').innerHTML +=
+      '<div style="margin-top:6px;color:#8A6D00;font-size:12px">Gravação cancelada — recarregue a página (F5) e processe o relatório de novo.</div>';
+    return;
+  }
 
   // BLINDAGEM: não grava nome de linha grudada sem confirmação explícita (senão recria os PREDNISOLONA FUROSEMIDA)
   const suspeitos = egProdutos.filter(p => p._suspeito);

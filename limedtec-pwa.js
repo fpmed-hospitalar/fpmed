@@ -117,4 +117,39 @@
       location.reload();
     });
   });
+
+  // ── VACINA DE CACHE: a aba velha nao pode GRAVAR calada ─────────────────────────────────
+  // O aviso "Nova versao disponivel" e passivo de proposito (recarregar no meio de uma cotacao
+  // de 40 linhas perde o trabalho de quem digita). So que passivo tem um custo: a aba fica
+  // aberta, o usuario ignora a faixa, e horas depois clica em GRAVAR -- rodando codigo VELHO
+  // contra o banco ATUAL. Ja aconteceu em instalacao real, com versionamento de `?v=` no <script>.
+  //
+  // O caso caro nao e a tela feia: e a escrita. Se o codigo velho tem um defeito que ja foi
+  // corrigido -- e hoje mesmo saiu daqui uma funcao que gravava preco de caixa como unitario --
+  // a aba velha reintroduz o defeito NO DADO, e ninguem liga o problema ao cache.
+  //
+  // Isto NAO bloqueia: pergunta. Bloquear seria pior que o defeito em dia de PNCP fora e
+  // relatorio pra importar. Quem decide continua sendo quem esta na frente da tela.
+  var _regSw = null;
+  if (navigator.serviceWorker && navigator.serviceWorker.getRegistration) {
+    navigator.serviceWorker.getRegistration().then(function (r) { _regSw = r || null; }).catch(function () {});
+  }
+  function abaDesatualizada() {
+    try { return !!(_regSw && _regSw.waiting && navigator.serviceWorker.controller); }
+    catch (e) { return false; }
+  }
+  // `acao` entra na pergunta pra ela ser especifica ("atualizar o estoque"), nao um alerta
+  // generico que se aprende a clicar em OK sem ler.
+  function confirmarSeAbaVelha(acao) {
+    if (!abaDesatualizada()) return true;
+    return window.confirm(
+      'Esta aba esta rodando uma versao ANTIGA do sistema — ja existe uma nova instalada.\n\n'
+      + 'Continuar ' + (acao || 'esta gravacao') + ' agora usa o codigo velho contra o banco atual, '
+      + 'e pode gravar dado errado sem dar erro.\n\n'
+      + 'Cancelar = recarregar a pagina primeiro (recomendado)\n'
+      + 'OK = gravar assim mesmo');
+  }
+  window.LIMEDTEC_PWA = window.LIMEDTEC_PWA || {};
+  window.LIMEDTEC_PWA.abaDesatualizada = abaDesatualizada;
+  window.LIMEDTEC_PWA.confirmarSeAbaVelha = confirmarSeAbaVelha;
 })();
