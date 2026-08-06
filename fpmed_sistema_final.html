@@ -1348,11 +1348,38 @@ async function deletarFornecedor(id) {
   } catch(e) { toast('Erro: ' + e.message, 'error'); }
 }
 function preencherSelects() {
-  ['cot-fornecedor','filtro-fornecedor-cot'].forEach(id => {
-    const s = document.getElementById(id);
+  // O FORMULÁRIO de nova cotação continua nascendo da tabela `fornecedores`: pra GRAVAR é
+  // preciso o `codigo_fornecedor` de lá, não dá pra inventar código a partir de um nome.
+  const s = document.getElementById('cot-fornecedor');
+  if (s) {
     const first = s.options[0].outerHTML;
     s.innerHTML = first + fornecedores.map(f => `<option value="${f.id}">${f.nome}</option>`).join('');
-  });
+  }
+  preencherFiltroFornecedor();
+}
+
+// ── FILTRO DE FORNECEDOR DAS COTAÇÕES (Bloco 2 do sync, 05/08) ─────────────────────────────
+// ESTAVA 100% MORTO, por dois motivos somados:
+//   1. o dropdown nascia da tabela `fornecedores`, que tem ZERO linhas neste banco — então ele
+//      só tinha "Todos fornecedores". Não havia nada pra escolher.
+//   2. mesmo com a tabela cheia, o `value` era o `id` da tabela e o filtro comparava com
+//      `c.fornecedor`, que guarda o CÓDIGO ('1', '18', 'SANTA CRUZ'). id × código nunca bate.
+// (Na Global o mesmo defeito matava 44 dos 48 valores; aqui matava os 46.)
+//
+// A CORREÇÃO: o dropdown nasce do que EXISTE nas cotações carregadas — que é exatamente o
+// universo que o usuário pode filtrar — e casa pelo NOME já normalizado (`fornecedor_nome`),
+// que é o mesmo texto que ele lê na coluna da tabela. Filtro que oferece opção inexistente, ou
+// que mostra uma coisa e compara outra, é pior que filtro nenhum: parece que não há resultado.
+function preencherFiltroFornecedor() {
+  const s = document.getElementById('filtro-fornecedor-cot');
+  if (!s) return;
+  const sel = s.value;                                  // preserva a escolha entre recargas
+  const cont = {};
+  (cotacoes || []).forEach(c => { const n = c.fornecedor_nome || 'FPMED'; cont[n] = (cont[n] || 0) + 1; });
+  const nomes = Object.keys(cont).sort((a, b) => cont[b] - cont[a] || a.localeCompare(b));
+  s.innerHTML = '<option value="">Todos fornecedores</option>'
+    + nomes.map(n => `<option value="${n.replace(/"/g,'&quot;')}">${n} (${cont[n]})</option>`).join('');
+  if (sel && nomes.includes(sel)) s.value = sel;
 }
 
 // ─── COTAÇÕES ─────────────────────────────────────────────────────────────────
@@ -1370,6 +1397,8 @@ async function carregarCotacoes() {
     _falhaCarga('Não consegui carregar as cotações: ' + (e && e.message ? e.message : e));
     throw e;
   }
+  // o filtro de fornecedor nasce das cotações, então só pode ser montado DEPOIS delas
+  preencherFiltroFornecedor();
   renderCotacoes(cotacoes);
   renderDashboard();
 }
@@ -1463,7 +1492,9 @@ function filtrarCotacoes() {
   const t = document.getElementById('filtro-tipo').value;
   renderCotacoes(cotacoes.filter(c =>
     (!b || c.produto.toLowerCase().includes(b) || (c.principio_ativo||'').toLowerCase().includes(b)) &&
-    (!f || c.fornecedor === f || (c.fornecedor||'').toLowerCase().includes(f.toLowerCase())) &&
+    // casa pelo NOME normalizado — o mesmo texto que o usuário vê na coluna e escolheu no
+    // dropdown. Comparar com `c.fornecedor` (código) era o que deixava o filtro morto.
+    (!f || (c.fornecedor_nome || 'FPMED') === f) &&
     (!t || c.tipo === t)
   ));
 }
@@ -4970,7 +5001,7 @@ function gerarBlocoFornecedores(p, porForn, emissao, apenasAlgunsForn=false) {
     </tr>`).join('');
 
     html += `<div style="margin-bottom:12px">
-      <div style="background:#0d1b2a;color:white;padding:6px 12px;border-radius:6px 6px 0 0;font-size:11px;font-weight:600;display:flex;justify-content:space-between">
+      <div style="background:#173A5E;color:white;padding:6px 12px;border-radius:6px 6px 0 0;font-size:11px;font-weight:600;display:flex;justify-content:space-between">
         <span>🏢 ${nomeForn(forn).toUpperCase()}</span><span style="opacity:.7">${itensForn.length} item(ns)</span>
       </div>
       <table style="width:100%;border-collapse:collapse;border:1px solid #e0e0e0;border-top:none">
@@ -5006,13 +5037,11 @@ function gerarJanelaPedido(rows, totalGeral, emissao, nPedidos, nForn) {
     body{font-family:Arial,sans-serif;font-size:11px;padding:20px;max-width:297mm;margin:0 auto;}
     .hdr{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #000;padding-bottom:10px;margin-bottom:14px;}
     .logo{background:#fff;padding:7px 12px;border-radius:5px;}
-    .logo .n{font-size:15px;font-weight:800;color:white;}
-    .logo .s{font-size:7px;color:#29b8ff;letter-spacing:3px;}
     .emp{text-align:center;font-size:9px;line-height:1.7;}
     .emp strong{font-size:10px;display:block;}
-    .tit{background:#0d1b2a;color:white;padding:7px 12px;border-radius:5px;margin-bottom:14px;display:flex;justify-content:space-between;}
+    .tit{background:#173A5E;color:white;padding:7px 12px;border-radius:5px;margin-bottom:14px;display:flex;justify-content:space-between;}
     .tit h2{font-size:12px;color:white;margin:0;}
-    .total-bar{background:#0d1b2a;color:white;padding:9px 14px;border-radius:5px;margin-top:14px;display:flex;justify-content:space-between;align-items:center;}
+    .total-bar{background:#173A5E;color:white;padding:9px 14px;border-radius:5px;margin-top:14px;display:flex;justify-content:space-between;align-items:center;}
     .foot{margin-top:12px;font-size:9px;color:#777;border-top:1px solid #eee;padding-top:7px;display:flex;justify-content:space-between;}
     @media print{body{padding:0;}@page{size:A4;margin:8mm;}}
   </style></head><body>
@@ -5086,7 +5115,7 @@ async function imprimirPedido(id) {
         <td style="padding:6px 10px;text-align:center;font-size:11px;color:#222">${(i.vencimento||i.validade)?new Date(i.vencimento||i.validade).toLocaleDateString('pt-BR'):'—'}</td>
       </tr>`).join('');
       return `<div style="margin-bottom:20px">
-        <div style="background:#0d1b2a;color:white;padding:8px 12px;border-radius:6px 6px 0 0;font-size:13px;font-weight:700;display:flex;justify-content:space-between;-webkit-print-color-adjust:exact;print-color-adjust:exact">
+        <div style="background:#173A5E;color:white;padding:8px 12px;border-radius:6px 6px 0 0;font-size:13px;font-weight:700;display:flex;justify-content:space-between;-webkit-print-color-adjust:exact;print-color-adjust:exact">
           <span>🏢 FORNECEDOR: ${nomeForn(forn).toUpperCase()}</span>
           <span style="opacity:.85">${itensForn.length} item(ns)</span>
         </div>
@@ -5121,15 +5150,13 @@ async function imprimirPedido(id) {
       *{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
       .hdr{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #000;padding-bottom:12px;margin-bottom:16px;}
       .logo{background:#fff;padding:8px 14px;border-radius:6px;}
-      .logo .n{font-size:16px;font-weight:800;color:white;}
-      .logo .s{font-size:7px;color:#29b8ff;letter-spacing:3px;}
       .emp{text-align:center;font-size:9px;line-height:1.8;color:#111;}
       .emp strong{font-size:11px;display:block;}
-      .tit{background:#0d1b2a;color:white;padding:8px 14px;border-radius:6px;margin-bottom:16px;display:flex;justify-content:space-between;}
+      .tit{background:#173A5E;color:white;padding:8px 14px;border-radius:6px;margin-bottom:16px;display:flex;justify-content:space-between;}
       .tit h2{font-size:13px;color:white;margin:0;}
       .info{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;padding:10px 14px;background:#eef3f7;border-radius:6px;border:1px solid #bcc7d0;font-size:10px;color:#111;}
       .info strong{color:#000;}
-      .total-bar{background:#0d1b2a;color:white;padding:10px 14px;border-radius:6px;margin-top:16px;display:flex;justify-content:space-between;align-items:center;}
+      .total-bar{background:#173A5E;color:white;padding:10px 14px;border-radius:6px;margin-top:16px;display:flex;justify-content:space-between;align-items:center;}
       .foot{margin-top:14px;font-size:9px;color:#333;border-top:1px solid #ccc;padding-top:8px;display:flex;justify-content:space-between;}
       @media print{body{padding:0;}@page{size:A4;margin:10mm;}}
     </style></head><body>
