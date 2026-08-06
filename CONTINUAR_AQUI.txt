@@ -254,8 +254,17 @@ ITEM 9, 2o PEDACO FECHADO (06/08): NOTIFICACOES — o sininho no header do funil
   Com erro de leitura o sino diz "NAO SEI", nao "nada abre hoje".
   Suite nova testa_notificacoes (30) -> 1.239 asserts / 0 falhas / 38 suites.
 
->>> PROXIMO DA FILA: item 11 (ABRIR_FILA.bat inicia o Claude ja com "continua a fila").
-    Depois, do item 9 sobram: Meus Jornais (3o — busca salva da pra fazer; o E-MAIL exige
+ITEM 11 FECHADO (06/08): ABRIR_FILA.bat. Secao 11.1 do TAREFAS. O MECANISMO ja estava certo
+  (claude --dangerously-skip-permissions "<prompt>" abre sessao interativa -- conferido no
+  --help). O DEFEITO era o CONTRATO: os dois .bat mandavam textos diferentes, e o ABRIR_FILA
+  -- o dos 2 cliques -- mandava so "continua a fila", SEM as regras (nada de DELETE/UPDATE sem
+  OK, commit+CONTINUAR+push por task, relatorio unico). Rodada automatica com contrato mais
+  fraco que a manual. Agora o prompt vive em .claude/prompt_fila.txt, lido pelos DOIS.
+  Provado com um .bat de teste que imprime o comando montado (nao abre sessao aninhada).
+  Suite nova testa_abrir_fila (31) -> 1.270 asserts / 0 falhas / 39 suites.
+  >>> A PROVA FINAL E O PROXIMO BOOT DELE: fechar tudo, 2 cliques no ABRIR_FILA.bat.
+
+>>> FILA: acabou o que estava acionavel. Do item 9 sobram (todos com dependencia externa): Meus Jornais (3o — busca salva da pra fazer; o E-MAIL exige
     provedor = CUSTO, decisao dele), ANALISE (5o — bloqueado ate achar o endpoint de
     resultados/atas do PNCP), JURIDICO (6o — projeto de coleta de acervo, nao tela) e a
     validade de documento do sino (depende de "Meus Documentos", que nao existe).

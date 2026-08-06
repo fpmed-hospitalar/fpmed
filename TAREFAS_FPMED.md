@@ -129,7 +129,38 @@ qualquer um, e a configuração da Global **não serve** (os nomes são de lá).
 | **8** | Calendário FASE 2 | ✅ **CONCLUÍDO 06/08** — 2.555 linhas, taxa de vitória 15,2% |
 | **10** | Coleta agendada do PNCP + banco próprio | ✅ **CONCLUÍDO 06/08** — edge function no ar + Actions 3x/dia (ver 10.1). 1 passo do Lemuel: o secret no GitHub |
 | **9** | **SIGA / funil de Negócios** | 🟡 **2 ETAPAS CONCLUÍDAS 06/08** — 1ª: Funil + Tarefas + Agenda (9.1). 4ª: Pesquisa avançada + Órgãos + Desertas (9.2). Faltam Notificações, Meus Jornais, Análise e Jurídico |
-| **11** | `ABRIR_FILA.bat` inicia o Claude com "continua a fila" | 🆕 fim da fila |
+| **11** | `ABRIR_FILA.bat` inicia o Claude com "continua a fila" | ✅ **CONCLUÍDO 06/08** — o mecanismo já existia; o defeito era o **contrato** (ver 11.1) |
+
+### 11.1 — ABRIR_FILA.bat ✅ (06/08/2026) — o mecanismo estava certo, o **contrato** não
+
+**O mecanismo já existia** e está correto: `claude --dangerously-skip-permissions "<prompt>"`.
+Confirmado no `claude --help` desta máquina — `claude [options] [prompt]` **abre sessão
+interativa** com o prompt (o `-p/--print` é que seria não-interativo), e o flag
+`--dangerously-skip-permissions` continua válido.
+
+**O defeito era o texto, e era sério**: os dois `.bat` mandavam prompts **diferentes**. O
+`ABRIR_FILA.bat` — justamente o dos "2 cliques" — mandava só **"continua a fila"**, sem
+*"nunca DELETE/UPDATE de dados sem OK"*, sem *"commit + CONTINUAR + push a cada task"*, sem
+*"relatório único"*. Dois cliques abriam uma rodada automática com **contrato mais fraco que o
+da rodada manual** — e ninguém notaria até a rodada fazer algo que a regra proibia.
+
+**Correção**: o prompt passou a viver em **`.claude/prompt_fila.txt`**, lido pelos dois. Mudar
+a regra da rodada é editar **um** lugar, e os dois não têm como divergir de novo.
+Entrou junto: `where claude` **antes** do backup (falhar cedo custa menos) e aborto explícito
+com `pause` quando o arquivo do prompt some — em vez de abrir rodada sem contrato.
+
+**Detalhes de batch que quebram em silêncio, travados na suíte**: `for /f "usebackq delims="`
+(sem `delims=` o prompt seria cortado no 1º espaço), arquivo de **uma linha só** (o `for /f`
+guarda a última — 3 linhas mandariam só a 3ª, sem erro na tela), **sem BOM** (3 bytes entrariam
+no comando), **só ASCII**, sem `"` e sem `%`.
+
+**Prova feita**: rodei um `.bat` de teste que executa só a parte da leitura e **imprime o
+comando que seria disparado** — voltou a instrução inteira, com as barras e o hífen intactos.
+> ⚠️ O que **não** dá pra provar daqui continua igual: lançar o `.bat` de dentro do Claude
+> abriria sessão **aninhada**, que é o cenário que o teste não quer provar. A prova final é o
+> próximo boot dele. *(A suíte registra essa limitação em vez de fingir cobertura.)*
+
+Suíte nova `testa_abrir_fila` (**31 asserts**). Total: **1.270 asserts / 0 falhas / 39 suítes**.
 
 ### 9.3 — NOTIFICAÇÕES (o sininho) ✅ (2ª das 6 etapas do item 9, 06/08/2026)
 

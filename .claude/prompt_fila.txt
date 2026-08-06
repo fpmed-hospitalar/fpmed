@@ -1,0 +1,1 @@
+Le o CONTINUAR_AQUI e continua a fila de tarefas na ordem, trabalhando sozinho. Nunca executa DELETE/DROP/TRUNCATE/UPDATE de dados sem OK - se precisar, pula e anota. Decisao de negocio acumula pro checkpoint. Commit + CONTINUAR + push a cada task. No final, relatorio unico.
