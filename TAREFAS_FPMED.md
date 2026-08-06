@@ -128,8 +128,54 @@ qualquer um, e a configuração da Global **não serve** (os nomes são de lá).
 | **4** | Blocos 2 e 4 do sync de código | ✅ **CONCLUÍDO 06/08** |
 | **8** | Calendário FASE 2 | ✅ **CONCLUÍDO 06/08** — 2.555 linhas, taxa de vitória 15,2% |
 | **10** | Coleta agendada do PNCP + banco próprio | ✅ **CONCLUÍDO 06/08** — edge function no ar + Actions 3x/dia (ver 10.1). 1 passo do Lemuel: o secret no GitHub |
-| **9** | **SIGA / funil de Negócios** | 🟡 **1ª ETAPA CONCLUÍDA 06/08** — Funil + Tarefas + Agenda no ar, semeado com as 2.555 linhas. Falta o resto das abas (ver 9.1 abaixo) |
+| **9** | **SIGA / funil de Negócios** | 🟡 **2 ETAPAS CONCLUÍDAS 06/08** — 1ª: Funil + Tarefas + Agenda (9.1). 4ª: Pesquisa avançada + Órgãos + Desertas (9.2). Faltam Notificações, Meus Jornais, Análise e Jurídico |
 | **11** | `ABRIR_FILA.bat` inicia o Claude com "continua a fila" | 🆕 fim da fila |
+
+### 9.2 — PESQUISA AVANÇADA + ÓRGÃOS + DESERTAS ✅ (4ª das 6 etapas do item 9, 06/08/2026)
+
+**Os filtros novos saem do que o PNCP REALMENTE entrega** — levantado dos registros já
+coletados (`select jsonb_object_keys(bruto)`), não da documentação: `usuarioNome` (portal),
+`modoDisputaNome`, `situacaoCompraNome`, `srp`, `valorTotalEstimado`, `orgaoEntidade`,
+`unidadeOrgao`.
+
+**O portal é o filtro que mais vale aqui.** Nos 70 registros coletados apareceram **14 portais**
+(BNC, BLL, Licitanet, Compras.gov.br, Licitar Digital, SISLOG-GO, Megasoft, Prodata, CENTI…), e
+o **item 8 mediu a taxa de vitória da FPMED por portal**: BNC 23,0% · LICITANET 22,9% · BLL
+19,6% · GOV.BR 13,0%. Dá pra procurar oportunidade **onde a empresa historicamente ganha mais**.
+A lista de opções sai do próprio resultado — fixar 19 portais na mão envelheceria sozinha.
+
+**Decisão registrada — o refino filtra o RESULTADO, no navegador, e não vira parâmetro de
+consulta.** Dois motivos, e o segundo decide: (1) o PNCP não aceita nenhum deles como filtro;
+(2) empurrar só no caminho do banco criaria **dois filtros com a mesma intenção** e
+implementações diferentes — é sempre esse par que diverge com o tempo. Efeito colateral bom:
+trocar um filtro **não vai à rede**, numa fonte que caiu ~6× em 3 dias.
+
+**Duas coisas que a tela não pode fazer, e não faz:**
+1. **Sumir com licitação em silêncio.** Todo critério ativo vira **pill** acima da lista, e o
+   resultado vazio avisa *"há refino ligado — talvez seja ele, e não a busca"*. Sem isso, lê-se
+   "só tem 3 licitações hoje" quando a verdade é "3 passaram no refino de ontem".
+2. **Cortar licitação SEM valor estimado** na faixa de valor — dispensa costuma vir sem
+   estimado, e é justamente a oportunidade pequena que a FPMED disputa. A faixa filtra quem tem.
+   *(E o portal que some do resultado volta pra "Todos" sozinho: manter a escolha zeraria a
+   lista por um critério que não está mais na tela.)*
+
+**DESERTAS — só dado declarado, nunca inferência.** Duas fontes: `situacaoCompraNome`
+(Revogada/Anulada/Suspensa) e `situacaoCompraItemNome` dos itens (Deserto/Fracassado), que a
+tela já lê no cruzamento. O selo **sempre** carrega o motivo no `title`.
+> ⛔ **O que NÃO fiz, de propósito**: inferir deserta de *"encerrou e não tem
+> `valorTotalHomologado`"*. Homologação leva **semanas** — essa regra encheria a lista de
+> processo **em andamento** e mandaria alguém atrás de licitação viva achando que caducou. Um
+> filtro que erra assim é pior que filtro nenhum: custa o dia de quem confiou nele.
+> Consequência honesta e dita na tela: a marca por item só aparece **depois** de cruzar.
+
+**ÓRGÃOS**: view `v_orgaos_licitantes` (`ddl/orgaos.sql`) derivada da `licitacoes` — a spec
+pediu derivar "sem crawler novo". `security_invoker = on` pra herdar a RLS (senão viraria porta
+lateral pra ler a tabela sem política). A tela imprime **de quantas licitações o diretório
+saiu**: ele conhece o que coletamos, **não é cadastro nacional** — senão alguém conclui "esse
+órgão não compra isso" quando a verdade é "ainda não coletamos". Já funciona com dado real:
+ESTADO DE GOIÁS (6 licitações, R$ 10,3 mi), MUNICÍPIO DE BOM JESUS (5), ACREÚNA (4)…
+
+Suíte nova `testa_pesquisa_avancada` (**71 asserts**). Total: **1.209 asserts / 0 falhas / 37 suítes**.
 
 ### 10.1 — COLETA AGENDADA ✅ (item 10 fechado em 06/08/2026)
 
