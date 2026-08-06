@@ -1226,6 +1226,27 @@ const SUPA_URL2 = 'https://xzdowrksuswekwffoluk.supabase.co';
 const SUPA_KEY2 = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh6ZG93cmtzdXN3ZWt3ZmZvbHVrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ2NzE2MTMsImV4cCI6MjEwMDI0NzYxM30.Pk-SlV_pZdniESyrajDdfHdHcnmyCwCMtP_TrShh75Y';
 const SH = { 'Content-Type': 'application/json', 'apikey': SUPA_KEY2, 'Authorization': 'Bearer ' + SUPA_KEY2 };
 
+// ─── OS ARRAYS DE DADOS, DECLARADOS ──────────────────────────────────────────────────────────
+// >>> DEFEITO CORRIGIDO EM 07/08/2026, e ele estava escondido desde sempre: `cotacoes`,
+//     `cotacoesCache` e `fornecedores` NUNCA foram declaradas. Elas nasciam como GLOBAL
+//     IMPLÍCITA, na primeira atribuição (`cotacoes = dados`, lá na carga). Enquanto essa linha
+//     não rodasse, qualquer leitura de `cotacoes` estourava
+//     `ReferenceError: cotacoes is not defined`.
+//
+//     Enquanto tudo dava certo, ninguém via: a atribuição acontecia antes de qualquer leitura.
+//     O tratamento de falha que entrou hoje lê `cotacoes` no `catch` — pra decidir se mantém o
+//     último dado bom na tela — e o `catch` roda justamente quando a carga NÃO aconteceu. Aí a
+//     variável ainda não existia, e o ReferenceError SUBSTITUÍA o erro de verdade: em vez de
+//     "sua sessão expirou", o operador lia "cotacoes is not defined".
+//
+//     >>> A LIÇÃO É SOBRE O CAMINHO DE ERRO, NÃO SOBRE A VARIÁVEL. Código que só roda quando
+//         algo dá errado é o menos exercitado do sistema — e foi o primeiro lugar onde uma
+//         global implícita de meses cobrou o preço. Declarar é o conserto; o alerta é que todo
+//         `catch` novo precisa valer também no estado mais cru da página.
+var cotacoes = [];        // as cotações carregadas (o dado que quase toda tela usa)
+var cotacoesCache = [];   // cópia para os filtros trabalharem sem mexer no original
+var fornecedores = [];    // preenchido no boot; alimenta selects e o de-para de nome
+
 // ─── O SELO DE STATUS DIZ O QUE A ÚLTIMA CONSULTA DEU ────────────────────────────────────────
 // DEFEITO CORRIGIDO EM 06/08/2026 (o Lemuel viu no ar): o rodapé mostrava "Sem conexão"
 // enquanto o dashboard exibia dados recém-carregados do próprio Supabase. O selo mentia.

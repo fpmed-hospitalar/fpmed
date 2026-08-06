@@ -197,5 +197,28 @@ const carregado  = () => { EL['tabela-recentes'].innerHTML = '<table>dados</tabl
   }
 }
 
+// ══════════ 8. O CAMINHO DE ERRO TEM QUE VALER NO ESTADO MAIS CRU DA PAGINA ══════════
+// REGRESSAO REAL de 07/08, vista pelo Lemuel no app: o dashboard mostrou
+// "Nao consegui falar com o banco agora: cotacoes is not defined".
+// `cotacoes`, `cotacoesCache` e `fornecedores` NUNCA foram declaradas -- nasciam como GLOBAL
+// IMPLICITA na primeira atribuicao. Enquanto tudo dava certo ninguem via, porque a atribuicao
+// vinha antes de qualquer leitura. O tratamento de falha novo le `cotacoes` no CATCH -- que
+// roda justamente quando a carga NAO aconteceu -- e o ReferenceError SUBSTITUIU o erro de
+// verdade: em vez de "sua sessao expirou", o operador leu "cotacoes is not defined".
+//
+// >>> A LICAO E SOBRE O CAMINHO DE ERRO: codigo que so roda quando algo da errado e o menos
+//     exercitado do sistema. Foi o primeiro lugar onde uma global implicita de meses cobrou.
+{
+  for (const v of ['cotacoes', 'cotacoesCache', 'fornecedores']) {
+    ok('35.`' + v + '` e DECLARADA antes de qualquer uso (nao e global implicita)',
+      new RegExp('^var ' + v + ' = \\[\\];', 'm').test(src));
+  }
+  ok('36. *** e a declaracao vem ANTES do catch que le a variavel ***',
+    src.indexOf('var cotacoes = [];') < src.indexOf('mantendo o último dado bom'),
+    { decl: src.indexOf('var cotacoes = [];'), uso: src.indexOf('mantendo o último dado bom') });
+  ok('37. ...e antes do proprio sbGet, que e quem estoura primeiro',
+    src.indexOf('var cotacoes = [];') < src.indexOf('async function sbGet'));
+}
+
 console.log('\nRESULTADO: ' + p + ' ok, ' + f + ' falha(s)');
 if (f) process.exit(1);
