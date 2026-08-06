@@ -1,0 +1,60 @@
+LIMEDTEC - O MOLDE: OS 33 ARQUIVOS QUE UM CLIENTE NOVO RECEBE
+==============================================================================================
+GERADO por tools/gera_kit_molde.js a partir da lista viva de tools/cria_cliente.js.
+NAO EDITE A MAO. O tests/testa_kit.js compara este arquivo com a lista de la a cada rodada da
+suite - se os dois discordarem, a suite fica vermelha.
+
+A LISTA E EXPLICITA, e nao "copia tudo menos". A diferenca importa: com "tudo menos", um arquivo
+de dado novo entra no molde de todo cliente por omissao, e ninguem percebe ate ele chegar la.
+Com lista explicita, o que entra e o que alguem escreveu que entra.
+
+O QUE NAO ESTA AQUI, DE PROPOSITO:
+  - nenhum arquivo de dado (.json de import, .csv, .xlsx, backups)
+  - o cliente.config.js: ele e ESCRITO pelo cria_cliente, nao copiado - copiar levaria o banco
+    e a marca do cliente anterior
+  - o segredos.local.txt: e gitignore e tem a service_role
+  - a GLOBALMED-loja.html: nao esta no molde, entao nao custa nada por cliente
+
+==============================================================================================
+  1. index.html
+  2. globalmed_giovana.html
+  3. globalmed_painel.html
+  4. globalmed_vendedora.html
+  5. globalmed_vendas.html
+  6. dashboard_clientes.html
+  7. calculadora_comissao_globalmed.html
+  8. reset-senha.html
+  9. globalmed_sistema_final.html
+ 10. globalmed_viabilidade.html
+ 11. limedtec-usuarios.html
+ 12. limedtec-estoque.html
+ 13. gm-auth.js
+ 14. motor_busca.js
+ 15. limedtec-config.js
+ 16. limedtec-licenca.js
+ 17. limedtec-pwa.js
+ 18. sw.js
+ 19. limedtec-papeis.js
+ 20. limedtec-sessao.js
+ 21. limedtec-estoque-leitor.js
+ 22. vendor/pdfjs/pdf.min.mjs
+ 23. vendor/pdfjs/pdf.worker.min.mjs
+ 24. vendor/pdfjs/LEIA-ME.md
+ 25. IMPORTAR_ESTOQUE.bat
+ 26. tools/le_pdf_estoque.js
+ 27. tools/importa_estoque_erp.js
+ 28. tools/cria_atalho_estoque.ps1
+ 29. icones/limedtec.ico
+ 30. manifest.webmanifest
+ 31. icones/limedtec-192.png
+ 32. icones/limedtec-512.png
+ 33. icones/limedtec-512-maskable.png
+==============================================================================================
+Os 33 existem no repositorio de origem.
+
+COMO COPIAR:
+  node tools/cria_cliente.js --destino <pasta do cliente> --id 002 --nome FPMED
+  (sem --destino ele so imprime a previa e nao escreve nada)
+
+COMO CONFERIR DEPOIS:
+  node tools/verifica_instalacao.js <pasta do cliente>

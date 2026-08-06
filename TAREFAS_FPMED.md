@@ -131,6 +131,79 @@ qualquer um, e a configuração da Global **não serve** (os nomes são de lá).
 | **9** | **SIGA / funil de Negócios** | 🟡 **2 ETAPAS CONCLUÍDAS 06/08** — 1ª: Funil + Tarefas + Agenda (9.1). 4ª: Pesquisa avançada + Órgãos + Desertas (9.2). Faltam Notificações, Meus Jornais, Análise e Jurídico |
 | **11** | `ABRIR_FILA.bat` inicia o Claude com "continua a fila" | ✅ **CONCLUÍDO 06/08** — o mecanismo já existia; o defeito era o **contrato** (ver 11.1) |
 
+### 12 — INSTALAÇÃO PELO KIT (06/08/2026) — placar **24 ✓ · 3 ✗**, de 17 ✓ · 9 ✗ · 1 ?
+
+Kit puxado de `C:\globalmed\kit_cliente` (**só leitura**; a Global não foi tocada — `git status`
+de lá segue com os arquivos da sessão *dela*, nenhum meu). Cópia local em `kit_cliente/`.
+
+**Feito, na ordem do roteiro:**
+| passo | o que foi feito | prova |
+|---|---|---|
+| 2 | `id` 001 → **002**; campos de documento no config | verificador: seção 1 toda verde |
+| 3 | `ddl/03_perfis_e_papeis.sql` aplicado | rodou **2×** sem erro (idempotência provada rodando, não lendo) |
+| 4 | os **2 gestores** inseridos | `select papel from perfis` → 2 × `gestor_geral` |
+| 5 | `gera_manifest.js --aplicar` | `short_name=FPMED` |
+| 6 | suíte | **1.305 asserts / 0 falhas / 40 suítes** |
+| 8 | backup agendado **próprio** | tarefa `LIMEDTEC-backup-002`, disparada à mão: `saida=0` |
+| 9 | verificador | **24 ✓ · 3 ✗ · 0 não conferido** |
+
+**O `id` era 001 e isso quebrava a checagem mais importante.** O verificador usa `id === '001'`
+para decidir *"esta pasta é a da origem"* — com 001 aqui, ele **exigia que o banco fosse o da
+GlobalMed**. A checagem mais crítica da instalação estava invertida. Nada no código lê o campo
+(zero ocorrências), então a troca é de rótulo — reversível numa linha.
+
+**Dados da empresa**: o kit espera `empresa` (objeto); aqui a decisão dele (05/08) foi
+`empresas[]` (lista, pra 2 CNPJs). Resolvido **sem criar segunda verdade**: o singular é
+**derivado** da lista no fim do config. Endereço/telefone não são dados novos — estavam escritos
+à mão no PDF desde 22/07; só vieram pro lugar onde o molde procura.
+
+#### ⛔ O QUE **NÃO** RODEI, e por quê (cada um é decisão dele)
+1. **`02_operacao.sql`** — cria 17 tabelas, entre elas **`prospects` e `prospeccoes`**. A regra
+   master #3 da FPMED é **SEM Prospecção**. Rodar reintroduziria, no banco, escopo que ele
+   excluiu. Junto vem **`comissoes_isadora`** — tabela com o nome de uma pessoa da GlobalMed (o
+   próprio roteiro registra isso como pendência). *(E o verificador manda rodar o 02 pra criar
+   `perfis` — mas `perfis` está no 03. É defeito da mensagem dele.)*
+2. **`04_markup_e_view_vendedor.sql`** — faz `create or replace view cotacoes_vendedor`. Essa
+   view **já existe aqui** e tem `security_invoker=FALSE`, que é **pré-condição documentada**:
+   se virar `on`, a restritiva do 05 tira o sistema inteiro do vendedor. Substituir às cegas
+   mexe justamente nesse parafuso.
+3. **`05_rls_e_policies.sql`** — é a migração que já estava **parada esperando OK**. Ela
+   `drop policy` em 45 policies e liga RLS restritiva. Aqui convivem **dois gates**: o
+   `cargo_gestor()` de 24/07 (`cot_sel/ins/upd/del`, que o 05 **não** derruba) e o
+   `limedtec_pode()` novo. O Postgres **soma permissiva E restritiva**, então ler `cotacoes`
+   passaria a exigir os dois. Os 2 usuários atuais passam nos dois — mas usuário novo criado só
+   com perfil ficaria trancado fora sem mensagem clara.
+4. **`06_central_saude.sql`** — publica uma view agregada da FPMED **pra LIMEDTEC Central**, que
+   é o painel do dono do produto. Dado da FPMED saindo pra fora é decisão dele + COMPLIANCE.
+5. **`red_test_papeis.js`** (passo 7) — cria 3 usuários e **APAGA** os 3. A regra da rodada
+   proíbe DELETE sem OK.
+
+#### 🚨 ACHADOS QUE VOLTAM PRO KIT (defeitos do produto, não da FPMED)
+1. **O verificador e o red test carregam o `ref` do projeto Supabase da GlobalMed hardcoded.**
+   Copiei os dois pra cá e o `testa_compliance` ficou **vermelho na hora** (3 falhas). O repo da
+   FPMED é **público**: commitar aquilo publicaria o ref da Global. **Removi antes de commitar**
+   e rodei o verificador direto da pasta da Global. Todo cliente novo receberia isso.
+   *Correção sugerida: a checagem vira genérica — "o `ref` do config bate com o do resto do
+   repo" — em vez de nomear o projeto de outra empresa.*
+2. **A tarefa agendada dá verde com o backup de OUTRO cliente.** O verificador procura
+   "limedtec" no `schtasks`; nesta máquina existe a `LIMEDTEC-backup-001`, da Global, apontando
+   pra `C:\globalmed`. A FPMED não tinha backup agendado nenhum e o item saía ✓. Criei a
+   **`LIMEDTEC-backup-002`** com nome próprio. *Correção sugerida: casar a tarefa pela pasta que
+   ela executa, não pelo prefixo do nome.*
+3. **A lista do molde compara nomes literais da origem** (`globalmed_*.html`), então toda
+   instalação rebrandada nasce com esse item vermelho — 5 arquivos daqui existem, só com o nome
+   do cliente.
+
+#### 📦 E o item do molde revelou uma pendência REAL (não era só falso negativo)
+Dos 20 que ele acusou: **5** existem rebrandados · **2** estão fora por decisão de escopo
+(Prospecção e a calculadora da Isadora) · e **8 faltam de verdade** — a FPMED está atrás do
+molde atual: `limedtec-usuarios.html` (a tela que cadastra usuário — sem ela, depois do primeiro
+gestor o resto é SQL na mão), o **importador de estoque por PDF** (`limedtec-estoque.html`,
+`limedtec-estoque-leitor.js`, `le_pdf_estoque.js`, `importa_estoque_erp.js`, `IMPORTAR_ESTOQUE.bat`,
+`cria_atalho_estoque.ps1`, `vendor/pdfjs/*`), `motor_busca.js`, `limedtec-sessao.js` e
+`icones/limedtec.ico`. **Portar isso é SYNC com rebrand** (`SYNC_GLOBAL.md`, "nunca às cegas") —
+entra na fila, não sai de efeito colateral da instalação.
+
 ### 11.1 — ABRIR_FILA.bat ✅ (06/08/2026) — o mecanismo estava certo, o **contrato** não
 
 **O mecanismo já existia** e está correto: `claude --dangerously-skip-permissions "<prompt>"`.

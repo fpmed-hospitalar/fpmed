@@ -201,6 +201,22 @@ Criado em 21/07/2026 copiando SO os arquivos do app do C:\globalmed.
 >>> ONDE PARAMOS — 06/08/2026, RODADA 5. LEIA ISTO PRIMEIRO.
 ========================================
 
+>>> INSTALACAO PELO KIT (06/08) — placar 24 ✓ · 3 ✗ (era 17 ✓ · 9 ✗ · 1 nao conferido).
+    Secao 12 do TAREFAS. Kit puxado de C:\globalmed\kit_cliente SO LEITURA (a Global nao foi
+    tocada). Aplicados: config (id 001->002 + campos de documento), ddl/03 (perfis + funcoes +
+    trava do ultimo gestor, rodado 2x pra provar idempotencia), os 2 gestores, manifest,
+    backup agendado PROPRIO (LIMEDTEC-backup-002, disparado a mao, saida=0).
+    OS 3 QUE FALTAM: equipe (decisao dele) · lista do molde (5 falso-negativo + 2 fora de
+    escopo + 8 PENDENCIA REAL de sync) · policy RESTRICTIVE (e o ddl/05, parado esperando OK).
+    NAO RODEI de proposito: 02 (cria prospects/prospeccoes -> viola a regra master #3, e
+    comissoes_isadora), 04 (recria a view cotacoes_vendedor viva), 05 (a migracao parkeada que
+    pode trancar todo mundo), 06 (manda dado da FPMED pro painel do dono) e o red_test (APAGA
+    3 usuarios). Cada um esta explicado na secao 12.
+    >>> 3 DEFEITOS DO KIT achados e devolvidos: o verificador e o red_test carregam o ref do
+        Supabase da GLOBAL hardcoded (o testa_compliance ficou vermelho na hora; o repo daqui e
+        PUBLICO — removi antes de commitar); a checagem de backup agendado da VERDE com a
+        tarefa de outro cliente; e a lista do molde compara nomes literais da origem.
+
 >>> URGENCIA ATENDIDA 06/08 (fura-fila do Lemuel): "o sistema perde o banco de vez em quando,
     mensagem vermelha dizendo que as tabelas nao estao la". NAO ERA O BANCO NEM A REDE.
     Medido: as 20 tabelas/views respondem 200 logado e 401 sem sessao, com o corpo

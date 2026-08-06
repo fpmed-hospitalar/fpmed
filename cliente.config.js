@@ -12,11 +12,18 @@
    ═══════════════════════════════════════════════════════════════════════════════════════════ */
 (function (raiz) {
   var CFG = {
-    // O rotulo "001" veio do pedido do Lemuel (FPMED = primeiro cliente externo do produto).
-    // NOTA PRA QUANDO EXISTIR UM REGISTRO CENTRAL DE CLIENTES: a instalacao de origem tambem se
-    // chama 001 no config dela. Como cada instalacao vive num repo e num banco proprios, hoje
-    // nao ha colisao de fato — mas no dia de listar clientes num lugar so, um dos dois muda.
-    id: '001',
+    // >>> MUDOU DE '001' PARA '002' EM 06/08/2026, ao instalar o kit. Registrando o porque, e
+    //     como desfazer: o rotulo "001" veio de um pedido do Lemuel (FPMED = primeiro cliente
+    //     EXTERNO). So que a instalacao de origem tambem se chama 001, e o kit_cliente que
+    //     chegou hoje ja trata a FPMED como **002** (roteiro e cliente.config.EXEMPLO.js).
+    //     O dia da colisao chegou junto com o verificador: ele usa `id === '001'` pra decidir
+    //     "esta pasta E a de origem", e com 001 aqui ele EXIGIA que o banco fosse o da origem —
+    //     invertendo a checagem mais importante da instalacao. Com 002, a checagem volta a
+    //     significar o que deve: "o banco e o DESTE cliente".
+    //     Nada no codigo le este campo (conferido: zero ocorrencias de CLIENTE.id no repo), entao
+    //     a troca e de rotulo. Se o Lemuel preferir 001, e uma linha — mas ai o verificador
+    //     precisa de outro criterio pra saber quem e a origem.
+    id: '002',
     nome: 'FPMED',
     nomeCompleto: 'FPMED Hospitalar',
 
@@ -49,13 +56,21 @@
     //    sistema_final, desde o rebrand de 22/07. Sao duas fontes da mesma verdade. Unificar
     //    exige mexer no documento que vai pro cliente, o que e mudanca de outra natureza —
     //    fica como item proprio, nao como efeito colateral deste.
+    // >>> OS CAMPOS DE DOCUMENTO (endereco/cidadeUf/telefone) ENTRARAM EM 06/08, com o kit.
+    //     Eles ja existiam no sistema desde o rebrand de 22/07, escritos a mao no cabecalho do
+    //     PDF de proposta e no sistema_final. Trazer pra ca NAO e criar dado novo: e trazer pro
+    //     lugar onde o molde procura. Sao os dados de registro que o Lemuel passou em 22/07.
     empresas: [
       {
         razaoSocial: 'FPMED DISTRIBUIDORA DE PRODUTOS HOSPITALARES LTDA',
         cnpj: '47.110.418/0001-15',
         ie: '10.947.387-9',
+        endereco: 'RUA 09, S/N, QUADRA 55 A, LOTE 0002, VILA BRASILIA, CEP 74.911-080',
         cidade: 'APARECIDA DE GOIANIA',
         uf: 'GO',
+        cidadeUf: 'APARECIDA DE GOIANIA - GO',
+        telefone: '(62) 3290-4241',        // fixo institucional (o WhatsApp comercial e (62) 98147-9532)
+        email: 'comercial@fpmed.com.br',
         principal: true,
       },
     ],
@@ -84,6 +99,14 @@
       icones: 'icones/',
     },
   };
+
+  // ── `empresa` (singular): a MESMA empresa principal, no formato que o molde procura ────────
+  // O kit (06/08) padronizou `empresa` como OBJETO; aqui a decisao do Lemuel (05/08) foi LISTA,
+  // pra caber cliente com 2 CNPJs. As duas formas convivem sem virar duas verdades: o singular
+  // e DERIVADO da lista, nao copiado. Editar a lista muda os documentos junto, e nao ha o dia
+  // em que alguem corrige um lugar e esquece o outro.
+  CFG.empresa = (CFG.empresas || []).filter(function (e) { return e.principal; })[0]
+             || (CFG.empresas || [])[0] || {};
 
   raiz.LIMEDTEC_CLIENTE = CFG;
   if (typeof module !== 'undefined' && module.exports) module.exports = CFG;
