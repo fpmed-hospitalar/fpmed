@@ -878,7 +878,8 @@ select.filter{padding:8px 12px;border:1px solid var(--borda);border-radius:9px;f
           <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:2px;background:#9FE1CB;display:inline-block"></span>✅ Menor preço</span>
           <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:2px;background:#FFF8E1;border:1px solid #E0C86A;display:inline-block"></span>⚠ pack desconhecido — fora das contas</span>
           <span style="color:#333;font-weight:600">Todo preço é UNITÁRIO. <span style="font-weight:400">"un · cx100" = preço da caixa dividido por 100.</span></span>
-          <button id="comp-btn-analise" onclick="compToggleAnalise()" style="margin-left:auto;font-size:11px;padding:5px 12px;border:1px solid #C4B5FD;border-radius:7px;background:#fff;color:#5B21B6;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;white-space:nowrap">📊 ver análise</button>
+          <button id="comp-btn-familia" onclick="compToggleFamilia()" title="agrupa por princípio ativo + forma; a comparação continua sendo por dose" style="margin-left:auto;font-size:11px;padding:5px 12px;border:1px solid #B9E0F5;border-radius:7px;background:#fff;color:#1B6E97;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;white-space:nowrap">🧬 por família</button>
+          <button id="comp-btn-analise" onclick="compToggleAnalise()" style="font-size:11px;padding:5px 12px;border:1px solid #C4B5FD;border-radius:7px;background:#fff;color:#5B21B6;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;white-space:nowrap">📊 ver análise</button>
         </div>
         <div style="display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap">
           <div style="font-size:12px;color:var(--muted)" id="comp-sel-info">0 produtos</div>
@@ -2757,7 +2758,47 @@ function renderComparativo(termo, manterLimite) {
   }
 
   const totalLinhas = compLista.length;
-  const rows = compLista.slice(0, compLimite).map((g, idx) => {
+  // ── VISÃO POR FAMÍLIA (Bloco 2 do sync, 05/08) ─────────────────────────────────────────
+  // Com 5.759 grupos, procurar "as dipironas" é rolar a tela até achar. A visão por família
+  // junta o que é o MESMO princípio ativo na MESMA forma farmacêutica sob uma linha-mãe.
+  //
+  // >>> A LINHA-MÃE NÃO TEM PREÇO, E ISSO É A REGRA, NÃO ESQUECIMENTO. Dose nunca se mistura:
+  //     DIPIRONA 500MG/ML e DIPIRONA 1G são o mesmo PA e a mesma forma, e um preço "da família"
+  //     seria a média de coisas que ninguém compra juntas. A mãe é uma DIVISÓRIA — diz o que
+  //     vem embaixo e quantas doses são. Quem compara continua sendo a linha da dose.
+  //     Forma separada pelo mesmo motivo: comprimido e injetável não disputam a mesma cotação.
+  const _visiveis = compLista.slice(0, compLimite);
+  const _familiaDe = g => {
+    const pa = _cpzPaNorm(g.principioAtivo || g.principio || '');
+    const fm = (typeof _bmForma === 'function' ? _bmForma(g.produtoOriginal || '') : null) || 'SEM FORMA';
+    return (pa || 'SEM PA') + ' · ' + fm;
+  };
+  const _ordenados = compFamilia
+    ? _visiveis.slice().sort((a, b) => _familiaDe(a).localeCompare(_familiaDe(b))
+        || String(a.principio).localeCompare(String(b.principio)))
+    : _visiveis;
+  const _nCols = 3 + (compAnalise ? 5 : 0) + distribuidores.length + industrias.length;
+  let _famAtual = null;
+
+  const rows = _ordenados.map((g, idx) => {
+    let _cabFam = '';
+    if (compFamilia) {
+      const fam = _familiaDe(g);
+      if (fam !== _famAtual) {
+        _famAtual = fam;
+        const nDoses = _ordenados.filter(x => _familiaDe(x) === fam).length;
+        const comSaldo = _ordenados.filter(x => _familiaDe(x) === fam && x.estoqueGlobal > 0).length;
+        _cabFam = `<tr><td colspan="${_nCols}" style="padding:9px 14px;background:#EDF4FA;border-top:2px solid #2CA9E0;border-bottom:1px solid #CDE4F2">
+          <span style="font-family:'Montserrat',sans-serif;font-weight:700;font-size:12.5px;color:#12557E;letter-spacing:.2px">${fam}</span>
+          <span style="font-size:11px;color:#4A5B6B;margin-left:10px">${nDoses} dose(s)${comSaldo?` · <b style="color:#1B6E97">${comSaldo} com saldo</b>`:''}</span>
+          <span style="font-size:10.5px;color:#8496A6;margin-left:10px" title="preço de família seria a média de doses que ninguém compra juntas">a comparação é por dose, abaixo</span>
+        </td></tr>`;
+      }
+    }
+    return _cabFam + _linhaComparativo(g, idx);
+  }).join('');
+
+  function _linhaComparativo(g, idx) {
     const isSel = compSelecionados.has(g.chave);
     // >>> `certas` = só o que tem unitário SABIDO. Toda conta (mínimo, média, ranking, margem)
     //     roda em cima disto. As opções "conferir emb." continuam aparecendo na tela, mas não
@@ -2911,7 +2952,7 @@ function renderComparativo(termo, manterLimite) {
       </td>
       ${celGlobal}${compAnalise ? celMedia+celSeuPreco+celFonte+celDelta+celValeComprar : ''}${celDist}${celInd}
     </tr>`;
-  }).join('');
+  }
 
   // header da coluna Δ vs melhor + SCORECARD (linha extra sob o cabeçalho: cobertura + win rate + idade média)
   const thDelta = `<th style="text-align:center;min-width:80px;padding:8px 10px;background:#F3F4F6;color:#374151;font-size:10px;font-weight:600;border-bottom:0.5px solid #D1D5DB;white-space:nowrap">📐 Δ vs melhor<br><span style="font-weight:400;font-size:9px">folga de negociação</span></th>`;
@@ -2964,6 +3005,16 @@ function compToggleAnalise(){
   compAnalise = !compAnalise;
   const b = document.getElementById('comp-btn-analise');
   if (b) { b.textContent = compAnalise ? '📊 ocultar análise' : '📊 ver análise'; b.style.background = compAnalise ? '#EDE9FE' : '#fff'; }
+  renderComparativo(undefined, true);
+}
+
+// Visão por FAMÍLIA: agrupa PA + forma farmacêutica sob uma linha-mãe. A mãe não tem preço
+// de propósito — ver o comentário longo no renderComparativo.
+var compFamilia = false;
+function compToggleFamilia(){
+  compFamilia = !compFamilia;
+  const b = document.getElementById('comp-btn-familia');
+  if (b) { b.textContent = compFamilia ? '🧬 sem agrupar' : '🧬 por família'; b.style.background = compFamilia ? '#EAF6FD' : '#fff'; }
   renderComparativo(undefined, true);
 }
 
