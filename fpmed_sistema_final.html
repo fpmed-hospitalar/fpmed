@@ -2456,14 +2456,25 @@ function buildGrupos(filtro) {
                     estoque: parseInt(c.estoque||0), quando: _cmpQuando(c), tipo: _tipoOp };
     const idx = grupos[chave].opcoes.findIndex(o => o.forn===forn && o.marca===(c.marca||'—'));
     if (idx === -1) {
+      _nova.linhas = 1;
       grupos[chave].opcoes.push(_nova);
     } else {
-      // preço SABIDO sempre ganha de preço incerto, mesmo sendo maior — entre um número
-      // confiável e um que talvez seja de caixa, o confiável é o que serve pra decidir.
+      // ── DEDUPE: o PREÇO é o menor, mas o SALDO SOMA (Bloco 2 do sync, 05/08) ──────────────
+      // O dedupe guardava só uma linha por fornecedor+marca e jogava fora o saldo das irmãs.
+      // Aqui isso morde de verdade: o estoque próprio tem 474 linhas duplicadas que vêm da
+      // PRÓPRIA planilha de origem (469 chaves código+produto repetidas, auditado 04/08). Se a
+      // linha mais barata era a de saldo 0, o item sumia do filtro "Só Estoque FPMED" — com
+      // unidade na prateleira. O operador procurava o que tinha em casa e não achava.
+      // Somar é o certo: são apresentações irmãs do MESMO item, e é o que a Competitividade
+      // já faz. O preço continua sendo o menor — quem compra quer o menor, não a média.
       const ant = grupos[chave].opcoes[idx];
+      const saldo = (ant.estoque || 0) + (_nova.estoque || 0);
+      const nLinhas = (ant.linhas || 1) + 1;
       if ((ant.incerto && !_nova.incerto) || (ant.incerto === _nova.incerto && compra < ant.compra)) {
         grupos[chave].opcoes[idx] = _nova;
       }
+      grupos[chave].opcoes[idx].estoque = saldo;      // o saldo soma independente de quem venceu no preço
+      grupos[chave].opcoes[idx].linhas = nLinhas;
     }
   });
 
@@ -2741,7 +2752,8 @@ function renderComparativo(termo, manterLimite) {
           ${globalMin!=null
             ? `<div style="font-size:12px;font-weight:700;color:${temSaldo?'#12557E':'#444'}">${fmtBRL(globalMin)}</div>${cmpBadgePack(globalOps[0])}`
             : cmpAvisoConferir(opG)}
-          <div style="font-size:10px;color:${temSaldo?'#1B6E97':'#888'};font-weight:${temSaldo?'600':'400'}">${temSaldo?opG.estoque+' un':'Sem estoque'}</div>
+          <div style="font-size:10px;color:${temSaldo?'#1B6E97':'#888'};font-weight:${temSaldo?'600':'400'}"
+               ${opG.linhas>1?`title="saldo somado de ${opG.linhas} linhas irmãs do mesmo item (o cadastro tem apresentações repetidas)"`:''}>${temSaldo?opG.estoque+' un':'Sem estoque'}${opG.linhas>1?' <span style="font-weight:400;color:#7fa8c4">Σ'+opG.linhas+'</span>':''}</div>
          </td>`
       : `<td style="text-align:center;padding:6px 10px;border-bottom:0.5px solid #f0f0f0;color:#ccc;font-size:11px">—</td>`;
 

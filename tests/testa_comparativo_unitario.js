@@ -326,5 +326,82 @@ const O = (forn, produto, compra, und) => ({ forn, produto, compra, und: und||nu
   ok('59. "1000ML" nao e lido como "1 unidade" (15BSA segue sem pack conhecido)', u.status === 'conferir', u);
 }
 
+// ══════════ 12. DEDUPE: PRECO E O MENOR, SALDO SOMA (Bloco 2 do sync, 05/08) ══════════
+// O dedupe guardava so uma linha por fornecedor+marca e jogava fora o saldo das irmas. Aqui
+// isso morde de verdade: o estoque proprio tem 474 linhas duplicadas vindas da PROPRIA planilha
+// de origem (469 chaves codigo+produto repetidas, auditado 04/08). Se a linha mais barata era a
+// de saldo 0, o item sumia do filtro "So Estoque FPMED" — com unidade na prateleira.
+function dedupe(linhas){
+  const ops = [];
+  for (const c of linhas) {
+    const nova = { forn: c.forn, marca: c.marca, compra: c.compra, estoque: c.estoque|0,
+                   incerto: !!c.incerto, linhas: 1 };
+    const i = ops.findIndex(o => o.forn === nova.forn && o.marca === nova.marca);
+    if (i === -1) { ops.push(nova); continue; }
+    const ant = ops[i];
+    const saldo = (ant.estoque || 0) + (nova.estoque || 0);
+    const n = (ant.linhas || 1) + 1;
+    if ((ant.incerto && !nova.incerto) || (ant.incerto === nova.incerto && nova.compra < ant.compra)) ops[i] = nova;
+    ops[i].estoque = saldo; ops[i].linhas = n;
+  }
+  return ops;
+}
+{
+  // o caso exato: a linha MAIS BARATA e a que esta zerada
+  const ops = dedupe([
+    { forn:'GLOBAL', marca:'BLAU', compra: 4.20, estoque: 0 },
+    { forn:'GLOBAL', marca:'BLAU', compra: 4.90, estoque: 7 },
+  ]);
+  ok('60. o dedupe deixa UMA opcao', ops.length === 1, ops.length);
+  ok('61. *** o saldo SOMA: 0 + 7 = 7 (o item nao some do filtro "So Estoque") ***', ops[0].estoque === 7, ops[0].estoque);
+  ok('62. e o preco continua sendo o MENOR (quem compra quer o menor, nao a media)', ops[0].compra === 4.20, ops[0].compra);
+  ok('63. e a tela sabe que somou, pra poder avisar', ops[0].linhas === 2, ops[0].linhas);
+}
+{
+  // tres irmas, o menor preco no meio
+  const ops = dedupe([
+    { forn:'GLOBAL', marca:'X', compra: 9, estoque: 2 },
+    { forn:'GLOBAL', marca:'X', compra: 5, estoque: 0 },
+    { forn:'GLOBAL', marca:'X', compra: 7, estoque: 3 },
+  ]);
+  ok('64. tres irmas: saldo 2+0+3 = 5', ops[0].estoque === 5, ops[0].estoque);
+  ok('65. ...e o preco 5 (o menor dos tres)', ops[0].compra === 5, ops[0].compra);
+  ok('66. ...com a contagem certa', ops[0].linhas === 3, ops[0].linhas);
+}
+{
+  // MARCAS diferentes NAO se somam: sao produtos diferentes na mesma linha do comparativo
+  const ops = dedupe([
+    { forn:'GLOBAL', marca:'BLAU',  compra: 4, estoque: 3 },
+    { forn:'GLOBAL', marca:'UNIAO', compra: 6, estoque: 5 },
+  ]);
+  ok('67. *** marcas diferentes NAO somam saldo (sao produtos distintos) ***',
+    ops.length === 2 && ops[0].estoque === 3 && ops[1].estoque === 5, ops.map(o=>o.estoque));
+}
+{
+  // fornecedores diferentes tambem nao
+  const ops = dedupe([
+    { forn:'GLOBAL',    marca:'X', compra: 4, estoque: 3 },
+    { forn:'STOCK MED', marca:'X', compra: 6, estoque: 5 },
+  ]);
+  ok('68. fornecedores diferentes nao somam', ops.length === 2, ops.length);
+}
+{
+  // o saldo soma MESMO quando quem vence no preco e a linha zerada — este e o ponto
+  const ops = dedupe([
+    { forn:'GLOBAL', marca:'X', compra: 4.90, estoque: 7 },
+    { forn:'GLOBAL', marca:'X', compra: 4.20, estoque: 0 },   // esta vence no preco
+  ]);
+  ok('69. a linha vencedora tem saldo 0, mas a opcao final fica com 7', ops[0].estoque === 7 && ops[0].compra === 4.20, ops[0]);
+}
+{
+  // e a regra do incerto continua valendo por cima disso
+  const ops = dedupe([
+    { forn:'GLOBAL', marca:'X', compra: 100, estoque: 2, incerto: true },
+    { forn:'GLOBAL', marca:'X', compra: 9,   estoque: 4, incerto: false },
+  ]);
+  ok('70. preco sabido ganha do incerto, e o saldo soma assim mesmo',
+    ops[0].incerto === false && ops[0].compra === 9 && ops[0].estoque === 6, ops[0]);
+}
+
 console.log('\nRESULTADO: ' + p + ' ok, ' + f + ' falha(s)');
 process.exitCode = f ? 1 : 0;
