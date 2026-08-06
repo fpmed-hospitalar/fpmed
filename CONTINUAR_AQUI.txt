@@ -212,6 +212,24 @@ Suite: 658 asserts verdes / 0 falhas / 24 suites (eram 515 em 20 no inicio da ro
   [OK] 6  Pack (parcial) .... "1 + recipiente" no nome vale como pack 1; CMED por PA+dose
                               DESCARTADO com razao medida (ver TAREFAS, item 6)
 
+--- RODADA 3 (madrugada 06/08) — ITENS 4, 8 e 10 ---
+  [OK] 4  Blocos 2 e 4 do sync .... FECHADO. Bloco 2: dedupe soma saldo · filtro de fornecedor
+          (estava morto pros 46) · estoque_em · lista de cotar pedindo EMBALAGEM · vacina de
+          cache · comparativo por familia. Bloco 4: Alvos de Compra Direta, portada a IDEIA e
+          nao a consulta (a `compras` esta vazia; o sinal sai das 7.195 cotacoes).
+          + verificador de rebrand (tools/confere_rebrand.js) na suite.
+  [OK] 8  Calendario FASE 2 ....... 2.555 linhas em licitacoes_acompanhadas (nao 2.578 -- aquele
+          era o range da planilha). 105 ganhas, R$ 63.034.332,63. TAXA DE VITORIA 15,2%.
+          Por portal: BNC 23,0% · LICITANET 22,9% · BLL 19,6% · GOV.BR 13,0%.
+  [PARCIAL] 10 Coleta PNCP ........ tabela `licitacoes` + coleta_status + tools/coleta_pncp.js
+          (backoff com teto, circuit breaker, incremental) + A TELA LE DO BANCO PRIMEIRO com
+          procedencia ("N do nosso banco · coletados em DD/MM as HH:MM") e botao Atualizar agora.
+          >>> FALTA: a edge function que grava + agendamento (Actions 3x/dia). Depende de deploy
+              com o token do Supabase (segredos.local.txt, expira ~04/09).
+          >>> A TABELA ESTA VAZIA: o PNCP nao respondeu em NENHUMA tentativa de 05/08 (4a queda
+              confirmada em 2 dias). A tela cai pro ao vivo sozinha enquanto isso -- nada
+              regrediu. Rodar `node tools/coleta_pncp.js` quando a API voltar.
+
 --- FALTA NA FILA — ORDEM CORRIGIDA EM 05/08 (decisoes do Lemuel) ---
   >>> A ORDEM MUDOU: o 10 passou na frente do 9. Sequencia vigente: 4 -> 8 -> 10 -> 9.
   >>> E os DOIS itens que estavam esperando ele foram LIBERADOS. Nada mais esta bloqueado.

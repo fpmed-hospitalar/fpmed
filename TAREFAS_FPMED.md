@@ -125,10 +125,11 @@ qualquer um, e a configuração da Global **não serve** (os nomes são de lá).
 ### ⚠️ ORDEM VIGENTE — o que fazer, nesta sequência
 | # | item | estado |
 |---|---|---|
-| **4** | **Blocos 2 e 4 do sync de código** | 🟢 **LIBERADO 05/08** — blocos **2 e 4**, com verificador de rebrand. **← PRÓXIMO** |
-| **8** | **Calendário FASE 2** (gravar as 2.578 linhas) | 🟢 **LIBERADO 05/08** — backup antes + relatório do que entrou |
-| **10** | **Coleta agendada do PNCP + banco próprio** | 🟢 **SUBIU NA FILA — vem ANTES do 9** |
-| **9** | **SIGA / funil de Negócios** | nasce **em cima do banco próprio**, não do PNCP ao vivo |
+| **4** | Blocos 2 e 4 do sync de código | ✅ **CONCLUÍDO 06/08** |
+| **8** | Calendário FASE 2 | ✅ **CONCLUÍDO 06/08** — 2.555 linhas, taxa de vitória 15,2% |
+| **10** | Coleta agendada do PNCP + banco próprio | 🟡 **PARCIAL** — coletor + tela lendo do banco prontos; falta a edge function + agendamento |
+| **9** | **SIGA / funil de Negócios** | **← PRÓXIMO.** Já pode nascer semeado: as 2.555 linhas do item 8 estão no banco |
+| **11** | `ABRIR_FILA.bat` inicia o Claude com "continua a fila" | 🆕 fim da fila |
 
 **Por que o 10 passou na frente do 9** (decisão do Lemuel, 05/08): o funil tem que nascer lendo
 o banco próprio, não o PNCP ao vivo. Construir o 9 primeiro significaria construí-lo sobre uma
