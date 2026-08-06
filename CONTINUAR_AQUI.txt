@@ -212,9 +212,24 @@ Suite: 658 asserts verdes / 0 falhas / 24 suites (eram 515 em 20 no inicio da ro
   [OK] 6  Pack (parcial) .... "1 + recipiente" no nome vale como pack 1; CMED por PA+dose
                               DESCARTADO com razao medida (ver TAREFAS, item 6)
 
---- FALTA NA FILA (nada bloqueado por mim) ---
-  4  Blocos 2/4 do sync ... ESPERA o Lemuel escolher os blocos (SYNC_GLOBAL.md)
-  8  Calendario FASE 2 .... ESPERA OK dele (gravar as 2.578 linhas)
+--- FALTA NA FILA — ORDEM CORRIGIDA EM 05/08 (decisoes do Lemuel) ---
+  >>> A ORDEM MUDOU: o 10 passou na frente do 9. Sequencia vigente: 4 -> 8 -> 10 -> 9.
+  >>> E os DOIS itens que estavam esperando ele foram LIBERADOS. Nada mais esta bloqueado.
+
+  4  Blocos 2/4 do sync ... 🟢 LIBERADO 05/08 -- blocos 2 e 4, com verificador de rebrand.
+                            ** E O PROXIMO DA FILA. **
+                            Regra que ele deu junto: se aparecer escolha especifica dentro dos
+                            blocos, LISTAR AS OPCOES pra ele decidir -- nao decidir sozinho.
+                            ATENCAO: limedtec-config.js DIVERGE do molde de origem desde 05/08
+                            (guarda data-tema) -- nao sobrescrever no porte.
+  8  Calendario FASE 2 .... 🟢 LIBERADO 05/08 -- pode gravar as 2.578 linhas.
+                            Condicoes dele: BACKUP antes + RELATORIO do que entrou.
+                            Vai pra licitacoes_acompanhadas com origem='calendario_2025'.
+                            SEMEIA O FUNIL -- por isso vem antes do item 9.
+  10 Coleta PNCP ......... 🟢 SUBIU: vem ANTES do 9. Razao dele: o funil tem que nascer lendo o
+                            BANCO PROPRIO, nao o PNCP ao vivo. Construir o 9 primeiro seria
+                            construi-lo sobre fonte que caiu 3x em 2 dias (a ultima confirmada
+                            por mim as ~21h de 05/08) -- e depois refazer a camada de dados.
   9  SIGA completo ........ NAO COMECADO. Item grande. **REFERENCIA VISUAL DETALHADA do funil
                             recebida do Lemuel em 05/08 e anexada na secao 6.2.0 do
                             LICITACOES_SPEC.md** — barra de fases com contagem, 3 visualizacoes
@@ -263,8 +278,9 @@ Suite: 658 asserts verdes / 0 falhas / 24 suites (eram 515 em 20 no inicio da ro
   comportamento e layout, nunca codigo/asset/endpoint; registrar no SPEC antes de implementar.
   ⚠️ LIMITE PRATICO DESCOBERTO em 05/08 ~21h: a aba logada dele NAO esta no grupo de abas que a
   automacao enxerga, e aba nova abre o app SEM sessao (tela em branco, 146 elementos, zero
-  texto). Nao tentei login. Pra visitar de verdade, ele precisa mover a aba ja logada pra sessao
-  da automacao, ou avisar onde ela esta.
+  texto). Nao tentei login.
+  >>> RESOLVIDO NO COMBINADO (05/08): e so AVISAR ELE que precisa visitar -- ele arrasta a aba
+      logada pra janela que a automacao enxerga. Nao ficar tentando por conta.
   (Foi nisso que o teste do "SIGA responde com o PNCP fora?" ficou INCONCLUSIVO -- detalhes na
    secao 2.0 do SPEC. A conclusao do indice proprio segue de pe pelos outros dois indicios.)
 
@@ -290,12 +306,14 @@ Suite: 658 asserts verdes / 0 falhas / 24 suites (eram 515 em 20 no inicio da ro
   REFERENCIA DE ARQUITETURA. Consumir aquilo do sistema da FPMED seria uso nao autorizado de
   servico comercial alheio. Nossa fonte e e continua sendo a API publica do PNCP.
 
---- 3 COISAS QUE PRECISAM DELE (nenhuma e bloqueio tecnico) ---
-  (a) ITEM 4: quais blocos do sync de codigo portar (169 commits, curadoria em 5 blocos).
-  (b) ITEM 8: OK pra FASE 2 do Calendario (gravar em licitacoes_acompanhadas).
+--- O QUE AINDA PRECISA DELE (so 2 coisas, e nenhuma bloqueia a fila) ---
+  (a) [RESOLVIDO 05/08] ITEM 4 -- ele liberou os blocos 2 e 4.
+  (b) [RESOLVIDO 05/08] ITEM 8 -- ele liberou a FASE 2.
   (c) ITEM 6: as 85 linhas que seguem sem pack sao material cirurgico e dose unica. Ou
       capturar EAN/GGREM no cadastro (resolve de vez e serve pra outras coisas), ou conferir
       as 85 na mao uma vez e gravar com fonte='manual' na pack_confirmado.
+  (d) SIGA: quando eu precisar visitar de verdade, AVISAR ELE -- ele arrasta a aba logada pra
+      janela que a automacao enxerga. (A aba nova abre sem sessao; ver 6.2.0-Z do SPEC.)
 
 --- O QUE NAO FIZ, DE PROPOSITO ---
   APLICAR OS PAPEIS (limedtec-papeis.js + ddl/papeis.sql) ficou PARADO. A migracao liga uma

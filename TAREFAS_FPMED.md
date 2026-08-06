@@ -119,8 +119,37 @@ qualquer um, e a configuração da Global **não serve** (os nomes são de lá).
 5. Só então aplicar a lista real do Lemuel.
 📌 Registrar no molde/`cria_cliente` que **papéis fazem parte do padrão de todo cliente novo**.
 
-## 📋 FILA ATUAL (ordem definida pelo Lemuel em 04/08/2026, fim do dia)
+## 📋 FILA ATUAL — **ORDEM CORRIGIDA 05/08/2026 (decisões do Lemuel)**
 > Regra: pedido novo entra no FIM da fila. Só "URGÊNCIA" fura. Ver `CONTINUAR_AQUI.txt`.
+
+### ⚠️ ORDEM VIGENTE — o que fazer, nesta sequência
+| # | item | estado |
+|---|---|---|
+| **4** | **Blocos 2 e 4 do sync de código** | 🟢 **LIBERADO 05/08** — blocos **2 e 4**, com verificador de rebrand. **← PRÓXIMO** |
+| **8** | **Calendário FASE 2** (gravar as 2.578 linhas) | 🟢 **LIBERADO 05/08** — backup antes + relatório do que entrou |
+| **10** | **Coleta agendada do PNCP + banco próprio** | 🟢 **SUBIU NA FILA — vem ANTES do 9** |
+| **9** | **SIGA / funil de Negócios** | nasce **em cima do banco próprio**, não do PNCP ao vivo |
+
+**Por que o 10 passou na frente do 9** (decisão do Lemuel, 05/08): o funil tem que nascer lendo
+o banco próprio, não o PNCP ao vivo. Construir o 9 primeiro significaria construí-lo sobre uma
+fonte que **caiu 3× em 2 dias** — a última confirmada por mim às ~21h de 05/08, com a tela
+mostrando "não consegui falar com o PNCP". Depois seria refazer a camada de dados dele.
+
+**Item 8 antes do 9 pelo mesmo motivo, e mais um**: as 2.578 linhas do `Calendario 2025.xlsm`
+são o **histórico próprio de participação** da FPMED e **semeiam o funil** com dado real. Funil
+vazio não se avalia; funil com 2.578 negócios reais, sim.
+
+**Item 4 — o que ainda pode precisar de decisão dele**: a curadoria em 5 blocos está no
+`SYNC_GLOBAL.md`. Ele liberou 2 e 4 em bloco. Se dentro deles aparecer commit que muda **regra
+de negócio** (o bloco 4, "Alvos de Compra Direta", foi marcado 🟡 justamente por isso),
+**listar as opções pra ele escolher** — foi o que ele pediu, não decidir sozinho.
+
+**Item 4 — porte é com REBRAND, sempre**: checklist no `SYNC_GLOBAL.md`. Nunca portar às cegas.
+`sistema_final` / `index` / `gm-auth` / `dashboard_clientes` são **porte MANUAL** (divergência
+alta). ⚠️ E agora o `limedtec-config.js` também **diverge do molde de origem** (a correção do
+`data-tema` de 05/08) — conferir antes de sobrescrever.
+
+### Histórico da ordem anterior (04/08, fim do dia)
 
 1. 🔄 **LICITAÇÕES V1 — EM ANDAMENTO** (commit `71d313f`). Spec: `LICITACOES_SPEC.md`.
    ✅ **A API do PNCP VOLTOU** (estava 504/503 de manhã): 969 ms, 41 licitações em GO em 03/08.
@@ -376,9 +405,15 @@ qualquer um, e a configuração da Global **não serve** (os nomes são de lá).
      **Falta só o fundo azul-claro da célula**, que é coisa nova, não porte.
    - Manter busca, filtro "Só Estoque FPMED" e seleção/exportação.
    - **Teste obrigatório**: CEFALOTINA 475,25 → **4,75 un · cx100**. Screenshot antes/depois.
-4. ⬜ **Blocos 2 e 4** do sync de código. Bloco 2 peça 1/N já entrou (`091ece8`, bug da Melhor
-   Fonte). Faltam: filtro "Só Estoque GLOBAL", `estoque_em` (tem DDL), dropdown/filtro de
-   fornecedor em Cotações, Comparativo por família, Itens a Cotar, vacina de cache.
+4. 🟢 **LIBERADO 05/08 — Blocos 2 e 4** do sync de código, **com verificador de rebrand**.
+   **É O PRÓXIMO DA FILA.** Bloco 2 peça 1/N já entrou (`091ece8`, bug da Melhor Fonte).
+   Faltam: filtro "Só Estoque GLOBAL", `estoque_em` (tem DDL), dropdown/filtro de fornecedor em
+   Cotações, Comparativo por família, Itens a Cotar, vacina de cache. **Bloco 4** = Alvos de
+   Compra Direta (~6 commits, 🟡 marcado como decisão de negócio).
+   📌 **Regra que ele deu junto**: se aparecer escolha específica dentro dos blocos,
+   **listar as opções pra ele decidir** — não decidir sozinho.
+   ⚠️ Ao portar, conferir que `limedtec-config.js` **diverge do molde de origem** desde 05/08
+   (guarda `data-tema`, ver seção da regressão no `CONTINUAR_AQUI.txt`) — não sobrescrever.
 5. ✅ **CONCLUÍDO 05/08 — Estoque 0 → 1 no FLUXO**. A regra valia no DADO desde 04/08 (781
    linhas no seed) mas não no FLUXO — o próximo relatório de estoque desfazia tudo em silêncio,
    e as 781 voltavam a 0 no primeiro import. Regressão que ninguém vê acontecer.
@@ -485,8 +520,14 @@ qualquer um, e a configuração da Global **não serve** (os nomes são de lá).
      ⛔ **Espera OK do Lemuel** — a FASE 2 (gravar) não começou.
      🔒 `*.xlsm` **entrou no `.gitignore`** (a regra cobria `.xlsx`/`.xls` mas não `.xlsm`: o
         arquivo com `VALOR GANHO` estava a um `git add -A` de ir pro repo **público**).
-   - **FASE 2 — gravar SÓ depois do OK explícito do Lemuel**, em cima da proposta da fase 1.
-     Preview antes de qualquer escrita, como em toda carga do projeto.
+   - 🟢 **FASE 2 — LIBERADA em 05/08 pelo Lemuel.** Pode gravar as **2.578 linhas**.
+     Condições que ele deu junto: **backup antes** e **relatório do que entrou**.
+     Preview antes da escrita, como em toda carga do projeto.
+     Destino: `licitacoes_acompanhadas` com `origem='calendario_2025'` (separa do que a tela
+     gravar depois). Conversões na carga: `ABERTURA` serial Excel → data ISO · `HORA` fração →
+     HH:MM · `VALOR GANHO` pt-BR → numérico · `NUMERO` pelo `numCompra()` já testado.
+     📌 **Semeia o funil (item 9)** — é por isso que vem antes dele na fila.
+     🔒 O `.xlsm` continua no `.gitignore`: tem `VALOR GANHO` dentro e o repo é público.
    - ✅ **Guarda cumprida**: `*.xlsm`/`*.xlsb` no `.gitignore`; o relatório acima descreve
      estrutura, não reproduz valor nem cliente.
 
