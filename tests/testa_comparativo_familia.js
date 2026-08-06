@@ -42,9 +42,10 @@ const { _cpzPaNorm, _bmForma } = ctx;
 
 // replica do _familiaDe da tela
 const familiaDe = g => {
-  const pa = _cpzPaNorm(g.principioAtivo || g.principio || '');
+  const pa = _cpzPaNorm(g.principioAtivo || '');
+  if (!pa || pa.length < 3) return null;
   const fm = _bmForma(g.produtoOriginal || '') || 'SEM FORMA';
-  return (pa || 'SEM PA') + ' · ' + fm;
+  return pa + ' · ' + fm;
 };
 
 let p = 0, f = 0;
@@ -85,15 +86,23 @@ const G = (pa, prod) => ({ principioAtivo: pa, principio: pa, produtoOriginal: p
     [familiaDe(G('CLORIDRATO DE CLONIDINA','A COMPRIMIDO')), familiaDe(G('CLONIDINA','B COMPRIMIDO'))]);
 }
 
-// ══════════ 4. SEM PA / SEM FORMA NAO VIRAM UM BALAIO SO... ══════════
-// ...mas tambem nao podem sumir. Item de material nao tem PA por natureza (635 linhas do
-// estoque estao nessa situacao, medido em 04/08) e ainda precisa aparecer na tela.
+// ══════════ 4. SEM PA NAO GERA FAMILIA ══════════
+// Duas armadilhas medidas no ar em 05/08, as duas do mesmo desenho ingenuo:
+//  1. cair no NOME DO PRODUTO quando falta PA fazia CADA LINHA virar a propria familia. Uma
+//     busca por DIPIRONA rendeu 34 cabecalhos de "1 dose(s)" com nomes como "BROM N
+//     BUTILESCOPOLAMINA DIPIRONA 5ML CX 50AMP BLAU". Divisoria por linha nao divide nada.
+//  2. jogar tudo num "SEM PA" so seria o erro oposto: 635 linhas de material (medido em 04/08)
+//     debaixo de um cabecalho que nao informa nada.
+// Agrupar coisas que nao se sabe o que sao nao e agrupar. Sem PA, a linha fica solta.
 {
   const luva = G(null, 'LUVA DE PROCEDIMENTO LATEX M');
-  ok('8. item sem PA ganha familia mesmo assim (nao desaparece)', typeof familiaDe(luva) === 'string' && familiaDe(luva).length > 0, familiaDe(luva));
-  ok('9. e a familia diz que nao tem PA, em vez de fingir um', /SEM PA/.test(familiaDe(luva)), familiaDe(luva));
+  ok('8. *** item sem PA NAO gera familia (fica solto, sem cabecalho) ***', familiaDe(luva) === null, familiaDe(luva));
+  ok('9. *** e o nome do PRODUTO nunca vira nome de familia ***',
+    familiaDe({ principioAtivo: '', principio: 'LUVA DE PROCEDIMENTO', produtoOriginal: 'LUVA DE PROCEDIMENTO' }) === null);
+  ok('9b. PA curto demais tambem nao vira familia (ruido de normalizacao)',
+    familiaDe(G('DE', 'X SOL INJ')) === null, familiaDe(G('DE', 'X SOL INJ')));
   const semForma = G('DIPIRONA', 'DIPIRONA');
-  ok('10. sem forma detectavel idem', /SEM FORMA/.test(familiaDe(semForma)), familiaDe(semForma));
+  ok('10. com PA mas sem forma detectavel, a familia existe e diz "SEM FORMA"', /SEM FORMA/.test(familiaDe(semForma)), familiaDe(semForma));
 }
 
 // ══════════ 5. A MAE NAO TEM PREÇO — a regra central ══════════
@@ -122,6 +131,11 @@ const G = (pa, prod) => ({ principioAtivo: pa, principio: pa, produtoOriginal: p
   ok('20. e a funcao que alterna', /function compToggleFamilia\(\)/.test(src));
   ok('21. desligado por padrao (a tela abre na visao simples que o Lemuel pediu)', /var compFamilia = false;/.test(src));
   ok('22. o agrupamento so acontece com o toggle ligado', /compFamilia\s*\?\s*_visiveis\.slice\(\)\.sort/.test(src));
+  // ── e os dois consertos que vieram de rodar no ar ──
+  ok('23. *** familia de UMA dose so NAO vira cabecalho (divisoria que separa 1 item e ruido) ***',
+    /if \(fam && nDosesFam > 1 && fam !== _famAtual\)/.test(src));
+  ok('24. e o que nao tem familia vai pro FIM, sem picotar os grupos que agrupam',
+    /if \(!fa\) return 1;\s*\n\s*if \(!fb\) return -1;/.test(src));
 }
 
 console.log('\nRESULTADO: ' + p + ' ok, ' + f + ' falha(s)');

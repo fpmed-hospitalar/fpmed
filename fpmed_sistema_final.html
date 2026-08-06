@@ -2773,14 +2773,30 @@ function renderComparativo(termo, manterLimite) {
   //     vem embaixo e quantas doses são. Quem compara continua sendo a linha da dose.
   //     Forma separada pelo mesmo motivo: comprimido e injetável não disputam a mesma cotação.
   const _visiveis = compLista.slice(0, compLimite);
+  // >>> SEM PA NÃO GERA FAMÍLIA — devolve null e a linha sai sem cabeçalho.
+  //     Duas armadilhas, as duas medidas no ar em 05/08 antes de virarem isto aqui:
+  //     1. cair no NOME DO PRODUTO quando falta PA (era `|| g.principio`, e `principio` é o
+  //        nome do produto) fazia cada linha virar a própria família: uma busca por DIPIRONA
+  //        rendeu 34 famílias de "1 dose(s)" com nomes como "BROM N BUTILESCOPOLAMINA DIPIRONA
+  //        5ML CX 50AMP BLAU". Divisória por linha não divide nada — só empurra a tela pra baixo.
+  //     2. jogar tudo num "SEM PA" só seria o erro oposto: 635 linhas de material (medido em
+  //        04/08) debaixo de um cabeçalho que não informa nada.
+  //     Agrupar coisas que não se sabe o que são não é agrupar. Sem PA, a linha fica solta.
   const _familiaDe = g => {
-    const pa = _cpzPaNorm(g.principioAtivo || g.principio || '');
+    const pa = _cpzPaNorm(g.principioAtivo || '');
+    if (!pa || pa.length < 3) return null;
     const fm = (typeof _bmForma === 'function' ? _bmForma(g.produtoOriginal || '') : null) || 'SEM FORMA';
-    return (pa || 'SEM PA') + ' · ' + fm;
+    return pa + ' · ' + fm;
   };
+  // sem família vai pro FIM: o que não agrupa não pode picotar os grupos que agrupam
   const _ordenados = compFamilia
-    ? _visiveis.slice().sort((a, b) => _familiaDe(a).localeCompare(_familiaDe(b))
-        || String(a.principio).localeCompare(String(b.principio)))
+    ? _visiveis.slice().sort((a, b) => {
+        const fa = _familiaDe(a), fb = _familiaDe(b);
+        if (!fa && !fb) return String(a.principio).localeCompare(String(b.principio));
+        if (!fa) return 1;
+        if (!fb) return -1;
+        return fa.localeCompare(fb) || String(a.principio).localeCompare(String(b.principio));
+      })
     : _visiveis;
   const _nCols = 3 + (compAnalise ? 5 : 0) + distribuidores.length + industrias.length;
   let _famAtual = null;
@@ -2789,9 +2805,13 @@ function renderComparativo(termo, manterLimite) {
     let _cabFam = '';
     if (compFamilia) {
       const fam = _familiaDe(g);
-      if (fam !== _famAtual) {
+      // família de UMA dose só não vira cabeçalho: uma divisória que separa um item do
+      // próximo é ruído, e foi exatamente o que a 1ª versão produziu (34 cabeçalhos de
+      // "1 dose(s)" numa busca só). Cabeçalho só quando ele de fato agrupa.
+      const nDosesFam = fam ? _ordenados.filter(x => _familiaDe(x) === fam).length : 0;
+      if (fam && nDosesFam > 1 && fam !== _famAtual) {
         _famAtual = fam;
-        const nDoses = _ordenados.filter(x => _familiaDe(x) === fam).length;
+        const nDoses = nDosesFam;
         const comSaldo = _ordenados.filter(x => _familiaDe(x) === fam && x.estoqueGlobal > 0).length;
         _cabFam = `<tr><td colspan="${_nCols}" style="padding:9px 14px;background:#EDF4FA;border-top:2px solid #2CA9E0;border-bottom:1px solid #CDE4F2">
           <span style="font-family:'Montserrat',sans-serif;font-weight:700;font-size:12.5px;color:#12557E;letter-spacing:.2px">${fam}</span>
