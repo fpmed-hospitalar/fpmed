@@ -4,3 +4,9 @@ project_id = "fpmed"
 # A edge function 'ler-pedido' e PUBLICA (o app chama sem Authorization).
 [functions.ler-pedido]
 verify_jwt = false
+
+# A 'coletar-licitacoes' NAO e publica: quem autentica e o header x-coleta-token (segredo
+# dedicado). Exigir JWT junto obrigaria o agendador a carregar TAMBEM uma chave do Supabase --
+# dois segredos pra uma porta so, e o segundo sem poder nenhum a mais.
+[functions.coletar-licitacoes]
+verify_jwt = false

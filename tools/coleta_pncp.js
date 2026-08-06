@@ -55,6 +55,38 @@ function criaBreaker(limite) {
     get seguidas() { return seguidas; },
   };
 }
+// ── RITMO (anti-429) ───────────────────────────────────────────────────────────────────────
+// MEDIDO em 06/08/2026, na primeira coleta que de fato conversou com o PNCP (pela edge
+// function): 70 licitações gravadas e então **HTTP 429**. Ou seja, a fonte estava SAUDÁVEL —
+// só disse "você está indo rápido demais".
+// >>> 429 NÃO É QUEDA, e tratar igual à queda tem dois efeitos ruins:
+//     1. o circuit breaker mata a rodada com a API no ar (foi o que aconteceu: breaker aberto,
+//        carimbo não avançou, rodada marcada como falha — e não havia falha nenhuma);
+//     2. a retentativa de 1s bate MAIS FORTE em quem acabou de pedir pra desacelerar.
+// A correção de verdade não é retentar melhor, é ANDAR MAIS DEVAGAR: pausa entre chamadas que
+// DOBRA a cada 429 e não volta a acelerar dentro da rodada — voltar a acelerar só provoca o
+// próximo 429. E um teto de 429 por rodada, senão cota esgotada vira laço eterno.
+const PAUSA_MS = 300;
+const PAUSA_TETO_MS = 8000;
+const TETO_RATE_LIMIT = 20;
+function criaRitmo(base, teto) {
+  let pausa = base || PAUSA_MS, vezes = 0;
+  const tetoP = teto || PAUSA_TETO_MS;
+  return {
+    get pausa() { return pausa; },
+    get vezes() { return vezes; },
+    freou() { vezes++; pausa = Math.min(pausa * 2, tetoP); return pausa; },
+    get estourou() { return vezes > TETO_RATE_LIMIT; },
+  };
+}
+// Espera do 429: obedece o `Retry-After` quando o servidor manda um (ele sabe da própria cota
+// melhor que qualquer heurística nossa) e, sem ele, começa em 5s — não em 1s como a queda.
+function esperaRateLimit(tentativa, retryAfter) {
+  const h = parseInt(retryAfter, 10);
+  if (isFinite(h) && h > 0) return Math.min(h * 1000, 60000);
+  return Math.min(5000 * Math.pow(2, tentativa), 60000);
+}
+
 // Janela incremental: da última coleta OK até hoje, com 2 dias de sobreposição — publicação
 // pode ser corrigida depois, e reler dois dias é barato perto de perder uma alteração.
 const DIAS_1A_COLETA = 30;
@@ -108,7 +140,8 @@ function normaliza(x) {
 }
 const valida = r => !!(r.cnpj && r.ano && r.sequencial);   // sem chave natural não entra
 
-module.exports = { esperaBackoff, criaBreaker, janela, normaliza, valida, yyyymmdd, FALHAS_ATE_ABRIR };
+module.exports = { esperaBackoff, criaBreaker, janela, normaliza, valida, yyyymmdd, FALHAS_ATE_ABRIR,
+                   criaRitmo, esperaRateLimit, PAUSA_MS, PAUSA_TETO_MS, TETO_RATE_LIMIT };
 if (require.main !== module) return;
 
 const seg = fs.readFileSync('C:/fpmed/segredos.local.txt', 'utf8');
@@ -118,14 +151,26 @@ const SB = 'https://xzdowrksuswekwffoluk.supabase.co';
 const H = { apikey: SR, Authorization: 'Bearer ' + SR, 'Content-Type': 'application/json' };
 const dormir = ms => new Promise(r => setTimeout(r, ms));
 
-async function puxa(url, breaker) {
-  for (let t = 0; t < 4; t++) {
+async function puxa(url, breaker, ritmo) {
+  let t = 0;        // tentativas de FALHA (queda/timeout) — só estas gastam o orçamento
+  let t429 = 0;     // rate limits, contados à parte: a API está no ar
+  while (t < 4) {
     if (breaker.aberto) return { erro: 'breaker aberto' };
+    if (ritmo.estourou) return { erro: `rate limit persistente do PNCP (${ritmo.vezes}x)` };
     const ac = new AbortController();
     const to = setTimeout(() => ac.abort(), TIMEOUT_MS);
     try {
       const r = await fetch(url, { signal: ac.signal });
       clearTimeout(to);
+      // 429 não passa pelo breaker de propósito: ele existe pra "a fonte caiu", e aqui ela
+      // respondeu. O que muda é o RITMO da rodada inteira, não o contador de falhas.
+      if (r.status === 429) {
+        const espera = esperaRateLimit(t429++, r.headers.get('retry-after'));
+        const nova = ritmo.freou();
+        console.log(`    ~ 429 rate limit — desacelerando pra ${nova}ms entre chamadas, esperando ${espera / 1000}s`);
+        await dormir(espera);
+        continue;
+      }
       if (r.status === 204) { breaker.ok(); return { dados: [], total: 0 }; }   // sem resultado
       if (!r.ok) throw new Error('HTTP ' + r.status);
       const j = await r.json();
@@ -134,7 +179,7 @@ async function puxa(url, breaker) {
     } catch (e) {
       clearTimeout(to);
       const abriu = breaker.falhou();
-      const espera = esperaBackoff(t);
+      const espera = esperaBackoff(t++);
       console.log(`    ! ${e.name === 'AbortError' ? 'timeout' : e.message} (falha ${breaker.seguidas})`
         + (abriu ? ' — BREAKER ABERTO, parando' : ` — nova tentativa em ${espera / 1000}s`));
       if (abriu) return { erro: String(e.message || e.name) };
@@ -154,10 +199,16 @@ async function puxa(url, breaker) {
     if (Array.isArray(j) && j[0] && j[0].ultima_ok) ultimaOk = new Date(j[0].ultima_ok);
   } catch (_) {}
   const { ini, fim } = janela(ultimaOk, new Date(), parseInt(arg('--dias')) || null);
-  console.log(`janela: ${yyyymmdd(ini)} → ${yyyymmdd(fim)}  ${ultimaOk ? `(última coleta OK: ${ultimaOk.toISOString().slice(0,16)})` : '(primeira coleta: 30 dias)'}`);
+  // a origem da janela tem que bater com a janela impressa: `--dias 2` dizendo "primeira
+  // coleta: 30 dias" faz quem lê o log conferir a data errada quando algo não fechar.
+  const origemJanela = arg('--dias') ? `(janela forçada: ${arg('--dias')} dias)`
+    : ultimaOk ? `(última coleta OK: ${ultimaOk.toISOString().slice(0, 16)})`
+    : `(primeira coleta: ${DIAS_1A_COLETA} dias)`;
+  console.log(`janela: ${yyyymmdd(ini)} → ${yyyymmdd(fim)}  ${origemJanela}`);
   console.log(`UFs: ${UFS.join(',')} · modalidades: ${MODALIDADES.join(',')}`);
 
   const breaker = criaBreaker(FALHAS_ATE_ABRIR);
+  const ritmo = criaRitmo();
   const achados = new Map();      // chave natural -> registro (dedup entre UF/modalidade)
   let truncou = 0, erro = null;
 
@@ -169,7 +220,7 @@ async function puxa(url, breaker) {
         const url = `https://pncp.gov.br/api/consulta/v1/contratacoes/publicacao`
           + `?dataInicial=${yyyymmdd(ini)}&dataFinal=${yyyymmdd(fim)}`
           + `&codigoModalidadeContratacao=${mod}&uf=${uf}&pagina=${pag}&tamanhoPagina=${TAM_PAGINA}`;
-        const r = await puxa(url, breaker);
+        const r = await puxa(url, breaker, ritmo);
         if (r.erro) { erro = r.erro; break; }
         totalPag = Math.min(r.paginas || 1, TETO_PAGINAS);
         if ((r.paginas || 1) > TETO_PAGINAS && pag === 1) truncou++;
@@ -179,6 +230,7 @@ async function puxa(url, breaker) {
           achados.set(`${n.cnpj}|${n.ano}|${n.sequencial}`, n);
         }
         pag++;
+        await dormir(ritmo.pausa);   // o que EVITA o 429; retentar melhor só o remedia
       } while (pag <= totalPag && !breaker.aberto);
       if (breaker.aberto) break;
     }
@@ -188,6 +240,7 @@ async function puxa(url, breaker) {
   console.log(`\ncoletadas: ${regs.length} licitação(ões) únicas`);
   if (truncou) console.log(`⚠️  ${truncou} combinação(ões) uf×modalidade passaram do teto de ${TETO_PAGINAS} páginas — pode haver mais`);
   if (breaker.aberto) console.log(`🔴 BREAKER ABERTO: o PNCP falhou ${breaker.seguidas}x seguidas. A coleta parou.`);
+  if (ritmo.vezes) console.log(`⏱️  ${ritmo.vezes} rate limit(s) — a rodada terminou a ${ritmo.pausa}ms entre chamadas`);
 
   if (PREVIEW) {
     regs.slice(0, 6).forEach(r => console.log(`  ${r.data_publicacao} · ${r.uf} · ${(r.modalidade||'').slice(0,22)} · ${(r.orgao||'').slice(0,40)}`));

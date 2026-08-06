@@ -127,9 +127,53 @@ qualquer um, e a configuração da Global **não serve** (os nomes são de lá).
 |---|---|---|
 | **4** | Blocos 2 e 4 do sync de código | ✅ **CONCLUÍDO 06/08** |
 | **8** | Calendário FASE 2 | ✅ **CONCLUÍDO 06/08** — 2.555 linhas, taxa de vitória 15,2% |
-| **10** | Coleta agendada do PNCP + banco próprio | 🟡 **PARCIAL** — coletor + tela lendo do banco prontos; falta a edge function + agendamento |
+| **10** | Coleta agendada do PNCP + banco próprio | ✅ **CONCLUÍDO 06/08** — edge function no ar + Actions 3x/dia (ver 10.1). 1 passo do Lemuel: o secret no GitHub |
 | **9** | **SIGA / funil de Negócios** | 🟡 **1ª ETAPA CONCLUÍDA 06/08** — Funil + Tarefas + Agenda no ar, semeado com as 2.555 linhas. Falta o resto das abas (ver 9.1 abaixo) |
 | **11** | `ABRIR_FILA.bat` inicia o Claude com "continua a fila" | 🆕 fim da fila |
+
+### 10.1 — COLETA AGENDADA ✅ (item 10 fechado em 06/08/2026)
+
+**O que entrou no ar**: a edge function `coletar-licitacoes` (v2, `verify_jwt=false`, secret
+`COLETA_TOKEN` configurado) + `.github/workflows/coleta-pncp.yml` (cron `0 9,15,21 * * *` UTC =
+**06h, 12h e 18h em Goiás**, mais `workflow_dispatch`). Deploy sem instalar CLI nenhuma:
+`tools/deploy_edge.js`, pela Management API, com o token lido do `segredos.local.txt`.
+
+**A chave-mestra não entra no CI**: o repo é público e a `service_role` ignora toda a RLS. Ela
+fica **dentro do Supabase** (a plataforma injeta no runtime) e o pipeline conhece só o
+`COLETA_TOKEN` — dedicado e descartável. Se vazar, o poder dele é um: gravar licitação pública.
+A porta é **fechada por padrão**: sem token configurado a função responde 500 e não coleta.
+
+> ⚠️ **1 PASSO É DELE, e é o único** (fora do meu alcance — não há `gh` autenticado aqui):
+> GitHub → `fpmed-hospitalar/fpmed` → *Settings → Secrets and variables → Actions → New
+> repository secret* → **`COLETA_TOKEN`** = a linha `COLETA_TOKEN` do `segredos.local.txt`.
+> Enquanto não existir, o job para na 1ª linha com mensagem clara em vez de falhar sem explicação.
+
+**⏱️ O ACHADO DA RODADA — 429 NÃO É QUEDA.** Na **primeira coleta que de fato conversou com o
+PNCP** (06/08, pela edge function), ela gravou **70 licitações** e levou **HTTP 429**. A fonte
+estava **saudável**: só pediu pra desacelerar. Como o código tratava 429 como falha, **o circuit
+breaker matou a rodada com a API no ar** — e a retentativa de 1s batia mais forte em quem
+acabara de pedir calma.
+- 429 **não passa mais pelo breaker** (ele existe pra "a fonte caiu"; aqui ela respondeu);
+- o que muda é o **ritmo**: pausa entre chamadas **dobra a cada 429** (300ms → teto 8s) e **não
+  volta a acelerar** na rodada — acelerar de volta só provoca o próximo 429;
+- obedece `Retry-After` quando vem; sem ele, a espera começa em **5s**, não em 1s;
+- teto de **20 rate limits por rodada** — cota esgotada não pode virar laço.
+- **A correção não é retentar melhor, é andar mais devagar.** Corrigido nos **dois** coletores
+  (edge + `tools/coleta_pncp.js`), e a suíte trava as constantes iguais nos dois: dois arquivos
+  com a mesma responsabilidade que divergem viram produção se comportando diferente do teste.
+
+**A garantia "nunca apaga" foi provada com dado real, não em teste**: a rodada seguinte pegou o
+PNCP fora (timeout, breaker aberto, `coletadas: 0`) e **as 70 linhas continuaram no banco**, com
+`ultima_ok` **não** avançado e `ultimo_erro` gravado. A tela mostra `📦 N do nosso banco` e
+`⚠️ a última coleta falhou`, sem inventar hora de coleta.
+
+**O CI só fica vermelho quando a falha é nossa** (HTTP ≠ 200: função fora, token errado, projeto
+pausado). "O PNCP estava fora" vira **aviso amarelo** — essa fonte caiu ~6 vezes em 3 dias, e um
+X vermelho diário treina qualquer um a ignorar o CI; aí o dia em que a falha for nossa passa
+despercebido.
+
+Suíte nova `testa_coleta_agendada` (**63 asserts**) + 10 novos em `testa_coleta_pncp`.
+Total: **1.138 asserts / 0 falhas / 36 suítes**.
 
 ### 9.1 — FUNIL DE NEGÓCIOS ✅ (1ª das 6 etapas do item 9, concluída 06/08/2026)
 

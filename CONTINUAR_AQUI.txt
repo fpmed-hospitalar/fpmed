@@ -198,8 +198,35 @@ Criado em 21/07/2026 copiando SO os arquivos do app do C:\globalmed.
   RETOMADA do 1B: estender tools/carrega_cmed_pf.js + DDL da cmed_pf, depois a tela.
 
 ========================================
->>> ONDE PARAMOS — 06/08/2026, RODADA 4. LEIA ISTO PRIMEIRO.
+>>> ONDE PARAMOS — 06/08/2026, RODADA 5. LEIA ISTO PRIMEIRO.
 ========================================
+
+ITEM 10 FECHADO (06/08). A coleta do PNCP roda SOZINHA 3x/dia. Detalhes na secao 10.1 do TAREFAS.
+  - edge function `coletar-licitacoes` NO AR (v2, verify_jwt=false, secret COLETA_TOKEN setado),
+    deployada por tools/deploy_edge.js (Management API — nao precisou instalar CLI nenhuma).
+  - .github/workflows/coleta-pncp.yml: cron 0 9,15,21 UTC = 06h/12h/18h de Goias + rodar na mao.
+  - Suite nova testa_coleta_agendada (63) + 10 asserts no testa_coleta_pncp.
+    TOTAL: 1.138 asserts verdes / 0 falhas / 36 suites.
+
+>>> 1 PASSO E DELE (o unico que sobrou do item 10 — nao da pra fazer daqui, nao ha `gh` logado):
+    GitHub -> repo fpmed-hospitalar/fpmed -> Settings -> Secrets and variables -> Actions ->
+    New repository secret -> nome COLETA_TOKEN, valor = a linha COLETA_TOKEN do
+    segredos.local.txt. Sem isso o job para na 1a linha com mensagem clara (nao falha em silencio).
+
+>>> ACHADO DA RODADA — 429 NAO E QUEDA. Na PRIMEIRA coleta que de fato falou com o PNCP, a
+    funcao gravou 70 licitacoes e levou HTTP 429. A fonte estava SAUDAVEL, so pediu pra
+    desacelerar — e o circuit breaker matou a rodada com a API no ar. Corrigido nos DOIS
+    coletores: 429 nao conta como falha; a pausa entre chamadas DOBRA a cada 429 (300ms, teto
+    8s) e nao volta a acelerar; obedece Retry-After; teto de 20 por rodada.
+    A correcao nao e retentar melhor, e ANDAR MAIS DEVAGAR.
+>>> E a garantia "NUNCA APAGA" foi provada com dado real: a rodada seguinte pegou o PNCP fora
+    (timeout, breaker aberto, coletadas 0) e as 70 linhas CONTINUARAM no banco, com ultima_ok
+    nao avancado. A tela mostra "70 do nosso banco · a ultima coleta falhou", sem inventar hora.
+>>> PNCP: fora do ar de novo em 06/08 (~6a queda em 3 dias). Quando voltar, o cron pega sozinho;
+    na mao: node tools/deploy_edge.js --chamar coletar-licitacoes  (ou tools/coleta_pncp.js).
+
+>>> PROXIMO DA FILA: item 9, 4o pedaco (Pesquisa avancada + Orgaos + Desertas na tela de
+    Licitacoes) — sem dependencia externa. Depois o item 11 (ABRIR_FILA.bat).
 
 ITEM 9 — 1a ETAPA (FUNIL DE NEGOCIOS) FECHADA. Detalhes completos na secao 9.1 do TAREFAS.
 Suite: 1.075 asserts verdes / 0 falhas / 35 suites (suite nova testa_funil_negocios, 121).

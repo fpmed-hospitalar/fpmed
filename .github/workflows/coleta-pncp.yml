@@ -1,0 +1,100 @@
+# ══════════════════════════════════════════════════════════════════════════════════════════
+# COLETA DO PNCP — agendamento (item 10, FPMED)
+#
+# Chama a edge function `coletar-licitacoes` 3x por dia. Quem grava no banco é ELA, não este
+# workflow: o repositório é PÚBLICO e a `service_role` ignora toda a RLS, então a chave-mestra
+# do banco NUNCA entra num pipeline. Aqui só existe o `COLETA_TOKEN` — um segredo DEDICADO e
+# DESCARTÁVEL, cujo poder é exatamente um: mandar gravar licitação pública.
+#
+# >>> SE ESTE SEGREDO VAZAR: rotacionar é apagar a linha COLETA_TOKEN do segredos.local.txt,
+#     rodar `node tools/deploy_edge.js --gera-token`, depois `--segredo COLETA_TOKEN`, e trocar
+#     o secret aqui no GitHub. O banco não precisa ser tocado.
+#
+# ⚠️ PRÉ-CONDIÇÃO (é o Lemuel quem faz, uma vez): GitHub → repo `fpmed-hospitalar/fpmed` →
+#    Settings → Secrets and variables → Actions → New repository secret
+#      nome:  COLETA_TOKEN
+#      valor: a linha COLETA_TOKEN do segredos.local.txt
+#    Sem isso o job para na primeira linha com mensagem clara, em vez de falhar sem explicação.
+# ══════════════════════════════════════════════════════════════════════════════════════════
+name: Coleta PNCP
+
+on:
+  schedule:
+    # Horários em UTC. Goiás é UTC−3 → 06h, 12h e 18h no horário de lá.
+    # Manhã (antes do expediente), meio-dia e fim de tarde: publicação de edital sai no
+    # horário comercial, então 3 janelas cobrem o dia sem virar coleta de madrugada à toa.
+    - cron: '0 9,15,21 * * *'
+  workflow_dispatch:
+    inputs:
+      dias:
+        description: 'Janela em dias (vazio = incremental desde a última coleta OK)'
+        required: false
+        default: ''
+      ufs:
+        description: 'UFs separadas por vírgula (vazio = GO,DF,MG,MT,MS,TO,BA)'
+        required: false
+        default: ''
+
+permissions:
+  contents: read          # o workflow não escreve nada no repositório
+
+concurrency:
+  group: coleta-pncp
+  cancel-in-progress: false   # duas coletas sobrepostas só fariam o PNCP nos limitar mais
+
+jobs:
+  coletar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Conferir o segredo
+        env:
+          COLETA_TOKEN: ${{ secrets.COLETA_TOKEN }}
+        run: |
+          if [ -z "$COLETA_TOKEN" ]; then
+            echo "::error::Falta o secret COLETA_TOKEN no repositório (Settings → Secrets → Actions)."
+            echo "Como gerar: node tools/deploy_edge.js --gera-token  →  --segredo COLETA_TOKEN"
+            exit 1
+          fi
+
+      - name: Chamar a edge function
+        env:
+          COLETA_TOKEN: ${{ secrets.COLETA_TOKEN }}
+          DIAS: ${{ github.event.inputs.dias }}
+          UFS: ${{ github.event.inputs.ufs }}
+        run: |
+          set -euo pipefail
+          BODY='{}'
+          # if/fi, não `[ ... ] && ...`: com `set -e` um teste falso derruba o passo inteiro.
+          if [ -n "${DIAS:-}" ]; then BODY=$(echo "$BODY" | jq --argjson d "$DIAS" '. + {dias:$d}'); fi
+          if [ -n "${UFS:-}"  ]; then BODY=$(echo "$BODY" | jq --arg u "$UFS" '. + {ufs:$u}'); fi
+          echo "corpo: $BODY"
+
+          # --max-time 540: a função tem orçamento próprio de ~100s e para sozinha; este é o
+          # cinto de segurança do lado de cá, pra um socket pendurado não segurar o runner.
+          HTTP=$(curl -sS -o resposta.json -w '%{http_code}' --max-time 540 \
+            -X POST 'https://xzdowrksuswekwffoluk.supabase.co/functions/v1/coletar-licitacoes' \
+            -H 'Content-Type: application/json' \
+            -H "x-coleta-token: $COLETA_TOKEN" \
+            -d "$BODY")
+
+          echo "HTTP $HTTP"; cat resposta.json; echo
+
+          # HTTP != 200 é problema NOSSO (função fora, token errado, projeto pausado) → falha.
+          if [ "$HTTP" != "200" ]; then
+            echo "::error::A edge function respondeu HTTP $HTTP"
+            exit 1
+          fi
+
+          OK=$(jq -r '.ok' resposta.json)
+          GRAV=$(jq -r '.gravadas' resposta.json)
+          ERRO=$(jq -r '.erro // "—"' resposta.json)
+          echo "gravadas: $GRAV · ok: $OK · erro: $ERRO" >> "$GITHUB_STEP_SUMMARY"
+
+          # >>> "O PNCP estava fora" NÃO pinta o job de vermelho, de propósito. Esta fonte caiu
+          #     4 vezes em dois dias; um X vermelho diário treina qualquer um a ignorar o CI, e
+          #     aí o dia em que a falha for NOSSA passa despercebido. Vira aviso, e o carimbo
+          #     de frescor no banco (`coleta_status.ultima_ok`) continua sendo a verdade.
+          if [ "$OK" != "true" ]; then
+            echo "::warning::Coleta parcial — a fonte não colaborou ($ERRO). O banco ficou como estava; nada foi apagado."
+          fi
