@@ -60,19 +60,31 @@
     var s = getSess();
     if(!s || !s.access_token) return s;
     if(s.expires_at && s.expires_at < Date.now() + 60000){   // expirado ou < 60s p/ expirar
-      if(!_refreshing) _refreshing = refresh().finally(function(){ _refreshing = null; });
-      var ok = await _refreshing;
-      if(!ok){                                                // refresh falhou = sessão morta -> re-login (sem loop)
+      if(!_refreshing) _refreshing = refreshEstado().finally(function(){ _refreshing = null; });
+      var estado = await _refreshing;
+      if(estado === 'morta'){                                 // o servidor recusou: re-login (sem loop)
         try{ if(ov && !ov.parentNode) (document.documentElement||document.body).appendChild(ov); showLogin('Sua sessão expirou — entre novamente.'); }catch(e){}
         return null;
       }
+      // 'rede': a sessão CONTINUA VÁLIDA — só não deu pra renovar agora. Seguimos com o token
+      // que temos. Se ele já venceu, o PostgREST responde 401 e o tratamento abaixo cuida;
+      // derrubar o usuário aqui seria deslogar por causa de uma piscada de Wi-Fi.
       s = getSess();
     }
     return s;
   }
+  // 401/403 do PostgREST com sessão: pode ser token vencido (relógio fora, token revogado) ou
+  // falta de permissão real. Antes, cada tela imprimia o status cru — e "401 permission denied
+  // ... GRANT SELECT ON public.negocios TO anon" na tela vira "o banco sumiu" pra quem lê.
+  function _pareceSessao(status, corpo){
+    if(status !== 401 && status !== 403) return false;
+    return /42501|PGRST301|JWT|permission denied|expired/i.test(String(corpo || ''));
+  }
   window.fetch = async function(input, init){
+    var ehDados = false;
     try{
       if(typeof input === 'string' && input.indexOf('/rest/v1/') >= 0){
+        ehDados = true;
         // bloqueio de acesso: usuário sem permissão nesta página NÃO carrega dados
         if(_blocked){ return new Response('[]', { status: 403, headers: { 'Content-Type': 'application/json' } }); }
         var s = await _tokenFresco();
@@ -85,7 +97,36 @@
         }
       }
     }catch(e){ /* qualquer erro no patch: segue com o fetch original */ }
-    return _origFetch(input, init);
+    var resp = await _origFetch(input, init);
+    // ── 2ª CHANCE: token recusado pelo servidor mesmo achando a gente que estava bom ──
+    // Renova UMA vez e repete a chamada. Sem isto, a tela pinta um erro de banco e o operador
+    // recarrega a página no escuro. Com sessão morta de verdade, cai no overlay de login —
+    // que é a mensagem certa, em vez de "GRANT SELECT ... TO anon" numa caixa vermelha.
+    if(ehDados && resp && (resp.status === 401 || resp.status === 403) && getSess()){
+      var corpo = '';
+      try{ corpo = await resp.clone().text(); }catch(e){}
+      if(_pareceSessao(resp.status, corpo)){
+        try{
+          if(!_refreshing) _refreshing = refreshEstado().finally(function(){ _refreshing = null; });
+          var estado = await _refreshing;
+          if(estado === 'ok'){
+            var s2 = getSess();
+            init = Object.assign({}, init || {});
+            var h2 = new Headers((init && init.headers) || {});
+            h2.set('Authorization', 'Bearer ' + s2.access_token);
+            if(!h2.has('apikey')) h2.set('apikey', ANON);
+            init.headers = h2;
+            return _origFetch(input, init);          // repete UMA vez só — sem laço
+          }
+          if(estado === 'morta'){
+            try{ if(ov && !ov.parentNode) (document.documentElement||document.body).appendChild(ov); showLogin('Sua sessão expirou — entre novamente.'); }catch(e){}
+          }
+          // 'rede': devolve o 401 original. A tela mostra o erro dela, a sessão fica de pé,
+          // e a próxima tentativa do usuário funciona sozinha quando a rede voltar.
+        }catch(e){ /* nunca deixar o patch derrubar a chamada */ }
+      }
+    }
+    return resp;
   };
 
   // CARGO: lido do app_metadata (NÃO editável pelo usuário) com fallback pro user_metadata
@@ -115,18 +156,46 @@
     if(!r.ok) throw new Error(d.error_description || d.msg || d.error || 'Falha no login');
     return saveFromToken(d);
   }
-  async function refresh(){
-    var s = getSess(); if(!s || !s.refresh_token) return false;
+  // ── RENOVAÇÃO DA SESSÃO ───────────────────────────────────────────────────────
+  // >>> DEFEITO CORRIGIDO EM 06/08/2026, e ele era a causa de "o sistema perde o banco
+  //     de vez em quando": esta função devolvia `false` para DUAS coisas diferentes —
+  //       (a) o servidor RECUSOU o refresh_token  = a sessão morreu de verdade;
+  //       (b) não consegui FALAR com o servidor   = piscada de rede, sessão intacta.
+  //     Quem chama tratava os dois como "sessão morta". Resultado: uma oscilação de Wi-Fi de
+  //     2 segundos no instante do refresh (que acontece a cada ~1h, em CADA aba aberta)
+  //     derrubava a sessão. Dali em diante toda consulta ia como `anon` e o PostgREST
+  //     respondia 401 "permission denied ... GRANT SELECT ON public.X TO anon" — que na tela
+  //     vira uma mensagem vermelha com cara de "as tabelas sumiram / o banco caiu".
+  //     O banco nunca esteve fora. Medido em 06/08: as 20 tabelas/views respondendo 200
+  //     logado, e as MESMAS respondendo 401 sem sessão.
+  //
+  // >>> E O TIMEOUT: não havia nenhum. Como o `_tokenFresco` é aguardado ANTES de cada
+  //     consulta, um refresh pendurado travava a TELA INTEIRA pelo tempo que a rede levasse
+  //     pra desistir — o "ora carrega, ora fica 25s girando".
+  //
+  // Devolve: 'ok' | 'morta' | 'rede'.  Só 'morta' pode derrubar alguém pro login.
+  var REFRESH_TIMEOUT_MS = 12000;
+  async function refreshEstado(){
+    var s = getSess(); if(!s || !s.refresh_token) return 'morta';
+    var ctrl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+    var to = ctrl ? setTimeout(function(){ ctrl.abort(); }, REFRESH_TIMEOUT_MS) : null;
     try{
       var r = await fetch(SB + '/auth/v1/token?grant_type=refresh_token', {
         method:'POST', headers:{ apikey:ANON, 'Content-Type':'application/json' },
-        body: JSON.stringify({ refresh_token: s.refresh_token })
+        body: JSON.stringify({ refresh_token: s.refresh_token }),
+        signal: ctrl ? ctrl.signal : undefined
       });
-      var d = await r.json();
-      if(!r.ok || !d.access_token){ return false; }
-      saveFromToken(d); return true;
-    }catch(e){ return false; }
+      var d = null; try{ d = await r.json(); }catch(e){ d = null; }
+      if(r.ok && d && d.access_token){ saveFromToken(d); return 'ok'; }
+      // 5xx é servidor com problema, não credencial errada: manter a sessão e tentar depois.
+      if(r.status >= 500) return 'rede';
+      return 'morta';                      // 400/401 do GoTrue = o refresh_token não vale mais
+    }catch(e){
+      return 'rede';                       // abort/offline/DNS/TLS — NÃO é sessão inválida
+    }finally{ if(to) clearTimeout(to); }
   }
+  // compatibilidade: quem só quer saber "renovou?" continua chamando refresh()
+  async function refresh(){ return (await refreshEstado()) === 'ok'; }
   async function trocarSenha(nova){
     var s = getSess(); if(!s || !s.access_token) throw new Error('Sessão expirada');
     var r = await fetch(SB + '/auth/v1/user', {
@@ -265,7 +334,15 @@
   async function boot(){
     var s = getSess();
     if(s && s.access_token && s.expires_at && s.expires_at > Date.now() + 15000){ reveal(); return; }
-    if(s && s.refresh_token){ if(await refresh()){ reveal(); return; } }
+    if(s && s.refresh_token){
+      var estado = await refreshEstado();
+      if(estado === 'ok'){ reveal(); return; }
+      // 'rede' no boot: NÃO pedir senha por causa de rede. A sessão guardada continua valendo
+      // (o servidor não disse o contrário) e a 2ª chance do fetch renova sozinha quando voltar.
+      // Pedir login aqui é o pior momento possível: o operador digita senha achando que foi
+      // deslogado, quando na verdade o Wi-Fi piscou.
+      if(estado === 'rede' && s.access_token){ reveal(); return; }
+    }
     showLogin();
   }
   boot();
