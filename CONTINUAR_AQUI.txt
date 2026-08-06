@@ -198,7 +198,45 @@ Criado em 21/07/2026 copiando SO os arquivos do app do C:\globalmed.
   RETOMADA do 1B: estender tools/carrega_cmed_pf.js + DDL da cmed_pf, depois a tela.
 
 ========================================
->>> ONDE PARAMOS — 05/08/2026, RODADA 2 (a da fila). LEIA ISTO PRIMEIRO.
+>>> ONDE PARAMOS — 06/08/2026, RODADA 4. LEIA ISTO PRIMEIRO.
+========================================
+
+ITEM 9 — 1a ETAPA (FUNIL DE NEGOCIOS) FECHADA. Detalhes completos na secao 9.1 do TAREFAS.
+Suite: 1.075 asserts verdes / 0 falhas / 35 suites (suite nova testa_funil_negocios, 121).
+
+REGRA DE OURO QUE ELE DEU NO MEIO DA RODADA (06/08) e que o funil cumpre: "a planilha
+Calendario 2025 e COMO A FPMED TRABALHA -- o funil espelha o processo deles, nao inventa um
+novo". Os 9 status foram LEVANTADOS DO BANCO (2.555 linhas), nao supostos, e 2.555 de 2.555
+tem destino. O mapa esta em tools/semeia_negocios.js (MAPA_STATUS) e na secao 9.1 do TAREFAS.
+O codigo RECUSA status desconhecido em vez de mandar pro default -- era assim antes, em silencio.
+
+>>> 2 AMBIGUIDADES ESPERANDO ELE (nao travam nada; trocar depois e uma linha no MAPA_STATUS):
+    (1) PARTICIPAR (22 linhas) esta em QUALIFICACAO. Deveria ser DISPUTA? Consequencia visivel:
+        a coluna DISPUTA do kanban nasce VAZIA -- a planilha nao tem status que diga "esta em
+        sessao agora" (ela e preenchida antes e depois, nao durante). Se virar Disputa, o kanban
+        abre com 3 cartoes la.
+    (2) SUSPENSO/ADIADO (31) em QUALIFICACAO -- "parado, mas vivo". A planilha nao guarda em que
+        fase estava quando parou. Impacto baixo: as 31 ja entram arquivadas (data passada).
+
+>>> 1 UPDATE PENDENTE DE OK (pulei e anotei, como manda a regra da rodada):
+    negocios id 13 esta ARQUIVADO por um defeito de fuso que ja corrigi no codigo
+    (new Date('2026-08-06') < hoje da TRUE em GO: a string vira meia-noite UTC = 21h do dia
+    ANTERIOR no -03; a licitacao que abre HOJE nascia arquivada). Duas saidas: ele clica
+    "desarquivar" no card (a tela ganhou o botao) ou autoriza o UPDATE.
+    Auditoria so-leitura: node tools/semeia_negocios.js --conferir  -> acusa exatamente essa 1.
+
+>>> FALTA DO ITEM 9 (ordem da secao 6.7 do LICITACOES_SPEC.md):
+    2o Agenda+Notificacoes .. a AGENDA foi junto; falta validade de documento (depende de "Meus
+                              Documentos", que nao existe) e as NOTIFICACOES.
+    3o Meus Jornais ......... busca salva + cron; o e-mail exige provedor = CUSTO, decisao dele.
+    4o Pesquisa avancada + Orgaos + Desertas ... incremento na tela de Licitacoes. E O PROXIMO
+                              PEDACO ACIONAVEL do item 9, sem dependencia externa.
+    5o ANALISE .............. bloqueado ate achar o endpoint de resultados/atas do PNCP.
+    6o JURIDICO ............. projeto de coleta de acervo, nao tela.
+    DISPUTA ................. fora do escopo web (app desktop), decisao ja tomada.
+
+========================================
+>>> RODADA 3 — 05/08/2026 (itens 4, 8 e 10)
 ========================================
 
 TUDO commitado e pushado. Ultimo commit: 8ac1a3a.

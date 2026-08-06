@@ -62,6 +62,10 @@
       "url": "./fpmed_licitacoes.html"
     },
     {
+      "name": "Negocios",
+      "url": "./fpmed_negocios.html"
+    },
+    {
       "name": "Painel",
       "url": "./fpmed_painel.html"
     }

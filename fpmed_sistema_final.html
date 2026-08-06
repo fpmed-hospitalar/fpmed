@@ -228,6 +228,10 @@ select.filter{padding:8px 12px;border:1px solid var(--borda);border-radius:9px;f
     <span class="icon">🏛️</span> Licitações
     <span style="background:#8DC63F;color:#243d06;border-radius:10px;font-size:8px;font-weight:800;padding:1px 5px;margin-left:auto">PNCP</span>
   </div>
+  <div class="nav-item" id="nav-negocios" onclick="location.href='fpmed_negocios.html'">
+    <span class="icon">📈</span> Negócios
+    <span style="background:#8DC63F;color:#243d06;border-radius:10px;font-size:8px;font-weight:800;padding:1px 5px;margin-left:auto">FUNIL</span>
+  </div>
   <div class="nav-item" onclick="location.href='fpmed_giovana.html'">
     <span class="icon">📄</span> Propostas
   </div>
@@ -3588,7 +3592,7 @@ function espAplicaPermissao(){
   var mostra = espPodeVer();
   // 'licitacoes' casa pelo location.href do item de menu — a tela é de inteligência (lê a
   // tabela cotacoes com RLS) e vendedor/propostas seriam barrados pelo gm-auth ao chegar lá.
-  ['importar-espelho','compras-cliente','itens-a-cotar','clientes-dash','competitividade','licitacoes','compra-direta'].forEach(function(n){ var nav=document.querySelector('.nav-item[onclick*="'+n+'"]'); if(nav) nav.style.display = mostra ? '' : 'none'; });
+  ['importar-espelho','compras-cliente','itens-a-cotar','clientes-dash','competitividade','licitacoes','compra-direta','negocios'].forEach(function(n){ var nav=document.querySelector('.nav-item[onclick*="'+n+'"]'); if(nav) nav.style.display = mostra ? '' : 'none'; });
   if(!mostra){ var pg=document.querySelector('.page.active');
     if(pg && (pg.id==='page-importar-espelho'||pg.id==='page-compras-cliente') && typeof showPage==='function') showPage('dashboard', document.querySelector('.nav-item[onclick*="dashboard"]')); }
 }

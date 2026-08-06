@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<!-- data-tema="dark": esta tela é dona da própria paleta, como a de Licitações. Sem isso o
+     --bg claro do cliente entra como style inline no <html> e vence o :root daqui (regressão
+     medida em 05/08). A regra vive no limedtec-config.js. -->
+<html lang="pt-BR" data-tema="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LIMEDTEC — FPMED · Negócios</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%232CA9E0'/%3E%3Cpath d='M13 6h6v7h7v6h-7v7h-6v-7H6v-6h7z' fill='white'/%3E%3C/svg%3E">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="icones/limedtec-192.png">
+<link rel="apple-touch-icon" href="icones/limedtec-192.png">
+<script src="cliente.config.js"></script>
+<script src="limedtec-config.js"></script>
+<script src="limedtec-tema.js"></script>
+<script src="limedtec-licenca.js"></script>
+<script src="gm-auth.js?v=cargos"></script>
+<style>
+/* Mesma paleta da tela de Licitações — as duas são o módulo, e módulo com dois tons de escuro
+   parece dois sistemas. */
+:root{--azul:#2CA9E0;--azul-claro:#5CC3F0;--verde:#8DC63F;--verde-esc:#2c4a08;--muted:#8fa3b8;
+      --bg:#0B1622;--painel:#132234;--painel2:#182B41;--linha:#22374f;--texto:#e6edf5;
+      --roxo:#8B7FD4;--vermelho:#e5675a;--ambar:#e0a04a;
+      --sombra:0 1px 3px rgba(0,0,0,.35),0 8px 26px rgba(0,0,0,.28)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);font-family:Inter,system-ui,sans-serif;color:var(--texto)}
+.faixa-int{max-width:1420px;margin:0 auto;padding:0 22px;display:flex;align-items:center;gap:13px;width:100%}
+.topfaixa{background:#08111B;color:var(--muted);padding:7px 0;font-size:12.5px;border-bottom:1px solid rgba(34,55,79,.55)}
+.topfaixa a{color:var(--azul-claro);text-decoration:none;background:rgba(44,169,224,.13);padding:3px 11px;
+  border-radius:20px;font-size:12px;transition:background .16s,transform .16s}
+.topfaixa a:hover{background:rgba(44,169,224,.26);transform:translateY(-1px)}
+header{background:var(--painel);border-bottom:1px solid var(--linha);padding:14px 0;
+  box-shadow:0 1px 0 rgba(255,255,255,.03),0 6px 22px rgba(0,0,0,.28)}
+header .marca{display:flex;align-items:center;gap:9px}
+header .cruz{width:30px;height:30px;border-radius:7px;background:var(--azul);display:grid;place-items:center;
+  color:#fff;font-size:19px;font-weight:700;line-height:1;box-shadow:0 2px 10px rgba(44,169,224,.35)}
+header .nome{font-family:Montserrat;font-weight:800;font-size:17px;color:#fff;letter-spacing:.6px}
+header .nome small{display:block;font-size:8px;letter-spacing:2.6px;color:var(--muted);font-weight:600;margin-top:-2px}
+header .sep{width:1px;height:22px;background:var(--linha);margin:0 4px}
+header h1{font-family:Montserrat;font-size:18px;margin:0;color:#b3c4d6;font-weight:600}
+/* submenu NEGOCIOS, como no SIGA */
+header nav{margin-left:auto;display:flex;gap:4px}
+header nav a{color:var(--muted);text-decoration:none;font-size:12.5px;padding:6px 13px;border-radius:8px;cursor:pointer;transition:background .16s,color .16s}
+header nav a:hover{background:var(--painel2);color:var(--texto)}
+header nav a.on{background:rgba(44,169,224,.16);color:var(--azul-claro);font-weight:600}
+.wrap{max-width:1420px;margin:0 auto;padding:0 22px 70px}
+
+/* ── barra de topo: empresa · ordenar · filtrar ── */
+.barra{display:flex;gap:12px;align-items:center;flex-wrap:wrap;padding:18px 0 4px}
+.barra select,.barra input{background:var(--painel2);border:1px solid var(--linha);color:var(--texto);
+  border-radius:9px;padding:8px 12px;font-family:inherit;font-size:12.5px;outline:none}
+.barra select:focus,.barra input:focus{border-color:var(--azul)}
+.barra .lnk{color:var(--azul-claro);font-size:12.5px;cursor:pointer;text-decoration:none}
+.barra .lnk:hover{text-decoration:underline}
+.barra .dir{margin-left:auto;display:flex;gap:8px;align-items:center}
+.vis{display:flex;background:var(--painel2);border:1px solid var(--linha);border-radius:9px;overflow:hidden}
+.vis button{background:none;border:0;color:var(--muted);font-family:inherit;font-size:12.5px;padding:8px 14px;cursor:pointer;transition:background .16s,color .16s}
+.vis button:hover{background:rgba(44,169,224,.1);color:var(--texto)}
+.vis button.on{background:var(--azul);color:#06202e;font-weight:700}
+
+/* ── chips de fase ── */
+.fases{display:flex;gap:9px;flex-wrap:wrap;padding:16px 0 6px}
+.chip{background:var(--painel);border:1px solid var(--linha);color:var(--texto);border-radius:22px;
+  padding:8px 16px;font-size:12.5px;cursor:pointer;display:flex;align-items:center;gap:8px;
+  transition:border-color .16s,transform .16s,background .16s}
+.chip:hover{border-color:var(--azul);transform:translateY(-1px)}
+.chip .n{font-family:Montserrat;font-weight:700;font-size:12px;color:var(--muted)}
+.chip.on{background:var(--verde);border-color:var(--verde);color:#1b2c06;font-weight:700}
+.chip.on .n{color:#2c4a08}
+.chip .bola{width:9px;height:9px;border-radius:50%}
+.sublinks{display:flex;gap:18px;padding:4px 0 10px;font-size:12.5px}
+.sublinks a{color:var(--azul-claro);text-decoration:none;cursor:pointer}
+.sublinks a:hover{text-decoration:underline}
+
+/* ── card do negócio ── */
+.card{background:var(--painel);border:1px solid var(--linha);border-radius:13px;padding:15px 17px;margin-bottom:12px;
+  box-shadow:var(--sombra);position:relative;cursor:pointer;transition:border-color .18s,transform .18s,box-shadow .18s}
+.card:hover{border-color:rgba(44,169,224,.5);transform:translateY(-2px);box-shadow:0 4px 10px rgba(0,0,0,.4),0 14px 34px rgba(0,0,0,.3)}
+.card .fase-tag{position:absolute;top:11px;right:14px;font-size:9px;letter-spacing:1.3px;text-transform:uppercase;
+  font-weight:800;color:var(--verde)}
+.card .tit{font-family:Montserrat;font-weight:700;font-size:13.5px;color:var(--azul-claro);text-decoration:none;
+  display:inline-block;line-height:1.45;padding-right:96px}
+.card:hover .tit{color:#fff;text-decoration:underline}
+.card .emp{display:inline-block;background:rgba(139,127,212,.18);border:1px solid rgba(139,127,212,.4);
+  color:#b9b0ee;border-radius:20px;padding:2px 9px;font-size:10px;font-weight:700;margin-bottom:7px}
+.card .org{font-size:12.5px;color:#c3d1e0;margin-top:2px}
+.card .ab{font-size:12px;color:var(--muted);margin-top:6px}
+.card .ab b{color:#cfe0ef}
+.card .ab.hoje b{color:var(--ambar)}
+.card .ab.passou b{color:#9aa8b6}
+.card .etq{display:flex;gap:6px;flex-wrap:wrap;margin-top:9px}
+.etq span{font-size:10px;font-weight:600;border-radius:20px;padding:2px 9px}
+.etq .fonte{background:rgba(143,163,184,.15);border:1px solid rgba(143,163,184,.35);color:#b6c6d6}
+.etq .mod{background:rgba(141,198,63,.15);border:1px solid rgba(141,198,63,.4);color:#b7e07a}
+.etq .num{background:rgba(44,169,224,.14);border:1px solid rgba(44,169,224,.36);color:#8ed3f5}
+.etq .obs{background:rgba(224,160,74,.14);border:1px solid rgba(224,160,74,.36);color:#e8bc7e}
+.card .prog{font-size:11.5px;color:var(--muted);margin-top:9px;display:flex;align-items:center;gap:8px}
+.card .barra-prog{flex:1;max-width:130px;height:4px;background:var(--painel2);border-radius:3px;overflow:hidden}
+.card .barra-prog i{display:block;height:100%;background:var(--verde)}
+/* AÇÕES só no hover, como no SIGA: elas não podem competir com o conteúdo do card */
+.card .acoes{position:absolute;bottom:11px;right:14px;display:flex;gap:6px;opacity:0;transition:opacity .16s}
+.card:hover .acoes{opacity:1}
+.card .acoes button{background:var(--painel2);border:1px solid var(--linha);color:var(--muted);
+  border-radius:7px;padding:3px 9px;font-size:11px;cursor:pointer;font-family:inherit}
+.card .acoes button:hover{border-color:var(--azul);color:var(--azul-claro)}
+
+/* ── kanban ── */
+.kb{display:flex;gap:14px;overflow-x:auto;padding:8px 2px 20px;align-items:flex-start}
+.col{flex:0 0 300px;background:rgba(19,34,52,.5);border:1px solid var(--linha);border-radius:13px;padding:12px}
+.col h3{margin:0 0 10px;font-family:Montserrat;font-size:12.5px;font-weight:700;display:flex;align-items:center;gap:8px}
+.col h3 .bola{width:10px;height:10px;border-radius:50%}
+.col h3 .n{margin-left:auto;font-size:11.5px;color:var(--muted);font-weight:600}
+.col.alvo{border-color:var(--azul);background:rgba(44,169,224,.07)}
+.col .vazia{border:1px dashed var(--linha);border-radius:11px;padding:26px 14px;text-align:center;
+  font-size:12px;color:var(--muted)}
+.kb .card{cursor:grab;margin-bottom:10px}
+.kb .card:active{cursor:grabbing}
+.kb .card.arrastando{opacity:.45}
+
+/* ── agenda: o substituto direto do Calendário 2025 ── */
+.ag-dia{display:flex;align-items:baseline;gap:10px;margin:20px 0 9px;padding-bottom:6px;border-bottom:1px solid var(--linha)}
+.ag-dia .d{font-family:Montserrat;font-weight:800;font-size:15px;color:#fff}
+.ag-dia .sem{font-size:12px;color:var(--muted);text-transform:capitalize}
+.ag-dia .q{margin-left:auto;font-size:11.5px;color:var(--muted)}
+.ag-dia.hoje .d{color:var(--ambar)}
+.ag-dia.hoje .sem::after{content:' · HOJE';color:var(--ambar);font-weight:700;letter-spacing:.6px}
+.ag-lin{display:flex;gap:14px;align-items:flex-start;margin-bottom:10px}
+.ag-hora{flex:0 0 62px;text-align:right;font-family:Montserrat;font-weight:700;font-size:14px;color:var(--azul-claro);padding-top:15px}
+.ag-lin .card{flex:1;margin-bottom:0}
+.ag-secao{margin:34px 0 4px;font-family:Montserrat;font-weight:700;font-size:12px;letter-spacing:1.4px;
+  text-transform:uppercase;color:var(--muted)}
+
+.vazio{text-align:center;padding:46px 20px;color:var(--muted);font-size:13.5px;
+  background:rgba(19,34,52,.42);border:1px dashed var(--linha);border-radius:14px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));background:var(--painel);border-radius:14px;
+  box-shadow:var(--sombra);overflow:hidden;margin:14px 0 4px;border:1px solid var(--linha)}
+.kpi{padding:14px 17px;border-right:1px solid var(--linha)}
+.kpi:last-child{border-right:0}
+.kpi b{font-family:Montserrat;font-size:21px;font-weight:700;display:block;line-height:1.15;color:#fff}
+.kpi span{font-size:11px;color:var(--muted)}
+
+/* ── drawer de detalhe ── */
+#velcro{position:fixed;inset:0;background:rgba(4,10,17,.62);opacity:0;pointer-events:none;transition:opacity .2s;z-index:40}
+#velcro.on{opacity:1;pointer-events:auto}
+#drawer{position:fixed;top:0;right:0;bottom:0;width:min(560px,100vw);background:var(--painel);
+  border-left:1px solid var(--linha);box-shadow:-14px 0 44px rgba(0,0,0,.5);z-index:41;
+  transform:translateX(100%);transition:transform .22s ease;overflow-y:auto}
+#drawer.on{transform:none}
+.dw-top{position:sticky;top:0;background:var(--painel);border-bottom:1px solid var(--linha);padding:15px 20px;z-index:2}
+.dw-top .x{position:absolute;top:13px;right:16px;background:var(--painel2);border:1px solid var(--linha);
+  color:var(--muted);border-radius:8px;width:28px;height:28px;cursor:pointer;font-size:15px;line-height:1}
+.dw-top .x:hover{border-color:var(--azul);color:var(--azul-claro)}
+.dw-top h2{margin:0;font-family:Montserrat;font-size:15px;font-weight:700;color:#fff;padding-right:40px;line-height:1.45}
+.dw-body{padding:16px 20px 40px}
+.dw-sec{margin-top:20px}
+.dw-sec > h4{margin:0 0 9px;font-family:Montserrat;font-size:11px;font-weight:700;letter-spacing:1.3px;
+  text-transform:uppercase;color:var(--muted)}
+.dw-fases{display:flex;gap:6px;flex-wrap:wrap}
+.dw-fases button{background:var(--painel2);border:1px solid var(--linha);color:var(--muted);border-radius:20px;
+  padding:6px 13px;font-size:11.5px;font-family:inherit;cursor:pointer;transition:.16s}
+.dw-fases button:hover{border-color:var(--azul);color:var(--texto)}
+.dw-fases button.on{background:var(--verde);border-color:var(--verde);color:#1b2c06;font-weight:700}
+.ficha{display:grid;grid-template-columns:112px 1fr;gap:7px 12px;font-size:12.5px}
+.ficha dt{color:var(--muted)}
+.ficha dd{margin:0;color:var(--texto);word-break:break-word}
+.ficha dd.ganho{color:#b7e07a;font-weight:700}
+.dw-obs{background:var(--painel2);border:1px solid var(--linha);border-left:3px solid var(--ambar);
+  border-radius:9px;padding:11px 13px;font-size:12.5px;color:#d6c6ac;white-space:pre-wrap;line-height:1.55}
+textarea.anot{width:100%;min-height:110px;background:var(--painel2);border:1px solid var(--linha);color:var(--texto);
+  border-radius:10px;padding:11px 13px;font-family:inherit;font-size:12.5px;line-height:1.55;outline:none;resize:vertical}
+textarea.anot:focus{border-color:var(--azul)}
+.salvo{font-size:11px;color:var(--muted);margin-top:5px;min-height:14px}
+.salvo.ok{color:var(--verde)}
+.salvo.erro{color:var(--vermelho)}
+.tf-secao{font-family:Montserrat;font-size:10.5px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;
+  margin:13px 0 6px;display:flex;align-items:center;gap:7px}
+.tf-secao .bola{width:8px;height:8px;border-radius:50%}
+.tf{display:flex;gap:9px;align-items:flex-start;padding:6px 0;font-size:12.5px;cursor:pointer;line-height:1.45}
+.tf input{margin-top:2px;accent-color:var(--verde);cursor:pointer}
+.tf.feita span{color:var(--muted);text-decoration:line-through}
+.dw-prog{display:flex;align-items:center;gap:9px;font-size:12px;color:var(--muted)}
+.dw-prog .b{flex:1;height:6px;background:var(--painel2);border-radius:4px;overflow:hidden}
+.dw-prog .b i{display:block;height:100%;background:var(--verde)}
+.dw-acoes{display:flex;gap:8px;flex-wrap:wrap;margin-top:24px;padding-top:16px;border-top:1px solid var(--linha)}
+.dw-acoes button{background:var(--painel2);border:1px solid var(--linha);color:var(--texto);border-radius:9px;
+  padding:8px 14px;font-size:12px;font-family:inherit;cursor:pointer}
+.dw-acoes button:hover{border-color:var(--azul);color:var(--azul-claro)}
+@media(max-width:760px){.col{flex:0 0 84vw}.ag-hora{flex:0 0 48px;font-size:12.5px}.ficha{grid-template-columns:96px 1fr}}
+</style>
+</head>
+<body>
+<div class="topfaixa" data-limedtec-instalar>
+  <div class="faixa-int">
+    <a href="fpmed_sistema_final.html">← Sistema</a>
+    <a href="fpmed_licitacoes.html">🏛️ Licitações</a>
+    <span>📞 (62) 3290-4241</span>
+  </div>
+</div>
+<header>
+  <div class="faixa-int">
+    <div class="marca"><div class="cruz">✚</div><div class="nome">FPMED<small>HOSPITALAR</small></div></div>
+    <div class="sep"></div>
+    <h1>Negócios</h1>
+    <nav>
+      <a class="on" onclick="setVis('lista')">Funil de Licitações</a>
+      <a onclick="setVis('quadros')">Quadros</a>
+      <a onclick="setVis('agenda')">Agenda</a>
+    </nav>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="barra">
+    <select id="f-empresa" onchange="pinta()"><option value="">Todas as empresas</option></select>
+    <select id="f-ordem" onchange="pinta()">
+      <option value="recentes">Ordenar por: Mais recentes</option>
+      <option value="abertura">Ordenar por: Abertura mais próxima</option>
+      <option value="orgao">Ordenar por: Órgão</option>
+    </select>
+    <a class="lnk" onclick="toggleFiltro()">Filtrar</a>
+    <input type="text" id="f-busca" placeholder="órgão, objeto, nº…" style="display:none;min-width:230px" oninput="pinta()">
+    <div class="dir">
+      <label style="font-size:12.5px;color:var(--muted);display:flex;align-items:center;gap:6px;cursor:pointer">
+        <input type="checkbox" id="f-arquivados" onchange="pinta()" style="accent-color:var(--azul)"> ver arquivados
+      </label>
+      <div class="vis">
+        <button id="v-lista" class="on" onclick="setVis('lista')">Lista</button>
+        <button id="v-quadros" onclick="setVis('quadros')">Quadros</button>
+        <button id="v-agenda" onclick="setVis('agenda')">Agenda</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="fases" id="fases"></div>
+  <div class="sublinks">
+    <a onclick="setVis('quadros')">Quadros</a>
+    <a onclick="setVis('agenda')">Agenda</a>
+    <a onclick="verArquivados()">Meus arquivos</a>
+  </div>
+
+  <div class="kpis" id="kpis"></div>
+  <div id="corpo"><div class="vazio">Carregando…</div></div>
+</div>
+
+<div id="velcro" onclick="fecharDrawer()"></div>
+<aside id="drawer" aria-hidden="true">
+  <div class="dw-top"><button class="x" onclick="fecharDrawer()" title="fechar">✕</button><h2 id="dw-titulo">—</h2></div>
+  <div class="dw-body" id="dw-body"></div>
+</aside>
+
+<script>
+const SB_URL = 'https://xzdowrksuswekwffoluk.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh6ZG93cmtzdXN3ZWt3ZmZvbHVrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ2NzE2MTMsImV4cCI6MjEwMDI0NzYxM30.Pk-SlV_pZdniESyrajDdfHdHcnmyCwCMtP_TrShh75Y';
+const SB_H = { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY, 'Content-Type': 'application/json' };
+
+// As 5 fases, na ordem do funil. A bolinha colorida é o que deixa a coluna reconhecível de
+// relance no kanban — no SIGA é o mesmo recurso.
+const FASES = [
+  { k:'oportunidade',  n:'Oportunidade',  c:'#8DC63F' },
+  { k:'qualificacao',  n:'Qualificação',  c:'#2CA9E0' },
+  { k:'disputa',       n:'Disputa',       c:'#e0a04a' },
+  { k:'classificacao', n:'Classificação', c:'#8B7FD4' },
+  { k:'contrato',      n:'Contrato',      c:'#1E9E6A' },
+];
+const nomeFase = k => (FASES.find(f=>f.k===k)||{}).n || k;
+const corFase  = k => (FASES.find(f=>f.k===k)||{}).c || '#8fa3b8';
+
+// AS 15 TAREFAS-MODELO — a mesma lista do tools/semeia_negocios.js (spec 6.2). Aqui elas
+// servem pro negócio que NASCE na tela e pro arquivado que ainda não tem checklist.
+const TAREFAS_MODELO = [
+  ['oportunidade',  'Analisar o edital'],
+  ['oportunidade',  'Providenciar documentação de habilitação/qualificação'],
+  ['oportunidade',  'Solicitar esclarecimentos / Impugnar edital'],
+  ['qualificacao',  'Analisar mercado'],
+  ['qualificacao',  'Analisar concorrentes'],
+  ['qualificacao',  'Definir o melhor produto/serviço para a disputa'],
+  ['disputa',       'Cadastrar proposta no portal'],
+  ['disputa',       'Fazer composição de preços'],
+  ['disputa',       'Definir a estratégia de preços'],
+  ['disputa',       'Participar da disputa'],
+  ['classificacao', 'Analisar documentação dos concorrentes'],
+  ['classificacao', 'Analisar produto dos concorrentes'],
+  ['classificacao', 'Enviar recurso / contrarrazão'],
+  ['classificacao', 'Enviar proposta atualizada'],
+  ['contrato',      'Assinar contrato'],
+];
+const novasTarefas = () => TAREFAS_MODELO.map(([secao,texto]) => ({secao, texto, feita:false}));
+
+let NEG = [], EMPRESAS = [], VIS = 'lista', FASE_SEL = null, ERRO = null, ABERTO = null;
+const esc = s => String(s==null?'':s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const brl = n => n==null ? '—' : 'R$ ' + Number(n).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+// GESTOR: a tabela inteira já é de gestor pela RLS (ddl/negocios.sql). O gate de tela aqui é a
+// segunda camada — `valor_ganho` é resultado comercial, e tela não deve mostrar o que o banco
+// só entregaria a gestor. Se o gm-auth ainda não subiu, assume o mais restrito.
+const ehGestor = () => !!(window.gmAuth && window.gmAuth.isGestor && window.gmAuth.isGestor());
+
+// ── datas: 'YYYY-MM-DD' comparado como TEXTO ──────────────────────────────────────────────
+// Nunca `new Date('2026-08-06') < hoje`: a string vira meia-noite UTC = 21h do dia anterior em
+// GO (-03), e a licitação que abre HOJE — a mais urgente do funil — apareceria como vencida.
+// Foi exatamente esse defeito que arquivou uma linha na semeadura de 06/08.
+const hojeYMD = () => { const d=new Date(), p=n=>String(n).padStart(2,'0');
+  return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate()); };
+// dia LOCAL, não o slice(0,10) do ISO: o banco devolve `timestamptz` em UTC, e a sessão das
+// 21h em diante já caiu no dia seguinte lá. Fatiar o texto colocaria essa licitação no dia
+// errado da agenda — e comparar contra `hojeYMD()`, que é local, misturaria dois calendários.
+const diaDe  = iso => { if(!iso) return null; const d = new Date(iso);
+  if(isNaN(d)) return String(iso).slice(0,10);
+  const p=n=>String(n).padStart(2,'0');
+  return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate()); };
+const horaDe = iso => { if(!iso) return null; const d=new Date(iso); return isNaN(d) ? null
+  : d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}); };
+function fmtDtH(iso){
+  if(!iso) return null;
+  const d = new Date(iso); if(isNaN(d)) return null;
+  return d.toLocaleDateString('pt-BR') + ' às ' + d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+}
+const DIA_SEM = ['domingo','segunda-feira','terça-feira','quarta-feira','quinta-feira','sexta-feira','sábado'];
+function rotuloDia(ymd){
+  const [a,m,d] = ymd.split('-').map(Number);
+  const dt = new Date(a, m-1, d);            // construtor local: não passa pelo parser UTC
+  return { data: `${String(d).padStart(2,'0')}/${String(m).padStart(2,'0')}/${a}`, semana: DIA_SEM[dt.getDay()] };
+}
+
+async function carregar(){
+  try{
+    const [rn, re] = await Promise.all([
+      fetch(`${SB_URL}/rest/v1/negocios?select=*&order=abertura.desc&limit=3000`, {headers:SB_H}),
+      fetch(`${SB_URL}/rest/v1/empresas?select=id,razao_social&order=id`, {headers:SB_H}),
+    ]);
+    if(!rn.ok) throw new Error('o banco respondeu ' + rn.status + (rn.status===401||rn.status===403 ? ' — o funil é tela de gestor' : ''));
+    NEG = await rn.json();
+    EMPRESAS = re.ok ? await re.json() : [];
+  }catch(e){ ERRO = e.message; }
+  const sel = document.getElementById('f-empresa');
+  // O seletor e o badge de empresa FICAM VISÍVEIS mesmo com uma empresa só — decisão do
+  // Lemuel em 05/08, corrigindo a minha recomendação de escondê-los. Igual ao SIGA.
+  EMPRESAS.forEach(e => sel.insertAdjacentHTML('beforeend', `<option value="${e.id}">${esc(e.razao_social)}</option>`));
+  pinta();
+}
+
+function visiveis(){
+  const arq = document.getElementById('f-arquivados').checked;
+  const emp = document.getElementById('f-empresa').value;
+  const q = (document.getElementById('f-busca').value||'').trim().toLowerCase();
+  let l = NEG.filter(n => arq ? true : !n.arquivado);
+  if(emp) l = l.filter(n => String(n.empresa_id) === emp);
+  if(FASE_SEL) l = l.filter(n => n.estagio === FASE_SEL);
+  if(q) l = l.filter(n => [n.orgao,n.objeto,n.numero,n.municipio,n.portal].some(x => String(x||'').toLowerCase().includes(q)));
+  const ord = document.getElementById('f-ordem').value;
+  l.sort((a,b) => ord==='orgao' ? String(a.orgao||'').localeCompare(String(b.orgao||''))
+                : ord==='abertura' ? String(a.abertura||'9').localeCompare(String(b.abertura||'9'))
+                : String(b.abertura||'').localeCompare(String(a.abertura||'')));
+  return l;
+}
+
+function pinta(){
+  if(ERRO){
+    document.getElementById('corpo').innerHTML =
+      `<div class="vazio" style="border-color:#5a2622;background:#2a1614;color:#f2a99f"><b>⚠️ Não consegui carregar os negócios</b><div style="margin-top:8px;font-size:12px">${esc(ERRO)}</div></div>`;
+    document.getElementById('kpis').style.display='none';
+    return;
+  }
+  const arq = document.getElementById('f-arquivados').checked;
+  const base = NEG.filter(n => arq ? true : !n.arquivado);
+  // chips: a contagem é do universo visível, NÃO do filtro de fase — senão o chip que você
+  // acabou de clicar seria o único com número, e os outros mostrariam zero.
+  document.getElementById('fases').innerHTML = FASES.map(f => {
+    const n = base.filter(x => x.estagio === f.k).length;
+    return `<div class="chip${FASE_SEL===f.k?' on':''}" onclick="selFase('${f.k}')">
+      <span class="bola" style="background:${f.c}"></span>${f.n} <span class="n">(${n})</span></div>`;
+  }).join('') + (FASE_SEL ? `<div class="chip" onclick="selFase(null)">✕ limpar fase</div>` : '');
+
+  const gestor = ehGestor();
+  const ganhos = NEG.filter(n => n.valor_ganho > 0);
+  const disputados = NEG.filter(n => n.estagio==='classificacao' || n.valor_ganho > 0);
+  const total = ganhos.reduce((s,n)=>s+Number(n.valor_ganho||0),0);
+  document.getElementById('kpis').style.display='grid';
+  document.getElementById('kpis').innerHTML = `
+    <div class="kpi"><b>${NEG.filter(n=>!n.arquivado).length}</b><span>no funil agora</span></div>
+    <div class="kpi"><b>${NEG.length.toLocaleString('pt-BR')}</b><span>no histórico</span></div>
+    <div class="kpi"><b>${ganhos.length}</b><span>ganhas</span></div>
+    <div class="kpi"><b>${disputados.length ? (ganhos.length/disputados.length*100).toFixed(1)+'%' : '—'}</b><span>taxa de vitória</span></div>
+    ${gestor ? `<div class="kpi"><b style="font-size:16px">${brl(total)}</b><span>total ganho</span></div>` : ''}`;
+
+  const l = visiveis();
+  const corpo = document.getElementById('corpo');
+  if(VIS === 'quadros') { corpo.innerHTML = kanban(l); ligarArrasto(); return; }
+  if(VIS === 'agenda')  { corpo.innerHTML = agenda(l); return; }
+  corpo.innerHTML = l.length ? l.slice(0,200).map(n => card(n)).join('')
+    : '<div class="vazio">Nenhum negócio com esses filtros.</div>';
+}
+
+function card(n, noKanban){
+  const t = Array.isArray(n.tarefas) ? n.tarefas : null;
+  const feitas = t ? t.filter(x=>x.feita).length : 0;
+  const pct = t && t.length ? Math.round(feitas/t.length*100) : 0;
+  const dia = diaDe(n.abertura), hoje = hojeYMD();
+  const quando = dia === hoje ? ' hoje' : (dia && dia < hoje ? ' passou' : '');
+  // Os campos do card são os que a FPMED já usa na planilha: portal, órgão, número,
+  // data/hora de abertura. O valor ganho é de gestor.
+  return `<div class="card${noKanban?'':''}" ${noKanban?`draggable="true" data-id="${n.id}"`:''} onclick="abrirDrawer(${n.id})">
+    <div class="fase-tag" style="color:${corFase(n.estagio)}">${esc(nomeFase(n.estagio))}</div>
+    ${n.empresa_id ? `<div class="emp">${esc((EMPRESAS.find(e=>e.id===n.empresa_id)||{}).razao_social || 'empresa').split(' ').slice(0,2).join(' ')}</div>` : ''}
+    <div><span class="tit" title="${esc(n.objeto||'')}">${esc([n.portal,n.modalidade,n.numero].filter(Boolean).join(' · '))}${n.orgao?' — '+esc(n.orgao):''}</span></div>
+    <div class="org">${esc(n.municipio||'')}${n.uf?' · '+esc(n.uf):''}</div>
+    ${n.abertura && fmtDtH(n.abertura) ? `<div class="ab${quando}">Abertura em <b>${fmtDtH(n.abertura)}</b>${quando===' hoje'?' · é hoje':''}</div>` : ''}
+    <div class="etq">
+      ${n.portal ? `<span class="fonte">Fonte: ${esc(n.portal)}</span>` : ''}
+      ${n.modalidade ? `<span class="mod">${esc(n.modalidade)}</span>` : ''}
+      ${n.numero ? `<span class="num">nº ${esc(n.numero)}</span>` : ''}
+      ${n.valor_ganho>0 && ehGestor() ? `<span class="mod">🏆 ${brl(n.valor_ganho)}</span>` : ''}
+      ${n.anotacoes && String(n.anotacoes).trim() ? `<span class="obs">✎ anotado</span>` : ''}
+    </div>
+    ${t ? `<div class="prog">☑ ${feitas}/${t.length}<span class="barra-prog"><i style="width:${pct}%"></i></span></div>` : ''}
+    <div class="acoes">
+      ${n.arquivado ? `<button onclick="event.stopPropagation();desarquivar(${n.id})" title="devolve pro funil">desarquivar</button>`
+                    : `<button onclick="event.stopPropagation();arquivar(${n.id})" title="tira do funil, mantém no histórico">arquivar</button>`}
+    </div>
+  </div>`;
+}
+
+function kanban(l){
+  return '<div class="kb">' + FASES.map(f => {
+    const da = l.filter(n => n.estagio === f.k);
+    return `<div class="col" data-fase="${f.k}">
+      <h3><span class="bola" style="background:${f.c}"></span>${f.n}<span class="n">${da.length}</span></h3>
+      ${da.length ? da.map(n => card(n,true)).join('')
+                  : '<div class="vazia">Arraste negócios para cá</div>'}
+    </div>`;
+  }).join('') + '</div>';
+}
+
+// ── AGENDA — o substituto direto do Calendário 2025 ────────────────────────────────────────
+// Eles acompanham por DATA e HORA de abertura: é assim que a planilha é lida todo dia. Então a
+// agenda é cronológica de verdade — dia a dia, e dentro do dia por horário, com a hora numa
+// coluna própria à esquerda (o olho procura "que horas é a sessão", não o nome do órgão).
+// O que já passou não some: vai pra uma seção separada, do mais recente pro mais antigo.
+// Eventos DERIVADOS da abertura dos negócios — sem tabela de evento manual (spec 6.2).
+function agenda(l){
+  const comData = l.filter(n => n.abertura);
+  if(!comData.length) return '<div class="vazio">Nenhum negócio com data de abertura nos filtros atuais.</div>';
+  const hoje = hojeYMD();
+  const futuro = comData.filter(n => diaDe(n.abertura) >= hoje);
+  const passado = comData.filter(n => diaDe(n.abertura) < hoje);
+
+  const bloco = (lista, cresc) => {
+    const porDia = {};
+    lista.forEach(n => { const d = diaDe(n.abertura); (porDia[d] = porDia[d]||[]).push(n); });
+    const dias = Object.keys(porDia).sort();
+    if(!cresc) dias.reverse();
+    return dias.map(d => {
+      const r = rotuloDia(d);
+      // dentro do dia, SEMPRE por hora crescente: é a ordem em que as sessões acontecem
+      const doDia = porDia[d].slice().sort((a,b) => String(a.abertura).localeCompare(String(b.abertura)));
+      return `<div class="ag-dia${d===hoje?' hoje':''}">
+          <span class="d">${r.data}</span><span class="sem">${r.semana}</span>
+          <span class="q">${doDia.length} sessão${doDia.length>1?'ões':''}</span></div>`
+        + doDia.map(n => `<div class="ag-lin"><div class="ag-hora">${horaDe(n.abertura)||'--:--'}</div>${card(n)}</div>`).join('');
+    }).join('');
+  };
+
+  let html = '';
+  html += futuro.length ? bloco(futuro.slice(0,300), true)
+        : '<div class="vazio">Nada marcado de hoje em diante. Marque "ver arquivados" para rever o histórico.</div>';
+  if(passado.length) html += `<div class="ag-secao">Já passaram · ${passado.length.toLocaleString('pt-BR')} sessão(ões)</div>`
+        + bloco(passado.slice(0,200), false);
+  return html;
+}
+
+// ── drag-and-drop entre fases ──────────────────────────────────────────────────────────────
+// O arraste GRAVA. Por isso o card volta pro lugar se a gravação falhar: kanban que move na
+// tela e não persiste é pior que kanban que não move — o operador acha que registrou.
+let _arrastando = null;
+function ligarArrasto(){
+  document.querySelectorAll('.kb .card[draggable]').forEach(el => {
+    el.addEventListener('dragstart', e => { _arrastando = el.dataset.id; el.classList.add('arrastando'); e.dataTransfer.effectAllowed='move'; });
+    el.addEventListener('dragend', () => { el.classList.remove('arrastando'); _arrastando = null;
+      document.querySelectorAll('.col').forEach(c=>c.classList.remove('alvo')); });
+  });
+  document.querySelectorAll('.kb .col').forEach(col => {
+    col.addEventListener('dragover', e => { e.preventDefault(); col.classList.add('alvo'); });
+    col.addEventListener('dragleave', () => col.classList.remove('alvo'));
+    col.addEventListener('drop', async e => {
+      e.preventDefault(); col.classList.remove('alvo');
+      if(!_arrastando) return;
+      const id = Number(_arrastando), fase = col.dataset.fase;
+      const n = NEG.find(x => x.id === id);
+      if(!n || n.estagio === fase) return;
+      const antes = n.estagio;
+      n.estagio = fase; pinta();                       // otimista: a tela responde na hora
+      try{ await gravar(id, { estagio: fase }); }
+      catch(err){
+        n.estagio = antes; pinta();                    // desfaz: a tela não pode mentir
+        alert('Não consegui mover este negócio: ' + err.message + '\nEle voltou para ' + nomeFase(antes) + '.');
+      }
+    });
+  });
+}
+
+// ── gravação ───────────────────────────────────────────────────────────────────────────────
+async function gravar(id, campos){
+  const r = await fetch(`${SB_URL}/rest/v1/negocios?id=eq.${id}`, {
+    method:'PATCH', headers:SB_H,
+    body: JSON.stringify(Object.assign({ atualizado_em: new Date().toISOString() }, campos)) });
+  if(!r.ok) throw new Error('HTTP ' + r.status + (r.status===401||r.status===403 ? ' — só gestor grava no funil' : ''));
+  return true;
+}
+
+async function arquivar(id){
+  if(!confirm('Arquivar este negócio? Ele sai do funil e continua no histórico.')) return;
+  const n = NEG.find(x => x.id === id); if(!n) return;
+  try{ await gravar(id, { arquivado:true }); n.arquivado = true; if(ABERTO===id) fecharDrawer(); pinta(); }
+  catch(e){ alert('Não consegui arquivar: ' + e.message); }
+}
+// Devolver pro funil é ação de UMA linha, feita por quem decide — não migração em massa.
+// É por aqui que a licitação arquivada por engano (ou que voltou a andar) volta pro kanban.
+async function desarquivar(id){
+  const n = NEG.find(x => x.id === id); if(!n) return;
+  try{
+    const campos = { arquivado:false };
+    if(!Array.isArray(n.tarefas)) campos.tarefas = novasTarefas();   // volta pro jogo, volta com checklist
+    await gravar(id, campos);
+    Object.assign(n, campos);
+    pinta(); if(ABERTO===id) abrirDrawer(id);
+  }catch(e){ alert('Não consegui desarquivar: ' + e.message); }
+}
+
+// ── DRAWER de detalhe ──────────────────────────────────────────────────────────────────────
+// A OBSERVAÇÃO da planilha entra aqui, só leitura, ao lado das Anotações editáveis. São coisas
+// diferentes e misturar as duas apagaria a memória: a observação é o que a FPMED escreveu à
+// mão no Calendário 2025 (954 das 2.555 linhas têm uma), e a anotação é o que ela escreve de
+// agora em diante. Ela é buscada sob demanda — carregar 2.555 observações no load da tela
+// seria pagar por 2.544 que ninguém vai ler.
+async function abrirDrawer(id){
+  const n = NEG.find(x => x.id === id); if(!n) return;
+  ABERTO = id;
+  document.getElementById('velcro').classList.add('on');
+  const dw = document.getElementById('drawer'); dw.classList.add('on'); dw.setAttribute('aria-hidden','false');
+  document.getElementById('dw-titulo').textContent =
+    [n.portal, n.modalidade, n.numero].filter(Boolean).join(' · ') + (n.orgao ? ' — ' + n.orgao : '');
+  document.getElementById('dw-body').innerHTML = corpoDrawer(n, null, true);
+  if(n.acompanhada_id){
+    let obs = null;
+    try{
+      const r = await fetch(`${SB_URL}/rest/v1/licitacoes_acompanhadas?id=eq.${n.acompanhada_id}&select=observacao,status`, {headers:SB_H});
+      if(r.ok){ const d = await r.json(); obs = d[0] || null; }
+    }catch(e){ /* observação é enfeite útil, não requisito: a ficha vale sem ela */ }
+    if(ABERTO === id) document.getElementById('dw-body').innerHTML = corpoDrawer(n, obs, false);
+  } else {
+    document.getElementById('dw-body').innerHTML = corpoDrawer(n, null, false);
+  }
+}
+function fecharDrawer(){
+  ABERTO = null;
+  document.getElementById('velcro').classList.remove('on');
+  const dw = document.getElementById('drawer'); dw.classList.remove('on'); dw.setAttribute('aria-hidden','true');
+}
+document.addEventListener('keydown', e => { if(e.key === 'Escape' && ABERTO) fecharDrawer(); });
+
+function corpoDrawer(n, obs, carregando){
+  const gestor = ehGestor();
+  const t = Array.isArray(n.tarefas) ? n.tarefas : null;
+  const feitas = t ? t.filter(x=>x.feita).length : 0;
+  const pct = t && t.length ? Math.round(feitas/t.length*100) : 0;
+  const dia = diaDe(n.abertura), hoje = hojeYMD();
+
+  const linha = (r, v, cls) => v ? `<dt>${r}</dt><dd class="${cls||''}">${v}</dd>` : '';
+  const ficha = `<dl class="ficha">
+    ${linha('Portal', esc(n.portal))}
+    ${linha('Modalidade', esc(n.modalidade))}
+    ${linha('Número', esc(n.numero))}
+    ${linha('Órgão', esc(n.orgao))}
+    ${linha('Município', esc([n.municipio, n.uf].filter(Boolean).join(' · ')))}
+    ${linha('Abertura', n.abertura && fmtDtH(n.abertura) ? esc(fmtDtH(n.abertura)) + (dia===hoje?' <b style="color:var(--ambar)">· é hoje</b>':(dia&&dia<hoje?' <span style="color:var(--muted)">· já passou</span>':'')) : '')}
+    ${linha('Objeto', esc(n.objeto))}
+    ${gestor && n.valor_ganho > 0 ? linha('Valor ganho', '🏆 ' + brl(n.valor_ganho), 'ganho') : ''}
+    ${linha('Origem', n.origem === 'calendario_2025' ? 'Calendário 2025 (histórico da FPMED)' : esc(n.origem))}
+  </dl>`;
+
+  const tarefas = t ? FASES.map(f => {
+    const doGrupo = t.map((x,i)=>({x,i})).filter(o => o.x.secao === f.k);
+    if(!doGrupo.length) return '';
+    return `<div class="tf-secao"><span class="bola" style="background:${f.c}"></span>${esc(f.n)}</div>` +
+      doGrupo.map(o => `<label class="tf${o.x.feita?' feita':''}">
+        <input type="checkbox" ${o.x.feita?'checked':''} onchange="marcaTarefa(${n.id},${o.i},this.checked)">
+        <span>${esc(o.x.texto)}</span></label>`).join('');
+  }).join('')
+  : `<div style="font-size:12.5px;color:var(--muted)">Sem checklist — este negócio está arquivado.
+       <a class="lnk" style="color:var(--azul-claro);cursor:pointer" onclick="desarquivar(${n.id})">devolver ao funil</a> cria as 15 tarefas.</div>`;
+
+  return `
+    <div class="dw-sec">
+      <h4>Estágio</h4>
+      <div class="dw-fases">${FASES.map(f =>
+        `<button class="${n.estagio===f.k?'on':''}" onclick="mudaFase(${n.id},'${f.k}')">${esc(f.n)}</button>`).join('')}</div>
+    </div>
+    <div class="dw-sec"><h4>Ficha</h4>${ficha}</div>
+    ${carregando ? '<div class="dw-sec"><h4>Observação da planilha</h4><div style="font-size:12px;color:var(--muted)">carregando…</div></div>'
+      : (obs && obs.observacao && String(obs.observacao).trim()
+         ? `<div class="dw-sec"><h4>Observação do Calendário 2025${obs.status?' · '+esc(obs.status):''}</h4>
+              <div class="dw-obs">${esc(obs.observacao)}</div>
+              <div class="salvo">escrita à mão na planilha — histórico, não editável aqui</div></div>`
+         : (obs && obs.status ? `<div class="dw-sec"><h4>Status na planilha</h4><div style="font-size:12.5px;color:var(--muted)">${esc(obs.status)} — sem observação escrita</div></div>` : ''))}
+    <div class="dw-sec">
+      <h4>Anotações</h4>
+      <textarea class="anot" id="dw-anot" placeholder="O que antes ia na coluna OBSERVAÇÃO da planilha escreve-se aqui — e fica junto do negócio."
+        onblur="salvaAnot(${n.id}, this.value)">${esc(n.anotacoes||'')}</textarea>
+      <div class="salvo" id="dw-anot-msg">salva ao sair do campo</div>
+    </div>
+    <div class="dw-sec">
+      <h4>Tarefas ${t ? `· ${feitas} de ${t.length} concluídas` : ''}</h4>
+      ${t ? `<div class="dw-prog"><span>${pct}%</span><span class="b"><i style="width:${pct}%"></i></span></div>` : ''}
+      ${tarefas}
+    </div>
+    <div class="dw-acoes">
+      ${n.arquivado ? `<button onclick="desarquivar(${n.id})">↩ Devolver ao funil</button>`
+                    : `<button onclick="arquivar(${n.id})">📥 Arquivar</button>`}
+      <button onclick="location.href='fpmed_licitacoes.html'">🏛️ Abrir Licitações</button>
+      <button onclick="fecharDrawer()">Fechar</button>
+    </div>`;
+}
+
+async function mudaFase(id, fase){
+  const n = NEG.find(x => x.id === id); if(!n || n.estagio === fase) return;
+  const antes = n.estagio;
+  n.estagio = fase; abrirDrawer(id); pinta();
+  try{ await gravar(id, { estagio: fase }); }
+  catch(e){ n.estagio = antes; abrirDrawer(id); pinta(); alert('Não consegui mudar o estágio: ' + e.message); }
+}
+
+async function marcaTarefa(id, i, feita){
+  const n = NEG.find(x => x.id === id); if(!n || !Array.isArray(n.tarefas)) return;
+  const antes = n.tarefas[i].feita;
+  n.tarefas[i].feita = feita;
+  // repinta só o progresso e o card; o drawer inteiro roubaria o foco do checkbox
+  const t = n.tarefas, fe = t.filter(x=>x.feita).length, pct = Math.round(fe/t.length*100);
+  const cx = document.querySelector('#dw-body .dw-prog');
+  if(cx) cx.innerHTML = `<span>${pct}%</span><span class="b"><i style="width:${pct}%"></i></span>`;
+  try{ await gravar(id, { tarefas: n.tarefas }); pinta(); }
+  catch(e){ n.tarefas[i].feita = antes; abrirDrawer(id); alert('Não consegui salvar a tarefa: ' + e.message); }
+}
+
+async function salvaAnot(id, txt){
+  const n = NEG.find(x => x.id === id); if(!n) return;
+  const v = String(txt||'');
+  const msg = document.getElementById('dw-anot-msg');
+  if(v === String(n.anotacoes||'')) { if(msg){ msg.className='salvo'; msg.textContent='salva ao sair do campo'; } return; }
+  if(msg){ msg.className='salvo'; msg.textContent='salvando…'; }
+  try{
+    await gravar(id, { anotacoes: v.trim() ? v : null });
+    n.anotacoes = v.trim() ? v : null;
+    if(msg){ msg.className='salvo ok'; msg.textContent='✓ anotação salva'; }
+    pinta();
+  }catch(e){
+    if(msg){ msg.className='salvo erro'; msg.textContent='não salvou: ' + e.message + ' — copie o texto antes de sair'; }
+  }
+}
+
+function setVis(v){
+  VIS = v;
+  ['lista','quadros','agenda'].forEach(x => {
+    const b = document.getElementById('v-'+x); if(b) b.classList.toggle('on', x===v);
+  });
+  document.querySelectorAll('header nav a').forEach((a,i) => a.classList.toggle('on', (i===0&&v==='lista')||(i===1&&v==='quadros')||(i===2&&v==='agenda')));
+  pinta();
+}
+function selFase(k){ FASE_SEL = (FASE_SEL===k) ? null : k; pinta(); }
+function verArquivados(){ document.getElementById('f-arquivados').checked = true; setVis('lista'); }
+function toggleFiltro(){
+  const b = document.getElementById('f-busca');
+  b.style.display = b.style.display==='none' ? '' : 'none';
+  if(b.style.display==='') b.focus(); else { b.value=''; pinta(); }
+}
+
+// Mesma corrida do gm-auth que mordeu o Licitações em 05/08: com token fresco o
+// `gm-auth-ready` dispara ainda dentro do <head>, antes deste script existir. Então checa
+// primeiro se já está pronto, e só escuta o evento se não estiver.
+if(window.gmAuth) carregar();
+else document.addEventListener('gm-auth-ready', carregar, { once:true });
+</script>
+<script src="limedtec-pwa.js" defer></script>
+</body>
+</html>

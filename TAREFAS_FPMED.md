@@ -128,8 +128,78 @@ qualquer um, e a configuração da Global **não serve** (os nomes são de lá).
 | **4** | Blocos 2 e 4 do sync de código | ✅ **CONCLUÍDO 06/08** |
 | **8** | Calendário FASE 2 | ✅ **CONCLUÍDO 06/08** — 2.555 linhas, taxa de vitória 15,2% |
 | **10** | Coleta agendada do PNCP + banco próprio | 🟡 **PARCIAL** — coletor + tela lendo do banco prontos; falta a edge function + agendamento |
-| **9** | **SIGA / funil de Negócios** | **← PRÓXIMO.** Já pode nascer semeado: as 2.555 linhas do item 8 estão no banco |
+| **9** | **SIGA / funil de Negócios** | 🟡 **1ª ETAPA CONCLUÍDA 06/08** — Funil + Tarefas + Agenda no ar, semeado com as 2.555 linhas. Falta o resto das abas (ver 9.1 abaixo) |
 | **11** | `ABRIR_FILA.bat` inicia o Claude com "continua a fila" | 🆕 fim da fila |
+
+### 9.1 — FUNIL DE NEGÓCIOS ✅ (1ª das 6 etapas do item 9, concluída 06/08/2026)
+
+**A regra de ouro que ele deu junto** (06/08): *"a planilha Calendário 2025 é COMO A FPMED
+TRABALHA. O funil tem que espelhar o processo deles, não inventar um novo."* Está cumprida assim:
+
+**MAPA OFICIAL STATUS DA PLANILHA → FASE DO FUNIL** — os 9 status foram **levantados do banco**
+(2.555 linhas), não supostos. **Nenhum ficou sem destino: 2.555 de 2.555 viraram negócio.**
+
+| status da planilha | linhas | → fase do funil | por quê |
+|---|---:|---|---|
+| `DESCARTADO` | 1.779 | Oportunidade *(arquivado)* | analisou e não seguiu — morreu na análise |
+| `PARTICIPOU` | 693 | **Classificação** *(arquivado)* | disputou; a sessão já passou |
+| `SUSPENSO` | 27 | Qualificação | parado pelo órgão, mas vivo |
+| `PARTICIPAR` | 22 | **Qualificação** | decidiu entrar; preparando a disputa |
+| `NAO PARTICIPOU` | 13 | Oportunidade *(arquivado)* | ia entrar e não entrou |
+| `EM ANALISE` | 11 | **Oportunidade** | ainda decidindo se entra |
+| `REVOGADO` | 4 | Oportunidade *(arquivado)* | o órgão revogou |
+| `ADIADO` | 4 | Qualificação | remarcado, mas vivo |
+| `CANCELADO` | 2 | Oportunidade *(arquivado)* | o órgão cancelou |
+| **(+) qualquer linha com `VALOR GANHO` > 0** | **105** | **Contrato** | o resultado manda no estágio |
+
+Resultado no banco: **11 ativos** no kanban · **2.544 arquivados** (histórico) · **105 em
+Contrato**, dos quais 104 vieram de `PARTICIPOU` e **1 de `PARTICIPAR`** — a planilha ficou no
+status de antes do resultado sair, e o dinheiro é o fato mais forte.
+
+⚠️ **DUAS AMBIGUIDADES REGISTRADAS PRA ELE DECIDIR** (segui com um padrão documentado, não
+travei a fila — e trocar depois é uma linha no `MAPA_STATUS`):
+1. **`PARTICIPAR` (22 linhas) está em Qualificação. Deveria ser Disputa?** No SIGA, Disputa é a
+   sessão em si; Qualificação é preparar (analisar mercado, concorrentes, definir produto).
+   `PARTICIPAR` na planilha quer dizer "decidimos entrar" — antes da sessão. **Consequência
+   visível: a coluna DISPUTA do kanban nasce vazia (0 de 2.555)**, porque a planilha não tem
+   nenhum status que signifique "está em sessão agora" — ela é preenchida antes e depois, não
+   durante. Alternativa: `PARTICIPAR` → Disputa, e o kanban abre com 3 cartões lá.
+2. **`SUSPENSO`/`ADIADO` (31 linhas) estão em Qualificação** — "parado, mas vivo". A planilha
+   não guarda em que fase estava quando parou, então não dá pra devolver ao estágio anterior.
+   Baixo impacto: as 31 têm data passada e já entram arquivadas.
+
+**Defeito de fuso achado e corrigido** (só aparecia com dado real): `new Date('2026-08-06') < hoje`
+dá TRUE em Goiás — a string vira meia-noite **UTC** = 21h do dia anterior no fuso −03. Com isso a
+licitação que abre **HOJE** — a mais urgente do funil — nascia **arquivada**. Foi o que aconteceu
+com a sessão das 08:00 no BLL em 06/08. A comparação passou a ser por texto `'YYYY-MM-DD'`, que
+não tem fuso, e a tela deriva o dia **local** do `timestamptz` em vez de fatiar o ISO (senão a
+sessão das 22h cairia no dia seguinte da agenda).
+> ⛔ **1 LINHA NO BANCO SEGUE COM O VALOR VELHO** (`negocios` id 13, arquivada por esse defeito).
+> Corrigir é um `UPDATE` — **não executei, a regra da rodada pede OK**. Duas saídas: ele clica
+> **"desarquivar"** no card (a tela ganhou o botão, é ação de uma linha feita por quem decide),
+> ou autoriza o UPDATE. Auditoria: `node tools/semeia_negocios.js --conferir` (só leitura) —
+> hoje acusa **exatamente essa 1 divergência**, e mais nenhuma.
+
+**O que entrou na tela** (`fpmed_negocios.html`, tema escuro, `data-tema="dark"`):
+- **3 visualizações do mesmo dado**: Lista · Quadros (kanban com drag-and-drop que **grava**, e
+  devolve o card se o PATCH falhar) · **Agenda**.
+- **AGENDA = o substituto direto do Calendário 2025**: cronológica por **DATA e HORA**, com a
+  hora em coluna própria à esquerda, dia da semana no cabeçalho, **HOJE destacado em âmbar**, e
+  o que já passou numa seção separada do mais recente pro mais antigo.
+- **Card**: portal · modalidade · **número** · órgão · município/UF · `Abertura em DD/MM/AAAA às
+  HH:MM` (com "é hoje") · badge da empresa · progresso `☑ n/15` · ações no hover.
+- **Drawer de detalhe** (clique no card): seletor de estágio, ficha completa, **as 15 tarefas em
+  seções por fase com progresso**, arquivar/desarquivar.
+- **ANOTAÇÕES** (o que ia na coluna OBSERVAÇÃO da planilha) — campo editável que grava em
+  `negocios.anotacoes`, com aviso de "copie o texto antes de sair" se o PATCH falhar.
+- **A observação velha da planilha entra em bloco PRÓPRIO, só leitura**, buscada sob demanda da
+  `licitacoes_acompanhadas` (954 das 2.555 linhas têm uma). **Não foi copiada pra dentro do campo
+  editável de propósito**: a primeira digitação apagaria a memória que a empresa levou um ano
+  pra escrever. Carregar as 954 no load da tela seria pagar por 940 que ninguém abre.
+- **`valor_ganho` é de GESTOR** na tela (card, ficha e KPI), além da RLS que já restringe a
+  tabela inteira. Duas camadas porque um dia a leitura pode afrouxar por uma view.
+
+Suite nova `testa_funil_negocios` (**121 asserts**). Total: **1.075 asserts / 0 falhas / 35 suites**.
 
 **Por que o 10 passou na frente do 9** (decisão do Lemuel, 05/08): o funil tem que nascer lendo
 o banco próprio, não o PNCP ao vivo. Construir o 9 primeiro significaria construí-lo sobre uma
@@ -543,16 +613,17 @@ real acontece no próximo boot dele (ou ele mesmo dá os 2 cliques e me conta).
    - ✅ **Guarda cumprida**: `*.xlsm`/`*.xlsb` no `.gitignore`; o relatório acima descreve
      estrutura, não reproduz valor nem cliente.
 
-9. ⬜ **SIGA COMPLETO — 5 abas** (entrou no fim da fila em 05/08). Estudo do Lemuel registrado no
+9. 🟡 **SIGA COMPLETO — 5 abas** (entrou no fim da fila em 05/08). **1ª etapa (Funil) CONCLUÍDA
+   06/08 — detalhes na seção 9.1 acima.** Estudo do Lemuel registrado no
    `LICITACOES_SPEC.md`: **seção 5** (módulo Análise em detalhe) + **seção 6** (produto inteiro,
    aba por aba: Oportunidades · Negócios · Análise · Disputa · Jurídico + telas transversais).
    **Ler a seção 6.0 antes de estimar** — boa parte da aba 1 JÁ ESTÁ NO AR e não deve ser
    reconstruída. Ordem recomendada na 6.7:
-   - **1º NEGÓCIOS / Funil + Tarefas** 🟢 zero dependência externa, usa a busca que já existe +
-     nosso banco. Kanban de 5 estágios, 15 tarefas-modelo automáticas, drawer de detalhe. É o que
-     o Lemuel elogiou. O `Calendario 2025.xlsm` (item 8) semeia com 2.578 linhas reais.
-   - **2º Agenda + Notificações** 🟢 eventos DERIVADOS (abertura dos negócios + validade dos
-     documentos), sem tabela de evento manual.
+   - **1º NEGÓCIOS / Funil + Tarefas** ✅ **FEITO 06/08** — kanban de 5 estágios, 15 tarefas-modelo
+     automáticas, drawer de detalhe, semeado com as 2.555 linhas do item 8. Ver seção 9.1.
+   - **2º Agenda + Notificações** 🟡 **a AGENDA foi junto no 06/08** (eventos DERIVADOS da
+     abertura dos negócios, sem tabela de evento manual). **Falta**: os eventos de validade de
+     documento (dependem de "Meus Documentos", que não existe) e as NOTIFICAÇÕES.
    - **3º Meus Jornais** 🟡 busca salva + cron; o e-mail exige provedor (**custo, decisão do Lemuel**).
    - **4º Pesquisa avançada completa + Órgãos + Desertas** 🟡 incremento na tela atual.
    - **5º ANÁLISE** 🔴 **bloqueado** até achar o endpoint de **resultados/atas do PNCP**.

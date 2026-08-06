@@ -54,6 +54,7 @@ const manifest = {
   shortcuts: [
     { name: 'Propostas',  url: './fpmed_giovana.html', icons: [{ src: 'icones/limedtec-192.png', sizes: '192x192' }] },
     { name: 'Licitacoes', url: './fpmed_licitacoes.html' },
+    { name: 'Negocios', url: './fpmed_negocios.html' },
     { name: 'Painel',     url: './fpmed_painel.html' },
   ],
 };
