@@ -255,18 +255,25 @@ ITEM 9, 4o PEDACO FECHADO (06/08): pesquisa avancada completa + Orgaos + Deserta
   Aberto-Fechado 8, >= R$ 1 mi 29, e as 12 SEM valor estimado passaram TODAS na faixa de
   1-2 mi (a garantia principal). View v_orgaos_licitantes respondeu 200 com a RLS do usuario.
 
->>> !! BLOQUEIO EXTERNO (GitHub, nao e nosso codigo) — O SITE NAO ESTA ATUALIZANDO !!
-    O "pages build and deployment" esta FALHANDO desde o commit 98faf3f (o funil, da rodada
-    passada). Ou seja: fpmed_negocios.html E a pesquisa avancada estao no repo mas NAO no ar.
-    O ultimo deploy que passou foi eec0f5c, 06/08 02:48 GMT.
-      98faf3f -> build OK, DEPLOY falhou
-      1cf18e6 -> falhou logo no "Set up job" (nem comecou)
-      62f11e9 -> em FILA ha mais de 25 min, sem sair do lugar
-    Os 3 casos apontam pro lado do GitHub (runner/quota/incidente), nao pro conteudo: um deles
-    chegou a BUILDAR e morreu no deploy, e outro morreu antes de rodar qualquer passo.
-    >>> O QUE ELE PRECISA FAZER: abrir github.com/fpmed-hospitalar/fpmed -> aba Actions -> o run
-        vermelho -> ler o erro do passo (eu nao consigo: os logs exigem login). Se for cota/
-        incidente, e so reexecutar ("Re-run all jobs") quando normalizar. Nada a corrigir aqui.
+>>> !! BLOQUEIO EXTERNO CONFIRMADO — INCIDENTE DO GITHUB. NADA A CORRIGIR AQUI. !!
+    githubstatus.com em 06/08 ~17h30: **Actions: major_outage · Pages: major_outage**.
+    O site nao atualiza desde o commit eec0f5c (06/08 02:48 GMT). Ou seja, NAO ESTAO NO AR
+    ainda: o funil (fpmed_negocios), a pesquisa avancada/Orgaos/Desertas, o sino e a CORRECAO
+    DA SESSAO. Tudo commitado e pushado — falta so o GitHub publicar.
+    DIAGNOSTICO FEITO (pra ninguem refazer): o BUILD passa em ~46s; quem trava e o DEPLOY, que
+    fica em `waiting` e morre. Descartados um a um, pela API publica:
+      - branch policy do ambiente github-pages: permite `master` (o branch certo);
+      - revisor obrigatorio: nenhum · temporizador: 0;
+      - conteudo do repo: o build conclui com sucesso.
+    ACHADO DE PROCESSO (foi erro meu no comeco da rodada): cada push CANCELA o deploy em
+    andamento. Como o deploy leva >15 min e eu commitava a cada task, eu mesmo estava
+    cancelando o anterior. Regra pra proximas rodadas: no fim, dar UM tempo sem push pro
+    deploy fechar antes de conferir no ar.
+    >>> O QUE FAZER: nada agora. Quando o githubstatus normalizar, o run pega sozinho; se nao,
+        Actions -> ultimo run -> "Re-run all jobs".
+    >>> E O QUE FICOU DEVENDO: conferir NO NAVEGADOR a pesquisa avancada, o sino e a correcao
+        da sessao. O refino ja foi validado contra as 70 linhas reais do banco por injecao do
+        codigo novo na pagina logada, e a suite cobre o resto — mas ver na tela ainda falta.
 
 ITEM 9, 2o PEDACO FECHADO (06/08): NOTIFICACOES — o sininho no header do funil. Secao 9.3.
   Tres blocos: abre hoje · abre amanha · a sessao passou e o negocio continua na fase anterior.
