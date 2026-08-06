@@ -131,6 +131,37 @@ qualquer um, e a configuração da Global **não serve** (os nomes são de lá).
 | **9** | **SIGA / funil de Negócios** | 🟡 **2 ETAPAS CONCLUÍDAS 06/08** — 1ª: Funil + Tarefas + Agenda (9.1). 4ª: Pesquisa avançada + Órgãos + Desertas (9.2). Faltam Notificações, Meus Jornais, Análise e Jurídico |
 | **11** | `ABRIR_FILA.bat` inicia o Claude com "continua a fila" | 🆕 fim da fila |
 
+### 9.3 — NOTIFICAÇÕES (o sininho) ✅ (2ª das 6 etapas do item 9, 06/08/2026)
+
+O 2º pedaço da ordem da 6.7 era *Agenda + Notificações*. A **Agenda** entrou na 1ª etapa; aqui
+entra o **sino**, no header do funil — a Agenda mostra o mês, o sino mostra o que não pode passar.
+
+**Sem tabela, e isso é decisão.** A notificação é **derivada do fato** (a `abertura` do
+negócio), igual à Agenda. Fila de mensagens guardada exigiria um processo pra criar e outro pra
+expirar; no dia em que um falhasse, o sino avisaria de **sessão que já aconteceu** — pior que
+não avisar. Pelo mesmo motivo **não existe "marcar como lida"**: o aviso some quando o fato some
+(o dia passa, o negócio é arquivado). Um botão de dispensar deixaria alguém esconder a sessão
+que abre hoje às 8h — exatamente a que o sino existe pra não deixar passar.
+
+**Três blocos**: `abre hoje` · `abre amanhã` · `a sessão passou e o negócio continua na fase
+anterior`. O terceiro só conta quem ficou em **Oportunidade/Qualificação** — quem está em
+Disputa pra frente andou. É o aviso de "esqueceram de mover o cartão, ou de participar".
+
+**O badge conta só hoje + amanhã.** Somar as atrasadas deixaria o número aceso pra sempre com
+histórico velho, e badge que nunca zera é badge que ninguém mais olha.
+
+**Duas coisas que a tela não faz:**
+1. dizer *"nada abre hoje"* quando a leitura do banco **falhou** — nesse caso o sino diz
+   **"não sei"**. Com a lista vazia por erro, "nenhum aviso" e "não sei" seriam a mesma tela;
+2. calar sobre o que não cobre — o painel avisa que **vencimento de documento** ainda não entra,
+   porque depende de **"Meus Documentos"**, que não existe no sistema (segue pendente na 6.7).
+
+Fuso coberto pelo mesmo cuidado do funil: dia **local** derivado do `timestamptz`, nunca slice
+do ISO. A suíte testa as **duas pontas do dia** (08:00 e 22:00) — sem isso, a sessão das 22h
+cairia no dia seguinte e a das 8h de hoje não seria avisada.
+
+Suíte nova `testa_notificacoes` (**30 asserts**). Total: **1.239 asserts / 0 falhas / 38 suítes**.
+
 ### 9.2 — PESQUISA AVANÇADA + ÓRGÃOS + DESERTAS ✅ (4ª das 6 etapas do item 9, 06/08/2026)
 
 **Os filtros novos saem do que o PNCP REALMENTE entrega** — levantado dos registros já

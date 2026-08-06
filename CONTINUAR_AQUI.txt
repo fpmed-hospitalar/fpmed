@@ -247,8 +247,18 @@ ITEM 9, 4o PEDACO FECHADO (06/08): pesquisa avancada completa + Orgaos + Deserta
         vermelho -> ler o erro do passo (eu nao consigo: os logs exigem login). Se for cota/
         incidente, e so reexecutar ("Re-run all jobs") quando normalizar. Nada a corrigir aqui.
 
->>> PROXIMO DA FILA: item 9, 2o pedaco — NOTIFICACOES (sininho D-1/D-0 de abertura de sessao),
-    que sai do funil e nao depende de nada externo. Depois o item 11 (ABRIR_FILA.bat).
+ITEM 9, 2o PEDACO FECHADO (06/08): NOTIFICACOES — o sininho no header do funil. Secao 9.3.
+  Tres blocos: abre hoje · abre amanha · a sessao passou e o negocio continua na fase anterior.
+  SEM TABELA (derivada do fato, igual a Agenda) e SEM "marcar como lida" — o aviso some quando
+  o fato some. O badge conta so hoje+amanha: somar atrasada deixaria o numero aceso pra sempre.
+  Com erro de leitura o sino diz "NAO SEI", nao "nada abre hoje".
+  Suite nova testa_notificacoes (30) -> 1.239 asserts / 0 falhas / 38 suites.
+
+>>> PROXIMO DA FILA: item 11 (ABRIR_FILA.bat inicia o Claude ja com "continua a fila").
+    Depois, do item 9 sobram: Meus Jornais (3o — busca salva da pra fazer; o E-MAIL exige
+    provedor = CUSTO, decisao dele), ANALISE (5o — bloqueado ate achar o endpoint de
+    resultados/atas do PNCP), JURIDICO (6o — projeto de coleta de acervo, nao tela) e a
+    validade de documento do sino (depende de "Meus Documentos", que nao existe).
 
 ITEM 9 — 1a ETAPA (FUNIL DE NEGOCIOS) FECHADA. Detalhes completos na secao 9.1 do TAREFAS.
 Suite: 1.075 asserts verdes / 0 falhas / 35 suites (suite nova testa_funil_negocios, 121).
