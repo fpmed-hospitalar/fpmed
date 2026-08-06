@@ -213,7 +213,20 @@ PORTE FECHADO (06/08): USUARIOS E ACESSOS — 2 dos 8 arquivos que faltavam do m
   ESCOLHE; a tela portada pede --lt-* e o config daqui so escrevia os nomes crus — ela abriria
   ESCURA num sistema claro. O config agora escreve OS DOIS. A virada completa (largar os nomes
   crus e converter as 7 telas) e item de SYNC com teste proprio, nao efeito colateral.
-  >>> FALTAM 6 DOS 8, e 2 deles sao DECISAO (nao digitacao) — ver "O QUE FICOU PRO LEMUEL".
+  >>> OS OUTROS 6 DO MOLDE: conferidos um a um, e a resposta e NAO PORTAR (tabela na 12.1).
+      - motor_busca.js e GERADO ("NAO EDITE A MAO — espelho verbatim do MOTOR de
+        globalmed_giovana"). Copiar traria o motor DA GLOBAL, divergente do que vive no
+        fpmed_giovana. As suites daqui ja fatiam o motor do HTML. Se um dia valer, porta-se o
+        GERADOR e gera-se o espelho DAQUI — nunca o arquivo pronto.
+      - o importador de estoque do molde (6 arquivos + vendor/pdfjs): a FPMED JA importa PDF,
+        e a versao daqui e a mais rica (extracao local GRATIS primeiro, IA so pra escaneado,
+        data do relatorio, desfazer com 5 backups, regra 0->1). Portar seria um SEGUNDO
+        importador gravando na mesma tabela com regras que nao conhecem essas decisoes.
+        Ha precedente no SYNC_GLOBAL.md (o importador por CLI ficou fora pelo mesmo motivo).
+      - icones/limedtec.ico so e usado pelo cria_atalho_estoque.ps1, da tela que nao entra.
+      >>> REVERSIVEL, e esta no checkpoint: se ele quiser o importador do molde pra padronizar
+          com os outros clientes, o caminho e SUBSTITUIR o da FPMED e migrar as 4 decisoes pra
+          ele — nao rodar os dois lado a lado.
 
 >>> !! SEGURANCA CORRIGIDA 06/08 — a tabela `perfis` estava LEGIVEL PELA INTERNET !!
     4o DEFEITO DO KIT, e o grave. O ddl/03 cria `perfis` e nao liga RLS, nao cria policy e nao

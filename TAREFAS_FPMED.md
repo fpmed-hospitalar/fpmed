@@ -268,10 +268,20 @@ mais `tests/db/testa_rls_cobertura` e `testa_congelamento` verdes contra o banco
 > coerência interna — *"algum ref cravado no arquivo?"* — em vez de citar o projeto de outra
 > empresa.
 
-⬜ **Faltam 6 dos 8**: o importador de estoque por PDF (`limedtec-estoque.html`,
-`limedtec-estoque-leitor.js`, `le_pdf_estoque.js`, `importa_estoque_erp.js`, `IMPORTAR_ESTOQUE.bat`,
-`cria_atalho_estoque.ps1`, `vendor/pdfjs/*`), `motor_busca.js` e `icones/limedtec.ico`.
-**Os dois primeiros exigem decisão, não digitação** — ver "o que ficou de fora" no `CONTINUAR`.
+#### 📦 Os outros 6 do molde — **conferidos um a um, e a resposta é NÃO PORTAR** (06/08)
+
+O item do verificador ficaria verde copiando os 6 arquivos. Copiar por causa do checklist é o
+mesmo defeito que já devolvi pro kit (ficar *"mais verde por saber menos"*). Cada um foi aberto:
+
+| arquivo | por que fica de fora |
+|---|---|
+| `motor_busca.js` | **É gerado**, não escrito: o cabeçalho dele diz *"GERADO por `tools/gera_motor_busca.js` — NÃO EDITE À MÃO. Espelho verbatim do MOTOR de `globalmed_giovana.html`"*. Copiá-lo traria pra cá o motor **da Global**, não o nosso — uma segunda cópia, divergente da que vive no `fpmed_giovana.html`, e o par que diverge com o tempo é sempre esse. As suítes daqui já fatiam o motor direto do HTML (`bloco()`), então não há buraco funcional. **Se um dia valer, porta-se o GERADOR e gera-se o espelho DAQUI** — nunca o arquivo pronto. |
+| `limedtec-estoque.html` + `limedtec-estoque-leitor.js` + `le_pdf_estoque.js` + `importa_estoque_erp.js` + `IMPORTAR_ESTOQUE.bat` + `vendor/pdfjs/*` | **A FPMED já importa estoque por PDF**, dentro do sistema (*Atualizar Estoque FPMED*), e a versão daqui é a mais rica: extração **local e grátis** primeiro, IA só pra PDF escaneado, **data do relatório** (relatório de sexta importado na segunda tem 3 dias de idade), **desfazer** com 5 backups, caixa de itens novos, e a regra **estoque 0 → 1**. O leitor do molde é genérico do LIMEDTEC; o parser daqui é do relatório do ERP da FPMED. Portar seria **um segundo importador** gravando na mesma tabela, com regras que não conhecem essas decisões. Já há precedente registrado no `SYNC_GLOBAL.md` (o importador PDF por CLI ficou fora pelo mesmo motivo). |
+| `icones/limedtec.ico` | Existe **um único** uso dele em toda a origem: o `cria_atalho_estoque.ps1`, que cria o atalho da tela de estoque — a tela que não entra. Copiar sozinho seria um arquivo órfão cuja única função é pintar um item de verde. |
+
+> ⚠️ **As duas primeiras linhas são reversíveis e ficam no checkpoint pro Lemuel.** Se ele quiser
+> o importador do molde (por exemplo, para padronizar com os outros clientes), o caminho é
+> *substituir* o da FPMED e migrar as 4 decisões acima pra ele — não rodar os dois lado a lado.
 
 ### 9.4 — MEUS JORNAIS ✅ (3ª das 6 etapas do item 9, 06/08/2026)
 
