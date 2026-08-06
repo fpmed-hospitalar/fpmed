@@ -251,8 +251,22 @@ Suite: 658 asserts verdes / 0 falhas / 24 suites (eram 515 em 20 no inicio da ro
   borda e o conteudo comecava 180px adiante -- medido depois: logo e conteudo em x=200, iguais);
   profundidade desinvertida (topfaixa #08111B recua < corpo #0B1622 < header #132234 elevado);
   estado vazio virou caixa tracejada em vez de slab solido.
-  ⚠️ FALTOU: ver a tela COM RESULTADOS carregados -- a extensao do Chrome desconectou antes.
-     O tema e o alinhamento foram medidos e tem screenshot; os CARDS nao foram revistos no ar.
+  ⚠️ VER A TELA COM RESULTADOS: tentado depois, e o PNCP ESTAVA FORA DO AR (3a queda em 2 dias).
+     A degradacao funcionou como projetada -- "Nao consegui falar com o PNCP / nao respondeu em
+     20s", legivel no tema escuro, com botao "Tentar de novo", sem tela branca. Mas os CARDS
+     continuam sem revisao visual no ar. Refazer numa janela em que o PNCP responda.
+     >>> ISSO E O ARGUMENTO VIVO DO ITEM 10: a tela esta INUTIL agora, e nao por defeito nosso.
+
+>>> AUTORIZACAO PERMANENTE DE CONSULTA AO SIGA (Lemuel, 05/08) -- secao 6.2.0-Z do SPEC.
+  Pode visitar sozinho durante a construcao do modulo. SO OLHAR: nunca criar/editar/excluir/
+  salvar nada na conta dele; JAMAIS tocar na aba DISPUTA em sessao ao vivo; referencia de
+  comportamento e layout, nunca codigo/asset/endpoint; registrar no SPEC antes de implementar.
+  ⚠️ LIMITE PRATICO DESCOBERTO em 05/08 ~21h: a aba logada dele NAO esta no grupo de abas que a
+  automacao enxerga, e aba nova abre o app SEM sessao (tela em branco, 146 elementos, zero
+  texto). Nao tentei login. Pra visitar de verdade, ele precisa mover a aba ja logada pra sessao
+  da automacao, ou avisar onde ela esta.
+  (Foi nisso que o teste do "SIGA responde com o PNCP fora?" ficou INCONCLUSIVO -- detalhes na
+   secao 2.0 do SPEC. A conclusao do indice proprio segue de pe pelos outros dois indicios.)
 
 >>> ACHADO DO LEMUEL 05/08 -- COMO O SIGA REALMENTE BUSCA (interceptacao de rede + bundles JS)
   Ele abriu o DevTools e trocou o filtro de portal: ZERO requisicao pro pncp.gov.br ou pra

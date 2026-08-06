@@ -198,9 +198,21 @@ e (b) proxy ao vivo pro portal a cada requisição; de fora os dois se parecem.
    base guardada. Este é o indício mais forte, porque é sobre o que o produto FAZ, não sobre
    como ele parece ser feito.
 
-> 🔬 **Teste que encerraria de vez, se um dia interessar:** abrir o SIGA num momento em que o
-> PNCP esteja fora do ar (aconteceu em 04/08 e de novo em 05/08). Continuou respondendo =
-> índice próprio. Caiu junto = proxy ao vivo.
+> 🔬 **Teste que encerraria de vez:** abrir o SIGA num momento em que o PNCP esteja fora do ar.
+> Continuou respondendo = índice próprio. Caiu junto = proxy ao vivo.
+>
+> **TENTADO em 05/08 ~21h — INCONCLUSIVO, e o registro fica aqui pra não ser refeito às cegas.**
+> A janela era perfeita: o PNCP caiu pela **terceira vez em dois dias** e a nossa tela mostrou
+> "não consegui falar com o PNCP · não respondeu em 20s". Abri o SIGA na mesma hora, com a
+> autorização de consulta (6.2.0-Z), e a tela veio **em branco** — 146 elementos, zero texto.
+> **Isso não diz nada sobre a arquitetura deles**: a sessão logada do Lemuel está numa aba que
+> ele deixou aberta, e essa aba não pertence ao grupo que a automação enxerga. Aba nova = app
+> sem sessão. Não tentei login — inserir credencial não é coisa que eu faça.
+> **Como refazer:** ele precisa mover a aba já logada do SIGA para a sessão da automação (ou
+> avisar que ela está lá), e a tentativa tem que cair de novo numa janela de PNCP fora do ar.
+> Enquanto isso, a conclusão do índice próprio continua **sustentada pelos outros dois indícios**
+> (bundles `useSuperCrawl*` e o produto entregar histórico) — que já bastam pra decisão do
+> item 10, e é por isso que ela não ficou esperando este teste.
 
 **Sobre o `useSuperCrawlRealtime`:** é quase certamente a tela de **DISPUTA**, acompanhando a
 sessão ao vivo no Comprasnet. Isso **não entra no nosso escopo** e a decisão já está tomada
