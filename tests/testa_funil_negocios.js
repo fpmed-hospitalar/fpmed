@@ -236,8 +236,13 @@ ok('403 no PATCH explica que só gestor grava', /só gestor grava no funil/.test
     /'licitacoes','compra-direta','negocios'/.test(sf) || /'negocios'/.test(sf.slice(sf.indexOf('function espAplicaPermissao'), sf.indexOf('function espAplicaPermissao') + 800)));
   const sw = fs.readFileSync(path.join(raiz, 'sw.js'), 'utf8');
   ok('...e está na casca do service worker (abre offline)', sw.includes("'./fpmed_negocios.html'"));
-  const mf = fs.readFileSync(path.join(raiz, 'manifest.webmanifest'), 'utf8');
-  ok('...e no atalho do aplicativo instalado', mf.includes('fpmed_negocios.html'));
+  // >>> O ATALHO DO MANIFEST SAIU EM 07/08, e o teste mudou junto porque a DECISAO mudou:
+  //     atalho de app abre JANELA NOVA por padrao do sistema operacional, e o Lemuel relatou
+  //     exatamente isso ("abre em outra janela independente"). A entrada da tela e o MENU, na
+  //     mesma janela. Guardado pelo tests/testa_navegacao_janela.js.
+  const menu = fs.readFileSync(path.join(raiz, 'fpmed_sistema_final.html'), 'utf8');
+  ok('...e tem entrada no MENU, abrindo na mesma janela',
+    menu.includes("onclick=\"location.href='fpmed_negocios.html'\""));
   ok('a tela de Negócios tem o pill "← Sistema" de volta', /<a href="fpmed_sistema_final\.html">/.test(src));
   ok('...e o caminho pro Licitações, que é o irmão dela no módulo', /<a href="fpmed_licitacoes\.html">/.test(src));
 }

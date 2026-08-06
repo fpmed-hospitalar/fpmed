@@ -212,6 +212,30 @@ Criado em 21/07/2026 copiando SO os arquivos do app do C:\globalmed.
     PERFIS DA FPMED agora: comercial@fpmed.com.br · lemuelempresas7@outlook.com · licitacao@
     fpmed.com.br — os TRES gestor_geral ativos (o do Lemuel segue gestor_geral, conferido).
 
+>>> SEGUNDO GESTOR (07/08): comercial@fpmed.com.br · Marcos Fernando · gerente geral.
+    O usuario JA EXISTIA no Auth (id 53ade1df-...), entao foi AJUSTADO, nao duplicado: senha
+    provisoria, e-mail confirmado, nome no user_metadata e app_metadata.role='diretor'.
+    Perfil gestor_geral/ativo. PROVA com login real (token dele): perfis 200 · cotacoes COM
+    CUSTO 200 · funil 200 · licitacoes 200 · CMED 200.
+    No cliente.config.js o nome dele estava como "FPMED Comercial" e virou "Marcos Fernando" —
+    e o nome que sai nos campos de vendedora e nos documentos.
+    EQUIPE DA FPMED: Natanael (licitacao@) · Marcos Fernando (comercial@) · Lemuel — os TRES
+    gestor_geral ativos.
+
+>>> NAVEGACAO — UMA JANELA SO (07/08, relato do Lemuel com print).
+    Ele viu "os itens de SISTEMAS abrem em outra janela independente". A investigacao contraria
+    o palpite natural e vale registrar: os itens do MENU nunca abriram janela nova — os 7 usam
+    location.href e NAO existe target="_blank" nem window.open em nenhum deles (conferido linha
+    a linha). Quem abria eram os ATALHOS DO MANIFEST (`shortcuts`): no app instalado eles
+    aparecem no botao direito do icone e na jump list, e o padrao do SO pra atalho de app e
+    abrir UMA JANELA NOVA. Duas janelas do mesmo sistema, cada uma com a sua sessao em memoria.
+    CORRIGIDO: `shortcuts` saiu do manifest E do tools/gera_manifest.js (senao voltava na
+    proxima geracao). O menu ja levava as 4 telas em um clique, na mesma janela — o atalho so
+    oferecia um caminho pior pro mesmo lugar.
+    Suite nova testa_navegacao_janela (24). Duas suites antigas cravavam que a tela TINHA
+    atalho no manifest; mudaram junto, porque quem mudou foi a decisao — agora elas exigem a
+    entrada no MENU.
+
 >>> SENHA UNICA 'adm2026' — DECISAO DO LEMUEL PRO DIA 1, REGISTRADA COM A RECOMENDACAO DADA.
     Ela e PROVISORIA. A recomendacao que eu dei, por escrito, e: cada pessoa troca no PRIMEIRO
     login, pelo botao da chave (🔑) no canto superior direito de qualquer tela, ou pelo

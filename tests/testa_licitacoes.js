@@ -68,8 +68,13 @@ ok('último dia útil é no passado', d < new Date(), d.toISOString());
   // continua na casca do PWA e nos atalhos do app instalado
   const sw = require('fs').readFileSync(require('path').join(__dirname, '..', 'sw.js'), 'utf8');
   ok('...e continua na casca do service worker (abre offline)', sw.includes("'./fpmed_licitacoes.html'"));
-  const mf = require('fs').readFileSync(require('path').join(__dirname, '..', 'manifest.webmanifest'), 'utf8');
-  ok('...e no atalho do aplicativo instalado', mf.includes('fpmed_licitacoes.html'));
+  // >>> O ATALHO DO MANIFEST SAIU EM 07/08, e o teste mudou junto porque a DECISAO mudou:
+  //     atalho de app abre JANELA NOVA por padrao do sistema operacional, e o Lemuel relatou
+  //     exatamente isso ("abre em outra janela independente"). A entrada da tela e o MENU, na
+  //     mesma janela. Guardado pelo tests/testa_navegacao_janela.js.
+  const menu = require('fs').readFileSync(require('path').join(__dirname, '..', 'fpmed_sistema_final.html'), 'utf8');
+  ok('...e tem entrada no MENU, abrindo na mesma janela',
+    menu.includes("onclick=\"location.href='fpmed_licitacoes.html'\""));
   // e o caminho de volta, pra nao virar beco sem saida
   ok('a tela de Licitacoes tem o pill "← Sistema" de volta',
     /<a href="fpmed_sistema_final\.html">/.test(src));

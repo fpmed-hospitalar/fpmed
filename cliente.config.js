@@ -113,7 +113,7 @@
     equipe: {
       'licitacao@fpmed.com.br':      'Natanael',
       'lemuelempresas7@outlook.com': 'Lemuel',
-      'comercial@fpmed.com.br':      'FPMED Comercial',
+      'comercial@fpmed.com.br':      'Marcos Fernando',   // gerente geral
     },
   };
 
