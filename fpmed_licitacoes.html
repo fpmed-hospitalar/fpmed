@@ -104,6 +104,19 @@ select:focus,input:focus{outline:none;border-color:var(--azul)}
 .org .sub{font-size:11.5px;color:var(--muted)}
 .org .n{margin-left:auto;text-align:right;white-space:nowrap}
 .org .n b{font-family:Montserrat;color:var(--azul-claro);font-size:14px}
+/* ── MEUS JORNAIS (buscas salvas) ── mesma caixa dos outros dois painéis ── */
+#jornais{display:none;background:var(--painel);border:1px solid var(--linha);border-radius:12px;padding:18px;margin-top:18px;box-shadow:var(--sombra);text-align:left}
+#jornais.open{display:block}
+.jor{display:flex;gap:12px;align-items:center;padding:11px 12px;border-radius:10px;border:1px solid var(--linha);
+  background:var(--painel2);margin-bottom:9px}
+.jor .nome{font-size:13.5px;color:var(--texto);font-weight:600;line-height:1.35}
+.jor .sub{font-size:11.5px;color:var(--muted);margin-top:3px;line-height:1.5}
+.jor .acao{margin-left:auto;display:flex;gap:8px;align-items:center;white-space:nowrap}
+/* o contador de novidade só existe quando há novidade — "0 novas" em destaque treina o olho a
+   ignorar o lugar onde o número importante aparece. */
+.novas{background:rgba(141,198,63,.16);color:var(--verde);border:1px solid rgba(141,198,63,.4);
+  padding:4px 11px;border-radius:20px;font-size:11.5px;font-weight:700}
+.bdg.nova{background:var(--verde);color:#0b1622;font-weight:700}
 /* filtro de refino ATIVO: o operador precisa ver que a lista está cortada, senão lê "só tem
    3 licitações hoje" quando na verdade é "3 passaram no refino que eu mesmo deixei ligado". */
 .refino{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px;font-size:12.5px}
@@ -237,14 +250,14 @@ select:focus,input:focus{outline:none;border-color:var(--azul)}
       <span class="lupa">🔍</span>
       <input id="f-kw" value="medicamento; hospitalar; material médico; farmac; soro; correlatos"
              placeholder="Pesquisar por objeto… (separe termos por ;)"
-             onkeydown="if(event.key==='Enter')buscar()">
-      <button class="go" onclick="buscar()" title="Buscar">🔎</button>
+             onkeydown="if(event.key==='Enter')buscaNova()">
+      <button class="go" onclick="buscaNova()" title="Buscar">🔎</button>
     </div>
     <div class="links">
       <a onclick="document.getElementById('avancada').classList.toggle('open')">Pesquisa avançada</a>
       <a onclick="abrirOrgaos()">Órgãos</a>
       <a onclick="soDesertas()" id="lk-desertas" title="processos que não seguiram: desertos/fracassados, revogados, anulados ou suspensos — costumam ser republicados">Desertas e republicáveis</a>
-      <a onclick="alert('Meus alertas entra na V1.5: a busca atual vira um alerta diário salvo.')">Meus alertas</a>
+      <a onclick="abrirJornais()" id="lk-jornais" title="buscas salvas: abre a pesquisa de novo e mostra o que chegou depois da última vez">Meus Jornais</a>
       <a onclick="porNumero()">Encontrar por Nº</a>
     </div>
 
@@ -298,7 +311,7 @@ select:focus,input:focus{outline:none;border-color:var(--azul)}
       <div style="margin-top:14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
         <span class="hint">o refino filtra o que já está na tela — não custa nova consulta ao PNCP</span>
         <button class="btn sec" style="margin-left:auto" onclick="limparRefino()">Limpar refino</button>
-        <button class="btn" onclick="buscar()">Aplicar e buscar</button>
+        <button class="btn" onclick="buscaNova()">Aplicar e buscar</button>
       </div>
     </div>
 
@@ -314,6 +327,24 @@ select:focus,input:focus{outline:none;border-color:var(--azul)}
       </div>
       <input type="text" id="f-orgbusca" placeholder="filtrar por nome, município ou CNPJ…" oninput="pintaOrgaos()">
       <div id="org-lista" style="margin-top:12px;max-height:420px;overflow:auto"></div>
+    </div>
+
+    <!-- ── MEUS JORNAIS ── buscas salvas. O valor não é o atalho, é o DELTA: "o que chegou
+         depois da última vez que EU olhei". Por isso cada jornal guarda no banco os números de
+         controle que já mostrou (ver ddl/jornais.sql). -->
+    <div id="jornais">
+      <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:6px">
+        <b style="font-family:Montserrat;font-size:15px;color:#fff">Meus Jornais</b>
+        <span class="hint" id="jor-resumo">carregando…</span>
+        <button class="btn mini" onclick="salvarJornal()" title="salva a busca que está na tela agora">＋ Salvar a busca atual</button>
+        <button class="btn sec mini" onclick="document.getElementById('jornais').classList.remove('open')">fechar</button>
+      </div>
+      <div class="hint" style="margin-bottom:10px">
+        o jornal roda quando você abre e compara com a sua última leitura · a leitura sai do
+        <b>nosso banco</b>, que a coleta abastece 3× por dia — não depende do PNCP estar no ar.
+        <br>envio automático por e-mail/WhatsApp exige um provedor contratado: está fora até o Lemuel decidir.
+      </div>
+      <div id="jor-lista"></div>
     </div>
   </div>
 
@@ -663,8 +694,17 @@ async function iniciarEstoque(){
                  + '). A busca funciona; o cruzamento fica indisponível.</span>';
   }
 }
-if(window.gmAuth) iniciarEstoque();
-else document.addEventListener('gm-auth-ready', iniciarEstoque, { once:true });
+// A MESMA regra de corrida vale pros jornais: eles são lidos com o JWT. O contador de novidade
+// roda em segundo plano e nunca segura a tela — quem entra aqui veio buscar licitação.
+let _jornaisIniciado = false;
+async function iniciarJornais(){
+  if(_jornaisIniciado) return;
+  _jornaisIniciado = true;
+  if(await carregarJornais()) conferirJornais();
+}
+function _aoAutenticar(){ iniciarEstoque(); iniciarJornais(); }
+if(window.gmAuth) _aoAutenticar();
+else document.addEventListener('gm-auth-ready', _aoAutenticar, { once:true });
 
 // ══ ITENS DO EDITAL ═══════════════════════════════════════════════════════════════════════
 // Endpoint confirmado pelo Lemuel. MEDIDO em 04/08: aceita tamanhoPagina até 500 e responde em
@@ -724,12 +764,17 @@ async function puxarPagina(params, pagina){
   }finally{ clearTimeout(t); }
 }
 
+// BUSCA NOVA (lupa, Enter, "Aplicar e buscar", busca por nº) — desliga o contexto do jornal.
+// >>> O "Atualizar agora" e o refino NÃO passam por aqui, de propósito: quem abriu um jornal e
+//     recarregou do PNCP, ou trocou um filtro, continua lendo AQUELE jornal — e perder as marcas
+//     de "NOVA" no meio da leitura é perder justamente o que ele foi ali ver.
+function buscaNova(){ window._jornalAtivo = null; buscar(); }
 function porNumero(){
   const n = prompt('Número de controle PNCP (ex.: 05106805000138-1-000010/2026):');
   if(!n) return;
   document.getElementById('f-kw').value = '';
   window._filtroNumero = n.trim();
-  buscar();
+  buscaNova();
 }
 
 // ══ ÍNDICE PRÓPRIO (item 10, 05/08) ═══════════════════════════════════════════════════════
@@ -784,18 +829,44 @@ function atualizarAgora(){ buscar(true); }
 // >>> E TODO CRITÉRIO ATIVO APARECE EM PILL acima da lista. Filtro invisível é como se lê
 //     "só tem 3 licitações hoje" quando a verdade é "3 passaram no refino que eu deixei ligado".
 const _CAMPOS_REFINO = ['f-portal','f-modo','f-sit','f-orgao','f-srp','f-vmin','f-vmax'];
-function refino(){
+
+// A BUSCA INTEIRA, num objeto — é isto que o jornal salva e é isto que a tela usa pra filtrar.
+// >>> Um só lugar, de propósito: se o jornal lesse os campos por conta própria, "o que está
+//     salvo" e "o que a tela filtra" seriam duas leituras do mesmo formulário, e a primeira vez
+//     que alguém acrescentasse um filtro só uma das duas ia saber dele.
+function filtrosDaTela(){
   const v = id => { const e = document.getElementById(id); return e ? String(e.value||'').trim() : ''; };
   const n = id => { const x = parseFloat(v(id).replace(',','.')); return isFinite(x) ? x : null; };
+  const de = v('f-de'), ate = v('f-ate') || de;
+  // JANELA MÓVEL x FIXA: o padrão da tela é o último dia útil, e um jornal que guardasse essa
+  // data como número reabriria amanhã pesquisando ONTEM, calado. Quando a janela é a padrão,
+  // guarda-se o TIPO e a data é recalculada na abertura. Quando o operador escolheu um
+  // intervalo, guardam-se as datas — e a tela DIZ que aquela janela é fixa. Adivinhar qual dos
+  // dois ele quis seria o pior dos dois mundos.
+  const hoje = iso(ultimoDiaUtil());
+  const movel = (de === hoje && ate === hoje);
   return {
+    kw: v('f-kw'), excluir: v('f-excluir'), uf: v('f-uf'), mod: v('f-mod'),
+    janela: movel ? {tipo:'movel'} : {tipo:'fixa', de, ate},
     portal: v('f-portal'), modo: v('f-modo'), sit: v('f-sit'), srp: v('f-srp'),
-    // `;` = OU, a mesma convenção do campo de palavras-chave desta tela. Duas convenções
-    // diferentes na mesma tela é como o operador aprende a não confiar em nenhuma.
-    orgao: v('f-orgao').split(';').map(s=>semAcento(s.trim())).filter(Boolean),
-    vmin: n('f-vmin'), vmax: n('f-vmax'),
+    orgao: v('f-orgao'), vmin: n('f-vmin'), vmax: n('f-vmax'),
     desertas: !!window._soDesertas,
   };
 }
+// filtros -> objeto de refino. PURO: é o que deixa o jornal contar novidade em segundo plano,
+// sem tocar no formulário (mexer nos campos pra contar mudaria a tela debaixo de quem olha).
+function refinoDe(f){
+  return {
+    portal: f.portal||'', modo: f.modo||'', sit: f.sit||'', srp: f.srp||'',
+    // `;` = OU, a mesma convenção do campo de palavras-chave desta tela. Duas convenções
+    // diferentes na mesma tela é como o operador aprende a não confiar em nenhuma.
+    orgao: String(f.orgao||'').split(';').map(s=>semAcento(s.trim())).filter(Boolean),
+    vmin: (f.vmin==null||f.vmin==='') ? null : Number(f.vmin),
+    vmax: (f.vmax==null||f.vmax==='') ? null : Number(f.vmax),
+    desertas: !!f.desertas,
+  };
+}
+function refino(){ return refinoDe(filtrosDaTela()); }
 const _ehSrp = l => l.srp === true || String(l.srp) === 'true';
 function casaRefino(l, r){
   if(r.portal && String(l.usuarioNome||'').trim() !== r.portal) return false;
@@ -843,7 +914,11 @@ function limparRefino(){
 // A lista de opções sai do próprio resultado — fixar 19 portais na mão envelheceria sozinha.
 function populaPortais(todos){
   const s = document.getElementById('f-portal'); if(!s) return;
-  const atual = s.value;
+  // portal que veio de um JORNAL: o select é montado a partir do resultado, então um portal
+  // salvo não pode ser escrito no campo antes da busca — a opção nem existe ainda. O jornal
+  // deixa o DESEJO aqui e ele vira seleção se aquele portal aparecer neste resultado.
+  const desejado = window._portalDesejado; window._portalDesejado = null;
+  const atual = desejado || s.value;
   const nomes = [...new Set(todos.map(l => String(l.usuarioNome||'').trim()).filter(Boolean))]
                   .sort((a,b)=>a.localeCompare(b,'pt-BR'));
   s.innerHTML = '<option value="">Todos os portais</option>'
@@ -938,6 +1013,187 @@ function filtrarPorOrgao(nome){
   document.getElementById('orgaos').classList.remove('open');
   document.getElementById('avancada').classList.add('open');
   rerender();
+}
+
+// ══ MEUS JORNAIS ══ buscas salvas (item 9, 3º pedaço · 06/08) ═════════════════════════════
+// Um jornal é a pesquisa avançada SALVA COM NOME. O que ele entrega, e que um atalho não
+// entrega, é o DELTA: "8 novas desde a última vez que você olhou". Sem isso, reabrir a busca
+// mostra as mesmas 70 de ontem e obriga a reler tudo pra achar as 3 que mudaram.
+//
+// >>> A CONTA DE NOVIDADE SAI DO NOSSO BANCO, não do PNCP ao vivo. A fonte externa caiu ~6× em
+//     3 dias; um contador de novidade que depende dela mostraria "nada novo" quando a verdade é
+//     "não consegui perguntar" — que é exatamente a mentira que este projeto não aceita. Por
+//     isso, quando a leitura falha, o jornal diz **não sei**, e não zero.
+//
+// >>> A PRIMEIRA LEITURA NÃO INVENTA NOVIDADE. No jornal recém-salvo tudo seria "novo", o que
+//     é verdade formal e mentira prática: ele acabou de ver aquilo na tela. A 1ª abertura só
+//     registra o que existe; a 2ª em diante é que compara.
+const SB_HW = Object.assign({'Content-Type':'application/json'}, SB_H);
+const TETO_VISTOS = 800;      // não deixa `vistos` crescer sem fim; corta o mais antigo
+let JORNAIS = null;
+
+function janelaDe(f){
+  if(!f || !f.janela || f.janela.tipo === 'movel'){ const d = iso(ultimoDiaUtil()); return {de:d, ate:d}; }
+  return {de: f.janela.de||'', ate: f.janela.ate||f.janela.de||''};
+}
+const _MOD_NOME = {'6':'Pregão eletrônico','8':'Dispensa eletrônica','4':'Concorrência eletrônica','9':'Inexigibilidade'};
+function resumoFiltros(f){
+  const j = janelaDe(f), br = s => s ? s.slice(8,10)+'/'+s.slice(5,7) : '—';
+  const p = [];
+  p.push(f.janela && f.janela.tipo === 'fixa'
+    ? '📅 janela FIXA ' + br(j.de) + (j.ate!==j.de ? '–'+br(j.ate) : '')
+    : '📅 último dia útil (move sozinho)');
+  p.push((f.uf||'todas as UF') + ' · ' + (_MOD_NOME[f.mod] || 'modalidade '+(f.mod||'?')));
+  if(f.kw) p.push('🔍 ' + f.kw);
+  if(f.excluir) p.push('⛔ ' + f.excluir);
+  // reaproveita as MESMAS pills da tela: o resumo do jornal não pode descrever o filtro de um
+  // jeito e a lista aplicá-lo de outro.
+  const pil = pillsRefino(refinoDe(f));
+  if(pil.length) p.push(pil.join(' · '));
+  return p;
+}
+// aplica um jornal ao formulário. É o mesmo caminho de sempre — o jornal não tem consulta
+// própria, ele só PREENCHE a tela e manda buscar.
+function aplicaFiltros(f){
+  const set = (id,val) => { const e = document.getElementById(id); if(e) e.value = (val==null?'':val); };
+  const j = janelaDe(f);
+  set('f-kw', f.kw); set('f-excluir', f.excluir); set('f-uf', f.uf); set('f-mod', f.mod);
+  set('f-de', j.de); set('f-ate', j.ate);
+  set('f-modo', f.modo); set('f-sit', f.sit); set('f-orgao', f.orgao); set('f-srp', f.srp);
+  set('f-vmin', f.vmin); set('f-vmax', f.vmax);
+  // o portal é populado a partir do RESULTADO (populaPortais). Guardo a escolha e deixo o
+  // render restaurá-la se aquele portal aparecer nesta busca — senão o select nasce sem a
+  // opção e o filtro se perderia calado.
+  window._portalDesejado = f.portal || '';
+  window._soDesertas = !!f.desertas; marcaDesertas();
+}
+const _numCtrl = l => String(l.numeroControlePNCP || chaveLic(l));
+// filtra uma lista de licitações pelos filtros de um jornal, SEM tocar no formulário.
+function aplicaJornal(todos, f){
+  const kws  = String(f.kw||'').split(';').map(s=>semAcento(s.trim())).filter(Boolean);
+  const excl = String(f.excluir||'').split(';').map(s=>semAcento(s.trim())).filter(Boolean);
+  const r = refinoDe(f);
+  return todos.filter(l => {
+    const t = semAcento(l.objetoCompra||'');
+    if(excl.length && excl.some(x=>t.includes(x))) return false;
+    if(!casaRefino(l, r)) return false;
+    return !kws.length || kws.some(k=>t.includes(k));
+  });
+}
+
+async function carregarJornais(){
+  try{
+    const r = await fetch(`${SB_URL}/rest/v1/jornais?select=*&order=criado_em.asc`, {headers:SB_H});
+    if(!r.ok) throw new Error('o banco respondeu '+r.status);
+    JORNAIS = await r.json();
+    return true;
+  }catch(e){ JORNAIS = null; window._jornaisErro = e.message; return false; }
+}
+async function abrirJornais(){
+  const p = document.getElementById('jornais');
+  p.classList.add('open');
+  document.getElementById('jor-resumo').textContent = 'lendo os seus jornais…';
+  if(JORNAIS === null) await carregarJornais();
+  pintaJornais();
+  conferirJornais();          // conta a novidade de cada um em segundo plano
+}
+function pintaJornais(){
+  const el = document.getElementById('jor-lista'), res = document.getElementById('jor-resumo');
+  if(JORNAIS === null){
+    res.textContent = 'não consegui ler os seus jornais ('+(window._jornaisErro||'')+')';
+    el.innerHTML = ''; return;
+  }
+  res.textContent = JORNAIS.length
+    ? JORNAIS.length + (JORNAIS.length===1 ? ' jornal salvo' : ' jornais salvos')
+    : 'nenhum ainda — monte a busca acima e clique em "Salvar a busca atual"';
+  el.innerHTML = JORNAIS.map(j => {
+    const n = window._novasPorJornal && window._novasPorJornal[j.id];
+    const marca = !n ? ''
+      : n.erro   ? '<span class="hint" title="'+esc(n.erro)+'">não sei dizer agora</span>'
+      : n.novas  ? '<span class="novas">'+n.novas+' novas</span>'
+      : '<span class="hint">nada novo</span>';
+    return '<div class="jor">'
+      + '<div><div class="nome">'+esc(j.nome)+'</div>'
+      +   '<div class="sub">'+resumoFiltros(j.filtros||{}).map(esc).join('<br>')+'</div>'
+      +   '<div class="sub">'+(j.ultima_leitura
+            ? 'última leitura em '+fmtDt(j.ultima_leitura)+(j.ultimo_total!=null?' · '+j.ultimo_total+' bateram':'')
+            : '<b>nunca aberto</b> — a 1ª leitura só registra o que existe hoje')+'</div></div>'
+      + '<div class="acao">'+marca
+      +   '<button class="btn mini" onclick="abrirJornal('+j.id+')">Abrir</button>'
+      +   '<button class="btn sec mini" onclick="excluirJornal('+j.id+')" title="apaga só este jornal, e só pra você">✕</button>'
+      + '</div></div>';
+  }).join('');
+}
+async function salvarJornal(){
+  const f = filtrosDaTela();
+  const nome = (prompt('Nome do jornal (ex.: "Medicamentos GO — pregão"):')||'').trim();
+  if(!nome) return;
+  try{
+    const r = await fetch(`${SB_URL}/rest/v1/jornais`, {method:'POST', headers:Object.assign({'Prefer':'return=representation'}, SB_HW),
+      body: JSON.stringify({nome, filtros:f})});
+    if(!r.ok){
+      const t = await r.text();
+      // 23505 = o índice único (usuario, lower(nome)). Mensagem em português, não código cru.
+      throw new Error(/23505/.test(t) ? 'você já tem um jornal com esse nome' : 'HTTP '+r.status+(r.status===401||r.status===403?' — sessão sem permissão de gravar':''));
+    }
+    const novo = await r.json();
+    JORNAIS = (JORNAIS||[]).concat(novo);
+    document.getElementById('jornais').classList.add('open');
+    pintaJornais();
+  }catch(e){ alert('Não consegui salvar: '+e.message); }
+}
+async function excluirJornal(id){
+  const j = (JORNAIS||[]).find(x=>x.id===id); if(!j) return;
+  if(!confirm('Apagar o jornal "'+j.nome+'"? A busca em si não se perde — ela continua na tela.')) return;
+  try{
+    const r = await fetch(`${SB_URL}/rest/v1/jornais?id=eq.${id}`, {method:'DELETE', headers:SB_HW});
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    JORNAIS = JORNAIS.filter(x=>x.id!==id);
+    pintaJornais();
+  }catch(e){ alert('Não consegui apagar: '+e.message); }
+}
+// ABRIR = preencher a tela com o jornal, buscar pelo caminho normal e, no fim, registrar a
+// leitura. O registro é o que faz a PRÓXIMA abertura ter algo com que comparar.
+async function abrirJornal(id){
+  const j = (JORNAIS||[]).find(x=>x.id===id); if(!j) return;
+  aplicaFiltros(j.filtros||{});
+  document.getElementById('jornais').classList.remove('open');
+  window._jornalAtivo = {id:j.id, nome:j.nome, vistos:new Set(j.vistos||[]), primeira: !j.ultima_leitura};
+  await buscar();
+  await registrarLeitura(j);
+}
+async function registrarLeitura(j){
+  const hits = window._hits;
+  // sem resultado NENHUM na tela (PNCP fora, banco vazio) não se registra leitura: gravar
+  // "li tudo" numa busca que falhou faria as licitações de hoje nascerem VELHAS amanhã.
+  if(!Array.isArray(hits) || !hits.length) return;
+  const vistos = [...new Set((j.vistos||[]).concat(hits.map(_numCtrl)))].slice(-TETO_VISTOS);
+  try{
+    const r = await fetch(`${SB_URL}/rest/v1/jornais?id=eq.${j.id}`, {method:'PATCH', headers:SB_HW,
+      body: JSON.stringify({vistos, ultima_leitura:new Date().toISOString(), ultimo_total:hits.length,
+                            atualizado_em:new Date().toISOString()})});
+    if(r.ok){ j.vistos = vistos; j.ultima_leitura = new Date().toISOString(); j.ultimo_total = hits.length;
+              if(window._novasPorJornal) delete window._novasPorJornal[j.id]; }
+  }catch(e){ /* não travar a tela por causa do carimbo: o resultado já está à vista */ }
+}
+// CONTADOR EM SEGUNDO PLANO — lê o NOSSO banco (nunca o PNCP) e não mexe no formulário.
+// Só conta pra jornal já aberto uma vez: no recém-salvo, "tudo é novo" seria ruído.
+async function conferirJornais(){
+  if(!JORNAIS || !JORNAIS.length) return;
+  window._novasPorJornal = window._novasPorJornal || {};
+  for(const j of JORNAIS){
+    const f = j.filtros||{}, w = janelaDe(f);
+    if(!j.ultima_leitura){ continue; }
+    const doBanco = await buscarNoBanco(f.uf||'', f.mod||'', w.de.replace(/-/g,''), w.ate.replace(/-/g,''));
+    if(!doBanco){ window._novasPorJornal[j.id] = {erro:'não consegui ler o nosso banco agora'}; continue; }
+    const vistos = new Set(j.vistos||[]);
+    window._novasPorJornal[j.id] = {novas: aplicaJornal(doBanco, f).filter(l => !vistos.has(_numCtrl(l))).length};
+  }
+  pintaJornais();
+  // o link do topo só ganha número quando há número: "Meus Jornais (0)" ensinaria a ignorá-lo.
+  const total = Object.values(window._novasPorJornal).reduce((s,x)=>s+((x&&x.novas)||0),0);
+  const a = document.getElementById('lk-jornais');
+  if(a) a.textContent = total ? 'Meus Jornais (' + total + ' novas)' : 'Meus Jornais';
 }
 
 // Refino não vai à rede: ele re-renderiza o que já está na memória. Trocar "só SRP" não pode
@@ -1069,6 +1325,20 @@ function render(todos, kws, excl, aviso, procedencia){
   }
   hits.sort((a,b)=>{ const x=dt(a.dataEncerramentoProposta), y=dt(b.dataEncerramentoProposta);
                      return (x?x.getTime():9e15)-(y?y.getTime():9e15); });
+  // ── JORNAL ABERTO: quantas destas ele ainda não tinha visto ──────────────────────────────
+  // A 1ª leitura de um jornal recém-salvo NÃO conta novidade: ele acabou de ver isso na tela, e
+  // marcar tudo de verde seria uma verdade formal que treina o olho a ignorar a marca.
+  const jor = window._jornalAtivo;
+  const ehNova = l => !!(jor && !jor.primeira && !jor.vistos.has(_numCtrl(l)));
+  if(jor){
+    const qtd = hits.filter(ehNova).length;
+    h += '<div class="refino" style="margin-top:2px"><span class="pill">📰 '+esc(jor.nome)+'</span>'
+       + (jor.primeira
+          ? '<span class="hint">primeira leitura deste jornal — a partir da próxima eu marco só o que chegou depois</span>'
+          : qtd ? '<span class="novas">'+qtd+(qtd===1?' nova desde a sua última leitura':' novas desde a sua última leitura')+'</span>'
+                : '<span class="hint">nada novo desde a sua última leitura</span>')
+       + '</div>';
+  }
   h += '<div class="contagem" style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">'
      + '<span><b>'+hits.length+'</b> '+(hits.length===1?'licitação encontrada':'licitações encontradas')
      + ' · ordenadas por quem <b>encerra primeiro</b></span>'
@@ -1114,6 +1384,7 @@ function render(todos, kws, excl, aviso, procedencia){
       +   '<span class="bdg azul">'+esc(l.modalidadeNome||'')+'</span>'
       +   (_ehSrp(l) ? '<span class="bdg laranja" title="Sistema de Registro de Preços: a ata vale por até 12 meses e a compra é parcelada">SRP</span>' : '')
       +   prazo
+      +   (ehNova(l) ? '<span class="bdg nova" title="não estava no resultado da última vez que você abriu este jornal">NOVA</span>' : '')
       +   '<span class="bdg cinza" title="Número de controle PNCP">'+esc(l.numeroControlePNCP||'')+'</span>'
       +   '<span class="valor">'+brl(l.valorTotalEstimado)+'</span>'
       + '</div>'

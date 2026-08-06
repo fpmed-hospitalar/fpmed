@@ -32,8 +32,11 @@ const elem = id => (CAMPOS[id] === undefined ? null : CAMPOS[id]);
 const doc = { getElementById: elem };
 const win = {};
 
+// A ancora foi ate `ultimoDiaUtil` porque o `filtrosDaTela()` (06/08, Meus Jornais) precisa de
+// `iso` e `ultimoDiaUtil` pra decidir se a janela de data e movel ou fixa. Extrair menos que
+// isso quebraria o refino aqui por falta de dependencia, nao por defeito.
 const ctx = (new Function('document', 'window',
-  bloco('const brl =', 'const ymd =') +
+  bloco('const brl =', '(function(){ const d=ultimoDiaUtil()') +
   bloco('const CRUZ = new Map()', 'function aderencia') +
   bloco('const _CAMPOS_REFINO', '// ══ ÓRGÃOS') +
   'return { refino, casaRefino, pillsRefino, populaPortais, desertaDe, _ehSrp, CRUZ, chaveLic, semAcento };'))(doc, win);

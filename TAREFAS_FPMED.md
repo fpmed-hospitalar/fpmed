@@ -128,7 +128,7 @@ qualquer um, e a configuração da Global **não serve** (os nomes são de lá).
 | **4** | Blocos 2 e 4 do sync de código | ✅ **CONCLUÍDO 06/08** |
 | **8** | Calendário FASE 2 | ✅ **CONCLUÍDO 06/08** — 2.555 linhas, taxa de vitória 15,2% |
 | **10** | Coleta agendada do PNCP + banco próprio | ✅ **CONCLUÍDO 06/08** — edge function no ar + Actions 3x/dia (ver 10.1). 1 passo do Lemuel: o secret no GitHub |
-| **9** | **SIGA / funil de Negócios** | 🟡 **2 ETAPAS CONCLUÍDAS 06/08** — 1ª: Funil + Tarefas + Agenda (9.1). 4ª: Pesquisa avançada + Órgãos + Desertas (9.2). Faltam Notificações, Meus Jornais, Análise e Jurídico |
+| **9** | **SIGA / funil de Negócios** | 🟡 **4 ETAPAS CONCLUÍDAS 06/08** — 1ª Funil+Tarefas+Agenda (9.1) · 2ª Notificações (9.3) · 3ª **Meus Jornais (9.4)** · 4ª Pesquisa avançada+Órgãos+Desertas (9.2). Faltam ANÁLISE e JURÍDICO, os dois com dependência externa |
 | **11** | `ABRIR_FILA.bat` inicia o Claude com "continua a fila" | ✅ **CONCLUÍDO 06/08** — o mecanismo já existia; o defeito era o **contrato** (ver 11.1) |
 
 ### 12 — INSTALAÇÃO PELO KIT (06/08/2026) — placar **24 ✓ · 3 ✗**, de 17 ✓ · 9 ✗ · 1 ?
@@ -216,6 +216,55 @@ gestor o resto é SQL na mão), o **importador de estoque por PDF** (`limedtec-e
 `cria_atalho_estoque.ps1`, `vendor/pdfjs/*`), `motor_busca.js`, `limedtec-sessao.js` e
 `icones/limedtec.ico`. **Portar isso é SYNC com rebrand** (`SYNC_GLOBAL.md`, "nunca às cegas") —
 entra na fila, não sai de efeito colateral da instalação.
+
+### 9.4 — MEUS JORNAIS ✅ (3ª das 6 etapas do item 9, 06/08/2026)
+
+**O que é**: a pesquisa avançada **salva com nome**. Abre com um clique e mostra **o que chegou
+depois da última vez que aquela pessoa olhou**. Tabela nova `jornais` (`ddl/jornais.sql`),
+aditiva, rodada **2×** pra provar idempotência.
+
+**O valor não é o atalho, é o DELTA.** Reabrir a busca sem `vistos` mostraria as mesmas 70 de
+ontem e obrigaria a reler tudo pra achar as 3 que mudaram — que é o trabalho que o jornal existe
+pra eliminar. Por isso cada jornal guarda **no banco** (não no `localStorage`: o mesmo usuário
+abre de outra máquina) os `numeroControlePNCP` que já mostrou, com teto de 800.
+
+**A decisão de projeto desta etapa — a JANELA DE DATA.** O padrão da tela é *o último dia útil*.
+Um jornal que guardasse essa data como número reabriria amanhã pesquisando **ontem**, calado: uma
+busca salva que envelhece sozinha é pior que busca salva nenhuma. Então:
+- janela padrão → guarda o **tipo** (`movel`) e **recalcula** a data na abertura;
+- intervalo escolhido a mão → guarda as datas e a tela **diz** que aquela janela é fixa.
+Adivinhar qual dos dois ele quis seria o pior dos dois mundos.
+
+**Três coisas que o jornal se recusa a fazer:**
+1. **Inventar novidade na 1ª leitura.** No jornal recém-salvo tudo seria "novo" — verdade formal,
+   mentira prática: ele acabou de ver aquilo na tela. A 1ª abertura só registra; a 2ª compara.
+2. **Carimbar leitura vazia.** Se a busca voltou vazia (PNCP fora, banco sem aquela janela), NÃO
+   grava "li tudo" — senão as licitações de **hoje** nasceriam **velhas amanhã**, e some
+   oportunidade sem deixar rastro. É o pior defeito possível aqui.
+3. **Dizer "nada novo" quando não conseguiu perguntar.** Com o banco fora o jornal diz
+   **"não sei dizer agora"**. E o link do topo só ganha número quando há número — "Meus Jornais
+   (0)" ensina o olho a ignorar justamente o lugar onde o número importa.
+
+**A leitura sai do NOSSO banco** (`licitacoes`, que a coleta agendada abastece 3×/dia), nunca do
+PNCP ao vivo — um contador de novidade pendurado numa fonte que caiu ~6× em 3 dias mostraria
+"nada novo" o tempo todo.
+
+**RLS de DONO, sem `cargo_gestor()`** — e isso é deliberado: quem entra na tela de Licitações já é
+filtrado pelo gm-auth uma camada acima. Amarrar o jornal ao cargo faria os jornais de alguém
+**sumirem** no dia em que o cargo dele mudasse: perda silenciosa de trabalho salvo.
+
+**Refatoração que veio junto (e evita a divergência clássica)**: `filtrosDaTela()` passou a ser o
+**único** lugar que lê o formulário, e `refinoDe(filtros)` a ser puro. O refino da tela e o filtro
+do jornal são hoje o mesmo objeto — sem isso, o primeiro filtro novo entraria só num dos dois.
+
+⬜ **O que NÃO entrou, e por quê**: envio automático por **e-mail/WhatsApp**. Exige provedor
+contratado (Resend/SES) = **custo**, decisão do Lemuel (6.1 do `LICITACOES_SPEC.md`). Quando ele
+liberar, o delta já está pronto — é este `vistos`. A tela **diz isso na cara**, em vez de fingir
+que o jornal avisa sozinho.
+
+Suíte nova `testa_meus_jornais` (**74 asserts**), com rede e DOM de mentira. Provada por mutação
+nas duas garantias centrais: gravar leitura vazia → cai o 46; janela sempre fixa → caem 4.
+Total: **1.379 asserts / 0 falhas / 41 suítes**.
 
 ### 11.1 — ABRIR_FILA.bat ✅ (06/08/2026) — o mecanismo estava certo, o **contrato** não
 

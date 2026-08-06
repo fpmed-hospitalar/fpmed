@@ -198,8 +198,24 @@ Criado em 21/07/2026 copiando SO os arquivos do app do C:\globalmed.
   RETOMADA do 1B: estender tools/carrega_cmed_pf.js + DDL da cmed_pf, depois a tela.
 
 ========================================
->>> ONDE PARAMOS — 06/08/2026, RODADA 5. LEIA ISTO PRIMEIRO.
+>>> ONDE PARAMOS — 06/08/2026, RODADA 6. LEIA ISTO PRIMEIRO.
 ========================================
+
+ITEM 9, 3o PEDACO FECHADO (06/08): MEUS JORNAIS — a pesquisa avancada SALVA COM NOME.
+  Secao 9.4 do TAREFAS. Tabela nova `jornais` (ddl/jornais.sql), aditiva, rodada 2x.
+  Suite nova testa_meus_jornais (74) -> 1.379 asserts / 0 falhas / 41 suites.
+  O valor nao e o atalho, e o DELTA: "N novas desde a sua ultima leitura". Cada jornal guarda no
+  BANCO (nao no localStorage — ele abre de outra maquina) os numeros de controle que ja mostrou.
+  A DECISAO DA ETAPA — a JANELA DE DATA: o padrao da tela e "o ultimo dia util", e guardar isso
+  como DATA faria o jornal reabrir amanha pesquisando ONTEM, calado. Janela padrao guarda o TIPO
+  ('movel') e recalcula na abertura; intervalo escolhido a mao guarda a data e a tela DIZ que e
+  fixa. As 3 recusas: nao inventa novidade na 1a leitura · NAO carimba leitura vazia (senao o de
+  hoje nasce velho amanha) · com o banco fora diz "nao sei", nunca "nada novo".
+  RLS de DONO, sem cargo_gestor() de proposito: amarrar ao cargo faria os jornais de alguem
+  SUMIREM no dia em que o cargo mudasse. O gate de quem entra na tela ja e do gm-auth.
+  >>> FICOU FORA (custo, decisao dele): envio por e-mail/WhatsApp — exige provedor contratado.
+      A tela DIZ isso na cara. Quando ele liberar, o delta ja esta pronto: e este `vistos`.
+
 
 >>> INSTALACAO PELO KIT (06/08) — placar 24 ✓ · 3 ✗ (era 17 ✓ · 9 ✗ · 1 nao conferido).
     Secao 12 do TAREFAS. Kit puxado de C:\globalmed\kit_cliente SO LEITURA (a Global nao foi
