@@ -178,6 +178,19 @@ GlobalMed**. A checagem mais crítica da instalação estava invertida. Nada no 
 5. **`red_test_papeis.js`** (passo 7) — cria 3 usuários e **APAGA** os 3. A regra da rodada
    proíbe DELETE sem OK.
 
+**Conferido contra os commits `903d05e` / `ed1fe96`** (06/08, fim do dia): os 10 arquivos do kit
+são **byte-idênticos** aos que eu já tinha puxado enquanto ele subia — hash a hash. A instalação
+acima foi feita contra a versão final; nada a refazer. (`ed1fe96` só mexeu no `CONTINUAR` de lá.)
+
+**O verificador é ferramenta de FÁBRICA, não do cliente** — tentei instalá-lo em `tools/` daqui e
+as duas coisas quebraram: (1) o `testa_compliance` ficou vermelho, porque ele carrega o `ref` do
+Supabase da origem e este repo é público; (2) ele lê `tools/cria_cliente.js` do **próprio**
+`__dirname` pra montar a lista do molde — sem esse arquivo (que é da fábrica), o item do molde
+sai vazio e o checklist encolhe de 27 pra 26, ficando **mais verde por saber menos**. Cheguei a
+escrever uma versão rebrandada com checagem por coerência interna (`ref` do config × `ref` do
+`gm-auth.js`, que pega qualquer vizinho em vez de só um), mas **desfiz**: o uso correto é o que o
+próprio roteiro documenta — rodar da fábrica passando a pasta do cliente como argumento.
+
 #### 🚨 ACHADOS QUE VOLTAM PRO KIT (defeitos do produto, não da FPMED)
 1. **O verificador e o red test carregam o `ref` do projeto Supabase da GlobalMed hardcoded.**
    Copiei os dois pra cá e o `testa_compliance` ficou **vermelho na hora** (3 falhas). O repo da
