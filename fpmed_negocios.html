@@ -45,6 +45,24 @@ header nav{margin-left:auto;display:flex;gap:4px}
 header nav a{color:var(--muted);text-decoration:none;font-size:12.5px;padding:6px 13px;border-radius:8px;cursor:pointer;transition:background .16s,color .16s}
 header nav a:hover{background:var(--painel2);color:var(--texto)}
 header nav a.on{background:rgba(44,169,224,.16);color:var(--azul-claro);font-weight:600}
+/* ── sininho de avisos ── ancorado no header, painel flutuante ── */
+.sino-cx{position:relative;margin-left:10px}
+.sino{background:var(--painel2);border:1px solid var(--linha);color:var(--texto);border-radius:10px;
+  width:38px;height:34px;font-size:15px;cursor:pointer;position:relative;transition:border-color .16s,transform .16s}
+.sino:hover{border-color:var(--azul);transform:translateY(-1px)}
+.sino .cnt{position:absolute;top:-6px;right:-6px;background:var(--ambar);color:#3a2708;border-radius:11px;
+  min-width:19px;height:19px;font-size:11px;font-weight:800;font-family:Montserrat;line-height:19px;padding:0 5px}
+#notif{display:none;position:absolute;right:0;top:42px;width:380px;max-height:70vh;overflow:auto;z-index:40;
+  background:var(--painel);border:1px solid var(--linha);border-radius:13px;box-shadow:0 10px 40px rgba(0,0,0,.5);padding:8px}
+#notif.open{display:block}
+.nf-sec{font-size:10.5px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);font-weight:700;padding:10px 10px 5px}
+.nf{display:block;padding:9px 11px;border-radius:9px;cursor:pointer;border:1px solid transparent;transition:background .14s,border-color .14s}
+.nf:hover{background:var(--painel2);border-color:rgba(44,169,224,.4)}
+.nf .q{font-size:12.5px;color:#fff;font-weight:600}
+.nf .s{font-size:11.5px;color:var(--muted);line-height:1.45;margin-top:2px}
+.nf.hoje .q{color:var(--ambar)}
+.nf-vazio{padding:16px 12px;font-size:12.5px;color:var(--muted);line-height:1.5}
+.nf-nota{padding:10px 12px;margin-top:6px;border-top:1px solid var(--linha);font-size:11px;color:var(--muted);line-height:1.5}
 .wrap{max-width:1420px;margin:0 auto;padding:0 22px 70px}
 
 /* ── barra de topo: empresa · ordenar · filtrar ── */
@@ -208,6 +226,12 @@ textarea.anot:focus{border-color:var(--azul)}
       <a onclick="setVis('quadros')">Quadros</a>
       <a onclick="setVis('agenda')">Agenda</a>
     </nav>
+    <!-- SININHO: o que abre hoje e amanhã. Fica no header do módulo porque é aqui que o dia
+         de trabalho acontece — a Agenda mostra o mês, o sino mostra o que não pode passar. -->
+    <div class="sino-cx">
+      <button class="sino" id="sino" onclick="toggleNotif(event)" title="Avisos de sessão">🔔<span class="cnt" id="sino-n" style="display:none">0</span></button>
+      <div id="notif"><div class="nf-vazio">carregando…</div></div>
+    </div>
   </div>
 </header>
 
@@ -323,6 +347,33 @@ function rotuloDia(ymd){
   return { data: `${String(d).padStart(2,'0')}/${String(m).padStart(2,'0')}/${a}`, semana: DIA_SEM[dt.getDay()] };
 }
 
+// ══ NOTIFICAÇÕES (item 9, 2º pedaço · 06/08) ══════════════════════════════════════════════
+// >>> NÃO TEM TABELA, e isso é decisão: a notificação é DERIVADA do fato (a data de abertura
+//     do negócio), igual à Agenda. Fila de mensagens guardada exigiria um processo pra criar,
+//     outro pra expirar, e no dia em que um deles falhasse o sino avisaria de sessão que já
+//     aconteceu — que é pior que não avisar.
+//
+// >>> E POR ISSO NÃO EXISTE "MARCAR COMO LIDA". O aviso some quando o fato some (o dia passa,
+//     o negócio é arquivado). Um botão de dispensar deixaria alguém esconder a sessão que abre
+//     hoje às 8h — exatamente a que o sino existe pra não deixar passar.
+const emDias = k => { const d = new Date(); d.setDate(d.getDate() + k); const p = n => String(n).padStart(2,'0');
+  return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate()); };
+// Fases em que a sessão AINDA NÃO deveria ter passado. Se a abertura ficou pra trás e o negócio
+// segue aqui, ou ninguém mexeu ou esqueceram de mover — nos dois casos é aviso, não ruído.
+const _FASES_ANTES = ['oportunidade','qualificacao'];
+function notificacoes(lista){
+  const hoje = emDias(0), amanha = emDias(1);
+  const vivos = (lista||[]).filter(n => !n.arquivado && n.abertura);
+  const porHora = (a,b) => String(a.abertura||'').localeCompare(String(b.abertura||''));
+  const hojeL   = vivos.filter(n => diaDe(n.abertura) === hoje).sort(porHora);
+  const amanhaL = vivos.filter(n => diaDe(n.abertura) === amanha).sort(porHora);
+  const passou  = vivos.filter(n => diaDe(n.abertura) < hoje && _FASES_ANTES.includes(n.estagio))
+                       .sort((a,b)=>porHora(b,a));
+  // O NÚMERO do sino conta só hoje + amanhã. Somar as atrasadas deixaria o badge acesso pra
+  // sempre com histórico velho, e badge que nunca zera é badge que ninguém mais olha.
+  return { hoje: hojeL, amanha: amanhaL, passou, urgentes: hojeL.length + amanhaL.length };
+}
+
 async function carregar(){
   try{
     const [rn, re] = await Promise.all([
@@ -360,6 +411,11 @@ function pinta(){
     document.getElementById('corpo').innerHTML =
       `<div class="vazio" style="border-color:#5a2622;background:#2a1614;color:#f2a99f"><b>⚠️ Não consegui carregar os negócios</b><div style="margin-top:8px;font-size:12px">${esc(ERRO)}</div></div>`;
     document.getElementById('kpis').style.display='none';
+    // o sino NÃO pode dizer "nada abre hoje" quando o que houve foi falha de leitura: com a
+    // lista vazia por erro, "nenhum aviso" e "não sei" são a mesma tela — e não são a mesma coisa.
+    document.getElementById('sino-n').style.display='none';
+    document.getElementById('notif').innerHTML =
+      '<div class="nf-vazio">⚠️ Não consegui ler os negócios, então <b>não sei</b> o que abre hoje.<br>Recarregue a página.</div>';
     return;
   }
   const arq = document.getElementById('f-arquivados').checked;
@@ -384,6 +440,7 @@ function pinta(){
     <div class="kpi"><b>${disputados.length ? (ganhos.length/disputados.length*100).toFixed(1)+'%' : '—'}</b><span>taxa de vitória</span></div>
     ${gestor ? `<div class="kpi"><b style="font-size:16px">${brl(total)}</b><span>total ganho</span></div>` : ''}`;
 
+  pintaNotif();          // o sino conta o funil inteiro, não o que os filtros deixaram na tela
   const l = visiveis();
   const corpo = document.getElementById('corpo');
   if(VIS === 'quadros') { corpo.innerHTML = kanban(l); ligarArrasto(); return; }
@@ -657,6 +714,43 @@ async function salvaAnot(id, txt){
     if(msg){ msg.className='salvo erro'; msg.textContent='não salvou: ' + e.message + ' — copie o texto antes de sair'; }
   }
 }
+
+// ── o sino na tela ──────────────────────────────────────────────────────────────────────
+function pintaNotif(){
+  const n = notificacoes(NEG);
+  const cnt = document.getElementById('sino-n');
+  cnt.textContent = n.urgentes;
+  cnt.style.display = n.urgentes ? '' : 'none';
+  const linha = (x, cls) => {
+    const h = horaDe(x.abertura);
+    return `<a class="nf ${cls||''}" onclick="irPara(${x.id})">
+      <div class="q">${h ? h + ' · ' : ''}${esc(x.orgao || x.objeto || 'negócio')}</div>
+      <div class="s">${esc([x.portal, x.numero, x.municipio].filter(Boolean).join(' · '))}</div></a>`;
+  };
+  let h = '';
+  if(n.hoje.length)   h += `<div class="nf-sec">abre hoje</div>` + n.hoje.map(x=>linha(x,'hoje')).join('');
+  if(n.amanha.length) h += `<div class="nf-sec">abre amanhã</div>` + n.amanha.map(x=>linha(x)).join('');
+  if(n.passou.length) h += `<div class="nf-sec">a sessão passou e o negócio continua na fase anterior (${n.passou.length})</div>`
+                         + n.passou.slice(0,8).map(x=>linha(x)).join('');
+  if(!h) h = '<div class="nf-vazio">Nada abre hoje nem amanhã.<br>O sino só mostra sessão de negócio <b>ativo</b> — arquivado não avisa.</div>';
+  // A ausência é DITA, não silenciosa: sem isto, alguém confia no sino pra um alerta que ele
+  // nunca teve como dar. "Meus Documentos" não existe ainda (registrado no TAREFAS).
+  h += '<div class="nf-nota">⏳ Vencimento de documento da empresa ainda não entra aqui: depende de “Meus Documentos”, que não existe no sistema.</div>';
+  document.getElementById('notif').innerHTML = h;
+}
+function toggleNotif(ev){
+  if(ev) ev.stopPropagation();
+  document.getElementById('notif').classList.toggle('open');
+}
+function irPara(id){
+  document.getElementById('notif').classList.remove('open');
+  abrirDrawer(id);
+}
+// clicar fora fecha — painel que só fecha no próprio botão vira painel que fica aberto
+document.addEventListener('click', e => {
+  const p = document.getElementById('notif');
+  if(p && p.classList.contains('open') && !e.target.closest('.sino-cx')) p.classList.remove('open');
+});
 
 function setVis(v){
   VIS = v;
