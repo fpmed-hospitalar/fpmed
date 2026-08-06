@@ -10,11 +10,12 @@
 --
 -- ESTRUTURA, ZERO LINHA. Nenhum select de dado gerou este arquivo.
 --
--- >>> UMA DIVIDA CONHECIDA VIAJA JUNTO: a tabela comissoes_isadora tem o nome de uma pessoa da
---     GlobalMed. Um cliente novo nao deveria receber isso, e a unica saida honesta e renomear -
---     que e DDL + mexer na tela que a le. Esta registrado no CONTINUAR como decisao pendente.
---     Enquanto nao for decidido, o arquivo a cria com o nome que a tela procura: instalar com
---     outro nome faria a tela de comissao abrir vazia sem dizer por que.
+-- >>> UMA TABELA FICOU DE FORA, DE PROPOSITO (Lemuel, 07/08): comissoes_isadora. Ela e a comissao
+--     de UMA PESSOA da instalacao de origem, e a decisao foi que ela NAO viaja - nem renomeada.
+--     Renomear custaria DDL + mexer numa tela viva do banco de producao pra resolver um problema
+--     que so existe do lado do cliente novo. Junto dela saiu do molde a calculadora que a le.
+--     A pagina de comissao do sistema_final continua existindo e diz, com todas as letras, que o
+--     modulo nao esta instalado neste cliente - em vez de estourar erro de JavaScript.
 --
 -- >>> OS INDICES UNICOS NAO SAO ENFEITE. ux_cotacao_unica (fornecedor + nome normalizado) e o que
 --     impede o mesmo produto do mesmo fornecedor entrar duas vezes com grafia diferente; sem ele
@@ -57,22 +58,6 @@ create table if not exists comissoes_externas (
   recebido boolean default false,
   obs text,
   criado_em timestamp with time zone default now(),
-  primary key (id)
-);
-
-create table if not exists comissoes_isadora (
-  id bigint default nextval('comissoes_isadora_id_seq'::regclass) not null,
-  pedido text,
-  cliente text not null,
-  val numeric(12,2) not null,
-  tipo text not null,
-  condicao text not null,
-  prazo integer default 0,
-  pct numeric(4,2),
-  comissao numeric(12,2),
-  data_venda date,
-  rec_data date,
-  recebido boolean default false,
   primary key (id)
 );
 

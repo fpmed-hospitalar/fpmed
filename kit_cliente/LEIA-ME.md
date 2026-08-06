@@ -11,7 +11,8 @@ lido pela sessao do **cliente** (quem instala).
 
 | arquivo | o que e |
 |---|---|
-| `ROTEIRO_INSTALACAO.md` | **comece por aqui.** Passo a passo na ordem certa, comando exato e criterio de verde de cada passo |
+| `ROTEIRO_INSTALACAO.md` | **comece por aqui.** Passo a passo na ordem certa, comando exato, **de qual pasta ele roda** e criterio de verde |
+| `PERGUNTAS_FREQUENTES.md` | **travou? venha pra ca.** Os tropecos que ja aconteceram de verdade, cada um com sintoma e conserto |
 | `cliente.config.EXEMPLO.js` | o config comentado campo a campo, com `>>> PREENCHER` no que falta |
 | `MOLDE.txt` | a lista dos arquivos que um cliente novo recebe (gerada da lista viva) |
 | `ddl/01..06_*.sql` | o banco inteiro, em ordem, idempotente |
@@ -22,6 +23,12 @@ E dois comandos que vivem em `tools/`:
 |---|---|
 | `node tools/verifica_instalacao.js <pasta>` | o **checklist de PRONTO**, item a item, com o conserto de cada `X` |
 | `node tools/gera_ddl_instalacao.js` | **regera** o `ddl/` a partir do schema real (rode depois de qualquer mudanca de banco) |
+
+> **DUAS PASTAS, E CONFUNDI-LAS E O ERRO MAIS CARO.** A **fabrica** e o repositorio de origem
+> (`tools/`, `tests/`, este kit). O **cliente** e a pasta nova, que recebe so o `MOLDE.txt`. Ela
+> **nao** recebe `tests/` nem a maior parte de `tools/` — entao os comandos de verificacao rodam
+> **da fabrica, apontando pro cliente** com `LIMEDTEC_RAIZ`. O roteiro marca isso passo a passo, e
+> todo comando que escreve imprime, na primeira linha, **em que pasta e em que banco** vai mexer.
 
 ## O QUE **NAO** TEM AQUI, E ISSO E O PONTO
 
