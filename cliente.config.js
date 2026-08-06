@@ -98,6 +98,23 @@
                destaque2: '#8DC63F', texto: '#173A5E', borda: 'rgba(23,58,94,.16)' },
       icones: 'icones/',
     },
+
+    // ── QUEM É QUEM (e-mail de acesso -> nome usado nas tabelas) ─────────────────────────────
+    // A coluna `vendedora` de clientes/orçamentos guarda o NOME, não o e-mail. Quem entra é
+    // identificado pelo e-mail, então alguém tem que fazer a ponte. Sem correspondência o
+    // sistema usa o PRÓPRIO E-MAIL — nunca o nome de outra pessoa. Um padrão do tipo "cai na
+    // primeira da lista" faria o cliente de um funcionário novo aparecer na carteira de outro.
+    // >>> É ESTA LISTA que o `<select data-limedtec-equipe>` das telas mostra. Vazia, os campos
+    //     de vendedora nasciam sem opção nenhuma — era o item vermelho da auditoria (07/08).
+    // >>> PESSOA NOVA NÃO PRECISA ENTRAR AQUI PRA TER ACESSO: acesso se dá na tela "Usuários e
+    //     acessos", sem deploy. Esta lista é só o de-para do NOME que sai nos documentos.
+    //     (O ideal é uma coluna `nome` na tabela `perfis`, e aí some a duplicidade. É DDL, e
+    //      está anotado como proposta no TAREFAS.)
+    equipe: {
+      'licitacao@fpmed.com.br':      'Natanael',
+      'lemuelempresas7@outlook.com': 'Lemuel',
+      'comercial@fpmed.com.br':      'FPMED Comercial',
+    },
   };
 
   // ── `empresa` (singular): a MESMA empresa principal, no formato que o molde procura ────────

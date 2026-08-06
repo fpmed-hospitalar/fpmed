@@ -201,6 +201,40 @@ Criado em 21/07/2026 copiando SO os arquivos do app do C:\globalmed.
 >>> ONDE PARAMOS — 06/08/2026, RODADA 6. LEIA ISTO PRIMEIRO.
 ========================================
 
+>>> ENTREGA 07/08 — PRIMEIRO GESTOR DA FPMED CRIADO E PROVADO COM LOGIN REAL
+    licitacao@fpmed.com.br · Natanael · gestor_geral · e-mail JA CONFIRMADO.
+    id no Auth: f15be776-303e-4cfc-b08c-df9a241d2d32. Perfil gravado (gestor_geral, ativo).
+    app_metadata.role = 'diretor' (o gate das TELAS, que o usuario nao edita) + perfil
+    gestor_geral (o gate do BANCO). Os dois gates casados, que e a licao da Global.
+    PROVA (login real pelo mesmo endpoint do gm-auth, com o token DELE): entra, e-mail
+    confirmado, e enxerga o que gestor enxerga — perfis 200, cotacoes COM CUSTO 200, funil 200,
+    licitacoes 200, CMED 200, dicionario 200, e os jornais DELE vazios (sao por usuario).
+    PERFIS DA FPMED agora: comercial@fpmed.com.br · lemuelempresas7@outlook.com · licitacao@
+    fpmed.com.br — os TRES gestor_geral ativos (o do Lemuel segue gestor_geral, conferido).
+
+>>> SENHA UNICA 'adm2026' — DECISAO DO LEMUEL PRO DIA 1, REGISTRADA COM A RECOMENDACAO DADA.
+    Ela e PROVISORIA. A recomendacao que eu dei, por escrito, e: cada pessoa troca no PRIMEIRO
+    login, pelo botao da chave (🔑) no canto superior direito de qualquer tela, ou pelo
+    reset-senha.html. Enquanto nao trocarem, qualquer pessoa que saiba o padrao entra como
+    gestor — e gestor ve CUSTO, FORNECEDOR e o funil inteiro. Nao trava a entrega; fica aqui
+    registrado que foi avisado e que a decisao de manter e dele.
+
+>>> EQUIPE preenchida no cliente.config.js (era o item vermelho da auditoria):
+    licitacao@fpmed.com.br -> Natanael · lemuelempresas7@outlook.com -> Lemuel ·
+    comercial@fpmed.com.br -> FPMED Comercial. Pessoa NOVA nao precisa entrar aqui pra ter
+    acesso (isso e a tela "Usuarios e acessos", sem deploy): esta lista e so o de-para do NOME
+    que sai nos documentos.
+
+>>> VERIFICADOR (kit regenerado, commit 3d2d24b): 26 ✓ · 1 ✗ (era 24 ✓ · 3 ✗).
+    Ficaram verdes: EQUIPE (eu preenchi) e a POLICY DE CUSTO — esta segunda NAO porque eu
+    apliquei o ddl/05, e sim porque o VERIFICADOR REGENERADO passou a fazer a pergunta certa:
+    ele aceita SELECT condicional (cot_sel=cargo_gestor()) em vez de exigir RESTRICTIVE literal.
+    O ddl/05 CONTINUA PARADO esperando OK do Lemuel.
+    O unico ✗ que sobra e a lista do molde (14 arquivos), e os 14 sao decisao registrada:
+    globalmed_vendedora (Prospeccao, fora do escopo), limedtec-estoque* + vendor/pdfjs (o
+    importador redundante — a FPMED ja importa PDF e a versao daqui e mais rica) e
+    motor_busca.js (arquivo GERADO). Detalhe na secao 12.1 do TAREFAS.
+
 >>> !! INVESTIGACAO 06/08 — "por que so a FPMED cai?" RESPOSTA MEDIDA: ela nao e a unica que
     cai, e a unica que AVISA. NAO era rede, NAO era cota, NAO era compute. !!
     O defeito da sessao existe IDENTICO no gm-auth da Global (refresh devolvendo false pros dois
