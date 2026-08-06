@@ -51,12 +51,18 @@ const manifest = {
   theme_color: cores.destaque || '#000000',
   categories: ['business', 'productivity', 'medical'],
   icons: icons,
-  shortcuts: [
-    { name: 'Propostas',  url: './fpmed_giovana.html', icons: [{ src: 'icones/limedtec-192.png', sizes: '192x192' }] },
-    { name: 'Licitacoes', url: './fpmed_licitacoes.html' },
-    { name: 'Negocios', url: './fpmed_negocios.html' },
-    { name: 'Painel',     url: './fpmed_painel.html' },
-  ],
+  // >>> SEM `shortcuts`, e ISTO E O CONSERTO DE 07/08 (relato do Lemuel, com print): "os itens
+  //     de SISTEMAS abrem em outra janela independente".
+  //     Os itens do MENU nunca abriram: os 7 usam `location.href`, mesma janela, e nao existe
+  //     `target="_blank"` nem `window.open` em nenhum deles (conferido linha a linha).
+  //     Quem abria janela separada era ISTO: os atalhos do manifest. No app instalado eles
+  //     aparecem no botao direito do icone / na jump list da barra de tarefas, e o padrao do
+  //     sistema operacional para atalho de app e ABRIR UMA JANELA NOVA do aplicativo. Duas
+  //     janelas do mesmo sistema, cada uma com a sua sessao em memoria, e o operador sem saber
+  //     qual e a "de verdade".
+  //     >>> E o custo de manter era baixo em troca de nada: o menu ja leva a essas 4 telas em
+  //         um clique, de dentro da MESMA janela. O atalho so oferecia um caminho pior pro
+  //         mesmo lugar. Some com ele e sobra "UMA janela, UMA entrada de menu".
 };
 
 const txt = JSON.stringify(manifest, null, 2) + '\n';
