@@ -134,11 +134,25 @@ ok('24. o sino conta o funil inteiro, nao o que os filtros deixaram na tela',
 ok('25. *** com erro de leitura o sino diz "NAO SEI", nao "nada abre hoje" ***',
   /não sei<\/b> o que abre hoje/.test(src) && /não são a mesma coisa/.test(src));
 ok('26. o painel avisa que so mostra negocio ATIVO', /arquivado não avisa/.test(src));
-ok('27. *** a ausencia do vencimento de documento e DITA, nao silenciosa ***',
-  /Vencimento de documento da empresa ainda não entra aqui/.test(src) && /Meus Documentos/.test(src));
+// >>> ESTE ASSERT MUDOU DE LADO EM 08/08, e e a melhor razao possivel pra um teste mudar: ele
+//     exigia que o sino DISSESSE que nao sabia avisar sobre vencimento de documento, porque
+//     "Meus Documentos" nao existia. O modulo entrou (ddl/documentos.sql + fpmed_documentos.html)
+//     e a ausencia deixou de existir. Agora ele exige o AVISO DE VERDADE no lugar do bilhete.
+//     A regra por tras e a mesma dos dois lados: o sino nao pode ficar calado sobre um risco.
+ok('27. *** o vencimento de documento agora AVISA de verdade (era so um bilhete de ausencia) ***',
+  !/Vencimento de documento da empresa ainda não entra aqui/.test(src)
+  && /d\.situacao === 'vencido' \|\| d\.situacao === 'vencendo'/.test(src)
+  && /habilitação — resolver antes da próxima sessão/.test(src));
+ok('27b. ...e falha ao ler documento vira "nao sei", como o resto do sino',
+  /não sei<\/b> se há certidão vencendo/.test(src));
 ok('28. clicar no aviso abre o negocio', /function irPara\(id\)/.test(src) && /abrirDrawer\(id\)/.test(src));
 ok('29. clicar fora fecha o painel', /!e\.target\.closest\('\.sino-cx'\)/.test(src));
-ok('30. o badge some quando nao ha nada urgente', /cnt\.style\.display = n\.urgentes \? '' : 'none'/.test(src));
+ok('30. o badge some quando nao ha nada urgente', /cnt\.style\.display = total \? '' : 'none'/.test(src));
+// O badge passou a somar documento vencido/vencendo (08/08). A distincao esta no proprio codigo:
+// sessao ATRASADA nao entra porque nao tem mais conserto -- o numero ficaria aceso pra sempre;
+// certidao vencida entra porque fica acesa ate alguem RESOLVER, e resolver e possivel hoje.
+ok('31. *** documento entra no badge; sessao atrasada continua fora ***',
+  /const total = n\.urgentes \+ docsRuins;/.test(src) && /urgentes: hojeL\.length \+ amanhaL\.length/.test(src));
 
 console.log('\nRESULTADO: ' + p + ' ok, ' + f + ' falha(s)');
 process.exitCode = f ? 1 : 0;

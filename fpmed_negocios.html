@@ -232,6 +232,7 @@ textarea.anot:focus{border-color:var(--azul)}
     <nav class="portal">
       <a href="fpmed_licitacoes.html" title="Buscar oportunidades no PNCP">Encontrar</a>
       <a class="on" title="Funil, quadros e agenda">Negócios</a>
+      <a href="fpmed_documentos.html" title="Certidões e documentos de habilitação, com aviso de vencimento">Documentos</a>
     </nav>
     <div class="sep"></div>
     <nav>
@@ -326,6 +327,9 @@ const TAREFAS_MODELO = [
 const novasTarefas = () => TAREFAS_MODELO.map(([secao,texto]) => ({secao, texto, feita:false}));
 
 let NEG = [], EMPRESAS = [], VIS = 'lista', FASE_SEL = null, ERRO = null, ABERTO = null;
+// documentos da empresa, só para o sino. `null` = ainda não li · `'erro'` = não consegui ler ·
+// array = li. Os três estados são diferentes e a tela trata os três (ver pintaNotif).
+let DOCS = null;
 const esc = s => String(s==null?'':s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const brl = n => n==null ? '—' : 'R$ ' + Number(n).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
 // GESTOR: a tabela inteira já é de gestor pela RLS (ddl/negocios.sql). O gate de tela aqui é a
@@ -397,6 +401,13 @@ async function carregar(){
     NEG = await rn.json();
     EMPRESAS = re.ok ? await re.json() : [];
   }catch(e){ ERRO = e.message; }
+  // DOCUMENTOS pro sino (08/08). Em chamada SEPARADA e depois do funil, de propósito: se a
+  // leitura de documento falhar, o funil — que é o motivo de a tela existir — continua abrindo.
+  // `'erro'` e não `[]`: lista vazia diria "não há certidão vencendo", e não é isso que houve.
+  try{
+    const rd = await fetch(`${SB_URL}/rest/v1/v_documentos_situacao?select=id,nome,situacao,dias_para_vencer&order=validade.asc.nullslast`, {headers:SB_H});
+    DOCS = rd.ok ? await rd.json() : 'erro';
+  }catch(e){ DOCS = 'erro'; }
   const sel = document.getElementById('f-empresa');
   // O seletor e o badge de empresa FICAM VISÍVEIS mesmo com uma empresa só — decisão do
   // Lemuel em 05/08, corrigindo a minha recomendação de escondê-los. Igual ao SIGA.
@@ -732,8 +743,15 @@ async function salvaAnot(id, txt){
 function pintaNotif(){
   const n = notificacoes(NEG);
   const cnt = document.getElementById('sino-n');
-  cnt.textContent = n.urgentes;
-  cnt.style.display = n.urgentes ? '' : 'none';
+  // >>> DOCUMENTO VENCIDO ENTRA NO BADGE, e a sessão atrasada não — a diferença não é capricho.
+  //     O badge não soma sessão passada porque aquilo NÃO TEM MAIS CONSERTO: o número ficaria
+  //     aceso pra sempre com histórico velho, e badge que nunca zera ninguém mais olha.
+  //     Certidão vencida é o oposto: fica acesa até alguém RESOLVER, e resolver é possível hoje.
+  //     Um badge que apaga sozinho quando o problema continua é pior que badge nenhum.
+  const docsRuins = Array.isArray(DOCS) ? DOCS.filter(d => d.situacao==='vencido' || d.situacao==='vencendo').length : 0;
+  const total = n.urgentes + docsRuins;
+  cnt.textContent = total;
+  cnt.style.display = total ? '' : 'none';
   const linha = (x, cls) => {
     const h = horaDe(x.abertura);
     return `<a class="nf ${cls||''}" onclick="irPara(${x.id})">
@@ -745,10 +763,26 @@ function pintaNotif(){
   if(n.amanha.length) h += `<div class="nf-sec">abre amanhã</div>` + n.amanha.map(x=>linha(x)).join('');
   if(n.passou.length) h += `<div class="nf-sec">a sessão passou e o negócio continua na fase anterior (${n.passou.length})</div>`
                          + n.passou.slice(0,8).map(x=>linha(x)).join('');
-  if(!h) h = '<div class="nf-vazio">Nada abre hoje nem amanhã.<br>O sino só mostra sessão de negócio <b>ativo</b> — arquivado não avisa.</div>';
-  // A ausência é DITA, não silenciosa: sem isto, alguém confia no sino pra um alerta que ele
-  // nunca teve como dar. "Meus Documentos" não existe ainda (registrado no TAREFAS).
-  h += '<div class="nf-nota">⏳ Vencimento de documento da empresa ainda não entra aqui: depende de “Meus Documentos”, que não existe no sistema.</div>';
+  // ── DOCUMENTO VENCENDO ── o bloco que estava registrado como IMPOSSÍVEL ("depende de Meus
+  //    Documentos, que não existe"). Existe desde 08/08, então ele entra.
+  //    >>> ELE VEM PRIMEIRO NA LISTA, e não no fim: certidão vencida DESCLASSIFICA. Uma sessão
+  //        que abre hoje ainda dá pra correr atrás; habilitação vencida na hora da sessão, não.
+  if(DOCS === 'erro'){
+    // mesma regra do resto do sino: falha de leitura vira "não sei", nunca "está tudo certo"
+    h = '<div class="nf-sec">documentos</div><div class="nf-vazio">⚠️ Não consegui ler os documentos, então <b>não sei</b> se há certidão vencendo.</div>' + h;
+  } else if(Array.isArray(DOCS)){
+    const ruins = DOCS.filter(d => d.situacao === 'vencido' || d.situacao === 'vencendo');
+    if(ruins.length){
+      h = '<div class="nf-sec">habilitação — resolver antes da próxima sessão</div>'
+        + ruins.slice(0,6).map(d => `<a class="nf ${d.situacao==='vencido'?'hoje':''}" href="fpmed_documentos.html">
+             <div class="q">${d.situacao==='vencido' ? '⛔' : '⚠️'} ${esc(d.nome)}</div>
+             <div class="s">${d.situacao==='vencido'
+                 ? 'venceu há ' + Math.abs(d.dias_para_vencer) + ' dia(s)'
+                 : 'vence em ' + d.dias_para_vencer + ' dia(s)'}</div></a>`).join('')
+        + h;
+    }
+  }
+  if(!h) h = '<div class="nf-vazio">Nada abre hoje nem amanhã, e nenhum documento vencendo.<br>O sino só mostra sessão de negócio <b>ativo</b> — arquivado não avisa.</div>';
   document.getElementById('notif').innerHTML = h;
 }
 function toggleNotif(ev){

@@ -201,15 +201,22 @@ Criado em 21/07/2026 copiando SO os arquivos do app do C:\globalmed.
 >>> ONDE PARAMOS — 06/08/2026, RODADA 6. LEIA ISTO PRIMEIRO.
 ========================================
 
->>> SPEC DE PLATAFORMA DE LICITACOES (estilo "Licitante Prime") — CHEGOU 08/08 e NAO ENTRA AQUI.
-    O Lemuel mandou a spec funcional completa (14 modulos: buscador multi-plataforma, CRM
-    kanban, radar por raio, gestor de documentos, gerador de propostas, leitor de edital com IA,
-    pecas juridicas, declaracoes, pesquisa de preco, ERP, monitoramento de chat de pregao,
-    boletim diario) e disse em seguida: **nao quero colocar dentro do sistema licitacao**.
-    >>> DECISAO REGISTRADA: NAO construir nada disso no modulo de Licitacoes da FPMED. Se um dia
-        virar produto, o destino e a FABRICA (kit da Global) — pela regra "o que vale pra
-        qualquer cliente e da fabrica; o que e da instalacao e local". Construir aqui criaria
-        uma versao que so a FPMED tem e que o proximo cliente nao herda.
+>>> SPEC DE PLATAFORMA DE LICITACOES (estilo "Licitante Prime") — CHEGOU 08/08. **ENTRA SIM**,
+    dentro do modulo de Licitacoes da FPMED. (Eu tinha lido ao contrario o "n quero colocar
+    dentro do sistema licitacao" e registrado como "nao entra"; ele corrigiu: e pra FAZER e
+    COLOCAR no sistema de licitacao. Registro anterior invalidado.)
+    A spec tem 14 modulos: buscador multi-plataforma, CRM kanban, radar por raio, gestor de
+    documentos, gerador de propostas, leitor de edital com IA, pecas juridicas, declaracoes,
+    pesquisa de preco, ERP, monitoramento de chat de pregao, boletim diario.
+    >>> ORDEM DE ATAQUE (o que nao depende de custo nem de decisao juridica vem primeiro):
+        1. 2.6 GESTOR DE DOCUMENTOS — sem custo externo, e DESTRAVA a validade de documento no
+           sino, que estava registrada como bloqueada por "Meus Documentos nao existe".
+        2. 2.10 DECLARACOES — modelos + dados da empresa + PDF pelo mesmo caminho dos outros PDFs.
+        3. 2.9 PECAS JURIDICAS — comeca por formulario guiado + modelo; a IA entra depois.
+        4. 2.5 RADAR por raio — precisa de lat/long dos municipios (IBGE, dado aberto).
+        DEPENDEM DELE: 2.8 leitor de edital com IA (custo por edital, e edital tem 80 paginas),
+        2.14 envio do boletim (provedor de e-mail) e 2.13 chat de pregao (peso juridico, ver
+        abaixo). O resto da spec ja existe em algum grau.
     >>> MEDIDO na ocasiao, e vale guardar: 8 dos 14 modulos da spec JA existem em algum grau
         aqui (CRM 2.555 negocios, buscador PNCP + indice proprio, dashboard, Meus Jornais como
         boletim sem o envio, propostas com PDF, preco de mercado com 25.702 tetos CMED + 8.832

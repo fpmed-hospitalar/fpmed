@@ -17,7 +17,7 @@
  */
 'use strict';
 
-const VERSAO = 'limedtec-fpmed-2026-08-08-1';
+const VERSAO = 'limedtec-fpmed-2026-08-08-2';
 const CACHE = 'limedtec-shell-' + VERSAO;
 
 // A CASCA DA FPMED. Lista MONTADA A MAO conferindo `git ls-files` (= o que o Pages serve),
@@ -32,6 +32,7 @@ const SHELL = [
   './fpmed_painel.html',               // Painel de notas
   './fpmed_licitacoes.html',           // Licitacoes
   './fpmed_negocios.html',             // Negocios (funil) — entrou 06/08 com o item 9
+  './fpmed_documentos.html',           // Documentos (habilitacao) — entrou 08/08, 3a aba do portal
   './fpmed_competitividade.html',      // aqui ELA ENTRA (na instalacao de origem estava fora por
                                        // ficar no .gitignore; na FPMED e versionada e vai pro ar)
   './dashboard_clientes.html',         // demo 100% ficticio (nao ha dado real dentro)
