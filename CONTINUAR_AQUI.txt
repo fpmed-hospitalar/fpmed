@@ -201,6 +201,30 @@ Criado em 21/07/2026 copiando SO os arquivos do app do C:\globalmed.
 >>> ONDE PARAMOS — 06/08/2026, RODADA 6. LEIA ISTO PRIMEIRO.
 ========================================
 
+>>> SPEC DE PLATAFORMA DE LICITACOES (estilo "Licitante Prime") — CHEGOU 08/08 e NAO ENTRA AQUI.
+    O Lemuel mandou a spec funcional completa (14 modulos: buscador multi-plataforma, CRM
+    kanban, radar por raio, gestor de documentos, gerador de propostas, leitor de edital com IA,
+    pecas juridicas, declaracoes, pesquisa de preco, ERP, monitoramento de chat de pregao,
+    boletim diario) e disse em seguida: **nao quero colocar dentro do sistema licitacao**.
+    >>> DECISAO REGISTRADA: NAO construir nada disso no modulo de Licitacoes da FPMED. Se um dia
+        virar produto, o destino e a FABRICA (kit da Global) — pela regra "o que vale pra
+        qualquer cliente e da fabrica; o que e da instalacao e local". Construir aqui criaria
+        uma versao que so a FPMED tem e que o proximo cliente nao herda.
+    >>> MEDIDO na ocasiao, e vale guardar: 8 dos 14 modulos da spec JA existem em algum grau
+        aqui (CRM 2.555 negocios, buscador PNCP + indice proprio, dashboard, Meus Jornais como
+        boletim sem o envio, propostas com PDF, preco de mercado com 25.702 tetos CMED + 8.832
+        cotacoes, ERP de estoque) e o MULTI-EMPRESA ja esta pronto no modelo (`empresas` existe,
+        `negocios.empresa_id` existe; so a interface esta escondida).
+    >>> E OS 3 PONTOS QUE NAO SAO "PROGRAMAR MAIS", se um dia o assunto voltar:
+        (a) monitorar chat de pregao exige sessao persistente DENTRO da plataforma de terceiro
+            durante disputa ao vivo — mesma familia da decisao ja tomada sobre o SIGA (referencia
+            de arquitetura, sim; consumir o servico deles, nao) e da regra "jamais tocar na aba
+            DISPUTA em sessao ao vivo";
+        (b) agregar varias plataformas por scraping tira a garantia que sustenta o indice proprio
+            de hoje, que e API PUBLICA do PNCP;
+        (c) peca juridica e declaracao geradas por IA tem valor legal: o produto gera, alguem
+            assina — isso muda a interface, nao so o backend.
+
 >>> ENTREGA 07/08 — PRIMEIRO GESTOR DA FPMED CRIADO E PROVADO COM LOGIN REAL
     licitacao@fpmed.com.br · Natanael · gestor_geral · e-mail JA CONFIRMADO.
     id no Auth: f15be776-303e-4cfc-b08c-df9a241d2d32. Perfil gravado (gestor_geral, ativo).
