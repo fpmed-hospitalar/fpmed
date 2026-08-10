@@ -525,6 +525,34 @@ Criado em 21/07/2026 copiando SO os arquivos do app do C:\globalmed.
     Suite nova testa_pix (17). Ela ja pegou uma 2a copia do CNPJ escrita num COMENTARIO do
     config — que e exatamente o jeito classico de a copia nascer (alguem copia do comentario).
 
+>>> 10/08 — BOLETIM: O TESTE CHEGOU, E FICA UMA RESTRICAO CONHECIDA ATE O DOMINIO SER VERIFICADO.
+    O e-mail chegou na caixa do lemuelbarros@outlook.com (o dono da conta do Resend).
+    *** ATE O DOMINIO SER VERIFICADO, O BOLETIM DAS 5h SO CHEGA NESSE ENDERECO. *** Envio pra
+    qualquer outro destinatario e recusado com HTTP 403 pelo Resend — inclusive pros donos dos
+    jornais (lemuelempresas7@ e licitacao@), que sao justamente quem o cron tenta avisar.
+    E CONFERI COMO A FUNCAO TRATA A RECUSA — rodando o caminho REAL do cron (sem `teste`), nao
+    lendo o codigo:
+      vistos_email ANTES 0  ->  DEPOIS 0   (o Resend recusou e NINGUEM foi marcado como avisado)
+      ultimo_envio_qtd ..... ficou NULO    (nao conta como entregue)
+      ultimo_envio_erro .... GRAVADO       (a falha aparece na linha do jornal, na tela)
+    >>> OU SEJA: NADA SE PERDE. As 6 licitacoes novas continuam no proximo boletim; no dia em que
+        o dominio for verificado, elas saem. A regra que sustenta isso e a de sempre — so carimba
+        `vistos_email` quando o envio DEU CERTO, senao a licitacao sumiria do proximo boletim sem
+        nunca ter chegado a ninguem.
+    >>> O DNS, DESCOBERTO (rdap.registro.br + consulta DNS, 10/08):
+        fpmed.com.br · titular CNPJ 47.110.418/0001-15 (bate com o da empresa) · vence 02/02/2029
+        NAMESERVERS: ns1/ns2/ns3.dominios.uol.com.br  -> **os registros se editam no painel da
+        UOL HOST**, mesmo com o site e o e-mail estando na Hostinger (MX mx.uhserver.com).
+        !! JA EXISTE UM SPF na raiz: `v=spf1 include:spf.whservidor.com ?all`. Um SEGUNDO registro
+           `v=spf1` na raiz INVALIDA OS DOIS e pode derrubar a entrega do comercial@. O Resend
+           pede os registros dele num subdominio (`send.`) justamente pra nao encostar nisso — mas
+           se um dia a tela dele pedir SPF NA RAIZ, os dois tem que ser FUNDIDOS em um, e isso e
+           cirurgia no e-mail que ja funciona. Nao ha DMARC hoje.
+        Passo a passo mastigado (fora do repo): _PASSO_A_PASSO_DOMINIO_RESEND.txt
+    >>> QUANDO ELE AVISAR "Verified": trocar o secret BOLETIM_REMETENTE de onboarding@resend.dev
+        pra `FPMED <boletim@fpmed.com.br>` (ou o nome que ele escolher) e disparar um teste real
+        pros dois e-mails. E secret, nao codigo — 1 minuto.
+
 >>> 10/08 — POR QUE O BOLETIM DE TESTE NAO CHEGOU. DOIS BLOQUEIOS EM SERIE, medidos.
     O painel do Resend mostrava "No sent emails yet" — nenhuma TENTATIVA. Diagnostico:
     1. A FUNCAO NEM CHAMOU O RESEND, e estava certa: o dia padrao e D-1 = 09/08, que e DOMINGO.
