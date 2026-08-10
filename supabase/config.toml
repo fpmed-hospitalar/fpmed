@@ -16,3 +16,11 @@ verify_jwt = false
 # configurado responde 503 (fechada), nunca aberta.
 [functions.enviar-boletim]
 verify_jwt = false
+
+# A 'ler-edital' e a UNICA que EXIGE JWT de usuario -- e nao por capricho: ela e a trava de
+# permissao do piloto (so o gestor de licitacao le) e a que grava o contador de cobranca. Um
+# endpoint desses aberto por origem, como os outros, seria botao escondido e nao permissao.
+# verify_jwt fica false porque a propria funcao valida o token em /auth/v1/user e precisa
+# responder 401/403 com mensagem em portugues em vez do 401 cru da plataforma.
+[functions.ler-edital]
+verify_jwt = false

@@ -17,6 +17,7 @@
 const fs = require('fs'), path = require('path');
 const R = (...p) => fs.readFileSync(path.join(__dirname, '..', ...p), 'utf8').replace(/\r\n/g, '\n');
 const TELA = R('fpmed_edital_ia.html');
+const FN = R('supabase', 'functions', 'ler-edital', 'index.ts');   // onde o custo e a permissao moram
 const PROVA = R('tools', 'prova_custo_edital.js');
 const SW = R('sw.js');
 const MENU = R('fpmed_sistema_final.html');
@@ -105,8 +106,11 @@ ok('30. *** e usa o mesmo proxy com trava de origem que ja esta no ar ***',
 // claude-haiku-4-5 e decisao de CUSTO ja registrada no projeto (22/07). Trocar por um modelo
 // maior multiplica a conta -- se um dia mudar, que mude junto nos dois lugares e com numero novo.
 ok('31. os dois lados usam o MESMO modelo', /claude-haiku-4-5/.test(TELA) && /claude-haiku-4-5/.test(PROVA));
-ok('32. a saida e limitada (custo de saida e 5x o de entrada)',
-  /max_tokens: 2000/.test(TELA) && /max_tokens: 2000/.test(PROVA));
+// O teto de saida MUDOU DE LUGAR em 10/08: a tela nao chama mais a IA direto — quem chama e a
+// edge function `ler-edital`, que e onde moram a permissao e o contador. O limite foi junto,
+// e e assim que tem que ser: parametro de custo do lado que o usuario nao edita.
+ok('32. a saida e limitada, e o limite mora no SERVIDOR (custo de saida e 5x o de entrada)',
+  /MAX_TOKENS_SAIDA = 2000/.test(FN) && /max_tokens: 2000/.test(PROVA));
 ok('33. ...e o motivo esta dito na ferramenta',
   /o custo de saida e 5x o de entrada/.test(PROVA));
 

@@ -444,6 +444,68 @@ Criado em 21/07/2026 copiando SO os arquivos do app do C:\globalmed.
         convidado a atualizar. NAO alterei o limedtec-pwa.js aqui: e arquivo de MOLDE, e a regra
         e "o que vale pra qualquer cliente conserta-se na fabrica".
 
+>>> ============================================================================
+>>> 10/08 — LEITOR DE EDITAL LIBERADO EM PILOTO + CONTADOR DE COBRANCA.
+>>>          *** LEIA O "FALTA" NO FIM DESTE BLOCO: A SESSAO ACABOU NO MEIO. ***
+>>> ============================================================================
+    FEITO E PROVADO:
+    1. O GATE E PERMISSAO DE VERDADE, nao botao escondido. Edge function `ler-edital` (v2) exige
+       o JWT do Supabase, confere o e-mail contra a lista NO SERVIDOR e so entao chama a IA.
+       PROVADO com login real (tools/prova_gate_edital.js):
+         sem token .................. 401
+         token invalido ............. 401
+         Marcos (logado, fora) ...... 403  <- a lista e do servidor, nao da tela
+         Natanael (logado, na lista) . passou (parou no 400 do texto curto, sem gastar credito)
+       LEITORES = ['licitacao@fpmed.com.br']. Acrescentar alguem e 1 linha na funcao.
+    2. MODO HIBRIDO na tela: extrai o texto com o pdf.js; se vier com menos de 500 caracteres
+       (edital escaneado), cai pro PDF nativo AUTOMATICAMENTE e registra o motivo. A tela SEMPRE
+       diz qual modo usou, junto do custo — e o modo que explica o numero.
+    3. CONTADOR `usos_ia` (era `leituras_edital`; renomeada na mesma rodada, ver abaixo).
+       Quem grava e a EDGE FUNCTION com service_role, DEPOIS da chamada, com os tokens que a
+       Anthropic devolveu. Contador que a tela escreve e contador que o pagante escreve.
+       RLS PROVADA com dado dentro: Marcos ve 0 · Natanael ve a dele · DELETE e PATCH do dono
+       NAO mudam nada (a linha sobreviveu, o usd continuou 0.0001).
+       >>> ARMADILHA QUE QUASE ME ENGANOU: o PostgREST devolve **204 no DELETE que nao apagou
+           nada** ("sucesso, 0 linhas apos a RLS"). Lido como status, parece furo. A prova e
+           olhar A LINHA depois — e a ferramenta hoje faz isso (contava status, agora conta linha).
+    4. REPASSE = custo x (1 + margem). Margem PADRAO 50%, configuravel.
+       >>> A MARGEM NAO PODE IR PRO cliente.config.js, e por pouco nao foi: aquele arquivo e
+           baixado pelo NAVEGADOR DA FPMED e o repo e PUBLICO. A margem e quanto o Lemuel cobra
+           por cima — informacao comercial DELE. Ela mora na tabela `cobranca_config`, atras da RLS.
+       O calculo sai de UM lugar: a view `v_leituras_cobranca`, com `security_invoker = true`.
+       E essa flag que faz a regra valer — com ela, a RLS de quem consulta e aplicada de verdade.
+       PROVADO: custo R$ 0,1457 -> repasse R$ 0,22 (x1,5, arredondado PRA CIMA no centavo) para o
+       Lemuel; o Natanael ve a MESMA linha com repasse NULL e `cobranca_config` vazia.
+       O historico guarda o CUSTO da epoca; o repasse e calculado na hora de mostrar.
+    5. `custos_fixos` criada (Supabase Pro US$ 25 + compute Micro US$ 10, com valor em USD e
+       espaco pro cambio). Sem DELETE: encerrar um custo e `vigente_ate`, nao apagar — senao a
+       conta de um mes passado deixa de bater depois.
+    6. RENOMEEI `leituras_edital` -> `usos_ia` ANTES de ter dado real. A ordem de registrar TODO
+       gasto de IA (o ler-pedido tambem) chegou horas depois de a tabela nascer, e o nome ja
+       tinha ficado mais estreito que o conteudo. Coluna `tipo` ('edital'|'pedido-proposta'|
+       'pedido-foto'). Renomear nao e apagar: linhas, indices e RLS foram junto.
+    DDL: ddl/leituras_edital.sql + ddl/cobranca_repasse.sql (os dois rodados 2x, aditivos).
+    >>> HA 2 LINHAS DE TESTE no `usos_ia`, marcadas com modelo='teste-rls' e titulo
+        "LINHA DE TESTE DA RLS". NAO APAGUEI de proposito — a tabela nao tem DELETE nem pra mim,
+        e e esse o ponto. Filtrar por modelo<>'teste-rls' no fechamento.
+
+    *** FALTA (a sessao esgotou aqui — retomar EXATAMENTE nesta ordem) ***
+    a) A TELA NAO TEM COMO SER ABERTA. Ela esta liberada pro Natanael e continua FORA do menu e
+       fora do sw.js. Sem um link, o piloto nao existe na pratica. Proximo passo: entrada no menu
+       do fpmed_sistema_final visivel so pra ele + entrar na casca.
+    b) `ler-pedido` AINDA NAO REGISTRA em `usos_ia`. Hoje o gasto da leitura de pedido da tela de
+       Propostas nao entra na conta do mes — ou seja, o fechamento sairia MENOR que a fatura da
+       Anthropic. E o item 1 da ordem do fechamento mensal.
+    c) FECHAMENTO DO MES (tools/fechamento_mes.js): as 2 planilhas .xlsx
+       (fechamento_interno_AAAA-MM = custo + lucro; fatura_fpmed_AAAA-MM = so o que se cobra),
+       abas Resumo / Detalhe / Custos fixos, cabecalho LIMEDTEC, sem jargao e sem nome de modelo
+       de IA. O `xlsx` ja e dependencia do projeto. Filtrar as linhas de teste.
+    d) SUITE dessas partes (gate, hibrido, view do repasse, fechamento) — hoje o que existe e a
+       PROVA CONTRA O BANCO (tools/prova_gate_edital.js), que e melhor que teste de string, mas
+       nao roda no run_all.
+    e) A tela ainda se chama "prova de custo" no titulo e no cabecalho — texto de antes da
+       liberacao, agora desatualizado.
+
 >>> 10/08 — *** DADOS DA EMPRESA 100% COMPLETOS. *** O PIX chegou e era o ultimo que faltava.
     A CHAVE E O PROPRIO CNPJ (decisao do Lemuel): 47.110.418/0001-15. Conferido contra o CNPJ ja
     cadastrado — BATE (se divergisse, a ordem era parar e perguntar).

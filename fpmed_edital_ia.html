@@ -77,12 +77,24 @@ td.k{width:190px;color:var(--muted)}
 <div class="regua">
 
   <!-- O AVISO É A PRIMEIRA COISA DA TELA, e não um rodapé. Quem abrir isto tem que saber, antes
-       de clicar em qualquer coisa, que cada leitura gasta dinheiro de verdade. -->
+       de clicar em qualquer coisa, que cada leitura gasta dinheiro de verdade E QUE ELA FICA
+       REGISTRADA no nome de quem leu. Transparência antes do clique, não depois. -->
   <div class="aviso" id="av-liberacao">
-    <b>⚠️ Esta tela não está liberada.</b> Cada leitura de edital <b>custa dinheiro</b> — é o único
-    recurso do sistema assim. O custo foi medido em dois editais reais em 10/08:
-    <b>R$ 0,31</b> (edital de 0,17 MB) e <b>R$ 0,88</b> (1,34 MB).
-    <br>Ela fica fora do menu até o Lemuel decidir se libera e para quem.
+    <b>⚠️ Cada leitura de edital custa dinheiro e fica registrada.</b>
+    É o único recurso do sistema assim. Medido em dois editais reais em 10/08:
+    <b>R$ 0,15 a R$ 0,37</b> lendo o texto e <b>R$ 0,31 a R$ 0,88</b> quando precisa mandar o PDF
+    inteiro (edital escaneado).
+    <br><b>Esta leitura será registrada</b> — quem leu, quando, qual edital e quanto custou —
+    porque o custo é repassado. Você vê as suas leituras no fim desta tela.
+  </div>
+
+  <!-- O GATE DA TELA. Ele existe pra pessoa entender por que não consegue, não pra impedir:
+       quem impede é a edge function, que confere o JWT no servidor. Botão escondido não é
+       permissão — é só um botão escondido. -->
+  <div class="aviso err" id="av-sem-permissao" style="display:none">
+    <b>Você não tem acesso ao leitor de edital.</b>
+    Ele está em <b>piloto</b>, liberado só para o gestor de licitação, porque cada leitura tem
+    custo e é cobrada. Quem libera é o Lemuel.
   </div>
 
   <div class="caixa">
@@ -105,6 +117,15 @@ td.k{width:190px;color:var(--muted)}
   </div>
 
   <div id="saida"></div>
+
+  <!-- AS MINHAS LEITURAS: quem é cobrado tem que conseguir conferir a própria conta sem pedir
+       pra ninguém. Para quem fecha a cobrança, a mesma consulta traz as de todo mundo — quem
+       decide isso é a RLS, não esta tela. -->
+  <div class="caixa" id="cx-leituras">
+    <b id="tit-leituras">Leituras registradas</b>
+    <span class="hint" id="res-leituras"> · carregando…</span>
+    <div id="lista-leituras"></div>
+  </div>
 </div>
 
 <script>
@@ -114,7 +135,58 @@ td.k{width:190px;color:var(--muted)}
 // não conseguir, mostra o custo em dólar e diz que não converteu.
 const MODELO = 'claude-haiku-4-5';
 const USD_ENTRADA_MTOK = 1.00, USD_SAIDA_MTOK = 5.00;
-const EDGE = 'https://xzdowrksuswekwffoluk.supabase.co/functions/v1/ler-pedido';
+const SB_URL = 'https://xzdowrksuswekwffoluk.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh6ZG93cmtzdXN3ZWt3ZmZvbHVrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ2NzE2MTMsImV4cCI6MjEwMDI0NzYxM30.Pk-SlV_pZdniESyrajDdfHdHcnmyCwCMtP_TrShh75Y';
+const SB_H = { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY };
+const EDGE = SB_URL + '/functions/v1/ler-edital';
+// >>> A CONSULTA AO BANCO usa a anon e o gm-auth troca pelo JWT antes de sair (é o padrão das
+//     outras telas). A CHAMADA DA EDGE FUNCTION não: o gm-auth declara que NÃO mexe em
+//     /functions/v1/, então lá o token vai à mão. Duas rotas, duas regras — e a segunda é
+//     justamente a que carrega a permissão, por isso ela não podia depender de um patch.
+
+// ── O MODO HÍBRIDO (decisão do Lemuel, 10/08) ───────────────────────────────────────────────
+// Texto primeiro, PDF nativo quando a extração vier pobre. MEDIDO nos mesmos 2 editais: o texto
+// custa ~55% menos e ocupa ~1/2,5 do contexto — mas texto só serve quando existe texto, e
+// edital escaneado é só imagem. Daí híbrido, e não "sempre texto".
+// >>> E A TELA SEMPRE DIZ QUAL DOS DOIS USOU. Os dois modos custam diferente e falham diferente;
+//     esconder qual foi usado é esconder metade da explicação da conta.
+const MIN_CHARS_TEXTO = 500;   // abaixo disto é PDF de imagem: extrair não adianta
+const PDFJS_CDN = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+const PDFJS_WORKER = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+let _pdfjs = null;
+function carregarPdfjs(){
+  if(window.pdfjsLib) return Promise.resolve(window.pdfjsLib);
+  if(_pdfjs) return _pdfjs;
+  _pdfjs = new Promise((res, rej) => {
+    const s = document.createElement('script');
+    s.src = PDFJS_CDN;
+    s.onload = () => { window.pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS_WORKER; res(window.pdfjsLib); };
+    s.onerror = () => rej(new Error('não consegui carregar o leitor de PDF'));
+    document.head.appendChild(s);
+  });
+  return _pdfjs;
+}
+// Mesma extração do Conferidor e do Atualizar Estoque: agrupa por Y pra preservar a LINHA. Num
+// edital é a linha que amarra o item ao prazo e ao valor.
+async function pdfParaTexto(buf){
+  const pdfjs = await carregarPdfjs();
+  const doc = await pdfjs.getDocument({ data: buf }).promise;
+  let out = '';
+  for(let p = 1; p <= doc.numPages; p++){
+    const tc = await (await doc.getPage(p)).getTextContent();
+    const linhas = [];
+    for(const it of tc.items){
+      if(!it.str || !it.str.trim()) continue;
+      const x = it.transform[4], y = it.transform[5];
+      let alvo = linhas.find(l => Math.abs(l.y - y) <= 2.5);
+      if(!alvo){ alvo = { y, itens: [] }; linhas.push(alvo); }
+      alvo.itens.push({ x, str: it.str });
+    }
+    linhas.sort((a,b) => b.y - a.y);
+    out += linhas.map(l => l.itens.sort((a,b)=>a.x-b.x).map(i=>i.str).join(' ')).join('\n') + '\n';
+  }
+  return { texto: out, paginas: doc.numPages };
+}
 
 // >>> O TETO DE CONTEXTO É A TRAVA QUE IMPORTA. O Haiku lê 200 mil tokens; o edital de 1,34 MB
 //     medido em 10/08 já consumiu 165 mil. Estimando por MEGABYTE a partir dessas duas medições
@@ -129,7 +201,7 @@ const el = id => document.getElementById(id);
 
 const PASSOS = [
   { t:'Conferindo o arquivo',   d:'tamanho, formato e se cabe na leitura' },
-  { t:'Preparando o documento', d:'o edital inteiro, página por página' },
+  { t:'Extraindo o texto',      d:'aqui no navegador; se vier pobre, mando o PDF inteiro' },
   { t:'Lendo com a IA',         d:'objeto, prazos, habilitação e armadilhas' },
   { t:'Conferindo a resposta',  d:'o que ele achou e o que ele não achou' },
 ];
@@ -187,48 +259,84 @@ async function lerEdital(){
       + 'é pior que resumo nenhum.');
   }
 
+  // ── PASSO 2: O HÍBRIDO DECIDE AQUI ──────────────────────────────────────────────────────
   passo(1);
-  let b64;
+  const buf = await ARQUIVO.arrayBuffer();
+  let corpo = { titulo: ARQUIVO.name, mb: +mb.toFixed(2), cambio: await cambio() };
   try{
-    b64 = await new Promise((res, rej) => {
-      const fr = new FileReader();
-      fr.onload = () => res(String(fr.result).split(',')[1]);
-      fr.onerror = () => rej(new Error('não consegui ler o arquivo do seu computador'));
-      fr.readAsDataURL(ARQUIVO);
-    });
-  }catch(e){ el('bt-ler').disabled = false; return falhou(1, e.message); }
+    const ex = await pdfParaTexto(buf.slice(0));
+    if(ex.texto.trim().length >= MIN_CHARS_TEXTO){
+      corpo.modo = 'texto'; corpo.texto = ex.texto;
+      corpo.paginas = ex.paginas; corpo.chars = ex.texto.length;
+    }else{
+      // Extração pobre = edital escaneado. Cai pro PDF nativo, que é o único que enxerga
+      // imagem — e DIZ o motivo, porque esse caminho custa mais.
+      corpo.modo = 'pdf-nativo'; corpo.motivo = 'extracao-pobre';
+      corpo.paginas = ex.paginas; corpo.chars = ex.texto.length;
+      corpo.pdfBase64 = await paraBase64(ARQUIVO);
+    }
+  }catch(e){
+    // Nem extrair deu. Ainda dá pra ler pelo PDF nativo — mas o motivo fica registrado.
+    corpo.modo = 'pdf-nativo'; corpo.motivo = 'sem-texto';
+    try{ corpo.pdfBase64 = await paraBase64(ARQUIVO); }
+    catch(e2){ el('bt-ler').disabled = false; return falhou(1, e2.message); }
+  }
+  el('passos').querySelectorAll('.passo .d')[1].textContent = corpo.modo === 'texto'
+    ? ('texto extraído aqui: ' + corpo.chars.toLocaleString('pt-BR') + ' caracteres em ' + corpo.paginas + ' páginas')
+    : ('a extração veio pobre — vou mandar o PDF inteiro (custa mais)');
 
   passo(2);
   const t0 = Date.now();
   let j;
   try{
+    // A CHAMADA VAI ASSINADA: o servidor é quem decide se você pode ler. A tela também esconde,
+    // mas esconder botão é conforto — a permissão de verdade está do outro lado.
+    const tok = tokenDaSessao();
+    if(!tok) throw new Error('sua sessão expirou — entre de novo e tente outra vez');
     const r = await fetch(EDGE, {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({
-        model: MODELO, max_tokens: 2000,
-        messages: [{ role:'user', content: [
-          { type:'document', source:{ type:'base64', media_type:'application/pdf', data: b64 } },
-          { type:'text', text: PERGUNTA },
-        ]}],
-      }),
+      method:'POST',
+      headers:{ 'Content-Type':'application/json', 'Authorization': 'Bearer ' + tok },
+      body: JSON.stringify(corpo),
       signal: AbortSignal.timeout(300000),
     });
     const txt = await r.text();
+    if(r.status === 403){ el('bt-ler').disabled = false;
+      el('av-sem-permissao').style.display = 'block';
+      return falhou(2, 'este acesso está em piloto, liberado só para o gestor de licitação.'); }
     if(!r.ok) throw new Error('o serviço de leitura respondeu ' + r.status + ' — ' + txt.slice(0,160));
     j = JSON.parse(txt);
-    if(j.error) throw new Error(JSON.stringify(j.error).slice(0,200));
+    if(j.ok === false) throw new Error(j.erro || 'a leitura não deu certo');
   }catch(e){ el('bt-ler').disabled = false; return falhou(2, e.message); }
 
   passo(3);
-  const bruto = (j.content||[]).filter(c=>c.type==='text').map(c=>c.text).join('\n');
-  let dados = null;
-  try{ dados = JSON.parse(bruto.replace(/^[\s\S]*?\{/, '{').replace(/\}[^}]*$/, '}')); }catch(e){ dados = null; }
-  if(!dados){ el('bt-ler').disabled = false;
+  if(!j.dados){ el('bt-ler').disabled = false;
     return falhou(3, 'a leitura voltou, mas não no formato esperado — não vou tentar adivinhar o que ela quis dizer.'); }
 
   _passo = 4; pintaPassos();
   el('bt-ler').disabled = false;
-  await mostra(dados, j.usage||{}, Math.round((Date.now()-t0)/1000));
+  mostra(j, Math.round((Date.now()-t0)/1000));
+  carregarLeituras();   // a leitura recém-registrada aparece na hora na conta da pessoa
+}
+
+function paraBase64(f){
+  return new Promise((res, rej) => {
+    const fr = new FileReader();
+    fr.onload = () => res(String(fr.result).split(',')[1]);
+    fr.onerror = () => rej(new Error('não consegui ler o arquivo do seu computador'));
+    fr.readAsDataURL(f);
+  });
+}
+// O token sai de onde o gm-auth guarda a sessão. Lido na hora da chamada, não no boot: sessão
+// renovada no meio do caminho tem token novo, e mandar o velho seria um 401 sem motivo aparente.
+function tokenDaSessao(){
+  try{
+    for(const k of Object.keys(localStorage)){
+      if(!/gm.?auth|sess/i.test(k)) continue;
+      const v = JSON.parse(localStorage.getItem(k) || '{}');
+      if(v && v.access_token) return v.access_token;
+    }
+  }catch(e){}
+  return null;
 }
 
 const PERGUNTA = `Voce esta lendo o EDITAL de uma licitacao publica brasileira para uma
@@ -239,11 +347,9 @@ ou depois, neste formato:
 "pontos_de_atencao":[],"nao_encontrado":[]}
 Se algo nao estiver no documento, NAO invente: ponha o nome do campo em "nao_encontrado".`;
 
-async function mostra(d, usage, segundos){
-  const entrada = (usage.input_tokens||0) + (usage.cache_creation_input_tokens||0);
-  const saida = usage.output_tokens||0;
-  const usd = (entrada/1e6)*USD_ENTRADA_MTOK + (saida/1e6)*USD_SAIDA_MTOK;
-  const cb = await cambio();
+function mostra(j, segundos){
+  const d = j.dados, entrada = j.usage.entrada, saida = j.usage.saida;
+  const usd = j.usd, cb = j.cambio;
 
   const linha = (k, v) => '<tr><td class="k">'+esc(k)+'</td><td>'+(v||'<span class="hint">—</span>')+'</td></tr>';
   const sn = b => b === true ? '<span class="pill sim">sim</span>'
@@ -274,12 +380,91 @@ async function mostra(d, usage, segundos){
     + '<div class="custo" style="margin:8px 0">'
     +   (cb ? 'R$ ' + (usd*cb).toFixed(2) : 'US$ ' + usd.toFixed(4))
     + '</div><div class="hint">'
+    // O MODO APARECE JUNTO DO CUSTO, e não numa nota de rodapé: é ele que explica o número.
+    + '<b>modo: ' + (j.modo === 'texto' ? 'texto extraído aqui no navegador' : 'PDF inteiro')
+    + '</b>' + (j.modoMotivo === 'extracao-pobre' ? ' (a extração de texto veio pobre — edital escaneado)'
+              : j.modoMotivo === 'sem-texto' ? ' (não deu pra extrair texto deste PDF)' : '') + '<br>'
     +   entrada.toLocaleString('pt-BR') + ' tokens de entrada · ' + saida.toLocaleString('pt-BR')
     +   ' de saída · ' + segundos + ' s · ' + MODELO
     +   (cb ? ' · câmbio R$ ' + cb.toFixed(4) + '/US$ (buscado agora)'
            : ' · <b>não consegui a cotação do dólar</b> — o valor fica em dólar, porque inventar câmbio seria pior')
+    + '<br>registrada' + (j.leituraId ? ' com o nº ' + j.leituraId : '') + ' na conta de leituras.'
     + '</div></div>';
 }
+
+/* ── AS LEITURAS REGISTRADAS ─────────────────────────────────────────────────────────────────
+   Quem é cobrado confere a própria conta sem pedir pra ninguém; quem fecha a cobrança vê todas.
+   A MESMA consulta serve aos dois — quem decide o que volta é a RLS, não esta tela. Uma tela que
+   filtrasse por conta própria seria uma segunda regra de acesso, e a que vale é a do banco. */
+async function carregarLeituras(){
+  const res = el('res-leituras'), lista = el('lista-leituras');
+  try{
+    // A VIEW, e não a tabela: é ela que calcula o repasse com a margem vigente, num lugar só.
+    // Para quem não fecha a cobrança, `repasse_brl` volta NULL pela RLS — a tela não precisa
+    // saber quem é admin, e é por isso que ela não pode "esconder a coluna" por conta própria.
+    const r = await fetch(SB_URL + '/rest/v1/v_leituras_cobranca'
+      + '?select=id,quando,email,edital_titulo,tipo,modo,tokens_entrada,brl,usd,ok,repasse_brl,margem_repasse'
+      + '&order=quando.desc&limit=200', { headers: SB_H });
+    if(!r.ok) throw new Error('HTTP ' + r.status);
+    const linhas = await r.json();
+    if(!linhas.length){ res.textContent = ' · nenhuma ainda'; lista.innerHTML = ''; return; }
+
+    // O TOTAL DO MÊS é o número da cobrança — e ele diz de qual mês, senão vira "total" sem
+    // âncora e alguém fecha a conta do mês errado.
+    const agora = new Date(), mes = agora.getMonth(), ano = agora.getFullYear();
+    const doMes = linhas.filter(l => { const d = new Date(l.quando); return d.getMonth()===mes && d.getFullYear()===ano; });
+    const somaBrl = doMes.reduce((s,l) => s + (Number(l.brl)||0), 0);
+    const semCambio = doMes.filter(l => l.brl == null).length;
+    const nomeMes = agora.toLocaleDateString('pt-BR', {month:'long', year:'numeric'});
+    // ADMIN = quem a VIEW deixou ver o repasse. A tela não decide isso, ela descobre — assim não
+    // há uma segunda regra de permissão morando aqui, capaz de discordar do banco.
+    const admin = linhas.some(l => l.repasse_brl != null);
+    const somaRep = doMes.reduce((s,l) => s + (Number(l.repasse_brl)||0), 0);
+
+    res.innerHTML = ' · <b>' + doMes.length + '</b> em ' + esc(nomeMes)
+      + ' · custo real <b>R$ ' + somaBrl.toFixed(2) + '</b>'
+      + (admin ? ' · repasse <b>R$ ' + somaRep.toFixed(2) + '</b> · lucro <b style="color:var(--verde)">R$ '
+                 + (somaRep - somaBrl).toFixed(2) + '</b> (margem ' + (linhas[0].margem_repasse||50) + '%)' : '')
+      + (semCambio ? ' <span style="color:#e6a817">(+' + semCambio + ' sem câmbio no dia — não somadas)</span>' : '');
+
+    lista.innerHTML = '<table><thead><tr><th>quando</th><th>quem</th><th>documento</th><th>modo</th>'
+      + '<th>tokens</th><th>custo</th>' + (admin ? '<th>repasse</th>' : '') + '</tr></thead><tbody>'
+      + linhas.map(l => '<tr>'
+        + '<td class="nowrap">' + new Date(l.quando).toLocaleString('pt-BR', {day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}) + '</td>'
+        + '<td>' + esc(String(l.email||'').split('@')[0]) + '</td>'
+        + '<td>' + esc(String(l.edital_titulo||'—').slice(0,44)) + (l.ok ? '' : ' <span class="pill" style="color:#ffb3b6">falhou</span>') + '</td>'
+        + '<td>' + (l.modo === 'texto' ? 'texto' : 'PDF') + '</td>'
+        + '<td>' + Number(l.tokens_entrada||0).toLocaleString('pt-BR') + '</td>'
+        + '<td>' + (l.brl != null ? 'R$ ' + Number(l.brl).toFixed(2) : 'US$ ' + Number(l.usd||0).toFixed(4)) + '</td>'
+        + (admin ? '<td>' + (l.repasse_brl != null ? 'R$ ' + Number(l.repasse_brl).toFixed(2) : '—') + '</td>' : '')
+        + '</tr>').join('') + '</tbody></table>'
+      + '<div class="hint" style="margin-top:8px">' + (admin
+          ? 'Custo real da IA e preço de repasse (custo × margem, arredondado pra cima no centavo). '
+            + 'A margem é configurável e o cálculo sai da view <b>v_leituras_cobranca</b> — um lugar só.'
+          : 'Este é o <b>custo real</b> da leitura. O preço cobrado é assunto comercial e não aparece aqui.')
+      + '</div>';
+  }catch(e){
+    // "Não sei" e "nenhuma" são coisas diferentes: zero leituras numa tela que na verdade não
+    // conseguiu ler o banco é o jeito de alguém fechar o mês com a conta errada.
+    res.textContent = ' · não consegui ler agora (' + e.message + ') — isto NÃO quer dizer zero';
+    lista.innerHTML = '';
+  }
+}
+
+// O gate de TELA: coerente com o do servidor, mas sem fingir que é ele. Roda quando o gm-auth
+// terminar — antes disso não há usuário pra perguntar.
+const LEITORES_TELA = ['licitacao@fpmed.com.br'];
+function aplicaGate(){
+  const u = (window.gmAuth && gmAuth.user) || {};
+  const email = String(u.email || '').toLowerCase();
+  const pode = LEITORES_TELA.includes(email);
+  el('av-sem-permissao').style.display = pode ? 'none' : 'block';
+  el('arq').disabled = !pode;
+  if(!pode) el('bt-ler').disabled = true;
+  carregarLeituras();
+}
+document.addEventListener('gm-auth-ready', aplicaGate);
+if(window.gmAuth) aplicaGate();
 </script>
 </body>
 </html>
