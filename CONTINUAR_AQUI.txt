@@ -303,8 +303,24 @@ Criado em 21/07/2026 copiando SO os arquivos do app do C:\globalmed.
                      "acima" — pack nao detectado vira divisor 1 e preco de CAIXA e comparado
                      com teto UNITARIO. O achado real registrado no item 1B foi 28 chaves acima.
                      O aviso esta impresso na saida do proprio teste.
-            >>> FALTA do item 5: a integracao no gerador de proposta do fpmed_giovana (itens do
-                edital + nosso preco sugerido + trava do teto), conforme a secao 8.3 do SPEC.
+            [OK] A TRAVA DO TETO NO GERADOR DE PROPOSTA (fpmed_giovana). ITEM 5 FECHADO.
+                 O Conferidor confere a proposta PRONTA; aqui a mesma conta entra no instante em
+                 que o preco e DECIDIDO — conferir depois de mandar e conferir tarde.
+                 O selo fica COLADO no campo de preco e no MKP (aviso longe da decisao nao muda
+                 decisao) e acompanha o que se digita, tecla a tecla: baixar o preco APAGA o
+                 alerta na hora, senao o vermelho fica na tela depois de resolvido e todo mundo
+                 aprende a ignorar vermelho.
+                 AVISA, NAO BLOQUEIA: a tela tambem monta proposta pra hospital privado, e ha
+                 item legitimo fora da tabela — travar o campo viraria aviso certo em impedimento
+                 errado. Quem decide e quem vende; o sistema garante que ele SAIBA.
+                 O selo aparece TAMBEM pro vendedor restrito: teto e LEI, nao intel de custo, e
+                 esconder dele faria justamente quem monta a proposta nao saber. E nao sai no PDF.
+                 Falha ao ler a CMED NAO vira "esta tudo dentro do teto": sem indice a tela nao
+                 afirma nada, que e diferente de afirmar que esta ok.
+                 Suite testa_teto_na_proposta (24). Total: 1.792 asserts / 0 falhas / 54 suites.
+                 >>> O QUE FICOU DA SECAO 8.3 e NAO entrou: puxar os ITENS DO EDITAL direto pro
+                     gerador (hoje o operador busca item por item). O endpoint de itens do PNCP
+                     ja e lido no cruzamento do Licitacoes — e ponte de tela, nao dado novo.
 
     >>> REFERENCIA VISUAL DA FICHA DELES (08/08) — secao 8.4-B do SPEC. EU VI a tela (o Lemuel
         capturou; o arquivo esta FORA do repo pelo .gitignore, porque e produto de terceiro E tem

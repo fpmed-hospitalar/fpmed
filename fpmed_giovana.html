@@ -14,6 +14,9 @@
 <script src="limedtec-tema.js"></script>
 <script src="limedtec-licenca.js"></script>
 <script src="gm-auth.js?v=sessao-06ago"></script>
+<!-- O MESMO motor do Conferidor: "meu preço x teto legal da CMED". Aqui ele entra no momento em
+     que o preço é DECIDIDO — conferir depois de mandar a proposta é conferir tarde. -->
+<script src="fpmed_teto_cmed.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root{--verde:#2CA9E0;--verde-escuro:#1B8DC4;--verde-claro:#EAF6FC;--bg:#F4F7FA;--texto:#1E2A36;--muted:#8496A6;--borda:#E3EAF1;--vermelho:#E05C5C;--navy:#173A5E;--fverde:#8DC63F;--card:#FFFFFF;--sombra:0 2px 10px rgba(23,58,94,.07);}
@@ -64,6 +67,14 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--texto);min-
 .item-row input[type=number]{width:62px;padding:6px 8px;border:1px solid var(--borda);border-radius:7px;text-align:center;font-size:13px;outline:none;background:#fff;color:var(--texto);}
 .item-row .item-preco{font-family:'Montserrat',sans-serif;font-weight:700;font-size:14px;color:var(--navy);min-width:85px;text-align:right;}
 .item-preco-info{font-size:10px;color:var(--muted);text-align:right;margin-top:2px;}
+/* ── TETO CMED ── o selo fica ao lado do preço, onde a decisão acontece.
+   `acima` usa a mesma linguagem visual dos outros alertas desta tela (âmbar/vermelho com fundo
+   fraco), e o `ok` é DISCRETO de propósito: quem está dentro do teto não precisa de festa —
+   precisa saber o número. Alerta que grita quando está tudo bem vira alerta ignorado. */
+.teto-badge{font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px;white-space:nowrap;cursor:help}
+.teto-badge.acima{background:rgba(239,68,68,.10);color:#ef4444;border:1px solid rgba(239,68,68,.42)}
+.teto-badge.ok{background:transparent;color:var(--muted);font-weight:600;border:1px solid var(--borda, #d8e2ea)}
+@media print{ .teto-badge{display:none !important} }
 
 /* ITENS NAO ENCONTRADOS */
 .nao-encontrado-row{background:#FBE9E9;border:1px dashed #F0BFBF;border-radius:8px;padding:9px 12px;margin-bottom:7px;display:flex;align-items:center;gap:8px;}
@@ -2731,6 +2742,9 @@ function buscarProduto(q, imediato=false) {
 // ─── ITENS ────────────────────────────────────────────────────────────────────
 function addItem(c) {
   if (itens.find(i=>i.id===c.id)) { toast('Já adicionado','error'); return; }
+  // a CMED é carregada na PRIMEIRA vez que entra item, e não no boot: quem só abre a tela pra
+  // olhar não paga por 4.875 chaves que não vai usar. Quando chega, repinta os que já estão.
+  carregarTetoCMED().then(idx => { if(idx) repintarTetos(); });
   const qtdCx = qtdEmbalagem(c.und, c.produto);
   itens.push({...c, qtd:1, desc_item:0, _pvv:pv(c), _qtd_caixa: qtdCx, _bpAlerta:bpAlerta(c), _conf:{nivel:'alta',motivos:[]}});   // escolhido à mão = confiança alta
   renderItens();
@@ -2787,6 +2801,11 @@ function renderItens() {
               oninput="setPrecoEdit('${c.id}',this.value)">
           </span>
           ${ehRestrito()?'':`<span id="margem-badge-${c.id}" style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px;background:${margemCor}22;color:${margemCor};">MKP ${margemTxt}</span>`}
+          <!-- A TRAVA DO TETO fica COLADA no preço e no MKP, não num rodapé: é aqui que a
+               decisão acontece, e aviso longe da decisão é aviso que não muda decisão.
+               Vale para TODOS, inclusive o vendedor restrito — o teto é lei, não é intel de
+               custo, e esconder dele faria justamente quem monta a proposta não saber. -->
+          <span id="teto-badge-${c.id}">${tetoBadgeHTML(avaliarTeto(c, precoUnit))}</span>
           <span style="font-size:10px;color:var(--muted)">Orig: ${fmtBRL(c._pvv)}</span>
         </div>
       </div>
@@ -2854,6 +2873,78 @@ function setDescItem(id, v) {
   calcTotal();
   reRenderPreco(id);
 }
+// ══ TRAVA DO TETO CMED NA PROPOSTA (08/08) ═══════════════════════════════════════════════
+// O Conferidor confere a proposta PRONTA. Aqui a mesma conta entra no instante em que o preço
+// é decidido — porque conferir depois de mandar é conferir tarde.
+//
+// >>> É O MESMO MOTOR (fpmed_teto_cmed.js), não uma segunda conta. Duas implementações de
+//     "meu preço x teto" acabariam discordando, e a que discorda na hora da proposta é a que
+//     custa caro.
+//
+// >>> NÃO BLOQUEIA, AVISA. Preço acima do teto é ILEGAL numa venda ao governo, mas esta tela
+//     também monta proposta para hospital privado, onde o teto que vale é outro — e há casos
+//     legítimos de item fora da tabela. Travar o campo transformaria um aviso correto num
+//     impedimento errado. Quem decide é quem vende; o sistema garante que ele SAIBA.
+let _tetoIdx = null, _tetoCarregando = null, _tetoBase = null;
+function carregarTetoCMED(){
+  if(_tetoIdx) return Promise.resolve(_tetoIdx);
+  if(_tetoCarregando) return _tetoCarregando;
+  _tetoCarregando = (async () => {
+    const pega = async (rota) => {
+      let out = [], off = 0;
+      while(true){
+        const r = await fetch(`${SUPA_URL}/rest/v1/${rota}&limit=1000&offset=${off}`, {headers:H});
+        if(!r.ok) throw new Error('HTTP ' + r.status);
+        const d = await r.json();
+        out = out.concat(d);
+        if(d.length < 1000 || off > 30000) break;      // o PostgREST daqui pagina em 1000
+        off += 1000;
+      }
+      return out;
+    };
+    const [teto, dic] = await Promise.all([
+      pega('cmed_teto?select=subst_norm,dose_key,apresentacoes,teto_min,teto_max,tem_cap'),
+      pega('cmed_dicionario?select=marca_norm,substancia'),
+    ]);
+    _tetoBase = teto.length;
+    _tetoIdx = window.LimedtecTetoCMED.indexar({ regua: [], teto, dicionario: dic });
+    return _tetoIdx;
+  })().catch(e => {
+    // >>> FALHA AO LER A CMED NÃO PODE VIRAR "ESTÁ TUDO DENTRO DO TETO". Sem índice, a tela
+    //     simplesmente não afirma nada sobre teto — que é diferente de afirmar que está ok.
+    console.warn('teto CMED indisponível:', e.message);
+    _tetoIdx = null; _tetoCarregando = null;
+    return null;
+  });
+  return _tetoCarregando;
+}
+
+// `null` = não sei dizer (sem índice, ou item não casou). A tela mostra `null` como NADA, nunca
+// como aprovação.
+function avaliarTeto(c, precoUnit){
+  if(!_tetoIdx || !window.LimedtecTetoCMED) return null;
+  const r = window.LimedtecTetoCMED.avaliar({
+    descricao: [c.produto, c.principio_ativo].filter(Boolean).join(' '),
+    precoUnit, unitario: true,
+    paraGoverno: true,          // esta tela monta proposta para licitação: o caso é venda ao governo
+  }, _tetoIdx);
+  return (r.situacao === 'acima' || r.situacao === 'abaixo') ? r : null;
+}
+function tetoBadgeHTML(r){
+  if(!r) return '';
+  return r.situacao === 'acima'
+    ? `<span class="teto-badge acima" title="Teto legal ${fmtBRL(r.teto)} (${r.tipoTeto}) — casou com ${r.evidencia}. Acima do teto, a proposta pode ser desclassificada.">⚠️ ACIMA DO TETO +${r.pctAcima}%</span>`
+    : `<span class="teto-badge ok" title="Teto legal ${fmtBRL(r.teto)} (${r.tipoTeto}) — casou com ${r.evidencia}">teto ${fmtBRL(r.teto)} · folga ${r.folgaPct}%</span>`;
+}
+function repintarTetos(){
+  itens.forEach(c => {
+    const el = document.getElementById('teto-badge-' + c.id);
+    if(!el) return;
+    const precoUnit = c._pvv_editado !== undefined ? c._pvv_editado : c._pvv * (1 - (c.desc_item||0)/100);
+    el.outerHTML = `<span id="teto-badge-${c.id}">${tetoBadgeHTML(avaliarTeto(c, precoUnit))}</span>`;
+  });
+}
+
 function setPrecoEdit(id, v) {
   const c = itens.find(x=>x.id===id);
   if(!c) return;
@@ -2877,6 +2968,10 @@ function setPrecoEdit(id, v) {
     badge.style.color = margemCor;
     badge.style.background = margemCor+'22';
   }
+  // o teto acompanha o preço digitado, tecla a tecla: baixar o preço tem que APAGAR o alerta na
+  // hora, senão o vermelho fica na tela depois de resolvido e a pessoa aprende a ignorá-lo.
+  const bt = document.getElementById('teto-badge-'+id);
+  if(bt) bt.outerHTML = `<span id="teto-badge-${id}">${tetoBadgeHTML(avaliarTeto(c, novo))}</span>`;
   calcTotal();
   reRenderPreco(id);
 }
