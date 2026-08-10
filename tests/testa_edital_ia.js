@@ -94,7 +94,10 @@ ok('27. ...e recusa arquivo grande demais pra requisicao, em vez de descobrir na
   /Abortando\./.test(PROVA) && /32 MB/.test(PROVA));
 ok('28. respeita a cota do PNCP entre chamadas (mesma licao do coletor)',
   /o PNCP tem cota dura/.test(PROVA));
-ok('29. grava a medicao pra conferencia depois', /prova_custo_edital\.json/.test(PROVA));
+// UM ARQUIVO POR MEDICAO (--rotulo). Na 1a rodada era um arquivo unico, sobrescrito, e foi
+// assim que a resposta do primeiro edital se perdeu — nao dava pra comparar os dois modos.
+ok('29. grava a medicao pra conferencia depois, UMA POR RODADA',
+  /'prova_custo_' \+ \(arg\('--rotulo'\)/.test(PROVA) && /--rotulo/.test(PROVA));
 ok('30. *** e usa o mesmo proxy com trava de origem que ja esta no ar ***',
   /functions\/v1\/ler-pedido/.test(PROVA) && /trava de origem/.test(PROVA));
 

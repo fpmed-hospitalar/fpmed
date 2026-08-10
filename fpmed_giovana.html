@@ -474,7 +474,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--texto);min-
       CNPJ: 47.110.418/0001-15 · IE: 10.947.387-9<br>
       RUA 09, S/N, QUADRA 55 A, LOTE 0002, VILA BRASILIA, APARECIDA DE GOIANIA/GO, CEP 74.911-080<br>
       WhatsApp: (62) 98147-9532 · Tel: (62) 3290-4241 · comercial@fpmed.com.br<br>
-      
+      <span id="doc-pix"></span>
     </div>
     <div class="doc-pagina">Página: 1 de 1</div>
   </div>
@@ -602,6 +602,7 @@ async function iniciar() {
   numOrc = Math.floor(Date.now()/1000) % 100000;
   document.getElementById('num-orc').value = String(numOrc).padStart(5,'0');
   _pintaObsPedido();   // mostra o aviso padrão na tela desde o começo (o vendedor precisa saber o que vai sair)
+  _pintaPix();         // a linha do PIX no cabeçalho do documento (vem do config, ver _pixLinha)
 
   try {
     // Busca direta com paginacao completa
@@ -2690,6 +2691,32 @@ function importarPedidoEdital(){
   toast(`${add} item(ns) do edital adicionados`);
 }
 
+/* ─── PIX (decisão do Lemuel, 10/08) ────────────────────────────────────────────────────────
+   A chave é o próprio CNPJ da FPMED, e ela NÃO é escrita aqui: sai do cliente.config.js, que a
+   deriva do campo `cnpj` da empresa. Um número de conta digitado em dois lugares é um número
+   que um dia diverge — e num dado bancário isso é o cliente pagar na conta errada.
+   >>> SEM CHAVE, SEM LINHA. Se o config não tiver PIX, nada é impresso: um campo "PIX:" em
+       branco num PDF de proposta é pior que campo nenhum — parece esquecimento e gera ligação. */
+function _pixLinha(){
+  try{ return (window.LIMEDTEC_CLIENTE && LIMEDTEC_CLIENTE.empresa && LIMEDTEC_CLIENTE.empresa.pixLinha) || ''; }
+  catch(e){ return ''; }
+}
+function _pixChave(){
+  try{ return (window.LIMEDTEC_CLIENTE && LIMEDTEC_CLIENTE.empresa && LIMEDTEC_CLIENTE.empresa.pixChave) || ''; }
+  catch(e){ return ''; }
+}
+// No CABEÇALHO do documento a linha sai por extenso ("PIX (CNPJ): ..."), porque ali ela fica
+// solta entre telefone e e-mail: sem dizer que é PIX, um CNPJ repetido logo abaixo do CNPJ da
+// empresa parece erro de impressão. No quadro da direita o rótulo já é a coluna, e aí vai só a
+// chave — repetir "PIX" dentro da linha rotulada "PIX" é ruído.
+// >>> Pintado pelo `iniciar()`, junto do resto do cabeçalho, e NÃO por um segundo listener de
+//     DOMContentLoaded: a tela já tem um ponto de partida, e dois pontos de partida é como um
+//     deles passa a rodar antes do config carregar sem ninguém entender por quê.
+function _pintaPix(){
+  var el = document.getElementById('doc-pix');
+  if(el) el.textContent = _pixLinha();
+}
+
 // ─── NOME DE FORNECEDOR (código → nome) — compartilhado, idêntico em sistema_final/vendas/painel (FASE A migração #18) ───
 const FORN_NOMES = {
   '1':'GLOBAL','2':'SUPERMEDICA','3':'STOCK MED','4':'PROMEFARMA','5':'DISMASTER',
@@ -3243,6 +3270,7 @@ function gerarPDF() {
     <div class="row"><span class="label">CNPJ:</span><span class="val">47.110.418/0001-15</span></div>
     <div class="row"><span class="label">Telefone..........:</span><span class="val">(62) 3290-4241</span></div>
     <div class="row"><span class="label">WhatsApp......:</span><span class="val">(62) 98147-9532</span></div>
+    ${_pixLinha() ? `<div class="row"><span class="label">PIX....................:</span><span class="val">${_pixChave()}</span></div>` : ''}
   `;
 
   // Itens

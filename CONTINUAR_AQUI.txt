@@ -444,12 +444,40 @@ Criado em 21/07/2026 copiando SO os arquivos do app do C:\globalmed.
         convidado a atualizar. NAO alterei o limedtec-pwa.js aqui: e arquivo de MOLDE, e a regra
         e "o que vale pra qualquer cliente conserta-se na fabrica".
 
->>> 10/08 — PIX: E O UNICO DADO DA EMPRESA QUE FALTA (item 7 da fila nova).
-    Tudo o mais foi aplicado em 22/07 (razao social, CNPJ 47.110.418/0001-15, IE, endereco,
-    WhatsApp, fixo, e-mail). Quando ele colar a chave aqui na janela, ela entra no
-    cliente.config.js e sai no PDF da proposta e nas declaracoes, junto dos outros dados.
-    >>> ATE LA A TELA NAO INVENTA NADA: nao ha campo de PIX em lugar nenhum, e e assim que tem
-        que ficar. Placeholder de dado bancario e o tipo de coisa que sai num PDF pro cliente.
+>>> 10/08 — *** DADOS DA EMPRESA 100% COMPLETOS. *** O PIX chegou e era o ultimo que faltava.
+    A CHAVE E O PROPRIO CNPJ (decisao do Lemuel): 47.110.418/0001-15. Conferido contra o CNPJ ja
+    cadastrado — BATE (se divergisse, a ordem era parar e perguntar).
+    >>> ELA NAO FOI DIGITADA: e DERIVADA do campo `cnpj` no cliente.config.js. Numero de conta
+        escrito em dois lugares e numero que um dia diverge, e num dado bancario divergir
+        significa O CLIENTE PAGAR NA CONTA ERRADA. O config expoe `pixChave` e `pixLinha`
+        ("PIX (CNPJ): ...") ja prontas — cada tela que montasse o formato por conta propria seria
+        mais um lugar onde ele pode sair diferente.
+    >>> SEM CHAVE, SEM LINHA: se um dia o PIX sair do config, nada e impresso. Campo "PIX:" em
+        branco num PDF de proposta e pior que campo nenhum — parece esquecimento e gera ligacao.
+    ONDE APARECE: no cabecalho do documento da proposta (por extenso, senao um CNPJ repetido
+    logo abaixo do CNPJ da empresa parece erro de impressao) e no quadro de dados da direita (so
+    a chave — repetir "PIX" dentro da linha rotulada "PIX" e ruido).
+    >>> ONDE **NAO** APARECE, de proposito: nas DECLARACOES. Declaracao apoiada na Lei 14.133
+        declara FATO JURIDICO; dado bancario nao pertence a ela — dentro de documento assinado
+        isso e ruido no melhor caso e alvo de fraude no pior. A suite trava a ausencia.
+    Suite nova testa_pix (17). Ela ja pegou uma 2a copia do CNPJ escrita num COMENTARIO do
+    config — que e exatamente o jeito classico de a copia nascer (alguem copia do comentario).
+
+>>> 10/08 — CHAVE DO RESEND CHEGOU: O BOLETIM ESTA LIGADO.
+    Gravada no segredos.local.txt (gitignored, conferido antes de escrever) e setada como secret
+    RESEND_API_KEY no Supabase. A funcao ja responde `chaveConfigurada: true`.
+    >>> MUDANCA PEQUENA E QUE VALE: a `enviar-boletim` passou a devolver `chaveConfigurada`
+        TAMBEM na saida curta (quando nao ha jornal assinado). Antes, o unico jeito de saber se o
+        provedor estava ligado era assinar um jornal — ou seja, mexer no dado de alguem so pra
+        conferir configuracao. Estado tem que ser observavel sem efeito colateral.
+    >>> FALTA 1 PASSO DELE (o mesmo tipo do COLETA_TOKEN): o secret BOLETIM_TOKEN nos Secrets do
+        GitHub, senao o robo das 5h nao consegue chamar a funcao. Passo a passo no
+        _PASSO_A_PASSO_RESEND.txt.
+    >>> E NENHUM JORNAL ESTA ASSINADO AINDA: o unico que existe ("Medicamentos GO — pregao") tem
+        o envio DESLIGADO, e eu nao liguei — assinar e um clique dele no botao "📧 e-mail".
+    >>> A chave passou pelo chat. Se ele quiser trocar por higiene, e 1 minuto: gera outra no
+        Resend, apaga a linha do segredos.local.txt e roda `node tools/deploy_edge.js --segredo
+        RESEND_API_KEY`. Nao e urgente — a permissao dela e so ENVIAR e-mail.
 
 >>> 10/08 — SYNC DA GLOBAL: 1 CORRECAO PORTADA, O RESTO PULADO COM MOTIVO (item 6 da fila nova).
     A instrucao dele foi: aplicar o que e correcao/melhoria PURA, um por vez, pelo verificador de
@@ -515,10 +543,50 @@ Criado em 21/07/2026 copiando SO os arquivos do app do C:\globalmed.
     PDF antes de mandar — pegou um "arquivo" de 6,45 MB do PNCP que era ZIP e economizou a
     chamada). Medicoes em backups/prova_custo_edital.json.
     >>> A ALAVANCA QUE **NAO** MEDI, e que pode derrubar o custo: mandar o TEXTO extraido em vez
-        do PDF nativo. O PDF nativo cobra texto + IMAGEM de cada pagina, e o projeto ja extrai
-        texto de PDF no navegador de graca (pdf.js, no Conferidor e no Atualizar Estoque). Isso
-        deve cortar a maior parte dos tokens de entrada — mas e HIPOTESE, nao medicao: precisa da
-        sua propria prova antes de virar numero em relatorio.
+        do PDF nativo. [MEDIDA EM 10/08 — ver a entrada logo abaixo.]
+
+>>> 10/08 — A ALAVANCA DO TEXTO EXTRAIDO, MEDIDA. OS 4 NUMEROS.
+    Mesmos 2 editais, mesmo prompt, mesmo modelo (claude-haiku-4-5). So muda o formato de entrada:
+    PDF nativo (a API converte cada pagina em texto + IMAGEM) x TEXTO extraido com o MESMO pdf.js
+    3.11.174 que o Conferidor e o Atualizar Estoque ja carregam no navegador (instalado como
+    devDependency pra a medicao rodar em node — usar outra versao mediria uma extracao que o app
+    nao faz).
+      EDITAL A (0,17 MB · 18 pag)  PDF  51.449 tokens · R$ 0,3009
+                                   TXT  22.375 tokens · R$ 0,1457   -57% tokens · -52% custo
+      EDITAL B (1,34 MB · 64 pag)  PDF 165.479 tokens · R$ 0,8833
+                                   TXT  65.612 tokens · R$ 0,3723   -60% tokens · -58% custo
+    >>> E O GANHO MAIOR NAO E O PRECO, E O TETO. O Haiku le 200 mil tokens; o edital B em PDF
+        nativo ja usava 165 mil e o teto pratico ficava em ~1,5 MB. Em texto ele cai pra 66 mil —
+        ou seja, a MESMA janela passa a caber um edital ~2,5x maior. A trava de tamanho da tela
+        muda de lugar; nao deixa de existir.
+    ══ QUALIDADE — e aqui a leitura honesta muda de sinal duas vezes ══
+    1. O QUE EU ESPERAVA (e estava ERRADO): que o texto perdesse a lista de habilitacao. No
+       edital B o PDF nativo citou 10 itens que o texto nao citou (FGTS, CNDT, CNES, Fazenda
+       Federal/Estadual/Municipal, comprovante de endereco). Fui conferir se sumiram na extracao:
+       **TODOS OS 6 QUE TESTEI ESTAO NO TEXTO EXTRAIDO** (CNES aparece 27x, FGTS 3x, CNDT 2x).
+       Ou seja: a extracao NAO perdeu — os dois modos resumiram o mesmo documento com recortes
+       diferentes. O texto tambem citou 5 itens que o PDF nao citou. Nenhum dos dois e completo.
+    2. O QUE ACHEI SEM PROCURAR, e que vale mais que a comparacao: *** A EXTRACAO QUEBRA
+       LIGADURAS. *** "justificado" sai como "justi fi cado" (44x no edital B), "especificado"
+       17x, "fluxo" -> "fl uxo", "oficial" -> "O fi cial", "recursos financeiros". O modelo le
+       assim mesmo (nao atrapalhou nenhum dos dois resumos), mas QUALQUER CASAMENTO POR PALAVRA
+       nesse texto falha — e o Conferidor e o Atualizar Estoque usam ESSA MESMA extracao pra
+       casar nome de produto. Nao mexi neles: e codigo de casamento que esta no ar, e a correcao
+       (recolar `\\b(\\w+) (fi|fl) (\\w+)`) precisa de medicao propria antes de entrar. FICA
+       REGISTRADO COMO SUSPEITA MEDIDA, nao como defeito confirmado nas telas.
+    3. AS TABELAS: **NAO TESTEI**, e nao da pra dizer que testei. Os dois editais que o PNCP me
+       deu sao credenciamento de servico — nenhum tem tabela de itens com quantidade e preco. As
+       paginas com mais cara de tabela eram clausulas numeradas. Testar isso de verdade exige um
+       edital de pregao de medicamento com anexo de itens; quando aparecer um no indice, e uma
+       rodada de 2 chamadas. Nenhuma pagina saiu vazia (nao ha carimbo/imagem perdida nesses dois).
+    >>> MINHA LEITURA, com o que esta medido: o texto extraido vale a pena — corta ~55% do custo
+        e mais que dobra o tamanho de edital que cabe, e nao perdeu conteudo nos dois casos
+        medidos. MAS eu nao mudaria a tela pra so-texto: o PDF nativo e o unico caminho que
+        funciona em edital ESCANEADO (a ferramenta ja aborta quando a extracao volta com menos de
+        500 caracteres, justamente por isso). O desenho que eu defendo e: tentar texto primeiro,
+        cair no PDF nativo quando a extracao vier pobre, e DIZER na tela qual dos dois usou —
+        porque o custo e o risco sao diferentes e quem paga tem que saber qual foi.
+        Isso continua NAO IMPLEMENTADO e a tela continua NAO LIBERADA: e decisao dele.
     >>> DECISAO DELE, com os numeros na mao: liberar pra quem, e se cobra por leitura. Total:
         2.046 asserts / 0 falhas / 60 suites.
 

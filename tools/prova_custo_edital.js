@@ -8,9 +8,17 @@
 //
 // >>> ELE NAO LIBERA NADA. Nao mexe em tela, nao grava no banco, nao cria menu. So mede.
 //
+// >>> DOIS CAMINHOS, DE PROPOSITO (10/08, 2a rodada): o PDF NATIVO (a API converte cada pagina
+//     em texto + IMAGEM, e a imagem e o que pesa) e o TEXTO EXTRAIDO com o MESMO pdf.js que o
+//     navegador ja usa no Conferidor e no Atualizar Estoque. A pergunta que so a medicao
+//     responde: quanto mais barato fica, e o que se PERDE junto — tabela e diagrama nao
+//     sobrevivem a extracao de texto.
+//
 // USO:
 //   node tools/prova_custo_edital.js                 (pega um edital do nosso indice)
 //   node tools/prova_custo_edital.js --url <pdf>     (um PDF especifico)
+//   node tools/prova_custo_edital.js --texto         (manda o TEXTO extraido, nao o PDF)
+//   node tools/prova_custo_edital.js --rotulo x      (nome do arquivo de saida, pra comparar)
 //   node tools/prova_custo_edital.js --so-baixar     (baixa e mede o tamanho, sem gastar credito)
 //
 // PRECO (tabela publica da Anthropic, claude-haiku-4-5): US$ 1,00 por milhao de tokens de
@@ -60,6 +68,32 @@ ou depois, neste formato:
 }
 Se algo nao estiver no documento, NAO invente: ponha o campo em "nao_encontrado".`;
 
+/* ── EXTRACAO DE TEXTO — a MESMA do navegador, verbatim ──────────────────────────────────────
+   pdfjs-dist 3.11.174 e exatamente a versao que o Conferidor e o Atualizar Estoque carregam do
+   CDN. Usar outra aqui mediria uma extracao que o app nao faz — o numero sairia bonito e nao
+   valeria nada.
+   Agrupa por Y pra preservar a LINHA: sem isso o texto sai embaralhado coluna a coluna, e num
+   edital e justamente a linha que amarra o item ao prazo e ao valor. */
+async function pdfParaTexto(buf) {
+  const pdfjs = require('pdfjs-dist/legacy/build/pdf.js');
+  const doc = await pdfjs.getDocument({ data: new Uint8Array(buf), useSystemFonts: false }).promise;
+  let out = '';
+  for (let p = 1; p <= doc.numPages; p++) {
+    const tc = await (await doc.getPage(p)).getTextContent();
+    const linhas = [];
+    for (const it of tc.items) {
+      if (!it.str || !it.str.trim()) continue;
+      const x = it.transform[4], y = it.transform[5];
+      let alvo = linhas.find(l => Math.abs(l.y - y) <= 2.5);
+      if (!alvo) { alvo = { y, itens: [] }; linhas.push(alvo); }
+      alvo.itens.push({ x, str: it.str });
+    }
+    linhas.sort((a, b) => b.y - a.y);
+    out += linhas.map(l => l.itens.sort((a, b) => a.x - b.x).map(i => i.str).join(' ')).join('\n') + '\n';
+  }
+  return { texto: out, paginas: doc.numPages };
+}
+
 async function cotacaoDolar() {
   try {
     const r = await fetch('https://economia.awesomeapi.com.br/last/USD-BRL', { signal: AbortSignal.timeout(8000) });
@@ -103,6 +137,7 @@ async function achaEdital() {
     url = achado.arquivo.url || achado.arquivo.uri || achado.arquivo.link;
     rotulo = `${achado.lic.orgao} · ${achado.arquivo.titulo || achado.arquivo.nomeArquivo}`;
     console.log('edital: ' + rotulo);
+    console.log('url: ' + url);   // impressa pra dar pra REPETIR a medicao no outro modo
     console.log('objeto: ' + String(achado.lic.objeto || '').slice(0, 120));
   }
 
@@ -119,9 +154,28 @@ async function achaEdital() {
   // do que descobrir com a chamada recusada.
   if (mb > 25) { console.error('PDF de ' + mb.toFixed(1) + ' MB — acima do que a requisicao aceita. Abortando.'); process.exit(1); }
 
+  // O MODO TEXTO extrai ANTES de decidir mandar: se a extracao vier vazia (PDF escaneado, so
+  // imagem), mandar assim seria pedir resumo de nada e pagar por isso. Melhor parar e dizer.
+  const MODO = tem('--texto') ? 'texto' : 'pdf-nativo';
+  let bloco = null, paginas = null, chars = null;
+  if (MODO === 'texto') {
+    console.log('extraindo o texto com o pdf.js (o mesmo do navegador)...');
+    const ex = await pdfParaTexto(buf);
+    paginas = ex.paginas; chars = ex.texto.length;
+    console.log(`  ${paginas} paginas · ${chars.toLocaleString('pt-BR')} caracteres de texto`);
+    if (chars < 500) {
+      console.error('a extracao devolveu quase nada — este PDF e imagem (escaneado). O caminho de '
+        + 'texto NAO serve pra ele; so o PDF nativo le. Abortando antes de gastar credito.');
+      process.exit(1);
+    }
+    bloco = { type: 'text', text: 'EDITAL (texto extraido do PDF):\n\n' + ex.texto };
+  } else {
+    bloco = { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: buf.toString('base64') } };
+  }
+
   if (tem('--so-baixar')) { console.log('\n--so-baixar: nada foi enviado, zero credito gasto.'); return; }
 
-  console.log(`enviando pro ${MODELO}...`);
+  console.log(`enviando pro ${MODELO} (modo ${MODO})...`);
   const t0 = Date.now();
   const r = await fetch(PROXY, {
     method: 'POST',
@@ -129,13 +183,7 @@ async function achaEdital() {
     body: JSON.stringify({
       model: MODELO,
       max_tokens: 2000,
-      messages: [{
-        role: 'user',
-        content: [
-          { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: buf.toString('base64') } },
-          { type: 'text', text: PERGUNTA },
-        ],
-      }],
+      messages: [{ role: 'user', content: [bloco, { type: 'text', text: PERGUNTA }] }],
     }),
     signal: AbortSignal.timeout(300000),
   });
@@ -152,6 +200,7 @@ async function achaEdital() {
   const cambio = await cotacaoDolar();
 
   console.log('\n=== O QUE CUSTOU ===');
+  console.log(`modo .............. ${MODO}` + (paginas ? ` (${paginas} pag · ${chars.toLocaleString('pt-BR')} chars)` : ''));
   console.log(`tempo ............. ${segundos}s`);
   console.log(`tokens de entrada . ${entrada.toLocaleString('pt-BR')}`);
   console.log(`tokens de saida ... ${saida.toLocaleString('pt-BR')}`);
@@ -168,14 +217,17 @@ async function achaEdital() {
   console.log('\n=== O QUE ELE LEU (primeiros 1200 caracteres) ===');
   console.log(resposta.slice(0, 1200));
 
-  const destino = path.join(RAIZ, 'backups', 'prova_custo_edital.json');
+  // Um arquivo POR MEDICAO (--rotulo), pra dar pra pôr os dois modos lado a lado depois. Um
+  // arquivo unico sobrescrito e o que fez a 1a rodada perder a resposta do primeiro edital.
+  const nome = 'prova_custo_' + (arg('--rotulo') || (MODO === 'texto' ? 'texto' : 'pdf')) + '.json';
+  const destino = path.join(RAIZ, 'backups', nome);
   try {
     fs.mkdirSync(path.dirname(destino), { recursive: true });
     fs.writeFileSync(destino, JSON.stringify({
       quando: new Date().toISOString(), edital: rotulo, url, mb: +mb.toFixed(2),
-      modelo: MODELO, segundos, entrada, saida, usd: +usd.toFixed(4),
+      modo: MODO, paginas, chars, modelo: MODELO, segundos, entrada, saida, usd: +usd.toFixed(4),
       cambio, brl: cambio ? +(usd * cambio).toFixed(4) : null, resposta,
     }, null, 1), 'utf8');
-    console.log('\nmedicao gravada em backups/prova_custo_edital.json (gitignored)');
+    console.log('\nmedicao gravada em backups/' + nome + ' (gitignored)');
   } catch (e) { /* o log e conforto */ }
 })().catch(e => { console.error('ERRO: ' + (e && e.message)); process.exit(1); });

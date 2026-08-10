@@ -71,6 +71,12 @@
         cidadeUf: 'APARECIDA DE GOIANIA - GO',
         telefone: '(62) 3290-4241',        // fixo institucional (o WhatsApp comercial e (62) 98147-9532)
         email: 'comercial@fpmed.com.br',
+        // ── PIX (decisao do Lemuel, 10/08) ────────────────────────────────────────────────
+        // A chave E O PROPRIO CNPJ. Por isso ela nao e digitada aqui como texto solto: e
+        // DERIVADA do campo `cnpj` acima, no fim deste arquivo. Duas copias do mesmo numero
+        // sao duas chances de divergir — e divergir aqui e o cliente pagar na conta errada.
+        // Se um dia a chave deixar de ser o CNPJ, entra `pixChave` explicito e o derivado sai.
+        pixTipo: 'CNPJ',
         principal: true,
       },
     ],
@@ -124,6 +130,24 @@
   // em que alguem corrige um lugar e esquece o outro.
   CFG.empresa = (CFG.empresas || []).filter(function (e) { return e.principal; })[0]
              || (CFG.empresas || [])[0] || {};
+
+  // ── PIX: a CHAVE é DERIVADA, e a LINHA PRONTA também ──────────────────────────────────────
+  // A chave da FPMED é o próprio CNPJ (decisão do Lemuel, 10/08). Derivar em vez de digitar de
+  // novo é o que garante que ela nunca discorde do CNPJ da empresa — e num dado bancário essa
+  // divergência é o cliente pagar na conta errada.
+  // (o exemplo do formato fica sem o numero de proposito: ate em comentario, um CNPJ escrito a
+  // mao e uma 2a copia esperando pra divergir — e alguem copiar do comentario e o jeito classico)
+  // `pixLinha` sai pronta ("PIX (CNPJ): <o cnpj da empresa>") porque cada tela que a montasse
+  // por conta própria seria mais um lugar onde o formato pode sair diferente.
+  // >>> QUANDO NÃO HÁ CHAVE, NÃO HÁ LINHA. `pixLinha` fica vazia e as telas não imprimem nada —
+  //     campo de PIX em branco num PDF de proposta é pior que campo nenhum: parece que a
+  //     empresa esqueceu de preencher, e alguém liga pra perguntar.
+  (function () {
+    var e = CFG.empresa || {};
+    var chave = e.pixChave || (e.pixTipo === 'CNPJ' ? e.cnpj : (e.pixTipo === 'E-MAIL' ? e.email : ''));
+    CFG.empresa.pixChave = chave || '';
+    CFG.empresa.pixLinha = chave ? ('PIX (' + (e.pixTipo || 'CHAVE') + '): ' + chave) : '';
+  })();
 
   raiz.LIMEDTEC_CLIENTE = CFG;
   if (typeof module !== 'undefined' && module.exports) module.exports = CFG;

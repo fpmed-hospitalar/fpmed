@@ -151,7 +151,13 @@ Deno.serve(async (req) => {
   const rj = await fetch(`${SB_URL}/rest/v1/jornais?enviar_email=eq.true&select=*`, { headers: H });
   if (!rj.ok) return J({ ok: false, erro: "nao consegui ler os jornais: HTTP " + rj.status }, 200);
   const jornais = await rj.json();
-  if (!Array.isArray(jornais) || !jornais.length) return J({ ok: true, dia, jornais: 0, enviados: 0 });
+  // `chaveConfigurada` vai TAMBÉM na saída curta (10/08): sem isso, o único jeito de saber se o
+  // provedor já está ligado era assinar um jornal — ou seja, mexer no dado de alguém só pra
+  // conferir configuração. Estado tem que ser observável sem efeito colateral.
+  if (!Array.isArray(jornais) || !jornais.length) {
+    return J({ ok: true, dia, jornais: 0, enviados: 0, chaveConfigurada: !!RESEND,
+      nota: "nenhum jornal assinado — marque '📧 e-mail' num jornal na tela de Licitações" });
+  }
 
   // e-mails dos donos, do auth (e não de uma cópia que envelhece na tabela)
   const donos = new Map<string, string>();
