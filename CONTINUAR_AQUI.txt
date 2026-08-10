@@ -444,6 +444,34 @@ Criado em 21/07/2026 copiando SO os arquivos do app do C:\globalmed.
         convidado a atualizar. NAO alterei o limedtec-pwa.js aqui: e arquivo de MOLDE, e a regra
         e "o que vale pra qualquer cliente conserta-se na fabrica".
 
+>>> 10/08 — A COLETA VOLTOU A ANDAR (o COLETA_TOKEN ENTROU), E APARECEU OUTRO DEFEITO, MAIOR.
+    Pedido do Lemuel: disparar uma rodada e dizer se `ultima_ok` foi preenchida.
+    MEDIDO, antes e depois, no banco:
+      antes  ... 70 licitacoes · a mais nova coletada em 06/08 14:26 · publicacao mais nova 05/08
+      depois ... 651 licitacoes (+581) · publicacao mais nova 10/08 (HOJE), com 272 linhas
+      por publicacao: 04/08 122 · 05/08 40 · 06/08 29 · 07/08 188 · 10/08 272
+      (08 e 09/08 sao sabado e domingo — nao ha o que coletar, nao e buraco)
+    >>> O TOKEN ESTA NO LUGAR. A prova nao e o Actions, e o `ultimo_erro` do banco: antes era
+        "This operation was aborted" (a funcao nem era alcancada); a tentativa das 16:48 de hoje
+        ja diz "orcamento de tempo esgotado", que so acontece DENTRO da funcao, rodando.
+    >>> `ultima_ok` CONTINUA NULL — e NAO e porque o PNCP caiu. As tres rodadas que eu disparei
+        gravaram 190, 213 e 272 linhas, sem breaker e sem erro. O carimbo so avanca em rodada que
+        TERMINA a janela inteira (decisao registrada no item 10), e nenhuma termina: a funcao tem
+        orcamento de 100s e bate no teto sempre.
+    >>> !! O DEFEITO DE VERDADE, e ele e silencioso: a rodada varre a janela DO DIA MAIS VELHO
+        PRO MAIS NOVO e gasta o orcamento nos primeiros. Com a janela padrao de 7 dias, ela
+        queimou os 100s em 04-06/08 e o dia de HOJE ficou com 25 linhas. So quando eu forcei
+        `--dias 1` e que as 272 de hoje entraram. Ou seja: o coletor sistematicamente perde a
+        publicacao MAIS NOVA, que e exatamente pra que ele existe. !!
+        Mesma marca por UF: das 7 UFs configuradas so entraram GO (550), DF (51) e MG (50) —
+        MT, MS, TO e BA nunca sao alcancadas antes do orcamento acabar.
+    >>> E POR ISSO A TELA VAI CONTINUAR DIZENDO "a ultima coleta falhou" com o indice crescendo:
+        o carimbo de frescor esta amarrado a "terminou a janela", e nao a "gravou dado novo".
+        Erra pro lado seguro (subestima em vez de mentir de bom), mas erra.
+    >>> NAO APAGUEI NENHUM ARQUIVO DE TOKEN: procurei nas tres areas de trabalho (a do OneDrive,
+        a local e a Publica) e nao existe arquivo de token/segredo em nenhuma. Nada a apagar.
+    CORRECAO: proximo item da fila (o coletor comecar pelo dia MAIS NOVO e retomar de onde parou).
+
 >>> 10/08 — MOTOR DE DOSE EM UM LUGAR SO. A pendencia registrada no item 5 esta FECHADA.
     O fpmed_licitacoes.html tinha `semAcento`/`doses`/`concMags`/`forma` escritas dentro dele, e
     o fpmed_teto_cmed.js tinha as MESMAS quatro. O teste comparava as duas versoes — o que pega a
