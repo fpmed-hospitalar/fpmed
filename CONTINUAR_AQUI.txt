@@ -232,6 +232,30 @@ Criado em 21/07/2026 copiando SO os arquivos do app do C:\globalmed.
         (c) peca juridica e declaracao geradas por IA tem valor legal: o produto gera, alguem
             assina — isso muda a interface, nao so o backend.
 
+>>> PLATAFORMA DE LICITACOES — CONSTRUCAO EM ANDAMENTO (08/08). Ordem acordada com o Lemuel:
+    [OK] 1. GESTOR DE DOCUMENTOS (2.6) — tabela + view de situacao + bucket privado + tela
+            (3a aba do portal) + o sino avisando documento vencido/vencendo. Suite testa_
+            documentos (35). DESTRAVOU o bloco que estava registrado como impossivel.
+    [OK] 2. DECLARACOES (2.10) — 8 modelos apoiados na Lei 14.133/2021 + personalizada, dados da
+            empresa vindos do CONFIG (nunca digitados), texto CONGELADO no ato com a versao do
+            modelo, historico, impressao pelo navegador. 4a aba do portal.
+            Suite testa_declaracoes (34). Total: 1.605 asserts / 0 falhas / 48 suites.
+    [  ] 3. PECAS JURIDICAS (2.9) — comeca por formulario guiado + modelo; a IA entra depois.
+    [  ] 4. RADAR por raio (2.5) — precisa de lat/long dos municipios (IBGE, dado aberto).
+    [  ] 5. CONFERIDOR DE PROPOSTA CONTRA A CMED — pedido de 08/08. Upload PDF/Excel ou colar
+            texto, casar por EAN/GGREM ou nome+dose (reusar o matching do Licitacoes), tabela
+            com meu preco x teto (PF 19% GO, ou PMVG quando CAP/venda ao governo), % acima/folga,
+            resumo no topo, exportar Excel. ARGUMENTO JA MEDIDO: o cruzamento da CMED com o
+            nosso estoque achou 28 itens ACIMA do teto legal — a ferramenta acha coisa de verdade.
+    [  ] 6. FICHA DO NEGOCIO EDITAVEL — pedido de 08/08. Abertura (data/hora), situacao do
+            certame (ADIADO/SUSPENSO/CANCELADO/REMARCADO), portal/numero/orgao/objeto, com
+            RASTRO (valor anterior + quem + quando) e sem sobrescrever a observacao da planilha.
+            Agenda e sino passam a usar a data nova. Cancelado/suspenso NAO some sozinho.
+            >>> RISCO DE OPERACAO ENQUANTO NAO ENTRA: pregao adiado mantem a data velha e o sino
+                avisa pelo dia errado. Registrado pro Lemuel decidir se promove.
+    DEPENDEM DELE (custo/juridico): leitor de edital com IA, envio do boletim por e-mail,
+    monitoramento de chat de pregao.
+
 >>> ENTREGA 07/08 — PRIMEIRO GESTOR DA FPMED CRIADO E PROVADO COM LOGIN REAL
     licitacao@fpmed.com.br · Natanael · gestor_geral · e-mail JA CONFIRMADO.
     id no Auth: f15be776-303e-4cfc-b08c-df9a241d2d32. Perfil gravado (gestor_geral, ativo).
