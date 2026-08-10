@@ -92,7 +92,10 @@ grant select on public.licitacoes to authenticated;
 -- o seu — e uma delas mostraria a hora errada no dia em que a coleta falhasse no meio.
 create table if not exists public.coleta_status (
   fonte         text primary key,          -- 'PNCP'
-  ultima_ok     timestamptz,               -- última coleta que TERMINOU bem
+  ultima_ok     timestamptz,               -- última coleta que TERMINOU bem (fato da EXECUÇÃO)
+  ultimo_dia_ok date,                      -- até que dia o índice está completo (fato do DADO)
+  dia_em_curso  date,                      -- de que dia é o progresso abaixo
+  ufs_feitas    text[] not null default '{}',  -- UFs já varridas nesse dia, somando rodadas
   ultima_tentativa timestamptz,
   ultimo_erro   text,
   registros     integer,

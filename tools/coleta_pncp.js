@@ -34,7 +34,13 @@ const PREVIEW = process.argv.includes('--preview');
 const UFS = (arg('--uf') || 'GO,DF,MG,MT,MS,TO,BA').split(',').map(s => s.trim()).filter(Boolean);
 // 6 = pregão eletrônico · 8 = dispensa · 9 = inexigibilidade. São as que a FPMED disputa.
 const MODALIDADES = (arg('--mod') || '6,8,9').split(',').map(s => parseInt(s.trim())).filter(Boolean);
-const TAM_PAGINA = 10;      // MEDIDO em 04/08: com 50 a API não responde; com 10 responde em ~450ms
+/* TAM_PAGINA — MEDIDO DUAS VEZES, e as duas medições estão certas:
+     04/08, consulta de JANELA (7 dias de uma vez): com 50 a API não respondia; com 10, ~450 ms.
+     10/08, consulta de UM DIA (a varredura mudou hoje): 10 → 437 ms · 20 → 764 ms · 50 → 778 ms,
+            todas HTTP 200. O que não cabia era o VOLUME da janela larga, não o tamanho da página.
+   Tem que ser IGUAL ao da edge function — a suíte testa_coleta_agendada trava isso, porque dois
+   coletores com ritmos diferentes fazem a produção se comportar diferente do que se testa aqui. */
+const TAM_PAGINA = 50;
 const TETO_PAGINAS = 40;    // por (uf, modalidade, dia) — teto de segurança, com aviso se truncar
 const TIMEOUT_MS = 20000;   // o mesmo AbortController estrutural da tela
 
@@ -192,11 +198,14 @@ async function puxa(url, breaker, ritmo) {
 (async () => {
   console.log(PREVIEW ? '[PREVIEW — nada e gravado]' : '[COLETA]');
   // estado anterior
-  let ultimaOk = null;
+  let ultimaOk = null, ultimoDiaOk = null, diaEmCurso = null, ufsFeitas = [];
   try {
     const r = await fetch(`${SB}/rest/v1/coleta_status?fonte=eq.PNCP&select=*`, { headers: H });
     const j = await r.json();
     if (Array.isArray(j) && j[0] && j[0].ultima_ok) ultimaOk = new Date(j[0].ultima_ok);
+    if (Array.isArray(j) && j[0] && j[0].ultimo_dia_ok) ultimoDiaOk = String(j[0].ultimo_dia_ok).slice(0, 10);
+    if (Array.isArray(j) && j[0] && j[0].dia_em_curso) diaEmCurso = String(j[0].dia_em_curso).slice(0, 10);
+    if (Array.isArray(j) && j[0] && Array.isArray(j[0].ufs_feitas)) ufsFeitas = j[0].ufs_feitas.slice();
   } catch (_) {}
   const { ini, fim } = janela(ultimaOk, new Date(), parseInt(arg('--dias')) || null);
   // a origem da janela tem que bater com a janela impressa: `--dias 2` dizendo "primeira
@@ -211,29 +220,71 @@ async function puxa(url, breaker, ritmo) {
   const ritmo = criaRitmo();
   const achados = new Map();      // chave natural -> registro (dedup entre UF/modalidade)
   let truncou = 0, erro = null;
+  let ultimoDiaCompleto = null;   // yyyy-mm-dd do dia MAIS NOVO coberto inteiro
 
-  for (const uf of UFS) {
-    for (const mod of MODALIDADES) {
-      if (breaker.aberto) break;
-      let pag = 1, totalPag = 1;
-      do {
-        const url = `https://pncp.gov.br/api/consulta/v1/contratacoes/publicacao`
-          + `?dataInicial=${yyyymmdd(ini)}&dataFinal=${yyyymmdd(fim)}`
-          + `&codigoModalidadeContratacao=${mod}&uf=${uf}&pagina=${pag}&tamanhoPagina=${TAM_PAGINA}`;
-        const r = await puxa(url, breaker, ritmo);
-        if (r.erro) { erro = r.erro; break; }
-        totalPag = Math.min(r.paginas || 1, TETO_PAGINAS);
-        if ((r.paginas || 1) > TETO_PAGINAS && pag === 1) truncou++;
-        for (const x of r.dados) {
-          const n = normaliza(x);
-          if (!valida(n)) continue;
-          achados.set(`${n.cnpj}|${n.ano}|${n.sequencial}`, n);
-        }
-        pag++;
-        await dormir(ritmo.pausa);   // o que EVITA o 429; retentar melhor só o remedia
-      } while (pag <= totalPag && !breaker.aberto);
-      if (breaker.aberto) break;
+  /* ══ DIA A DIA, DO MAIS NOVO PRO MAIS VELHO — a mesma correção da edge function (10/08) ═════
+     A varredura pedia a janela inteira de uma vez e caminhava as páginas até acabar o tempo (lá)
+     ou o breaker abrir (aqui). MEDIDO em 10/08 na edge function: com a janela de 7 dias, os 100 s
+     foram gastos em 04–06/08 e o dia de HOJE ficou com 25 linhas; forçando 1 dia, entraram 272.
+     Aqui o script não tem orçamento de tempo, mas tem o BREAKER e o rate limit persistente —
+     e quando um dos dois corta a rodada, o que se perde é o resto da varredura. Do jeito antigo,
+     o resto era sempre o dia mais novo. Este é o coletor-irmão da função: os dois se comportam
+     igual de propósito (é o que a suíte testa_coleta_agendada trava). */
+  const diasDaJanela = [];
+  for (const d = new Date(fim); d >= ini; d.setDate(d.getDate() - 1)) diasDaJanela.push(new Date(d));
+
+  /* ══ RODÍZIO DE UF: A RODADA LEMBRA ONDE PAROU — mesma correção da edge function (10/08) ═════
+     MEDIDO em 10/08, sondando o PNCP direto a uma requisição por 700 ms: as 7 primeiras deram
+     200 e da 8ª em diante vieram 14 × HTTP 429 seguidos. A cota é DURA. Sem memória, toda rodada
+     recomeçava em GO e morria antes de MT/MS/TO/BA — e o banco provava: 689 licitações, todas de
+     GO, DF e MG, as outras quatro nunca coletadas uma vez sequer.
+     Aqui o script tem mais fôlego que a função (não há orçamento de segundos, e o `puxa` espera o
+     Retry-After), então normalmente ele fecha a volta sozinho. O progresso é compartilhado com a
+     função de propósito: os dois alimentam o MESMO índice, e progresso separado faria um desfazer
+     a conta do outro. */
+  const diaMaisNovo = yyyymmdd(fim).replace(/(\d{4})(\d{2})(\d{2})/, '$1-$2-$3');
+  if (diaEmCurso !== diaMaisNovo) { diaEmCurso = diaMaisNovo; ufsFeitas = []; }
+  let voltaFechou = false;
+
+  for (const dia of diasDaJanela) {
+    const iso = yyyymmdd(dia).replace(/(\d{4})(\d{2})(\d{2})/, '$1-$2-$3');
+    const doDiaNovo = iso === diaMaisNovo;
+    const ufsDaVez = doDiaNovo ? UFS.filter(u => !ufsFeitas.includes(u)) : UFS;
+    let diaInteiro = true;
+    for (const uf of ufsDaVez) {
+      let ufInteira = true;
+      for (const mod of MODALIDADES) {
+        if (breaker.aberto || erro) { diaInteiro = false; ufInteira = false; break; }
+        let pag = 1, totalPag = 1;
+        do {
+          const url = `https://pncp.gov.br/api/consulta/v1/contratacoes/publicacao`
+            + `?dataInicial=${yyyymmdd(dia)}&dataFinal=${yyyymmdd(dia)}`
+            + `&codigoModalidadeContratacao=${mod}&uf=${uf}&pagina=${pag}&tamanhoPagina=${TAM_PAGINA}`;
+          const r = await puxa(url, breaker, ritmo);
+          if (r.erro) { erro = r.erro; diaInteiro = false; break; }
+          totalPag = Math.min(r.paginas || 1, TETO_PAGINAS);
+          if ((r.paginas || 1) > TETO_PAGINAS && pag === 1) { truncou++; diaInteiro = false; }
+          for (const x of r.dados) {
+            const n = normaliza(x);
+            if (!valida(n)) continue;
+            achados.set(`${n.cnpj}|${n.ano}|${n.sequencial}`, n);
+          }
+          pag++;
+          await dormir(ritmo.pausa);   // o que EVITA o 429; retentar melhor só o remedia
+        } while (pag <= totalPag && !breaker.aberto);
+        if (breaker.aberto) { diaInteiro = false; ufInteira = false; break; }
+      }
+      // a UF só entra no progresso com as 3 modalidades lidas — meia UF marcada como feita seria
+      // um buraco que nenhuma rodada futura voltaria pra tapar
+      if (doDiaNovo && ufInteira && !ufsFeitas.includes(uf)) ufsFeitas.push(uf);
+      if (breaker.aberto || erro) break;
     }
+    // O DIA MAIS NOVO fecha quando a VOLTA fecha (todas as UFs, somando rodadas). Dias velhos
+    // valem pelo que a rodada viu, porque ninguém guarda progresso deles.
+    const fechouAgora = doDiaNovo ? (UFS.every(u => ufsFeitas.includes(u)) && !truncou && !erro) : diaInteiro;
+    if (doDiaNovo && fechouAgora) voltaFechou = true;
+    if (fechouAgora && !ultimoDiaCompleto) ultimoDiaCompleto = iso;
+    if (breaker.aberto || erro) break;
   }
 
   const regs = [...achados.values()];
@@ -274,11 +325,24 @@ async function puxa(url, breaker, ritmo) {
   const st = { fonte: 'PNCP', ultima_tentativa: new Date().toISOString(),
                ultimo_erro: erro || null, registros: gravadas, atualizado_em: new Date().toISOString() };
   if (okDeVerdade) st.ultima_ok = new Date().toISOString();
+  // ATÉ QUE DIA O ÍNDICE ESTÁ EM DIA (10/08). `ultima_ok` fala da EXECUÇÃO; este fala do DADO, e
+  // sobrevive a uma rodada cortada no meio. SÓ ANDA PRA FRENTE: rodada que alcançou só dia velho
+  // não pode puxar o carimbo pra trás — o dia novo continua coberto.
+  if (ultimoDiaCompleto && (!ultimoDiaOk || ultimoDiaCompleto > ultimoDiaOk)) st.ultimo_dia_ok = ultimoDiaCompleto;
+  // O PROGRESSO DA VOLTA. Fechou -> ZERA, pra próxima rodada varrer o dia de novo e pegar o que
+  // foi publicado depois. O carimbo do dia já guarda que a volta aconteceu.
+  st.dia_em_curso = diaEmCurso;
+  st.ufs_feitas = voltaFechou ? [] : ufsFeitas;
   await fetch(`${SB}/rest/v1/coleta_status?on_conflict=fonte`, {
     method: 'POST', headers: { ...H, Prefer: 'return=minimal,resolution=merge-duplicates' },
     body: JSON.stringify([st]),
   }).catch(() => {});
   console.log(okDeVerdade ? '✅ coleta concluída — carimbo de frescor avançado'
                           : '⚠️  coleta INCOMPLETA — o carimbo NÃO avançou (a tela vai continuar mostrando a hora da última coleta boa)');
+  console.log(ultimoDiaCompleto ? `📅 índice completo até ${ultimoDiaCompleto}`
+                                : '📅 nenhum dia foi coberto por inteiro nesta rodada');
+  const faltam = UFS.filter(u => !ufsFeitas.includes(u));
+  console.log(voltaFechou ? `🔄 volta do dia ${diaEmCurso} FECHADA (as ${UFS.length} UFs) — o progresso zerou`
+    : `🔄 ${diaEmCurso}: ${ufsFeitas.length}/${UFS.length} UFs varridas` + (faltam.length ? ` · faltam ${faltam.join(',')}` : ''));
   process.exitCode = okDeVerdade ? 0 : 1;
 })().catch(e => { console.error('ERRO: ' + e.message); process.exit(1); });

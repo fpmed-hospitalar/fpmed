@@ -470,7 +470,46 @@ Criado em 21/07/2026 copiando SO os arquivos do app do C:\globalmed.
         Erra pro lado seguro (subestima em vez de mentir de bom), mas erra.
     >>> NAO APAGUEI NENHUM ARQUIVO DE TOKEN: procurei nas tres areas de trabalho (a do OneDrive,
         a local e a Publica) e nao existe arquivo de token/segredo em nenhuma. Nada a apagar.
-    CORRECAO: proximo item da fila (o coletor comecar pelo dia MAIS NOVO e retomar de onde parou).
+    CORRECAO FEITA NA MESMA RODADA — ver a entrada abaixo. RESULTADO: 70 -> 1.356 licitacoes,
+    as 7 UFs no indice pela primeira vez, e `ultimo_dia_ok` = 2026-08-10 (o carimbo ENCHEU).
+
+>>> 10/08 — O COLETOR CONSERTADO EM QUATRO PONTOS, TODOS MEDIDOS (nao supostos).
+    1. VARREDURA DIA A DIA, DO MAIS NOVO PRO MAIS VELHO. Ela pedia a janela inteira de uma vez e
+       caminhava as paginas ate o tempo acabar — e o tempo acabava sempre no comeco da janela.
+       Agora o orcamento e gasto de tras pra frente: o que fica de fora e o dia VELHO. Perder o
+       dia velho e atraso; perder o de hoje e a tela nao ter o edital que abre amanha.
+       E cada dia e GRAVADO ao fechar, nao tudo no fim: rodada cortada deixa o que ja terminou.
+    2. tamanhoPagina 10 -> 50. A medicao de 04/08 ("com 50 a API nao responde") estava CERTA e
+       continua no arquivo: ela foi feita com a consulta de 7 dias. Com consulta de UM DIA,
+       medido hoje: 10 -> 437ms · 20 -> 764ms · 50 -> 778ms, todas 200. O que nao cabia era o
+       VOLUME da janela larga. A tela segue com 10 de proposito (la o periodo e do operador).
+       >>> Efeito medido: a rodada foi de 243 pra 876 linhas coletadas. 3,5x.
+    3. TETO DE PAGINAS da funcao 12 -> 30. Com consulta de um dia, 12 x 10 = 120 estourava num
+       dia de GO — e dia truncado NAO pode ser carimbado como completo, entao o teto baixo
+       travava o carimbo no mesmo lugar do bug anterior.
+    4. *** RODIZIO DE UF COM MEMORIA — e este e o achado da rodada. *** Sondei o PNCP direto, uma
+       requisicao a cada 700ms: as 7 primeiras deram 200 e da 8a em diante vieram 14 x HTTP 429
+       SEGUIDOS. A cota dele e DURA e nao se resolve indo mais devagar: um dia sao 21 combinacoes
+       (7 UFs x 3 modalidades) e NENHUMA rodada de 100s faz 21 chamadas contra essa cota.
+       Por isso toda rodada recomecava em GO e morria antes de MT/MS/TO/BA — o banco provava:
+       689 linhas, TODAS de GO/DF/MG, as outras quatro UFs nunca coletadas uma vez sequer.
+       Agora `coleta_status` guarda `dia_em_curso` + `ufs_feitas` e cada rodada CONTINUA de onde a
+       anterior parou. Fechada a volta, o carimbo do dia avanca e o progresso ZERA — pra proxima
+       varrer o dia de novo e pegar o que publicarem a tarde.
+       PROVADO COM DUAS RODADAS REAIS: a 1a fechou 6 UFs (faltamUFs:["BA"]), a 2a fechou a volta
+       (voltaFechou:true) e gravou ultimo_dia_ok=2026-08-10.
+    5. O CARIMBO NOVO `ultimo_dia_ok`: ate que DIA o indice esta completo. `ultima_ok` fala da
+       EXECUCAO ("a rodada terminou?") e a resposta e nao quase sempre; este fala do DADO. A tela
+       passou a dizer "completo ate 10/08" e a rodada PARCIAL nao vira mais "a ultima coleta
+       falhou" — aviso sempre aceso e aviso que ninguem le no dia da falha de verdade.
+    NUMEROS FINAIS: 1.356 licitacoes (eram 70). Por UF: GO 618 · MG 304 · BA 262 · MT 60 · DF 53 ·
+    MS 32 · TO 27. Por publicacao: 04/08 122 · 05/08 40 · 06/08 29 · 07/08 188 · 09/08 2 ·
+    10/08 975. DDL aditivo ddl/coleta_ultimo_dia.sql (rodado 2x). Edge function na versao 6.
+    Suite nova testa_coleta_dia_novo (56). Total: 1.961 asserts / 0 falhas / 58 suites.
+    >>> O QUE SOBROU, e e decisao dele: com a cota do PNCP, cada UF e revarrida ~1x por volta e a
+        volta leva 2 rodadas. Com o cron 3x/dia, GO é revisto ~1,5x por dia. Se ele quiser GO
+        mais fresco que as outras, o caminho e dar peso as UFs (GO em toda rodada, as demais em
+        rodizio) — mas isso e escolha de negocio sobre quais pracas importam, nao ajuste tecnico.
 
 >>> 10/08 — MOTOR DE DOSE EM UM LUGAR SO. A pendencia registrada no item 5 esta FECHADA.
     O fpmed_licitacoes.html tinha `semAcento`/`doses`/`concMags`/`forma` escritas dentro dele, e

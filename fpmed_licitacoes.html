@@ -862,22 +862,28 @@ async function buscarNoBancoAmplo(uf, mod){
 
 // A FAIXA DISCRETA: o PNCP caiu, mas há resultado na tela. Fica ACIMA da lista, some sozinha do
 // caminho visual e oferece a ação — em vez do painel vermelho que substituía tudo.
-function avisoBrandoPNCP(quando){
+// `emDiaAte` (yyyy-mm-dd) tem prioridade sobre a HORA da última rodada completa: quem lê quer
+// saber até que dia pode confiar no índice, e não a que horas o robô terminou. A hora só aparece
+// quando não há dia fechado — e as duas juntas seriam duas datas concorrendo pela mesma pergunta.
+function avisoBrandoPNCP(quando, emDiaAte){
   const lista = document.getElementById('lista');
   if(!lista) return;
   const faixa = document.createElement('div');
   faixa.className = 'aviso-brando';
+  const dm2 = s => s ? s.slice(8,10)+'/'+s.slice(5,7)+'/'+s.slice(0,4) : '';
   faixa.innerHTML = '🌐 <b>O portal do governo (PNCP) não respondeu agora.</b> '
     + 'Mostrando o nosso índice'
-    + (quando ? ', atualizado em ' + quando.toLocaleDateString('pt-BR') + ' às '
-        + quando.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}) : '')
+    + (emDiaAte ? ', completo até ' + dm2(emDiaAte)
+       : quando ? ', atualizado em ' + quando.toLocaleDateString('pt-BR') + ' às '
+           + quando.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})
+       : '')
     + '. <button class="btn sec mini" onclick="atualizarAgora()">Tentar o PNCP de novo</button>';
   lista.insertBefore(faixa, lista.firstChild);
 }
 
 async function carimboColeta(){
   try{
-    const r = await fetch(`${SB_URL}/rest/v1/coleta_status?fonte=eq.PNCP&select=ultima_ok,ultimo_erro`, {headers:SB_H});
+    const r = await fetch(`${SB_URL}/rest/v1/coleta_status?fonte=eq.PNCP&select=ultima_ok,ultimo_dia_ok,ultimo_erro`, {headers:SB_H});
     const j = await r.json();
     return (Array.isArray(j) && j[0]) ? j[0] : null;
   }catch(e){ return null; }
@@ -1605,13 +1611,25 @@ async function buscar(aoVivo){
 
   const carimbo = await carimboColeta();
   const quando = carimbo && carimbo.ultima_ok ? new Date(carimbo.ultima_ok) : null;
+  // ATÉ QUE DIA O ÍNDICE ESTÁ COMPLETO (10/08). É esta a pergunta que o operador faz — "posso
+  // confiar que hoje está tudo aqui?" — e ela é sobre o DADO. O `ultima_ok` é sobre a EXECUÇÃO,
+  // e com o volume real de publicação nenhuma rodada termina a janela dentro do orçamento da
+  // edge function: a tela dizia "a última coleta falhou" enquanto o índice ia de 70 pra 651.
+  // Aviso que fica sempre aceso é aviso que ninguém lê no dia em que a coleta falhar de verdade.
+  const emDiaAte = carimbo && carimbo.ultimo_dia_ok ? String(carimbo.ultimo_dia_ok).slice(0,10) : null;
+  const dm = s => s ? s.slice(8,10)+'/'+s.slice(5,7) : '';
   const procedenciaBanco = `📦 ${(doBanco||[]).length} do nosso índice`
     + (janelaAmpliada ? ' · <b>fora da janela de datas</b> (nada publicado no período escolhido)' : '')
+    + (emDiaAte ? ` · completo até ${dm(emDiaAte)}` : '')
     + (quando ? ` · coletados em ${quando.toLocaleDateString('pt-BR')} às ${quando.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}` : '');
 
   if(!aoVivo && doBanco && doBanco.length){
     st.textContent='';
-    render(doBanco, kws, excl, null, procedenciaBanco + (carimbo && carimbo.ultimo_erro ? ' · ⚠️ a última coleta falhou' : ''));
+    // A rodada parcial NÃO vira "a última coleta falhou": rodada que cobriu o dia mais novo e
+    // parou no dia velho fez exatamente o que devia. O alerta fica pro caso em que nenhum dia
+    // fechou — aí sim ninguém sabe o que está faltando.
+    const alerta = (carimbo && carimbo.ultimo_erro && !emDiaAte) ? ' · ⚠️ a última coleta falhou' : '';
+    render(doBanco, kws, excl, null, procedenciaBanco + alerta);
     return;
   }
 
@@ -1639,12 +1657,12 @@ async function buscar(aoVivo){
     //     está funcionando ensina o operador a desconfiar dele justamente quando ele acertou.
     if(doBanco && doBanco.length){
       render(doBanco, kws, excl, null, procedenciaBanco);
-      avisoBrandoPNCP(quando);
+      avisoBrandoPNCP(quando, emDiaAte);
       return;
     }
     if(emCache){
       render(emCache.dados, kws, excl, null, '⚡ do cache desta sessão · ' + new Date(emCache.quando).toLocaleTimeString('pt-BR'));
-      avisoBrandoPNCP(quando);
+      avisoBrandoPNCP(quando, emDiaAte);
       return;
     }
     // Aqui sim: nem banco, nem cache, nem PNCP. E a mensagem separa as duas causas, porque a
@@ -1653,7 +1671,12 @@ async function buscar(aoVivo){
       + '<div class="hint" style="margin-top:10px;line-height:1.7">'
       + '<b>1.</b> O portal do governo (PNCP) não respondeu: ' + esc(e.message) + '.<br>'
       + '<b>2.</b> E o nosso índice não tem nada' + (kws.length ? ' para <b>' + esc(kws.join(' / ')) + '</b>' : ' no período escolhido')
-      + (quando ? ' (última coleta em ' + quando.toLocaleDateString('pt-BR') + ')' : ' — <b>a coleta nunca rodou com sucesso</b>')
+      // "a coleta nunca rodou" é uma acusação séria — só cabe quando NENHUM dia foi fechado E
+      // nenhuma rodada terminou. Com o índice completo até um dia qualquer, a coleta rodou sim;
+      // o que não há é resultado pra esta busca, que é outra conversa.
+      + (emDiaAte ? ' (o índice está completo até ' + dm(emDiaAte) + ')'
+         : quando ? ' (última coleta em ' + quando.toLocaleDateString('pt-BR') + ')'
+         : ' — <b>a coleta nunca rodou com sucesso</b>')
       + '.</div>'
       + '<button class="btn" style="margin-top:14px" onclick="buscar()">Tentar de novo</button></div>';
     document.getElementById('kpis').style.display='none';

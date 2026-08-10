@@ -129,8 +129,14 @@ const X = {
     /faria a tela mentir sobre a idade do dado/.test(src));
   ok('31. o upsert usa a chave natural, senao cada rodada duplicaria tudo',
     /on_conflict=portal,cnpj,ano,sequencial/.test(src) && /resolution=merge-duplicates/.test(src));
-  ok('32. tamanhoPagina 10 — com 50 a API do PNCP nao responde (medido em 04/08)',
-    /TAM_PAGINA = 10/.test(src));
+  // 04/08 (consulta de JANELA, 7 dias de uma vez): com 50 a API nao respondia; com 10, ~450ms.
+  // 10/08 (consulta de UM DIA, depois que a varredura mudou): 10 -> 437ms · 20 -> 764ms ·
+  //        50 -> 778ms, todas HTTP 200. O que nao cabia era o VOLUME da janela larga.
+  // E o 10 tinha virado O GARGALO: contra a cota do PNCP (7 requisicoes e 429), 10 por pagina
+  // nao fecha um dia de 7 UFs x 3 modalidades. As DUAS medicoes ficam registradas no arquivo --
+  // apagar a de 04/08 faria alguem "voltar" o 50 pra tela, onde a janela ainda e larga.
+  ok('32. tamanhoPagina 50 na coleta (um dia por consulta), com as DUAS medicoes registradas',
+    /TAM_PAGINA = 50/.test(src) && /04\/08/.test(src) && /10\/08/.test(src));
   ok('33. a tabela se chama `licitacoes` com coluna portal, nao `licitacoes_pncp`',
     /create table if not exists public\.licitacoes \(/.test(ddl) && /portal\s+text not null default 'PNCP'/.test(ddl));
   ok('34. *** `authenticated` NAO escreve na tabela (quem grava e a edge function) ***',

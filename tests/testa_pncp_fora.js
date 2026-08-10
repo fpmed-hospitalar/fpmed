@@ -40,14 +40,14 @@ ok('7. ...com a razao: pedir dado fresco nao pode custar o dado que ja se tinha'
   /não pode custar o dado que já se\s+tinha/.test(src.replace(/\s+/g,' ')) || /não pode custar o dado/.test(src));
 
 // ══════════ 2. O TOM ══════════
-ok('8. *** existe a faixa DISCRETA pro PNCP fora do ar ***', /function avisoBrandoPNCP\(quando\)/.test(src));
+ok('8. *** existe a faixa DISCRETA pro PNCP fora do ar ***', /function avisoBrandoPNCP\(quando, emDiaAte\)/.test(src));
 ok('9. ...com o texto que o Lemuel pediu', /O portal do governo \(PNCP\) não respondeu agora/.test(src));
 ok('10. ...dizendo de quando e o indice mostrado', /Mostrando o nosso índice/.test(src) && /atualizado em/.test(src));
 ok('11. ...e oferecendo a acao', /Tentar o PNCP de novo/.test(src) && /onclick="atualizarAgora\(\)"/.test(src));
 ok('12. *** com resultado na tela, NAO pinta o painel vermelho ***',
-  /if\(doBanco && doBanco\.length\)\{[\s\S]{0,200}avisoBrandoPNCP\(quando\);\s*return;/.test(src));
+  /if\(doBanco && doBanco\.length\)\{[\s\S]{0,200}avisoBrandoPNCP\(quando, emDiaAte\);\s*return;/.test(src));
 ok('13. ...e o cache tambem cai na faixa discreta, nao no vermelho',
-  /if\(emCache\)\{[\s\S]{0,240}avisoBrandoPNCP\(quando\);\s*return;/.test(src));
+  /if\(emCache\)\{[\s\S]{0,240}avisoBrandoPNCP\(quando, emDiaAte\);\s*return;/.test(src));
 ok('14. a faixa e visualmente contida (nao usa a classe de erro)',
   /\.aviso-brando\{/.test(src) && /faixa\.className = 'aviso-brando'/.test(src));
 ok('15. *** e a razao esta escrita: pintar de vermelho um sistema que funciona ensina a desconfiar dele ***',
