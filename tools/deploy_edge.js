@@ -69,20 +69,25 @@ async function setaSegredo(nome) {
 
 // Token dedicado e DESCARTAVEL: se vazar, o estrago e o que a funcao sabe fazer (gravar
 // licitacao publica). Nao e a service_role. 32 bytes de aleatoriedade criptografica.
+// `--nome` entrou em 10/08 com a 2a funcao agendada (enviar-boletim). CADA AGENDADOR TEM O SEU
+// TOKEN de proposito: token compartilhado faz a rotacao de um derrubar o outro, e o dia em que
+// um vazar obriga a trocar os dois.
 function geraToken() {
+  const nome = arg('--nome') || 'COLETA_TOKEN';
+  if (!/^[A-Z][A-Z0-9_]{2,40}$/.test(nome)) { console.error('nome de segredo invalido: ' + nome); process.exit(1); }
   const txt = fs.readFileSync(SEGREDOS, 'utf8');
-  if (/^\s*COLETA_TOKEN\s*[:=]/im.test(txt)) {
-    console.log('COLETA_TOKEN JA EXISTE no segredos.local.txt — nao vou sobrescrever.');
+  if (new RegExp('^\\s*' + nome + '\\s*[:=]', 'im').test(txt)) {
+    console.log(`${nome} JA EXISTE no segredos.local.txt — nao vou sobrescrever.`);
     console.log('(rotacionar de proposito: apague a linha na mao e rode de novo)');
     return;
   }
   const t = crypto.randomBytes(32).toString('base64url');
-  const bloco = `\n[COLETA PNCP - edge function coletar-licitacoes]\n`
+  const bloco = `\n[${nome}]\n`
     + `# Segredo DEDICADO do agendador. NAO e a service_role. Gerado em ${new Date().toISOString().slice(0, 10)}.\n`
-    + `# Usado por: tools/deploy_edge.js (seta no Supabase) e pelo GitHub Actions (secret COLETA_TOKEN).\n`
-    + `COLETA_TOKEN = ${t}\n`;
+    + `# Usado por: tools/deploy_edge.js (seta no Supabase) e pelo GitHub Actions (secret ${nome}).\n`
+    + `${nome} = ${t}\n`;
   fs.appendFileSync(SEGREDOS, bloco, 'utf8');
-  console.log(`COLETA_TOKEN gerado e gravado no segredos.local.txt  (len ${t.length})`);
+  console.log(`${nome} gerado e gravado no segredos.local.txt  (len ${t.length})`);
 }
 
 async function deploy(slug) {

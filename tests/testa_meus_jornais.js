@@ -198,8 +198,12 @@ ok('34. on delete cascade: usuario apagado nao deixa jornal orfao', /references 
   ok('36. ...e virou "Meus Jornais", abrindo o painel', /onclick="abrirJornais\(\)" id="lk-jornais"/.test(src));
   ok('37. *** o painel diz de onde sai a leitura (nosso banco, 3x/dia) ***',
     /nosso banco<\/b>, que a coleta abastece 3× por dia/.test(src));
-  ok('38. *** e diz que e-mail/WhatsApp esta FORA ate o Lemuel decidir (custo) ***',
-    /provedor contratado: está fora até o Lemuel decidir/.test(src));
+  // 10/08: o envio SAIU do "fora ate ele decidir" e virou boletim de verdade (modulo 2.14,
+  // suite testa_boletim). O que a tela tem que dizer agora e outra coisa, e mais importante:
+  // que o boletim e do dia FECHADO -- boletim disparado durante o dia perde, em silencio, o que
+  // sai depois do corte. O texto velho nao pode voltar: ele desmentiria o botao ao lado.
+  ok('38. *** o painel diz que o boletim e do dia anterior FECHADO ***',
+    /anterior <b>fechado<\/b>/.test(src) && !/está fora até o Lemuel decidir/.test(src));
   ok('39. a marca NOVA existe no card', /class="bdg nova"/.test(src));
   ok('40. ...e ela carrega o motivo no title, como todo selo desta tela',
     /class="bdg nova" title="não estava no resultado da última vez/.test(src));

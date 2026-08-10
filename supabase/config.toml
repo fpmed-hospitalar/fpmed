@@ -10,3 +10,9 @@ verify_jwt = false
 # dois segredos pra uma porta so, e o segundo sem poder nenhum a mais.
 [functions.coletar-licitacoes]
 verify_jwt = false
+
+# A 'enviar-boletim' segue a MESMA regra da coletar-licitacoes: quem autentica e o header
+# x-boletim-token. Ela nao e publica -- sem o segredo responde 401, e sem BOLETIM_TOKEN
+# configurado responde 503 (fechada), nunca aberta.
+[functions.enviar-boletim]
+verify_jwt = false

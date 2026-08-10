@@ -1,0 +1,92 @@
+# ═══════════════════════════════════════════════════════════════════════════════════════════
+# BOLETIM DIÁRIO — agendamento (módulo 2.14, FPMED)
+#
+# A REGRA DE OURO, registrada antes de existir código: ESPERAR O DIA FECHAR. O boletim é do dia
+# D-1 INTEIRO. Disparar durante o dia perderia o que fosse publicado depois do corte — e
+# perderia EM SILÊNCIO, porque quem recebe às 14h acredita que aquilo é o dia todo.
+#
+# Por isso o cron é 08:00 UTC = 05h de Goiás: o dia anterior já fechou, a coleta das 06h ainda
+# não começou a mexer, e o boletim chega antes do expediente.
+#
+# >>> ENQUANTO NÃO HOUVER RESEND_API_KEY, o job RODA e não manda nada: a função responde
+#     `semChave: true`, não marca ninguém como notificado e não perde novidade nenhuma. O passo
+#     vira um aviso amarelo, não um X vermelho — X vermelho todo dia treina qualquer um a
+#     ignorar o CI, e aí o dia em que a falha for real passa despercebido.
+#
+# ⚠️ PRÉ-CONDIÇÃO (é o Lemuel quem faz, uma vez): GitHub → repo `fpmed-hospitalar/fpmed` →
+#    Settings → Secrets and variables → Actions → New repository secret
+#      nome:  BOLETIM_TOKEN
+#      valor: a linha BOLETIM_TOKEN do segredos.local.txt
+#    E, no Supabase, o secret RESEND_API_KEY (passo a passo em _PASSO_A_PASSO_RESEND.txt).
+# ═══════════════════════════════════════════════════════════════════════════════════════════
+name: Boletim diario
+
+on:
+  schedule:
+    - cron: '0 8 * * *'      # 05h de Goiás (UTC-3) — o dia D-1 já fechou
+  workflow_dispatch:
+    inputs:
+      dia:
+        description: 'Dia a enviar (AAAA-MM-DD). Vazio = ontem.'
+        required: false
+        default: ''
+      teste:
+        description: 'E-mail de teste — manda TUDO pra este endereço e NÃO marca como enviado'
+        required: false
+        default: ''
+
+permissions:
+  contents: read
+
+concurrency:
+  group: boletim-diario
+  cancel-in-progress: false   # dois boletins sobrepostos mandariam o mesmo e-mail duas vezes
+
+jobs:
+  enviar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Conferir o segredo
+        env:
+          BOLETIM_TOKEN: ${{ secrets.BOLETIM_TOKEN }}
+        run: |
+          if [ -z "$BOLETIM_TOKEN" ]; then
+            echo "::error::Falta o secret BOLETIM_TOKEN (Settings -> Secrets -> Actions)."
+            echo "Como gerar: node tools/deploy_edge.js --gera-token --nome BOLETIM_TOKEN"
+            exit 1
+          fi
+
+      - name: Chamar a edge function
+        env:
+          BOLETIM_TOKEN: ${{ secrets.BOLETIM_TOKEN }}
+          DIA: ${{ github.event.inputs.dia }}
+          TESTE: ${{ github.event.inputs.teste }}
+        run: |
+          set -euo pipefail
+          BODY='{}'
+          if [ -n "${DIA:-}" ];   then BODY=$(echo "$BODY" | jq --arg d "$DIA"   '. + {dia:$d}');   fi
+          if [ -n "${TESTE:-}" ]; then BODY=$(echo "$BODY" | jq --arg t "$TESTE" '. + {teste:$t}'); fi
+          echo "corpo: $BODY"
+
+          HTTP=$(curl -sS -o resposta.json -w '%{http_code}' --max-time 540 \
+            -X POST 'https://xzdowrksuswekwffoluk.supabase.co/functions/v1/enviar-boletim' \
+            -H 'Content-Type: application/json' \
+            -H "x-boletim-token: $BOLETIM_TOKEN" \
+            -d "$BODY")
+
+          echo "HTTP $HTTP"; cat resposta.json; echo
+
+          if [ "$HTTP" != "200" ]; then
+            echo "::error::A edge function respondeu HTTP $HTTP"
+            exit 1
+          fi
+
+          ENV=$(jq -r '.enviados // 0' resposta.json)
+          CHAVE=$(jq -r '.chaveConfigurada // false' resposta.json)
+          ERRO=$(jq -r '.erro // "—"' resposta.json)
+          echo "enviados: $ENV · chave configurada: $CHAVE · erro: $ERRO" >> "$GITHUB_STEP_SUMMARY"
+
+          if [ "$CHAVE" != "true" ]; then
+            echo "::warning::Boletim montado mas NAO enviado: falta a RESEND_API_KEY no Supabase. Nada foi marcado como notificado."
+          fi

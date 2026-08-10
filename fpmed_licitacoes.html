@@ -415,7 +415,9 @@ select:focus,input:focus{outline:none;border-color:var(--azul)}
       <div class="hint" style="margin-bottom:10px">
         o jornal roda quando você abre e compara com a sua última leitura · a leitura sai do
         <b>nosso banco</b>, que a coleta abastece 3× por dia — não depende do PNCP estar no ar.
-        <br>envio automático por e-mail/WhatsApp exige um provedor contratado: está fora até o Lemuel decidir.
+        <br>📧 marque <b>e-mail</b> num jornal para receber o boletim de madrugada, com o dia
+        anterior <b>fechado</b> (boletim disparado durante o dia perde o que sai depois do corte).
+        <span id="jor-envio-estado" class="hint"></span>
       </div>
       <div id="jor-lista"></div>
     </div>
@@ -1482,11 +1484,39 @@ function pintaJornais(){
       +   '<div class="sub">'+(j.ultima_leitura
             ? 'última leitura em '+fmtDt(j.ultima_leitura)+(j.ultimo_total!=null?' · '+j.ultimo_total+' bateram':'')
             : '<b>nunca aberto</b> — a 1ª leitura só registra o que existe hoje')+'</div></div>'
+      +   (j.ultimo_envio_erro ? '<div class="sub" style="color:#e58"><b>o último boletim não saiu:</b> '+esc(String(j.ultimo_envio_erro).slice(0,90))+'</div>'
+           : j.ultimo_envio ? '<div class="sub">último boletim em '+fmtDt(j.ultimo_envio)+(j.ultimo_envio_qtd!=null?' · '+j.ultimo_envio_qtd+' enviadas':'')+'</div>' : '')
       + '<div class="acao">'+marca
+      +   '<button class="btn '+(j.enviar_email?'':'sec ')+'mini" onclick="alternarEnvio('+j.id+')" '
+      +     'title="'+(j.enviar_email?'você recebe o boletim deste jornal de madrugada':'marcar para receber por e-mail')+'">'
+      +     (j.enviar_email?'📧 e-mail ligado':'📧 e-mail')+'</button>'
       +   '<button class="btn mini" onclick="abrirJornal('+j.id+')">Abrir</button>'
       +   '<button class="btn sec mini" onclick="excluirJornal('+j.id+')" title="apaga só este jornal, e só pra você">✕</button>'
       + '</div></div>';
   }).join('');
+}
+
+// ASSINATURA DO BOLETIM. O botão é por JORNAL e não uma chave geral: a pessoa quer o boletim de
+// "Medicamentos GO", não de todas as buscas que já salvou. E é um clique reversível — assinatura
+// que só se desfaz pedindo pra alguém é assinatura que vira spam.
+// >>> A TELA NÃO PROMETE O QUE NÃO PODE CUMPRIR: se o provedor de envio ainda não estiver
+//     configurado, ela marca a assinatura e DIZ que o envio começa quando a chave entrar. Fingir
+//     que já está indo seria pior que a caixa desmarcada.
+async function alternarEnvio(id){
+  const j = (JORNAIS||[]).find(x=>x.id===id); if(!j) return;
+  const novo = !j.enviar_email;
+  try{
+    const r = await fetch(`${SB_URL}/rest/v1/jornais?id=eq.${id}`, {method:'PATCH',
+      headers: Object.assign({'Prefer':'return=representation'}, SB_HW),
+      body: JSON.stringify({enviar_email: novo})});
+    if(!r.ok) throw new Error('HTTP '+r.status+(r.status===401||r.status===403?' — sessão sem permissão de gravar':''));
+    j.enviar_email = novo;
+    pintaJornais();
+    const est = document.getElementById('jor-envio-estado');
+    if(est) est.innerHTML = novo
+      ? '<br>✅ <b>'+esc(j.nome)+'</b> vai no boletim das 5h. O primeiro sai na próxima madrugada.'
+      : '<br>o jornal <b>'+esc(j.nome)+'</b> saiu do boletim.';
+  }catch(e){ alert('Não consegui mudar a assinatura: '+e.message); }
 }
 async function salvarJornal(){
   const f = filtrosDaTela();

@@ -444,6 +444,44 @@ Criado em 21/07/2026 copiando SO os arquivos do app do C:\globalmed.
         convidado a atualizar. NAO alterei o limedtec-pwa.js aqui: e arquivo de MOLDE, e a regra
         e "o que vale pra qualquer cliente conserta-se na fabrica".
 
+>>> 10/08 — BOLETIM DIARIO 100% PRONTO, FALTANDO SO A CHAVE DO RESEND (item 4 da fila nova).
+    A tela ja dava o delta ("8 novas desde a sua ultima leitura") — mas so pra quem abre o
+    sistema. Quem so abre quando lembra perde o edital que abre amanha.
+    NO AR: ddl/boletim.sql (aditivo, rodado 2x) · edge function `enviar-boletim` v2 (401 sem
+    token, 200 com — testada) · .github/workflows/boletim-diario.yml (cron 0 8 UTC = 05h de
+    Goias) · botao "📧 e-mail" por jornal na tela · modelo do e-mail com cabecalho FPMED.
+    Suite nova testa_boletim (43), com o MODELO DO E-MAIL rodado de verdade (as funcoes puras do
+    TypeScript extraidas e executadas em node). Total: 2.013 asserts / 0 falhas / 59 suites.
+    >>> AS CINCO RECUSAS, todas do mesmo tipo (nao afirmar o que nao se sabe):
+        1. SEM A CHAVE ELE NAO FINGE QUE MANDOU — e, principalmente, NAO MARCA ninguem como
+           avisado. No dia em que a chave entrar, nada foi perdido: o boletim daquela manha ja
+           sai completo. E o job do Actions vira AVISO amarelo, nao X vermelho (X vermelho todo
+           dia treina qualquer um a ignorar o CI).
+        2. INDICE QUE NAO FECHOU O DIA NAO VIRA BOLETIM. Ele confere o `ultimo_dia_ok` (o carimbo
+           criado hoje de manha) e, se o dia nao fechou, NAO ENVIA e grava o motivo. Boletim
+           curto e lido como "teve pouca coisa"; a AUSENCIA dele e lida como "algo esta errado".
+        3. `vistos_email` E SEPARADO DE `vistos`. Se o e-mail carimbasse o `vistos`, o boletim das
+           5h leria o jornal PELA PESSOA e a tela diria "nada novo" as 8h sobre o que ela ainda
+           nao olhou. Dois leitores, duas memorias.
+        4. SO CARIMBA SE O ENVIO DEU CERTO. Marcar antes faria a licitacao sumir do proximo
+           boletim sem nunca ter chegado a ninguem.
+        5. NADA NOVO NAO VIRA E-MAIL. Boletim vazio todo dia deixa de ser aberto, e no dia em que
+           tiver algo dentro ja vai estar sendo ignorado.
+    >>> A REGRA DE OURO CUMPRIDA: dia D-1 INTEIRO, as 5h. O calculo do "ontem" e no fuso de GOIAS
+        e nao no UTC — pelo UTC, o boletim de segunda falaria de domingo em algumas madrugadas.
+    >>> O QUE EU **NAO** FIZ, de proposito: NAO liguei o envio no unico jornal que existe
+        ("Medicamentos GO — pregao", do Lemuel). Ligar seria UPDATE em dado dele, e assinar o
+        proprio jornal e decisao dele — e um clique no botao novo.
+    >>> DIVIDA REGISTRADA (nao trava nada): a funcao aplica os filtros que existem como COLUNA
+        (data, UF, modalidade) + palavra-chave com o MESMO semAcento da tela; o refino fino
+        (portal, modo de disputa, faixa de valor, SRP) vive no navegador. Por isso o RODAPE DO
+        E-MAIL diz que a tela e a autoridade e pode mostrar um numero menor. O conserto definitivo
+        e unificar o refino num modulo carregado pelos dois lados — mesma cura da copia das
+        funcoes de dose, resolvida hoje de manha.
+    >>> PASSO A PASSO PRO LEMUEL: _PASSO_A_PASSO_RESEND.txt (aberto no Bloco de Notas, fora do
+        repo). Sao 2 segredos: RESEND_API_KEY no Supabase e BOLETIM_TOKEN nos Secrets do GitHub
+        (este ultimo ja gerado e ja setado no Supabase; falta so o do GitHub).
+
 >>> 10/08 — UPGRADE NANO->MICRO AGENDADO PRA 11/08 AS 03:00 (item 3 da fila nova, aprovado).
     A Management API NAO tem parametro de agendamento — ela aplica na hora e o banco REINICIA
     (1-2 min). Entao o que foi agendado e a EXECUCAO: tarefa do Windows `FPMED-compute-micro`,
