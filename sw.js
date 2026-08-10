@@ -1,4 +1,4 @@
-/* LIMEDTEC - service worker.
+﻿/* LIMEDTEC - service worker.
  *
  * A REGRA QUE MANDA AQUI: preco velho servido do cache e proposta errada mandada pro hospital.
  * Um erro desses nao aparece como bug - aparece como o vendedor prometendo um valor que a empresa
@@ -17,7 +17,7 @@
  */
 'use strict';
 
-const VERSAO = 'limedtec-fpmed-2026-08-10-4';
+const VERSAO = 'limedtec-fpmed-2026-08-10-5';
 const CACHE = 'limedtec-shell-' + VERSAO;
 
 // A CASCA DA FPMED. Lista MONTADA A MAO conferindo `git ls-files` (= o que o Pages serve),
@@ -31,16 +31,16 @@ const SHELL = [
   './fpmed_viabilidade.html',          // Viabilidade de compra
   './fpmed_painel.html',               // Painel de notas
   './fpmed_licitacoes.html',           // Licitacoes
-  './fpmed_negocios.html',             // Negocios (funil) — entrou 06/08 com o item 9
-  './fpmed_documentos.html',           // Documentos (habilitacao) — entrou 08/08, 3a aba do portal
-  './fpmed_declaracoes.html',          // Declaracoes — 4a aba do portal, modulo 2.10 da spec
-  './fpmed_pecas.html',                // Pecas juridicas — 5a aba, modulo 2.9 da spec
-  './fpmed_conferidor.html',           // Conferidor de proposta x teto CMED — 6a aba
+  './fpmed_negocios.html',             // Negocios (funil) â€” entrou 06/08 com o item 9
+  './fpmed_documentos.html',           // Documentos (habilitacao) â€” entrou 08/08, 3a aba do portal
+  './fpmed_declaracoes.html',          // Declaracoes â€” 4a aba do portal, modulo 2.10 da spec
+  './fpmed_pecas.html',                // Pecas juridicas â€” 5a aba, modulo 2.9 da spec
+  './fpmed_conferidor.html',           // Conferidor de proposta x teto CMED â€” 6a aba
   './fpmed_teto_cmed.js',              // o motor "meu preco x teto", compartilhado
   './fpmed_competitividade.html',      // aqui ELA ENTRA (na instalacao de origem estava fora por
                                        // ficar no .gitignore; na FPMED e versionada e vai pro ar)
   './dashboard_clientes.html',         // demo 100% ficticio (nao ha dado real dentro)
-  './limedtec-usuarios.html',          // Usuarios e acessos (tela do MOLDE) — entrou 06/08
+  './limedtec-usuarios.html',          // Usuarios e acessos (tela do MOLDE) â€” entrou 06/08
   './reset-senha.html',
   './gm-auth.js',                      // motor de autenticacao compartilhado
   './cliente.config.js',
@@ -54,10 +54,10 @@ const SHELL = [
   './manifest.webmanifest',
   './icones/limedtec-192.png',
   './icones/limedtec-512.png',
-  './icones/limedtec-192-maskable.png',   // logo oficial (cruz com o L) — 4 arquivos desde 05/08
+  './icones/limedtec-192-maskable.png',   // logo oficial (cruz com o L) â€” 4 arquivos desde 05/08
   './icones/limedtec-512-maskable.png',
   './logo_fpmed.png',                  // usado nos PDFs e no cabecalho; e casca, nao dado
-  // â”€â”€ FICARAM DE FORA DE PROPOSITO â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // Ã¢â€â‚¬Ã¢â€â‚¬ FICARAM DE FORA DE PROPOSITO Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
   // fpmed_template.html ....... referencia de design, nao e tela que alguem abre.
   // *.xlsx / *.xlsm / *.pdf ... DADO COMERCIAL. Nunca. (E nem sobem pro repo: .gitignore.)
   // o xlsx.full.min.js do CDN . outra origem; o SW nem chega a olhar. Offline, a Viabilidade
