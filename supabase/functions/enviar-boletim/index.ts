@@ -224,12 +224,27 @@ Deno.serve(async (req) => {
     const txtRe = await re.text();
     const deuCerto = re.status >= 200 && re.status < 300;
 
+    /* ══ O 403 DE CONTA EM MODO DE TESTE, TRADUZIDO ═════════════════════════════════════════
+       MEDIDO em 10/08: com a conta do Resend recem-criada e SEM DOMINIO VERIFICADO, ele so
+       aceita enviar para o e-mail dono da conta. Todo destinatario diferente volta 403
+       `validation_error`. Guardar o texto cru faria alguem, daqui a um mes, ler
+       "You can only send testing emails to your own email address" na tela e nao entender que
+       o conserto e VERIFICAR O DOMINIO — nao trocar a chave nem mexer no codigo.
+       O erro do provedor continua no fim da mensagem: traduzir nao pode ser esconder. */
+    let erroLegivel = "HTTP " + re.status + " " + txtRe.slice(0, 200);
+    if (re.status === 403 && /only send testing emails/i.test(txtRe)) {
+      const dono = (txtRe.match(/\(([^)]+@[^)]+)\)/) || [])[1] || "o e-mail dono da conta";
+      erroLegivel = "A conta do Resend ainda esta em modo de teste: ela so entrega para " + dono
+        + ". Para mandar o boletim para a equipe, verifique o dominio fpmed.com.br em "
+        + "resend.com/domains e troque o remetente (secret BOLETIM_REMETENTE). [" + txtRe.slice(0, 120) + "]";
+    }
+
     // >>> SÓ MARCA COMO VISTO SE O ENVIO DEU CERTO. Marcar antes faria a licitação sumir do
     //     próximo boletim sem nunca ter chegado a ninguém — perda silenciosa.
     const patch: Record<string, unknown> = {
       ultimo_envio: new Date().toISOString(),
       ultimo_envio_qtd: deuCerto ? novas.length : null,
-      ultimo_envio_erro: deuCerto ? null : ("HTTP " + re.status + " " + txtRe.slice(0, 200)),
+      ultimo_envio_erro: deuCerto ? null : erroLegivel.slice(0, 400),
     };
     if (deuCerto && !body.teste) {
       patch.vistos_email = vistos.concat(novas.map((l: any) => l.numero_controle)).slice(-TETO_VISTOS);
@@ -239,7 +254,7 @@ Deno.serve(async (req) => {
     }).catch(() => {});
 
     if (deuCerto) { enviados++; detalhe.push({ jornal: j.nome, novas: novas.length, para: body.teste || destino }); }
-    else { pulados++; detalhe.push({ jornal: j.nome, motivo: "resend HTTP " + re.status + " " + txtRe.slice(0, 120) }); }
+    else { pulados++; detalhe.push({ jornal: j.nome, motivo: erroLegivel.slice(0, 300) }); }
   }
 
   return J({

@@ -525,6 +525,30 @@ Criado em 21/07/2026 copiando SO os arquivos do app do C:\globalmed.
     Suite nova testa_pix (17). Ela ja pegou uma 2a copia do CNPJ escrita num COMENTARIO do
     config — que e exatamente o jeito classico de a copia nascer (alguem copia do comentario).
 
+>>> 10/08 — POR QUE O BOLETIM DE TESTE NAO CHEGOU. DOIS BLOQUEIOS EM SERIE, medidos.
+    O painel do Resend mostrava "No sent emails yet" — nenhuma TENTATIVA. Diagnostico:
+    1. A FUNCAO NEM CHAMOU O RESEND, e estava certa: o dia padrao e D-1 = 09/08, que e DOMINGO.
+       Zero publicacao, entao "nada novo" -> nao manda. Boletim vazio nao vira e-mail, de
+       proposito (boletim que chega vazio todo dia deixa de ser aberto).
+    2. E MESMO SE TIVESSE NOVIDADE, O RESEND RECUSARIA. Chamando a API deles direto:
+       HTTP 403 validation_error — "You can only send testing emails to your own email address
+       (lemuelbarros@outlook.com)". A conta esta em MODO DE TESTE e so entrega pro e-mail DONO
+       DELA enquanto nao houver dominio verificado.
+       >>> E o dono da conta e **lemuelbarros@outlook.com** — nao e o lemuelempresas7@ nem o
+           comercial@. Ou seja: nenhum dos destinatarios dos jornais receberia.
+    PROVADO NOS DOIS SENTIDOS, com envio real:
+       dia 10/08 -> lemuelbarros@outlook.com ...... ENVIADO (6 licitacoes novas)
+       dia 10/08 -> lemuelempresas7@outlook.com ... RECUSADO pelo Resend (403)
+    CONSERTO: verificar o dominio fpmed.com.br em resend.com/domains e trocar o remetente
+    (secret BOLETIM_REMETENTE). Ate la o boletim SO chega em lemuelbarros@outlook.com.
+    O passo 5 do _PASSO_A_PASSO_RESEND.txt deixou de ser opcional — reescrito com isso.
+    >>> E A FUNCAO PASSOU A TRADUZIR ESSE 403 (v5): a linha do jornal na tela agora diz "A conta
+        do Resend ainda esta em modo de teste: ela so entrega para X — verifique o dominio", com
+        o erro cru do provedor no fim entre colchetes. Traduzir nao pode ser esconder: sem a
+        traducao, alguem leria "You can only send testing emails" daqui a um mes e trocaria a
+        chave — que nao e o conserto.
+    >>> O JORNAL JA ESTA ASSINADO: ele marcou o "📧 e-mail" no "Medicamentos GO — pregao".
+
 >>> 10/08 — CHAVE DO RESEND CHEGOU: O BOLETIM ESTA LIGADO.
     Gravada no segredos.local.txt (gitignored, conferido antes de escrever) e setada como secret
     RESEND_API_KEY no Supabase. A funcao ja responde `chaveConfigurada: true`.
