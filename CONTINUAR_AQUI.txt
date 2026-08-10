@@ -388,6 +388,29 @@ Criado em 21/07/2026 copiando SO os arquivos do app do C:\globalmed.
     DEPENDEM DELE (custo/juridico): leitor de edital com IA, envio do boletim por e-mail,
     monitoramento de chat de pregao.
 
+>>> URGENCIA 10/08 — "o Natanael nao consegue editar nada". NAO ERA PAPEL, ERA VERSAO EM CACHE.
+    A suspeita era trava de papel. Medido, e o papel dele estava CERTO desde a criacao:
+      app_metadata.role = "diretor"  ·  perfis.papel = gestor_geral  ·  cargo_gestor() = true
+    E o banco DEIXA ele gravar em tudo — provado por impersonacao com rollback: editou negocio
+    (com rastro), criou lembrete, documento, declaracao e peca. NENHUMA policy foi tocada.
+    A CAUSA esta em duas datas:
+      ultimo login do Natanael ... 07/08 11:21
+      ficha editavel publicada ... 10/08 10:09 (commit 33a38aa)
+    O sw.js NAO usa skipWaiting — decisao registrada ("trocar de versao no meio de uma cotacao
+    aberta e pior que esperar"). Entao o app instalado dele continua servindo a casca de 07/08,
+    onde a ficha do negocio E somente leitura. "Nao consigo mexer em nada" e literalmente
+    verdade NA VERSAO DELE.
+    >>> A FRASE PRO WHATSAPP: "Natanael, fecha o aplicativo por completo e abre de novo — a
+        edicao entrou numa versao nova e o app so troca de versao quando reabre. Se aparecer o
+        aviso 'Nova versao disponivel', clica em Recarregar."
+    >>> DEFEITO DE PRODUTO QUE ISSO REVELOU (e da FABRICA, nao daqui): o aviso de nova versao do
+        limedtec-pwa.js e uma faixa pequena no rodape COM UM X DE FECHAR. Quem fecha (ou nao ve)
+        fica na versao velha por tempo indeterminado e sem nenhum sinal — foi o que aconteceu.
+        Sugestao pra fabrica: quando a casca em uso for MUITO mais velha que a publicada, o aviso
+        nao pode ser dispensavel; e quem esta ha dias atras precisa saber disso, nao so ser
+        convidado a atualizar. NAO alterei o limedtec-pwa.js aqui: e arquivo de MOLDE, e a regra
+        e "o que vale pra qualquer cliente conserta-se na fabrica".
+
 >>> ENTREGA 07/08 — PRIMEIRO GESTOR DA FPMED CRIADO E PROVADO COM LOGIN REAL
     licitacao@fpmed.com.br · Natanael · gestor_geral · e-mail JA CONFIRMADO.
     id no Auth: f15be776-303e-4cfc-b08c-df9a241d2d32. Perfil gravado (gestor_geral, ativo).

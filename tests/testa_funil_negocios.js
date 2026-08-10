@@ -173,31 +173,31 @@ ok('rotuloDia acerta o dia da semana (06/08/2026 = quinta)', rotuloDia('2026-08-
 // 5. OS CAMPOS QUE ELES JÁ USAM ESTÃO NO CARD E NA FICHA
 // ══════════════════════════════════════════════════════════════════════════════════════════
 const fnCard  = bloco('function card(n, noKanban)', 'function kanban(');
-// >>> A ANCORA MUDOU EM 08/08 e o teste mudou junto: a ficha deixou de ser so um <dl> de leitura
-//     e virou `editavel ? <formulario> : <dl>`. O bloco vai do `const ficha` ate o fim do
-//     ternario -- assim ele pega AS DUAS formas, e continua provando que os campos aparecem em
-//     qualquer uma delas. Ancorar so no <dl> testaria metade da tela e passaria achando que
-//     testou tudo.
-const fnFicha = bloco('const ficha = ', '</dl>`;');
+// >>> A ANCORA MUDOU DUAS VEZES EM UM DIA, as duas por DECISAO de produto: de manha a ficha
+//     virou `editavel ? <form> : <dl>`, e a tarde a de leitura foi REMOVIDA — a de campo a
+//     campo serve os dois casos (quem nao grava so nao recebe o botao "Alterar"). O bloco agora
+//     vai do `const ficha` ate o fechamento dele. O que o teste protege segue igual: os campos
+//     que a FPMED usa na planilha tem que estar no card E na ficha.
+const fnFicha = bloco('const ficha = `<div class="ficha-fc">', '</div>`;');
 ['portal', 'orgao', 'numero', 'abertura'].forEach(c =>
   ok('o card mostra ' + c, fnCard.includes('n.' + c)));
-[['Portal', 'n.portal'], ['Modalidade', 'n.modalidade'], ['Número', 'n.numero'], ['Órgão', 'n.orgao'],
- ['Abertura', 'n.abertura'], ['Objeto', 'n.objeto']].forEach(([rot, campo]) => {
-  ok('a ficha do drawer traz ' + rot, fnFicha.includes("'" + rot + "'") && fnFicha.includes(campo));
+[['Abertura', 'abertura'], ['Situação', 'situacao'], ['Portal', 'portal'], ['Número', 'numero'],
+ ['Órgão', 'orgao'], ['Objeto', 'objeto'], ['Valor estimado', 'valor_estimado']].forEach(([rot, k]) => {
+  ok('a ficha do drawer traz ' + rot,
+    fnFicha.includes("campo('" + k + "'") && fnFicha.includes("'" + rot + "'"));
 });
-// e a versao EDITAVEL tem que trazer os mesmos campos, senao editar perderia informacao
-[['ed-data','abertura'], ['ed-situacao','situação'], ['ed-portal','portal'],
- ['ed-numero','número'], ['ed-orgao','órgão'], ['ed-objeto','objeto']].forEach(([id, rot]) => {
-  ok('a ficha EDITAVEL traz ' + rot, fnFicha.includes('id="' + id + '"'));
-});
+ok('a ficha traz o municipio (nao editavel: veio da fonte)', fnFicha.includes('Município'));
+ok('*** e o valor ganho, so pra gestor ***', /\$\{gestor \? campo\('valor_ganho'/.test(fnFicha));
 ok('a abertura do card sai com data E hora', /fmtDtH\(n\.abertura\)/.test(fnCard));
 ok('fmtDtH escreve "DD/MM/AAAA às HH:MM"', / às /.test(bloco('function fmtDtH(iso){', '\nconst DIA_SEM')));
 
 // *** VALOR GANHO É DE GESTOR *** — a RLS já restringe a tabela inteira, mas a tela não pode
 // depender só disso: um dia a leitura afrouxa pra vendedor por uma view e o número vazaria junto.
 ok('*** o card só mostra o valor ganho pra gestor ***', /n\.valor_ganho>0 && ehGestor\(\)/.test(fnCard));
+// a forma mudou (a ficha virou campo a campo em 08/08), o GATE nao: valor ganho e resultado
+// comercial e continua so pra gestor.
 ok('*** a ficha só mostra o valor ganho pra gestor ***',
-  /gestor && n\.valor_ganho > 0 \? linha\('Valor ganho'/.test(src));
+  /\$\{gestor \? campo\('valor_ganho'/.test(src));
 ok('o KPI de total ganho também é de gestor', /\$\{gestor \? `<div class="kpi"><b[^`]*brl\(total\)/.test(src));
 ok('ehGestor() assume o mais restrito quando o gm-auth ainda não subiu',
   /const ehGestor = \(\) => !!\(window\.gmAuth && window\.gmAuth\.isGestor/.test(src));

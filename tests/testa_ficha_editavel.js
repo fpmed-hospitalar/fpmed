@@ -82,13 +82,35 @@ ok('19. e a observacao da planilha segue marcada como nao editavel',
 // ══════════ 4. A TELA ══════════
 ok('20. *** so quem grava ve campo editavel (campo que daria 403 e convite a perder trabalho) ***',
   /const editavel = gestor && !n\.arquivado;/.test(tela));
-ok('21. ...e quem nao grava continua vendo a ficha de leitura', /: `<dl class="ficha">/.test(tela));
+// >>> MUDOU EM 08/08 e o teste mudou junto: a ficha de LEITURA (<dl>) foi REMOVIDA. A de campo
+//     a campo serve os dois casos — quem nao pode gravar simplesmente nao recebe o botao
+//     "Alterar". Manter as duas seria manter duas versoes da mesma tela, e a que ninguem abre e
+//     a que envelhece errado (a antiga ja tinha "Modalidade" que a nova nao mostrava, e nao
+//     mostrava "Valor estimado" que a nova mostra).
+ok('21. *** quem nao grava ve a MESMA ficha, sem o botao Alterar (nao ha 2a versao da tela) ***',
+  /\$\{editavel \? `<button class="fc-bt"/.test(tela) && !/<dl class="ficha">/.test(tela));
 ok('22. data e hora sao campos separados (o caso nº1 e "adiou pra outro dia")',
-  /id="ed-data"/.test(tela) && /id="ed-hora"/.test(tela));
+  /id="ec-data"/.test(tela) && /id="ec-hora"/.test(tela));
 ok('23. *** a abertura e montada como hora LOCAL (a mordida de fuso ja aconteceu aqui) ***',
   /new Date\(data \+ 'T' \+ \(hora \|\| '00:00'\) \+ ':00'\)/.test(tela));
 ok('24. portal, numero, orgao e objeto tambem editaveis (erro de digitacao precisa ter conserto)',
-  ['ed-portal','ed-numero','ed-orgao','ed-objeto'].every(i => tela.includes('id="'+i+'"')));
+  ['portal','numero','orgao','objeto'].every(k => new RegExp("^\\s*" + k + ":\\s*\\{ rot:", 'm').test(tela)));
+// 08/08: os DOIS VALORES entraram na ficha, e o `valor_ganho` e o campo mais sensivel dela —
+// e ele que alimenta a taxa de vitoria. Editavel sem rastro seria um indicador que qualquer um
+// muda e ninguem sabe quem mudou, e indicador assim nao serve pra decidir nada.
+ok('24b. *** valor_estimado e valor_ganho sao editaveis ***',
+  /valor_estimado:\s*\{ rot:/.test(tela) && /valor_ganho:\s*\{ rot:/.test(tela));
+ok('24c. *** e os DOIS entraram no rastro no MESMO dia em que ficaram editaveis ***',
+  /new\.valor_ganho is distinct from old\.valor_ganho/.test(ddl)
+  && /new\.valor_estimado is distinct from old\.valor_estimado/.test(ddl));
+ok('24d. o valor ganho continua so pra gestor', /\$\{gestor \? campo\('valor_ganho'/.test(tela));
+// A CATRACA DA EDICAO PONTUAL: um campo aberto por vez. Dois abertos seria o "modo edicao" de
+// volta, com o mesmo risco de salvar o que nao se quis.
+ok('24e. *** so UM campo aberto por vez ***',
+  /if\(_campoAberto && _campoAberto !== k\) abrirDrawer\(id\);/.test(tela));
+ok('24f. *** e salva SO o campo alterado (nao a ficha inteira) ***',
+  /await gravar\(id, \{ \[k\]: valor \}\);/.test(tela));
+ok('24g. cancelar nao grava nada, so repinta', /onclick="abrirDrawer\(\$\{id\}\)">Cancelar/.test(tela));
 ok('25. *** salvar re-pinta a AGENDA e o SINO na hora ***',
   /pinta\(\); pintaNotif\(\);/.test(tela));
 ok('26. ...e recarrega o rastro logo depois', /carregarRastro\(id\);/.test(tela));

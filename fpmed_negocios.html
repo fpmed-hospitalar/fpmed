@@ -201,14 +201,29 @@ textarea.anot{width:100%;min-height:110px;background:var(--painel2);border:1px s
   border-radius:10px;padding:11px 13px;font-family:inherit;font-size:12.5px;line-height:1.55;outline:none;resize:vertical}
 textarea.anot:focus{border-color:var(--azul)}
 .salvo{font-size:11px;color:var(--muted);margin-top:5px;min-height:14px}
-/* ── FICHA EDITÁVEL + RASTRO (08/08) ── */
-.ficha-ed{display:grid;grid-template-columns:1fr 1fr;gap:10px 12px}
-.ficha-ed .col2{grid-column:1 / -1}
-.ficha-ed label{display:block;font-size:10px;font-weight:700;color:var(--muted);margin-bottom:4px;
+/* ── FICHA CAMPO A CAMPO (08/08) ── só um campo aberto por vez; ver o comentário em
+   `editarCampo`. O botão "Alterar" é discreto e só aparece no hover da linha: ficha cheia de
+   botões azuis compete com o conteúdo, e o conteúdo é o que se veio ler. */
+.ficha-fc .fc{border-bottom:1px solid var(--linha);padding:8px 0}
+.ficha-fc .fc:last-child{border-bottom:0}
+.fc-r{display:flex;align-items:baseline;gap:10px}
+.fc-rot{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;
+  min-width:120px;flex-shrink:0}
+.fc-val{font-size:12.5px;color:var(--texto);line-height:1.5;flex:1;word-break:break-word}
+.fc-val i{color:var(--muted);font-style:normal}
+.fc-bt{opacity:0;background:transparent;border:1px solid var(--linha);color:var(--muted);
+  border-radius:7px;padding:2px 9px;font-size:10.5px;cursor:pointer;font-family:inherit;
+  transition:opacity .15s,color .15s,border-color .15s;flex-shrink:0}
+.fc:hover .fc-bt{opacity:1}
+.fc-bt:hover{color:var(--azul-claro);border-color:rgba(44,169,224,.5)}
+.fc-edit label{display:block;font-size:10px;font-weight:700;color:var(--muted);margin-bottom:5px;
   text-transform:uppercase;letter-spacing:.6px}
-.ficha-ed input,.ficha-ed select,.ficha-ed textarea{width:100%;background:var(--painel2);color:var(--texto);
-  border:1px solid var(--linha);border-radius:8px;padding:8px 10px;font-size:12.5px;font-family:inherit}
-.ficha-ed textarea{resize:vertical;line-height:1.5}
+.fc-in{display:flex;gap:8px}
+.fc-in input,.fc-in select,.fc-in textarea{flex:1;background:var(--painel2);color:var(--texto);
+  border:1px solid rgba(44,169,224,.5);border-radius:8px;padding:8px 10px;font-size:12.5px;font-family:inherit}
+.fc-in textarea{resize:vertical;line-height:1.5}
+.fc-acoes{display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap}
+.btn-ed.sec{background:var(--painel2);color:var(--texto);border:1px solid var(--linha)}
 .btn-ed{background:var(--azul);color:#fff;border:0;border-radius:8px;padding:8px 16px;font-weight:600;
   font-size:12.5px;cursor:pointer;font-family:inherit}
 .btn-ed:disabled{opacity:.5;cursor:not-allowed}
@@ -716,33 +731,47 @@ function corpoDrawer(n, obs, carregando){
   // >>> QUEM NÃO GRAVA CONTINUA VENDO A FICHA DE LEITURA. Campo editável para quem levaria 403
   //     do banco ao salvar é um convite a digitar e perder o trabalho.
   const editavel = gestor && !n.arquivado;
-  const ficha = editavel ? `<div class="ficha-ed">
-      <div><label>Abertura — data</label><input type="date" id="ed-data" value="${esc(dia||'')}"></div>
-      <div><label>Hora</label><input type="time" id="ed-hora" value="${esc(horaDe(n.abertura)||'')}"></div>
-      <div><label>Situação do certame</label><select id="ed-situacao">
-        ${SITUACOES.map(s => `<option value="${s.k}"${(n.situacao||'normal')===s.k?' selected':''}>${esc(s.n)}</option>`).join('')}
-      </select></div>
-      <div><label>Portal</label><input type="text" id="ed-portal" value="${esc(n.portal||'')}"></div>
-      <div><label>Número</label><input type="text" id="ed-numero" value="${esc(n.numero||'')}"></div>
-      <div class="col2"><label>Órgão</label><input type="text" id="ed-orgao" value="${esc(n.orgao||'')}"></div>
-      <div class="col2"><label>Objeto</label><textarea id="ed-objeto" rows="3">${esc(n.objeto||'')}</textarea></div>
-      <div class="col2" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
-        <button class="btn-ed" onclick="salvarFicha(${n.id})" id="bt-ficha">Salvar alterações</button>
-        <span class="salvo" id="dw-ficha-msg">${esc([n.municipio, n.uf].filter(Boolean).join(' · '))}${n.municipio?' · ':''}${n.origem === 'calendario_2025' ? 'veio do Calendário 2025' : esc(n.origem||'')}</span>
-      </div>
-    </div>`
-  : `<dl class="ficha">
-    ${linha('Portal', esc(n.portal))}
-    ${linha('Modalidade', esc(n.modalidade))}
-    ${linha('Número', esc(n.numero))}
-    ${linha('Órgão', esc(n.orgao))}
-    ${linha('Município', esc([n.municipio, n.uf].filter(Boolean).join(' · ')))}
-    ${linha('Abertura', n.abertura && fmtDtH(n.abertura) ? esc(fmtDtH(n.abertura)) + (dia===hoje?' <b style="color:var(--ambar)">· é hoje</b>':(dia&&dia<hoje?' <span style="color:var(--muted)">· já passou</span>':'')) : '')}
-    ${linha('Situação', (n.situacao && n.situacao!=='normal') ? esc(rotuloSituacao(n.situacao)) : '')}
-    ${linha('Objeto', esc(n.objeto))}
-    ${gestor && n.valor_ganho > 0 ? linha('Valor ganho', '🏆 ' + brl(n.valor_ganho), 'ganho') : ''}
-    ${linha('Origem', n.origem === 'calendario_2025' ? 'Calendário 2025 (histórico da FPMED)' : esc(n.origem))}
-  </dl>`;
+  // ══ EDIÇÃO CAMPO A CAMPO (08/08) ═══════════════════════════════════════════════════════
+  // Antes a ficha abria TODOS os campos ao mesmo tempo e salvava tudo num botão só. Quem ia
+  // corrigir o número do pregão podia arrastar a data sem perceber e salvar as duas — e o
+  // rastro registraria a mudança acidental fielmente, o que não conserta nada.
+  // >>> MENOS SUPERFÍCIE ABERTA POR VEZ = MENOS CHANCE DE SALVAR O QUE NÃO SE QUIS. Cada campo
+  //     tem seu "Alterar"; só ele abre, só ele salva. O padrão veio da captura da ficha do
+  //     concorrente (seção 8.4-B do SPEC) e resolve exatamente esse risco.
+  // >>> `valor_ganho` FICOU EDITÁVEL AQUI, e é o campo mais sensível da ficha: é ele que
+  //     alimenta a taxa de vitória. Por isso entrou no gatilho de rastro no MESMO dia — número
+  //     que qualquer um muda e ninguém sabe quem mudou não serve pra decidir nada.
+  const campo = (k, rot, valor, mostrado, extra) => `
+    <div class="fc" id="fc-${k}">
+      <div class="fc-r"><span class="fc-rot">${rot}</span>
+        <span class="fc-val" id="fcv-${k}">${mostrado || '<i>—</i>'}</span>
+        ${editavel ? `<button class="fc-bt" onclick="editarCampo(${n.id},'${k}')">✏ Alterar</button>` : ''}</div>
+      ${extra || ''}
+    </div>`;
+  const ficha = `<div class="ficha-fc">
+      ${campo('abertura', 'Abertura', null, n.abertura && fmtDtH(n.abertura)
+          ? esc(fmtDtH(n.abertura)) + (dia===hoje?' <b style="color:var(--ambar)">· é hoje</b>':(dia&&dia<hoje?' <span class="salvo">· já passou</span>':''))
+          : '')}
+      ${campo('situacao', 'Situação', null, (n.situacao && n.situacao!=='normal')
+          ? `<b style="color:${corSituacao(n.situacao)}">${esc(rotuloSituacao(n.situacao))}</b>` : 'normal')}
+      ${campo('portal', 'Portal', null, esc(n.portal||''))}
+      ${campo('numero', 'Número', null, esc(n.numero||''))}
+      ${campo('orgao', 'Órgão', null, esc(n.orgao||''))}
+      ${campo('objeto', 'Objeto', null, esc(n.objeto||''))}
+      ${campo('valor_estimado', 'Valor estimado', null, n.valor_estimado!=null ? brl(n.valor_estimado) : '')}
+      ${gestor ? campo('valor_ganho', 'Valor do contrato ganho', null,
+          n.valor_ganho>0 ? `<b style="color:var(--verde)">🏆 ${brl(n.valor_ganho)}</b>` : 'ainda não ganho') : ''}
+      <div class="fc"><div class="fc-r"><span class="fc-rot">Município</span>
+        <span class="fc-val">${esc([n.municipio, n.uf].filter(Boolean).join(' · ')) || '<i>—</i>'}</span></div></div>
+      <div class="fc"><div class="fc-r"><span class="fc-rot">Origem</span>
+        <span class="fc-val salvo">${n.origem === 'calendario_2025' ? 'Calendário 2025 (histórico da FPMED)' : esc(n.origem||'')}
+        ${n.numero ? ' · nº de controle ' + esc(n.numero) : ''}</span></div></div>
+    </div>`;
+  // >>> A FICHA DE LEITURA (<dl>) FOI REMOVIDA em 08/08, e a remoção é o ponto: a de campo a
+  //     campo já serve os dois casos — quem não pode gravar simplesmente não recebe o botão
+  //     "Alterar". Manter as duas seria manter duas versões da mesma tela, e a que ninguém abre
+  //     é a que envelhece errado (a antiga já tinha "Modalidade" que a nova não mostrava, e
+  //     não mostrava "Valor estimado" que a nova mostra).
 
   const tarefas = t ? FASES.map(f => {
     const doGrupo = t.map((x,i)=>({x,i})).filter(o => o.x.secao === f.k);
@@ -921,38 +950,86 @@ const corSituacao    = k => (SITUACOES.find(s=>s.k===k)||{}).cor || null;
 //     continua sendo decisão de gente, como já era.
 const paradoDeVez = k => k === 'cancelado' || k === 'suspenso';
 
-async function salvarFicha(id){
+// ══ EDITAR UM CAMPO POR VEZ ══════════════════════════════════════════════════════════════
+// Cada campo abre sozinho, salva sozinho e fecha. Só UM aberto de cada vez — dois campos
+// abertos já seriam o "modo edição" de volta, com o mesmo risco de salvar o que não se quis.
+const CAMPOS_FICHA = {
+  abertura:       { rot:'Abertura',                tipo:'datahora' },
+  situacao:       { rot:'Situação',                tipo:'lista' },
+  portal:         { rot:'Portal',                  tipo:'texto' },
+  numero:         { rot:'Número',                  tipo:'texto' },
+  orgao:          { rot:'Órgão',                   tipo:'texto' },
+  objeto:         { rot:'Objeto',                  tipo:'longo' },
+  valor_estimado: { rot:'Valor estimado',          tipo:'moeda' },
+  valor_ganho:    { rot:'Valor do contrato ganho', tipo:'moeda' },
+};
+let _campoAberto = null;
+
+function editarCampo(id, k){
   const n = NEG.find(x => x.id === id); if(!n) return;
-  const bt = document.getElementById('bt-ficha'), msg = document.getElementById('dw-ficha-msg');
-  const v = i => (document.getElementById(i)?.value || '').trim();
-  const data = v('ed-data'), hora = v('ed-hora');
-  // data sem hora vira meia-noite; hora sem data não é nada. A regra do fuso já mordeu este
-  // projeto uma vez (negócio nascendo arquivado por causa de meia-noite UTC), então a abertura
-  // é montada como hora LOCAL e o navegador converte.
-  let abertura = null;
-  if(data) abertura = new Date(data + 'T' + (hora || '00:00') + ':00').toISOString();
-  const campos = {
-    abertura,
-    situacao: v('ed-situacao') || 'normal',
-    portal: v('ed-portal') || null,
-    numero: v('ed-numero') || null,
-    orgao:  v('ed-orgao')  || null,
-    objeto: v('ed-objeto') || null,
-  };
+  const cfg = CAMPOS_FICHA[k]; if(!cfg) return;
+  if(_campoAberto && _campoAberto !== k) abrirDrawer(id);      // fecha o outro antes de abrir este
+  _campoAberto = k;
+  const box = document.getElementById('fc-' + k); if(!box) return;
+  let entrada;
+  if(cfg.tipo === 'datahora'){
+    entrada = `<input type="date" id="ec-data" value="${esc(diaDe(n.abertura)||'')}">
+               <input type="time" id="ec-hora" value="${esc(horaDe(n.abertura)||'')}">`;
+  } else if(cfg.tipo === 'lista'){
+    entrada = `<select id="ec-v">${SITUACOES.map(s =>
+      `<option value="${s.k}"${(n.situacao||'normal')===s.k?' selected':''}>${esc(s.n)}</option>`).join('')}</select>`;
+  } else if(cfg.tipo === 'longo'){
+    entrada = `<textarea id="ec-v" rows="3">${esc(n[k]||'')}</textarea>`;
+  } else if(cfg.tipo === 'moeda'){
+    entrada = `<input type="number" id="ec-v" step="0.01" min="0" value="${n[k]!=null?n[k]:''}" placeholder="0,00">`;
+  } else {
+    entrada = `<input type="text" id="ec-v" value="${esc(n[k]||'')}">`;
+  }
+  box.innerHTML = `<div class="fc-edit">
+      <label>${esc(cfg.rot)}</label>
+      <div class="fc-in">${entrada}</div>
+      <div class="fc-acoes">
+        <button class="btn-ed" onclick="salvarCampo(${id},'${k}')" id="ec-bt">Salvar</button>
+        <button class="btn-ed sec" onclick="abrirDrawer(${id})">Cancelar</button>
+        <span class="salvo" id="ec-msg"></span>
+      </div>
+    </div>`;
+  const foco = document.getElementById('ec-v') || document.getElementById('ec-data');
+  if(foco) foco.focus();
+}
+
+async function salvarCampo(id, k){
+  const n = NEG.find(x => x.id === id); if(!n) return;
+  const cfg = CAMPOS_FICHA[k];
+  const bt = document.getElementById('ec-bt'), msg = document.getElementById('ec-msg');
+  let valor;
+  if(cfg.tipo === 'datahora'){
+    const data = (document.getElementById('ec-data').value||'').trim();
+    const hora = (document.getElementById('ec-hora').value||'').trim();
+    // A REGRA DO FUSO já mordeu este projeto uma vez (negócio nascendo arquivado por causa de
+    // meia-noite UTC): a abertura é montada como hora LOCAL e o navegador converte.
+    valor = data ? new Date(data + 'T' + (hora || '00:00') + ':00').toISOString() : null;
+  } else if(cfg.tipo === 'moeda'){
+    const s = (document.getElementById('ec-v').value||'').trim();
+    valor = s === '' ? null : Number(s);
+    if(valor != null && !isFinite(valor)){ msg.textContent = 'valor inválido.'; return; }
+  } else {
+    valor = (document.getElementById('ec-v').value||'').trim() || null;
+    if(k === 'situacao' && !valor) valor = 'normal';
+  }
   bt.disabled = true; msg.textContent = 'salvando…';
   try{
-    await gravar(id, campos);
-    Object.assign(n, campos);            // memória local acompanha, sem recarregar tudo
-    msg.textContent = '✓ salvo';
-    // A AGENDA E O SINO PASSAM A USAR A DATA NOVA NA HORA: `pinta()` re-renderiza a visão ativa
-    // (lista, quadros ou agenda) e `pintaNotif()` refaz o sino. Sem isto o operador salvaria a
-    // nova data e continuaria vendo o negócio no dia velho — e concluiria que não salvou.
+    await gravar(id, { [k]: valor });
+    n[k] = valor;                       // memória local acompanha, sem recarregar tudo
+    _campoAberto = null;
+    abrirDrawer(id);                    // repinta a ficha com o valor novo e recarrega o rastro
+    // A AGENDA E O SINO PASSAM A USAR O VALOR NOVO NA HORA. Sem isto o operador salvaria a nova
+    // data e continuaria vendo o negócio no dia velho — e concluiria que não salvou.
     pinta(); pintaNotif();
-    carregarRastro(id);
   }catch(e){
     msg.textContent = '⚠️ não salvou: ' + e.message;
+    bt.disabled = false;
   }
-  bt.disabled = false;
 }
 
 // ── O RASTRO ── quem mudou o quê, e quando. Gravado por GATILHO no banco (ddl/negocios_

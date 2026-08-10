@@ -99,6 +99,19 @@ begin
     insert into public.negocio_alteracoes (negocio_id, campo, de, para, quem, quem_email)
     values (new.id, 'objeto', left(coalesce(old.objeto,''), 300), left(coalesce(new.objeto,''), 300), u, em);
   end if;
+  -- ── OS DOIS VALORES (08/08, quando viraram editáveis na ficha) ────────────────────────────
+  -- >>> `valor_ganho` É O QUE ALIMENTA A TAXA DE VITÓRIA. Enquanto ele só entrava por carga da
+  --     planilha, o número era auditável pela origem. Editável na tela, sem rastro, ele viraria
+  --     um indicador que qualquer um muda e ninguém sabe quem mudou — e indicador assim não
+  --     serve para decidir nada. Por isso ele entra no gatilho no MESMO dia em que fica editável.
+  if new.valor_estimado is distinct from old.valor_estimado then
+    insert into public.negocio_alteracoes (negocio_id, campo, de, para, quem, quem_email)
+    values (new.id, 'valor_estimado', old.valor_estimado::text, new.valor_estimado::text, u, em);
+  end if;
+  if new.valor_ganho is distinct from old.valor_ganho then
+    insert into public.negocio_alteracoes (negocio_id, campo, de, para, quem, quem_email)
+    values (new.id, 'valor_ganho', old.valor_ganho::text, new.valor_ganho::text, u, em);
+  end if;
   return new;
 end $function$;
 
