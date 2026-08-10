@@ -1,0 +1,285 @@
+<!doctype html>
+<html lang="pt-BR" data-tema="proprio">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Leitor de edital com IA — FPMED (PROVA DE CUSTO)</title>
+<!-- ══════════════════════════════════════════════════════════════════════════════════════════
+     LEITOR DE EDITAL COM IA — módulo 2.8 da spec · 10/08/2026 · **NÃO LIBERADO**
+
+     ESTA TELA EXISTE, FUNCIONA E NÃO ESTÁ NO MENU. De propósito. Ela é o único item da spec que
+     custa DINHEIRO POR USO, e a decisão de ligar é do Lemuel — então o fluxo foi construído e
+     MEDIDO, e a porta ficou fechada até ele bater o martelo.
+
+     O QUE FOI MEDIDO (dois editais reais do PNCP, claude-haiku-4-5, 10/08):
+       0,17 MB ·  51.449 tokens de entrada · 22 s · R$ 0,31
+       1,34 MB · 165.479 tokens de entrada · 19 s · R$ 0,88
+     (câmbio R$ 5,1097/US$ no dia; ferramenta: tools/prova_custo_edital.js)
+
+     >>> O TETO NÃO É O PREÇO, É O CONTEXTO. O Haiku lê até 200 mil tokens de uma vez, e o
+         segundo edital já usou 165 mil. Edital grande NÃO CABE — e o jeito de a tela errar aqui
+         seria mandar assim mesmo e mostrar um resumo do pedaço que coube, como se fosse do
+         edital inteiro. Por isso ela CONFERE O TAMANHO ANTES e recusa, dizendo o porquê.
+
+     >>> POR QUE NÃO ESTÁ NA CASCA (sw.js): casca é o que fica disponível offline. Uma tela que
+         só funciona chamando um serviço pago não tem o que fazer offline, e estar na casca
+         sugeriria que ela já faz parte do sistema.
+     ══════════════════════════════════════════════════════════════════════════════════════════ -->
+<script src="cliente.config.js"></script>
+<script src="limedtec-config.js"></script>
+<script src="limedtec-tema.js"></script>
+<script src="gm-auth.js?v=sessao-06ago"></script>
+<style>
+:root{--bg:#0B1622;--painel:#132234;--linha:#22374F;--muted:#8AA0B6;--azul:#2CA9E0;--verde:#8DC63F;--erro:#e5484d}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:#dbe6f2;font:14px/1.55 Inter,system-ui,sans-serif}
+.topo{background:#08111B;border-bottom:1px solid var(--linha);padding:12px 0}
+.regua{max-width:1180px;margin:0 auto;padding:0 20px}
+h1{font-family:Montserrat,sans-serif;font-size:19px;margin:0;color:#fff}
+.caixa{background:var(--painel);border:1px solid var(--linha);border-radius:14px;padding:18px;margin:16px 0}
+.aviso{border-left:4px solid #e6a817;background:rgba(230,168,23,.09);padding:14px 16px;border-radius:10px;margin:16px 0}
+.aviso b{color:#ffd98a}
+.err{border-left-color:var(--erro);background:rgba(229,72,77,.10)}
+.err b{color:#ffb3b6}
+.btn{background:var(--azul);color:#fff;border:0;border-radius:9px;padding:10px 18px;font-weight:700;cursor:pointer;font-size:13.5px}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+.btn.sec{background:transparent;border:1px solid var(--linha);color:#cfe0f0}
+.hint{color:var(--muted);font-size:12.5px}
+/* ── A JANELINHA DE PROGRESSO EM 4 PASSOS (referência: Licitante Prime, seção 2.8) ──
+   Ela existe porque a leitura leva ~20 s e uma tela parada por 20 s parece travada. Cada passo
+   diz o que está acontecendo AGORA — e o passo que falha fica vermelho no lugar dele, em vez de
+   virar um erro solto que não diz em que ponto parou. */
+.passos{display:grid;gap:10px;margin-top:6px}
+.passo{display:flex;gap:12px;align-items:flex-start;padding:10px 12px;border:1px solid var(--linha);
+  border-radius:10px;background:rgba(255,255,255,.02)}
+.passo .n{width:24px;height:24px;border-radius:50%;border:1px solid var(--linha);display:grid;
+  place-items:center;font-size:12px;font-weight:700;color:var(--muted);flex:0 0 auto}
+.passo.ativo{border-color:var(--azul)} .passo.ativo .n{border-color:var(--azul);color:var(--azul)}
+.passo.ok{border-color:rgba(141,198,63,.5)} .passo.ok .n{border-color:var(--verde);color:var(--verde)}
+.passo.falhou{border-color:rgba(229,72,77,.55)} .passo.falhou .n{border-color:var(--erro);color:var(--erro)}
+.passo .t{font-weight:600;color:#eaf2fa} .passo .d{font-size:12.5px;color:var(--muted)}
+.campo{width:100%;background:#0d1a28;border:1px solid var(--linha);color:#dbe6f2;border-radius:9px;padding:10px}
+table{width:100%;border-collapse:collapse;margin-top:10px}
+th{text-align:left;font-size:10.5px;text-transform:uppercase;color:var(--muted);padding:8px;border-bottom:1px solid var(--linha)}
+td{padding:9px 8px;border-bottom:1px solid rgba(34,55,79,.55);vertical-align:top}
+td.k{width:190px;color:var(--muted)}
+.pill{display:inline-block;padding:2px 9px;border-radius:20px;font-size:11.5px;border:1px solid var(--linha)}
+.pill.sim{color:var(--verde);border-color:rgba(141,198,63,.5)}
+.pill.nao{color:var(--muted)}
+.custo{font-family:Montserrat,sans-serif;font-size:20px;color:#fff}
+</style>
+</head>
+<body>
+<div class="topo"><div class="regua"><h1>Leitor de edital com IA</h1>
+  <div class="hint">módulo 2.8 da spec · <b style="color:#ffd98a">prova de custo — não liberado</b></div>
+</div></div>
+
+<div class="regua">
+
+  <!-- O AVISO É A PRIMEIRA COISA DA TELA, e não um rodapé. Quem abrir isto tem que saber, antes
+       de clicar em qualquer coisa, que cada leitura gasta dinheiro de verdade. -->
+  <div class="aviso" id="av-liberacao">
+    <b>⚠️ Esta tela não está liberada.</b> Cada leitura de edital <b>custa dinheiro</b> — é o único
+    recurso do sistema assim. O custo foi medido em dois editais reais em 10/08:
+    <b>R$ 0,31</b> (edital de 0,17 MB) e <b>R$ 0,88</b> (1,34 MB).
+    <br>Ela fica fora do menu até o Lemuel decidir se libera e para quem.
+  </div>
+
+  <div class="caixa">
+    <b>1. O edital</b>
+    <div class="hint" style="margin:4px 0 10px">
+      PDF do edital. Ele vai <b>inteiro</b> para a leitura — texto e imagem de cada página —
+      e é por isso que edital grande custa mais e, passado do limite, não cabe.
+    </div>
+    <input type="file" id="arq" accept="application/pdf" class="campo">
+    <div id="info-arq" class="hint" style="margin-top:8px"></div>
+    <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn" id="bt-ler" disabled onclick="lerEdital()">Ler o edital</button>
+      <button class="btn sec" onclick="location.href='fpmed_licitacoes.html'">Voltar</button>
+    </div>
+  </div>
+
+  <div class="caixa" id="cx-passos" style="display:none">
+    <b>Lendo</b>
+    <div class="passos" id="passos"></div>
+  </div>
+
+  <div id="saida"></div>
+</div>
+
+<script>
+// ── O CUSTO, MEDIDO ─────────────────────────────────────────────────────────────────────────
+// Tabela pública da Anthropic para o claude-haiku-4-5: US$ 1,00 por milhão de tokens de entrada
+// e US$ 5,00 por milhão de saída. O câmbio NÃO é chutado: a tela busca a cotação do dia e, se
+// não conseguir, mostra o custo em dólar e diz que não converteu.
+const MODELO = 'claude-haiku-4-5';
+const USD_ENTRADA_MTOK = 1.00, USD_SAIDA_MTOK = 5.00;
+const EDGE = 'https://xzdowrksuswekwffoluk.supabase.co/functions/v1/ler-pedido';
+
+// >>> O TETO DE CONTEXTO É A TRAVA QUE IMPORTA. O Haiku lê 200 mil tokens; o edital de 1,34 MB
+//     medido em 10/08 já consumiu 165 mil. Estimando por MEGABYTE a partir dessas duas medições
+//     (~123 mil tokens por MB no caso denso), acima de ~1,5 MB o risco de não caber é real.
+//     A tela recusa ANTES de mandar. O erro que ela existe pra evitar não é gastar à toa — é
+//     resumir o pedaço que coube e apresentar como se fosse o edital inteiro.
+const TETO_MB = 1.5;
+const TOKENS_POR_MB = 123000;   // medido: 165.479 tokens / 1,34 MB
+
+const esc = s => String(s==null?'':s).replace(/[<>&"]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c]));
+const el = id => document.getElementById(id);
+
+const PASSOS = [
+  { t:'Conferindo o arquivo',   d:'tamanho, formato e se cabe na leitura' },
+  { t:'Preparando o documento', d:'o edital inteiro, página por página' },
+  { t:'Lendo com a IA',         d:'objeto, prazos, habilitação e armadilhas' },
+  { t:'Conferindo a resposta',  d:'o que ele achou e o que ele não achou' },
+];
+let _passo = -1;
+function pintaPassos(falhouEm){
+  el('cx-passos').style.display = 'block';
+  el('passos').innerHTML = PASSOS.map((p,i) => {
+    const cls = (falhouEm === i) ? 'falhou' : (i < _passo ? 'ok' : (i === _passo ? 'ativo' : ''));
+    const marca = (falhouEm === i) ? '×' : (i < _passo ? '✓' : (i+1));
+    return '<div class="passo '+cls+'"><div class="n">'+marca+'</div>'
+         + '<div><div class="t">'+esc(p.t)+'</div><div class="d">'+esc(p.d)+'</div></div></div>';
+  }).join('');
+}
+function passo(i){ _passo = i; pintaPassos(); }
+function falhou(i, msg){
+  pintaPassos(i);
+  el('saida').innerHTML = '<div class="aviso err"><b>Não deu para ler este edital.</b><br>'+esc(msg)+'</div>';
+}
+
+let ARQUIVO = null;
+el('arq').addEventListener('change', e => {
+  ARQUIVO = e.target.files && e.target.files[0];
+  el('bt-ler').disabled = !ARQUIVO;
+  if(!ARQUIVO){ el('info-arq').textContent = ''; return; }
+  const mb = ARQUIVO.size / 1024 / 1024;
+  // DIZ O CUSTO ESTIMADO ANTES DO CLIQUE. Preço que só aparece depois de gastar não é preço.
+  const tok = Math.round(mb * TOKENS_POR_MB);
+  const usd = (tok/1e6)*USD_ENTRADA_MTOK + (1500/1e6)*USD_SAIDA_MTOK;
+  el('info-arq').innerHTML = esc(ARQUIVO.name) + ' · <b>' + mb.toFixed(2) + ' MB</b>'
+    + ' · estimativa: ~' + tok.toLocaleString('pt-BR') + ' tokens, cerca de US$ ' + usd.toFixed(3)
+    + (mb > TETO_MB ? ' · <b style="color:#ffb3b6">acima do limite de leitura</b>' : '');
+});
+
+async function cambio(){
+  try{
+    const r = await fetch('https://economia.awesomeapi.com.br/last/USD-BRL', {signal: AbortSignal.timeout(6000)});
+    const j = await r.json();
+    const v = parseFloat(j.USDBRL && j.USDBRL.bid);
+    return isFinite(v) && v > 0 ? v : null;
+  }catch(e){ return null; }
+}
+
+async function lerEdital(){
+  if(!ARQUIVO) return;
+  el('saida').innerHTML = '';
+  el('bt-ler').disabled = true;
+
+  passo(0);
+  const mb = ARQUIVO.size / 1024 / 1024;
+  if(mb > TETO_MB){
+    el('bt-ler').disabled = false;
+    return falhou(0, 'O arquivo tem ' + mb.toFixed(2) + ' MB e o limite de uma leitura é de cerca de '
+      + TETO_MB + ' MB — acima disso o edital não cabe inteiro na leitura. Preferi recusar a mandar '
+      + 'só o pedaço que cabe: um resumo de meio edital apresentado como se fosse do edital todo '
+      + 'é pior que resumo nenhum.');
+  }
+
+  passo(1);
+  let b64;
+  try{
+    b64 = await new Promise((res, rej) => {
+      const fr = new FileReader();
+      fr.onload = () => res(String(fr.result).split(',')[1]);
+      fr.onerror = () => rej(new Error('não consegui ler o arquivo do seu computador'));
+      fr.readAsDataURL(ARQUIVO);
+    });
+  }catch(e){ el('bt-ler').disabled = false; return falhou(1, e.message); }
+
+  passo(2);
+  const t0 = Date.now();
+  let j;
+  try{
+    const r = await fetch(EDGE, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        model: MODELO, max_tokens: 2000,
+        messages: [{ role:'user', content: [
+          { type:'document', source:{ type:'base64', media_type:'application/pdf', data: b64 } },
+          { type:'text', text: PERGUNTA },
+        ]}],
+      }),
+      signal: AbortSignal.timeout(300000),
+    });
+    const txt = await r.text();
+    if(!r.ok) throw new Error('o serviço de leitura respondeu ' + r.status + ' — ' + txt.slice(0,160));
+    j = JSON.parse(txt);
+    if(j.error) throw new Error(JSON.stringify(j.error).slice(0,200));
+  }catch(e){ el('bt-ler').disabled = false; return falhou(2, e.message); }
+
+  passo(3);
+  const bruto = (j.content||[]).filter(c=>c.type==='text').map(c=>c.text).join('\n');
+  let dados = null;
+  try{ dados = JSON.parse(bruto.replace(/^[\s\S]*?\{/, '{').replace(/\}[^}]*$/, '}')); }catch(e){ dados = null; }
+  if(!dados){ el('bt-ler').disabled = false;
+    return falhou(3, 'a leitura voltou, mas não no formato esperado — não vou tentar adivinhar o que ela quis dizer.'); }
+
+  _passo = 4; pintaPassos();
+  el('bt-ler').disabled = false;
+  await mostra(dados, j.usage||{}, Math.round((Date.now()-t0)/1000));
+}
+
+const PERGUNTA = `Voce esta lendo o EDITAL de uma licitacao publica brasileira para uma
+distribuidora de medicamentos e material hospitalar. Responda SOMENTE com JSON, sem texto antes
+ou depois, neste formato:
+{"objeto":"","orgao":"","modalidade":"","abertura":"","entrega_prazo":"","entrega_local":"",
+"pagamento":"","amostra":true,"registro_precos":true,"habilitacao":[],"penalidades":"",
+"pontos_de_atencao":[],"nao_encontrado":[]}
+Se algo nao estiver no documento, NAO invente: ponha o nome do campo em "nao_encontrado".`;
+
+async function mostra(d, usage, segundos){
+  const entrada = (usage.input_tokens||0) + (usage.cache_creation_input_tokens||0);
+  const saida = usage.output_tokens||0;
+  const usd = (entrada/1e6)*USD_ENTRADA_MTOK + (saida/1e6)*USD_SAIDA_MTOK;
+  const cb = await cambio();
+
+  const linha = (k, v) => '<tr><td class="k">'+esc(k)+'</td><td>'+(v||'<span class="hint">—</span>')+'</td></tr>';
+  const sn = b => b === true ? '<span class="pill sim">sim</span>'
+              : b === false ? '<span class="pill nao">não</span>' : '<span class="hint">—</span>';
+  const lista = a => Array.isArray(a) && a.length
+    ? '<ul style="margin:0;padding-left:18px">'+a.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul>' : '';
+
+  // >>> O QUE ELE NÃO ACHOU VEM EM DESTAQUE, e não escondido no fim. Um leitor de edital que só
+  //     mostra o que encontrou ensina a confiar no silêncio dele — e no edital, o campo que
+  //     ninguém leu é exatamente o que derruba a proposta.
+  el('saida').innerHTML =
+    '<div class="caixa"><b>O que o edital diz</b><table>'
+    + linha('Objeto', esc(d.objeto)) + linha('Órgão', esc(d.orgao))
+    + linha('Modalidade', esc(d.modalidade)) + linha('Abertura', esc(d.abertura))
+    + linha('Prazo de entrega', esc(d.entrega_prazo)) + linha('Local de entrega', esc(d.entrega_local))
+    + linha('Pagamento', esc(d.pagamento))
+    + linha('Exige amostra', sn(d.amostra)) + linha('Registro de preços', sn(d.registro_precos))
+    + linha('Habilitação', lista(d.habilitacao)) + linha('Penalidades', esc(d.penalidades))
+    + linha('Pontos de atenção', lista(d.pontos_de_atencao))
+    + '</table></div>'
+    + (Array.isArray(d.nao_encontrado) && d.nao_encontrado.length
+        ? '<div class="aviso"><b>O que ele NÃO achou no edital ('+d.nao_encontrado.length+')</b>'
+          + '<div class="hint" style="margin:6px 0">Isto não quer dizer que não exista — quer dizer que '
+          + 'não foi encontrado. Confira no documento antes de decidir por estes pontos.</div>'
+          + lista(d.nao_encontrado) + '</div>'
+        : '')
+    + '<div class="caixa"><b>O que esta leitura custou</b>'
+    + '<div class="custo" style="margin:8px 0">'
+    +   (cb ? 'R$ ' + (usd*cb).toFixed(2) : 'US$ ' + usd.toFixed(4))
+    + '</div><div class="hint">'
+    +   entrada.toLocaleString('pt-BR') + ' tokens de entrada · ' + saida.toLocaleString('pt-BR')
+    +   ' de saída · ' + segundos + ' s · ' + MODELO
+    +   (cb ? ' · câmbio R$ ' + cb.toFixed(4) + '/US$ (buscado agora)'
+           : ' · <b>não consegui a cotação do dólar</b> — o valor fica em dólar, porque inventar câmbio seria pior')
+    + '</div></div>';
+}
+</script>
+</body>
+</html>

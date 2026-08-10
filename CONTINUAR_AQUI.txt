@@ -444,6 +444,36 @@ Criado em 21/07/2026 copiando SO os arquivos do app do C:\globalmed.
         convidado a atualizar. NAO alterei o limedtec-pwa.js aqui: e arquivo de MOLDE, e a regra
         e "o que vale pra qualquer cliente conserta-se na fabrica".
 
+>>> 10/08 — LEITOR DE EDITAL COM IA: CUSTO MEDIDO, TELA PRONTA, **NAO LIBERADA** (item 5 da
+    fila nova). O pedido foi exatamente isto: montar o fluxo, medir com edital REAL e nao liberar.
+    *** O NUMERO QUE ELE PEDIU (dois editais reais do PNCP, claude-haiku-4-5, 10/08) ***
+        0,17 MB ·  51.449 tokens de entrada · 22 s · US$ 0,0598 · **R$ 0,31**
+        1,34 MB · 165.479 tokens de entrada · 19 s · US$ 0,1724 · **R$ 0,88**
+        (cambio R$ 5,1097/US$, buscado na hora; 100 editais do 1o tipo = R$ 31, mil = R$ 306)
+    >>> !! O TETO NAO E O PRECO, E O CONTEXTO. O Haiku le 200 mil tokens de uma vez e o segundo
+        edital JA CONSUMIU 165 MIL. Edital grande NAO CABE — e o pior jeito de errar seria mandar
+        assim mesmo e resumir o pedaco que coube como se fosse o edital inteiro. A tela RECUSA
+        acima de ~1,5 MB, dizendo por que. Teto derivado da medicao (123 mil tokens por MB), nao
+        de chute. !!
+    A TELA: fpmed_edital_ia.html — janelinha de 4 passos (referencia do Licitante Prime), custo
+    ESTIMADO antes do clique (preco que so aparece depois de gastar nao e preco), e o que a IA
+    NAO ACHOU em destaque, com o aviso de que "nao achou" nao e "nao existe" — a mesma regra do
+    motor do teto CMED. Cambio buscado na hora; sem ele o valor fica em dolar.
+    >>> FORA DO MENU, fora do link do Licitacoes e FORA DA CASCA do sw.js. Tela que so funciona
+        pagando nao tem o que fazer offline, e estar na casca sugeriria que ja faz parte do
+        sistema. A suite testa_edital_ia (33) trava as tres ausencias — se alguem linkar sem
+        querer, fica vermelho.
+    FERRAMENTA: tools/prova_custo_edital.js (previa `--so-baixar` mede sem gastar; confere que e
+    PDF antes de mandar — pegou um "arquivo" de 6,45 MB do PNCP que era ZIP e economizou a
+    chamada). Medicoes em backups/prova_custo_edital.json.
+    >>> A ALAVANCA QUE **NAO** MEDI, e que pode derrubar o custo: mandar o TEXTO extraido em vez
+        do PDF nativo. O PDF nativo cobra texto + IMAGEM de cada pagina, e o projeto ja extrai
+        texto de PDF no navegador de graca (pdf.js, no Conferidor e no Atualizar Estoque). Isso
+        deve cortar a maior parte dos tokens de entrada — mas e HIPOTESE, nao medicao: precisa da
+        sua propria prova antes de virar numero em relatorio.
+    >>> DECISAO DELE, com os numeros na mao: liberar pra quem, e se cobra por leitura. Total:
+        2.046 asserts / 0 falhas / 60 suites.
+
 >>> 10/08 — BOLETIM DIARIO 100% PRONTO, FALTANDO SO A CHAVE DO RESEND (item 4 da fila nova).
     A tela ja dava o delta ("8 novas desde a sua ultima leitura") — mas so pra quem abre o
     sistema. Quem so abre quando lembra perde o edital que abre amanha.
