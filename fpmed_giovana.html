@@ -186,6 +186,12 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--texto);min-
 
 <div class="main-wrap">
 
+  <!-- ITENS QUE CHEGARAM DO EDITAL (ponte Licitações → Propostas, 10/08) ────────────────────
+       Não importa sozinho: quem abriu esta tela pode estar no meio de OUTRA proposta, e trocar
+       os itens de alguém sem avisar é pior que uma tela a mais pra clicar. O aviso diz de qual
+       licitação vieram e quantos são; importar é decisão de quem está aqui. -->
+  <div id="pedido-edital" style="display:none"></div>
+
   <!-- CABEÇALHO DA PROPOSTA -->
   <div class="card">
     <h3>📄 Dados da Proposta</h3>
@@ -621,6 +627,9 @@ async function iniciar() {
     _cotTs = Date.now();
     setDbStatus(true);
     toast(`✓ ${cotacoes.length} produtos carregados`);
+    // ITENS VINDOS DO EDITAL: só DEPOIS do estoque carregar. O convite pra importar antes disso
+    // levaria a um clique que não acha nada e ensina que a ponte não funciona.
+    pintaPedidoEdital();
     // ENRIQUECIMENTOS OPCIONAIS — o banco já carregou. Cada um roda ISOLADO: se qualquer um
     // falhar, a busca continua funcionando (só sem aquele reforço). Sem esse isolamento, um erro
     // num carregador acessório derrubaria a carga inteira, com as cotações já na memória.
@@ -2572,6 +2581,115 @@ function importarLista() {
   if (adicionados > 0) toast(`${adicionados} produto(s) adicionado(s)!`);
 }
 
+/* ─── ITENS DO EDITAL → PROPOSTA (ponte com Licitações · seção 8.3 do SPEC · 10/08) ─────────
+   O que faltava do item 5: a tela de Licitações já lê os itens do edital no PNCP e já cruza cada
+   um contra o nosso estoque; até hoje o operador olhava aquela tabela e vinha DIGITAR item por
+   item aqui. Num edital de 280 itens isso é uma tarde — e cada linha redigitada é uma chance de
+   trocar a dose. Nada aqui é dado novo: é a mesma lista, entregue em vez de recopiada.
+
+   >>> NÃO IMPORTA SOZINHO. Quem abriu esta tela pode estar no meio de OUTRA proposta. Trocar os
+       itens de alguém sem avisar é pior que uma tela a mais pra clicar.
+
+   >>> A QUANTIDADE É O PERIGO. No edital ela vem na unidade DELE ("Caixa 100 UN", "Unidade");
+       aqui `qtd` é em CAIXAS NOSSAS. O Licitações manda a quantidade já em UNIDADES; aqui se
+       divide pela NOSSA embalagem, que só se sabe depois de saber QUAL produto casou.
+       Quando um dos dois lados não sabe o pack, o item entra com **1 e etiqueta de conferir** —
+       não com um palpite. 500 unidades viradas em 500 caixas é erro de 100× num documento que
+       vale como proposta comercial; e o palpite silencioso é justamente o que ninguém revisa. */
+function _escEd(s){ return String(s==null?'':s).replace(/[<>&"]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c])); }
+function pedidoDoEdital(){
+  try{
+    const cru = sessionStorage.getItem('fpmed_pedido_edital');
+    if(!cru) return null;
+    const p = JSON.parse(cru);
+    return (p && Array.isArray(p.itens) && p.itens.length) ? p : null;
+  }catch(e){ return null; }
+}
+function pintaPedidoEdital(){
+  const el = document.getElementById('pedido-edital'); if(!el) return;
+  const p = pedidoDoEdital();
+  if(!p){ el.style.display='none'; el.innerHTML=''; return; }
+  const l = p.lic || {};
+  el.style.display='block';
+  el.innerHTML = `<div class="card" style="border-left:4px solid var(--verde);background:#F2FAF4">
+    <h3 style="margin-bottom:6px">📄 Chegaram ${p.itens.length} itens de um edital</h3>
+    <div style="font-size:13px;color:var(--muted);line-height:1.6">
+      <strong>${_escEd(l.titulo||'Licitação')}</strong>${l.orgao?' · '+_escEd(l.orgao):''}
+      ${l.municipio?' · '+_escEd(l.municipio)+(l.uf?'/'+_escEd(l.uf):''):''}
+      <br>${p.itens.filter(i=>i.casouAqui).length} deles já tinham equivalente no nosso estoque no
+      cruzamento do Licitações${l.truncado?' · <strong style="color:#c06060">a leitura do edital foi truncada: pode haver mais itens</strong>':''}
+    </div>
+    <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn btn-primary btn-sm" onclick="importarPedidoEdital()">➕ Importar os ${p.itens.length} itens</button>
+      <button class="btn btn-outline btn-sm" onclick="descartarPedidoEdital()">Descartar</button>
+    </div>
+    <div style="margin-top:8px;font-size:11.5px;color:var(--muted)">
+      A quantidade de cada item é convertida do edital para a NOSSA embalagem. Onde a embalagem
+      de algum dos dois lados não for sabida, o item entra com <strong>1</strong> e etiqueta de
+      conferir — nunca com um número chutado.
+    </div>
+  </div>`;
+}
+function descartarPedidoEdital(){
+  try{ sessionStorage.removeItem('fpmed_pedido_edital'); }catch(e){}
+  pintaPedidoEdital();
+}
+function importarPedidoEdital(){
+  const p = pedidoDoEdital(); if(!p) return;
+  if(!cotacoes.length){ toast('O estoque ainda não carregou — espere o banco conectar','error'); return; }
+  const pack = (window.LimedtecTetoCMED||{}).packNosso;
+  let add = 0, somados = 0;
+  const naoAchados = [], conferirQtd = [];
+  for(const it of p.itens){
+    const melhor = buscarMelhorProduto(it.descricao);
+    if(!melhor){ naoAchados.push(it.descricao); continue; }
+    // QUANTIDADE: unidades pedidas ÷ unidades da nossa caixa, arredondando PRA CIMA — meia caixa
+    // não se vende, e faltar item na proposta é pior que sobrar.
+    const nosso = pack ? pack(melhor.und, qtdEmbalagem(melhor.und, melhor.produto)) : null;
+    let qtd = 1, aviso = null;
+    if(it.qtdUnidades == null){
+      aviso = 'o edital pede em "'+(it.unidade||'unidade não declarada')+'" e não dá pra saber quantas unidades são';
+    }else if(nosso == null){
+      aviso = 'o edital pede '+it.qtdUnidades.toLocaleString('pt-BR')+' unidades, mas a nossa embalagem não é sabida';
+    }else{
+      qtd = Math.max(1, Math.ceil(it.qtdUnidades / nosso));
+    }
+    const ex = itens.find(i => i.id === melhor.id);
+    if(ex){ ex.qtd = (parseInt(ex.qtd)||0) + qtd; somados++; }   // item repetido no edital: soma
+    else{
+      const qtdCx = qtdEmbalagem(melhor.und, melhor.produto);
+      itens.push({...melhor, qtd, desc_item:0, _pvv:pv(melhor), _qtd_caixa:qtdCx,
+                  _bpAlerta:bpAlerta(melhor), _conf:_bmConfianca(it.descricao, melhor),
+                  _qtdAlerta: aviso, _itemEdital: it.n});
+      add++;
+    }
+    if(aviso) conferirQtd.push({n: it.n, produto: melhor.produto, motivo: aviso});
+  }
+  // A CMED entra junto: o selo do teto legal vale ainda mais numa proposta pro governo.
+  if(typeof carregarTetoCMED === 'function') carregarTetoCMED().then(idx => { if(idx && typeof repintarTetos==='function') repintarTetos(); });
+  for(const nome of naoAchados) if(!naoEncontrados.some(n => n.toLowerCase() === nome.toLowerCase())) naoEncontrados.push(nome);
+  try{ sessionStorage.removeItem('fpmed_pedido_edital'); }catch(e){}
+
+  const el = document.getElementById('pedido-edital');
+  el.innerHTML = `<div class="card" style="border-left:4px solid var(--verde)">
+    <h3 style="margin-bottom:6px">📄 ${add} item(ns) do edital entraram na proposta</h3>
+    <div style="font-size:13px;color:var(--muted);line-height:1.6">
+      ${_escEd((p.lic||{}).titulo||'Licitação')}${somados?` · ${somados} item(ns) repetido(s) tiveram a quantidade somada`:''}
+      ${naoAchados.length?` · <strong style="color:#c06060">${naoAchados.length} sem equivalente no estoque</strong> — foram pra lista de não encontrados, e de lá pra fila de cotação`:''}
+    </div>
+    ${conferirQtd.length ? `<div style="margin-top:10px;padding:9px 11px;background:rgba(230,168,23,.10);border:1px solid rgba(230,168,23,.4);border-radius:8px;font-size:12px">
+      <strong>⚠️ ${conferirQtd.length} item(ns) entraram com quantidade 1 — confira antes de mandar:</strong>
+      ${conferirQtd.map(c=>`<div style="padding:3px 0">Item ${_escEd(c.n)} · ${_escEd(c.produto)} — ${_escEd(c.motivo)}</div>`).join('')}
+    </div>` : ''}
+    <div style="margin-top:8px;font-size:11.5px;color:var(--muted)">Confira o preço de cada linha: a proposta nasce com o preço de tabela, não com o preço do edital.</div>
+  </div>`;
+  renderItens();
+  if(typeof renderNaoEncontrados === 'function') renderNaoEncontrados();
+  calcTotal();
+  atualizarVisibilidade();
+  toast(`${add} item(ns) do edital adicionados`);
+}
+
 // ─── NOME DE FORNECEDOR (código → nome) — compartilhado, idêntico em sistema_final/vendas/painel (FASE A migração #18) ───
 const FORN_NOMES = {
   '1':'GLOBAL','2':'SUPERMEDICA','3':'STOCK MED','4':'PROMEFARMA','5':'DISMASTER',
@@ -2788,6 +2906,7 @@ function renderItens() {
           ${c.validade?` · Venc: ${fmtDate(c.validade)}`:''}
         </div>
         ${(c._bpAlerta && !ehRestrito())?`<div class="no-print" style="margin-top:4px;font-size:11px;color:#e6a817;background:rgba(230,168,23,.08);border:1px solid rgba(230,168,23,.35);border-radius:6px;padding:4px 8px">⚠️ conferir preço: ${c._bpAlerta.msg}</div>`:''}
+        ${c._qtdAlerta?`<div class="no-print" style="margin-top:4px;font-size:11px;color:#e6a817;background:rgba(230,168,23,.08);border:1px solid rgba(230,168,23,.35);border-radius:6px;padding:4px 8px">⚠️ <strong>quantidade não convertida</strong> (entrou 1): ${c._qtdAlerta}</div>`:''}
         ${(c._conf && c._conf.nivel!=='alta' && !c._confOK)?`<div class="no-print" style="margin-top:4px;font-size:11px;color:${c._conf.nivel==='baixa'?'#ef4444':'#e6a817'};background:${c._conf.nivel==='baixa'?'rgba(239,68,68,.08)':'rgba(230,168,23,.08)'};border:1px solid ${c._conf.nivel==='baixa'?'rgba(239,68,68,.4)':'rgba(230,168,23,.35)'};border-radius:6px;padding:5px 8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
           <span style="flex:1">⚠️ <strong>CONFERIR</strong> (confiança ${c._conf.nivel}): ${c._conf.motivos.join(' · ')||'match automático'} — confira se é o produto certo</span>
           <button class="btn btn-outline btn-sm" style="padding:2px 10px" onclick="confirmarMatch('${c.id}')">✓ Confirmar match</button>

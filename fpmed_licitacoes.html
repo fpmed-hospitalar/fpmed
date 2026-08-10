@@ -484,7 +484,7 @@ const fmtDt = s => { const d=dt(s); return d ? d.toLocaleDateString('pt-BR')+' �
 const esc = s => String(s==null?'':s).replace(/[<>&"]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c]));
 // >>> ESTAS QUATRO VÊM DO MOTOR (fpmed_teto_cmed.js), não são mais escritas aqui. A razão está
 //     no comentário lá em cima, junto da trava que impede a tela de abrir sem ele.
-const { semAcento, doses, concMags, forma } = window.LimedtecTetoCMED;
+const { semAcento, doses, concMags, forma, unidadePack, packNosso } = window.LimedtecTetoCMED;
 const ymd = d => { const p=n=>String(n).padStart(2,'0'); return d.getFullYear()+p(d.getMonth()+1)+p(d.getDate()); };
 const iso = d => d.toISOString().slice(0,10);
 
@@ -548,38 +548,22 @@ function _semCalibre(produto){
 }
 function qtdEmbalagem(und, produto){ const u=_undNum(und); return u>=1 ? u : _qtdDoNome(_semCalibre(produto)); }
 
-// UND do NOSSO estoque: "AMP"/"FR"/"UND" já é a unidade de venda (pack 1 sabido); "CX"/"PCT" é
-// agregador — sem contagem no nome não dá pra unitarizar e a célula vira "⚠ conferir emb."
-// (mesma regra do Comparativo). O silêncio (und NULL) também é "não sei", nunca 1 por otimismo.
-const _UND_UNITARIA  = /^(und|un|unid|unidade|amp|ampola|fa|fr|frasco|cpr|comp|cp|caps|cap|lt|litro|pc|par|tb|tubo|bg|bisnaga|rl|rolo|gl|sc|kg|mt)$/;
-const _UND_AGREGADORA= /^(cx|caixa|ct|cart|pct|pacote|fd|fardo|dp|display|kit|cj|conj|bls|blister|env)$/;
+// UND do NOSSO estoque: quem classifica é o `packNosso` do motor (10/08) — a mesma pergunta é
+// feita aqui, no gerador de proposta e no conferidor, e três respostas seriam três chances de
+// divergir. `null` = "caixa sem contagem": a célula vira "⚠ conferir emb.", que é a verdade.
+// O leitor de pack (qtdEmbalagem, com as manhas de calibre/NxM/frasco-ampola) continua sendo
+// daqui — o motor só decide o que fazer quando ele não leu nada.
 function unitarioNosso(c){
   const base = parseFloat(c.global_venda1||0) || parseFloat(c.venda_unit_calculada||0);
   if(!(base>0)) return {status:'sem-preco'};
-  const qtd = qtdEmbalagem(c.und, c.produto);
-  if(qtd>1) return {status:'ok', valor:base/qtd, pack:qtd, bruto:base};
-  const u = semAcento(c.und||'').replace(/[^a-z]/g,'');
-  if(_UND_UNITARIA.test(u)) return {status:'ok', valor:base, pack:1, bruto:base};
-  if(_UND_AGREGADORA.test(u) || !u) return {status:'conferir', bruto:base};  // caixa sem contagem
-  return {status:'ok', valor:base, pack:1, bruto:base};
+  const pack = packNosso(c.und, qtdEmbalagem(c.und, c.produto));
+  if(pack == null) return {status:'conferir', bruto:base};                  // caixa sem contagem
+  return {status:'ok', valor:base/pack, pack, bruto:base};
 }
 
-// unidadeMedida do EDITAL: "Caixa 100 UN"→100 · "Embalagem 10 UN"→10 · "Unidade"→1
-// "Frasco 1000 ML"→1 e "Galão 5 L"→1 (o número é MEDIDA, não contagem — mesmo cuidado do
-// _qtdDoNome, que barra "FR C/240ML"). "Caixa" sem número → null (não sei: ⚠ conferir emb.).
-const _MEDIDA     = /^(ml|l|g|kg|mg|mcg|m|cm|mm|litro|litros|grama|gramas|metro|metros)$/;
-const _AGREGADOR  = /(caixa|cx|embalagem|emb|pacote|pct|fardo|kit|conjunto|maco|saco|display|cartucho)/;
-function unidadePack(u){
-  const t = semAcento(u||'').trim();
-  if(!t) return 1;
-  const m = t.match(/(\d+(?:[.,]\d+)?)\s*([a-z]+)?/);
-  if(m){
-    const n = parseFloat(m[1].replace(',','.')), unidade = m[2]||'';
-    if(_MEDIDA.test(unidade)) return 1;
-    return (n>1 && n<=100000) ? n : 1;
-  }
-  return _AGREGADOR.test(t) ? null : 1;
-}
+// unidadeMedida do EDITAL ("Caixa 100 UN"→100 · "Unidade"→1 · "Galão 5 L"→1 · "Caixa"→null):
+// também do motor desde 10/08 — é a mesma conta que a ponte pro gerador de proposta usa pra
+// converter a quantidade do edital na quantidade da NOSSA embalagem.
 function unitarioEdital(it){
   if(it.orcamentoSigiloso) return {status:'sigiloso'};
   const v = Number(it.valorUnitarioEstimado)||0;
@@ -1331,6 +1315,64 @@ async function mandarProFunil(i){
   }
 }
 
+// ══ ITENS DO EDITAL → GERADOR DE PROPOSTA (seção 8.3 do SPEC · 10/08) ═════════════════════
+// O que ficou faltando do item 5: hoje o operador lê os itens AQUI e vai digitar produto por
+// produto lá nas Propostas. Num edital de 280 itens isso é uma tarde de trabalho — e cada linha
+// redigitada é uma chance de trocar a dose.
+//
+// >>> NÃO É DADO NOVO, É PONTE DE TELA. Os itens já vieram do PNCP pelo cruzamento; as Propostas
+//     já sabem casar uma lista de texto contra o estoque (o `importarLista`, com score de
+//     confiança e fila de cotação pros não achados). Aqui só se leva um do outro.
+//
+// >>> A QUANTIDADE É O PERIGO, e é por isso que ela vai CONVERTIDA. No edital a quantidade vem na
+//     unidade de fornecimento DELE ("Caixa 100 UN", "Unidade", "Frasco 1000 ML"); nas Propostas a
+//     quantidade é em CAIXAS NOSSAS. Mandar o número cru faria 500 unidades virarem 500 caixas —
+//     um erro de 100× num documento que vale como proposta. Então aqui se manda a quantidade em
+//     UNIDADES (quantidade × pack do edital, o mesmo `unidadePack` que o cruzamento usa) e quem
+//     divide pela NOSSA embalagem é a tela de Propostas, que é quem sabe qual produto casou.
+//     Quando o pack do edital não é sabido (`unidadePack` devolve null, o "conferir emb."), vai
+//     `qtdUnidades: null` — e a proposta entra com 1 e DIZ que a quantidade é pra conferir.
+//     Chutar 1 calado seria o mesmo erro com outro sinal.
+function itensProPedido(r, l){
+  const o = l.orgaoEntidade||{}, u = l.unidadeOrgao||{};
+  return {
+    de: 'licitacoes', quando: Date.now(),
+    lic: {
+      titulo: (l.modalidadeNome||'Licitação') + ' Nº ' + numCompra(l.numeroCompra, l.anoCompra),
+      numero: String(l.numeroControlePNCP || numCompra(l.numeroCompra, l.anoCompra) || ''),
+      orgao: o.razaoSocial || null, municipio: u.municipioNome || null, uf: u.ufSigla || null,
+      portal: l.usuarioNome || 'PNCP', abertura: l.dataAberturaProposta || null,
+      truncado: !!r.truncado, lidos: r.itens.length, casados: r.casados,
+    },
+    itens: r.itens.map(x => {
+      const it = x.it, pack = unidadePack(it.unidadeMedida), q = Number(it.quantidade)||0;
+      const uE = unitarioEdital(it);
+      return {
+        n: it.numeroItem,
+        descricao: String(it.descricao||'').replace(/\s+/g,' ').trim(),
+        qtdEdital: q, unidade: it.unidadeMedida || '',
+        packEdital: pack,                                  // null = não sei quantas unidades tem
+        qtdUnidades: (pack && q) ? q * pack : null,
+        unitEdital: uE.status === 'ok' ? uE.valor : null,  // referência: o unitário estimado do edital
+        casouAqui: x.pares.length > 0,
+      };
+    }),
+  };
+}
+function mandarProPropostas(i){
+  const l = (window._hits||[])[i]; if(!l) return;
+  const r = CRUZ.get(chaveLic(l));
+  if(!r || !r.itens.length){ alert('Abra os itens desta licitação antes — é deles que a proposta é montada.'); return; }
+  try{
+    sessionStorage.setItem('fpmed_pedido_edital', JSON.stringify(itensProPedido(r, l)));
+  }catch(e){
+    alert('Não consegui guardar os itens pra levar às Propostas: ' + e.message); return;
+  }
+  // sessionStorage e não localStorage DE PROPÓSITO: o pedido morre com a aba. Guardado em
+  // localStorage, o edital de hoje reapareceria semana que vem em cima de outra proposta.
+  location.href = 'fpmed_giovana.html';
+}
+
 // ══ MEUS JORNAIS ══ buscas salvas (item 9, 3º pedaço · 06/08) ═════════════════════════════
 // Um jornal é a pesquisa avançada SALVA COM NOME. O que ele entrega, e que um atalho não
 // entrega, é o DELTA: "8 novas desde a última vez que você olhou". Sem isso, reabrir a busca
@@ -1791,7 +1833,7 @@ function celMatch(par, uEdital){
        + (c.marca ? ' · '+esc(c.marca) : '') + delta + '</div></div>';
 }
 
-function tabelaItens(r){
+function tabelaItens(r, i){
   if(!r.itens.length) return '<div class="aviso mini">O PNCP não devolveu itens para esta licitação.</div>';
   let h = '';
   if(r.truncado) h += '<div class="aviso err mini">⚠️ Li '+r.itens.length+' itens (teto por licitação). Pode haver mais no edital.</div>';
@@ -1799,7 +1841,11 @@ function tabelaItens(r){
       ? '⚠️ estoque FPMED indisponível ('+esc(ESTOQUE_ERRO)+') — os itens abaixo são do edital, sem cruzamento.'
       : 'estoque FPMED ainda carregando — os itens abaixo são do edital, sem cruzamento.')+'</div>';
   h += '<div class="progresso" style="margin-bottom:8px"><b>'+r.casados+'</b> de <b>'+r.itens.length
-     + '</b> itens do edital têm produto equivalente no nosso estoque · comparação sempre <b>unitária</b></div>';
+     + '</b> itens do edital têm produto equivalente no nosso estoque · comparação sempre <b>unitária</b>'
+     + (i != null ? '<button class="btn mini" style="margin-left:12px" onclick="mandarProPropostas('+i+')"'
+        + ' title="leva os '+r.itens.length+' itens pro gerador de proposta, que casa cada um contra o estoque">'
+        + '📄 Montar proposta com estes itens</button>' : '')
+     + '</div>';
   h += '<table><thead><tr><th>Nº</th><th class="desc">Item do edital</th><th>Quantidade</th><th>Unitário do edital</th></tr></thead><tbody>';
   for(const x of r.itens){
     const it = x.it, uE = unitarioEdital(it);
@@ -1857,7 +1903,7 @@ async function verItens(i, forcar){
   bt.innerHTML='ocultar itens';
   if(!box.innerHTML || forcar) box.innerHTML='<div class="progresso">buscando os itens do edital no PNCP…</div>';
   try{
-    box.innerHTML = tabelaItens(await puxarItens(l));
+    box.innerHTML = tabelaItens(await puxarItens(l), i);
     atualizaBadge(i);
   }catch(e){
     box.innerHTML = '<div class="aviso err mini">⚠️ '+esc(e.message)

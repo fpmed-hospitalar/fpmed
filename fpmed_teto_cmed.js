@@ -110,6 +110,51 @@
     return null;
   }
 
+  /* ── EMBALAGEM: QUANTAS UNIDADES TEM UMA "CAIXA" ────────────────────────────────────────
+     Entrou aqui em 10/08, junto com a ponte "itens do edital -> gerador de proposta". Não é
+     assunto novo: é a REGRA 2 do cabeçalho ("preço sempre unitário nos dois lados") vista do
+     outro ângulo — pra unitarizar é preciso saber o pack, e pra converter a quantidade de um
+     edital na quantidade da NOSSA embalagem também.
+     >>> POR QUE NO MOTOR, e não em cada tela: esta é a família de defeito que mais custou neste
+         projeto (preço de caixa mostrado como unitário, unidade virando caixa no faturamento).
+         Três telas fazem a mesma pergunta; três respostas seriam três chances de divergir.
+     >>> `null` É RESPOSTA. "Caixa" sem contagem não é caixa de 1 — é caixa de quantidade
+         desconhecida. Devolver 1 por otimismo é o que transforma um preço de caixa em preço
+         unitário sem ninguém ver. Quem recebe null tem que DIZER "conferir embalagem". */
+
+  // Unidade do EDITAL (campo `unidadeMedida` do PNCP): "Caixa 100 UN"->100 · "Unidade"->1
+  // "Frasco 1000 ML"->1 e "Galão 5 L"->1 (o número é MEDIDA, não contagem).
+  // "Caixa" sem número -> null (não sei).
+  const _MEDIDA    = /^(ml|l|g|kg|mg|mcg|m|cm|mm|litro|litros|grama|gramas|metro|metros)$/;
+  const _AGREGADOR = /(caixa|cx|embalagem|emb|pacote|pct|fardo|kit|conjunto|maco|saco|display|cartucho)/;
+  function unidadePack(u){
+    const t = semAcento(u||'').trim();
+    if(!t) return 1;
+    const m = t.match(/(\d+(?:[.,]\d+)?)\s*([a-z]+)?/);
+    if(m){
+      const n = parseFloat(m[1].replace(',','.')), unidade = m[2]||'';
+      if(_MEDIDA.test(unidade)) return 1;
+      return (n>1 && n<=100000) ? n : 1;
+    }
+    return _AGREGADOR.test(t) ? null : 1;
+  }
+
+  // Unidade do NOSSO estoque. "AMP"/"FR"/"UND" já é a unidade de venda (pack 1 sabido);
+  // "CX"/"PCT" é agregador — sem contagem no nome não dá pra unitarizar. O silêncio (und vazio)
+  // também é "não sei", nunca 1 por otimismo.
+  const _UND_UNITARIA   = /^(und|un|unid|unidade|amp|ampola|fa|fr|frasco|cpr|comp|cp|caps|cap|lt|litro|pc|par|tb|tubo|bg|bisnaga|rl|rolo|gl|sc|kg|mt)$/;
+  const _UND_AGREGADORA = /^(cx|caixa|ct|cart|pct|pacote|fd|fardo|dp|display|kit|cj|conj|bls|blister|env)$/;
+  // `qtdEmb` é o pack que a tela conseguiu LER (do campo und ou do nome do produto) — cada tela
+  // tem o seu leitor, com as manhas dela (calibre French, NxM CPR, frasco-ampola). Aqui só se
+  // decide o que fazer quando ele não leu nada.
+  function packNosso(und, qtdEmb){
+    if(qtdEmb > 1) return qtdEmb;
+    const u = semAcento(und||'').replace(/[^a-z]/g,'');
+    if(_UND_UNITARIA.test(u)) return 1;
+    if(_UND_AGREGADORA.test(u) || !u) return null;   // caixa sem contagem, ou silêncio
+    return 1;
+  }
+
   // ── O ÍNDICE ────────────────────────────────────────────────────────────────────────────
   // Montado uma vez, a partir do que a tela leu do banco. Três caminhos de busca, do mais
   // confiável para o menos — e o resultado sempre DIZ por qual deles casou.
@@ -237,7 +282,8 @@
     return r;
   }
 
-  const API = { semAcento, doses, concMags, forma, indexar, chavesDoseDe, avaliar, resumir };
+  const API = { semAcento, doses, concMags, forma, unidadePack, packNosso,
+                indexar, chavesDoseDe, avaliar, resumir };
   raiz.LimedtecTetoCMED = API;
   if (typeof module !== 'undefined' && module.exports) module.exports = API;
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -322,6 +322,7 @@ Criado em 21/07/2026 copiando SO os arquivos do app do C:\globalmed.
                  >>> O QUE FICOU DA SECAO 8.3 e NAO entrou: puxar os ITENS DO EDITAL direto pro
                      gerador (hoje o operador busca item por item). O endpoint de itens do PNCP
                      ja e lido no cruzamento do Licitacoes — e ponte de tela, nao dado novo.
+                     >>> [OK 10/08] FEITO — ver "OS ITENS DO EDITAL VIRAM PROPOSTA".
 
     >>> REFERENCIA VISUAL DA FICHA DELES (08/08) — secao 8.4-B do SPEC. EU VI a tela (o Lemuel
         capturou; o arquivo esta FORA do repo pelo .gitignore, porque e produto de terceiro E tem
@@ -464,6 +465,40 @@ Criado em 21/07/2026 copiando SO os arquivos do app do C:\globalmed.
     pesquisa avancada, meus jornais) passaram a entregar um `window` de mentira carregando o motor
     DE VERDADE — que e exatamente como a tela roda no navegador.
     Total: 1.860 asserts / 0 falhas / 56 suites. sw VERSAO -> 2026-08-10-2 (casca nova).
+
+>>> 10/08 — OS ITENS DO EDITAL VIRAM PROPOSTA (secao 8.3 do SPEC). Era o que faltava do item 5.
+    O Licitacoes ja lia os itens do edital no PNCP e ja cruzava cada um contra o nosso estoque; o
+    operador olhava aquela tabela e vinha DIGITAR item por item nas Propostas. Num edital de 280
+    itens isso e uma tarde — e cada linha redigitada e uma chance de trocar a dose.
+    Botao "📄 Montar proposta com estes itens" no cabecalho da tabela de itens -> as Propostas
+    abrem com uma FAIXA convidando a importar. NAO IMPORTA SOZINHO: quem abriu as Propostas pode
+    estar no meio de outra proposta, e trocar os itens de alguem sem avisar e pior que um clique.
+    >>> A QUANTIDADE E O UNICO PONTO ONDE ISTO PODE ESTRAGAR DADO, e por isso a conta e explicita:
+        no edital a quantidade vem na unidade DELE ("Caixa 100 UN"); na proposta ela e em CAIXAS
+        NOSSAS. O Licitacoes manda em UNIDADES (qtd x pack do edital) e a proposta divide pela
+        NOSSA embalagem — que so se sabe depois de saber QUAL produto casou. Arredonda PRA CIMA
+        (meia caixa nao se vende). 500 caixas de 100 viradas em 500 unidades e erro de 100x num
+        documento que vale como proposta comercial.
+    >>> QUANDO UM DOS DOIS LADOS NAO SABE O PACK: entra 1 + etiqueta AMARELA na propria linha do
+        item, e o resumo LISTA quais sao, com o numero do item e QUAL dos dois lados nao sabia.
+        Palpite silencioso e o que ninguem revisa.
+    O que nao casa com o estoque NAO SOME: vai pra lista de nao encontrados e de la pra fila de
+    cotacao (o caminho que ja existia). Item repetido no edital soma a quantidade.
+    sessionStorage e nao localStorage: o pedido morre com a aba — guardado, o edital de hoje
+    reapareceria semana que vem em cima de outra proposta.
+    >>> DE QUEBRA, MAIS UMA COPIA A MENOS: a conversao precisa de "quantas unidades tem esta
+        caixa" dos DOIS lados, e essa pergunta e a familia de defeito que mais custou neste
+        projeto. Em vez de copiar as listas de unidade pra giovana, `unidadePack` e o novo
+        `packNosso` foram pro fpmed_teto_cmed.js e o Licitacoes passou a ler de la (o
+        `unitarioNosso` encolheu pra 4 linhas). As 63 asserts do testa_cruzamento passaram sem
+        mudanca nenhuma — que e a prova de que a mudanca nao mexeu em comportamento.
+    Suite nova testa_ponte_edital (38). Total: 1.908 asserts / 0 falhas / 57 suites.
+    >>> A PRIMEIRA VERSAO DA SUITE NAO TESTAVA NADA, e vale registrar: a fixture tinha a nossa
+        caixa com 100 e o edital pedindo "Caixa 100 UN" x 500 — a conversao dava 500 e a
+        quantidade crua do edital tambem era 500. Mutei o codigo pra `qtd = it.qtdEdital` e a
+        suite passou VERDE. Fixture em que o certo e o errado dao o mesmo numero nao prova nada.
+        Corrigida (CX/250 e CX/20 contra "Caixa 100 UN" e "Unidade"), as duas mutacoes ficam
+        vermelhas: a do caixa-x-unidade em 3 asserts, a do palpite de pack em 1.
 
 >>> ENTREGA 07/08 — PRIMEIRO GESTOR DA FPMED CRIADO E PROVADO COM LOGIN REAL
     licitacao@fpmed.com.br · Natanael · gestor_geral · e-mail JA CONFIRMADO.

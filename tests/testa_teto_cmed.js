@@ -133,8 +133,8 @@ const IDX = M.indexar({
 {
   ok('30. *** o fpmed_licitacoes.html CARREGA o motor ***',
     /<script src="fpmed_teto_cmed\.js"><\/script>/.test(licit));
-  ok('31. ...e o pega do window, em vez de escrever de novo',
-    /const \{ semAcento, doses, concMags, forma \} = window\.LimedtecTetoCMED;/.test(licit));
+  ok('31. ...e pega as funcoes do window, em vez de escrever de novo',
+    /const \{ semAcento, doses, concMags, forma, unidadePack, packNosso \} = window\.LimedtecTetoCMED;/.test(licit));
   for(const fn of ['doses','concMags','forma']){
     ok('32.*** o HTML NAO define mais `' + fn + '` (copia = duas verdades) ***',
       !new RegExp('\\n\\s*function ' + fn + '\\s*\\(').test(licit));
@@ -147,20 +147,46 @@ const IDX = M.indexar({
     /nao carregou|não carregou/.test(licit) && /Recarregue a p/.test(licit));
   ok('35. o motor entra na casca do service worker (senao offline a tela morre)',
     fs.readFileSync(path.join(raiz, 'sw.js'), 'utf8').includes('fpmed_teto_cmed.js'));
+  for(const fn of ['unidadePack']){
+    ok('35b. o HTML tambem nao define mais `' + fn + '`',
+      !new RegExp('\\n\\s*function ' + fn + '\\s*\\(').test(licit));
+  }
+  ok('35c. nem as listas de unidade agregadora/unitaria (elas moram no motor agora)',
+    !/_UND_AGREGADORA\s*=/.test(licit) && !/const _AGREGADOR\s*=/.test(licit));
+}
+
+// ══════════ 7B. EMBALAGEM: `null` E RESPOSTA ══════════
+// Entrou no motor em 10/08 com a ponte "itens do edital -> gerador de proposta". Devolver 1 pra
+// "caixa sem contagem" e o que transforma preco de caixa em preco unitario sem ninguem ver -- e
+// o que faria 500 caixas de 100 virarem 500 unidades na proposta.
+{
+  ok('36. "Caixa 100 UN" -> 100', M.unidadePack('Caixa 100 UN') === 100, M.unidadePack('Caixa 100 UN'));
+  ok('37. "Unidade" -> 1', M.unidadePack('Unidade') === 1);
+  ok('38. *** "Frasco 1000 ML" -> 1: 1000 ML e MEDIDA, nao contagem ***',
+    M.unidadePack('Frasco 1000 ML') === 1, M.unidadePack('Frasco 1000 ML'));
+  ok('39. *** "Caixa" sem numero -> NULL (nao sei), nunca 1 ***',
+    M.unidadePack('Caixa') === null, M.unidadePack('Caixa'));
+  ok('40. o NOSSO pack lido do nome manda', M.packNosso('CX', 100) === 100);
+  ok('41. und unitaria sem pack lido -> 1 (AMP/FR/UND ja e a unidade de venda)',
+    M.packNosso('AMP', 1) === 1 && M.packNosso('UND', 1) === 1);
+  ok('42. *** und agregadora sem contagem -> NULL: e o "conferir embalagem" ***',
+    M.packNosso('CX', 1) === null && M.packNosso('PCT', 1) === null, M.packNosso('CX', 1));
+  ok('43. *** silencio (und vazia) tambem e NULL, nao 1 por otimismo ***',
+    M.packNosso('', 1) === null && M.packNosso(null, 1) === null);
 }
 
 // ══════════ 8. O MOTOR E COMPARTILHADO DE VERDADE ══════════
-ok('36. exporta pro navegador E pro node (as tres telas e o teste)',
+ok('44. exporta pro navegador E pro node (as tres telas e o teste)',
   /raiz\.LimedtecTetoCMED = API/.test(motor) && /module\.exports = API/.test(motor));
-ok('37. indexar declara o tamanho do que carregou (pra tela dizer "conferi contra N")',
+ok('45. indexar declara o tamanho do que carregou (pra tela dizer "conferi contra N")',
   !!M.indexar({}).tamanho);
-ok('38. indice vazio nao estoura: devolve nao_encontrado',
+ok('46. indice vazio nao estoura: devolve nao_encontrado',
   M.avaliar({ descricao:'DIPIRONA 1000MG', precoUnit:1, unitario:true }, M.indexar({})).situacao === 'nao_encontrado');
-ok('39. item nulo nao estoura', M.avaliar(null, IDX).situacao === 'nao_encontrado');
+ok('47. item nulo nao estoura', M.avaliar(null, IDX).situacao === 'nao_encontrado');
 // O motor precisa continuar sabendo POR QUE cada regra de dose existe -- os comentarios vieram
 // do fpmed_licitacoes.html junto com as funcoes. Sem eles, a proxima pessoa "simplifica" o
 // gauge da agulha ou a reducao de 50MG/5ML e reabre defeito que ja custou depuracao no ar.
-ok('40. *** o motor carrega a razao das regras (gauge, concentracao x volume, forma) ***',
+ok('48. *** o motor carrega a razao das regras (gauge, concentracao x volume, forma) ***',
   /GAUGE de agulha/.test(motor) && /CONCENTRAÇÃO ≠ VOLUME/.test(motor) && /FORMA FARMACÊUTICA/.test(motor));
 
 console.log('\nRESULTADO: ' + p + ' ok, ' + f + ' falha(s)');
