@@ -111,6 +111,16 @@ select:focus,input:focus{outline:none;border-color:var(--azul)}
 .org .sub{font-size:11.5px;color:var(--muted)}
 .org .n{margin-left:auto;text-align:right;white-space:nowrap}
 .org .n b{font-family:Montserrat;color:var(--azul-claro);font-size:14px}
+/* ── RADAR ── mesma caixa dos outros painéis ── */
+#radar{display:none;background:var(--painel);border:1px solid var(--linha);border-radius:12px;padding:18px;margin-top:18px;box-shadow:var(--sombra);text-align:left}
+#radar.open{display:block}
+.rd{display:flex;gap:12px;align-items:center;padding:10px 12px;border-radius:9px;border:1px solid var(--linha);
+  background:var(--painel2);margin-bottom:8px}
+.rd .nome{font-size:13px;color:#fff;font-weight:600}
+.rd .sub{font-size:11.5px;color:var(--muted);margin-top:2px}
+.rd .km{margin-left:auto;text-align:right;white-space:nowrap;font-size:11.5px;color:var(--muted)}
+.rd .n{font-family:Montserrat;font-size:17px;font-weight:700;color:var(--azul-claro);min-width:34px;text-align:center}
+.rd.zero .n{color:var(--muted)}
 /* ── MEUS JORNAIS (buscas salvas) ── mesma caixa dos outros dois painéis ── */
 #jornais{display:none;background:var(--painel);border:1px solid var(--linha);border-radius:12px;padding:18px;margin-top:18px;box-shadow:var(--sombra);text-align:left}
 #jornais.open{display:block}
@@ -281,6 +291,7 @@ select:focus,input:focus{outline:none;border-color:var(--azul)}
       <a onclick="document.getElementById('avancada').classList.toggle('open')">Pesquisa avançada</a>
       <a onclick="abrirOrgaos()">Órgãos</a>
       <a onclick="soDesertas()" id="lk-desertas" title="processos que não seguiram: desertos/fracassados, revogados, anulados ou suspensos — costumam ser republicados">Desertas e republicáveis</a>
+      <a onclick="abrirRadar()" title="cidades num raio daqui com licitação aberta — quanto vale sair de casa">Radar</a>
       <a onclick="abrirJornais()" id="lk-jornais" title="buscas salvas: abre a pesquisa de novo e mostra o que chegou depois da última vez">Meus Jornais</a>
       <a onclick="porNumero()">Encontrar por Nº</a>
     </div>
@@ -351,6 +362,35 @@ select:focus,input:focus{outline:none;border-color:var(--azul)}
       </div>
       <input type="text" id="f-orgbusca" placeholder="filtrar por nome, município ou CNPJ…" oninput="pintaOrgaos()">
       <div id="org-lista" style="margin-top:12px;max-height:420px;overflow:auto"></div>
+    </div>
+
+    <!-- ── RADAR ── "quais cidades num raio daqui têm licitação aberta com este termo?"
+         A pergunta por trás é logística, não jurídica: vale a viagem? dá pra atender? o frete
+         come a margem? Por isso o resultado é ordenado por DISTÂNCIA e não por valor. -->
+    <div id="radar">
+      <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:12px">
+        <b style="font-family:Montserrat;font-size:15px;color:#fff">Radar</b>
+        <span class="hint" id="rd-resumo">cidades com licitação aberta, num raio daqui</span>
+        <button class="btn sec mini" style="margin-left:auto" onclick="document.getElementById('radar').classList.remove('open')">fechar</button>
+      </div>
+      <div class="grid3">
+        <div><label>Cidade de referência</label>
+          <input type="text" id="rd-cidade" list="rd-lista" placeholder="digite e escolha…" oninput="rdSugerir()" autocomplete="off">
+          <datalist id="rd-lista"></datalist>
+          <div class="hint" style="margin-top:4px" id="rd-ref"></div></div>
+        <div><label>Raio (km)</label>
+          <select id="rd-raio">
+            <option>50</option><option selected>100</option><option>150</option>
+            <option>200</option><option>300</option><option>500</option>
+          </select></div>
+        <div><label>Palavra-chave no objeto</label>
+          <input type="text" id="rd-kw" placeholder="usa as da busca acima se ficar em branco"></div>
+      </div>
+      <div style="margin-top:14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+        <button class="btn" onclick="rodarRadar()" id="rd-bt">🎯 Varrer o raio</button>
+        <span class="hint" id="rd-msg"></span>
+      </div>
+      <div id="rd-lista-res" style="margin-top:14px;max-height:440px;overflow:auto"></div>
     </div>
 
     <!-- ── MEUS JORNAIS ── buscas salvas. O valor não é o atalho, é o DELTA: "o que chegou
@@ -1051,6 +1091,153 @@ function filtrarPorOrgao(nome){
   document.getElementById('orgaos').classList.remove('open');
   document.getElementById('avancada').classList.add('open');
   rerender();
+}
+
+// ══ RADAR ══ cidades num raio, com licitação aberta (módulo 2.5 · 08/08) ═══════════════════
+// A pergunta que ele responde é LOGÍSTICA, não jurídica: vale a viagem? dá pra entregar? o
+// frete come a margem? Por isso o resultado sai ordenado por DISTÂNCIA, e não por valor: uma
+// licitação de R$ 2 mi a 600 km pode valer menos que uma de R$ 80 mil a 40 km.
+const RAIO_TERRA_KM = 6371;
+function distanciaKm(lat1, lon1, lat2, lon2){
+  const r = Math.PI/180;
+  const c = Math.sin(lat1*r)*Math.sin(lat2*r) + Math.cos(lat1*r)*Math.cos(lat2*r)*Math.cos((lon2-lon1)*r);
+  return RAIO_TERRA_KM * Math.acos(Math.min(1, Math.max(-1, c)));
+}
+
+let RD_REF = null;                    // o município escolhido como centro
+let RD_CACHE = new Map();             // nome digitado -> candidatos (a sugestão não vai à rede a cada tecla)
+
+function abrirRadar(){
+  document.getElementById('radar').classList.add('open');
+  const c = document.getElementById('rd-cidade');
+  if(!c.value){
+    // começa na cidade da própria empresa: é de lá que a entrega sai
+    const emp = (window.LIMEDTEC_CLIENTE && LIMEDTEC_CLIENTE.empresa) || {};
+    if(emp.cidade){ c.value = emp.cidade; rdSugerir(); }
+  }
+  c.focus();
+}
+
+// SUGESTÃO SERVIDOR-SIDE, não baixando os 5.570: o autocomplete manda o prefixo e recebe 12.
+let _rdTimer = null;
+function rdSugerir(){
+  clearTimeout(_rdTimer);
+  _rdTimer = setTimeout(async () => {
+    const q = semAcento(document.getElementById('rd-cidade').value.trim());
+    if(q.length < 3) return;
+    if(RD_CACHE.has(q)) return rdPintaSugestoes(RD_CACHE.get(q));
+    try{
+      const r = await fetch(`${SB_URL}/rest/v1/municipios?select=codigo_ibge,nome,uf,lat,lon&nome_norm=like.${encodeURIComponent(q+'%')}&order=nome&limit=12`, {headers:SB_H});
+      if(!r.ok) return;
+      const d = await r.json();
+      RD_CACHE.set(q, d); rdPintaSugestoes(d);
+    }catch(e){ /* sugestão é conforto: sem ela ainda dá pra digitar o nome inteiro */ }
+  }, 220);
+}
+function rdPintaSugestoes(d){
+  document.getElementById('rd-lista').innerHTML = d.map(m => `<option value="${esc(m.nome)} - ${esc(m.uf)}">`).join('');
+  // se o que está digitado casa exatamente com um, já fixa a referência
+  const txt = document.getElementById('rd-cidade').value.trim();
+  const achado = d.find(m => semAcento(m.nome + ' - ' + m.uf) === semAcento(txt)) ||
+                 (d.length === 1 && semAcento(d[0].nome) === semAcento(txt) ? d[0] : null);
+  RD_REF = achado || null;
+  document.getElementById('rd-ref').textContent = RD_REF
+    ? `centro: ${RD_REF.nome}/${RD_REF.uf}`
+    : (d.length ? 'escolha uma da lista' : '');
+}
+
+async function rodarRadar(){
+  const bt = document.getElementById('rd-bt'), msg = document.getElementById('rd-msg');
+  const box = document.getElementById('rd-lista-res');
+  if(!RD_REF){ msg.textContent = 'escolha a cidade de referência na lista.'; return; }
+  if(RD_REF.lat == null){
+    // o município existe mas não tem ponto (ver ddl/municipios.sql). Dizer, não fingir.
+    msg.textContent = 'esta cidade ainda não tem coordenada na base do IBGE — escolha uma vizinha.';
+    return;
+  }
+  const raio = parseInt(document.getElementById('rd-raio').value, 10);
+  const kws = (document.getElementById('rd-kw').value.trim() || document.getElementById('f-kw').value)
+                .split(';').map(s => semAcento(s.trim())).filter(Boolean);
+  bt.disabled = true; msg.textContent = 'varrendo…'; box.innerHTML = '';
+  try{
+    // 1. CAIXA ANTES DA TRIGONOMETRIA. 1 grau de latitude ≈ 111 km; a longitude encolhe com o
+    //    cosseno da latitude. Pedir a caixa ao banco e refinar aqui evita baixar 5.570 pontos
+    //    (e evita trigonometria em cima de município que está a 2.000 km).
+    const dLat = raio / 111;
+    const dLon = raio / (111 * Math.max(0.2, Math.cos(RD_REF.lat * Math.PI/180)));
+    const q = `${SB_URL}/rest/v1/municipios?select=nome,uf,lat,lon`
+      + `&lat=gte.${(RD_REF.lat-dLat).toFixed(4)}&lat=lte.${(RD_REF.lat+dLat).toFixed(4)}`
+      + `&lon=gte.${(RD_REF.lon-dLon).toFixed(4)}&lon=lte.${(RD_REF.lon+dLon).toFixed(4)}&limit=2000`;
+    const rm = await fetch(q, {headers:SB_H});
+    if(!rm.ok) throw new Error(rm.status===401||rm.status===403 ? 'sua sessão expirou' : ('o banco respondeu '+rm.status));
+    const naCaixa = await rm.json();
+    // 2. a caixa é um quadrado; o raio é um círculo. Sem este passo, o canto do quadrado
+    //    entregaria cidade a 1,41× o raio pedido.
+    const dentro = naCaixa
+      .filter(m => m.lat != null)
+      .map(m => ({...m, km: distanciaKm(RD_REF.lat, RD_REF.lon, m.lat, m.lon)}))
+      .filter(m => m.km <= raio);
+
+    // 3. as licitações ABERTAS do NOSSO índice que batem na palavra-chave
+    const rl = await fetch(`${SB_URL}/rest/v1/licitacoes?select=municipio,uf,objeto,valor_estimado,data_encerramento&limit=1000`, {headers:SB_H});
+    const lics = rl.ok ? await rl.json() : [];
+    const agora = new Date();
+    const abertas = lics.filter(l => {
+      const fim = l.data_encerramento ? new Date(l.data_encerramento) : null;
+      if(fim && fim < agora) return false;                       // encerrada não é oportunidade
+      if(!kws.length) return true;
+      const t = semAcento(l.objeto||'');
+      return kws.some(k => t.includes(k));
+    });
+    const porCidade = new Map();
+    for(const l of abertas){
+      const k = semAcento(l.municipio||'') + '|' + (l.uf||'').toUpperCase();
+      const a = porCidade.get(k) || { n:0, valor:0 };
+      a.n++; a.valor += Number(l.valor_estimado)||0;
+      porCidade.set(k, a);
+    }
+    dentro.forEach(m => {
+      const a = porCidade.get(semAcento(m.nome) + '|' + m.uf) || { n:0, valor:0 };
+      m.lic = a.n; m.valor = a.valor;
+    });
+    // ordena por DISTÂNCIA entre as que têm licitação; as sem licitação vão pro fim
+    const comLic = dentro.filter(m => m.lic > 0).sort((a,b) => a.km - b.km);
+    const semLic = dentro.filter(m => !m.lic).sort((a,b) => a.km - b.km);
+
+    const totalLic = comLic.reduce((s,m)=>s+m.lic,0);
+    document.getElementById('rd-resumo').textContent =
+      `${dentro.length} cidade(s) em até ${raio} km · ${comLic.length} com licitação aberta · ${totalLic} licitação(ões)`;
+
+    // >>> A FRASE QUE NÃO PODE FALTAR. A contagem sai do NOSSO índice, não do Brasil. Sem isto,
+    //     "0 licitações" se lê como "não há licitação nessa região" quando a verdade pode ser
+    //     "ainda não coletamos" — e aí alguém deixa de olhar uma região inteira.
+    let h = `<div class="aviso" style="text-align:left;padding:11px 14px;margin-bottom:10px">`
+      + `<span class="hint">A contagem é do <b>nosso índice</b> (${lics.length} licitação(ões) coletadas), `
+      + `não de tudo que existe no Brasil. Cidade com <b>0</b> pode significar “ainda não coletamos”, `
+      + `não “não tem”. A distância é entre os <b>centroides</b> dos municípios.</span></div>`;
+
+    if(!comLic.length && !semLic.length){ box.innerHTML = h + '<div class="aviso">Nenhuma cidade nesse raio.</div>'; return; }
+    h += comLic.map(m => linhaRadar(m, true)).join('');
+    if(semLic.length){
+      h += `<div class="hint" style="margin:12px 0 6px">${semLic.length} cidade(s) no raio sem licitação no nosso índice:</div>`
+         + semLic.slice(0,40).map(m => linhaRadar(m, false)).join('')
+         + (semLic.length>40 ? `<div class="hint" style="padding:8px">…e mais ${semLic.length-40}.</div>` : '');
+    }
+    box.innerHTML = h;
+    msg.textContent = '';
+  }catch(e){
+    msg.textContent = '';
+    box.innerHTML = '<div class="aviso err" style="text-align:left;padding:14px">⚠️ '+esc(e.message)+'</div>';
+  }
+  bt.disabled = false;
+}
+
+function linhaRadar(m, tem){
+  return `<div class="rd${tem?'':' zero'}">
+    <div class="n">${m.lic}</div>
+    <div><div class="nome">${esc(m.nome)} <span class="hint">/${esc(m.uf)}</span></div>
+      ${tem ? `<div class="sub">${brl(m.valor)} estimado somado</div>` : ''}</div>
+    <div class="km">${m.km.toFixed(0)} km</div></div>`;
 }
 
 // ══ A PONTE ENCONTRAR → NEGÓCIOS (08/08) ══════════════════════════════════════════════════

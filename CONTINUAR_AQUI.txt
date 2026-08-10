@@ -255,7 +255,20 @@ Criado em 21/07/2026 copiando SO os arquivos do app do C:\globalmed.
             suspenso fica no funil, esmaecido e etiquetado. Agenda e sino usam a data nova na
             hora. `anotacoes` (a observacao da planilha) NAO e tocada.
             Suite testa_ficha_editavel (34). Provado com dado real + rollback.
-    [1/2] 4. RADAR por raio (2.5) — A BASE GEOGRAFICA ESTA NO AR; falta a TELA.
+    [OK] 4. RADAR por raio (2.5) — COMPLETO. A tela entrou nos LINKS DO ENCONTRAR (e ferramenta
+            de busca; virar 6a aba do portal seria esconder o que e uma forma de procurar).
+            Cidade de referencia com autocomplete por prefixo (o banco devolve 12; nao baixa os
+            5.570), raio, palavra-chave. CAIXA antes da trigonometria e REFINO por distancia
+            depois — caixa e quadrado, raio e circulo: sem refinar, o canto entregaria cidade a
+            1,41x o raio pedido. Ordena por DISTANCIA, nao por valor: a pergunta e logistica
+            (vale a viagem? o frete come a margem?).
+            >>> A FRASE QUE NAO PODE SUMIR DA TELA: a contagem e do NOSSO indice, e "0" pode
+                significar "ainda nao coletamos", nao "nao tem". Sem ela alguem descarta uma
+                regiao inteira. Distancia entre CENTROIDES, tambem dito.
+            Suite testa_radar (25), com a distancia rodada contra pares reais (Aparecida->Goiania
+            ~18km, ->Brasilia ~190km, Goiania->SP ~810km). 1.730 asserts / 0 falhas / 52 suites.
+
+    [ex] 4b. A BASE GEOGRAFICA (feita na iteracao anterior)
             5.571 municipios carregados, 5.570 com coordenada. Fonte IBGE nas duas pontas: nome
             e UF da API de localidades, PONTO derivado da MALHA oficial (centroide de AREA do
             maior anel — media de vertices puxaria o ponto pro lado mais detalhado do desenho).
