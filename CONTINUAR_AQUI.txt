@@ -255,7 +255,19 @@ Criado em 21/07/2026 copiando SO os arquivos do app do C:\globalmed.
             suspenso fica no funil, esmaecido e etiquetado. Agenda e sino usam a data nova na
             hora. `anotacoes` (a observacao da planilha) NAO e tocada.
             Suite testa_ficha_editavel (34). Provado com dado real + rollback.
-    [  ] 4. RADAR por raio (2.5) — precisa de lat/long dos municipios (IBGE, dado aberto).
+    [1/2] 4. RADAR por raio (2.5) — A BASE GEOGRAFICA ESTA NO AR; falta a TELA.
+            5.571 municipios carregados, 5.570 com coordenada. Fonte IBGE nas duas pontas: nome
+            e UF da API de localidades, PONTO derivado da MALHA oficial (centroide de AREA do
+            maior anel — media de vertices puxaria o ponto pro lado mais detalhado do desenho).
+            Conferido: Aparecida de Goiania -16.810/-49.261, e o raio de 60km devolve Goiania a
+            18,6km, Trindade a 35,6km — bate com a realidade.
+            O UNICO sem ponto e "Boa Esperanca do Norte/MT" (municipio novo, ainda fora da
+            malha): fica com lat nula e o Radar tem que IGNORAR dizendo por que.
+            ddl/municipios.sql + tools/carrega_municipios.js (previa por padrao, --apply grava).
+            Suite testa_municipios (21). Total: 1.705 asserts / 0 falhas / 51 suites.
+            >>> FALTA: a tela (palavra-chave + cidade + raio -> cidades com licitacao aberta).
+                A contagem sai do NOSSO indice (`licitacoes`), que hoje tem 70 linhas — a tela
+                precisa DIZER que conta o que nos coletamos, nao o Brasil inteiro.
     >>> 2o MERGULHO NO LICITANTE PRIME (08/08) — anexado na SECAO 8 do LICITACOES_SPEC.md.
         O que ele muda na fila:
         - GERADOR DE PROPOSTA: e pra INTEGRAR no fpmed_giovana que ja existe, NAO criar outro.
