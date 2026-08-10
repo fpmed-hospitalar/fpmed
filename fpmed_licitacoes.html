@@ -111,6 +111,13 @@ select:focus,input:focus{outline:none;border-color:var(--azul)}
 .org .sub{font-size:11.5px;color:var(--muted)}
 .org .n{margin-left:auto;text-align:right;white-space:nowrap}
 .org .n b{font-family:Montserrat;color:var(--azul-claro);font-size:14px}
+/* ── FAIXA DISCRETA DO PNCP FORA DO AR (10/08) ── contratempo não é falha do sistema.
+   Cinza-azulada e de uma linha: informa e oferece a ação, sem competir com o resultado que
+   está logo abaixo. O vermelho ficou reservado pro caso em que não há NADA a mostrar. */
+.aviso-brando{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:14px;
+  padding:10px 14px;background:var(--painel);border:1px solid var(--linha);border-left:3px solid var(--azul);
+  border-radius:10px;font-size:12.5px;color:var(--muted);line-height:1.5}
+.aviso-brando b{color:var(--texto);font-weight:600}
 /* ── RADAR ── mesma caixa dos outros painéis ── */
 #radar{display:none;background:var(--painel);border:1px solid var(--linha);border-radius:12px;padding:18px;margin-top:18px;box-shadow:var(--sombra);text-align:left}
 #radar.open{display:block}
@@ -883,6 +890,42 @@ async function buscarNoBanco(uf, mod, de, ate){
   }catch(e){ return null; }
   finally{ clearTimeout(t); }
 }
+// ── O ÍNDICE INTEIRO, sem janela de data (10/08) ──────────────────────────────────────────
+// Usado quando a janela escolhida não tem nada E o operador digitou um termo. Não filtra por
+// palavra AQUI de propósito: quem filtra é o `render`, com o mesmo `semAcento` de sempre. Mandar
+// o termo pro banco criaria um SEGUNDO filtro de palavra — e o do banco é sensível a acento
+// ("farmaceutico" não casaria com "FARMACÊUTICO"), então ele perderia justamente o que o do
+// navegador acha. Com o índice na casa dos milhares, trazer e filtrar aqui é instantâneo.
+async function buscarNoBancoAmplo(uf, mod){
+  let q = `${SB_URL}/rest/v1/licitacoes?select=bruto&order=data_publicacao.desc&limit=1000`;
+  if (uf)  q += `&uf=eq.${encodeURIComponent(uf)}`;
+  if (mod) q += `&modalidade_cod=eq.${encodeURIComponent(mod)}`;
+  const ctrl = new AbortController();
+  const t = setTimeout(()=>ctrl.abort(), TIMEOUT_MS);
+  try{
+    const r = await fetch(q, {headers:SB_H, signal:ctrl.signal});
+    if(!r.ok) return null;
+    const j = await r.json();
+    return Array.isArray(j) ? j.map(x => x.bruto).filter(Boolean) : null;
+  }catch(e){ return null; }
+  finally{ clearTimeout(t); }
+}
+
+// A FAIXA DISCRETA: o PNCP caiu, mas há resultado na tela. Fica ACIMA da lista, some sozinha do
+// caminho visual e oferece a ação — em vez do painel vermelho que substituía tudo.
+function avisoBrandoPNCP(quando){
+  const lista = document.getElementById('lista');
+  if(!lista) return;
+  const faixa = document.createElement('div');
+  faixa.className = 'aviso-brando';
+  faixa.innerHTML = '🌐 <b>O portal do governo (PNCP) não respondeu agora.</b> '
+    + 'Mostrando o nosso índice'
+    + (quando ? ', atualizado em ' + quando.toLocaleDateString('pt-BR') + ' às '
+        + quando.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}) : '')
+    + '. <button class="btn sec mini" onclick="atualizarAgora()">Tentar o PNCP de novo</button>';
+  lista.insertBefore(faixa, lista.firstChild);
+}
+
 async function carimboColeta(){
   try{
     const r = await fetch(`${SB_URL}/rest/v1/coleta_status?fonte=eq.PNCP&select=ultima_ok,ultimo_erro`, {headers:SB_H});
@@ -1532,18 +1575,37 @@ async function buscar(aoVivo){
     '<div class="skel"><div style="width:52%;height:15px"></div><div style="width:96%"></div>'
     + '<div style="width:88%"></div><div style="width:30%;margin-top:16px"></div></div>').join('');
 
-  // ── 1º: o NOSSO banco. Instantâneo e não cai. Só é pulado no "Atualizar agora". ──
-  if(!aoVivo){
-    const doBanco = await buscarNoBanco(uf, mod, de, ate);
-    if(doBanco && doBanco.length){
-      const c = await carimboColeta();
-      const q = c && c.ultima_ok ? new Date(c.ultima_ok) : null;
-      st.textContent='';
-      render(doBanco, kws, excl, null,
-        `📦 ${doBanco.length} do nosso banco` + (q ? ` · coletados em ${q.toLocaleDateString('pt-BR')} às ${q.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}` : '')
-        + (c && c.ultimo_erro ? ' · ⚠️ a última coleta falhou' : ''));
-      return;
+  // ══ BANCO PRIMEIRO, SEMPRE — inclusive no "Atualizar agora" (10/08) ═══════════════════════
+  // >>> O DEFEITO QUE ISTO CORRIGE, medido no relato do Natanael: o termo digitado NUNCA CHEGAVA
+  //     AO BANCO. O `buscarNoBanco` filtra por data + UF + modalidade; a palavra-chave só era
+  //     aplicada depois, no navegador. Com o índice congelado em 06/08 e a data padrão sendo o
+  //     último dia útil, o banco devolvia ZERO — e a tela caía no PNCP ao vivo, que estava fora.
+  //     Resultado: quem digitou um termo levou painel vermelho, com 70 licitações paradas no
+  //     nosso próprio banco.
+  // >>> E AGORA O BANCO É CONSULTADO ATÉ NO "Atualizar agora": ele deixa de ser o primeiro
+  //     caminho e vira a REDE DE SEGURANÇA. Pedir dado fresco não pode custar o dado que já se
+  //     tinha — foi exatamente isso que pintou a tela de vermelho com resultado na mão.
+  let doBanco = null, janelaAmpliada = false;
+  try{
+    doBanco = await buscarNoBanco(uf, mod, de, ate);
+    // Janela vazia + termo digitado -> pergunta ao índice INTEIRO antes de desistir do banco.
+    // "Não publicaram nada nesse dia" é uma resposta sobre a DATA, não sobre o que ele procura.
+    if((!doBanco || !doBanco.length) && kws.length){
+      const amplo = await buscarNoBancoAmplo(uf, mod);
+      if(amplo && amplo.length){ doBanco = amplo; janelaAmpliada = true; }
     }
+  }catch(e){ doBanco = null; }
+
+  const carimbo = await carimboColeta();
+  const quando = carimbo && carimbo.ultima_ok ? new Date(carimbo.ultima_ok) : null;
+  const procedenciaBanco = `📦 ${(doBanco||[]).length} do nosso índice`
+    + (janelaAmpliada ? ' · <b>fora da janela de datas</b> (nada publicado no período escolhido)' : '')
+    + (quando ? ` · coletados em ${quando.toLocaleDateString('pt-BR')} às ${quando.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}` : '');
+
+  if(!aoVivo && doBanco && doBanco.length){
+    st.textContent='';
+    render(doBanco, kws, excl, null, procedenciaBanco + (carimbo && carimbo.ultimo_erro ? ' · ⚠️ a última coleta falhou' : ''));
+    return;
   }
 
   let todos, truncado=null;
@@ -1563,12 +1625,32 @@ async function buscar(aoVivo){
       if((p1.totalPaginas||1) > TETO_PAGINAS) truncado = {lidas:tp, total:p1.totalPaginas};
     }
   }catch(e){
-    if(emCache){ st.textContent=''; render(emCache.dados,kws,excl,
-      'A API do PNCP não respondeu ('+e.message+'). Mostrando a última busca de '+new Date(emCache.quando).toLocaleTimeString('pt-BR')); return; }
-    lista.innerHTML = '<div class="aviso err"><b>⚠️ Não consegui falar com o PNCP</b>'
-      + '<div class="hint" style="margin-top:8px">'+esc(e.message)+'</div>'
+    st.textContent='';
+    // ══ O TOM (10/08) ══════════════════════════════════════════════════════════════════════
+    // >>> PAINEL VERMELHO SÓ QUANDO NÃO HÁ NADA A MOSTRAR. Com resultado na tela, o PNCP fora do
+    //     ar é um CONTRATEMPO, não uma falha do sistema — e pintar de vermelho um sistema que
+    //     está funcionando ensina o operador a desconfiar dele justamente quando ele acertou.
+    if(doBanco && doBanco.length){
+      render(doBanco, kws, excl, null, procedenciaBanco);
+      avisoBrandoPNCP(quando);
+      return;
+    }
+    if(emCache){
+      render(emCache.dados, kws, excl, null, '⚡ do cache desta sessão · ' + new Date(emCache.quando).toLocaleTimeString('pt-BR'));
+      avisoBrandoPNCP(quando);
+      return;
+    }
+    // Aqui sim: nem banco, nem cache, nem PNCP. E a mensagem separa as duas causas, porque a
+    // ação é diferente — "espera o portal voltar" não é "procura outro termo".
+    lista.innerHTML = '<div class="aviso err" style="text-align:left;padding:18px"><b>⚠️ Sem resultado por dois motivos ao mesmo tempo</b>'
+      + '<div class="hint" style="margin-top:10px;line-height:1.7">'
+      + '<b>1.</b> O portal do governo (PNCP) não respondeu: ' + esc(e.message) + '.<br>'
+      + '<b>2.</b> E o nosso índice não tem nada' + (kws.length ? ' para <b>' + esc(kws.join(' / ')) + '</b>' : ' no período escolhido')
+      + (quando ? ' (última coleta em ' + quando.toLocaleDateString('pt-BR') + ')' : ' — <b>a coleta nunca rodou com sucesso</b>')
+      + '.</div>'
       + '<button class="btn" style="margin-top:14px" onclick="buscar()">Tentar de novo</button></div>';
-    document.getElementById('kpis').style.display='none'; st.textContent=''; return;
+    document.getElementById('kpis').style.display='none';
+    return;
   }
   st.textContent='';
   render(todos, kws, excl,

@@ -388,6 +388,37 @@ Criado em 21/07/2026 copiando SO os arquivos do app do C:\globalmed.
     DEPENDEM DELE (custo/juridico): leitor de edital com IA, envio do boletim por e-mail,
     monitoramento de chat de pregao.
 
+>>> URGENCIA 10/08 (2a) — "PNCP nao respondeu em 20s" na busca do Natanael. TRES DEFEITOS, e o
+    do meio ninguem tinha visto.
+    1. A COLETA ESTA PARADA, e a causa e o passo que sobrou pro Lemuel desde 06/08:
+       o workflow RODA (12 rodadas, 3x/dia) e FALHA nas 12 — o passo "Conferir o segredo" quebra
+       porque o COLETA_TOKEN **nao esta nos Secrets do GitHub**. Medido no banco:
+         coleta_status.ultima_ok = NULL (NUNCA houve rodada limpa)
+         ultima_tentativa = 06/08 14:38 · ultimo_erro = "This operation was aborted"
+         licitacoes = 70 linhas, a mais nova coletada em 06/08 14:26
+       >>> O PASSO E DELE (nao da pra fazer daqui, nao ha `gh` logado):
+           GitHub -> fpmed-hospitalar/fpmed -> Settings -> Secrets and variables -> Actions ->
+           New repository secret -> nome COLETA_TOKEN, valor = a linha COLETA_TOKEN do
+           segredos.local.txt. Sem isso o indice fica congelado em 06/08 pra sempre.
+    2. *** O TERMO DIGITADO NUNCA CHEGAVA AO BANCO. *** O `buscarNoBanco` filtrava por data +
+       UF + modalidade; a palavra-chave so era aplicada DEPOIS, no navegador. Com o indice
+       congelado em 06/08 e a data padrao sendo o ultimo dia util, o banco devolvia ZERO e a
+       tela caia no PNCP ao vivo — que estava fora. O termo dele nunca foi perguntado a quem
+       tinha a resposta.
+       CORRIGIDO: janela vazia + termo digitado -> pergunta ao indice INTEIRO (buscarNoBancoAmplo)
+       antes de desistir do banco, e a tela DIZ que ampliou a janela. E o banco passou a ser
+       consultado ATE no "Atualizar agora", como rede de seguranca: pedir dado fresco nao pode
+       custar o dado que ja se tinha.
+       >>> O termo NAO vai pro banco de proposito: quem filtra palavra e o `render`, com o mesmo
+           semAcento de sempre. Filtrar no banco criaria um SEGUNDO filtro, sensivel a acento
+           ("farmaceutico" nao casa com "FARMACÊUTICO"), que perderia o que o do navegador acha.
+    3. O TOM. Com resultado na tela, PNCP fora do ar virou FAIXA DISCRETA ("O portal do governo
+       nao respondeu agora. Mostrando o nosso indice, atualizado em ... [Tentar o PNCP de novo]").
+       O painel VERMELHO ficou so pro caso em que nao ha NADA — e ai ele SEPARA as duas causas,
+       porque a acao e diferente: "espera o portal voltar" nao e "procura outro termo". Ele
+       tambem denuncia quando a coleta NUNCA rodou, que e o caso de hoje.
+    Suite nova testa_pncp_fora (24). Total: 1.856 asserts / 0 falhas / 56 suites.
+
 >>> URGENCIA 10/08 — "o Natanael nao consegue editar nada". NAO ERA PAPEL, ERA VERSAO EM CACHE.
     A suspeita era trava de papel. Medido, e o papel dele estava CERTO desde a criacao:
       app_metadata.role = "diretor"  ·  perfis.papel = gestor_geral  ·  cargo_gestor() = true

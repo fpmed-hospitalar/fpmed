@@ -147,14 +147,22 @@ const X = {
 {
   const fs = require('fs'), path = require('path');
   const tela = fs.readFileSync(path.join(__dirname, '..', 'fpmed_licitacoes.html'), 'utf8');
-  ok('37. *** a busca tenta o NOSSO banco antes do PNCP ***',
-    /if\(!aoVivo\)\{\s*\n\s*const doBanco = await buscarNoBanco/.test(tela));
+  // >>> A GARANTIA FICOU MAIS FORTE EM 10/08, e o assert acompanhou: o banco deixou de ser
+  //     consultado "quando nao e ao vivo" e passou a ser consultado SEMPRE — no "Atualizar
+  //     agora" ele vira REDE DE SEGURANCA. Pedir dado fresco nao pode custar o dado que ja se
+  //     tinha, que foi o que pintou a tela de vermelho com resultado na mao (urgencia do
+  //     Natanael, 10/08).
+  ok('37. *** a busca consulta o NOSSO banco SEMPRE, antes do PNCP ***',
+    /doBanco = await buscarNoBanco\(uf, mod, de, ate\);/.test(tela)
+    && !/if\(!aoVivo\)\{\s*\n\s*const doBanco = await buscarNoBanco/.test(tela));
+  ok('37b. ...e so RENDERIZA direto do banco quando nao e "Atualizar agora"',
+    /if\(!aoVivo && doBanco && doBanco\.length\)\{/.test(tela));
   ok('38. o banco devolve o `bruto`, que e a MESMA forma que o render ja consome',
     /select=bruto/.test(tela) && /j\.map\(x => x\.bruto\)/.test(tela));
   // sem isso haveria um segundo caminho de codigo pra divergir do primeiro com o tempo
   ok('39. *** banco vazio ou fora CAI pro ao vivo (nunca mostra vazio dizendo que nao ha licitacao) ***',
     /if\(doBanco && doBanco\.length\)\{/.test(tela) && /catch\(e\)\{ return null; \}/.test(tela));
-  ok('40. a tela diz DE ONDE veio o que esta nela', /do nosso banco/.test(tela) && /ao vivo do PNCP/.test(tela));
+  ok('40. a tela diz DE ONDE veio o que esta nela', /do nosso índice/.test(tela) && /ao vivo do PNCP/.test(tela));
   ok('41. ...e de QUANDO (o carimbo da coleta)', /coletados em \$\{/.test(tela) || /coletados em /.test(tela));
   ok('42. avisa quando a ultima coleta falhou', /a última coleta falhou/.test(tela));
   ok('43. e tem o botao "Atualizar agora", que forca o ao vivo',
