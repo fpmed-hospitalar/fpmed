@@ -284,6 +284,7 @@ Criado em 21/07/2026 copiando SO os arquivos do app do C:\globalmed.
                 fica VERMELHO se divergirem. PENDENCIA: o conserto definitivo e o Licitacoes
                 CARREGAR este arquivo em vez de ter copia; nao fiz hoje pra nao mexer no
                 cruzamento que esta no ar.
+                >>> [OK 10/08] A COPIA ACABOU — ver a entrada "MOTOR DE DOSE EM UM LUGAR SO".
             [OK] A TELA DO CONFERIDOR (fpmed_conferidor.html, 6a aba do portal): cola o texto ou
                  envia PDF/Excel. O PDF e lido NO NAVEGADOR (pdf.js, mesma tecnica do Atualizar
                  Estoque — agrupa por Y pra preservar a linha); Excel pelo SheetJS. Placar no
@@ -441,6 +442,28 @@ Criado em 21/07/2026 copiando SO os arquivos do app do C:\globalmed.
         nao pode ser dispensavel; e quem esta ha dias atras precisa saber disso, nao so ser
         convidado a atualizar. NAO alterei o limedtec-pwa.js aqui: e arquivo de MOLDE, e a regra
         e "o que vale pra qualquer cliente conserta-se na fabrica".
+
+>>> 10/08 — MOTOR DE DOSE EM UM LUGAR SO. A pendencia registrada no item 5 esta FECHADA.
+    O fpmed_licitacoes.html tinha `semAcento`/`doses`/`concMags`/`forma` escritas dentro dele, e
+    o fpmed_teto_cmed.js tinha as MESMAS quatro. O teste comparava as duas versoes — o que pega a
+    divergencia SILENCIOSA, nao a divergencia. E a copia ja tinha custado caro uma vez: a do motor
+    nasceu sem duas linhas do `forma` (colirio e spray) e colirio virava "forma desconhecida" de
+    um lado e nao do outro.
+    AGORA: a tela CARREGA o motor (<script src="fpmed_teto_cmed.js">, o mesmo arquivo que o
+    Conferidor e as Propostas ja carregavam) e pega as quatro do window. Uma versao viva, tres
+    telas em cima. Os comentarios que explicam CADA regra (gauge da agulha, concentracao que nao
+    e volume, forma farmaceutica) foram junto pro motor — sem eles a proxima pessoa "simplifica"
+    a regra e reabre defeito que ja custou depuracao no ar.
+    >>> SEM O MOTOR A TELA NAO ABRE, E DIZ POR QUE. Faixa vermelha legivel + para. Seguir com as
+        funcoes faltando faria o cruzamento comparar dose com dose que nao existe, CALADO — e o
+        cruzamento e justamente quem afirma "este item do edital e o nosso produto". O arquivo ja
+        estava na casca do sw.js desde 08/08 (tem assert cobrindo isso agora).
+    O teste virou do avesso, de proposito: a secao 7 do testa_teto_cmed antes exigia que as duas
+    copias fossem IDENTICAS; agora exige que a copia NAO EXISTA (nenhum `function doses(` no HTML)
+    e que a tela carregue e trave. As 5 suites que extraem codigo do HTML (licitacoes, cruzamento,
+    pesquisa avancada, meus jornais) passaram a entregar um `window` de mentira carregando o motor
+    DE VERDADE — que e exatamente como a tela roda no navegador.
+    Total: 1.860 asserts / 0 falhas / 56 suites. sw VERSAO -> 2026-08-10-2 (casca nova).
 
 >>> ENTREGA 07/08 — PRIMEIRO GESTOR DA FPMED CRIADO E PROVADO COM LOGIN REAL
     licitacao@fpmed.com.br · Natanael · gestor_geral · e-mail JA CONFIRMADO.

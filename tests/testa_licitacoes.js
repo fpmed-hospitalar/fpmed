@@ -11,12 +11,15 @@ function bloco(ini, fim) {
   if (s < 0 || e < 0) throw new Error('ancora: ' + ini);
   return src.slice(s, e);
 }
-const ctx = (new Function(
-  bloco('const semAcento =', 'const ymd =') +
+// `window` de mentira com o motor DE VERDADE: desde 10/08 a tela nao escreve mais `semAcento`,
+// ela pega do fpmed_teto_cmed.js carregado no <head>.
+const win = { LimedtecTetoCMED: require(path.join(__dirname, '..', 'fpmed_teto_cmed.js')) };
+const ctx = (new Function('window',
+  bloco('const { semAcento', 'const ymd =') +
   bloco('const CATEGORIAS =', 'function categorias') +
   bloco('function categorias', '// ══ PACK') +      // âncora movida: o bloco da ADERÊNCIA virou o cruzamento por item
   bloco('function ultimoDiaUtil', '(function(){ const d=ultimoDiaUtil') +
-  'return { categorias, ultimoDiaUtil, semAcento };'))();
+  'return { categorias, ultimoDiaUtil, semAcento };'))(win);
 const { categorias, ultimoDiaUtil } = ctx;
 
 let p = 0, f = 0;

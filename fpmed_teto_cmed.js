@@ -34,14 +34,17 @@
 (function (raiz) {
   'use strict';
 
-  // ── ESTAS QUATRO SÃO CÓPIA VERBATIM DO fpmed_licitacoes.html ────────────────────────────
-  // O cruzamento do Licitações já as usa e já foi validado no ar contra dado real (4 defeitos
-  // corrigidos em 05/08: calibre French virando pack, match por 1 palavra, volume confundido com
-  // concentração, corrida com o gm-auth). Reescrever aqui seria refazer aquela depuração.
-  // >>> E A CÓPIA É VIGIADA: o tests/testa_teto_cmed.js compara as duas versões e fica VERMELHO
-  //     se alguém mexer em uma e esquecer da outra. A cópia não é o problema; a cópia
-  //     silenciosa é. (O conserto definitivo é o Licitações passar a carregar este arquivo —
-  //     registrado como pendência, não feito hoje pra não mexer no cruzamento que está no ar.)
+  // ── AS QUATRO FUNÇÕES DE DOSE, EM UM LUGAR SÓ ───────────────────────────────────────────
+  // Elas nasceram no fpmed_licitacoes.html, onde o cruzamento por item já as validou no ar
+  // contra dado real (4 defeitos corrigidos em 05/08: calibre French virando pack, match por 1
+  // palavra, volume confundido com concentração, corrida com o gm-auth). Em 08/08 vieram pra cá
+  // COPIADAS, com um teste comparando as duas versões — o que impede a divergência SILENCIOSA,
+  // não a divergência. E a cópia pegou defeito na primeira execução: esta aqui nasceu sem duas
+  // linhas do `forma` (colírio/oftálmico e spray/aerossol), e colírio virava "forma
+  // desconhecida" de um lado e não do outro.
+  // >>> 10/08: A CÓPIA ACABOU. O fpmed_licitacoes.html carrega este arquivo e não escreve mais
+  //     nenhuma das quatro. Quem mexer numa regra de dose mexe AQUI, e as três telas
+  //     (Licitações, Conferidor e Propostas) mudam juntas — que é o ponto.
   const semAcento = s => { let o=''; for(const c of String(s||'').normalize('NFD')){ const k=c.codePointAt(0); if(k>=0x300&&k<=0x36f) continue; o+=c; } return o.toLowerCase(); };
 
   function doses(s){
@@ -67,6 +70,11 @@
     return out;
   }
 
+  // CONCENTRAÇÃO ≠ VOLUME. Visto no ar em 05/08: "ACETILCISTEINA 40MG/ML XPE 120ML" do edital
+  // casou como "dose confere" com a nossa de 20MG só porque os dois dizem 120ML — o volume do
+  // frasco é EMBALAGEM, a concentração é a IDENTIDADE do medicamento. Aqui a concentração vira
+  // uma magnitude comparável ("20mg/ml" e "20mg" viram ambos 20mg, que é a mesma coisa dita de
+  // dois jeitos) e passa a ser condição de aceite quando os DOIS lados a declaram.
   function concMags(s){
     let t = semAcento(s).replace(/,/g,'.');
     const out = new Set(); let m;
@@ -88,6 +96,9 @@
     return out;
   }
 
+  // FORMA FARMACÊUTICA: comprimido não é injetável, e xarope não é pomada. Sem isto, "DIPIRONA
+  // 500MG 200CPR" casava com "dipirona 500 mg/ml solução injetável" — mesmo princípio, mesmo
+  // número, produto completamente diferente. null = não deu pra saber, e aí não rejeita nada.
   function forma(s){
     const t = semAcento(s);
     if(/injet|ampola|\bamp\b|f\s*\/\s*a|frasco.ampola|\biv\b|\bim\b|infusao|bolsa/.test(t)) return 'INJ';

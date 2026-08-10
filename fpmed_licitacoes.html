@@ -23,6 +23,7 @@
 <script src="limedtec-tema.js"></script>
 <script src="limedtec-licenca.js"></script>
 <script src="gm-auth.js?v=sessao-06ago"></script>
+<script src="fpmed_teto_cmed.js"></script>
 <style>
 /* ══ TEMA ESCURO — só esta tela (decisão do Lemuel: Licitações é a "tela premium";
    o resto do sistema segue claro). A disposição espelha o SIGA, mas a IDENTIDADE é FPMED:
@@ -449,6 +450,26 @@ select:focus,input:focus{outline:none;border-color:var(--azul)}
   }catch(e){}
 })();
 
+// ── O MOTOR DE DOSE É UM ARQUIVO SÓ (10/08) ───────────────────────────────────────────────
+// Até hoje esta tela tinha CÓPIA de `semAcento`/`doses`/`concMags`/`forma`, e o
+// fpmed_teto_cmed.js tinha as mesmas quatro. Um teste comparava as duas versões e ficava
+// vermelho quando divergiam — isso impede a divergência SILENCIOSA, não a divergência. E a
+// cópia já tinha pegado defeito de verdade: a do motor nasceu sem duas linhas do `forma`
+// (colírio/oftálmico e spray/aerossol), e colírio virava "forma desconhecida" de um lado e não
+// do outro. Agora existe UMA versão, carregada dos dois lugares.
+// SE O MOTOR NÃO VIER, A TELA DIZ E PARA. Seguir sem ele deixaria o cruzamento comparando dose
+// com dose que não existe — e é justamente o cruzamento que diz "este item do edital é o nosso".
+// Errar calado aqui vale mais caro que não abrir.
+if(!window.LimedtecTetoCMED){
+  document.body.insertAdjacentHTML('afterbegin',
+    '<div style="margin:12px;padding:14px 16px;border:1px solid #b23;border-radius:10px;' +
+    'background:#2a1116;color:#ffd9df;font:14px/1.5 system-ui,sans-serif">' +
+    '<b>Não consegui carregar o motor de comparação</b> (fpmed_teto_cmed.js).<br>' +
+    'A tela não abre sem ele — o cruzamento com o nosso estoque depende desse arquivo. ' +
+    'Recarregue a página; se continuar, feche e abra o aplicativo por completo.</div>');
+  throw new Error('fpmed_teto_cmed.js nao carregou');
+}
+
 const API = 'https://pncp.gov.br/api/consulta/v1/contratacoes/publicacao';
 const CACHE_MIN = 15;
 const cache = new Map();
@@ -461,7 +482,9 @@ const brl = n => (Number(n)||0).toLocaleString('pt-BR',{style:'currency',currenc
 const dt  = s => { if(!s) return null; const d=new Date(s); return isNaN(d)?null:d; };
 const fmtDt = s => { const d=dt(s); return d ? d.toLocaleDateString('pt-BR')+' às '+d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}) : '—'; };
 const esc = s => String(s==null?'':s).replace(/[<>&"]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c]));
-const semAcento = s => { let o=''; for(const c of String(s||'').normalize('NFD')){ const k=c.codePointAt(0); if(k>=0x300&&k<=0x36f) continue; o+=c; } return o.toLowerCase(); };
+// >>> ESTAS QUATRO VÊM DO MOTOR (fpmed_teto_cmed.js), não são mais escritas aqui. A razão está
+//     no comentário lá em cima, junto da trava que impede a tela de abrir sem ele.
+const { semAcento, doses, concMags, forma } = window.LimedtecTetoCMED;
 const ymd = d => { const p=n=>String(n).padStart(2,'0'); return d.getFullYear()+p(d.getMonth()+1)+p(d.getDate()); };
 const iso = d => d.toISOString().slice(0,10);
 
@@ -589,68 +612,10 @@ function termos(s){
   return semAcento(s).replace(/[^a-z0-9]+/g,' ').split(' ')
     .filter(t => t.length>=4 && !STOP.has(t) && !/^\d+$/.test(t));
 }
-function doses(s){
-  const t = semAcento(s).replace(/,/g,'.');
-  const out = new Set(); let m;
-  const re = /(\d+(?:\.\d+)?)\s*(mg\/ml|mcg\/ml|ui\/ml|g\/ml|mg|mcg|ui|ml|%|g\b)/g;
-  while((m = re.exec(t))){
-    const n = parseFloat(m[1]);                    // 03ml -> 3ml · 0.100mg -> 0.1mg
-    if(!isFinite(n)) continue;
-    out.add(n + m[2].trim());
-  }
-  // GAUGE de agulha: o nosso nome escreve "22GX1" (o `g` colado no `x` não fecha \b e escapava
-  // do laço acima) e o edital escreve "23 g x 1". Sem isto, 22G e 23G casavam como se fossem a
-  // mesma agulha — que é exatamente o erro que o discriminador de dose existe pra impedir.
-  const reG = /(\d{1,2})\s*g\s*x\s*\d/g;
-  while((m = reG.exec(t))) out.add(parseFloat(m[1]) + 'g');
-  // CATMAT escreve a medida como "capacidade: 3" (sem unidade) onde o nosso nome escreve "3ML".
-  // Sem isto, a seringa de 60 ml casava com o item de 3 ml, porque o lado do edital não tinha
-  // dose nenhuma pra discordar. Só vale quando o número vem PELADO — "capacidade: 100 litros"
-  // traz unidade e é ignorado de propósito (bebedouro não é seringa).
-  const reC = /capacidade\s*:?\s*(\d+(?:\.\d+)?)(?!\s*[a-z0-9])/g;
-  while((m = reC.exec(t))) out.add(parseFloat(m[1]) + 'ml');
-  return out;
-}
-
-// CONCENTRAÇÃO ≠ VOLUME. Visto no ar em 05/08: "ACETILCISTEINA 40MG/ML XPE 120ML" do edital casou
-// como "dose confere" com a nossa de 20MG só porque os dois dizem 120ML — o volume do frasco é
-// EMBALAGEM, a concentração é a IDENTIDADE do medicamento. Aqui a concentração vira uma magnitude
-// comparável ("20mg/ml" e "20mg" viram ambos 20mg, que é a mesma coisa dita de dois jeitos) e
-// passa a ser condição de aceite quando os DOIS lados a declaram.
-function concMags(s){
-  let t = semAcento(s).replace(/,/g,'.');
-  const out = new Set(); let m;
-  // "50MG/5ML" é 10 mg por ml, NÃO 50 — e o edital escreve a mesma coisa como "10MG/ML".
-  // Visto no ar em 05/08: sem esta redução, a nossa ACEBROFILINA 50MG/5ML aparecia como
-  // "dose confere" num item de 50MG/ML, que é cinco vezes mais concentrado. O trecho é
-  // consumido aqui pra não ser relido lá embaixo como um "50mg" solto.
-  t = t.replace(/(\d+(?:\.\d+)?)\s*(mg|mcg|g|ui)\s*\/\s*(\d+(?:\.\d+)?)\s*ml/g, (todo, n, u, d) => {
-    const por = parseFloat(n) / parseFloat(d);
-    if(isFinite(por) && por > 0) out.add(+por.toFixed(4) + u);
-    return ' ';
-  });
-  const re = /(\d+(?:\.\d+)?)\s*(mg\/ml|mcg\/ml|ui\/ml|g\/ml|mg|mcg|ui|%|g\b)/g;
-  while((m = re.exec(t))){
-    const n = parseFloat(m[1]);
-    if(!isFinite(n)) continue;
-    out.add(n + m[2].split('/')[0].trim());          // 500mg/ml -> 500mg
-  }
-  return out;
-}
-
-// FORMA FARMACÊUTICA: comprimido não é injetável, e xarope não é pomada. Sem isto, "DIPIRONA
-// 500MG 200CPR" casava com "dipirona 500 mg/ml solução injetável" — mesmo princípio, mesmo número,
-// produto completamente diferente. null = não deu pra saber, e aí não rejeita nada.
-function forma(s){
-  const t = semAcento(s);
-  if(/injet|ampola|\bamp\b|f\s*\/\s*a|frasco.ampola|\biv\b|\bim\b|infusao|bolsa/.test(t)) return 'INJ';
-  if(/comprimid|\bcpr\b|\bcomp\b|caps|drage|\bdrg\b|revestid/.test(t))                    return 'ORAL_SOL';
-  if(/xarope|\bxpe\b|suspensao|solucao oral|gotas|\bgts\b|elixir|sache/.test(t))          return 'ORAL_LIQ';
-  if(/pomada|creme|\bgel\b|unguento|locao|topic/.test(t))                                  return 'TOPICO';
-  if(/colirio|oftalmic/.test(t))                                                           return 'OFT';
-  if(/spray|aeross?ol|inalat|nebuliz/.test(t))                                             return 'SPRAY';
-  return null;
-}
+// >>> `doses`, `concMags` e `forma` NÃO MORAM MAIS AQUI. Estavam escritas nesta tela e, iguais,
+//     no fpmed_teto_cmed.js — as duas versões vivas ao mesmo tempo. Agora são as do motor,
+//     carregado no <head>, e o que explica cada linha delas (o gauge da agulha, a concentração
+//     que não é volume, a forma farmacêutica) foi junto pro arquivo do motor.
 
 // Índice do estoque: termo -> linhas. Só os 4 primeiros termos do nome entram (a cabeça é a
 // identidade do produto; a cauda é embalagem/marca e geraria par com meio mundo).

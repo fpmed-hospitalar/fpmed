@@ -44,7 +44,10 @@ function campo(id) {
   return CAMPOS[id];
 }
 const doc = { getElementById: id => (CAMPOS[id] === undefined ? null : CAMPOS[id]) };
-const win = {};
+// Desde 10/08 o bloco de constantes da tela abre com `const { semAcento, ... } =
+// window.LimedtecTetoCMED` -- a tela carrega o motor em vez de escrever as funcoes de dose de
+// novo. O `window` de mentira entrega o motor DE VERDADE, como no navegador.
+const win = { LimedtecTetoCMED: require(path.join(__dirname, '..', 'fpmed_teto_cmed.js')) };
 for (const id of ['f-kw', 'f-excluir', 'f-uf', 'f-mod', 'f-de', 'f-ate', 'f-portal', 'f-modo',
                   'f-sit', 'f-orgao', 'f-srp', 'f-vmin', 'f-vmax', 'jornais', 'jor-lista',
                   'jor-resumo', 'lk-jornais']) campo(id);

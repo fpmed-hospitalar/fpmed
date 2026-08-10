@@ -124,38 +124,44 @@ const IDX = M.indexar({
     !!M.avaliar({ descricao:'DIPIRONA 1000MG', precoUnit:1, unitario:true }, IDX).evidencia);
 }
 
-// ══════════ 7. AS COPIAS NAO PODEM DIVERGIR DO LICITACOES ══════════
-// A cópia nao e o problema; a copia SILENCIOSA e. Se alguem corrigir a dose num arquivo e
-// esquecer do outro, o Conferidor e o Licitacoes passam a discordar sobre o mesmo produto.
+// ══════════ 7. NAO EXISTE MAIS COPIA: O LICITACOES CARREGA ESTE ARQUIVO ══════════
+// ATE 10/08 este bloco COMPARAVA as duas versoes das funcoes de dose e ficava vermelho quando
+// divergiam. Isso pegava a divergencia silenciosa, nao a divergencia -- e a copia ja tinha
+// pegado defeito de verdade (o `forma` do motor nasceu sem colirio e sem spray). Agora a tela
+// carrega o motor, e o que este bloco protege e A AUSENCIA DA COPIA: no dia em que alguem
+// colar de novo um `function doses(` dentro do HTML, nascem duas verdades outra vez.
 {
-  const corpo = (txt, nome) => {
-    const i = txt.indexOf('function ' + nome + '(');
-    if(i < 0) return null;
-    let n = 0, j = txt.indexOf('{', i);
-    for(let k = j; k < txt.length; k++){
-      if(txt[k] === '{') n++;
-      else if(txt[k] === '}'){ n--; if(!n) return txt.slice(i, k+1).replace(/\s+/g,' ').trim(); }
-    }
-    return null;
-  };
+  ok('30. *** o fpmed_licitacoes.html CARREGA o motor ***',
+    /<script src="fpmed_teto_cmed\.js"><\/script>/.test(licit));
+  ok('31. ...e o pega do window, em vez de escrever de novo',
+    /const \{ semAcento, doses, concMags, forma \} = window\.LimedtecTetoCMED;/.test(licit));
   for(const fn of ['doses','concMags','forma']){
-    const a = corpo(licit, fn), b = corpo(motor, fn);
-    ok('30.`' + fn + '` e IDENTICA nos dois arquivos', a && b && a === b,
-      a === b ? undefined : { licitacoes: (a||'').slice(0,90), motor: (b||'').slice(0,90) });
+    ok('32.*** o HTML NAO define mais `' + fn + '` (copia = duas verdades) ***',
+      !new RegExp('\\n\\s*function ' + fn + '\\s*\\(').test(licit));
   }
-  ok('31. semAcento tambem', licit.includes("const semAcento = s => { let o=''") && motor.includes("const semAcento = s => { let o=''"));
-  ok('32. *** e o arquivo REGISTRA que a copia e vigiada (pra ninguem "limpar" o teste) ***',
-    /a cópia\s+silenciosa é/.test(motor.replace(/\s+/g,' ')) || /A cópia não é o problema/.test(motor));
+  ok('33. e nem o semAcento', !/\n\s*const semAcento = s =>/.test(licit));
+  // SEM MOTOR A TELA NAO ABRE, e diz por que. O contrario -- seguir com as funcoes faltando --
+  // faria o cruzamento comparar dose com dose que nao existe, calado.
+  ok('34. *** o HTML PARA e AVISA se o motor nao carregar ***',
+    /if\(!window\.LimedtecTetoCMED\)\{/.test(licit) &&
+    /nao carregou|não carregou/.test(licit) && /Recarregue a p/.test(licit));
+  ok('35. o motor entra na casca do service worker (senao offline a tela morre)',
+    fs.readFileSync(path.join(raiz, 'sw.js'), 'utf8').includes('fpmed_teto_cmed.js'));
 }
 
 // ══════════ 8. O MOTOR E COMPARTILHADO DE VERDADE ══════════
-ok('33. exporta pro navegador E pro node (as duas telas e o teste)',
+ok('36. exporta pro navegador E pro node (as tres telas e o teste)',
   /raiz\.LimedtecTetoCMED = API/.test(motor) && /module\.exports = API/.test(motor));
-ok('34. indexar declara o tamanho do que carregou (pra tela dizer "conferi contra N")',
+ok('37. indexar declara o tamanho do que carregou (pra tela dizer "conferi contra N")',
   !!M.indexar({}).tamanho);
-ok('35. indice vazio nao estoura: devolve nao_encontrado',
+ok('38. indice vazio nao estoura: devolve nao_encontrado',
   M.avaliar({ descricao:'DIPIRONA 1000MG', precoUnit:1, unitario:true }, M.indexar({})).situacao === 'nao_encontrado');
-ok('36. item nulo nao estoura', M.avaliar(null, IDX).situacao === 'nao_encontrado');
+ok('39. item nulo nao estoura', M.avaliar(null, IDX).situacao === 'nao_encontrado');
+// O motor precisa continuar sabendo POR QUE cada regra de dose existe -- os comentarios vieram
+// do fpmed_licitacoes.html junto com as funcoes. Sem eles, a proxima pessoa "simplifica" o
+// gauge da agulha ou a reducao de 50MG/5ML e reabre defeito que ja custou depuracao no ar.
+ok('40. *** o motor carrega a razao das regras (gauge, concentracao x volume, forma) ***',
+  /GAUGE de agulha/.test(motor) && /CONCENTRAÇÃO ≠ VOLUME/.test(motor) && /FORMA FARMACÊUTICA/.test(motor));
 
 console.log('\nRESULTADO: ' + p + ' ok, ' + f + ' falha(s)');
 if (f) process.exit(1);

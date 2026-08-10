@@ -16,13 +16,19 @@ function bloco(ini, fim) {
   if (s < 0 || e < 0) throw new Error('ancora sumiu do HTML: ' + ini);
   return src.slice(s, e);
 }
-const ctx = (new Function(
-  bloco('const semAcento =', 'const ymd =') +
+// A TELA NAO ESCREVE MAIS AS FUNCOES DE DOSE (10/08): ela carrega o fpmed_teto_cmed.js e
+// destrincha `semAcento`/`doses`/`concMags`/`forma` do `window.LimedtecTetoCMED`. Entao o teste
+// entrega um `window` de mentira carregando o motor DE VERDADE -- que e como a tela roda no
+// navegador. Se um dia a tela voltar a ter copia propria, este `window` vira decoracao e o
+// assert de "sem copia" no testa_teto_cmed fica vermelho.
+const win = { LimedtecTetoCMED: require(path.join(__dirname, '..', 'fpmed_teto_cmed.js')) };
+const ctx = (new Function('window',
+  bloco('const { semAcento', 'const ymd =') +
   bloco('// ══ PACK', '// ══ MATCHING') +
   bloco('const STOP =', '// ADERÊNCIA:') +
   bloco('function numCompra', '\n\n// ══ ESTOQUE') +
   'return { qtdEmbalagem, unitarioNosso, unitarioEdital, unidadePack, doses, termos,' +
-  '         indexaEstoque, cruzaItem, numCompra };'))();
+  '         indexaEstoque, cruzaItem, numCompra };'))(win);
 const { qtdEmbalagem, unitarioNosso, unitarioEdital, unidadePack, doses,
         indexaEstoque, cruzaItem, numCompra } = ctx;
 

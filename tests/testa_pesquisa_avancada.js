@@ -30,7 +30,9 @@ function bloco(ini, fim) {
 const CAMPOS = {};
 const elem = id => (CAMPOS[id] === undefined ? null : CAMPOS[id]);
 const doc = { getElementById: elem };
-const win = {};
+// O `window` carrega o motor DE VERDADE: desde 10/08 o bloco de constantes da tela abre com
+// `const { semAcento, ... } = window.LimedtecTetoCMED` em vez de escrever as funcoes de novo.
+const win = { LimedtecTetoCMED: require(path.join(__dirname, '..', 'fpmed_teto_cmed.js')) };
 
 // A ancora foi ate `ultimoDiaUtil` porque o `filtrosDaTela()` (06/08, Meus Jornais) precisa de
 // `iso` e `ultimoDiaUtil` pra decidir se a janela de data e movel ou fixa. Extrair menos que
