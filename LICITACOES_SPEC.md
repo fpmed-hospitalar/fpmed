@@ -640,6 +640,62 @@ coluna `licitacoes.portal` já nasceu preparada para outras fontes (decisão de 
 vitória medida no item 8): **BNC 23,0%** · **LICITANET 22,9%** · **BLL 19,6%** · **GOV.BR 13,0%**.
 Ou seja: se um dia entrar uma segunda fonte, ela deve ser o **BNC** — é onde a empresa mais ganha.
 
+### 8.4-B A FICHA DO NEGÓCIO DELES — **eu VI esta tela** (captura de 08/08)
+
+> ⚠️ Diferente do resto da seção 8, **este item eu vi de fato**: o Lemuel capturou a ficha e eu
+> abri a imagem. O que está aqui é observação direta, não relato. (O arquivo fica **fora do
+> repositório** — `.gitignore`, linha `licitante-prime*.gif`. Dois motivos independentes: é
+> material de produto de terceiro, e a captura tem **imagem de pessoa**. Publicar rosto em repo
+> aberto não se desfaz com `git rm` — o commit fica no histórico e nos espelhos.)
+
+**Estrutura:** modal sobre o kanban, com **4 abas** — *Informações · Documentos · Lembretes ·
+Observações*.
+
+**Cabeçalho** (faixa roxa): badge da modalidade (`PREGÃO - PRESENCIAL`) · `edital: 45141132000171-1-000052/2026`
+· **etiqueta da empresa** no canto (`LAFAG N.O.`) · e o nome do órgão em destaque abaixo.
+→ A etiqueta de empresa confirma a decisão do Lemuel de 05/08 (badge visível mesmo com uma só).
+
+**Corpo da aba Informações**, na ordem em que aparece:
+1. `OBJETO DA LICITAÇÃO` em caixa de destaque, no topo — é o que se lê primeiro.
+2. Dois cartões: **`Data de abertura (original)`** (`22/06/2026, 00:00:00`) e `Localização`.
+3. Três cartões editáveis: **`Data no calendário`** · `Valor estimado` · `Valor do Contrato Ganho`.
+4. `ID Licitante Prime` discreto no rodapé.
+
+> **>>> O QUE ISSO CONFIRMA DO NOSSO DESENHO:** eles separam **"data original"** de **"data no
+> calendário"**, exatamente como a urgência de 08/08 resolveu aqui — o dado que veio da fonte
+> fica intocado e a edição vive em campo próprio. A diferença é que o nosso guarda **rastro**
+> (`negocio_alteracoes`, por gatilho): eles mostram a original, nós mostramos a original **e**
+> quem mudou, de quanto para quanto, e quando.
+
+**Padrão de edição — e aqui eles são melhores que nós hoje:** cada campo editável tem um botão
+pequeno **"✏ Alterar"** ao lado do valor. Edição **campo a campo**, não um "modo edição" da ficha
+inteira (que é o que a nossa faz desde 08/08).
+> **Recomendação:** adotar o campo-a-campo. O nosso formulário abre tudo de uma vez e salva tudo
+> junto — quem foi corrigir o número do pregão pode arrastar sem querer a data e salvar as duas.
+> O rastro registraria a mudança acidental fielmente, o que não conserta nada. **Menos superfície
+> aberta por vez = menos chance de salvar o que não se quis.**
+
+**⬜ PENDÊNCIA QUE ISTO REVELOU:** o `Valor do Contrato Ganho` é **editável** na ficha deles. Na
+nossa, `valor_ganho` é **só leitura** e só aparece para gestor. Ele precisa ser editável (com a
+mesma regra de visibilidade) — é o número que alimenta a taxa de vitória, e hoje só entra por
+carga da planilha.
+
+**Quando aplicar:** as 4 abas entram quando o loop passar pela ficha —
+*Lembretes* (item 7) nasce **como aba**, não tela separada; *Observações* é a coluna `anotacoes`
+que já existe, só ganhando aba; *Documentos* é **atalho filtrado** para o nosso Gestor de
+Documentos, sem duplicar dado.
+
+### 8.4-C MENU LATERAL DELES (confirmado na captura)
+
+`Buscar Licitações · Radar de Licitações · Licitações favoritas · Calendário · Gestor de
+documentos · Gerador de proposta · Leitor de Edital IA (Beta) · Docs Jurídicos IA · Gerador de
+declarações · Pesquisa de Preço (Beta) · Calculadora de lucro`
+
+Nada disso muda a fila. Dois candidatos futuros ficam anotados:
+- **Licitações favoritas** — já previsto no raio-x; barato depois do funil.
+- **Calculadora de lucro** — **V-next, e casa com o motor "meu preço × teto"** que está sendo
+  construído agora: quem sabe o teto e o custo sabe a margem que sobra.
+
 ### 8.5 DESKTOP DE MONITORAMENTO DE CHAT — **FORA DO ESCOPO WEB** (decisão mantida)
 
 Registrado o que ele descreveu: dashboard com *Pregões Cadastrados / Monitorando / Mensagens /

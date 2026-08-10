@@ -268,6 +268,32 @@ Criado em 21/07/2026 copiando SO os arquivos do app do C:\globalmed.
             Suite testa_radar (25), com a distancia rodada contra pares reais (Aparecida->Goiania
             ~18km, ->Brasilia ~190km, Goiania->SP ~810km). 1.730 asserts / 0 falhas / 52 suites.
 
+    [1/3] 5. CONFERIDOR CMED + GERADOR DE PROPOSTA — O MOTOR ESTA PRONTO (fpmed_teto_cmed.js).
+            Conferir proposta pronta e sugerir preco na hora de montar sao A MESMA CONTA em dois
+            momentos: uma engine so, duas telas em cima.
+            AS TRES REGRAS DO MOTOR:
+              1. NAO ENCONTRADO != DENTRO DO TETO. Item que nao casa volta 'nao_encontrado',
+                 nunca "ok", e o resumo conta os dois SEPARADOS.
+              2. PRECO DE CAIXA NAO ENTRA: `unitario` e DECLARADO por quem chama.
+              3. FAIXA -> USA O MENOR TETO (DIPIRONA 1000MG: 31 apresentacoes, R$0,61 a R$1,45).
+            Teto aplicavel: PMVG so quando governo E cap=true; senao PF. O motor nao adivinha.
+            Suite testa_teto_cmed (38). Total: 1.768 asserts / 0 falhas / 53 suites.
+            >>> A TRAVA DAS COPIAS PEGOU DEFEITO NA 1a EXECUCAO: a minha copia de `forma` estava
+                sem duas linhas (colirio/oftalmico e spray/aerossol) — colirio viraria "forma
+                desconhecida". O teste compara as funcoes de dose com as do fpmed_licitacoes e
+                fica VERMELHO se divergirem. PENDENCIA: o conserto definitivo e o Licitacoes
+                CARREGAR este arquivo em vez de ter copia; nao fiz hoje pra nao mexer no
+                cruzamento que esta no ar.
+            >>> FALTA: a tela do Conferidor (upload/colar) e a integracao no gerador do giovana.
+
+    >>> REFERENCIA VISUAL DA FICHA DELES (08/08) — secao 8.4-B do SPEC. EU VI a tela (o Lemuel
+        capturou; o arquivo esta FORA do repo pelo .gitignore, porque e produto de terceiro E tem
+        imagem de pessoa). Confirma o nosso desenho de data original x data editavel, e revela
+        DUAS coisas: (a) eles editam CAMPO A CAMPO com botao "Alterar", e a nossa ficha abre tudo
+        de uma vez — recomendo adotar o campo-a-campo (menos superficie aberta = menos chance de
+        salvar o que nao se quis); (b) o "Valor do Contrato Ganho" e EDITAVEL la e SO LEITURA
+        aqui — e ele alimenta a taxa de vitoria. Entra quando o loop passar pela ficha (item 7).
+
     [ex] 4b. A BASE GEOGRAFICA (feita na iteracao anterior)
             5.571 municipios carregados, 5.570 com coordenada. Fonte IBGE nas duas pontas: nome
             e UF da API de localidades, PONTO derivado da MALHA oficial (centroide de AREA do

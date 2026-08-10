@@ -7,6 +7,19 @@ segredos.local.txt
 *.key
 *.pem
 
+# REFERENCIA VISUAL DE PRODUTO DE TERCEIRO — NUNCA vai pro repo, que e PUBLICO.
+# Sao capturas de tela do Licitante Prime, guardadas so pra consulta de layout enquanto se
+# constroi o nosso. Dois motivos independentes, e cada um sozinho ja basta:
+#   1. e material de produto de outra empresa — o que atravessa daqui e REFERENCIA de
+#      comportamento, nunca o arquivo deles (a mesma regra ja registrada pro SIGA);
+#   2. as capturas tem IMAGEM DE PESSOA. Publicar rosto de alguem num repo aberto nao se
+#      desfaz com um `git rm` — o commit fica no historico e nos espelhos.
+licitante-prime*.gif
+licitante-prime*.png
+licitante-prime*.jpg
+licitante-prime*.mp4
+referencia-concorrente/
+
 # dependencias (package.json + lock ficam versionados; node_modules nao)
 node_modules/
 
