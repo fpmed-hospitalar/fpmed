@@ -101,6 +101,14 @@ header nav a.on{background:rgba(44,169,224,.16);color:var(--azul-claro);font-wei
 .card:hover{border-color:rgba(44,169,224,.5);transform:translateY(-2px);box-shadow:0 4px 10px rgba(0,0,0,.4),0 14px 34px rgba(0,0,0,.3)}
 .card .fase-tag{position:absolute;top:11px;right:14px;font-size:9px;letter-spacing:1.3px;text-transform:uppercase;
   font-weight:800;color:var(--verde)}
+/* ── SITUAÇÃO DO CERTAME (08/08) ── etiqueta + esmaecido, mas o cartão CONTINUA no funil ── */
+.card .sit-tag{position:absolute;top:9px;right:14px;font-size:9px;letter-spacing:1.2px;font-weight:800;
+  border:1px solid;border-radius:20px;padding:2px 8px}
+.card .sit-tag ~ .fase-tag{top:32px}         /* a fase desce pra não colidir com a etiqueta */
+/* PARADO ≠ SUMIDO: opacidade menor diz "isto não anda agora" sem esconder de ninguém.
+   O :hover devolve a opacidade cheia — cartão que não dá pra ler direito vira cartão ignorado. */
+.card.parado{opacity:.55;filter:saturate(.6)}
+.card.parado:hover{opacity:1;filter:none}
 .card .tit{font-family:Montserrat;font-weight:700;font-size:13.5px;color:var(--azul-claro);text-decoration:none;
   display:inline-block;line-height:1.45;padding-right:96px}
 .card:hover .tit{color:#fff;text-decoration:underline}
@@ -193,6 +201,20 @@ textarea.anot{width:100%;min-height:110px;background:var(--painel2);border:1px s
   border-radius:10px;padding:11px 13px;font-family:inherit;font-size:12.5px;line-height:1.55;outline:none;resize:vertical}
 textarea.anot:focus{border-color:var(--azul)}
 .salvo{font-size:11px;color:var(--muted);margin-top:5px;min-height:14px}
+/* ── FICHA EDITÁVEL + RASTRO (08/08) ── */
+.ficha-ed{display:grid;grid-template-columns:1fr 1fr;gap:10px 12px}
+.ficha-ed .col2{grid-column:1 / -1}
+.ficha-ed label{display:block;font-size:10px;font-weight:700;color:var(--muted);margin-bottom:4px;
+  text-transform:uppercase;letter-spacing:.6px}
+.ficha-ed input,.ficha-ed select,.ficha-ed textarea{width:100%;background:var(--painel2);color:var(--texto);
+  border:1px solid var(--linha);border-radius:8px;padding:8px 10px;font-size:12.5px;font-family:inherit}
+.ficha-ed textarea{resize:vertical;line-height:1.5}
+.btn-ed{background:var(--azul);color:#fff;border:0;border-radius:8px;padding:8px 16px;font-weight:600;
+  font-size:12.5px;cursor:pointer;font-family:inherit}
+.btn-ed:disabled{opacity:.5;cursor:not-allowed}
+.rastro{font-size:11.5px;color:var(--texto);padding:6px 0;border-bottom:1px solid var(--linha);line-height:1.5}
+.rastro b{color:var(--azul-claro)}
+.rastro span{display:block;color:var(--muted);font-size:10.5px}
 .salvo.ok{color:var(--verde)}
 .salvo.erro{color:var(--vermelho)}
 .tf-secao{font-family:Montserrat;font-size:10.5px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;
@@ -482,7 +504,11 @@ function card(n, noKanban){
   const quando = dia === hoje ? ' hoje' : (dia && dia < hoje ? ' passou' : '');
   // Os campos do card são os que a FPMED já usa na planilha: portal, órgão, número,
   // data/hora de abertura. O valor ganho é de gestor.
-  return `<div class="card${noKanban?'':''}" ${noKanban?`draggable="true" data-id="${n.id}"`:''} onclick="abrirDrawer(${n.id})">
+  // CANCELADO/SUSPENSO ganha etiqueta e fica esmaecido, mas CONTINUA NO FUNIL. Sumir sozinho
+  // esconderia da empresa que ela tinha algo ali; arquivar segue sendo decisão de gente.
+  const sit = n.situacao && n.situacao !== 'normal' ? n.situacao : null;
+  return `<div class="card${sit&&paradoDeVez(sit)?' parado':''}" ${noKanban?`draggable="true" data-id="${n.id}"`:''} onclick="abrirDrawer(${n.id})">
+    ${sit ? `<div class="sit-tag" style="color:${corSituacao(sit)};border-color:${corSituacao(sit)}">${esc(rotuloSituacao(sit))}</div>` : ''}
     <div class="fase-tag" style="color:${corFase(n.estagio)}">${esc(nomeFase(n.estagio))}</div>
     ${n.empresa_id ? `<div class="emp">${esc((EMPRESAS.find(e=>e.id===n.empresa_id)||{}).razao_social || 'empresa').split(' ').slice(0,2).join(' ')}</div>` : ''}
     <div><span class="tit" title="${esc(n.objeto||'')}">${esc([n.portal,n.modalidade,n.numero].filter(Boolean).join(' · '))}${n.orgao?' — '+esc(n.orgao):''}</span></div>
@@ -633,6 +659,7 @@ async function abrirDrawer(id){
   } else {
     document.getElementById('dw-body').innerHTML = corpoDrawer(n, null, false);
   }
+  if(ABERTO === id) carregarRastro(id);
 }
 function fecharDrawer(){
   ABERTO = null;
@@ -649,13 +676,38 @@ function corpoDrawer(n, obs, carregando){
   const dia = diaDe(n.abertura), hoje = hojeYMD();
 
   const linha = (r, v, cls) => v ? `<dt>${r}</dt><dd class="${cls||''}">${v}</dd>` : '';
-  const ficha = `<dl class="ficha">
+
+  // ══ FICHA EDITÁVEL (08/08, urgência) ══════════════════════════════════════════════════════
+  // O mundo real muda: pregão é ADIADO, SUSPENSO, CANCELADO e REMARCADO. Enquanto estes campos
+  // eram somente leitura, um pregão adiado ficava com a data velha — e o sino avisava pelo DIA
+  // ERRADO. Aviso que aponta o dia errado é pior que aviso nenhum: quem confia nele perde a
+  // sessão.
+  // >>> QUEM NÃO GRAVA CONTINUA VENDO A FICHA DE LEITURA. Campo editável para quem levaria 403
+  //     do banco ao salvar é um convite a digitar e perder o trabalho.
+  const editavel = gestor && !n.arquivado;
+  const ficha = editavel ? `<div class="ficha-ed">
+      <div><label>Abertura — data</label><input type="date" id="ed-data" value="${esc(dia||'')}"></div>
+      <div><label>Hora</label><input type="time" id="ed-hora" value="${esc(horaDe(n.abertura)||'')}"></div>
+      <div><label>Situação do certame</label><select id="ed-situacao">
+        ${SITUACOES.map(s => `<option value="${s.k}"${(n.situacao||'normal')===s.k?' selected':''}>${esc(s.n)}</option>`).join('')}
+      </select></div>
+      <div><label>Portal</label><input type="text" id="ed-portal" value="${esc(n.portal||'')}"></div>
+      <div><label>Número</label><input type="text" id="ed-numero" value="${esc(n.numero||'')}"></div>
+      <div class="col2"><label>Órgão</label><input type="text" id="ed-orgao" value="${esc(n.orgao||'')}"></div>
+      <div class="col2"><label>Objeto</label><textarea id="ed-objeto" rows="3">${esc(n.objeto||'')}</textarea></div>
+      <div class="col2" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+        <button class="btn-ed" onclick="salvarFicha(${n.id})" id="bt-ficha">Salvar alterações</button>
+        <span class="salvo" id="dw-ficha-msg">${esc([n.municipio, n.uf].filter(Boolean).join(' · '))}${n.municipio?' · ':''}${n.origem === 'calendario_2025' ? 'veio do Calendário 2025' : esc(n.origem||'')}</span>
+      </div>
+    </div>`
+  : `<dl class="ficha">
     ${linha('Portal', esc(n.portal))}
     ${linha('Modalidade', esc(n.modalidade))}
     ${linha('Número', esc(n.numero))}
     ${linha('Órgão', esc(n.orgao))}
     ${linha('Município', esc([n.municipio, n.uf].filter(Boolean).join(' · ')))}
     ${linha('Abertura', n.abertura && fmtDtH(n.abertura) ? esc(fmtDtH(n.abertura)) + (dia===hoje?' <b style="color:var(--ambar)">· é hoje</b>':(dia&&dia<hoje?' <span style="color:var(--muted)">· já passou</span>':'')) : '')}
+    ${linha('Situação', (n.situacao && n.situacao!=='normal') ? esc(rotuloSituacao(n.situacao)) : '')}
     ${linha('Objeto', esc(n.objeto))}
     ${gestor && n.valor_ganho > 0 ? linha('Valor ganho', '🏆 ' + brl(n.valor_ganho), 'ganho') : ''}
     ${linha('Origem', n.origem === 'calendario_2025' ? 'Calendário 2025 (histórico da FPMED)' : esc(n.origem))}
@@ -678,7 +730,8 @@ function corpoDrawer(n, obs, carregando){
       <div class="dw-fases">${FASES.map(f =>
         `<button class="${n.estagio===f.k?'on':''}" onclick="mudaFase(${n.id},'${f.k}')">${esc(f.n)}</button>`).join('')}</div>
     </div>
-    <div class="dw-sec"><h4>Ficha</h4>${ficha}</div>
+    <div class="dw-sec"><h4>Ficha${editavel?' <span class="salvo" style="font-weight:400">· editável</span>':''}</h4>${ficha}</div>
+    <div class="dw-sec" id="dw-rastro"></div>
     ${carregando ? '<div class="dw-sec"><h4>Observação da planilha</h4><div style="font-size:12px;color:var(--muted)">carregando…</div></div>'
       : (obs && obs.observacao && String(obs.observacao).trim()
          ? `<div class="dw-sec"><h4>Observação do Calendário 2025${obs.status?' · '+esc(obs.status):''}</h4>
@@ -702,6 +755,74 @@ function corpoDrawer(n, obs, carregando){
       <button onclick="location.href='fpmed_licitacoes.html'">🏛️ Abrir Licitações</button>
       <button onclick="fecharDrawer()">Fechar</button>
     </div>`;
+}
+
+// ══ SITUAÇÃO DO CERTAME ══════════════════════════════════════════════════════════════════
+// É FATO DO MUNDO, não fase do funil — por isso é campo próprio e não um `estagio` novo. Um
+// pregão suspenso continua na fase em que estava (qualificação, disputa); misturar as duas
+// coisas faria a empresa perder a informação de onde parou quando ele voltar.
+const SITUACOES = [
+  { k:'normal',    n:'Normal',    cor:null },
+  { k:'adiado',    n:'ADIADO',    cor:'#e0a04a' },
+  { k:'remarcado', n:'REMARCADO', cor:'#5CC3F0' },
+  { k:'suspenso',  n:'SUSPENSO',  cor:'#e0a04a' },
+  { k:'cancelado', n:'CANCELADO', cor:'#e5675a' },
+];
+const rotuloSituacao = k => (SITUACOES.find(s=>s.k===k)||{}).n || k;
+const corSituacao    = k => (SITUACOES.find(s=>s.k===k)||{}).cor || null;
+// >>> "PARADO" NÃO É "SUMIDO": cancelado e suspenso continuam no funil, com etiqueta e visual
+//     esmaecido. Sumir sozinho esconderia da empresa que ela tinha algo ali — e arquivar
+//     continua sendo decisão de gente, como já era.
+const paradoDeVez = k => k === 'cancelado' || k === 'suspenso';
+
+async function salvarFicha(id){
+  const n = NEG.find(x => x.id === id); if(!n) return;
+  const bt = document.getElementById('bt-ficha'), msg = document.getElementById('dw-ficha-msg');
+  const v = i => (document.getElementById(i)?.value || '').trim();
+  const data = v('ed-data'), hora = v('ed-hora');
+  // data sem hora vira meia-noite; hora sem data não é nada. A regra do fuso já mordeu este
+  // projeto uma vez (negócio nascendo arquivado por causa de meia-noite UTC), então a abertura
+  // é montada como hora LOCAL e o navegador converte.
+  let abertura = null;
+  if(data) abertura = new Date(data + 'T' + (hora || '00:00') + ':00').toISOString();
+  const campos = {
+    abertura,
+    situacao: v('ed-situacao') || 'normal',
+    portal: v('ed-portal') || null,
+    numero: v('ed-numero') || null,
+    orgao:  v('ed-orgao')  || null,
+    objeto: v('ed-objeto') || null,
+  };
+  bt.disabled = true; msg.textContent = 'salvando…';
+  try{
+    await gravar(id, campos);
+    Object.assign(n, campos);            // memória local acompanha, sem recarregar tudo
+    msg.textContent = '✓ salvo';
+    // A AGENDA E O SINO PASSAM A USAR A DATA NOVA NA HORA: `pinta()` re-renderiza a visão ativa
+    // (lista, quadros ou agenda) e `pintaNotif()` refaz o sino. Sem isto o operador salvaria a
+    // nova data e continuaria vendo o negócio no dia velho — e concluiria que não salvou.
+    pinta(); pintaNotif();
+    carregarRastro(id);
+  }catch(e){
+    msg.textContent = '⚠️ não salvou: ' + e.message;
+  }
+  bt.disabled = false;
+}
+
+// ── O RASTRO ── quem mudou o quê, e quando. Gravado por GATILHO no banco (ddl/negocios_
+// editavel.sql): se dependesse desta tela, alterar por outra via não deixaria rastro nenhum.
+async function carregarRastro(id){
+  const box = document.getElementById('dw-rastro'); if(!box) return;
+  try{
+    const r = await fetch(`${SB_URL}/rest/v1/negocio_alteracoes?negocio_id=eq.${id}&select=campo,de,para,quem_email,quando&order=quando.desc&limit=12`, {headers:SB_H});
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    const d = await r.json();
+    if(!d.length){ box.innerHTML = ''; return; }
+    const rot = { abertura:'Abertura', situacao:'Situação', portal:'Portal', numero:'Número', orgao:'Órgão', objeto:'Objeto' };
+    box.innerHTML = '<h4>O que já foi alterado</h4>'
+      + d.map(x => `<div class="rastro"><b>${esc(rot[x.campo]||x.campo)}</b>: ${esc(x.de||'—')} → ${esc(x.para||'—')}
+           <span>por ${esc((x.quem_email||'alguém').split('@')[0])} em ${new Date(x.quando).toLocaleString('pt-BR')}</span></div>`).join('');
+  }catch(e){ box.innerHTML = '<h4>O que já foi alterado</h4><div class="salvo">não consegui ler o histórico de alterações</div>'; }
 }
 
 async function mudaFase(id, fase){

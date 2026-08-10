@@ -173,12 +173,22 @@ ok('rotuloDia acerta o dia da semana (06/08/2026 = quinta)', rotuloDia('2026-08-
 // 5. OS CAMPOS QUE ELES JÁ USAM ESTÃO NO CARD E NA FICHA
 // ══════════════════════════════════════════════════════════════════════════════════════════
 const fnCard  = bloco('function card(n, noKanban)', 'function kanban(');
-const fnFicha = bloco('const ficha = `<dl class="ficha">', '</dl>`;');
+// >>> A ANCORA MUDOU EM 08/08 e o teste mudou junto: a ficha deixou de ser so um <dl> de leitura
+//     e virou `editavel ? <formulario> : <dl>`. O bloco vai do `const ficha` ate o fim do
+//     ternario -- assim ele pega AS DUAS formas, e continua provando que os campos aparecem em
+//     qualquer uma delas. Ancorar so no <dl> testaria metade da tela e passaria achando que
+//     testou tudo.
+const fnFicha = bloco('const ficha = ', '</dl>`;');
 ['portal', 'orgao', 'numero', 'abertura'].forEach(c =>
   ok('o card mostra ' + c, fnCard.includes('n.' + c)));
 [['Portal', 'n.portal'], ['Modalidade', 'n.modalidade'], ['Número', 'n.numero'], ['Órgão', 'n.orgao'],
  ['Abertura', 'n.abertura'], ['Objeto', 'n.objeto']].forEach(([rot, campo]) => {
   ok('a ficha do drawer traz ' + rot, fnFicha.includes("'" + rot + "'") && fnFicha.includes(campo));
+});
+// e a versao EDITAVEL tem que trazer os mesmos campos, senao editar perderia informacao
+[['ed-data','abertura'], ['ed-situacao','situação'], ['ed-portal','portal'],
+ ['ed-numero','número'], ['ed-orgao','órgão'], ['ed-objeto','objeto']].forEach(([id, rot]) => {
+  ok('a ficha EDITAVEL traz ' + rot, fnFicha.includes('id="' + id + '"'));
 });
 ok('a abertura do card sai com data E hora', /fmtDtH\(n\.abertura\)/.test(fnCard));
 ok('fmtDtH escreve "DD/MM/AAAA às HH:MM"', / às /.test(bloco('function fmtDtH(iso){', '\nconst DIA_SEM')));
