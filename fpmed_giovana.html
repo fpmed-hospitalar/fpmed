@@ -3823,6 +3823,26 @@ Regras:
     }
     const texto = data.content?.[0]?.text || '';
 
+    /* ══ RESPOSTA CORTADA NO LIMITE DE TOKENS — NUNCA EM SILÊNCIO ══════════════════════════
+       PORTADO DA GLOBAL (bloco 1 do sync, 10/08). Correção pura: até aqui a FPMED não olhava o
+       `stop_reason`, e o modo de falha é o pior possível — a lista chega COMPLETA NA APARÊNCIA,
+       com as últimas linhas simplesmente ausentes, e o contador conta o que chegou sem saber o
+       que faltou. Lá isso já aconteceu com dado real: um pedido saiu com 77 de 91 itens sem
+       ninguém perceber.
+       >>> AQUI É BLOQUEIO, NÃO AVISO. Com a leitura cortada, gerar proposta é gerar proposta
+           errada — e o operador não tem como saber o que ficou de fora olhando a tela. */
+    if (data.stop_reason === 'max_tokens') {
+      const _n = texto.trim().split('\n').filter(function(l){ return l.trim(); }).length;
+      statusEl.style.color = '#e03e3e';
+      statusEl.innerHTML = '❌ <b>LEITURA CORTADA</b> — a resposta da IA bateu no limite de tamanho e '
+        + 'parou no meio. Chegaram ' + _n + ' linha(s), mas o pedido tem <b>MAIS</b>. '
+        + '<b>Não use este resultado.</b> Divida o pedido em partes e leia uma de cada vez.';
+      document.getElementById('ia-resultado').style.display = 'none';
+      btn.disabled = false;
+      btn.style.opacity = '1';
+      return;
+    }
+
     if (texto.includes('NENHUM_PRODUTO_ENCONTRADO') || !texto.trim()) {
       statusEl.style.color = '#e03e3e';
       statusEl.textContent = '❌ Nenhum produto encontrado no arquivo.';
@@ -4253,6 +4273,18 @@ Regras:
     if (data && (data.type === 'error' || data.error)) {
       st.style.color = 'var(--vermelho)';
       st.textContent = '❌ Erro da IA: ' + ((data.error&&data.error.message) || data.message || 'desconhecido');
+      btn.disabled = false; btn.style.opacity = '1';
+      return;
+    }
+    // MESMA TRAVA DA OUTRA LEITURA (portada da Global, 10/08): resposta cortada no limite de
+    // tokens NUNCA passa calada. Aqui é ainda mais traiçoeiro que na leitura simples — o JSON
+    // truncado costuma AINDA PARECER JSON depois do conserto de chaves logo abaixo, e a lista
+    // sai com menos itens do que o pedido tem, sem sinal nenhum na tela.
+    if (data.stop_reason === 'max_tokens') {
+      st.style.color = 'var(--vermelho)';
+      st.innerHTML = '❌ <b>LEITURA CORTADA</b> — a resposta da IA bateu no limite de tamanho e parou '
+        + 'no meio. <b>Não use este resultado</b>: faltam itens e não dá pra saber quais. '
+        + 'Divida o pedido em partes e leia uma de cada vez.';
       btn.disabled = false; btn.style.opacity = '1';
       return;
     }

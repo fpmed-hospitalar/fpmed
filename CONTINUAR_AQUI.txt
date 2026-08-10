@@ -444,6 +444,54 @@ Criado em 21/07/2026 copiando SO os arquivos do app do C:\globalmed.
         convidado a atualizar. NAO alterei o limedtec-pwa.js aqui: e arquivo de MOLDE, e a regra
         e "o que vale pra qualquer cliente conserta-se na fabrica".
 
+>>> 10/08 — PIX: E O UNICO DADO DA EMPRESA QUE FALTA (item 7 da fila nova).
+    Tudo o mais foi aplicado em 22/07 (razao social, CNPJ 47.110.418/0001-15, IE, endereco,
+    WhatsApp, fixo, e-mail). Quando ele colar a chave aqui na janela, ela entra no
+    cliente.config.js e sai no PDF da proposta e nas declaracoes, junto dos outros dados.
+    >>> ATE LA A TELA NAO INVENTA NADA: nao ha campo de PIX em lugar nenhum, e e assim que tem
+        que ficar. Placeholder de dado bancario e o tipo de coisa que sai num PDF pro cliente.
+
+>>> 10/08 — SYNC DA GLOBAL: 1 CORRECAO PORTADA, O RESTO PULADO COM MOTIVO (item 6 da fila nova).
+    A instrucao dele foi: aplicar o que e correcao/melhoria PURA, um por vez, pelo verificador de
+    rebrand/compliance; qualquer duvida ou mudanca de comportamento visivel, PULAR e listar.
+    >>> ESTADO REAL DOS 5 BLOCOS, conferido hoje (a curadoria e de 04/08 e ficou velha):
+        BLOCO 1 (motor/Propostas) . a parte MOTOR ja foi portada em 04/08. Sobra a parte da TELA.
+        BLOCO 2 (telas de analise) . JA FEITO — foi o item 4, fechado em 06/08.
+        BLOCO 3 (CMED) ............ SUPERADO — a FPMED construiu o proprio subsistema CMED
+                                    (cmed_pf, cmed_precos com PMVG, dicionario, tela, view
+                                    cmed_teto). Portar agora criaria uma segunda base CMED.
+        BLOCO 4 (Compra Direta) ... JA FEITO em 06/08 (portada a IDEIA, nao a consulta).
+        BLOCO 5 (rebrand DARK) .... nao portar, decisao firme (a FPMED e tema claro).
+    >>> PORTADO HOJE — A UNICA CORRECAO PURA QUE SOBROU E QUE FALTAVA AQUI:
+        *** A RESPOSTA DA IA CORTADA NO LIMITE DE TOKENS PASSAVA CALADA. *** A giovana chama a IA
+        em DOIS lugares e nenhum dos dois olhava o `stop_reason`. O modo de falha e o pior
+        possivel: a lista chega COMPLETA NA APARENCIA, com as ultimas linhas ausentes, e o
+        contador conta o que chegou sem saber o que faltou. Na Global isso aconteceu com dado
+        real — um pedido saiu com 77 de 91 itens sem ninguem perceber.
+        Agora as DUAS leituras BLOQUEIAM (nao avisam): "LEITURA CORTADA — nao use este
+        resultado", a leitura simples esconde o resultado parcial, e as duas mandam dividir o
+        pedido. Bloqueio e nao aviso porque, com a leitura cortada, gerar proposta e gerar
+        proposta errada — e ninguem descobre o que faltou olhando a tela.
+        Suite nova testa_leitura_cortada (15). Rebrand LIMPO, compliance 8/8, 2.061 asserts /
+        0 falhas / 61 suites.
+    >>> !! PULEI A OPCAO B DO BLOCO 1 — E O MOTIVO E NOVO, MEDIDO HOJE !!
+        A curadoria de 04/08 recomendava "adotar a giovana da Global inteira e reaplicar os 49
+        marcadores de rebrand". ISSO AGORA DESTRUIRIA TRABALHO DA FPMED. Medido:
+          LimedtecTetoCMED ..... FPMED 4 ocorrencias · GLOBAL 0
+          fpmed_teto_cmed ...... FPMED 2 · GLOBAL 0
+          repintarTetos ........ FPMED 3 · GLOBAL 0
+          importarPedidoEdital . FPMED 2 · GLOBAL 0
+          _qtdAlerta ........... FPMED 2 · GLOBAL 0
+        Ou seja: a trava do teto CMED no gerador de proposta (item 5, 08/08) e a ponte itens do
+        edital -> proposta (hoje) NAO EXISTEM na Global. Trocar o arquivo inteiro apagaria as
+        duas. A recomendacao "Opcao B" nasceu quando a giovana daqui era quase igual a de la;
+        hoje ela DIVERGIU DE PROPOSITO, e a divergencia e valor, nao atraso.
+        >>> O QUE SOBRA DO BLOCO 1, se ele quiser: os ~20 refinos de casamento e as melhorias de
+            PDF, portados UM A UM (Opcao A), com teste por peca. E rodada propria, nao cabe de
+            carona. Nada disso e defeito aberto aqui: sao melhorias.
+    >>> E O QUE **NAO** ENTRA POR REGRA, nao por escolha: dado do banco da Global (imports,
+        correcoes, contatos). COMPLIANCE.md — so codigo cruza.
+
 >>> 10/08 — LEITOR DE EDITAL COM IA: CUSTO MEDIDO, TELA PRONTA, **NAO LIBERADA** (item 5 da
     fila nova). O pedido foi exatamente isto: montar o fluxo, medir com edital REAL e nao liberar.
     *** O NUMERO QUE ELE PEDIU (dois editais reais do PNCP, claude-haiku-4-5, 10/08) ***
