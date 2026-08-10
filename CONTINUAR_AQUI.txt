@@ -444,6 +444,22 @@ Criado em 21/07/2026 copiando SO os arquivos do app do C:\globalmed.
         convidado a atualizar. NAO alterei o limedtec-pwa.js aqui: e arquivo de MOLDE, e a regra
         e "o que vale pra qualquer cliente conserta-se na fabrica".
 
+>>> FILA — ESTADO EM 10/08, FIM DA RODADA 7. Conferido item a item, nao suposto.
+    [OK] motor de dose num arquivo so (a pendencia do item 5)
+    [OK] itens do edital -> gerador de proposta (o que restava da secao 8.3)
+    [OK] coleta do PNCP conferida a pedido dele + coletor consertado em 4 pontos
+    [ex] "agenda/acompanhar + KPIs de acompanhamento", registrada como FALTA do Licitacoes V1 em
+         05/08: SUPERADA pelo item 9, e NAO deve ser construida. Conferido hoje: a ponte
+         Encontrar->Funil ja existe ("＋ Mandar pro funil" no card, com dedup por numero de
+         controle e vinculo de empresa) e os KPIs de acompanhamento — no funil agora, historico,
+         ganhas, TAXA DE VITORIA e total ganho — vivem no fpmed_negocios. Construir a agenda
+         paralela em `licitacoes_acompanhadas` criaria uma SEGUNDA verdade sobre o mesmo negocio,
+         que e exatamente o que este projeto passa o tempo desfazendo.
+    RESTAM (todos com dependencia dele, nao tecnica): leitor de edital com IA (custo por edital),
+    envio do boletim por e-mail (provedor contratado), chat de pregao (fora do escopo web),
+    sync de CODIGO da Global (169 commits, curadoria em 5 blocos esperando ele escolher),
+    ddl/05 (a policy RESTRICTIVE, parada esperando OK), e o peso por UF na coleta (acima).
+
 >>> 10/08 — A COLETA VOLTOU A ANDAR (o COLETA_TOKEN ENTROU), E APARECEU OUTRO DEFEITO, MAIOR.
     Pedido do Lemuel: disparar uma rodada e dizer se `ultima_ok` foi preenchida.
     MEDIDO, antes e depois, no banco:
