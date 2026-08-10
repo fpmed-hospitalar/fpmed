@@ -34,6 +34,7 @@ const SHELL = [
   './fpmed_negocios.html',             // Negocios (funil) — entrou 06/08 com o item 9
   './fpmed_documentos.html',           // Documentos (habilitacao) — entrou 08/08, 3a aba do portal
   './fpmed_declaracoes.html',          // Declaracoes — 4a aba do portal, modulo 2.10 da spec
+  './fpmed_pecas.html',                // Pecas juridicas — 5a aba, modulo 2.9 da spec
   './fpmed_competitividade.html',      // aqui ELA ENTRA (na instalacao de origem estava fora por
                                        // ficar no .gitignore; na FPMED e versionada e vai pro ar)
   './dashboard_clientes.html',         // demo 100% ficticio (nao ha dado real dentro)

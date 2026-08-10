@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-tema="escuro">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex,nofollow">
+<title>LIMEDTEC — FPMED · Peças Jurídicas</title>
+<link rel="icon" type="image/png" sizes="192x192" href="icones/limedtec-192.png">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="cliente.config.js"></script>
+<script src="limedtec-config.js"></script>
+<script>LIMEDTEC.aplicaTema();</script>
+<script src="limedtec-licenca.js"></script>
+<script src="gm-auth.js?v=sessao-06ago"></script>
+<style>
+:root{--azul:#2CA9E0;--azul-claro:#5CC3F0;--verde:#8DC63F;--muted:#8fa3b8;
+  --bg:#0B1622;--painel:#132234;--painel2:#0F1B29;--linha:#1E3348;--texto:#DCE7F2;
+  --vermelho:#e5675a;--ambar:#e0a04a;--topfaixa:#08111B;--sombra:0 6px 22px rgba(0,0,0,.28)}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--texto);font-family:'Inter',system-ui,Arial,sans-serif;min-height:100vh}
+.faixa-int{max-width:1180px;margin:0 auto;padding:0 20px;display:flex;align-items:center;gap:14px}
+.topfaixa{background:var(--topfaixa);color:var(--muted);padding:7px 0;font-size:12.5px}
+.topfaixa a{color:var(--azul-claro);text-decoration:none;background:rgba(44,169,224,.13);padding:3px 11px;border-radius:20px}
+header{background:var(--painel);border-bottom:1px solid var(--linha);padding:14px 0;box-shadow:var(--sombra)}
+header h1{font-family:Montserrat;font-size:18px;margin:0;color:#fff;font-weight:700}
+header .marca{display:flex;align-items:center;gap:9px}
+header .cruz{width:30px;height:30px;border-radius:7px;background:var(--azul);display:grid;place-items:center;
+  color:#fff;font-size:19px;font-weight:700;line-height:1;box-shadow:0 2px 10px rgba(44,169,224,.35)}
+header .nome{font-family:Montserrat;font-weight:800;font-size:17px;color:#fff;letter-spacing:.6px}
+header .nome small{display:block;font-size:8px;letter-spacing:2.6px;color:var(--muted);font-weight:600;margin-top:-2px}
+header .sep{width:1px;height:22px;background:var(--linha);margin:0 4px}
+header nav.portal{margin-left:auto;display:flex;gap:4px}
+header nav.portal a{color:var(--muted);text-decoration:none;font-size:12.5px;padding:6px 13px;border-radius:8px;cursor:pointer;transition:background .16s,color .16s}
+header nav.portal a:hover{background:var(--painel2);color:var(--texto)}
+header nav.portal a.on{background:rgba(44,169,224,.16);color:var(--azul-claro);font-weight:600}
+.wrap{max-width:1180px;margin:0 auto;padding:26px 20px 70px}
+.cols{display:grid;grid-template-columns:360px 1fr;gap:18px;align-items:start}
+@media(max-width:900px){.cols{grid-template-columns:1fr}}
+.painel{background:var(--painel);border:1px solid var(--linha);border-radius:12px;padding:16px}
+.painel h2{font-family:Montserrat;font-size:14px;color:#fff;margin-bottom:4px}
+label{display:block;font-size:11px;font-weight:600;color:var(--muted);margin:11px 0 5px;text-transform:uppercase;letter-spacing:.5px}
+input,select,textarea{width:100%;background:var(--painel2);color:var(--texto);border:1px solid var(--linha);
+  border-radius:9px;padding:9px 11px;font-size:13px;font-family:inherit}
+textarea{resize:vertical;line-height:1.6}
+.btn{background:var(--azul);color:#fff;border:0;border-radius:9px;padding:10px 18px;font-weight:600;font-size:13px;cursor:pointer;font-family:inherit}
+.btn.sec{background:var(--painel2);color:var(--texto);border:1px solid var(--linha)}
+.btn.mini{padding:6px 12px;font-size:12px}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.tipo{padding:10px 12px;border-radius:9px;border:1px solid transparent;cursor:pointer;font-size:12.5px;line-height:1.45}
+.tipo:hover{background:var(--painel2);border-color:rgba(44,169,224,.35)}
+.tipo.on{background:rgba(44,169,224,.16);border-color:rgba(44,169,224,.45);color:#fff}
+.tipo small{display:block;color:var(--muted);font-size:11px;margin-top:2px}
+.hint{font-size:11.5px;color:var(--muted);line-height:1.5}
+.aviso-legal{background:rgba(229,103,90,.10);border:1px solid rgba(229,103,90,.38);border-radius:10px;
+  padding:11px 13px;font-size:12px;color:#ff9d92;line-height:1.55;margin-bottom:14px}
+/* ── O PRAZO ── é o que decide se a peça vale alguma coisa ── */
+.prazo{border-radius:10px;padding:11px 13px;font-size:12.5px;line-height:1.55;margin:12px 0}
+.prazo.ok{background:rgba(141,198,63,.12);border:1px solid rgba(141,198,63,.35);color:var(--verde)}
+.prazo.perto{background:rgba(224,160,74,.12);border:1px solid rgba(224,160,74,.4);color:#f0c483}
+.prazo.fora{background:rgba(229,103,90,.14);border:1px solid rgba(229,103,90,.45);color:#ff9d92}
+#previa{background:#fff;color:#111;border-radius:10px;padding:26px 30px;font-family:'Times New Roman',serif;
+  font-size:14px;line-height:1.75;white-space:pre-wrap;min-height:300px}
+.hist{font-size:12px;color:var(--muted);padding:8px 0;border-bottom:1px solid var(--linha)}
+.hist b{color:var(--texto)}
+@media print{
+  .topfaixa,header,.cols>.painel:first-child,.barra-acoes,.aviso-legal,.prazo,#gm-auth-bar{display:none !important}
+  body{background:#fff} .wrap{padding:0;max-width:none} .cols{display:block}
+  .painel{border:0;background:#fff;padding:0} #previa{border-radius:0;padding:0}
+}
+</style>
+</head>
+<body>
+<div class="topfaixa" data-limedtec-instalar>
+  <div class="faixa-int">
+    <a href="fpmed_sistema_final.html">← Sistema</a>
+    <span>📞 (62) 3290-4241</span>
+  </div>
+</div>
+<header>
+  <div class="faixa-int">
+    <div class="marca"><div class="cruz">✚</div><div class="nome">FPMED<small>HOSPITALAR</small></div></div>
+    <div class="sep"></div>
+    <h1 style="font-weight:600;color:#b3c4d6">Peças Jurídicas</h1>
+    <nav class="portal">
+      <a href="fpmed_licitacoes.html">Encontrar</a>
+      <a href="fpmed_negocios.html">Negócios</a>
+      <a href="fpmed_documentos.html">Documentos</a>
+      <a href="fpmed_declaracoes.html">Declarações</a>
+      <a class="on">Peças</a>
+    </nav>
+  </div>
+</header>
+
+<div class="wrap">
+  <!-- MAIS FORTE QUE O DA DECLARAÇÃO, e de propósito: peça protocolada VINCULA a empresa. -->
+  <div class="aviso-legal">
+    ⚖️ <b>Isto é um esqueleto de peça, não uma peça pronta.</b> A tese é sua — o gerador organiza o
+    texto, cita o dispositivo e monta o pedido, mas <b>quem protocola responde pelo que está
+    escrito</b>. Leia inteiro antes de assinar. Em caso de dúvida, advogado.
+  </div>
+
+  <div class="cols">
+    <div class="painel">
+      <h2>Tipo de peça</h2>
+      <div class="hint" style="margin-bottom:10px">Lei 14.133/2021. Clique para carregar o esqueleto.</div>
+      <div id="tipos"></div>
+
+      <label>Data da abertura da sessão</label><input type="date" id="f-sessao" oninput="render()">
+      <div id="prazo-box"></div>
+
+      <label>Órgão / entidade</label><input type="text" id="f-orgao" oninput="render()">
+      <label>Nº da compra / pregão</label><input type="text" id="f-compra" oninput="render()">
+      <label>Nº do processo</label><input type="text" id="f-processo" oninput="render()">
+      <label>Quem assina</label><input type="text" id="f-rep" oninput="render()">
+      <label>Cargo</label><input type="text" id="f-cargo" oninput="render()">
+      <label>Cidade da assinatura</label><input type="text" id="f-cidade" oninput="render()">
+    </div>
+
+    <div>
+      <div class="painel" style="margin-bottom:14px">
+        <div class="barra-acoes">
+          <b style="font-family:Montserrat;font-size:14px;color:#fff" id="titulo-sel">Escolha o tipo ao lado</b>
+          <!-- O FORMULÁRIO GUIADO: fatos → fundamento → pedido. É a espinha de qualquer peça, e
+               separá-lo do texto final permite reescrever sem perder o que foi levantado. -->
+          <label>Os FATOS — o que aconteceu, em ordem</label>
+          <textarea id="f-fatos" rows="4" placeholder="ex.: o item 12 do Termo de Referência exige marca específica, sem justificativa técnica…" oninput="render()"></textarea>
+          <label>O FUNDAMENTO — por que isso é irregular</label>
+          <textarea id="f-fund" rows="3" placeholder="deixe em branco para usar o fundamento padrão do tipo escolhido" oninput="render()"></textarea>
+          <label>O PEDIDO — o que a empresa quer</label>
+          <textarea id="f-pedido" rows="2" placeholder="deixe em branco para usar o pedido padrão do tipo escolhido" oninput="render()"></textarea>
+          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:12px">
+            <button class="btn sec mini" onclick="window.print()">🖨 Imprimir / PDF</button>
+            <button class="btn mini" onclick="salvar()" id="bt-salvar">Salvar no histórico</button>
+            <span class="hint" id="msg"></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="painel" style="margin-bottom:14px">
+        <div id="previa">Escolha o tipo de peça à esquerda.</div>
+        <div class="hint barra-acoes" style="margin-top:10px">O texto acima é editável — ajuste o que for preciso antes de imprimir.</div>
+      </div>
+
+      <div class="painel barra-acoes">
+        <h2>Peças emitidas</h2>
+        <div id="historico"><div class="hint">carregando…</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const SB_URL = 'https://xzdowrksuswekwffoluk.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh6ZG93cmtzdXN3ZWt3ZmZvbHVrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ2NzE2MTMsImV4cCI6MjEwMDI0NzYxM30.Pk-SlV_pZdniESyrajDdfHdHcnmyCwCMtP_TrShh75Y';
+const SB_H  = { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY };
+const SB_HW = Object.assign({'Content-Type':'application/json'}, SB_H);
+const esc = s => String(s==null?'':s).replace(/[<>&"]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c]));
+const EMP = (window.LIMEDTEC_CLIENTE && LIMEDTEC_CLIENTE.empresa) || {};
+const MODELO_VERSAO = '2026-08-08.1';
+
+// ══ DIAS ÚTEIS ═════════════════════════════════════════════════════════════════════════════
+// O prazo da Lei 14.133 é em dia ÚTIL, não corrido. Contar corrido daria uma data mais cedo e
+// faria a empresa achar que perdeu prazo que ainda tem — ou o contrário, que é pior.
+// >>> FERIADO NACIONAL NÃO ENTRA NESTA CONTA, e a tela DIZ isso. Uma tabela de feriados
+//     municipais que ninguém mantém envelhece em silêncio e passa a mentir com cara de precisão;
+//     é melhor o operador saber que precisa conferir do que confiar num número que só parece
+//     exato. O que a tela garante é a parte objetiva: sábado e domingo não contam.
+function menosDiasUteis(iso, n){
+  if(!iso) return null;
+  const d = new Date(iso + 'T12:00:00');
+  let faltam = n;
+  while(faltam > 0){ d.setDate(d.getDate()-1); const s = d.getDay(); if(s!==0 && s!==6) faltam--; }
+  return d;
+}
+const brData = d => d ? String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear() : '—';
+const hojeMeia = () => { const h = new Date(); h.setHours(0,0,0,0); return h; };
+
+const TIPOS = [
+  { id:'impugnacao', titulo:'Impugnação ao edital', prazoDias:3,
+    base:'Lei 14.133/2021, art. 164 — até 3 dias úteis antes da abertura',
+    fundPadrao:'A exigência impugnada restringe indevidamente a competitividade do certame, em afronta ao art. 5º e ao art. 11, IV, da Lei nº 14.133/2021, que impõem à Administração a busca pela proposta mais vantajosa e a ampla disputa, vedada a inclusão de cláusulas que comprometam ou frustrem o caráter competitivo.',
+    pedidoPadrao:'REQUER seja recebida e provida a presente impugnação, com a retificação do instrumento convocatório e a reabertura do prazo legal, nos termos do art. 164, parágrafo único, da Lei nº 14.133/2021.' },
+
+  { id:'esclarecimento', titulo:'Pedido de esclarecimento', prazoDias:3,
+    base:'Lei 14.133/2021, art. 164 — até 3 dias úteis antes da abertura',
+    fundPadrao:'A dúvida ora suscitada é relevante para a correta formulação da proposta e, se não esclarecida, pode conduzir a interpretações divergentes entre os licitantes, comprometendo a isonomia do certame.',
+    pedidoPadrao:'REQUER o esclarecimento do ponto acima, com a devida publicidade da resposta a todos os interessados, nos termos do art. 164 da Lei nº 14.133/2021.' },
+
+  { id:'intencao_recurso', titulo:'Intenção de recurso (na sessão)', prazoDias:0,
+    base:'Lei 14.133/2021, art. 165, §1º — manifestada IMEDIATAMENTE na sessão',
+    fundPadrao:'A decisão ora recorrida diverge do que dispõem o instrumento convocatório e a Lei nº 14.133/2021, motivo pelo qual a licitante manifesta, de forma imediata e motivada, sua intenção de recorrer.',
+    pedidoPadrao:'MANIFESTA a intenção de recorrer, requerendo a abertura do prazo de 3 (três) dias úteis para apresentação das razões, nos termos do art. 165, §1º, da Lei nº 14.133/2021.' },
+
+  { id:'recurso', titulo:'Razões de recurso', prazoDias:0,
+    base:'Lei 14.133/2021, art. 165 — 3 dias úteis após a manifestação',
+    fundPadrao:'A decisão recorrida contraria o instrumento convocatório e a Lei nº 14.133/2021, devendo ser reformada para que se restabeleça a legalidade e a isonomia do certame.',
+    pedidoPadrao:'REQUER seja conhecido e provido o presente recurso, reformando-se a decisão recorrida, com o consequente prosseguimento do certame nos termos da legislação aplicável.' },
+
+  { id:'contrarrazoes', titulo:'Contrarrazões de recurso', prazoDias:0,
+    base:'Lei 14.133/2021, art. 165, §4º — 3 dias úteis após o recurso',
+    fundPadrao:'As razões recursais não merecem prosperar: a decisão atacada observou o instrumento convocatório e a Lei nº 14.133/2021, não havendo vício a ser sanado.',
+    pedidoPadrao:'REQUER seja conhecido e NEGADO PROVIMENTO ao recurso interposto, mantendo-se integralmente a decisão recorrida.' },
+];
+
+let SEL = null;
+
+function v(id){ return (document.getElementById(id).value || '').trim(); }
+
+function caixaPrazo(){
+  const box = document.getElementById('prazo-box');
+  if(!SEL || !v('f-sessao')){ box.innerHTML = ''; return null; }
+  if(!SEL.prazoDias){
+    box.innerHTML = '<div class="prazo perto"><b>Prazo de sessão.</b> ' + esc(SEL.base)
+      + '<br>Este prazo corre na própria sessão ou logo após — não dá pra calcular por data de abertura.</div>';
+    return null;
+  }
+  const limite = menosDiasUteis(v('f-sessao'), SEL.prazoDias);
+  const dias = Math.round((limite - hojeMeia()) / 86400000);
+  // >>> O PRAZO É A PRIMEIRA COISA QUE A TELA DIZ. Peça fora do prazo não é peça fraca — é peça
+  //     que não existe, porque o pregoeiro nem lê. Gerar o texto lindo e deixar passar a data
+  //     não ajudou em nada.
+  const cls = dias < 0 ? 'fora' : (dias <= 1 ? 'perto' : 'ok');
+  const frase = dias < 0 ? `<b>PRAZO VENCIDO.</b> O limite era ${brData(limite)} — há ${Math.abs(dias)} dia(s).`
+    : dias === 0 ? `<b>O PRAZO ACABA HOJE</b> (${brData(limite)}).`
+    : `<b>Prazo até ${brData(limite)}</b> — faltam ${dias} dia(s).`;
+  box.innerHTML = `<div class="prazo ${cls}">${frase}<br>${esc(SEL.base)}
+    <br><span style="opacity:.85">Conta dias úteis (sábado e domingo fora). <b>Feriado não entra nesta conta</b> — confira o calendário do órgão.</span></div>`;
+  return limite;
+}
+
+function cabecalho(){
+  return `${(EMP.razaoSocial||'[RAZÃO SOCIAL]')}, inscrita no CNPJ nº ${(EMP.cnpj||'[CNPJ]')}, com sede em ${(EMP.endereco||'[ENDEREÇO]')}, ${(EMP.cidadeUf||'')}, por seu representante legal ao final assinado, vem, respeitosamente, à presença de Vossa Senhoria, com fundamento na Lei nº 14.133/2021, apresentar`;
+}
+
+function render(){
+  const box = document.getElementById('previa');
+  caixaPrazo();
+  if(!SEL){ box.textContent = 'Escolha o tipo de peça à esquerda.'; return; }
+  document.getElementById('titulo-sel').textContent = SEL.titulo;
+  const orgao = v('f-orgao') || '[ÓRGÃO]';
+  const compra = v('f-compra') || '[Nº DA COMPRA]';
+  const proc = v('f-processo');
+  const hoje = new Date();
+  const mes = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'][hoje.getMonth()];
+
+  box.textContent =
+`AO(À) ILUSTRÍSSIMO(A) SENHOR(A) PREGOEIRO(A) / AGENTE DE CONTRATAÇÃO
+${orgao.toUpperCase()}
+
+Referência: Pregão/Compra nº ${compra}${proc ? ' — Processo nº ' + proc : ''}
+
+${SEL.titulo.toUpperCase()}
+
+${cabecalho()} a presente ${SEL.titulo.toLowerCase()}, pelas razões de fato e de direito a seguir expostas.
+
+I — DOS FATOS
+
+${v('f-fatos') || '[DESCREVA OS FATOS: o que está no edital ou o que aconteceu na sessão, em ordem, com item e página quando houver.]'}
+
+II — DO DIREITO
+
+${v('f-fund') || SEL.fundPadrao}
+
+III — DO PEDIDO
+
+${v('f-pedido') || SEL.pedidoPadrao}
+
+Nestes termos,
+pede deferimento.
+
+${v('f-cidade') || EMP.cidade || ''}${(v('f-cidade')||EMP.cidade) ? ', ' : ''}${hoje.getDate()} de ${mes} de ${hoje.getFullYear()}.
+
+
+_______________________________________________
+${v('f-rep') || '[NOME DO REPRESENTANTE LEGAL]'}
+${v('f-cargo') || '[CARGO]'}
+${EMP.razaoSocial || '[RAZÃO SOCIAL]'}`;
+}
+
+function escolher(id){
+  SEL = TIPOS.find(t => t.id === id) || null;
+  document.querySelectorAll('.tipo').forEach(e => e.classList.toggle('on', e.dataset.id === id));
+  document.getElementById('previa').setAttribute('contenteditable','true');
+  render();
+}
+
+async function salvar(){
+  if(!SEL){ alert('Escolha o tipo de peça primeiro.'); return; }
+  const bt = document.getElementById('bt-salvar'), msg = document.getElementById('msg');
+  bt.disabled = true; msg.textContent = 'salvando…';
+  try{
+    const limite = SEL.prazoDias && v('f-sessao') ? menosDiasUteis(v('f-sessao'), SEL.prazoDias) : null;
+    const corpo = {
+      tipo: SEL.id, titulo: SEL.titulo, modelo_versao: MODELO_VERSAO,
+      orgao: v('f-orgao') || null, numero_compra: v('f-compra') || null, numero_processo: v('f-processo') || null,
+      prazo_final: limite ? limite.toISOString().slice(0,10) : null,
+      fatos: v('f-fatos') || null, fundamento: v('f-fund') || null, pedido: v('f-pedido') || null,
+      conteudo: document.getElementById('previa').innerText,
+    };
+    const r = await fetch(`${SB_URL}/rest/v1/pecas_juridicas`, {method:'POST',
+      headers: Object.assign({'Prefer':'return=representation'}, SB_HW), body: JSON.stringify(corpo)});
+    if(!r.ok){
+      const t = await r.text();
+      throw new Error(r.status===401||r.status===403 ? 'só gestor pode emitir peça' : ('HTTP '+r.status+' '+t.slice(0,70)));
+    }
+    msg.textContent = '✓ salvo';
+    await carregarHist();
+  }catch(e){ msg.textContent = '⚠️ ' + e.message; }
+  bt.disabled = false;
+}
+
+async function carregarHist(){
+  const el = document.getElementById('historico');
+  try{
+    const r = await fetch(`${SB_URL}/rest/v1/pecas_juridicas?select=id,titulo,orgao,numero_compra,prazo_final,protocolada_em,criado_em,revisado_em&order=criado_em.desc&limit=40`, {headers:SB_H});
+    if(!r.ok) throw new Error(r.status===401||r.status===403 ? 'sessão sem permissão' : ('HTTP '+r.status));
+    const d = await r.json();
+    el.innerHTML = d.length ? d.map(h => {
+      const venceu = h.prazo_final && !h.protocolada_em && new Date(h.prazo_final+'T23:59:59') < new Date();
+      return '<div class="hist"><b>'+esc(h.titulo)+'</b>'
+        + (h.orgao ? ' · '+esc(h.orgao) : '') + (h.numero_compra ? ' · nº '+esc(h.numero_compra) : '')
+        + ' · ' + new Date(h.criado_em).toLocaleDateString('pt-BR')
+        + (h.protocolada_em ? ' · <span style="color:var(--verde)">protocolada</span>'
+           : venceu ? ' · <span style="color:#ff9d92">prazo venceu sem protocolo</span>' : '')
+        + (h.revisado_em ? '' : ' · <span style="color:#f0c483">não conferida</span>')
+        + '</div>';
+    }).join('') : '<div class="hint">Nenhuma peça emitida ainda.</div>';
+  }catch(e){
+    el.innerHTML = '<div class="hint" style="color:#ff9d92">⚠️ Não consegui ler o histórico ('+esc(e.message)+').</div>';
+  }
+}
+
+document.getElementById('tipos').innerHTML = TIPOS.map(t =>
+  '<div class="tipo" data-id="'+t.id+'" onclick="escolher(\''+t.id+'\')">'+esc(t.titulo)
+  + '<small>'+esc(t.base)+'</small></div>').join('');
+document.getElementById('f-cidade').value = EMP.cidade || '';
+
+let _iniciado = false;
+function iniciar(){ if(_iniciado) return; _iniciado = true; carregarHist(); }
+if(window.gmAuth) iniciar();
+else { document.addEventListener('gm-auth-ready', iniciar, { once:true }); setTimeout(iniciar, 12000); }
+</script>
+<script src="limedtec-pwa.js" defer></script>
+</body>
+</html>

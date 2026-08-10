@@ -48,6 +48,11 @@ Criado em 21/07/2026 copiando SO os arquivos do app do C:\globalmed.
     CONTINUAR_AQUI/TAREFAS com o ponto exato de retomada e avisa
     "sessao esgotada, abre nova e manda continua a fila".
 
+>>> VOLTA A ORDEM SOZINHO (08/08/2026 — regra do Lemuel): terminada uma URGENCIA, RETOMAR a
+    fila na ordem e SEGUIR, sem perguntar e sem pedir aval. Palavras dele: "pode sempre voltar
+    pra ordem sem me consultar, pode tocar direto". Perguntar "volto pra ordem?" no fim de cada
+    urgencia e exatamente a parada que o modo automatico existe pra evitar.
+
 >>> FILA EM ORDEM (04/08/2026 — regra do Lemuel): TUDO que ele mandar entra no FIM DA FILA
     e e feito em ordem. NUNCA largar a tarefa atual no meio pra atender o que acabou de chegar.
     UNICA excecao: se ele escrever URGENCIA, ai fura a fila e atende na hora.
@@ -240,7 +245,16 @@ Criado em 21/07/2026 copiando SO os arquivos do app do C:\globalmed.
             empresa vindos do CONFIG (nunca digitados), texto CONGELADO no ato com a versao do
             modelo, historico, impressao pelo navegador. 4a aba do portal.
             Suite testa_declaracoes (34). Total: 1.605 asserts / 0 falhas / 48 suites.
-    [  ] 3. PECAS JURIDICAS (2.9) — comeca por formulario guiado + modelo; a IA entra depois.
+    [OK] 3. PECAS JURIDICAS (2.9) — 5 tipos (impugnacao, esclarecimento, intencao de recurso,
+            recurso, contrarrazoes), formulario guiado fatos/fundamento/pedido, e O PRAZO NA
+            FRENTE: conta em DIAS UTEIS (art. 164 e 165 da Lei 14.133) e ADMITE que feriado nao
+            entra. 5a aba do portal. Suite testa_pecas_juridicas (39) com a conta de dias uteis
+            rodada contra datas reais. Total: 1.684 asserts / 0 falhas / 50 suites.
+    [OK] URGENCIA 08/08 — FICHA DO NEGOCIO EDITAVEL, com rastro por GATILHO no banco.
+            Abertura (data/hora), situacao do certame, portal, numero, orgao, objeto. Cancelado/
+            suspenso fica no funil, esmaecido e etiquetado. Agenda e sino usam a data nova na
+            hora. `anotacoes` (a observacao da planilha) NAO e tocada.
+            Suite testa_ficha_editavel (34). Provado com dado real + rollback.
     [  ] 4. RADAR por raio (2.5) — precisa de lat/long dos municipios (IBGE, dado aberto).
     [  ] 5. CONFERIDOR DE PROPOSTA CONTRA A CMED — pedido de 08/08. Upload PDF/Excel ou colar
             texto, casar por EAN/GGREM ou nome+dose (reusar o matching do Licitacoes), tabela
