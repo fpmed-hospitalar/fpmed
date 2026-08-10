@@ -575,6 +575,86 @@ negócios para cá". **Drag-and-drop** entre fases. Scroll horizontal.
 
 **Topo da tela:** seletor *"Todas as empresas"* · *"Ordenar por: Mais recentes"* · link *"Filtrar"*.
 
+## 8. LICITANTE PRIME — 2º MERGULHO (detalhes finos, 08/08/2026)
+
+> Refino da spec do Licitante Prime, módulo a módulo. **Não substitui a seção anterior** — é o
+> nível de detalhe que só apareceu na segunda passada.
+> ⚠️ **Limite honesto de origem:** eu **não consegui assistir ao vídeo** (o player não roda no
+> navegador automatizado e a transcrição não renderiza). O que está aqui vem do que o Lemuel
+> descreveu e da lista pública de módulos do site deles. Onde eu não vi, está escrito que não vi.
+
+### 8.1 BOLETIM DIÁRIO — especificação FECHADA (é o nosso *Meus Jornais*)
+
+**Config na tela da empresa:** toggle *"Receber boletim diário"* · estados agrupados **por região**
+(Norte / Nordeste / Centro-Oeste / Sudeste / Sul) com **contador de marcados por região** ·
+palavras-chave do objeto.
+
+> **A REGRA DE OURO DO DISPARO — e ela é a única coisa aqui que não é enfeite:**
+> **esperar o dia FECHAR antes de enviar.** Licitação é publicada até tarde; boletim disparado
+> cedo demais perde tudo que saiu depois do corte — e, pior, perde **em silêncio**: quem recebe
+> não tem como saber que o boletim está incompleto. Disparo de madrugada, com o dia D-1 inteiro.
+
+**Como encaixa aqui:** o `Meus Jornais` já guarda os filtros e já calcula o delta (`vistos`).
+Falta só o **envio**: o cron do `.github/workflows/coleta-pncp.yml` já existe e roda 3×/dia — um
+job novo às 03h UTC resolve o horário. O provedor (Resend) continua sendo **decisão de custo**.
+
+### 8.2 FUNIL / CRM
+
+- **Ao jogar a licitação da busca pro funil: modal "Adicionar ao Calendário" perguntando A QUAL
+  EMPRESA vincular.** O nosso modelo já suporta (`negocios.empresa_id`); com uma empresa só, ela
+  vem pré-selecionada. ⬜ **Hoje o botão "＋ Mandar pro funil" não pergunta** — grava sem empresa.
+  Ajuste pequeno, entra quando o multi-empresa for exercitado de verdade.
+- **Lembretes:** título + data/hora + prioridade, com lista *"Lembretes Agendados"* no card,
+  integrados ao sino e à agenda. ⬜ Ainda não existe: hoje o sino deriva de `abertura` e de
+  documento vencendo. Lembrete é **evento criado à mão**, e por isso precisa de tabela própria.
+
+### 8.3 GERADOR DE PROPOSTA — ⭐ o detalhe que MUDA O DESENHO
+
+O documento final deles: cabeçalho da empresa + dados do órgão/processo/edital + tabela de itens
+(qtd, unidade, especificação, marca, preço unitário, total), com **os itens puxados do edital**.
+
+> **>>> INTEGRAR, NÃO DUPLICAR.** A FPMED **já tem** gerador de proposta (`fpmed_giovana.html`).
+> Construir um segundo dentro do portal criaria duas propostas com dois formatos e dois preços —
+> e o dia em que os dois divergirem é o dia em que o cliente recebe o número errado.
+>
+> **>>> E AQUI A NOSSA VANTAGEM É REAL, não retórica:** nós já temos as **duas** metades que eles
+> não juntam — os **itens do edital** (endpoint de itens do PNCP, já lido no cruzamento) e o
+> **nosso preço** (estoque próprio + os 25.702 tetos da CMED). O gerador nasce **pré-preenchido**:
+> item do edital → nosso preço unitário sugerido → **trava do teto CMED**.
+> Botões: *Imprimir* · *Habilitar edição livre* · *Voltar*.
+>
+> **>>> ISSO SE ENCOSTA NO CONFERIDOR CMED (item 5 da fila) — é o MESMO motor.** "Meu preço x teto
+> legal" é a mesma conta nos dois: um confere uma proposta pronta, o outro sugere o preço na hora
+> de montar. Devem ser construídos com **uma engine só**; fazer duas é criar o par que diverge.
+
+### 8.4 COLETA MULTI-FONTE — **V-NEXT, não construir agora**
+
+A base deles (~810 mil) vem de scraping de portais de pregão **e** de sites de prefeitura, além
+do PNCP. Registrado como **visão futura**: scraping de dezenas de portais é infraestrutura
+contínua — cada portal muda de layout e quebra sozinho, e isso vira manutenção permanente.
+
+**Hoje:** o PNCP cobre a grande maioria (a Lei 14.133/2021 **obriga** a publicação lá), e a nossa
+coluna `licitacoes.portal` já nasceu preparada para outras fontes (decisão de 05/08).
+
+**Candidatas, na ordem de valor — e a ordem sai do HISTÓRICO da FPMED, não de palpite** (taxa de
+vitória medida no item 8): **BNC 23,0%** · **LICITANET 22,9%** · **BLL 19,6%** · **GOV.BR 13,0%**.
+Ou seja: se um dia entrar uma segunda fonte, ela deve ser o **BNC** — é onde a empresa mais ganha.
+
+### 8.5 DESKTOP DE MONITORAMENTO DE CHAT — **FORA DO ESCOPO WEB** (decisão mantida)
+
+Registrado o que ele descreveu: dashboard com *Pregões Cadastrados / Monitorando / Mensagens /
+Alertas*, palavras-chave gatilho, alerta sonoro. **Continua fora** — exige sessão persistente
+dentro da plataforma de pregão de terceiro, durante disputa ao vivo (mesma família da decisão já
+tomada sobre o SIGA, seção 2.0). Fica aqui como **projeto separado**, se um dia valer.
+
+### 8.6 ERP — alertas internos
+
+Eles têm alertas internos por empresa. **Nós já temos o sino**, que hoje avisa abertura de sessão
+e documento vencendo. Fica registrada apenas a **ideia** de alertas do financeiro — para quando
+existir módulo financeiro. Sem módulo, alerta financeiro não tem do que falar.
+
+---
+
 **Hover em tudo** — ele citou explicitamente: cards levantam, itens de menu destacam.
 A tela de Licitações já tem esse vocabulário pronto (`.lic:hover` levanta 2px com sombra
 dupla; `.topfaixa a:hover` levanta 1px) — **reaproveitar, não reinventar**.
@@ -725,4 +805,5 @@ Ordenado por **valor entregue ÷ dependência externa**, não pela ordem do menu
 > não são "telas a implementar". O que nos diferencia hoje não é copiar isso, é o que o SIGA não
 > tem: **o cruzamento do edital com o nosso estoque e o nosso preço unitário**, que já está no ar.
 > O funil (6.2) é o que falta pra fechar o ciclo de trabalho em cima disso.
+
 

@@ -256,6 +256,19 @@ Criado em 21/07/2026 copiando SO os arquivos do app do C:\globalmed.
             hora. `anotacoes` (a observacao da planilha) NAO e tocada.
             Suite testa_ficha_editavel (34). Provado com dado real + rollback.
     [  ] 4. RADAR por raio (2.5) — precisa de lat/long dos municipios (IBGE, dado aberto).
+    >>> 2o MERGULHO NO LICITANTE PRIME (08/08) — anexado na SECAO 8 do LICITACOES_SPEC.md.
+        O que ele muda na fila:
+        - GERADOR DE PROPOSTA: e pra INTEGRAR no fpmed_giovana que ja existe, NAO criar outro.
+          E ele usa o MESMO motor do Conferidor CMED ("meu preco x teto legal") — os dois devem
+          sair de uma engine so; fazer duas e criar o par que diverge.
+        - BOLETIM (Meus Jornais): spec fechada. So falta o ENVIO. Regra de ouro registrada:
+          esperar o dia FECHAR antes de disparar (boletim cedo perde o que saiu depois do corte,
+          e perde em silencio). Cron de madrugada com o dia D-1 inteiro. Provedor = custo, dele.
+        - COLETA MULTI-FONTE: V-NEXT, nao construir. Se um dia entrar 2a fonte, e o BNC — onde a
+          FPMED mais ganha (23,0%, medido no item 8).
+        - CHAT DE PREGAO: continua FORA do escopo web.
+        - 2 pendencias pequenas que ele descreveu e nos nao temos: o modal "a qual empresa
+          vincular" ao mandar pro funil, e LEMBRETES (titulo+data+prioridade) no card.
     [  ] 5. CONFERIDOR DE PROPOSTA CONTRA A CMED — pedido de 08/08. Upload PDF/Excel ou colar
             texto, casar por EAN/GGREM ou nome+dose (reusar o matching do Licitacoes), tabela
             com meu preco x teto (PF 19% GO, ou PMVG quando CAP/venda ao governo), % acima/folga,
