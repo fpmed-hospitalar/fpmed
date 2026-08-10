@@ -354,8 +354,26 @@ Criado em 21/07/2026 copiando SO os arquivos do app do C:\globalmed.
         - COLETA MULTI-FONTE: V-NEXT, nao construir. Se um dia entrar 2a fonte, e o BNC — onde a
           FPMED mais ganha (23,0%, medido no item 8).
         - CHAT DE PREGAO: continua FORA do escopo web.
-        - 2 pendencias pequenas que ele descreveu e nos nao temos: o modal "a qual empresa
-          vincular" ao mandar pro funil, e LEMBRETES (titulo+data+prioridade) no card.
+        - [OK 08/08] as 2 pendencias pequenas: o modal "a qual empresa vincular" e os LEMBRETES.
+          EMPRESA: com UMA nao pergunta (modal de uma opcao e clique que nao carrega informacao)
+          mas DIZ no botao a qual foi — senao, no dia em que a segunda entrar, ninguem sabe onde
+          os negocios de antes foram parar. Com duas ou mais pergunta; cancelar nao grava nada.
+          LEMBRETES: tabela propria (titulo, quando, prioridade de TRES niveis, `feito` em vez de
+          delete) + a ficha reorganizada em 4 ABAS — Informacoes · Lembretes · Tarefas ·
+          Observacoes — o mesmo desenho da captura deles, porque resolve o mesmo problema: cada
+          aba e uma PERGUNTA diferente sobre o mesmo negocio. O ESTAGIO ficou FORA das abas: e o
+          estado do negocio, tem que aparecer em qualquer uma.
+          >>> POR QUE LEMBRETE PRECISA DE TABELA e o resto do sino nao: o que o sino avisa hoje e
+              FATO (a sessao abre, a certidao vence), e fato se le de onde ja esta. Lembrete e
+              INTENCAO — sem escrever, mora na cabeca de quem pensou.
+          RLS igual a da `negocios` (gestor): o titulo carrega a estrategia ("ligar pro
+          fornecedor X sobre o pregao Y"), e mais aberto vazaria pelo titulo o que a tabela de
+          cima protege. No sino vem DEPOIS das sessoes (sessao tem hora do orgao e nao se
+          remarca) e entra no badge pela mesma razao do documento: fica aceso ate RESOLVEREM.
+          Suite testa_lembretes (34). Total: 1.828 asserts / 0 falhas / 55 suites.
+          >>> FALTA da captura (secao 8.4-B), pra proxima passagem pela ficha: a edicao CAMPO A
+              CAMPO (hoje abre tudo de uma vez e salva junto) e o `valor_ganho` EDITAVEL — hoje
+              e so leitura, e e ele que alimenta a taxa de vitoria.
     [  ] 5. CONFERIDOR DE PROPOSTA CONTRA A CMED — pedido de 08/08. Upload PDF/Excel ou colar
             texto, casar por EAN/GGREM ou nome+dose (reusar o matching do Licitacoes), tabela
             com meu preco x teto (PF 19% GO, ou PMVG quando CAP/venda ao governo), % acima/folga,

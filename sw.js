@@ -17,7 +17,7 @@
  */
 'use strict';
 
-const VERSAO = 'limedtec-fpmed-2026-08-08-7';
+const VERSAO = 'limedtec-fpmed-2026-08-08-8';
 const CACHE = 'limedtec-shell-' + VERSAO;
 
 // A CASCA DA FPMED. Lista MONTADA A MAO conferindo `git ls-files` (= o que o Pages serve),

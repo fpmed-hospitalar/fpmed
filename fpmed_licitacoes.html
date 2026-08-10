@@ -1251,10 +1251,39 @@ function linhaRadar(m, tem){
 // >>> E NÃO DUPLICA: antes de gravar, procura pelo número de controle do PNCP. Clicar duas vezes
 //     no mesmo card (ou dois vendedores no mesmo dia) tem que dar UM negócio, não dois — funil
 //     com a mesma licitação duas vezes faz duas pessoas trabalharem a mesma coisa sem saber.
+// A QUAL EMPRESA VINCULAR (seção 8.2 do SPEC, 08/08). O modelo é multi-empresa desde o começo,
+// e negócio sem empresa é negócio que ninguém sabe de quem é quando a segunda entrar.
+// >>> COM UMA EMPRESA SÓ, NÃO PERGUNTA — vincula e DIZ qual foi. Um modal para escolher entre
+//     uma opção é um clique que não carrega informação nenhuma; o que não pode acontecer é o
+//     sistema ADIVINHAR entre várias. Com duas ou mais, pergunta.
+let _EMPRESAS = null;
+async function empresasDoSistema(){
+  if(_EMPRESAS) return _EMPRESAS;
+  try{
+    const r = await fetch(`${SB_URL}/rest/v1/empresas?select=id,razao_social&order=id`, {headers:SB_H});
+    _EMPRESAS = r.ok ? await r.json() : [];
+  }catch(e){ _EMPRESAS = []; }
+  return _EMPRESAS;
+}
+async function escolherEmpresa(){
+  const es = await empresasDoSistema();
+  if(!es.length) return { id: null, nome: null };            // instalação sem empresa cadastrada
+  if(es.length === 1) return { id: es[0].id, nome: es[0].razao_social };
+  const lista = es.map((e,i) => `${i+1}) ${e.razao_social}`).join('\n');
+  const esc = prompt('A qual empresa vincular este negócio?\n\n' + lista + '\n\nDigite o número:');
+  if(esc === null) return null;                              // cancelou: não grava nada
+  const n = parseInt(esc, 10);
+  const alvo = es[n-1];
+  if(!alvo){ alert('Opção inválida — nada foi gravado.'); return null; }
+  return { id: alvo.id, nome: alvo.razao_social };
+}
+
 async function mandarProFunil(i){
   const l = (window._hits||[])[i]; if(!l) return;
   const bt = document.getElementById('bf-'+i);
   const numero = String(l.numeroControlePNCP || numCompra(l.numeroCompra, l.anoCompra) || '').trim();
+  const emp = await escolherEmpresa();
+  if(emp === null) return;                                   // cancelou a escolha
   if(bt){ bt.disabled = true; bt.textContent = 'mandando…'; }
   try{
     if(numero){
@@ -1267,6 +1296,7 @@ async function mandarProFunil(i){
     }
     const o = l.orgaoEntidade||{}, u = l.unidadeOrgao||{};
     const corpo = {
+      empresa_id: emp.id,
       estagio: 'oportunidade', arquivado: false, origem: 'licitacoes',
       titulo: (l.modalidadeNome||'Licitação') + ' Nº ' + numCompra(l.numeroCompra, l.anoCompra),
       orgao: o.razaoSocial || null, municipio: u.municipioNome || null, uf: u.ufSigla || null,
@@ -1282,7 +1312,10 @@ async function mandarProFunil(i){
       const t = await r.text();
       throw new Error(r.status===401||r.status===403 ? 'só gestor pode criar negócio' : ('HTTP '+r.status+' '+t.slice(0,60)));
     }
-    if(bt){ bt.textContent = '✓ no funil — abrir ↗'; bt.disabled = false;
+    // diz A QUAL EMPRESA foi, mesmo quando não perguntou: sem isso, no dia em que a segunda
+    // empresa entrar, ninguém sabe onde os negócios de antes foram parar.
+    if(bt){ bt.textContent = '✓ no funil' + (emp.nome ? ' · ' + emp.nome.split(' ').slice(0,2).join(' ') : '') + ' — abrir ↗';
+            bt.disabled = false;
             bt.onclick = () => location.href='fpmed_negocios.html'; }
   }catch(e){
     if(bt){ bt.disabled = false; bt.textContent = '＋ Mandar pro funil'; }

@@ -151,8 +151,16 @@ ok('30. o badge some quando nao ha nada urgente', /cnt\.style\.display = total \
 // O badge passou a somar documento vencido/vencendo (08/08). A distincao esta no proprio codigo:
 // sessao ATRASADA nao entra porque nao tem mais conserto -- o numero ficaria aceso pra sempre;
 // certidao vencida entra porque fica acesa ate alguem RESOLVER, e resolver e possivel hoje.
-ok('31. *** documento entra no badge; sessao atrasada continua fora ***',
-  /const total = n\.urgentes \+ docsRuins;/.test(src) && /urgentes: hojeL\.length \+ amanhaL\.length/.test(src));
+// 08/08: o LEMBRETE entrou no badge junto com o documento, pela MESMA razao — ele fica aceso
+// ate alguem RESOLVER, e resolver e possivel. A sessao atrasada continua fora porque aquela nao
+// tem mais conserto. O assert acompanha os dois somandos, e continua exigindo que `urgentes`
+// (as sessoes) conte so hoje+amanha.
+ok('31. *** documento E lembrete entram no badge; sessao atrasada continua fora ***',
+  /const total = n\.urgentes \+ docsRuins \+ lemAbertos;/.test(src)
+  && /urgentes: hojeL\.length \+ amanhaL\.length/.test(src));
+ok('31b. o lembrete do sino so conta o que NAO foi feito', /feito=is\.false/.test(src));
+ok('31c. ...e falha ao ler lembrete vira "nao sei", como o resto do sino',
+  /não sei<\/b> o que está agendado/.test(src));
 
 console.log('\nRESULTADO: ' + p + ' ok, ' + f + ' falha(s)');
 process.exitCode = f ? 1 : 0;

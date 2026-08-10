@@ -212,6 +212,26 @@ textarea.anot:focus{border-color:var(--azul)}
 .btn-ed{background:var(--azul);color:#fff;border:0;border-radius:8px;padding:8px 16px;font-weight:600;
   font-size:12.5px;cursor:pointer;font-family:inherit}
 .btn-ed:disabled{opacity:.5;cursor:not-allowed}
+/* ── ABAS DA FICHA (08/08) ── cada aba é uma PERGUNTA diferente sobre o mesmo negócio ── */
+.dw-abas{display:flex;gap:4px;padding:0 0 10px;border-bottom:1px solid var(--linha);margin-bottom:12px;flex-wrap:wrap}
+.dw-abas button{background:transparent;border:0;color:var(--muted);font-size:12.5px;font-family:inherit;
+  padding:7px 12px;border-radius:8px;cursor:pointer;transition:background .15s,color .15s}
+.dw-abas button:hover{background:var(--painel2);color:var(--texto)}
+.dw-abas button.on{background:rgba(44,169,224,.16);color:var(--azul-claro);font-weight:600}
+.dw-painel{display:none}
+.dw-painel.on{display:block}
+/* ── LEMBRETES ── */
+.lem-novo{display:grid;grid-template-columns:1fr 190px 96px auto;gap:8px;margin:10px 0 6px}
+@media(max-width:700px){.lem-novo{grid-template-columns:1fr}}
+.lem-novo input,.lem-novo select{background:var(--painel2);color:var(--texto);border:1px solid var(--linha);
+  border-radius:8px;padding:8px 10px;font-size:12.5px;font-family:inherit}
+.lem{display:flex;gap:10px;align-items:flex-start;padding:9px 0;border-bottom:1px solid var(--linha)}
+.lem .t{font-size:12.5px;color:#fff;line-height:1.4}
+.lem .q{font-size:11px;color:var(--muted);margin-top:2px}
+.lem .prio{margin-left:auto;font-size:10px;font-weight:700;border:1px solid;border-radius:20px;padding:1px 8px;white-space:nowrap}
+/* feito continua VISÍVEL, só apagado: some seria perder a prova de que a coisa foi feita */
+.lem.feito .t{text-decoration:line-through;color:var(--muted)}
+.lem.feito{opacity:.6}
 .rastro{font-size:11.5px;color:var(--texto);padding:6px 0;border-bottom:1px solid var(--linha);line-height:1.5}
 .rastro b{color:var(--azul-claro)}
 .rastro span{display:block;color:var(--muted);font-size:10.5px}
@@ -355,6 +375,8 @@ let NEG = [], EMPRESAS = [], VIS = 'lista', FASE_SEL = null, ERRO = null, ABERTO
 // documentos da empresa, só para o sino. `null` = ainda não li · `'erro'` = não consegui ler ·
 // array = li. Os três estados são diferentes e a tela trata os três (ver pintaNotif).
 let DOCS = null;
+// lembretes abertos que vencem ate amanha, so pro sino. Mesmos tres estados do DOCS.
+let LEM_SINO = null;
 const esc = s => String(s==null?'':s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const brl = n => n==null ? '—' : 'R$ ' + Number(n).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
 // GESTOR: a tabela inteira já é de gestor pela RLS (ddl/negocios.sql). O gate de tela aqui é a
@@ -433,6 +455,13 @@ async function carregar(){
     const rd = await fetch(`${SB_URL}/rest/v1/v_documentos_situacao?select=id,nome,situacao,dias_para_vencer&order=validade.asc.nullslast`, {headers:SB_H});
     DOCS = rd.ok ? await rd.json() : 'erro';
   }catch(e){ DOCS = 'erro'; }
+  // LEMBRETES ABERTOS pro sino — só os que ainda não foram feitos e que vencem até amanhã. O
+  // mesmo critério das sessões: o sino é do dia, não da vida inteira.
+  try{
+    const amanha = new Date(); amanha.setDate(amanha.getDate()+2); amanha.setHours(0,0,0,0);
+    const rl = await fetch(`${SB_URL}/rest/v1/lembretes?feito=is.false&quando=lt.${amanha.toISOString()}&select=id,negocio_id,titulo,quando,prioridade&order=quando.asc&limit=50`, {headers:SB_H});
+    LEM_SINO = rl.ok ? await rl.json() : 'erro';
+  }catch(e){ LEM_SINO = 'erro'; }
   const sel = document.getElementById('f-empresa');
   // O seletor e o badge de empresa FICAM VISÍVEIS mesmo com uma empresa só — decisão do
   // Lemuel em 05/08, corrigindo a minha recomendação de escondê-los. Igual ao SIGA.
@@ -661,7 +690,7 @@ async function abrirDrawer(id){
   } else {
     document.getElementById('dw-body').innerHTML = corpoDrawer(n, null, false);
   }
-  if(ABERTO === id) carregarRastro(id);
+  if(ABERTO === id){ carregarRastro(id); carregarLembretes(id); }
 }
 function fecharDrawer(){
   ABERTO = null;
@@ -726,37 +755,152 @@ function corpoDrawer(n, obs, carregando){
   : `<div style="font-size:12.5px;color:var(--muted)">Sem checklist — este negócio está arquivado.
        <a class="lnk" style="color:var(--azul-claro);cursor:pointer" onclick="desarquivar(${n.id})">devolver ao funil</a> cria as 15 tarefas.</div>`;
 
+  // ══ ABAS DA FICHA (08/08) ══════════════════════════════════════════════════════════════
+  // A ficha juntava tudo numa coluna só: estágio, ficha, rastro, observação da planilha,
+  // anotações e 15 tarefas — dava rolagem longa e o que importava ficava embaixo do que não
+  // importava naquele momento. Agora são 4 abas, o mesmo desenho que a captura do concorrente
+  // mostrou (Informações · Lembretes · Tarefas · Observações), porque ele resolve o mesmo
+  // problema: cada aba é uma PERGUNTA diferente que se faz sobre o mesmo negócio.
+  // >>> O ESTÁGIO FICA FORA DAS ABAS, no topo: ele é o estado do negócio, não um assunto.
+  //     Precisa estar visível seja qual for a aba aberta.
+  const obsPlanilha = carregando
+    ? '<div class="salvo">carregando a observação da planilha…</div>'
+    : (obs && obs.observacao && String(obs.observacao).trim()
+       ? `<h4>Observação do Calendário 2025${obs.status?' · '+esc(obs.status):''}</h4>
+          <div class="dw-obs">${esc(obs.observacao)}</div>
+          <div class="salvo">escrita à mão na planilha — histórico, não editável aqui</div>`
+       : (obs && obs.status ? `<h4>Status na planilha</h4><div style="font-size:12.5px;color:var(--muted)">${esc(obs.status)} — sem observação escrita</div>` : ''));
+
   return `
     <div class="dw-sec">
       <h4>Estágio</h4>
       <div class="dw-fases">${FASES.map(f =>
         `<button class="${n.estagio===f.k?'on':''}" onclick="mudaFase(${n.id},'${f.k}')">${esc(f.n)}</button>`).join('')}</div>
     </div>
-    <div class="dw-sec"><h4>Ficha${editavel?' <span class="salvo" style="font-weight:400">· editável</span>':''}</h4>${ficha}</div>
-    <div class="dw-sec" id="dw-rastro"></div>
-    ${carregando ? '<div class="dw-sec"><h4>Observação da planilha</h4><div style="font-size:12px;color:var(--muted)">carregando…</div></div>'
-      : (obs && obs.observacao && String(obs.observacao).trim()
-         ? `<div class="dw-sec"><h4>Observação do Calendário 2025${obs.status?' · '+esc(obs.status):''}</h4>
-              <div class="dw-obs">${esc(obs.observacao)}</div>
-              <div class="salvo">escrita à mão na planilha — histórico, não editável aqui</div></div>`
-         : (obs && obs.status ? `<div class="dw-sec"><h4>Status na planilha</h4><div style="font-size:12.5px;color:var(--muted)">${esc(obs.status)} — sem observação escrita</div></div>` : ''))}
-    <div class="dw-sec">
-      <h4>Anotações</h4>
-      <textarea class="anot" id="dw-anot" placeholder="O que antes ia na coluna OBSERVAÇÃO da planilha escreve-se aqui — e fica junto do negócio."
-        onblur="salvaAnot(${n.id}, this.value)">${esc(n.anotacoes||'')}</textarea>
-      <div class="salvo" id="dw-anot-msg">salva ao sair do campo</div>
+
+    <div class="dw-abas">
+      <button class="on" data-aba="info"   onclick="abaFicha(this,'info')">Informações</button>
+      <button        data-aba="lembretes"  onclick="abaFicha(this,'lembretes')">Lembretes <span id="dw-lem-n"></span></button>
+      <button        data-aba="tarefas"    onclick="abaFicha(this,'tarefas')">Tarefas${t ? ` ${feitas}/${t.length}` : ''}</button>
+      <button        data-aba="obs"        onclick="abaFicha(this,'obs')">Observações</button>
     </div>
-    <div class="dw-sec">
-      <h4>Tarefas ${t ? `· ${feitas} de ${t.length} concluídas` : ''}</h4>
-      ${t ? `<div class="dw-prog"><span>${pct}%</span><span class="b"><i style="width:${pct}%"></i></span></div>` : ''}
-      ${tarefas}
+
+    <div class="dw-painel on" id="aba-info">
+      <div class="dw-sec"><h4>Ficha${editavel?' <span class="salvo" style="font-weight:400">· editável</span>':''}</h4>${ficha}</div>
+      <div class="dw-sec" id="dw-rastro"></div>
     </div>
+
+    <div class="dw-painel" id="aba-lembretes">
+      <div class="dw-sec">
+        <h4>Lembretes agendados</h4>
+        <div class="salvo">O sino avisa por eles. Diferente do resto do sino, lembrete não é
+          fato lido do banco — é uma intenção que alguém teve, e sem escrever ela some.</div>
+        ${editavel ? `<div class="lem-novo">
+          <input type="text" id="lem-titulo" placeholder="ex.: ligar pro fornecedor antes da sessão">
+          <input type="datetime-local" id="lem-quando">
+          <select id="lem-prio"><option value="alta">alta</option><option value="media" selected>média</option><option value="baixa">baixa</option></select>
+          <button class="btn-ed" onclick="criarLembrete(${n.id})" id="lem-bt">＋ Agendar</button>
+        </div><div class="salvo" id="lem-msg"></div>` : '<div class="salvo">só quem grava pode agendar lembrete.</div>'}
+        <div id="lem-lista"><div class="salvo">carregando…</div></div>
+      </div>
+    </div>
+
+    <div class="dw-painel" id="aba-tarefas">
+      <div class="dw-sec">
+        <h4>Tarefas ${t ? `· ${feitas} de ${t.length} concluídas` : ''}</h4>
+        ${t ? `<div class="dw-prog"><span>${pct}%</span><span class="b"><i style="width:${pct}%"></i></span></div>` : ''}
+        ${tarefas}
+      </div>
+    </div>
+
+    <div class="dw-painel" id="aba-obs">
+      ${obsPlanilha ? `<div class="dw-sec">${obsPlanilha}</div>` : ''}
+      <div class="dw-sec">
+        <h4>Anotações</h4>
+        <textarea class="anot" id="dw-anot" placeholder="O que antes ia na coluna OBSERVAÇÃO da planilha escreve-se aqui — e fica junto do negócio."
+          onblur="salvaAnot(${n.id}, this.value)">${esc(n.anotacoes||'')}</textarea>
+        <div class="salvo" id="dw-anot-msg">salva ao sair do campo</div>
+      </div>
+    </div>
+
     <div class="dw-acoes">
       ${n.arquivado ? `<button onclick="desarquivar(${n.id})">↩ Devolver ao funil</button>`
                     : `<button onclick="arquivar(${n.id})">📥 Arquivar</button>`}
-      <button onclick="location.href='fpmed_licitacoes.html'">🏛️ Abrir Licitações</button>
+      <button onclick="location.href='fpmed_documentos.html'">📄 Documentos</button>
       <button onclick="fecharDrawer()">Fechar</button>
     </div>`;
+}
+
+// ══ AS ABAS ══════════════════════════════════════════════════════════════════════════════
+function abaFicha(bt, qual){
+  document.querySelectorAll('.dw-abas button').forEach(b => b.classList.toggle('on', b === bt));
+  document.querySelectorAll('.dw-painel').forEach(p => p.classList.toggle('on', p.id === 'aba-' + qual));
+}
+
+// ══ LEMBRETES ════════════════════════════════════════════════════════════════════════════
+let LEMBRETES = [];
+const PRIO_COR = { alta:'#e5675a', media:'#e0a04a', baixa:'#8fa3b8' };
+async function carregarLembretes(id){
+  const box = document.getElementById('lem-lista'); if(!box) return;
+  try{
+    const r = await fetch(`${SB_URL}/rest/v1/lembretes?negocio_id=eq.${id}&select=*&order=quando.asc`, {headers:SB_H});
+    if(!r.ok) throw new Error('HTTP ' + r.status);
+    LEMBRETES = await r.json();
+  }catch(e){
+    // erro NÃO vira "nenhum lembrete": alguém concluiria que não há nada agendado
+    box.innerHTML = '<div class="salvo" style="color:#ff9d92">⚠️ não consegui ler os lembretes deste negócio.</div>';
+    return;
+  }
+  pintaLembretes(id);
+}
+function pintaLembretes(id){
+  const box = document.getElementById('lem-lista'); if(!box) return;
+  const cnt = document.getElementById('dw-lem-n');
+  const abertos = LEMBRETES.filter(l => !l.feito).length;
+  if(cnt) cnt.textContent = abertos ? '(' + abertos + ')' : '';
+  if(!LEMBRETES.length){ box.innerHTML = '<div class="salvo">Nenhum lembrete agendado neste negócio.</div>'; return; }
+  const agora = new Date();
+  box.innerHTML = LEMBRETES.map(l => {
+    const q = new Date(l.quando);
+    const atrasado = !l.feito && q < agora;
+    return `<div class="lem${l.feito?' feito':''}">
+      <input type="checkbox" ${l.feito?'checked':''} onchange="marcarLembrete(${id},${l.id},this.checked)">
+      <div><div class="t">${esc(l.titulo)}</div>
+        <div class="q">${q.toLocaleString('pt-BR')}${atrasado?' · <b style="color:#ff9d92">atrasado</b>':''}</div></div>
+      <span class="prio" style="color:${PRIO_COR[l.prioridade]||'#8fa3b8'};border-color:${PRIO_COR[l.prioridade]||'#8fa3b8'}">${esc(l.prioridade)}</span>
+    </div>`;
+  }).join('');
+}
+async function criarLembrete(id){
+  const msg = document.getElementById('lem-msg'), bt = document.getElementById('lem-bt');
+  const titulo = (document.getElementById('lem-titulo').value||'').trim();
+  const quando = document.getElementById('lem-quando').value;
+  if(!titulo){ msg.textContent = 'escreva o que precisa ser feito.'; return; }
+  if(!quando){ msg.textContent = 'escolha a data e a hora — lembrete sem quando não avisa nada.'; return; }
+  bt.disabled = true; msg.textContent = 'agendando…';
+  try{
+    const n = NEG.find(x => x.id === id);
+    const r = await fetch(`${SB_URL}/rest/v1/lembretes`, {method:'POST',
+      headers: Object.assign({'Prefer':'return=representation'}, SB_H, {'Content-Type':'application/json'}),
+      body: JSON.stringify({ negocio_id: id, empresa_id: (n && n.empresa_id) || null, titulo,
+        quando: new Date(quando).toISOString(), prioridade: document.getElementById('lem-prio').value })});
+    if(!r.ok) throw new Error(r.status===401||r.status===403 ? 'só gestor agenda lembrete' : ('HTTP '+r.status));
+    document.getElementById('lem-titulo').value = '';
+    msg.textContent = '';
+    await carregarLembretes(id);
+    pintaNotif();                       // o sino passa a contar este lembrete na hora
+  }catch(e){ msg.textContent = '⚠️ ' + e.message; }
+  bt.disabled = false;
+}
+async function marcarLembrete(negId, id, feito){
+  try{
+    await fetch(`${SB_URL}/rest/v1/lembretes?id=eq.${id}`, {method:'PATCH',
+      headers: Object.assign({}, SB_H, {'Content-Type':'application/json'}),
+      body: JSON.stringify({ feito, feito_em: feito ? new Date().toISOString() : null,
+                             atualizado_em: new Date().toISOString() })});
+    const l = LEMBRETES.find(x => x.id === id); if(l) l.feito = feito;
+    pintaLembretes(negId); pintaNotif();
+  }catch(e){ /* a marcação volta no próximo carregamento; não vale travar a ficha por isso */ }
 }
 
 // ══ SITUAÇÃO DO CERTAME ══════════════════════════════════════════════════════════════════
@@ -873,7 +1017,10 @@ function pintaNotif(){
   //     Certidão vencida é o oposto: fica acesa até alguém RESOLVER, e resolver é possível hoje.
   //     Um badge que apaga sozinho quando o problema continua é pior que badge nenhum.
   const docsRuins = Array.isArray(DOCS) ? DOCS.filter(d => d.situacao==='vencido' || d.situacao==='vencendo').length : 0;
-  const total = n.urgentes + docsRuins;
+  // Lembrete entra no badge pela MESMA razão do documento: ele fica aceso até alguém RESOLVER,
+  // e resolver é possível — é justamente para isso que ele foi criado.
+  const lemAbertos = Array.isArray(LEM_SINO) ? LEM_SINO.length : 0;
+  const total = n.urgentes + docsRuins + lemAbertos;
   cnt.textContent = total;
   cnt.style.display = total ? '' : 'none';
   const linha = (x, cls) => {
@@ -906,7 +1053,21 @@ function pintaNotif(){
         + h;
     }
   }
-  if(!h) h = '<div class="nf-vazio">Nada abre hoje nem amanhã, e nenhum documento vencendo.<br>O sino só mostra sessão de negócio <b>ativo</b> — arquivado não avisa.</div>';
+  // ── LEMBRETES ── entram DEPOIS das sessões e antes do resto: sessão tem hora marcada pelo
+  //    órgão e não se remarca; lembrete é compromisso interno, e esse a empresa controla.
+  if(LEM_SINO === 'erro'){
+    h += '<div class="nf-sec">lembretes</div><div class="nf-vazio">⚠️ Não consegui ler os lembretes, então <b>não sei</b> o que está agendado.</div>';
+  } else if(Array.isArray(LEM_SINO) && LEM_SINO.length){
+    const agora = new Date();
+    h += '<div class="nf-sec">lembretes agendados</div>'
+      + LEM_SINO.slice(0,8).map(l => {
+          const q = new Date(l.quando), atrasado = q < agora;
+          return `<a class="nf ${atrasado?'hoje':''}" onclick="irPara(${l.negocio_id})">
+            <div class="q">${atrasado?'⏰':'🔔'} ${esc(l.titulo)}</div>
+            <div class="s">${q.toLocaleString('pt-BR')}${atrasado?' · atrasado':''} · prioridade ${esc(l.prioridade)}</div></a>`;
+        }).join('');
+  }
+  if(!h) h = '<div class="nf-vazio">Nada abre hoje nem amanhã, nenhum documento vencendo e nenhum lembrete no prazo.<br>O sino só mostra sessão de negócio <b>ativo</b> — arquivado não avisa.</div>';
   document.getElementById('notif').innerHTML = h;
 }
 function toggleNotif(ev){
