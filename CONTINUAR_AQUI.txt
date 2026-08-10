@@ -444,6 +444,25 @@ Criado em 21/07/2026 copiando SO os arquivos do app do C:\globalmed.
         convidado a atualizar. NAO alterei o limedtec-pwa.js aqui: e arquivo de MOLDE, e a regra
         e "o que vale pra qualquer cliente conserta-se na fabrica".
 
+>>> 10/08 — UPGRADE NANO->MICRO AGENDADO PRA 11/08 AS 03:00 (item 3 da fila nova, aprovado).
+    A Management API NAO tem parametro de agendamento — ela aplica na hora e o banco REINICIA
+    (1-2 min). Entao o que foi agendado e a EXECUCAO: tarefa do Windows `FPMED-compute-micro`,
+    gatilho unico 2026-08-11T03:00:00-03:00, com WakeToRun (acorda a maquina) e StartWhenAvailable
+    (se a maquina estiver desligada, roda quando ligar — nao pula em silencio).
+    Roda: "C:\Program Files\nodejs\node.exe" tools/upgrade_compute.js --aplicar  (em C:\fpmed)
+    >>> A FERRAMENTA E PREVIA POR PADRAO. Sem --aplicar ela nao muda nada; e acao COM FATURA
+        (~US$ 0,01344/h, ~US$ 10/mes, coberto pelo credito de compute do Pro).
+    >>> E ELA CONFERE DEPOIS DE VOLTAR: espera o projeto voltar pra ACTIVE_HEALTHY e faz uma
+        CONSULTA REAL ao banco. "A API aceitou" nao e "o banco esta no ar", e quem le o log de
+        manha precisa saber qual das duas aconteceu. Log em backups/upgrade_compute.log.
+    >>> Se ja estiver em Micro, ela NAO reinicia: reiniciar pra chegar onde ja se esta e o tipo
+        de operacao "inofensiva" que derruba o sistema por nada.
+    PREVIA RODADA HOJE: compute atual ci_nano (padrao, sem addon) · alvo ci_micro, 2 vCPU, 1 GB.
+    >>> LEMBRETE DA MEDICAO DE 06/08, pra ninguem reescrever a historia: o Nano NAO e gargalo de
+        nada medido (latencia 43,3 ms, consulta mais pesada 206 ms, zero OOM em 48 h). O Micro e
+        FOLGA DE RAM, nao correcao de defeito.
+    CONFERIR DEPOIS: Get-ScheduledTaskInfo -TaskName "FPMED-compute-micro"  +  o log acima.
+
 >>> 10/08 — PESO DAS PRACAS APROVADO E APLICADO: GO EM TODA RODADA. (item 1 da fila nova)
     O rodizio tratava as 7 UFs como iguais, e elas nao sao. Agora `UFS_SEMPRE = ['GO']` entra na
     FRENTE de toda rodada e as outras 6 seguem no rodizio com memoria. Nos DIAS VELHOS nao ha

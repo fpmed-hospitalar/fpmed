@@ -65,3 +65,7 @@ varredura_*.txt
 scan_*.txt
 *preco*.txt
 *leads*.json
+
+# mensagens operacionais pro Lemuel mandar (nao sao produto, e citam pessoas)
+_MENSAGEM_*.txt
+_PASSO_A_PASSO_*.txt
