@@ -246,10 +246,19 @@ async function puxa(url, breaker, ritmo) {
   if (diaEmCurso !== diaMaisNovo) { diaEmCurso = diaMaisNovo; ufsFeitas = []; }
   let voltaFechou = false;
 
+  /* ══ PESO DAS PRAÇAS: GO EM TODA RODADA (decisão do Lemuel, 10/08) ════════════════════════
+     O rodízio puro tratava as 7 UFs como iguais, e elas não são: GO é onde a FPMED disputa. GO
+     entra SEMPRE, na frente; as outras 6 seguem no rodízio com memória. Tem que ser IDÊNTICO ao
+     da edge function — a suíte trava isso, porque dois coletores com prioridades diferentes
+     fariam a produção se comportar diferente do que se testa aqui. */
+  const UFS_SEMPRE = UFS.filter(u => u === 'GO');
+
   for (const dia of diasDaJanela) {
     const iso = yyyymmdd(dia).replace(/(\d{4})(\d{2})(\d{2})/, '$1-$2-$3');
     const doDiaNovo = iso === diaMaisNovo;
-    const ufsDaVez = doDiaNovo ? UFS.filter(u => !ufsFeitas.includes(u)) : UFS;
+    const ufsDaVez = doDiaNovo
+      ? UFS_SEMPRE.concat(UFS.filter(u => !UFS_SEMPRE.includes(u) && !ufsFeitas.includes(u)))
+      : UFS;
     let diaInteiro = true;
     for (const uf of ufsDaVez) {
       let ufInteira = true;
@@ -344,5 +353,6 @@ async function puxa(url, breaker, ritmo) {
   const faltam = UFS.filter(u => !ufsFeitas.includes(u));
   console.log(voltaFechou ? `🔄 volta do dia ${diaEmCurso} FECHADA (as ${UFS.length} UFs) — o progresso zerou`
     : `🔄 ${diaEmCurso}: ${ufsFeitas.length}/${UFS.length} UFs varridas` + (faltam.length ? ` · faltam ${faltam.join(',')}` : ''));
+  if (UFS_SEMPRE.length) console.log(`⭐ praça principal (toda rodada): ${UFS_SEMPRE.join(',')}`);
   process.exitCode = okDeVerdade ? 0 : 1;
 })().catch(e => { console.error('ERRO: ' + e.message); process.exit(1); });

@@ -264,11 +264,28 @@ Deno.serve(async (req) => {
   if (diaEmCurso !== diaMaisNovo) { diaEmCurso = diaMaisNovo; ufsFeitas = []; }
   let voltaFechou = false;
 
+  /* ══ PESO DAS PRAÇAS: GO EM TODA RODADA (decisão do Lemuel, 10/08) ════════════════════════
+     O rodízio puro tratava as 7 UFs como iguais, e elas não são: GO é onde a FPMED disputa. Com
+     o rodízio sozinho, Goiás era revisto uma vez por volta — e a volta leva ~2 rodadas, ou seja
+     ~1,5× por dia. Agora GO entra SEMPRE, na frente, e as outras 6 seguem no rodízio com
+     memória. Frescor de GO passa de ~1,5× para 3× por dia (o cron), sem custar cobertura das
+     outras: GO são ~6 requisições de um dia, e a rodada faz de 20 a 40.
+     >>> A LISTA É DE CASA, NÃO DA API: quem muda a praça principal muda AQUI e nos dois
+         coletores, e a suíte trava que os dois dizem a mesma coisa. Se um dia a FPMED abrir
+         filial, a UF nova entra nesta lista — não em `UFS`, que é só o universo de busca.
+     >>> E `ufsSempre` continua entrando em `ufsFeitas`: a volta só fecha quando TODAS as 7
+         passaram, e Goiás passar toda rodada não pode fazer a volta parecer fechada sem as
+         outras — é a mesma conta de antes, com GO chegando na frente. */
+  const UFS_SEMPRE = UFS.filter((u) => u === "GO");
+
   for (const dia of diasDaJanela) {
     const iso = yyyymmdd(dia).replace(/(\d{4})(\d{2})(\d{2})/, "$1-$2-$3");
     const doDiaNovo = iso === diaMaisNovo;
-    // no dia mais novo, pula o que rodada anterior já varreu; nos dias velhos, varre tudo que der
-    const ufsDaVez = doDiaNovo ? UFS.filter((u) => !ufsFeitas.includes(u)) : UFS;
+    // no dia mais novo: a praça principal primeiro, SEMPRE, e depois o que o rodízio ainda deve.
+    // Nos dias velhos, varre tudo que der — ninguém guarda progresso deles.
+    const ufsDaVez = doDiaNovo
+      ? UFS_SEMPRE.concat(UFS.filter((u) => !UFS_SEMPRE.includes(u) && !ufsFeitas.includes(u)))
+      : UFS;
     const achados = new Map<string, any>();
     let diaInteiro = true;                    // vi TODAS as UFs, todas as modalidades, sem teto?
     for (const uf of ufsDaVez) {
@@ -369,6 +386,7 @@ Deno.serve(async (req) => {
     diaEmCurso,                              // de que dia é o progresso guardado
     ufsFeitas,                               // quais UFs desse dia já foram varridas
     faltamUFs: UFS.filter((u) => !ufsFeitas.includes(u)),
+    ufsSempre: UFS_SEMPRE,                   // a praça principal, revista em toda rodada
     voltaFechou,
     truncou,
     breakerAberto: breaker.aberto,

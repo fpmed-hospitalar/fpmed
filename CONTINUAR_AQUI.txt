@@ -444,6 +444,22 @@ Criado em 21/07/2026 copiando SO os arquivos do app do C:\globalmed.
         convidado a atualizar. NAO alterei o limedtec-pwa.js aqui: e arquivo de MOLDE, e a regra
         e "o que vale pra qualquer cliente conserta-se na fabrica".
 
+>>> 10/08 — PESO DAS PRACAS APROVADO E APLICADO: GO EM TODA RODADA. (item 1 da fila nova)
+    O rodizio tratava as 7 UFs como iguais, e elas nao sao. Agora `UFS_SEMPRE = ['GO']` entra na
+    FRENTE de toda rodada e as outras 6 seguem no rodizio com memoria. Nos DIAS VELHOS nao ha
+    privilegio (la nao existe progresso guardado). A volta so fecha com as 7 — Goias passar toda
+    rodada nao pode fazer a volta parecer fechada sem as outras.
+    >>> EFEITO MEDIDO EM 3 RODADAS REAIS (nao estimado), e o custo aparece junto:
+        GO ...... 1 vez a cada 2 rodadas  ->  TODA rodada.   Com o cron 3x/dia: ~1,5x -> 3x/dia.
+        as outras 6 ... a volta foi de 2 para 3 rodadas  ->  de ~1,5x para ~1x por dia.
+        E EXATAMENTE A TROCA QUE ELE APROVOU: a praca onde a FPMED disputa fica com o dobro de
+        frescor, e as outras perdem meia passagem por dia. Nao ha almoco gratis com a cota do PNCP.
+    Rodadas: A ufsFeitas [GO,DF] · B [GO,DF,MG,MT,MS] · C fechou a volta (voltaFechou:true).
+    Indice: 1.356 -> 1.847 licitacoes. Por UF: GO 747 · MG 485 · BA 337 · MT 95 · DF 77 · MS 58 ·
+    TO 48. Edge function versao 7. Suite: 1.970 asserts / 0 falhas / 58 suites.
+    >>> SE ELE QUISER MUDAR A PRACA (filial nova, outra regiao): mexer em `UFS_SEMPRE` nos DOIS
+        coletores. `UFS` continua sendo o universo de BUSCA, nao a lista de prioridade.
+
 >>> FILA — ESTADO EM 10/08, FIM DA RODADA 7. Conferido item a item, nao suposto.
     [OK] motor de dose num arquivo so (a pendencia do item 5)
     [OK] itens do edital -> gerador de proposta (o que restava da secao 8.3)

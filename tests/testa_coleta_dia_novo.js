@@ -76,8 +76,9 @@ ok('13. a resposta da funcao DIZ ate que dia fechou (senao ninguem confere de fo
 // recomecava em GO: o banco tinha 689 licitacoes, TODAS de GO/DF/MG, e MT/MS/TO/BA nunca haviam
 // sido coletadas uma unica vez. Com o cursor, duas rodadas fecharam a volta e o carimbo encheu.
 for (const [nome, src] of [['edge', EDGE], ['local', LOCAL]]) {
+  // (a praca principal entra na frente por decisao do Lemuel — o assert dela e o 39c)
   ok(`33.${nome}: *** o dia mais novo pula as UFs que rodada anterior ja varreu ***`,
-    /const ufsDaVez = doDiaNovo \? UFS\.filter\(\(?u\)? => !ufsFeitas\.includes\(u\)\) : UFS;/.test(src));
+    /const ufsDaVez = doDiaNovo[\s\S]{0,140}!ufsFeitas\.includes\(u\)\)\)?\s*\n?\s*: UFS;/.test(src));
   ok(`34.${nome}: *** a UF so entra no progresso com as 3 modalidades lidas ***`,
     /if \(doDiaNovo && ufInteira && !ufsFeitas\.includes\(uf\)\) ufsFeitas\.push\(uf\);/.test(src));
   // o texto quebra de linha em lugares diferentes nos dois arquivos — normaliza antes de olhar
@@ -92,8 +93,24 @@ for (const [nome, src] of [['edge', EDGE], ['local', LOCAL]]) {
   ok(`39.${nome}: a cota medida do PNCP esta registrada (senao alguem "conserta" tirando o cursor)`,
     /14 × HTTP 429 seguidos|14 x HTTP 429 seguidos|14 × HTTP 429/.test(src));
 }
+// ══════════ 2C. O PESO DAS PRACAS — GO EM TODA RODADA (decisao do Lemuel, 10/08) ══════════
+// O rodizio puro tratava as 7 UFs como iguais, e elas nao sao: GO e onde a FPMED disputa. Com o
+// rodizio sozinho Goias era revisto ~1x por volta (~1,5x/dia). Agora entra SEMPRE, na frente.
+for (const [nome, src] of [['edge', EDGE], ['local', LOCAL]]) {
+  ok(`39b.${nome}: *** a praca principal e GO, declarada em lista propria ***`,
+    /const UFS_SEMPRE = UFS\.filter\(\(?u\)? => u === ['"]GO['"]\);/.test(src));
+  ok(`39c.${nome}: *** e ela vem NA FRENTE, antes do que o rodizio ainda deve ***`,
+    /UFS_SEMPRE\.concat\(UFS\.filter\(\(?u\)? => !UFS_SEMPRE\.includes\(u\) && !ufsFeitas\.includes\(u\)\)\)/.test(src));
+  ok(`39d.${nome}: *** e a volta SO fecha com as 7 (GO passar toda rodada nao fecha volta) ***`,
+    /UFS\.every\(\(?u\)? => ufsFeitas\.includes\(u\)\)/.test(src));
+  ok(`39e.${nome}: o dia VELHO nao tem privilegio (la nao ha progresso guardado)`,
+    /: UFS;/.test(src));
+}
+ok('39f. a lista da praca e DE CASA, e isso esta dito (senao alguem procura na API do PNCP)',
+  /A LISTA É DE CASA, NÃO DA API/.test(EDGE));
 ok('40. a resposta da funcao diz quais UFs faltam (da pra conferir de fora, sem abrir o banco)',
-  /faltamUFs: UFS\.filter\(\(?u\)? => !ufsFeitas\.includes\(u\)\)/.test(EDGE) && /voltaFechou,/.test(EDGE));
+  /faltamUFs: UFS\.filter\(\(?u\)? => !ufsFeitas\.includes\(u\)\)/.test(EDGE) && /voltaFechou,/.test(EDGE)
+  && /ufsSempre: UFS_SEMPRE,/.test(EDGE));
 ok('41. o script local imprime o andamento da volta',
   /UFs varridas/.test(LOCAL) && /volta do dia \$\{diaEmCurso\} FECHADA/.test(LOCAL));
 ok('42. *** os dois coletores compartilham o MESMO progresso (indice unico, conta unica) ***',
