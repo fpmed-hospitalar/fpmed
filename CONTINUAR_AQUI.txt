@@ -284,7 +284,27 @@ Criado em 21/07/2026 copiando SO os arquivos do app do C:\globalmed.
                 fica VERMELHO se divergirem. PENDENCIA: o conserto definitivo e o Licitacoes
                 CARREGAR este arquivo em vez de ter copia; nao fiz hoje pra nao mexer no
                 cruzamento que esta no ar.
-            >>> FALTA: a tela do Conferidor (upload/colar) e a integracao no gerador do giovana.
+            [OK] A TELA DO CONFERIDOR (fpmed_conferidor.html, 6a aba do portal): cola o texto ou
+                 envia PDF/Excel. O PDF e lido NO NAVEGADOR (pdf.js, mesma tecnica do Atualizar
+                 Estoque — agrupa por Y pra preservar a linha); Excel pelo SheetJS. Placar no
+                 topo com "nao encontrados" em COR PROPRIA: ele nao e bom nem ruim, e
+                 DESCONHECIDO — pintar de verde ou vermelho seria opinar sem saber.
+                 Exporta Excel COM a coluna Situacao (a planilha e levada pra corrigir a
+                 proposta; quem abre depois precisa ver o que estava acima sem refazer a conta).
+                 A tela avisa que material/correlato cai em "nao encontrado" POR NATUREZA.
+            [OK] GUARD DE BANCO: tests/db/testa_teto_real.js roda o motor contra a CMED DE
+                 VERDADE (4.875 chaves + 6.283 pares marca->PA). O outro teste prova a LOGICA
+                 contra indice de mentira; este prova que ela ACHA o que existe. Casa DIPIRONA,
+                 e NAO casa parafuso/cadeira/papel — inventar teto pra material seria o pior erro.
+                 TAXA DE CASAMENTO no estoque proprio: 63/400 = 15,8% (o estoque tem muito
+                 material e correlato, que nao tem teto CMED — nao se espera 100%).
+                 >>> CUIDADO COM UM NUMERO DESSE TESTE: ele imprime "85 de 98 acima do teto".
+                     NAO E DIAGNOSTICO. A unitarizacao ali e grosseira (venda/und) e infla o
+                     "acima" — pack nao detectado vira divisor 1 e preco de CAIXA e comparado
+                     com teto UNITARIO. O achado real registrado no item 1B foi 28 chaves acima.
+                     O aviso esta impresso na saida do proprio teste.
+            >>> FALTA do item 5: a integracao no gerador de proposta do fpmed_giovana (itens do
+                edital + nosso preco sugerido + trava do teto), conforme a secao 8.3 do SPEC.
 
     >>> REFERENCIA VISUAL DA FICHA DELES (08/08) — secao 8.4-B do SPEC. EU VI a tela (o Lemuel
         capturou; o arquivo esta FORA do repo pelo .gitignore, porque e produto de terceiro E tem
