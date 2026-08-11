@@ -525,6 +525,24 @@ Criado em 21/07/2026 copiando SO os arquivos do app do C:\globalmed.
     Suite nova testa_pix (17). Ela ja pegou uma 2a copia do CNPJ escrita num COMENTARIO do
     config — que e exatamente o jeito classico de a copia nascer (alguem copia do comentario).
 
+>>> 11/08 — "IR PRO FUNIL" no cartao da lista (e da agenda).
+    A lista responde "o que eu tenho"; o funil responde "em que pe esta". Quem via um negocio na
+    lista e queria o segundo trocava de visao e CACAVA o card entre as colunas — e o titulo do
+    card e curto, entao cacar com o olho e o que da errado.
+    Botao no MESMO bloco de acoes do "arquivar" (aparece no hover, mesmo estilo, nada inventado).
+    NAO aparece dentro dos Quadros: la o card ja esta no funil. A AGENDA ganhou de graca — ela
+    usa o mesmo `card()`; se um dia montar card proprio, o assert 6 cai e avisa.
+    >>> AS DUAS ARMADILHAS, que sao o motivo de o botao ter codigo em vez de um href:
+        FASE: com uma etiqueta de fase ligada, ir pro funil de um negocio de OUTRA fase levaria a
+          uma tela SEM o card — e o botao pareceria quebrado. Ele SOLTA o filtro e DIZ que soltou
+          (mudanca silenciosa de filtro e pior que filtro nenhum).
+        EMPRESA: esse NAO e mexido. Ele responde "de quem e este funil"; trazer negocio de outra
+          empresa seria responder outra pergunta. A tela avisa e NAO vai.
+        Arquivado: reabre o filtro de arquivados, senao o alvo nao existe no kanban.
+    O REALCE PULSA e some em 4s: movimento e o que o olho acha numa tela de cards parecidos, e
+    marca que fica vira sujeira que ninguem sabe tirar. Respeita prefers-reduced-motion.
+    Suite nova testa_ir_pro_funil (23). Total: 2.115 asserts / 0 falhas / 64 suites.
+
 >>> 10/08 — CAMINHO DE VOLTA EM TODAS AS TELAS. Ele achou UMA; a varredura achou TRES.
     Relato dele: "Usuarios e acessos" sem o "← Sistema" — a barra do gm-auth ocupa a DIREITA
     (e-mail, chave, Sair) e a esquerda estava vazia. Quem entra so sai pelo botao do navegador, e
