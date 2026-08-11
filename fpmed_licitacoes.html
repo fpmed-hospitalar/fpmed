@@ -118,6 +118,15 @@ select:focus,input:focus{outline:none;border-color:var(--azul)}
 /* Numa coluna estreita o grid de 3 colunas vira uma pilha — os campos ficam legíveis e o
    rótulo continua colado no seu campo. */
 #avancada .grid3{grid-template-columns:1fr;gap:11px}
+/* >>> `min-width:0` É O QUE FAZ CABER, e sem ele a coluna nasce quebrada: item de grid tem
+       `min-width:auto` por padrão e NÃO encolhe abaixo do próprio conteúdo — e um `<select>`
+       com opção longa ("Concorrência eletrônica") mede 359px. Medido no ar: coluna de 245px
+       com conteúdo de 375px, campos cortados na direita e barra de rolagem horizontal.
+       `box-sizing:border-box` já existia e não resolve isto: o problema não é o padding, é o
+       piso de largura do item. */
+#avancada .grid3 > *{min-width:0}
+#avancada select,#avancada input,#avancada textarea{max-width:100%}
+#avancada{overflow-x:hidden}
 .grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px}
 .grid3 label{display:block;font-size:11px;font-weight:600;color:var(--muted);margin-bottom:5px;text-transform:uppercase;letter-spacing:.3px}
 
