@@ -23,7 +23,20 @@ name: Boletim diario
 
 on:
   schedule:
-    - cron: '0 8 * * *'      # 05h de Goiás (UTC-3) — o dia D-1 já fechou
+    # ══ MEDIDO EM 11/08: O BOLETIM SAIU 4h55 ATRASADO ═══════════════════════════════════════
+    # O cron era 08:00 UTC (05h de Goiás) e o `ultimo_envio` gravado foi 12:55 UTC (09:55). Não
+    # foi a função nem o token: o agendador do GitHub Actions atrasa cron, e atrasa MAIS no
+    # minuto :00 de hora cheia, que é o horário mais disputado da plataforma. Dois consertos:
+    #
+    # 1. SAIR DA HORA CHEIA. `17 8` em vez de `0 8` — o mesmo horário para quem lê, num minuto
+    #    que não concorre com metade do mundo.
+    - cron: '17 8 * * *'     # 05h17 de Goiás (UTC-3) — o dia D-1 já fechou
+    # 2. UMA REDE, e não uma segunda tentativa às cegas. Se a das 5h atrasou ou se perdeu, esta
+    #    pega. Se a das 5h funcionou, esta NÃO manda nada: a função pula jornal sem novidade
+    #    (`if (!novas.length && !sessoes.length)`), e o que já foi enviado está marcado em
+    #    `vistos_email`. Ou seja, o custo de ter a rede é zero e-mail a mais — e o custo de não
+    #    ter é o operador descobrir a oportunidade no dia seguinte.
+    - cron: '23 11 * * *'    # 08h23 de Goiás — rede de segurança, mata-mata com a de cima
   workflow_dispatch:
     inputs:
       dia:

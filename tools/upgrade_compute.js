@@ -87,12 +87,24 @@ const api = async (caminho, opts) => {
   }
 
   diz('aplicando ' + VARIANTE + '... (o banco reinicia; 1-2 min)');
+  /* >>> PATCH, E NAO POST. A tarefa agendada disparou 03:00 em ponto de 11/08 e falhou com
+         `HTTP 404 Cannot POST /v1/projects/.../billing/addons`: a Management API trocou o metodo
+         de escrita, e o POST deixou de existir. O GET na MESMA rota continuou respondendo 200,
+         que e o que fazia a previa parecer saudavel.
+         Descoberto sem aplicar nada: mandei corpo vazio em PUT, PATCH e POST — PUT e POST deram
+         404 (rota nao existe pra eles) e PATCH deu 400 reclamando do CORPO, que e a resposta de
+         quem existe. Descobrir metodo por tentativa de escrita seria arriscar aplicar sem querer;
+         corpo invalido de proposito nao muda nada. */
   const r = await api('/v1/projects/' + REF + '/billing/addons', {
-    method: 'POST',
+    method: 'PATCH',
     body: JSON.stringify({ addon_type: 'compute_instance', addon_variant: VARIANTE }),
   });
   if (r.status < 200 || r.status >= 300) {
     diz('ERRO na troca: HTTP ' + r.status + ' ' + JSON.stringify(r.corpo).slice(0, 400));
+    // >>> 404 AQUI QUER DIZER QUE A ROTA MUDOU DE NOVO, e nao que o projeto sumiu — o GET da
+    //     mesma rota funcionou dez linhas acima. Dizer isso poupa a proxima investigacao.
+    if (r.status === 404) diz('    (o GET desta MESMA rota respondeu 200 — entao o projeto existe e '
+      + 'quem mudou foi o METODO de escrita da Management API. Foi assim em 11/08, quando era POST.)');
     process.exit(1);
   }
   diz('troca aceita pela Management API (HTTP ' + r.status + ')');

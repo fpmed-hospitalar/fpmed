@@ -37,8 +37,16 @@ ok('2. *** e ontem no fuso de GOIAS, nao no UTC ***',
   /Date\.now\(\) - 3 \* 3600 \* 1000/.test(FN) && /fuso de Goiás/.test(FN));
 ok('3. ...com o motivo escrito (usar o dia UTC faria a madrugada falar do dia errado)',
   /faria o boletim de segunda falar de domingo/.test(FN));
-ok('4. *** o cron e de madrugada: 08h UTC = 05h de Goias ***',
-  /cron: '0 8 \* \* \*'/.test(YML) && /05h de Goiás/.test(YML));
+// 11/08: MEDIDO que o boletim saiu 4h55 atrasado. O cron estava certo (08:00 UTC); quem atrasa
+// e o agendador do GitHub, e ele atrasa mais no minuto :00 de hora cheia. Duas mudancas: saiu da
+// hora cheia (`17 8`) e ganhou uma REDE mais tarde. A rede e segura porque a funcao pula jornal
+// sem novidade — se a das 5h funcionou, a segunda nao manda nada.
+ok('4. *** o cron continua de madrugada, mas FORA da hora cheia ***',
+  /cron: '17 8 \* \* \*'/.test(YML) && /05h17 de Goiás/.test(YML));
+ok('4b. *** e ha uma REDE mais tarde, pro dia em que o agendador atrasar ***',
+  /cron: '23 11 \* \* \*'/.test(YML) && /rede de segurança/.test(YML));
+ok('4c. ...e o YML explica por que a rede nao manda e-mail duplicado',
+  /a função pula jornal sem novidade/.test(YML.replace(/\s*\n\s*#?\s*/g, ' ')));
 ok('5. e a razao da regra de ouro esta no YML, nao so no codigo',
   /ESPERAR O DIA FECHAR/.test(YML) && /perderia EM SILÊNCIO/.test(YML));
 

@@ -350,7 +350,20 @@ Deno.serve(async (req) => {
   const st: Record<string, unknown> = {
     fonte: "PNCP",
     ultima_tentativa: new Date().toISOString(),
-    ultimo_erro: erro || (estourouTempo ? "orcamento de tempo esgotado" : null),
+    /* ══ RODADA PARCIAL NAO E ERRO (11/08) ═════════════════════════════════════════════════
+       Medido hoje: uma rodada gravou 814 linhas, cobriu GO/DF/MG/MT, bateu no orcamento de
+       tempo antes de MS/TO/BA — e gravou `ultimo_erro: "orcamento de tempo esgotado"`. O indice
+       foi de 1.881 pra 2.674 e o status dizia ERRO.
+       Isso e pior do que parece: "erro" todo dia numa coisa que esta funcionando e o jeito mais
+       rapido de ensinar todo mundo a ignorar o campo — e ai o dia em que o erro for real passa
+       batido. Alarme que toca a toa e alarme que nao serve.
+       >>> A REGRA NOVA distingue as duas coisas pelo unico criterio que importa: ENTROU DADO?
+             · gravou e nao terminou a janela .... rodada PARCIAL, e nao erro;
+             · nao gravou nada e estourou tempo .. ai sim e erro (a rodada nao serviu pra nada).
+           O `ultima_ok` continua exigindo rodada inteira — ele responde outra pergunta. */
+    ultimo_erro: erro
+      || (estourouTempo && gravadas === 0 ? "orcamento de tempo esgotado sem gravar nada" : null),
+    parcial: !erro && estourouTempo && gravadas > 0,
     registros: gravadas,
     atualizado_em: new Date().toISOString(),
   };

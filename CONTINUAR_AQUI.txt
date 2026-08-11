@@ -525,6 +525,74 @@ Criado em 21/07/2026 copiando SO os arquivos do app do C:\globalmed.
     Suite nova testa_pix (17). Ela ja pegou uma 2a copia do CNPJ escrita num COMENTARIO do
     config — que e exatamente o jeito classico de a copia nascer (alguem copia do comentario).
 
+>>> FILA — ESTADO EM 11/08, FIM DA 2a RODADA DO DIA. Conferido item a item, nao suposto.
+    [OK] 1. Extracao de itens do leitor de edital + botao na ficha + porta na barra do portal
+    [OK] 2. Credenciamento junto a industria (trilha por trigger, sino, carta)
+    [OK] 3. CMED sempre atualizada (vigencia derivada, rotina mensal, Conferidor diz a regua)
+    [OK] 4. Proposta anexada + comparativo PMVG (0 erros de veredito na prova)
+    [OK] 5. Gerenciamento de Ata (6 categorias, itens ganhos, mapa de precos)
+    [OK] 6. Busca nacional no PNCP (3.639 para "albumina", 0 ja no nosso indice)
+    [OK] URGENCIA: leitura em partes (edital de qualquer tamanho)
+    [OK] os 3 defeitos que apareceram ao responder as 4 perguntas dele (abaixo)
+
+>>> 11/08 — OS TRES DEFEITOS DE ONTEM, DIAGNOSTICADOS E CONSERTADOS.
+
+    1. UPGRADE NANO->MICRO: a tarefa DISPAROU 03:00 em ponto. Falhou com
+       `HTTP 404 Cannot POST /v1/projects/.../billing/addons`. Nao era o agendamento nem o token:
+       a Management API TROCOU O METODO de escrita. O GET da MESMA rota continua respondendo 200,
+       que e o que fazia a previa parecer saudavel.
+       >>> DESCOBERTO SEM APLICAR NADA: mandei corpo vazio em PUT, PATCH e POST. PUT e POST deram
+           404 (rota nao existe pra eles); PATCH deu 400 reclamando do CORPO — que e a resposta de
+           quem existe. Descobrir metodo por tentativa de escrita seria arriscar aplicar sem
+           querer; corpo invalido de proposito nao muda nada.
+       Corrigido pra PATCH. NAO APLIQUEI AGORA: a aprovacao dele foi "HOJE DE MADRUGADA" e a
+       troca REINICIA o banco por 1-2 min. Tarefa reagendada pra 12/08 as 03:00.
+
+    2. BOLETIM: o cron estava CERTO (08:00 UTC = 05h de Goias). O `ultimo_envio` gravado foi
+       12:55 UTC (09:55 de Goias) — 4h55 de atraso. Quem atrasa e o agendador do GitHub Actions,
+       e ele atrasa mais no minuto :00 de hora cheia, que e o mais disputado da plataforma.
+       Dois consertos: saiu da hora cheia (`17 8`) e ganhou uma REDE as 11:23 UTC.
+       >>> A REDE E SEGURA E NAO MANDA E-MAIL DUPLICADO, e isso foi conferido no codigo antes de
+           agendar: a funcao pula jornal sem novidade (`if (!novas.length && !sessoes.length)`) e
+           o que ja saiu esta marcado em `vistos_email`. Custo de ter a rede: zero e-mail a mais.
+           Custo de nao ter: o operador descobre a oportunidade no dia seguinte.
+
+    3. COLETA: **ela nao esta quebrada**. Provado disparando duas rodadas agora:
+         1a rodada .... 814 gravadas · GO,DF,MG,MT · indice 1.881 -> 2.674
+         2a rodada .... 933 gravadas · GO,DF,MG,MT,MS,TO,BA (as 7) · indice -> 3.044
+       O que estava errado era o STATUS: rodada que gravava 814 linhas e batia no orcamento de
+       tempo gravava `ultimo_erro: "orcamento de tempo esgotado"`, e a tela dizia "a ultima coleta
+       falhou" com o indice crescendo.
+       >>> "ERRO" TODO DIA NUMA COISA QUE FUNCIONA e o jeito mais rapido de ensinar todo mundo a
+           ignorar o campo — e ai o dia em que o erro for real passa batido.
+       Regra nova, pelo unico criterio que importa (ENTROU DADO?):
+         · gravou e nao terminou a janela .... `parcial: true`, sem erro;
+         · nao gravou nada e estourou tempo .. ai sim e erro.
+       Coluna `parcial` em coleta_status (aditiva). `ultima_ok` continua exigindo rodada inteira —
+       ele responde outra pergunta. Coletor v10. CONFERIDO DEPOIS: ultimo_erro null, parcial true,
+       registros 933.
+
+>>> 11/08 — DEFEITO MEU, ENCONTRADO E CONSERTADO NO MESMO DIA: A TAREFA `juntar` GASTAVA SEM
+    COBRAR. A leitura em partes (de manha) criou a tarefa `juntar` e ninguem lembrou do check
+    constraint da coluna `tarefa`, que so aceitava 'resumo' e 'itens'. O insert levantava erro, e
+    o `catch {}` da edge function — escrito com boa intencao ("o registro falhar nao pode engolir
+    a leitura que a pessoa ja pagou") — engolia em SILENCIO. Custo consumido e NAO cobrado.
+    Provado: `select tarefa, count(*)` nao tinha nenhuma linha 'juntar' depois de duas provas que
+    rodaram a juncao.
+    >>> A LICAO NAO E "lembrar do check". E que UM CONTADOR DE FATURAMENTO NAO PODE FALHAR CALADO.
+        Consertei os dois lados: o check aceita as cinco tarefas (ddl/usos_ia_tarefas5.sql) e a
+        funcao passou a devolver `registrado: false`, com a tela dizendo na cara "esta leitura NAO
+        entrou no contador". Reprovado: tarefa=juntar, registrado=true, linha 26 no banco.
+
+>>> RESTA NA FILA (nada acionavel sem ele): sync da Global (169 commits, 5 blocos esperando ele
+    escolher), ddl/05 (policy RESTRICTIVE esperando OK), ligaduras no casamento do Conferidor
+    (tecnico, exige medicao propria antes de mexer), `tools/fechamento_mes.js` (as duas .xlsx do
+    fechamento mensal), e o caminho de PDF ESCANEADO nos relatorios da Ata (existe no leitor de
+    edital, nao foi ligado la).
+    E uma medicao pra reportar: a taxa de casamento do motor contra a CMED foi 6/14 mesmo
+    alimentado com o texto da PROPRIA CMED. Ele prefere "nao encontrado" a casamento errado, e a
+    tela diz isso em tres lugares — mas o numero merece decisao dele.
+
 >>> FILA — ESTADO EM 11/08, FIM DA RODADA. Conferido item a item, nao suposto.
     [OK] 1. Extracao de itens do leitor de edital + botao na ficha + porta na barra do portal
     [OK] 2. Credenciamento junto a industria (tabela, trilha por trigger, sino, carta)
