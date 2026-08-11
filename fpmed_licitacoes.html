@@ -445,6 +445,11 @@ select:focus,input:focus{outline:none;border-color:var(--azul)}
   <div id="estoque-status" class="hint" style="min-height:18px;margin:10px 0 2px"></div>
   <div id="status" class="hint" style="min-height:18px;margin-bottom:8px"></div>
   <div id="lista"><div class="aviso vazio">Ajuste os filtros e clique na lupa para buscar.</div></div>
+  <!-- A BUSCA NACIONAL VEM DEPOIS DO ÍNDICE, e essa ordem é a decisão: o índice é nosso, rápido,
+       das nossas praças e está sempre disponível; o nacional é do Brasil todo e depende do PNCP
+       estar no ar. São duas procedências, e misturar as duas numa lista só faria o operador
+       tratar como igual o que não é. -->
+  <div id="nacional" style="display:none;margin-top:26px;padding-top:18px;border-top:1px dashed var(--linha)"></div>
 </div>
 <button id="aoTopo" onclick="window.scrollTo({top:0,behavior:'smooth'})" title="Voltar ao topo">↑</button>
 
@@ -898,6 +903,54 @@ async function buscarNoBanco(uf, mod, de, ate){
 // o termo pro banco criaria um SEGUNDO filtro de palavra — e o do banco é sensível a acento
 // ("farmaceutico" não casaria com "FARMACÊUTICO"), então ele perderia justamente o que o do
 // navegador acha. Com o índice na casa dos milhares, trazer e filtrar aqui é instantâneo.
+/* ══ BUSCA NACIONAL NO PNCP ══════════════════════════════════════════════════════════════════
+   O nosso índice cobre 7 UFs e 3 modalidades — é o que a coleta consegue manter fresco. Quando o
+   operador digita um termo, porém, a pergunta dele é sobre o BRASIL: "alguém está comprando
+   albumina?". O PNCP é o agregador nacional obrigatório, então cobrir o PNCP já cobre BLL, BNC,
+   Licitanet, Compras.gov e os demais — sem tocar em nenhum portal privado.
+
+   ══ A INVESTIGAÇÃO, MEDIDA EM 11/08 ═══════════════════════════════════════════════════════
+   O endpoint existe e é público: `/api/search/`. Três coisas descobertas na marra:
+
+   1. ELE RECUSA CLIENTE SEM `User-Agent` DE NAVEGADOR — a conexão é cortada (ECONNRESET),
+      enquanto a API que a coleta usa responde 200 normalmente. Isso afeta script em node, e NÃO
+      esta tela: navegador manda User-Agent sozinho. Medido também: ele responde 200 para origem
+      de fora e devolve `access-control-allow-origin: *`, então a chamada sai daqui direto, sem
+      proxy. (Não confunda com Referer: testado com o Referer da FPMED, respondeu 200 igual.)
+
+   2. >>> A ORDENAÇÃO DECIDE TUDO, E QUASE ME FEZ DESCARTAR O ENDPOINT. Copiei da URL do site o
+      `ordenacao=-data` e medi: **0 de 20 resultados continham a palavra buscada**. "albumina"
+      devolvia editais de teste de bioquímica. Ia relatar que o endpoint não serve.
+      O erro era MEU: `-data` joga a relevância fora e devolve os editais mais NOVOS que casaram
+      com qualquer coisa. Na ordenação padrão (relevância), **20 de 20 contêm a palavra**, em dois
+      termos diferentes. Por isso aqui NÃO se manda `ordenacao`.
+
+   3. O ÍNDICE DELE ALCANÇA O ITEM, e não só o objeto. As descrições que voltam são coisas como
+      "Albumina bovina" e "ALBUMINA HUMANA" — nomes de ITEM. É exatamente por isso que ele acha o
+      que o nosso índice não acha: o nosso guarda o OBJETO ("aquisição de medicamentos"), e a
+      palavra do operador está lá dentro, no anexo.
+      MEDIDO: dos 10 primeiros de "albumina", **0 já estavam no nosso índice**.
+
+   ══ O QUE ELE NÃO ENTREGA, dito antes de alguém procurar ═══════════════════════════════════
+   · NÃO HÁ CAMPO DE PORTAL DE ORIGEM. Foi pedido, e não existe na resposta — nenhum dos 54
+     campos traz o sistema onde o edital foi publicado. A tela diz "—" em vez de inventar.
+   · A ORDEM É POR RELEVÂNCIA, NÃO POR DATA. Vem o mais parecido, não o mais novo: entre os
+     primeiros de "albumina" há editais de 2023. Isso é dito na tela, porque quem procura
+     oportunidade quer o de hoje — e o índice, esse sim, é ordenado por data. */
+const PNCP_BUSCA = 'https://pncp.gov.br/api/search/';
+async function buscarNacional(termo, uf){
+  if(!termo || termo.trim().length < 3) return null;
+  const u = PNCP_BUSCA + '?q=' + encodeURIComponent(termo.trim())
+    + '&tipos_documento=edital&pagina=1&tam_pagina=30&status=todos'
+    + (uf ? '&ufs=' + encodeURIComponent(uf) : '');
+  // Sem cabeçalho especial: o navegador manda User-Agent sozinho, que é o único que o PNCP
+  // exige. `Accept` é cortesia, não requisito.
+  const r = await fetch(u, { headers: { 'Accept': 'application/json' }, signal: AbortSignal.timeout(20000) });
+  if(!r.ok) throw new Error('o PNCP respondeu ' + r.status);
+  const j = await r.json();
+  return { total: Number(j.total) || 0, itens: Array.isArray(j.items) ? j.items : [] };
+}
+
 async function buscarNoBancoAmplo(uf, mod){
   // Esta é a consulta do "procurei no índice INTEIRO" — era a que mais mentia parando em 1000,
   // porque é justamente a que promete ter olhado tudo.
@@ -1764,6 +1817,92 @@ async function buscar(aoVivo){
     fresco ? '⚡ do cache desta sessão' : '🌐 ao vivo do PNCP · agora');
 }
 
+/* ── QUANDO A BUSCA NACIONAL ENTRA ───────────────────────────────────────────────────────────
+   Só quando há UM termo específico. O campo nasce com seis categorias ("medicamento; hospitalar;
+   material médico; farmac; soro; correlatos") — buscar isso no Brasil inteiro devolveria dezenas
+   de milhares de resultados de qualquer coisa, e uma lista assim não é uma resposta, é ruído com
+   aparência de trabalho.
+   O gesto que dispara é o do pedido: a pessoa apagou tudo e escreveu "albumina". */
+function termoNacional(){
+  const cru = (document.getElementById('f-kw').value || '').trim();
+  if(!cru) return null;
+  const partes = cru.split(';').map(x => x.trim()).filter(Boolean);
+  if(partes.length !== 1) return null;          // lista de categorias: não é pergunta nacional
+  return partes[0].length >= 3 ? partes[0] : null;
+}
+
+let _nacToken = 0;
+async function dispararBuscaNacional(){
+  const box = document.getElementById('nacional'); if(!box) return;
+  const termo = termoNacional();
+  if(!termo){ box.style.display = 'none'; box.innerHTML = ''; return; }
+  const uf = (document.getElementById('f-uf') || {}).value || '';
+  // Cada busca invalida a anterior: sem isto, uma resposta lenta de "albumina" pintaria em cima
+  // do resultado de "dipirona" que a pessoa pediu depois.
+  const meu = ++_nacToken;
+  box.style.display = 'block';
+  box.innerHTML = '<div class="contagem"><span>🌎 procurando "<b>' + esc(termo) + '</b>" no PNCP nacional…</span></div>';
+  try{
+    const r = await buscarNacional(termo, uf);
+    if(meu !== _nacToken) return;
+    pintaNacional(termo, uf, r, null);
+  }catch(e){
+    if(meu !== _nacToken) return;
+    pintaNacional(termo, uf, null, e.message);
+  }
+}
+
+function pintaNacional(termo, uf, r, erro){
+  const box = document.getElementById('nacional');
+  // >>> PNCP FORA NÃO APAGA O ÍNDICE. O bloco do índice já está pintado acima; aqui vira uma
+  //     faixa discreta dizendo o que NÃO foi possível — e nunca "nenhum resultado nacional",
+  //     que seria afirmar que o Brasil não tem o que a pessoa procura.
+  if(erro){
+    box.innerHTML = '<div class="contagem" style="opacity:.85"><span>🌎 <b>não consegui consultar o PNCP nacional agora</b> ('
+      + esc(erro) + '). Isto <b>não</b> quer dizer que não haja nada — o que está acima é só o nosso índice.</span></div>';
+    return;
+  }
+  const itens = r.itens || [];
+  // O QUE JÁ ESTÁ NO NOSSO ÍNDICE é marcado, e não escondido: escondido, o operador não entende
+  // por que o total nacional não bate com a lista.
+  const nossos = new Set((window._ultimoRender ? (window._ultimoRender.todos || []) : [])
+    .map(l => String(l.numeroControlePNCP || '')));
+  const fmt = d => { const x = String(d || '').slice(0,10); return x ? x.split('-').reverse().join('/') : '—'; };
+
+  box.innerHTML = '<div class="contagem" style="display:block">'
+    + '<span>🌎 <b>Busca nacional no PNCP</b> (ao vivo) · <b>' + Number(r.total).toLocaleString('pt-BR') + '</b> resultado(s) para "'
+    +   esc(termo) + '"' + (uf ? ' em ' + esc(uf) : ' no Brasil inteiro') + ' · mostrando os ' + itens.length + ' mais parecidos</span>'
+    // AS DUAS LIMITAÇÕES, ditas onde a pessoa está olhando — e não num rodapé.
+    + '<div class="hint" style="margin-top:6px">Isto vem do PNCP <b>na hora</b>, e é o Brasil todo: '
+    +   'todos os portais (BLL, BNC, Licitanet, Compras.gov) publicam lá por obrigação. Duas coisas a saber: '
+    +   'a ordem é por <b>semelhança, não por data</b> (pode vir edital antigo), e o PNCP <b>não informa o portal</b> '
+    +   'de origem nesta busca — por isso a coluna fica em branco em vez de chutar.</div>'
+    + '</div>'
+    + (itens.length
+        ? '<div class="tabelinha" style="overflow:auto"><table style="width:100%;border-collapse:collapse;font-size:12.5px">'
+          + '<thead><tr>' + ['UF','ITEM / OBJETO','ÓRGÃO','MODALIDADE','PUBLICADO','PORTAL',''].map(h =>
+              '<th style="text-align:left;padding:7px;border-bottom:1px solid var(--linha);color:var(--muted);font-size:10.5px">'+h+'</th>').join('')
+          + '</tr></thead><tbody>'
+          + itens.map(i => {
+              const ja = nossos.has(String(i.numero_controle_pncp||''));
+              return '<tr>'
+                + '<td style="padding:7px;border-bottom:1px solid var(--linha)"><b>' + esc(i.uf||'—') + '</b></td>'
+                + '<td style="padding:7px;border-bottom:1px solid var(--linha)">' + esc(String(i.description||'').slice(0,70))
+                +   (ja ? ' <span class="bdg cinza">já no nosso índice</span>' : '') + '</td>'
+                + '<td style="padding:7px;border-bottom:1px solid var(--linha)">' + esc(String(i.orgao_nome||'—').slice(0,34))
+                +   '<div class="hint">' + esc(String(i.municipio_nome||'')) + '</div></td>'
+                + '<td style="padding:7px;border-bottom:1px solid var(--linha)">' + esc(i.modalidade_licitacao_nome||'—') + '</td>'
+                + '<td style="padding:7px;border-bottom:1px solid var(--linha);white-space:nowrap">' + fmt(i.data_publicacao_pncp) + '</td>'
+                + '<td style="padding:7px;border-bottom:1px solid var(--linha);color:var(--muted)">—</td>'
+                + '<td style="padding:7px;border-bottom:1px solid var(--linha);white-space:nowrap">'
+                +   (i.item_url ? '<a href="https://pncp.gov.br/app/editais' + esc(i.item_url) + '" target="_blank" rel="noopener" class="btn sec mini">abrir no PNCP</a>' : '')
+                + '</td></tr>';
+            }).join('')
+          + '</tbody></table></div>'
+        : '<div class="hint" style="padding:8px 0">O PNCP respondeu, e não achou nada para "' + esc(termo) + '"'
+          + (uf ? ' em ' + esc(uf) : '') + '. Aqui <b>zero quer dizer zero</b> — a consulta foi feita e voltou vazia.</div>');
+}
+
 function render(todos, kws, excl, aviso, procedencia){
   window._ultimoRender = {todos, kws, excl, aviso, procedencia};   // pro refino re-renderizar sem rede
   const num = window._filtroNumero; window._filtroNumero = null;
@@ -1852,6 +1991,11 @@ function render(todos, kws, excl, aviso, procedencia){
      + '<button class="btn sec mini" id="bt-todos" onclick="cruzarTodos()" '
      +   'title="lê os itens de cada edital em lotes de 3 e marca os que temos">🎯 Cruzar todas com o estoque</button>'
      + '</div>';
+
+  // A BUSCA NACIONAL É DISPARADA DEPOIS, e não junto: o índice é instantâneo e o PNCP leva
+  // segundos. Segurar a tela esperando a rede pra mostrar o que já está na memória seria trocar
+  // uma resposta rápida e certa por uma lenta e igual.
+  dispararBuscaNacional();
 
   window._hits = hits;                       // os cards chamam verItens(i) por índice
   hits.forEach((l, i) => {
