@@ -602,8 +602,14 @@ Criado em 21/07/2026 copiando SO os arquivos do app do C:\globalmed.
     ninguem notar. Edge function ler-edital v3. Suite nova testa_itens_edital (77).
     TOTAL: 2.270 asserts / 0 falhas / 68 suites. sw VERSAO limedtec-fpmed-2026-08-11-5.
 
-    >>> AINDA PENDENTE deste pedido: o leitor continua SEM entrada no menu. Quem nao souber o
-        endereco so chega nele pelo botao da ficha do negocio. Registrado pra proxima rodada.
+    >>> A PORTA DO LEITOR, fechada na mesma rodada: ate hoje a tela existia e nao tinha caminho
+        nenhum - quem nao soubesse o endereco nao chegava nela. Entrou "Ler edital" na BARRA DO
+        PORTAL, nas duas abas (Encontrar e Negocios), nascendo `hidden` e revelada so pra quem
+        tem o piloto. O menu lateral do sistema continua sem ela de proposito: o leitor pertence
+        ao portal de Licitacoes, e o menu tem UMA entrada pro portal inteiro.
+        Suite testa_itens_edital passou pra 82; e o assert antigo que exigia ZERO links pro
+        leitor foi reescrito - ele travava o estado ANTERIOR do projeto ("nao liberado"), e nao
+        a regra. Total: 2.275 asserts / 0 falhas / 68 suites.
 
 >>> 11/08 — FASE HABILITACAO: rotulo, checklist enxuto, tarefas do dia a dia e atalho das Pecas.
     1. ROTULO "Classificação" -> "HABILITAÇÃO". *** A CHAVE `classificacao` NAO FOI TOCADA. ***

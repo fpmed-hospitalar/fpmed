@@ -293,6 +293,10 @@ textarea.anot:focus{border-color:var(--azul)}
       <a href="fpmed_declaracoes.html" title="Modelos de declaração de habilitação, preenchidos com os dados da empresa">Declarações</a>
       <a href="fpmed_pecas.html" title="Impugnação, esclarecimento, recurso e contrarrazões — com o prazo na frente">Peças</a>
       <a href="fpmed_conferidor.html" title="Confere o preço da proposta contra o teto legal da CMED">Conferir</a>
+      <!-- Mesma entrada escondida da aba Encontrar. Se aparecesse só lá, as duas telas voltariam
+           a ser dois sistemas parecidos em vez de um lugar só — que é o que a barra evita. -->
+      <a href="fpmed_edital_ia.html" id="nav-edital-ia" hidden
+         title="Lê o PDF do edital com IA — piloto; cada leitura tem custo e fica registrada">Ler edital ✨</a>
     </nav>
     <div class="sep"></div>
     <nav>
@@ -1020,6 +1024,12 @@ function podeLerEdital(){
   try{ return LEITORES_EDITAL.includes(String((window.gmAuth && gmAuth.user && gmAuth.user.email) || '').toLowerCase()); }
   catch(e){ return false; }
 }
+// A MESMA regra revela a entrada da barra do portal. Uma tela liberada sem porta é uma tela não
+// liberada — até 11/08 o leitor só era alcançável por quem soubesse o endereço.
+function abreLeitorNaBarra(){
+  const a = document.getElementById('nav-edital-ia');
+  if(a && podeLerEdital()) a.hidden = false;
+}
 function lerEditalIA(id){
   const n = NEG.find(x => x.id === id); if(!n) return;
   try{
@@ -1450,8 +1460,9 @@ function toggleFiltro(){
 // Mesma corrida do gm-auth que mordeu o Licitações em 05/08: com token fresco o
 // `gm-auth-ready` dispara ainda dentro do <head>, antes deste script existir. Então checa
 // primeiro se já está pronto, e só escuta o evento se não estiver.
-if(window.gmAuth) carregar();
-else document.addEventListener('gm-auth-ready', carregar, { once:true });
+function _aoAutenticar(){ carregar(); abreLeitorNaBarra(); }
+if(window.gmAuth) _aoAutenticar();
+else document.addEventListener('gm-auth-ready', _aoAutenticar, { once:true });
 </script>
 <script src="limedtec-pwa.js" defer></script>
 </body>

@@ -27,10 +27,18 @@ let p = 0, f = 0;
 const ok = (n, c, e) => { if (c) p++; else { f++; console.log('  FALHA ' + n + (e !== undefined ? '  [' + JSON.stringify(e) + ']' : '')); } };
 console.log('SUITE testa_edital_ia — leitor de edital em prova de custo\n');
 
-// ══════════ 1. *** NAO LIBERADO *** ══════════
-// A metade mais importante: a tela existe e a porta esta fechada.
-ok('1. *** a tela NAO esta no menu do sistema ***', !/fpmed_edital_ia/.test(MENU));
-ok('2. *** nem linkada na tela de Licitacoes ***', !/fpmed_edital_ia/.test(LIC));
+// ══════════ 1. *** A PORTA — E QUEM A ABRE *** ══════════
+// ── 11/08: a tela DEIXOU de ser "nao liberada". O Lemuel liberou em piloto, e ai o assert que
+//    exigia zero links passou de protecao a estorvo: ele estava travando o estado ANTERIOR do
+//    projeto. O que ele protegia de verdade continua travado, so que pela regra nova — a porta
+//    existe, e ela so aparece pra quem tem o piloto.
+//    >>> O MENU LATERAL DO SISTEMA CONTINUA SEM ELA, de proposito: o leitor pertence ao portal
+//        de Licitacoes, e o menu do sistema tem UMA entrada pra esse portal inteiro.
+ok('1. *** a tela continua fora do menu lateral (ela e do portal de Licitacoes) ***',
+  !/fpmed_edital_ia/.test(MENU));
+ok('2. *** na barra do portal ela existe, mas nasce ESCONDIDA ***',
+  /<a href="fpmed_edital_ia\.html" id="nav-edital-ia" hidden/.test(LIC)
+  && /function abreLeitorNaBarra\(\)/.test(LIC));
 ok('3. *** nem na casca do service worker ***', !/fpmed_edital_ia/.test(SW));
 ok('4. ...e o motivo da casca esta escrito (tela que so funciona pagando nao serve offline)',
   /não tem o que fazer offline/.test(TELA));

@@ -267,6 +267,14 @@ select:focus,input:focus{outline:none;border-color:var(--azul)}
       <a href="fpmed_declaracoes.html" title="Modelos de declaração de habilitação, preenchidos com os dados da empresa">Declarações</a>
       <a href="fpmed_pecas.html" title="Impugnação, esclarecimento, recurso e contrarrazões — com o prazo na frente">Peças</a>
       <a href="fpmed_conferidor.html" title="Confere o preço da proposta contra o teto legal da CMED">Conferir</a>
+      <!-- LER EDITAL entra na barra ESCONDIDO e só é revelado pra quem tem o piloto (ver
+           `abreLeitorNaBarra`). Até 11/08 a tela existia e não tinha caminho nenhum: quem não
+           soubesse o endereço não chegava nela. Uma tela liberada sem porta é uma tela não
+           liberada.
+           >>> `hidden` no HTML e não um item que some depois: barra que pisca com um link a mais
+               no boot ensina a esperar que ela mude sozinha. -->
+      <a href="fpmed_edital_ia.html" id="nav-edital-ia" hidden
+         title="Lê o PDF do edital com IA — piloto; cada leitura tem custo e fica registrada">Ler edital ✨</a>
     </nav>
   </div>
 </header>
@@ -742,7 +750,16 @@ async function iniciarJornais(){
   _jornaisIniciado = true;
   if(await carregarJornais()) conferirJornais();
 }
-function _aoAutenticar(){ iniciarEstoque(); iniciarJornais(); }
+/* A ENTRADA DO LEITOR DE EDITAL na barra. Mesma lista da ficha do negócio e da própria tela do
+   leitor — e, como lá, ela NÃO é a permissão: quem impede é a edge function, que confere o JWT e
+   responde 403. Isto aqui só evita oferecer o que vai ser negado. */
+const LEITORES_EDITAL = ['licitacao@fpmed.com.br'];
+function abreLeitorNaBarra(){
+  const a = document.getElementById('nav-edital-ia'); if(!a) return;
+  const email = String((window.gmAuth && gmAuth.user && gmAuth.user.email) || '').toLowerCase();
+  if(LEITORES_EDITAL.includes(email)) a.hidden = false;
+}
+function _aoAutenticar(){ iniciarEstoque(); iniciarJornais(); abreLeitorNaBarra(); }
 if(window.gmAuth) _aoAutenticar();
 else document.addEventListener('gm-auth-ready', _aoAutenticar, { once:true });
 
