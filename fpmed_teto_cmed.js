@@ -282,8 +282,36 @@
     return r;
   }
 
+  /* ══ LER A PROPOSTA — subiu do Conferidor pro motor em 11/08 ═══════════════════════════════
+     Ela vivia dentro do <script> do fpmed_conferidor.html. Quando a ficha do negócio passou a
+     conferir a proposta anexada contra o PMVG, havia duas saídas: copiar estas 15 linhas pra lá,
+     ou trazê-las pra cá. Copiar seria criar duas leituras da mesma proposta — e no dia em que
+     alguém melhorar a de um lado (um formato de preço novo, uma coluna a mais), o outro passa a
+     ler o MESMO PDF de um jeito diferente. Duas respostas para "este preço está acima do teto?"
+     é o defeito mais caro que este arquivo existe pra impedir.
+     >>> O CONFERIDOR CONTINUA CHAMANDO PELO MESMO NOME (ele lê do motor agora), então nada mudou
+         pra quem usa aquela tela. */
+
+  // O PREÇO É O ÚLTIMO NÚMERO DA LINHA. Não é adivinhação: proposta tem descrição à esquerda e
+  // valores à direita, e o último costuma ser o unitário ou o total. Quando houver dois números,
+  // a tela mostra o que leu — conferir uma leitura errada é fácil; descobrir depois, não.
+  function precoDaLinha(txt){
+    const nums = String(txt).match(/-?\d{1,3}(?:\.\d{3})*,\d{2}|-?\d+[.,]\d+|-?\d+/g);
+    if(!nums || !nums.length) return null;
+    const s = nums[nums.length-1];
+    // "1.234,56" (BR) vs "1234.56" — vírgula manda quando existe
+    const n = s.includes(',') ? parseFloat(s.replace(/\./g,'').replace(',','.')) : parseFloat(s);
+    return isFinite(n) ? n : null;
+  }
+  function itensDoTexto(txt){
+    return String(txt).split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 5)
+      .map(l => ({ linha: l, descricao: l.replace(/[\d.,;\t ]+$/,'').trim() || l, precoUnit: precoDaLinha(l) }))
+      .filter(x => x.descricao.length >= 4);
+  }
+
   const API = { semAcento, doses, concMags, forma, unidadePack, packNosso,
-                indexar, chavesDoseDe, avaliar, resumir };
+                indexar, chavesDoseDe, avaliar, resumir,
+                precoDaLinha, itensDoTexto };
   raiz.LimedtecTetoCMED = API;
   if (typeof module !== 'undefined' && module.exports) module.exports = API;
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -261,6 +261,22 @@ textarea.anot:focus{border-color:var(--azul)}
 .tf{display:flex;gap:9px;align-items:flex-start;padding:6px 0;font-size:12.5px;cursor:pointer;line-height:1.45}
 .tf input{margin-top:2px;accent-color:var(--verde);cursor:pointer}
 .tf.feita span{color:var(--muted);text-decoration:line-through}
+/* ── PROPOSTA ANEXADA ── */
+.prop-novo{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:12px 0 6px}
+.prop-novo input[type=file]{background:var(--painel2);color:var(--texto);border:1px solid var(--linha);
+  border-radius:8px;padding:7px 9px;font-size:12px;font-family:inherit;flex:1;min-width:180px}
+.anx{display:flex;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--linha);font-size:12.5px}
+.anx .v{font-size:10px;font-weight:700;color:var(--azul-claro);border:1px solid var(--azul-claro);
+  border-radius:20px;padding:1px 8px;white-space:nowrap}
+.anx .n{color:#fff;flex:1;cursor:pointer;text-decoration:underline;text-decoration-color:var(--linha)}
+.anx .q{color:var(--muted);font-size:11px;white-space:nowrap}
+/* O placar da conferência: mesmo desenho do Conferidor, de propósito — é o mesmo resultado. */
+.pl-conf{display:grid;grid-template-columns:repeat(auto-fit,minmax(96px,1fr));gap:8px;margin:10px 0}
+.pl-conf div{background:var(--painel2);border:1px solid var(--linha);border-radius:9px;padding:9px 10px;text-align:center}
+.pl-conf b{display:block;font-family:Montserrat,sans-serif;font-size:19px;color:#fff}
+.pl-conf span{font-size:10.5px;color:var(--muted)}
+.pl-conf .acima b{color:#ff9d92} .pl-conf .acima{border-color:rgba(229,103,90,.5)}
+.pl-conf .ok b{color:var(--verde)}
 /* ── CREDENCIAMENTOS ── */
 .cred-novo{display:grid;grid-template-columns:1fr 170px auto;gap:8px;margin:12px 0 6px}
 @media(max-width:700px){.cred-novo{grid-template-columns:1fr}}
@@ -530,6 +546,15 @@ async function carregar(){
       + '&select=id,negocio_id,industria,status,solicitado_em&order=solicitado_em.asc&limit=50', {headers:SB_H});
     CRED_SINO = rc.ok ? await rc.json() : 'erro';
   }catch(e){ CRED_SINO = 'erro'; }
+  // A CONFERÊNCIA MAIS NOVA DE CADA NEGÓCIO, pro selo do card. Vem ordenada da mais nova pra
+  // mais velha e só a primeira de cada negócio entra — as anteriores continuam no banco, mas o
+  // card mostra o estado de HOJE, não a história.
+  try{
+    const rq = await fetch(`${SB_URL}/rest/v1/negocio_conferencias`
+      + '?select=negocio_id,acima,itens,quando,cmed_vigente_desde&order=quando.desc&limit=500', {headers:SB_H});
+    CONF_POR_NEGOCIO = {};
+    if(rq.ok) for(const c of await rq.json()) if(!CONF_POR_NEGOCIO[c.negocio_id]) CONF_POR_NEGOCIO[c.negocio_id] = c;
+  }catch(e){ CONF_POR_NEGOCIO = {}; }   // sem selo é "não sei", e o card já não afirma nada
   const sel = document.getElementById('f-empresa');
   // O seletor e o badge de empresa FICAM VISÍVEIS mesmo com uma empresa só — decisão do
   // Lemuel em 05/08, corrigindo a minha recomendação de escondê-los. Igual ao SIGA.
@@ -595,6 +620,22 @@ function pinta(){
     : '<div class="vazio">Nenhum negócio com esses filtros.</div>';
 }
 
+/* ── O SELO DA CONFERÊNCIA NO CARD ───────────────────────────────────────────────────────────
+   O resultado só valia dentro da ficha, e quem precisa dele é quem está olhando o funil na
+   véspera do pregão. O selo responde, sem abrir nada, a única pergunta que importa: **tem item
+   acima do teto?**
+   >>> ELE SÓ APARECE QUANDO HÁ CONFERÊNCIA. Card sem selo quer dizer "não conferido", e não
+       "está tudo certo" — por isso não existe um selo cinza de "ok" para quem nunca conferiu.
+       Um selo neutro em 200 cards ensinaria a ignorar os vermelhos. */
+let CONF_POR_NEGOCIO = {};
+function seloConferencia(id){
+  const c = CONF_POR_NEGOCIO[id];
+  if(!c) return '';
+  return c.acima > 0
+    ? `<span class="mod" style="color:#ff9d92;border-color:rgba(229,103,90,.55)" title="conferido contra a CMED: ${c.acima} item(ns) acima do teto legal">⚠️ ${c.acima} acima do teto</span>`
+    : `<span class="mod" style="color:var(--verde);border-color:rgba(124,197,118,.5)" title="conferido contra a CMED: nenhum item acima do teto">⚖️ dentro do teto</span>`;
+}
+
 function card(n, noKanban){
   // O medidor "4/15" saiu do card em 11/08 junto com o checklist fixo (decisão do Lemuel: a
   // equipe não usa). O `tarefas` continua no banco — some da tela, não do dado.
@@ -618,6 +659,7 @@ function card(n, noKanban){
       ${n.numero ? `<span class="num">nº ${esc(n.numero)}</span>` : ''}
       ${n.valor_ganho>0 && ehGestor() ? `<span class="mod">🏆 ${brl(n.valor_ganho)}</span>` : ''}
       ${n.anotacoes && String(n.anotacoes).trim() ? `<span class="obs">✎ anotado</span>` : ''}
+      ${seloConferencia(n.id)}
     </div>
     <div class="acoes">
       ${noKanban ? '' : `<button onclick="event.stopPropagation();irProFunil(${n.id})" title="abre os Quadros na coluna da fase deste negócio, com ele em destaque">ir pro funil</button>`}
@@ -759,7 +801,7 @@ async function abrirDrawer(id){
   } else {
     document.getElementById('dw-body').innerHTML = corpoDrawer(n, null, false);
   }
-  if(ABERTO === id){ carregarRastro(id); carregarLembretes(id); carregarCredenciamentos(id); }
+  if(ABERTO === id){ carregarRastro(id); carregarLembretes(id); carregarCredenciamentos(id); carregarProposta(id); }
 }
 function fecharDrawer(){
   ABERTO = null;
@@ -860,6 +902,7 @@ function corpoDrawer(n, obs, carregando){
       <button class="on" data-aba="info"   onclick="abaFicha(this,'info')">Informações</button>
       <button        data-aba="lembretes"  onclick="abaFicha(this,'lembretes')">Lembretes <span id="dw-lem-n"></span></button>
       <button        data-aba="tarefas"    onclick="abaFicha(this,'tarefas')">Tarefas <span id="dw-tar-n"></span></button>
+      <button        data-aba="prop"       onclick="abaFicha(this,'prop')">Proposta <span id="dw-prop-n"></span></button>
       <button        data-aba="cred"       onclick="abaFicha(this,'cred')">Credenciamentos <span id="dw-cred-n"></span></button>
       <button        data-aba="obs"        onclick="abaFicha(this,'obs')">Observações</button>
     </div>
@@ -898,6 +941,41 @@ function corpoDrawer(n, obs, carregando){
           <button class="btn" id="tar-bt" onclick="criarTarefa(${n.id})">+ adicionar tarefa</button>
         </div>
         <div class="salvo" id="tar-msg"></div>
+      </div>
+    </div>
+
+    <!-- ══ PROPOSTA ANEXADA + COMPARATIVO PMVG (11/08) ═══════════════════════════════════════
+         Duas coisas que só fazem sentido juntas: guardar a proposta que foi enviada, e conferir
+         se ela cabe no teto legal. Separadas, a primeira é um arquivo perdido numa pasta e a
+         segunda é uma tela que se abre com boa vontade.
+         (sem crase neste comentário de propósito: ele vive DENTRO do template literal do drawer,
+          e uma crase aqui fecharia a string no meio da ficha — foi o que aconteceu na 1a versão)
+         >>> A CONFERÊNCIA NÃO TEM ENGINE PRÓPRIA. Ela usa o MESMO LimedtecTetoCMED do
+             Conferidor, com a MESMA leitura de PDF. Uma segunda regra de teto seria duas
+             respostas para "este preço é legal?" — e uma delas estaria errada sem ninguém saber
+             qual. -->
+    <div class="dw-painel" id="aba-prop">
+      <div class="dw-sec">
+        <h4>Proposta enviada</h4>
+        <div class="dica" style="font-size:11.5px;color:var(--muted);margin-bottom:8px">
+          Anexe o PDF da proposta. <b>As versões empilham</b> — mandar de novo não apaga a
+          anterior, e é assim que fica registrado o que foi enviado em cada rodada.
+        </div>
+        <div id="prop-lista"><div class="salvo">carregando…</div></div>
+        ${editavel ? `<div class="prop-novo">
+          <input type="file" id="prop-arq" accept="application/pdf">
+          <button class="btn-ed" id="prop-bt" onclick="anexarProposta(${n.id})">📎 Anexar proposta</button>
+        </div><div class="salvo" id="prop-msg"></div>`
+        : '<div class="salvo">só quem grava pode anexar proposta.</div>'}
+      </div>
+      <div class="dw-sec">
+        <h4>Conferência contra o teto CMED</h4>
+        <div class="dica" style="font-size:11.5px;color:var(--muted);margin-bottom:8px">
+          Lê os itens da proposta anexada e compara cada preço com o teto legal (PMVG para venda
+          ao governo). É o <b>mesmo motor</b> do Conferidor — não uma segunda conta.
+        </div>
+        <div id="conf-resultado"></div>
+        <div class="salvo" id="conf-msg"></div>
       </div>
     </div>
 
@@ -1154,6 +1232,396 @@ async function criarTarefa(id){
     carregar().then(pinta);      // o sino conta o funil inteiro; recarrega pra ele já contar esta
   }catch(e){ msg.textContent = 'não consegui salvar: ' + e.message; }
   bt.disabled = false;
+}
+
+/* ══ PROPOSTA ANEXADA E A CONFERÊNCIA CONTRA O TETO ══════════════════════════════════════════
+   O que esta seção entrega não é "guardar um PDF": é responder, antes de o pregão começar, se a
+   proposta que a empresa vai mandar cabe no teto legal. Item acima do PMVG numa venda ao governo
+   desclassifica — e é o tipo de erro que ninguém vê olhando a planilha, porque o número parece
+   um preço normal.
+
+   >>> NADA AQUI DECIDE PREÇO. Quem decide é o `LimedtecTetoCMED`, o mesmo motor do Conferidor,
+       com a MESMA leitura de PDF (que subiu pro motor justamente por causa desta tela). Esta
+       função monta a pergunta e mostra a resposta; ela não tem opinião sobre teto.
+   >>> E A RÉGUA É DITA. A CMED publica todo mês; um resultado guardado sem a data da edição que
+       o produziu é um número sem prazo de validade. `v_cmed_vigencia` entra junto e a data fica
+       gravada em `negocio_conferencias`. */
+const CAT_PROPOSTA = 'proposta';
+let ANEXOS = [], CONFERENCIAS = [], IDX_CMED = null, CMED_VIG = null;
+
+async function carregarProposta(id){
+  const box = document.getElementById('prop-lista'); if(!box) return;
+  try{
+    const [ra, rc] = await Promise.all([
+      fetch(`${SB_URL}/rest/v1/negocio_anexos?negocio_id=eq.${id}&categoria=eq.${CAT_PROPOSTA}`
+        + '&select=*&order=versao.desc', {headers:SB_H}),
+      fetch(`${SB_URL}/rest/v1/negocio_conferencias?negocio_id=eq.${id}&select=*&order=quando.desc&limit=10`, {headers:SB_H}),
+    ]);
+    if(!ra.ok) throw new Error('HTTP ' + ra.status);
+    ANEXOS = await ra.json();
+    CONFERENCIAS = rc.ok ? await rc.json() : [];
+    pintaProposta(id);
+  }catch(e){
+    // "Não sei" e "nenhuma" são coisas diferentes: uma lista vazia faria alguém anexar de novo
+    // por cima do que já está lá — e aí há duas versões da mesma proposta por engano.
+    ANEXOS = [];
+    box.innerHTML = '<div class="salvo">não consegui ler os anexos ('+esc(e.message)+') — '
+      + 'isto <b>não</b> quer dizer que não existam.</div>';
+  }
+}
+
+function pintaProposta(id){
+  const box = document.getElementById('prop-lista'); if(!box) return;
+  const cnt = document.getElementById('dw-prop-n');
+  if(cnt) cnt.textContent = ANEXOS.length ? ANEXOS.length : '';
+
+  box.innerHTML = ANEXOS.length
+    ? ANEXOS.map(a => `<div class="anx">
+        <span class="v">v${a.versao}</span>
+        <span class="n" onclick="abrirAnexo('${esc(a.arquivo_path)}')" title="abrir">${esc(a.arquivo_nome)}</span>
+        <span class="q">${esc(new Date(a.enviado_em).toLocaleDateString('pt-BR'))}${a.enviado_por?' · '+esc(String(a.enviado_por).split('@')[0]):''}${a.bytes?' · '+(a.bytes/1024).toFixed(0)+' KB':''}</span>
+      </div>`).join('')
+      + `<div style="margin-top:10px"><button class="btn-ed" onclick="conferirProposta(${id})" id="conf-bt">⚖️ Conferir a v${ANEXOS[0].versao} contra o teto CMED</button></div>`
+    : '<div class="salvo">Nenhuma proposta anexada ainda.</div>';
+
+  pintaConferencias(id);
+}
+
+// URL ASSINADA e não pública — o bucket é privado. Mesma regra da tela de Documentos: o link vale
+// 60 segundos, que é o tempo de abrir. Link de proposta que vale para sempre é link que vaza.
+async function abrirAnexo(path){
+  try{
+    const r = await fetch(`${SB_URL}/storage/v1/object/sign/documentos/${encodeURIComponent(path)}`, {
+      method:'POST', headers: Object.assign({'Content-Type':'application/json'}, SB_H),
+      body: JSON.stringify({ expiresIn: 60 }) });
+    if(!r.ok) throw new Error('HTTP ' + r.status);
+    const j = await r.json();
+    window.open(SB_URL + '/storage/v1' + j.signedURL, '_blank', 'noopener');
+  }catch(e){ alert('Não consegui abrir o arquivo: ' + e.message); }
+}
+
+async function anexarProposta(id){
+  const msg = document.getElementById('prop-msg'), bt = document.getElementById('prop-bt');
+  const arq = (document.getElementById('prop-arq').files || [])[0];
+  if(!arq){ msg.textContent = 'escolha o PDF da proposta.'; return; }
+  bt.disabled = true; msg.textContent = 'enviando…';
+  try{
+    // Caminho sem acento e sem espaço: nome de arquivo com caractere estranho quebra a URL
+    // assinada na hora de baixar, e o erro só aparece meses depois, na hora de precisar.
+    const limpo = arq.name.normalize('NFD').replace(/\p{M}/gu,'').toLowerCase().replace(/[^a-z0-9._-]+/g,'-');
+    const path = 'negocio-' + id + '/proposta/' + Date.now() + '-' + limpo;
+    const up = await fetch(`${SB_URL}/storage/v1/object/documentos/${encodeURIComponent(path)}`, {
+      method:'POST', headers: Object.assign({}, SB_H), body: arq });
+    if(!up.ok) throw new Error(up.status===403 ? 'só gestor pode enviar arquivo' : ('não consegui enviar (HTTP '+up.status+')'));
+    // >>> A VERSÃO NÃO VAI DAQUI. Quem calcula é uma trigger no banco: duas abas abertas
+    //     mandariam "2" ao mesmo tempo e uma sobrescreveria a outra sem erro nenhum.
+    const r = await fetch(`${SB_URL}/rest/v1/negocio_anexos`, {method:'POST',
+      headers: Object.assign({'Prefer':'return=representation'}, SB_H, {'Content-Type':'application/json'}),
+      body: JSON.stringify({ negocio_id: id, categoria: CAT_PROPOSTA, arquivo_path: path,
+        arquivo_nome: arq.name, bytes: arq.size,
+        enviado_por: (window.gmAuth && gmAuth.user && gmAuth.user.email) || null })});
+    if(!r.ok) throw new Error('o arquivo subiu, mas não consegui registrar (HTTP ' + r.status + ')');
+    const nova = (await r.json())[0];
+    document.getElementById('prop-arq').value = '';
+    msg.textContent = 'anexada como v' + (nova ? nova.versao : '?') + '. A anterior continua lá.';
+    await carregarProposta(id);
+  }catch(e){ msg.textContent = 'não consegui anexar: ' + e.message; }
+  bt.disabled = false;
+}
+
+/* ── A CONFERÊNCIA ───────────────────────────────────────────────────────────────────────────
+   Baixa a última versão anexada, lê os itens com a MESMA função do Conferidor (que vive no
+   motor), avalia cada um contra o teto e registra o resultado. */
+async function carregarIdxCMED(){
+  if(IDX_CMED) return IDX_CMED;
+  const T = window.LimedtecTetoCMED;
+  const pega = async rota => {
+    let out = [], off = 0;
+    while(true){
+      const r = await fetch(`${SB_URL}/rest/v1/${rota}&limit=1000&offset=${off}`, {headers:SB_H});
+      if(!r.ok) throw new Error('não consegui ler a tabela CMED (HTTP ' + r.status + ')');
+      const d = await r.json(); out = out.concat(d);
+      if(d.length < 1000 || off > 30000) break;      // o PostgREST daqui pagina em 1000
+      off += 1000;
+    }
+    return out;
+  };
+  const [teto, dicionario, vig] = await Promise.all([
+    pega('cmed_teto?select=subst_norm,dose_key,apresentacoes,teto_min,teto_max,tem_cap'),
+    pega('cmed_dicionario?select=marca_norm,substancia'),
+    fetch(`${SB_URL}/rest/v1/v_cmed_vigencia?select=*`, {headers:SB_H})
+      .then(r => r.ok ? r.json() : null).then(j => (j && j[0]) || null).catch(() => null),
+  ]);
+  CMED_VIG = vig;
+  IDX_CMED = T.indexar({ regua: [], teto, dicionario });
+  IDX_CMED._chaves = teto.length;
+  return IDX_CMED;
+}
+
+let CONF_ULTIMA = null;
+async function conferirProposta(id){
+  const msg = document.getElementById('conf-msg'), bt = document.getElementById('conf-bt');
+  const anexo = ANEXOS[0];
+  if(!anexo){ msg.textContent = 'anexe a proposta primeiro.'; return; }
+  const T = window.LimedtecTetoCMED;
+  if(!T || typeof T.avaliar !== 'function'){ msg.textContent = 'o motor de teto não carregou — recarregue a tela.'; return; }
+  if(bt) bt.disabled = true;
+  msg.textContent = 'baixando o anexo…';
+  try{
+    const rs = await fetch(`${SB_URL}/storage/v1/object/sign/documentos/${encodeURIComponent(anexo.arquivo_path)}`, {
+      method:'POST', headers: Object.assign({'Content-Type':'application/json'}, SB_H),
+      body: JSON.stringify({ expiresIn: 120 }) });
+    if(!rs.ok) throw new Error('não consegui abrir o anexo (HTTP ' + rs.status + ')');
+    const url = SB_URL + '/storage/v1' + (await rs.json()).signedURL;
+    const buf = await (await fetch(url)).arrayBuffer();
+
+    msg.textContent = 'lendo o PDF…';
+    const texto = await pdfParaTextoNeg(buf);
+    const itens = T.itensDoTexto(texto);
+    if(!itens.length) throw new Error('não consegui ler nenhuma linha com preço neste PDF. '
+      + 'Se ele for escaneado (só imagem), a extração de texto não enxerga — nesse caso confira pelo Conferidor colando o texto.');
+
+    msg.textContent = 'carregando a tabela CMED…';
+    const idx = await carregarIdxCMED();
+
+    // paraGoverno = true SEMPRE aqui, e isto é uma decisão: esta tela vive dentro de um negócio
+    // de LICITAÇÃO. O teto que vale numa venda ao governo é o PMVG (com o desconto CAP onde ele
+    // se aplica), não o PF. Conferir contra o PF numa proposta pro governo aprovaria preço que
+    // desclassifica.
+    const resultado = itens.map(it => Object.assign({}, it,
+      T.avaliar({ descricao: it.descricao, precoUnit: it.precoUnit, unitario: it.precoUnit != null, paraGoverno: true }, idx)));
+    const res = T.resumir(resultado);
+    const acima = resultado.filter(x => x.situacao === 'acima');
+    const pior = acima.length ? Math.max(...acima.map(x => Number(x.pctAcima)||0)) : null;
+
+    CONF_ULTIMA = { negocio: id, anexo, resultado, res, pior, quando: new Date() };
+
+    // REGISTRA. O que fica gravado é o RESUMO e a régua da época — não as linhas, que são
+    // deriváveis do anexo a qualquer momento e ocupariam o banco à toa.
+    try{
+      await fetch(`${SB_URL}/rest/v1/negocio_conferencias`, {method:'POST',
+        headers: Object.assign({}, SB_H, {'Content-Type':'application/json'}),
+        body: JSON.stringify({ negocio_id: id, anexo_id: anexo.id,
+          itens: res.total, dentro: res.ok, acima: res.acima,
+          nao_encontrados: res.naoEncontrados, sem_preco: res.semPreco,
+          pior_pct: pior, cmed_vigente_desde: CMED_VIG ? String(CMED_VIG.vigente_desde).slice(0,10) : null,
+          detalhe: { anexo: anexo.arquivo_nome, versao: anexo.versao, chaves: idx._chaves },
+          quem: (window.gmAuth && gmAuth.user && gmAuth.user.email) || null })});
+    }catch(e){ /* o registro falhar não pode engolir o resultado que a pessoa já viu */ }
+
+    msg.textContent = '';
+    pintaConferencia(id);
+    await carregarProposta(id);
+    carregar().then(pinta);   // o selo do card lê a conferência mais nova
+  }catch(e){ msg.textContent = '⚠️ ' + e.message; }
+  if(bt) bt.disabled = false;
+}
+
+// A MESMA extração de PDF do Conferidor e do leitor de edital: agrupa por Y pra preservar a
+// LINHA. Sem isso a descrição perde o preço de vista e todo item vira "sem preço".
+let _pdfjsNeg = null;
+function carregarPdfjsNeg(){
+  if(window.pdfjsLib) return Promise.resolve(window.pdfjsLib);
+  if(_pdfjsNeg) return _pdfjsNeg;
+  _pdfjsNeg = new Promise((res, rej) => {
+    const s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+    s.onload = () => { window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'; res(window.pdfjsLib); };
+    s.onerror = () => rej(new Error('não consegui carregar o leitor de PDF (precisa de internet)'));
+    document.head.appendChild(s);
+  });
+  return _pdfjsNeg;
+}
+async function pdfParaTextoNeg(buf){
+  const pdfjs = await carregarPdfjsNeg();
+  const doc = await pdfjs.getDocument({ data: buf }).promise;
+  let out = '';
+  for(let p = 1; p <= doc.numPages; p++){
+    const tc = await (await doc.getPage(p)).getTextContent();
+    const linhas = [];
+    for(const it of tc.items){
+      if(!it.str || !it.str.trim()) continue;
+      const x = it.transform[4], y = it.transform[5];
+      let alvo = linhas.find(l => Math.abs(l.y - y) <= 2.5);
+      if(!alvo){ alvo = { y, itens: [] }; linhas.push(alvo); }
+      alvo.itens.push({ x, str: it.str });
+    }
+    linhas.sort((a,b) => b.y - a.y);
+    out += linhas.map(l => l.itens.sort((a,b)=>a.x-b.x).map(i=>i.str).join(' ')).join('\n') + '\n';
+  }
+  return out;
+}
+
+function fraseReguaNeg(){
+  const v = CMED_VIG;
+  if(!v || !v.vigente_desde) return '<b style="color:#e0a04a">não consegui identificar a edição da CMED usada</b>';
+  const d = new Date(String(v.vigente_desde).slice(0,10) + 'T12:00:00');
+  return 'régua: <b>CMED publicada em ' + d.toLocaleDateString('pt-BR') + '</b>'
+    + (isFinite(Number(v.dias_desde)) ? ' (há ' + v.dias_desde + ' dias)' : '')
+    + (Number(v.dias_desde) > 45 ? ' · <b style="color:#e0a04a">a CMED publica todo mês — pode haver edição mais nova</b>' : '');
+}
+
+function pintaConferencia(id){
+  const box = document.getElementById('conf-resultado'); if(!box || !CONF_ULTIMA) return;
+  const { resultado, res, anexo } = CONF_ULTIMA;
+  const rot = { abaixo:'dentro do teto', acima:'ACIMA DO TETO', nao_encontrado:'não encontrado na CMED', sem_preco:'sem preço legível' };
+  const linhas = resultado.slice().sort((a,b) =>
+    (a.situacao==='acima'?0:a.situacao==='nao_encontrado'?1:2) - (b.situacao==='acima'?0:b.situacao==='nao_encontrado'?1:2));
+  box.innerHTML =
+      `<div class="pl-conf">
+        <div class="ok"><b>${res.ok}</b><span>dentro do teto</span></div>
+        <div class="acima"><b>${res.acima}</b><span>ACIMA do teto</span></div>
+        <div><b>${res.naoEncontrados}</b><span>não achados na CMED</span></div>
+        ${res.semPreco?`<div><b>${res.semPreco}</b><span>sem preço legível</span></div>`:''}
+        <div><b>${res.total}</b><span>linhas lidas</span></div>
+      </div>`
+    + `<div class="salvo" style="margin-bottom:8px">${esc(anexo.arquivo_nome)} (v${anexo.versao}) · ${fraseReguaNeg()}</div>`
+    // >>> "NÃO ENCONTRADO" NÃO É "DENTRO DO TETO". O placar conta separado de propósito: somar
+    //     os dois daria um verde que não existe. Item que a CMED não conhece pode ser material
+    //     (que não tem teto) ou pode ser um medicamento que a leitura não casou — e a diferença
+    //     entre os dois é quem confere, não a tela.
+    + `<div class="dica" style="font-size:11.5px;color:var(--muted);margin-bottom:8px">
+        <b>Não encontrado na CMED não quer dizer dentro do teto.</b> Pode ser material (que não tem
+        teto legal) ou um medicamento que a leitura não casou — confira os que interessam.
+       </div>`
+    + `<div style="max-height:340px;overflow:auto"><table style="width:100%;border-collapse:collapse;font-size:12px">
+        <thead><tr>
+          <th style="text-align:left;padding:6px;border-bottom:1px solid var(--linha);color:var(--muted);font-size:10.5px">ITEM</th>
+          <th style="text-align:right;padding:6px;border-bottom:1px solid var(--linha);color:var(--muted);font-size:10.5px">MEU PREÇO</th>
+          <th style="text-align:right;padding:6px;border-bottom:1px solid var(--linha);color:var(--muted);font-size:10.5px">TETO</th>
+          <th style="text-align:left;padding:6px;border-bottom:1px solid var(--linha);color:var(--muted);font-size:10.5px">SITUAÇÃO</th>
+        </tr></thead><tbody>`
+    + linhas.map(r => `<tr>
+        <td style="padding:6px;border-bottom:1px solid rgba(34,55,79,.4)">${esc(String(r.descricao).slice(0,90))}</td>
+        <td style="padding:6px;text-align:right;border-bottom:1px solid rgba(34,55,79,.4)">${brl(r.precoUnit)}</td>
+        <td style="padding:6px;text-align:right;border-bottom:1px solid rgba(34,55,79,.4)">${brl(r.teto)}</td>
+        <td style="padding:6px;border-bottom:1px solid rgba(34,55,79,.4);color:${r.situacao==='acima'?'#ff9d92':r.situacao==='abaixo'?'var(--verde)':'var(--muted)'}">
+          ${esc(rot[r.situacao]||r.situacao)}${r.situacao==='acima'?` <b>+${r.pctAcima}%</b>`:''}</td>
+      </tr>`).join('')
+    + `</tbody></table></div>
+       <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
+         <button class="btn-ed sec" onclick="imprimirConferencia(${id})">🖨️ Relatório (imprimir/PDF)</button>
+         <button class="btn-ed sec" onclick="excelConferencia()">⬇ Baixar Excel</button>
+       </div>`;
+}
+
+function pintaConferencias(id){
+  // O HISTÓRICO fica embaixo da lista de anexos: ele responde "a gente já tinha conferido antes
+  // de mandar?", que é a pergunta que aparece depois que dá errado.
+  const box = document.getElementById('prop-lista'); if(!box || !CONFERENCIAS.length) return;
+  box.innerHTML += '<div class="salvo" style="margin-top:10px"><b>Conferências anteriores</b></div>'
+    + CONFERENCIAS.map(c => `<div class="anx">
+        <span class="q">${esc(new Date(c.quando).toLocaleDateString('pt-BR'))}</span>
+        <span class="n" style="cursor:default;text-decoration:none">${c.itens} itens · <b style="color:${c.acima?'#ff9d92':'var(--verde)'}">${c.acima} acima</b> · ${c.nao_encontrados} não achados</span>
+        <span class="q">${c.cmed_vigente_desde ? 'CMED ' + esc(new Date(c.cmed_vigente_desde + 'T12:00:00').toLocaleDateString('pt-BR')) : 'régua não registrada'}</span>
+      </div>`).join('');
+}
+
+/* O RELATÓRIO IMPRIMÍVEL. Mesmo padrão dos outros documentos do sistema: abre numa janela
+   própria, com botão de imprimir que some na impressão.
+   >>> A VIGÊNCIA DA CMED VAI NO RODAPÉ, e não é enfeite: este papel sai da tela e vive semanas
+       numa pasta. Uma conferência sem a data da régua é uma afirmação sem prazo de validade —
+       daqui a dois meses continua parecendo verdadeira, e o teto já mudou. */
+function imprimirConferencia(id){
+  if(!CONF_ULTIMA) return;
+  const n = NEG.find(x => x.id === id) || {};
+  const { resultado, res, anexo, quando } = CONF_ULTIMA;
+  const emp = (window.LIMEDTEC_CLIENTE && LIMEDTEC_CLIENTE.empresa) || {};
+  const v = CMED_VIG;
+  const rot = { abaixo:'dentro do teto', acima:'ACIMA DO TETO', nao_encontrado:'não encontrado', sem_preco:'sem preço' };
+  const j = window.open('', '_blank');
+  if(!j){ alert('o navegador bloqueou a janela — libere o pop-up pra gerar o relatório'); return; }
+  const money = x => x==null ? '—' : 'R$ ' + Number(x).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:4});
+  j.document.write('<!doctype html><html lang="pt-BR"><head><meta charset="utf-8">'
+    + '<title>Conferência CMED — ' + esc(n.numero || n.orgao || 'negócio') + '</title>'
+    + '<style>body{font:12px/1.55 system-ui,sans-serif;max-width:900px;margin:26px auto;padding:0 20px;color:#111}'
+    + 'h1{font-size:17px;margin:0 0 4px} h2{font-size:13px;margin:20px 0 6px}'
+    + 'table{width:100%;border-collapse:collapse;margin-top:8px} th,td{padding:5px 6px;border-bottom:1px solid #ddd;text-align:left}'
+    + 'th{font-size:10px;text-transform:uppercase;color:#666} td.n{text-align:right;white-space:nowrap}'
+    + '.acima{color:#b02a20;font-weight:700} .ok{color:#2f7d32}'
+    + '.placar{display:flex;gap:18px;margin:12px 0;flex-wrap:wrap} .placar div{border:1px solid #ddd;border-radius:8px;padding:8px 14px}'
+    + '.placar b{display:block;font-size:18px}'
+    + '.rodape{margin-top:26px;padding-top:12px;border-top:1px solid #ddd;font-size:11px;color:#555}'
+    + '.acao{margin:16px 0} button{font:inherit;padding:7px 14px;border-radius:7px;border:1px solid #ccc;background:#f5f5f5;cursor:pointer}'
+    + '@media print{.acao{display:none}}</style></head><body>'
+    + '<h1>Conferência de proposta contra o teto legal (CMED)</h1>'
+    + '<div>' + esc(emp.razaoSocial || emp.nome || '') + (emp.cnpj ? ' · CNPJ ' + esc(emp.cnpj) : '') + '</div>'
+    + '<div style="color:#555;margin-top:6px">'
+    +   (n.orgao ? esc(n.orgao) + ' · ' : '') + (n.numero ? 'nº ' + esc(n.numero) : '')
+    +   '<br>proposta: ' + esc(anexo.arquivo_nome) + ' (versão ' + anexo.versao + ')'
+    +   '<br>conferida em ' + esc(quando.toLocaleString('pt-BR')) + '</div>'
+    + '<div class="acao"><button onclick="window.print()">🖨️ Imprimir / PDF</button></div>'
+    + '<div class="placar">'
+    +   '<div><b class="ok">' + res.ok + '</b>dentro do teto</div>'
+    +   '<div><b class="acima">' + res.acima + '</b>ACIMA do teto</div>'
+    +   '<div><b>' + res.naoEncontrados + '</b>não achados na CMED</div>'
+    +   '<div><b>' + res.total + '</b>linhas lidas</div></div>'
+    + (res.acima
+        ? '<p class="acima">Há ' + res.acima + ' item(ns) acima do teto legal. Em venda ao governo, preço acima do PMVG desclassifica.</p>'
+        : '<p class="ok">Nenhum item acima do teto legal nesta leitura.</p>')
+    + '<p style="color:#555"><b>Não encontrado na CMED não quer dizer dentro do teto.</b> Pode ser material '
+    + '(que não tem teto legal) ou um medicamento que a leitura não casou.</p>'
+    + '<h2>Item a item</h2><table><thead><tr><th>Item da proposta</th><th>Meu preço</th><th>Teto</th><th>Diferença</th><th>Situação</th></tr></thead><tbody>'
+    + resultado.map(r => '<tr><td>' + esc(String(r.descricao).slice(0,110)) + '</td>'
+        + '<td class="n">' + money(r.precoUnit) + '</td><td class="n">' + money(r.teto) + '</td>'
+        + '<td class="n">' + (r.situacao==='acima' ? '+' + r.pctAcima + '%' : r.situacao==='abaixo' ? '−' + r.folgaPct + '%' : '—') + '</td>'
+        + '<td class="' + (r.situacao==='acima'?'acima':r.situacao==='abaixo'?'ok':'') + '">' + esc(rot[r.situacao]||r.situacao) + '</td></tr>').join('')
+    + '</tbody></table>'
+    + '<div class="rodape">'
+    +   (v && v.vigente_desde
+          ? 'Conferido contra a tabela CMED publicada em <b>'
+            + esc(new Date(String(v.vigente_desde).slice(0,10) + 'T12:00:00').toLocaleDateString('pt-BR'))
+            + '</b> (' + Number(v.apresentacoes).toLocaleString('pt-BR') + ' apresentações). '
+            + 'A CMED publica nova tabela todo mês — esta conferência vale para essa edição.'
+          : '<b>ATENÇÃO: não foi possível identificar a edição da CMED usada nesta conferência.</b>')
+    +   '<br>Teto aplicado: PMVG (preço máximo de venda ao governo), com o desconto CAP onde ele incide.'
+    + '</div></body></html>');
+  j.document.close();
+}
+
+function excelConferencia(){
+  if(!CONF_ULTIMA) return;
+  const { resultado, anexo } = CONF_ULTIMA;
+  const v = CMED_VIG;
+  const rot = { abaixo:'dentro do teto', acima:'ACIMA DO TETO', nao_encontrado:'NÃO ENCONTRADO na CMED', sem_preco:'sem preço legível' };
+  carregarXlsxNeg().then(X => {
+    const ws = X.utils.json_to_sheet(resultado.map(r => ({
+      'Item da proposta': r.descricao,
+      'Meu preço unitário': r.precoUnit,
+      'Teto CMED': r.teto,
+      'Situação': rot[r.situacao] || r.situacao,
+      '% acima': r.pctAcima ?? '',
+      'Folga R$': r.folgaRS ?? '',
+      'Casou com': r.evidencia || '',
+    })));
+    ws['!cols'] = [{wch:60},{wch:16},{wch:14},{wch:24},{wch:10},{wch:12},{wch:40}];
+    // A RÉGUA VAI DENTRO DA PLANILHA, pelo mesmo motivo do relatório impresso: o .xlsx sai daqui
+    // e vive no e-mail de alguém, longe de qualquer aviso da tela.
+    X.utils.sheet_add_aoa(ws, [[],
+      [(v && v.vigente_desde)
+        ? 'Conferido contra a tabela CMED publicada em ' + new Date(String(v.vigente_desde).slice(0,10)+'T12:00:00').toLocaleDateString('pt-BR')
+        : 'ATENÇÃO: não foi possível identificar a edição da CMED usada nesta conferência.'],
+      ['Proposta: ' + anexo.arquivo_nome + ' (versão ' + anexo.versao + ') · gerado em ' + new Date().toLocaleString('pt-BR')],
+      ['Teto aplicado: PMVG (venda ao governo). "Não encontrado" não quer dizer dentro do teto.'],
+    ], { origin: -1 });
+    const wb = X.utils.book_new();
+    X.utils.book_append_sheet(wb, ws, 'Conferência CMED');
+    X.writeFile(wb, 'conferencia-cmed-' + (anexo.arquivo_nome||'proposta').replace(/\.pdf$/i,'').slice(0,40) + '.xlsx');
+  }).catch(e => alert(e.message));
+}
+// Baixado só no clique — a maioria de quem abre a ficha nunca exporta planilha.
+let _xlsxNeg = null;
+function carregarXlsxNeg(){
+  if(window.XLSX) return Promise.resolve(window.XLSX);
+  if(_xlsxNeg) return _xlsxNeg;
+  _xlsxNeg = new Promise((res, rej) => {
+    const s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+    s.onload = () => res(window.XLSX);
+    s.onerror = () => rej(new Error('não consegui carregar o gerador de planilha (precisa de internet)'));
+    document.head.appendChild(s);
+  });
+  return _xlsxNeg;
 }
 
 /* ══ CREDENCIAMENTO JUNTO À INDÚSTRIA ═════════════════════════════════════════════════════════
