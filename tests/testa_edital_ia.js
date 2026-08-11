@@ -132,7 +132,10 @@ ok('31. os dois lados usam o MESMO modelo', /claude-haiku-4-5/.test(TELA) && /cl
 ok('32. a saida e limitada, e o limite mora no SERVIDOR (custo de saida e 5x o de entrada)',
   // 11/08: virou teto POR TAREFA (resumo 2000, itens 12000). O limite continua morando no
   // servidor — que é o ponto do assert; um teto que a tela mandasse seria um teto negociável.
-  /const MAX_SAIDA: Record<string, number> = \{ resumo: 2000, itens: 12000, juntar: 3000 \};/.test(FN)
+  // 11/08 à tarde: as tarefas viraram cinco e o teto virou um objeto. O que o assert protege
+  // continua sendo o mesmo — o limite mora no SERVIDOR; um teto que a tela mandasse seria um
+  // teto negociável.
+  /const MAX_SAIDA: Record<string, number> = \{/.test(FN) && /resumo: 2000, itens: 12000, juntar: 3000,/.test(FN)
   && /max_tokens: MAX_SAIDA\[tarefa\]/.test(FN) && /max_tokens: 2000/.test(PROVA));
 ok('33. ...e o motivo esta dito na ferramenta',
   /o custo de saida e 5x o de entrada/.test(PROVA));

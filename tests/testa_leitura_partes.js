@@ -94,7 +94,7 @@ ok('28. ...com o motivo escrito', /Uma lista com buraco não se parece com uma l
 
 // ══════════ 5. A JUNCAO DO RESUMO (map-reduce) ══════════
 ok('29. *** existe a tarefa `juntar` na funcao, com prompt proprio ***',
-  /const PERGUNTA_JUNTAR = /.test(F) && /body\.tarefa === "juntar" \? "juntar"/.test(F));
+  /const PERGUNTA_JUNTAR = /.test(F) && /juntar: PERGUNTA_JUNTAR/.test(F));
 ok('30. *** e ela tem teto de saida proprio ***', /juntar: 3000/.test(F));
 ok('31. *** conflito entre partes NAO e resolvido no escuro ***',
   /Se DUAS partes disserem coisas diferentes do mesmo campo, NAO escolha uma/.test(F));

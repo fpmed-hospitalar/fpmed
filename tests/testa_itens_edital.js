@@ -37,13 +37,17 @@ console.log('SUITE testa_itens_edital — a tabela de itens, do PDF ate a propos
 // ══════════ 1. A FUNCAO TEM DUAS TAREFAS, E ELAS SAO DIFERENTES DE VERDADE ══════════
 // (11/08 à tarde: a `tarefa` virou de duas para TRÊS — entrou `juntar`, a passada final do
 //  resumo em partes. Os asserts continuam dizendo o mesmo: a tarefa decide o prompt e o teto.)
+// (11/08 à tarde, 2ª vez: as tarefas foram de três para CINCO — entraram `itens-ganhos` e
+//  `mapa-precos`, do Gerenciamento de Ata. A escada de ternários virou um objeto `PROMPTS`,
+//  justamente porque com cinco a escada escondia qual prompt vai com qual teto.)
 ok('1. *** a funcao aceita `tarefa` e ela decide o prompt ***',
-  /const tarefa = body\.tarefa === "itens" \? "itens" : body\.tarefa === "juntar" \? "juntar" : "resumo";/.test(F)
-  && /const PERGUNTA = tarefa === "itens" \? PERGUNTA_ITENS : tarefa === "juntar" \? PERGUNTA_JUNTAR : PERGUNTA_RESUMO;/.test(F));
+  /const PROMPTS: Record<string, string> = \{/.test(F)
+  && /itens: PERGUNTA_ITENS/.test(F)
+  && /const PERGUNTA = PROMPTS\[tarefa\];/.test(F));
 ok('2. o padrao e `resumo` (corpo antigo continua funcionando igual)',
   /: "resumo";/.test(F));
 ok('3. *** o teto de saida MUDA com a tarefa ***',
-  /const MAX_SAIDA: Record<string, number> = \{ resumo: 2000, itens: 12000, juntar: 3000 \};/.test(F)
+  /const MAX_SAIDA: Record<string, number> = \{/.test(F) && /itens: 12000/.test(F)
   && /max_tokens: MAX_SAIDA\[tarefa\]/.test(F));
 ok('4. ...e o motivo esta escrito (teto de resumo aplicado a itens corta a tabela)',
   /Teto de resumo aplicado a itens nao devolve tabela menor: devolve tabela CORTADA no meio/.test(F));
@@ -192,7 +196,7 @@ ok('63. *** o contexto NAO e consumido (quem veio da ficha pode ler dois anexos 
 
 // ══════════ 11. ERRO QUE CUSTOU DINHEIRO APARECE COM O CUSTO ══════════
 ok('64. *** a funcao devolve o custo JUNTO do erro ***',
-  /if \(erro\) return J\(\{ ok: false, erro, cortou, modo, tarefa, parte, partes, leituraId,\s*usd: \+usd\.toFixed\(4\)/.test(F));
+  /if \(erro\) return J\(\{ ok: false, erro, cortou, modo, tarefa, parte, partes, leituraId,[\s\S]{0,80}usd: \+usd\.toFixed\(4\)/.test(F));
 // 11/08 à tarde: com leitura em partes, o custo consumido por partes que falharam vem do
 // acumulado (`usdTotal`), e não do erro de uma chamada só — mas continua sendo DITO.
 ok('65. *** e a tela mostra quanto a tentativa fracassada custou ***',

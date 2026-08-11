@@ -403,7 +403,11 @@ const FASES = [
      migração de dado + DDL + reescrever histórico, pra mudar uma palavra que só existe pra ser
      lida. Rótulo é apresentação; chave é identidade. Quem lê vê "Habilitação"; o banco não muda. */
   { k:'classificacao', n:'Habilitação',    c:'#8B7FD4' },
-  { k:'contrato',      n:'Contrato',      c:'#1E9E6A' },
+  /* MESMO PADRÃO, 11/08 à tarde (Contrato -> Ata), e pela MESMA razão: a chave `contrato` está
+     no check constraint, no MAPA_STATUS e no histórico. O que o Lemuel pediu foi que a etiqueta
+     do funil ficasse curta ("Ata") e a ABA da ficha por extenso ("Gerenciamento de Ata") — são
+     dois lugares com espaço diferente, não dois nomes para a mesma coisa. */
+  { k:'contrato',      n:'Ata',           c:'#1E9E6A' },
 ];
 const nomeFase = k => (FASES.find(f=>f.k===k)||{}).n || k;
 const corFase  = k => (FASES.find(f=>f.k===k)||{}).c || '#8fa3b8';
@@ -801,7 +805,8 @@ async function abrirDrawer(id){
   } else {
     document.getElementById('dw-body').innerHTML = corpoDrawer(n, null, false);
   }
-  if(ABERTO === id){ carregarRastro(id); carregarLembretes(id); carregarCredenciamentos(id); carregarProposta(id); }
+  if(ABERTO === id){ carregarRastro(id); carregarLembretes(id); carregarCredenciamentos(id);
+                     carregarProposta(id); carregarAta(id); }
 }
 function fecharDrawer(){
   ABERTO = null;
@@ -903,6 +908,7 @@ function corpoDrawer(n, obs, carregando){
       <button        data-aba="lembretes"  onclick="abaFicha(this,'lembretes')">Lembretes <span id="dw-lem-n"></span></button>
       <button        data-aba="tarefas"    onclick="abaFicha(this,'tarefas')">Tarefas <span id="dw-tar-n"></span></button>
       <button        data-aba="prop"       onclick="abaFicha(this,'prop')">Proposta <span id="dw-prop-n"></span></button>
+      <button        data-aba="ata"        onclick="abaFicha(this,'ata')">Gerenciamento de Ata <span id="dw-ata-n"></span></button>
       <button        data-aba="cred"       onclick="abaFicha(this,'cred')">Credenciamentos <span id="dw-cred-n"></span></button>
       <button        data-aba="obs"        onclick="abaFicha(this,'obs')">Observações</button>
     </div>
@@ -977,6 +983,38 @@ function corpoDrawer(n, obs, carregando){
         <div id="conf-resultado"></div>
         <div class="salvo" id="conf-msg"></div>
       </div>
+    </div>
+
+    <!-- ══ GERENCIAMENTO DE ATA (11/08) ══════════════════════════════════════════════════════
+         A fase final do negócio. A etiqueta do funil diz "Ata" (é curta, cabe na coluna) e esta
+         aba diz por extenso — dois lugares com espaço diferente, não dois nomes.
+         >>> O QUE ENTRA AQUI É O FIM DA HISTÓRIA: os documentos assinados, o que se ganhou, e —
+             o que quase ninguém guarda — POR QUANTO se perdeu. O mapa de preços é a única parte
+             deste sistema que serve pra aprender em vez de executar. -->
+    <div class="dw-painel" id="aba-ata">
+      <div class="dw-sec">
+        <h4>Documentos da ata</h4>
+        <div class="dica" style="font-size:11.5px;color:var(--muted);margin-bottom:8px">
+          Cada anexo tem uma <b>categoria</b>, e as versões empilham dentro dela. Nada se
+          sobrescreve e nada se apaga.
+        </div>
+        <div id="ata-lista"><div class="salvo">carregando…</div></div>
+        ${editavel ? `<div class="prop-novo">
+          <select id="ata-cat" style="background:var(--painel2);color:var(--texto);border:1px solid var(--linha);border-radius:8px;padding:8px 10px;font-size:12.5px;font-family:inherit">
+            <option value="ata">Ata de registro de preços</option>
+            <option value="contrato">Contrato</option>
+            <option value="proposta_final">Proposta final</option>
+            <option value="ata_sessao">Ata da sessão</option>
+            <option value="itens_ganhos">Itens ganhos</option>
+            <option value="retorno_precos">Retorno de preços</option>
+          </select>
+          <input type="file" id="ata-arq" accept="application/pdf">
+          <button class="btn-ed" id="ata-bt" onclick="anexarAta(${n.id})">📎 Anexar</button>
+        </div><div class="salvo" id="ata-msg"></div>`
+        : '<div class="salvo">só quem grava pode anexar documento.</div>'}
+      </div>
+      <div class="dw-sec" id="ata-relatorios"></div>
+      <div class="dw-sec" id="ata-saida"></div>
     </div>
 
     <!-- ══ CREDENCIAMENTO JUNTO À INDÚSTRIA (11/08) ══════════════════════════════════════════
@@ -1622,6 +1660,402 @@ function carregarXlsxNeg(){
     document.head.appendChild(s);
   });
   return _xlsxNeg;
+}
+
+/* ══ GERENCIAMENTO DE ATA ═════════════════════════════════════════════════════════════════════
+   A fase final: os documentos assinados, o que se ganhou, e por quanto se perdeu.
+
+   >>> AS DUAS LEITURAS DE IA ENTRAM NA `ler-edital`, e não numa função nova. Ela já tem a
+       permissão do piloto conferida no servidor, o contador de custo, o teto por tarefa e o
+       bloqueio de leitura cortada. Função nova seria uma segunda permissão e um segundo contador
+       para a mesma cobrança — e o dia em que uma das duas ficasse pra trás seria um dia em que
+       alguém lê de graça, ou lê sem poder.
+   >>> E A IA NUNCA ESCREVE SOZINHA NO `valor_ganho`. Ele alimenta a taxa de vitória, que é o
+       número que a empresa usa pra decidir onde disputar. O relatório SUGERE; confirmar é um
+       clique de gente, e o rastro guarda que veio de leitura. */
+const ATA_CATS = [
+  { k:'ata',            n:'Ata de registro de preços' },
+  { k:'contrato',       n:'Contrato' },
+  { k:'proposta_final', n:'Proposta final' },
+  { k:'ata_sessao',     n:'Ata da sessão' },
+  { k:'itens_ganhos',   n:'Itens ganhos' },
+  { k:'retorno_precos', n:'Retorno de preços' },
+];
+const nomeCat = k => (ATA_CATS.find(c => c.k === k) || {}).n || k;
+let ANEXOS_ATA = [], RELATORIO_ATA = null;
+
+async function carregarAta(id){
+  const box = document.getElementById('ata-lista'); if(!box) return;
+  try{
+    const cats = ATA_CATS.map(c => c.k).join(',');
+    const r = await fetch(`${SB_URL}/rest/v1/negocio_anexos?negocio_id=eq.${id}`
+      + `&categoria=in.(${cats})&select=*&order=categoria.asc,versao.desc`, {headers:SB_H});
+    if(!r.ok) throw new Error('HTTP ' + r.status);
+    ANEXOS_ATA = await r.json();
+    pintaAta(id);
+  }catch(e){
+    ANEXOS_ATA = [];
+    box.innerHTML = '<div class="salvo">não consegui ler os documentos ('+esc(e.message)+') — '
+      + 'isto <b>não</b> quer dizer que não existam.</div>';
+  }
+}
+
+function pintaAta(id){
+  const box = document.getElementById('ata-lista'); if(!box) return;
+  const cnt = document.getElementById('dw-ata-n');
+  if(cnt) cnt.textContent = ANEXOS_ATA.length ? ANEXOS_ATA.length : '';
+
+  // AGRUPADO POR TIPO, como pedido. Categoria vazia NÃO aparece: seis cabeçalhos com "nenhum"
+  // embaixo empurram pra baixo os dois que existem, e a lista deixa de ser lida.
+  const porCat = {};
+  for(const a of ANEXOS_ATA) (porCat[a.categoria] ||= []).push(a);
+  const cheias = ATA_CATS.filter(c => porCat[c.k]);
+  box.innerHTML = cheias.length
+    ? cheias.map(c => `<div style="margin-bottom:10px">
+        <div class="salvo" style="color:var(--azul-claro);font-weight:600">${esc(c.n)} (${porCat[c.k].length})</div>
+        ${porCat[c.k].map(a => `<div class="anx">
+          <span class="v">v${a.versao}</span>
+          <span class="n" onclick="abrirAnexo('${esc(a.arquivo_path)}')" title="abrir">${esc(a.arquivo_nome)}</span>
+          <span class="q">${esc(new Date(a.enviado_em).toLocaleDateString('pt-BR'))}${a.enviado_por?' · '+esc(String(a.enviado_por).split('@')[0]):''}</span>
+        </div>`).join('')}
+      </div>`).join('')
+    : '<div class="salvo">Nenhum documento anexado ainda.</div>';
+
+  pintaBotoesAta(id, porCat);
+}
+
+/* OS BOTÕES DOS RELATÓRIOS SÓ APARECEM QUANDO HÁ O DOCUMENTO QUE ELES LEEM. Um botão "ler itens
+   ganhos" sem nenhum documento de resultado anexado só pode fazer uma coisa: gastar uma leitura
+   pra dizer "não achei". E ele é do piloto — quem não tem permissão não vê nada disso. */
+function pintaBotoesAta(id, porCat){
+  const box = document.getElementById('ata-relatorios'); if(!box) return;
+  if(!podeLerEdital()){
+    box.innerHTML = '<div class="salvo">Os relatórios com IA estão em piloto, liberados só para o '
+      + 'gestor de licitação — cada leitura tem custo e é cobrada.</div>';
+    return;
+  }
+  const temGanhos = porCat['itens_ganhos'] || porCat['ata_sessao'];
+  const temMapa   = porCat['ata_sessao'] || porCat['retorno_precos'];
+  box.innerHTML = '<h4>Relatórios com IA</h4>'
+    + '<div class="dica" style="font-size:11.5px;color:var(--muted);margin-bottom:8px">'
+    +   'Cada leitura <b>custa dinheiro e fica registrada</b> no seu nome. Leitura cortada é '
+    +   'bloqueada — nunca entregue pela metade.</div>'
+    + '<div style="display:flex;gap:8px;flex-wrap:wrap">'
+    + (temGanhos
+        ? `<button class="btn-ed" onclick="lerAtaIA(${id},'itens-ganhos')">🏆 O que eu ganhei</button>`
+        : '<span class="salvo">Anexe <b>Itens ganhos</b> ou <b>Ata da sessão</b> para ler o que foi ganho.</span>')
+    + (temMapa
+        ? `<button class="btn-ed sec" onclick="lerAtaIA(${id},'mapa-precos')">📉 Mapa de preços da disputa</button>`
+        : '<span class="salvo">Anexe <b>Ata da sessão</b> ou <b>Retorno de preços</b> para montar o mapa.</span>')
+    + '</div>';
+}
+
+async function anexarAta(id){
+  const msg = document.getElementById('ata-msg'), bt = document.getElementById('ata-bt');
+  const arq = (document.getElementById('ata-arq').files || [])[0];
+  const cat = document.getElementById('ata-cat').value;
+  if(!arq){ msg.textContent = 'escolha o arquivo.'; return; }
+  bt.disabled = true; msg.textContent = 'enviando…';
+  try{
+    const limpo = arq.name.normalize('NFD').replace(/\p{M}/gu,'').toLowerCase().replace(/[^a-z0-9._-]+/g,'-');
+    const path = 'negocio-' + id + '/' + cat + '/' + Date.now() + '-' + limpo;
+    const up = await fetch(`${SB_URL}/storage/v1/object/documentos/${encodeURIComponent(path)}`, {
+      method:'POST', headers: Object.assign({}, SB_H), body: arq });
+    if(!up.ok) throw new Error(up.status===403 ? 'só gestor pode enviar arquivo' : ('não consegui enviar (HTTP '+up.status+')'));
+    const r = await fetch(`${SB_URL}/rest/v1/negocio_anexos`, {method:'POST',
+      headers: Object.assign({'Prefer':'return=representation'}, SB_H, {'Content-Type':'application/json'}),
+      body: JSON.stringify({ negocio_id: id, categoria: cat, arquivo_path: path,
+        arquivo_nome: arq.name, bytes: arq.size,
+        enviado_por: (window.gmAuth && gmAuth.user && gmAuth.user.email) || null })});
+    if(!r.ok) throw new Error('o arquivo subiu, mas não consegui registrar (HTTP ' + r.status + ')');
+    const nova = (await r.json())[0];
+    document.getElementById('ata-arq').value = '';
+    msg.textContent = nomeCat(cat) + ' anexado como v' + (nova ? nova.versao : '?') + '.';
+    await carregarAta(id);
+  }catch(e){ msg.textContent = 'não consegui anexar: ' + e.message; }
+  bt.disabled = false;
+}
+
+/* ── AS DUAS LEITURAS ────────────────────────────────────────────────────────────────────────
+   O documento que cada uma lê é escolhido por CATEGORIA, e não por "o mais recente": ler a
+   proposta final quando se pediu o mapa de preços gastaria uma leitura pra devolver nada. */
+async function lerAtaIA(id, tarefa){
+  const saida = document.getElementById('ata-saida');
+  const prefs = tarefa === 'itens-ganhos' ? ['itens_ganhos','ata_sessao'] : ['ata_sessao','retorno_precos'];
+  let anexo = null;
+  for(const c of prefs){ anexo = ANEXOS_ATA.find(a => a.categoria === c); if(anexo) break; }
+  if(!anexo){ saida.innerHTML = '<div class="salvo">anexe o documento primeiro.</div>'; return; }
+
+  saida.innerHTML = '<div class="salvo">baixando o documento…</div>';
+  try{
+    const rs = await fetch(`${SB_URL}/storage/v1/object/sign/documentos/${encodeURIComponent(anexo.arquivo_path)}`, {
+      method:'POST', headers: Object.assign({'Content-Type':'application/json'}, SB_H),
+      body: JSON.stringify({ expiresIn: 120 }) });
+    if(!rs.ok) throw new Error('não consegui abrir o anexo (HTTP ' + rs.status + ')');
+    const buf = await (await fetch(SB_URL + '/storage/v1' + (await rs.json()).signedURL)).arrayBuffer();
+
+    saida.innerHTML = '<div class="salvo">lendo o PDF…</div>';
+    const texto = await pdfParaTextoNeg(buf);
+    if(texto.trim().length < 500) throw new Error('a extração de texto veio pobre — este PDF parece escaneado. '
+      + 'O caminho de imagem existe no leitor de edital; aqui ele ainda não foi ligado.');
+
+    saida.innerHTML = '<div class="salvo">lendo com IA (isto custa e fica registrado)…</div>';
+    const tok = tokenSessaoNeg();
+    if(!tok) throw new Error('sua sessão expirou — entre de novo');
+    const r = await fetch(`${SB_URL}/functions/v1/ler-edital`, {method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer ' + tok},
+      body: JSON.stringify({ tarefa, modo:'texto', texto, titulo: anexo.arquivo_nome,
+        chars: texto.length, cambio: await cambioNeg() }),
+      signal: AbortSignal.timeout(600000)});
+    const txt = await r.text();
+    if(r.status === 403) throw new Error('os relatórios com IA estão em piloto, liberados só para o gestor de licitação.');
+    if(!r.ok) throw new Error('o serviço de leitura respondeu ' + r.status);
+    const j = JSON.parse(txt);
+    // ERRO COM CUSTO JUNTO, como em toda leitura paga deste sistema.
+    if(j.ok === false) throw new Error((j.erro || 'a leitura não deu certo')
+      + (j.usd ? ' · esta tentativa já custou ' + (j.brl != null ? 'R$ '+Number(j.brl).toFixed(2) : 'US$ '+Number(j.usd).toFixed(4)) + '.' : ''));
+    if(!j.dados) throw new Error('a leitura voltou fora do formato esperado — não vou adivinhar o que ela quis dizer.');
+
+    RELATORIO_ATA = { tarefa, anexo, dados: j.dados, custo: j, negocio: id };
+    if(tarefa === 'itens-ganhos') pintaGanhos(id); else pintaMapa(id);
+  }catch(e){ saida.innerHTML = '<div class="aviso-err salvo" style="color:#ff9d92">⚠️ ' + esc(e.message) + '</div>'; }
+}
+
+function tokenSessaoNeg(){
+  try{
+    for(const k of Object.keys(localStorage)){
+      if(!/gm.?auth|sess/i.test(k)) continue;
+      const v = JSON.parse(localStorage.getItem(k) || '{}');
+      if(v && v.access_token) return v.access_token;
+    }
+  }catch(e){}
+  return null;
+}
+async function cambioNeg(){
+  try{
+    const r = await fetch('https://economia.awesomeapi.com.br/last/USD-BRL', {signal: AbortSignal.timeout(6000)});
+    const v = parseFloat((await r.json()).USDBRL.bid);
+    return isFinite(v) && v > 0 ? v : null;
+  }catch(e){ return null; }
+}
+function custoDaLeitura(j){
+  return '<div class="salvo" style="margin-top:10px">'
+    + 'custo desta leitura: <b>' + (j.brl != null ? 'R$ ' + Number(j.brl).toFixed(2) : 'US$ ' + Number(j.usd||0).toFixed(4)) + '</b>'
+    + (j.registrado === false
+        ? ' · <b style="color:#ff9d92">⚠️ NÃO entrou no contador</b>' + (j.regErro ? ' (' + esc(j.regErro) + ')' : '')
+        : (j.leituraId ? ' · registrada com o nº ' + j.leituraId : ''))
+    + '</div>';
+}
+
+/* ── O QUE EU GANHEI ─────────────────────────────────────────────────────────────────────────
+   O total daqui vira SUGESTÃO para `valor_ganho`. Nunca escrita automática: esse campo alimenta
+   a taxa de vitória, e um número que a IA pôs sozinha contaminaria a estatística que a empresa
+   usa pra decidir onde disputar — sem ninguém lembrar de onde ele veio. */
+function pintaGanhos(id){
+  const saida = document.getElementById('ata-saida');
+  const d = RELATORIO_ATA.dados, g = Array.isArray(d.ganhos) ? d.ganhos : [];
+  if(d.encontrado === false || (!g.length && !(d.perdidos||[]).length)){
+    saida.innerHTML = '<div class="aviso-err salvo" style="color:#ffd98a">Não achei resultado neste documento. '
+      + '<b>Isto não quer dizer que a empresa não ganhou nada</b> — quer dizer que não foi encontrado aqui.'
+      + (d.observacao ? '<br>O que a leitura disse: <i>' + esc(d.observacao) + '</i>' : '') + '</div>'
+      + custoDaLeitura(RELATORIO_ATA.custo);
+    return;
+  }
+  const num = v => { const n = Number(v); return isFinite(n) && v != null && v !== '' ? n : null; };
+  const comTotal = g.filter(x => num(x.total) != null || (num(x.quantidade) != null && num(x.valor_unitario) != null));
+  const total = comTotal.reduce((s,x) => s + (num(x.total) != null ? num(x.total) : num(x.quantidade)*num(x.valor_unitario)), 0);
+  const y = num(d.itens_no_documento);
+
+  saida.innerHTML =
+      '<div class="aviso-err salvo" style="color:#ffd98a;margin-bottom:8px">⚠️ <b>Confira contra o documento antes de usar.</b> '
+    +   'Isto foi lido por IA. O número que importa conferir é simples: o documento tem quantos itens?</div>'
+    + '<h4>O que ganhamos</h4>'
+    + '<div class="salvo" style="margin-bottom:8px">'
+    +   '<b>' + g.length + (y ? ' de ' + y : '') + ' item(ns)</b>'
+    +   (comTotal.length ? ' · total <b>' + brl(total) + '</b>'
+          + (comTotal.length < g.length ? ' <span style="color:#e0a04a">(' + (g.length-comTotal.length) + ' sem valor legível ficaram de fora da soma)</span>' : '')
+        : ' · nenhum item trouxe valor — não há total a somar')
+    +   (d.empresa ? '<br>lido como: ' + esc(d.empresa) : '')
+    + '</div>'
+    + (g.length ? '<div style="max-height:280px;overflow:auto"><table style="width:100%;border-collapse:collapse;font-size:12px">'
+        + '<thead><tr><th style="text-align:left;padding:5px;color:var(--muted);font-size:10.5px;border-bottom:1px solid var(--linha)">Nº</th>'
+        + '<th style="text-align:left;padding:5px;color:var(--muted);font-size:10.5px;border-bottom:1px solid var(--linha)">ITEM</th>'
+        + '<th style="text-align:right;padding:5px;color:var(--muted);font-size:10.5px;border-bottom:1px solid var(--linha)">QTD</th>'
+        + '<th style="text-align:right;padding:5px;color:var(--muted);font-size:10.5px;border-bottom:1px solid var(--linha)">UNIT.</th>'
+        + '<th style="text-align:right;padding:5px;color:var(--muted);font-size:10.5px;border-bottom:1px solid var(--linha)">TOTAL</th></tr></thead><tbody>'
+        + g.map(x => `<tr>
+            <td style="padding:5px;border-bottom:1px solid rgba(34,55,79,.4)">${esc(x.n)}</td>
+            <td style="padding:5px;border-bottom:1px solid rgba(34,55,79,.4)">${esc(String(x.descricao||'').slice(0,70))}</td>
+            <td style="padding:5px;text-align:right;border-bottom:1px solid rgba(34,55,79,.4)">${num(x.quantidade)!=null?Number(x.quantidade).toLocaleString('pt-BR'):'—'}</td>
+            <td style="padding:5px;text-align:right;border-bottom:1px solid rgba(34,55,79,.4)">${brl(num(x.valor_unitario))}</td>
+            <td style="padding:5px;text-align:right;border-bottom:1px solid rgba(34,55,79,.4)">${brl(num(x.total)!=null?num(x.total):(num(x.quantidade)!=null&&num(x.valor_unitario)!=null?num(x.quantidade)*num(x.valor_unitario):null))}</td>
+          </tr>`).join('') + '</tbody></table></div>' : '')
+    + ((d.nao_consegui_ler||[]).length
+        ? '<div class="salvo" style="margin-top:8px;color:#ffd98a"><b>O que a leitura NÃO conseguiu ler ('+d.nao_consegui_ler.length+'):</b><br>'
+          + d.nao_consegui_ler.map(esc).join('<br>') + '</div>' : '')
+    // ── A SUGESTÃO, COM CONFIRMAÇÃO DE GENTE ──────────────────────────────────────────────
+    + (comTotal.length && ehGestor()
+        ? `<div class="aviso-err salvo" style="margin-top:12px;padding:10px 12px;border:1px solid rgba(124,197,118,.5);border-radius:9px">
+            <b>Sugestão para o valor ganho: ${brl(total)}</b>
+            <div style="margin:6px 0;color:var(--muted);font-size:11.5px">
+              Este número <b>não foi gravado</b>. Ele alimenta a taxa de vitória, e a IA não escreve
+              sozinha num campo que a empresa usa pra decidir onde disputar. Confira a tabela acima
+              e confirme — a confirmação fica no histórico com a marca de que veio de leitura.
+            </div>
+            <button class="btn-ed" onclick="confirmarValorGanho(${id}, ${total.toFixed(2)})">✓ Confirmar ${brl(total)} como valor ganho</button>
+          </div>`
+        : (comTotal.length ? '<div class="salvo" style="margin-top:10px">O valor ganho é campo de gestor.</div>' : ''))
+    + custoDaLeitura(RELATORIO_ATA.custo);
+}
+
+async function confirmarValorGanho(id, valor){
+  const n = NEG.find(x => x.id === id); if(!n) return;
+  const saida = document.getElementById('ata-saida');
+  const antes = n.valor_ganho;
+  if(!confirm('Gravar ' + brl(valor) + ' como valor ganho deste negócio?'
+    + (antes ? '\n\nO valor atual é ' + brl(antes) + ' e será substituído.' : '')
+    + '\n\nEste número alimenta a taxa de vitória.')) return;
+  try{
+    // >>> O RASTRO DIZ DE ONDE VEIO. `gravar` já registra a alteração; o que se acrescenta aqui é
+    //     a anotação de que o número nasceu de uma leitura por IA e foi CONFIRMADO por alguém.
+    //     Daqui a seis meses, "por que este negócio vale R$ 84 mil?" tem resposta.
+    await gravar(id, { valor_ganho: valor });
+    n.valor_ganho = valor;
+    await fetch(`${SB_URL}/rest/v1/negocio_alteracoes`, {method:'POST',
+      headers: Object.assign({}, SB_H, {'Content-Type':'application/json'}),
+      body: JSON.stringify({ negocio_id: id, campo: 'valor_ganho',
+        de: antes == null ? null : String(antes), para: String(valor),
+        quem: (window.gmAuth && gmAuth.user && gmAuth.user.email) || null,
+        nota: 'confirmado a partir do relatório de itens ganhos lido por IA ('
+              + (RELATORIO_ATA && RELATORIO_ATA.anexo ? RELATORIO_ATA.anexo.arquivo_nome : 'documento') + ')' })
+    }).catch(()=>{});
+    saida.innerHTML += '<div class="salvo ok" style="margin-top:8px">✓ valor ganho gravado como ' + brl(valor) + ' — a confirmação está no histórico.</div>';
+    carregarRastro(id); pinta();
+  }catch(e){ saida.innerHTML += '<div class="salvo erro" style="margin-top:8px">não consegui gravar: ' + esc(e.message) + '</div>'; }
+}
+
+/* ── O MAPA DE PREÇOS DA DISPUTA ─────────────────────────────────────────────────────────────
+   A inteligência comercial da derrota. A DIFERENÇA (R$ e %) é calculada AQUI, com aritmética —
+   o prompt manda a IA copiar os valores e proíbe que ela calcule. Modelo de linguagem errando
+   uma subtração é um jeito silencioso de a análise inteira ficar errada, e essa conta é barata
+   demais pra terceirizar. */
+function pintaMapa(id){
+  const saida = document.getElementById('ata-saida');
+  const d = RELATORIO_ATA.dados, itens = Array.isArray(d.itens) ? d.itens : [];
+  if(d.encontrado === false || !itens.length){
+    saida.innerHTML = '<div class="aviso-err salvo" style="color:#ffd98a">Não achei um mapa de preços neste documento. '
+      + '<b>Isto não quer dizer que não houve disputa</b> — quer dizer que não foi encontrado aqui.'
+      + (d.observacao ? '<br>' + esc(d.observacao) : '') + '</div>' + custoDaLeitura(RELATORIO_ATA.custo);
+    return;
+  }
+  const num = v => { const n = Number(v); return isFinite(n) && v != null && v !== '' ? n : null; };
+  const linhas = itens.map(x => {
+    const nosso = num(x.nosso_preco), venc = num(x.preco_vencedor);
+    // A diferença só existe quando os DOIS números existem. Meio dado vira "—", e não zero.
+    const difRS = (nosso != null && venc != null) ? +(nosso - venc).toFixed(4) : null;
+    const difPct = (difRS != null && venc > 0) ? +((difRS / venc) * 100).toFixed(2) : null;
+    return Object.assign({}, x, { _nosso: nosso, _venc: venc, difRS, difPct });
+  });
+  const perdidos = linhas.filter(l => l.nossa_situacao === 'perdedor' && l.difRS != null);
+  const ganhos = linhas.filter(l => l.nossa_situacao === 'vencedor');
+  // "Perdemos por pouco" é a informação que faz mudar a estratégia da próxima. A mediana diria
+  // menos: o que interessa é ver a lista, e o pior e o melhor caso dela.
+  const perto = perdidos.filter(l => l.difPct != null && l.difPct <= 5).length;
+
+  saida.innerHTML =
+      '<div class="aviso-err salvo" style="color:#ffd98a;margin-bottom:8px">⚠️ <b>Confira contra a ata antes de usar.</b> '
+    +   'Isto foi lido por IA. As diferenças em R$ e % foram calculadas aqui, com aritmética — a IA só copiou os valores.</div>'
+    + '<h4>Mapa de preços da disputa</h4>'
+    + '<div class="salvo" style="margin-bottom:8px">'
+    +   itens.length + ' item(ns) no mapa · <b style="color:var(--verde)">' + ganhos.length + ' ganhos</b>'
+    +   ' · <b style="color:#ff9d92">' + perdidos.length + ' perdidos</b>'
+    +   (perto ? ' · <b style="color:#e0a04a">' + perto + ' perdidos por 5% ou menos</b>' : '')
+    +   (d.nossa_empresa ? '<br>lido como: ' + esc(d.nossa_empresa) : '')
+    + '</div>'
+    + '<div style="max-height:320px;overflow:auto"><table style="width:100%;border-collapse:collapse;font-size:12px">'
+    + '<thead><tr>'
+    +   ['Nº','ITEM','NOSSO','VENCEDOR','PREÇO DELE','DIFERENÇA'].map(h =>
+          '<th style="text-align:left;padding:5px;color:var(--muted);font-size:10.5px;border-bottom:1px solid var(--linha)">'+h+'</th>').join('')
+    + '</tr></thead><tbody>'
+    + linhas.map(l => `<tr>
+        <td style="padding:5px;border-bottom:1px solid rgba(34,55,79,.4)">${esc(l.n)}</td>
+        <td style="padding:5px;border-bottom:1px solid rgba(34,55,79,.4)">${esc(String(l.descricao||'').slice(0,52))}</td>
+        <td style="padding:5px;text-align:right;border-bottom:1px solid rgba(34,55,79,.4)">${brl(l._nosso)}</td>
+        <td style="padding:5px;border-bottom:1px solid rgba(34,55,79,.4)">${esc(String(l.vencedor||'—').slice(0,26))}</td>
+        <td style="padding:5px;text-align:right;border-bottom:1px solid rgba(34,55,79,.4)">${brl(l._venc)}</td>
+        <td style="padding:5px;text-align:right;border-bottom:1px solid rgba(34,55,79,.4);color:${l.difRS>0?'#ff9d92':l.difRS<0?'var(--verde)':'var(--muted)'}">
+          ${l.difRS==null?'—':(l.difRS>0?'+':'') + brl(l.difRS) + (l.difPct!=null?' ('+(l.difPct>0?'+':'')+l.difPct+'%)':'')}</td>
+      </tr>`).join('')
+    + '</tbody></table></div>'
+    + ((d.nao_consegui_ler||[]).length
+        ? '<div class="salvo" style="margin-top:8px;color:#ffd98a"><b>Não consegui ler ('+d.nao_consegui_ler.length+'):</b> '
+          + d.nao_consegui_ler.map(esc).join(' · ') + '</div>' : '')
+    + `<div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn-ed sec" onclick="imprimirMapa(${id})">🖨️ Relatório (imprimir/PDF)</button>
+        <button class="btn-ed sec" onclick="excelMapa()">⬇ Baixar Excel</button>
+      </div>`
+    + custoDaLeitura(RELATORIO_ATA.custo);
+  RELATORIO_ATA.linhas = linhas;
+}
+
+function imprimirMapa(id){
+  if(!RELATORIO_ATA || !RELATORIO_ATA.linhas) return;
+  const n = NEG.find(x => x.id === id) || {};
+  const L = RELATORIO_ATA.linhas, d = RELATORIO_ATA.dados;
+  const emp = (window.LIMEDTEC_CLIENTE && LIMEDTEC_CLIENTE.empresa) || {};
+  const money = x => x==null ? '—' : 'R$ ' + Number(x).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:4});
+  const j = window.open('', '_blank');
+  if(!j){ alert('o navegador bloqueou a janela — libere o pop-up'); return; }
+  j.document.write('<!doctype html><html lang="pt-BR"><head><meta charset="utf-8">'
+    + '<title>Mapa de preços — ' + esc(n.numero || n.orgao || 'negócio') + '</title>'
+    + '<style>body{font:12px/1.55 system-ui,sans-serif;max-width:960px;margin:26px auto;padding:0 20px;color:#111}'
+    + 'h1{font-size:17px;margin:0 0 4px} table{width:100%;border-collapse:collapse;margin-top:10px}'
+    + 'th,td{padding:5px 6px;border-bottom:1px solid #ddd;text-align:left} th{font-size:10px;text-transform:uppercase;color:#666}'
+    + 'td.n{text-align:right;white-space:nowrap} .perdeu{color:#b02a20} .ganhou{color:#2f7d32}'
+    + '.rodape{margin-top:24px;padding-top:12px;border-top:1px solid #ddd;font-size:11px;color:#555}'
+    + '.acao{margin:16px 0} button{font:inherit;padding:7px 14px;border-radius:7px;border:1px solid #ccc;background:#f5f5f5;cursor:pointer}'
+    + '@media print{.acao{display:none}}</style></head><body>'
+    + '<h1>Mapa de preços da disputa</h1>'
+    + '<div>' + esc(emp.razaoSocial || emp.nome || '') + '</div>'
+    + '<div style="color:#555;margin-top:6px">' + (n.orgao ? esc(n.orgao) + ' · ' : '') + (n.numero ? 'nº ' + esc(n.numero) : '')
+    +   '<br>documento: ' + esc(RELATORIO_ATA.anexo.arquivo_nome) + ' · gerado em ' + new Date().toLocaleString('pt-BR') + '</div>'
+    + '<div class="acao"><button onclick="window.print()">🖨️ Imprimir / PDF</button></div>'
+    + '<table><thead><tr><th>Nº</th><th>Item</th><th>Nosso preço</th><th>Vencedor</th><th>Preço dele</th><th>Diferença</th><th>Situação</th></tr></thead><tbody>'
+    + L.map(l => '<tr><td>' + esc(l.n) + '</td><td>' + esc(String(l.descricao||'').slice(0,80)) + '</td>'
+        + '<td class="n">' + money(l._nosso) + '</td><td>' + esc(String(l.vencedor||'—').slice(0,34)) + '</td>'
+        + '<td class="n">' + money(l._venc) + '</td>'
+        + '<td class="n ' + (l.difRS>0?'perdeu':l.difRS<0?'ganhou':'') + '">'
+        +   (l.difRS==null?'—':(l.difRS>0?'+':'') + money(l.difRS) + (l.difPct!=null?' ('+(l.difPct>0?'+':'')+l.difPct+'%)':'')) + '</td>'
+        + '<td class="' + (l.nossa_situacao==='vencedor'?'ganhou':l.nossa_situacao==='perdedor'?'perdeu':'') + '">' + esc(l.nossa_situacao||'—') + '</td></tr>').join('')
+    + '</tbody></table>'
+    + '<div class="rodape"><b>Este mapa foi lido por IA a partir do documento acima e deve ser conferido contra ele.</b>'
+    + '<br>As diferenças em R$ e % foram calculadas por aritmética a partir dos valores lidos — a IA não fez contas.'
+    + '<br>Diferença positiva = nosso preço acima do vencedor (perdemos por essa margem).</div>'
+    + '</body></html>');
+  j.document.close();
+}
+
+function excelMapa(){
+  if(!RELATORIO_ATA || !RELATORIO_ATA.linhas) return;
+  const L = RELATORIO_ATA.linhas;
+  carregarXlsxNeg().then(X => {
+    const ws = X.utils.json_to_sheet(L.map(l => ({
+      'Item': l.n, 'Descrição': l.descricao,
+      'Nosso preço': l._nosso, 'Nossa situação': l.nossa_situacao,
+      'Vencedor': l.vencedor, 'Preço do vencedor': l._venc,
+      'Diferença R$': l.difRS, 'Diferença %': l.difPct,
+      'Concorrentes': (l.concorrentes||[]).map(c => c.empresa + ': ' + (c.preco==null?'—':c.preco)).join(' · '),
+    })));
+    ws['!cols'] = [{wch:8},{wch:52},{wch:14},{wch:16},{wch:30},{wch:16},{wch:14},{wch:12},{wch:60}];
+    X.utils.sheet_add_aoa(ws, [[],
+      ['Lido por IA a partir de ' + RELATORIO_ATA.anexo.arquivo_nome + ' — confira contra o documento.'],
+      ['Diferenças calculadas por aritmética a partir dos valores lidos. Positivo = nosso preço acima do vencedor.'],
+      ['Gerado em ' + new Date().toLocaleString('pt-BR')],
+    ], { origin: -1 });
+    const wb = X.utils.book_new();
+    X.utils.book_append_sheet(wb, ws, 'Mapa de preços');
+    X.writeFile(wb, 'mapa-precos-lido-por-IA.xlsx');
+  }).catch(e => alert(e.message));
 }
 
 /* ══ CREDENCIAMENTO JUNTO À INDÚSTRIA ═════════════════════════════════════════════════════════

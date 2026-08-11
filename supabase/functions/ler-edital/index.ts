@@ -46,7 +46,12 @@ const USD_SAIDA_MTOK = 5.00;
 // Resumo cabe em 2 mil tokens. Uma tabela de 80 itens com descricao COMPLETA de medicamento
 // ("Dipirona sodica 500mg/mL solucao injetavel ampola 2mL, embalagem com...") passa fácil de 6 mil.
 // Teto de resumo aplicado a itens nao devolve tabela menor: devolve tabela CORTADA no meio.
-const MAX_SAIDA: Record<string, number> = { resumo: 2000, itens: 12000, juntar: 3000 };
+const MAX_SAIDA: Record<string, number> = {
+  resumo: 2000, itens: 12000, juntar: 3000,
+  // Os dois relatorios do Gerenciamento de Ata sao tabelas item a item, como a extracao de itens
+  // — e o mapa de precos e a maior de todas, porque traz uma LINHA POR CONCORRENTE de cada item.
+  "itens-ganhos": 12000, "mapa-precos": 16000,
+};
 
 // ── QUEM PODE LER (piloto, decisao do Lemuel em 10/08) ──────────────────────────────────────
 // Lista EXPLICITA de e-mail. Nao e cargo: os tres usuarios da FPMED sao gestor_geral, entao
@@ -123,6 +128,58 @@ REGRAS OBRIGATORIAS:
 - "habilitacao" e "pontos_de_atencao" sao LISTAS: junte todas as partes e tire so as repetidas.
 - Em "nao_encontrado" ponha so o que NENHUMA parte encontrou.`;
 
+/* ══ OS ITENS GANHOS ═════════════════════════════════════════════════════════════════════════
+   Le o documento de resultado (itens ganhos / ata da sessao) e devolve o que a empresa ganhou.
+   O total daqui vira SUGESTAO para o campo `valor_ganho`, que alimenta a TAXA DE VITORIA — e por
+   isso o prompt e o mais desconfiado dos cinco:
+     · nao inventar item, nao completar sequencia;
+     · dizer QUANTOS itens o documento tinha ao todo (e o denominador do "ganhou X de Y", e sem
+       ele o X sozinho nao informa nada);
+     · e separar o que ele NAO conseguiu ler, em vez de deixar de fora em silencio. */
+const PERGUNTA_GANHOS = `Voce esta lendo o RESULTADO de uma licitacao publica brasileira (ata da
+sessao, mapa de apuracao ou relacao de itens adjudicados). A empresa que pergunta e a que consta
+como VENCEDORA nos itens que ganhou.
+Responda SOMENTE com JSON, sem texto antes ou depois:
+{"encontrado": true, "empresa": "a razao social da nossa empresa como aparece no documento",
+ "itens_no_documento": 0,
+ "ganhos":[{"n":"numero do item","descricao":"descricao COMPLETA","quantidade":0,
+            "unidade":"","valor_unitario":0,"total":0,"fornecedor":"quem venceu"}],
+ "perdidos":[{"n":"","descricao":"","vencedor":"","valor_unitario":0}],
+ "nao_consegui_ler":["o que ficou ilegivel ou ambiguo"],
+ "observacao":""}
+REGRAS OBRIGATORIAS:
+- NAO invente item nem complete sequencia de numeracao.
+- "itens_no_documento" e o TOTAL de itens que aparecem no documento, ganhos ou nao.
+- "total" de cada item ganho = quantidade x valor_unitario. Se faltar um dos dois, use null e
+  NAO estime.
+- Um item so entra em "ganhos" se o documento disser explicitamente que a nossa empresa venceu.
+  Na duvida, ponha em "nao_consegui_ler" — nunca chute a nosso favor.
+- Se voce NAO encontrar resultado nenhum, devolva {"encontrado": false} e explique em
+  "observacao". Lista vazia sem esse aviso seria dizer que a empresa nao ganhou nada.`;
+
+/* ══ O MAPA DE PRECOS DA DISPUTA ═════════════════════════════════════════════════════════════
+   Este e o unico dos cinco que NAO serve pra executar nada: serve pra aprender. Ele le a ata da
+   sessao e monta, item a item, quanto cada um ofereceu — e a distancia do nosso lance pro
+   vencedor. E a inteligencia comercial da derrota: mostra ONDE e POR QUANTO se perdeu.
+   >>> A DIFERENCA E CALCULADA AQUI? NAO. O prompt pede os NUMEROS; a conta (R$ e %) e feita na
+       tela, com aritmetica, e nao pela IA. Modelo de linguagem errando uma subtracao e um jeito
+       silencioso de a analise inteira ficar errada — e essa conta e barata demais pra terceirizar. */
+const PERGUNTA_MAPA = `Voce esta lendo a ATA DA SESSAO / MAPA DE PRECOS de uma licitacao publica
+brasileira. Monte o mapa da disputa, item a item, com os valores de CADA participante.
+Responda SOMENTE com JSON, sem texto antes ou depois:
+{"encontrado": true, "nossa_empresa": "a razao social da nossa empresa como aparece",
+ "itens":[{"n":"numero do item","descricao":"",
+           "nosso_preco":0, "nossa_situacao":"vencedor|perdedor|desclassificado|nao_participamos",
+           "vencedor":"quem venceu","preco_vencedor":0,
+           "concorrentes":[{"empresa":"","preco":0,"situacao":""}]}],
+ "nao_consegui_ler":[], "observacao":""}
+REGRAS OBRIGATORIAS:
+- Copie os valores COMO ESTAO no documento. NAO calcule diferencas, percentuais nem medias.
+- Se um item nao trouxer o preco de algum participante, use null. NAO estime.
+- Se a nossa empresa nao apareceu num item, "nosso_preco" e null e "nossa_situacao" e
+  "nao_participamos". Isso e diferente de ter perdido.
+- Se o documento nao for uma ata/mapa de precos, devolva {"encontrado": false} e diga por que.`;
+
 Deno.serve(async (req) => {
   const origin = req.headers.get("origin") || "";
   const CORS = cors(ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0]);
@@ -156,8 +213,15 @@ Deno.serve(async (req) => {
   try { body = await req.json(); } catch { return J({ error: "corpo invalido" }, 400); }
 
   // ── O QUE VOCE QUER QUE EU LEIA (resumo, tabela de itens, ou a juncao dos parciais) ──────
-  const tarefa = body.tarefa === "itens" ? "itens" : body.tarefa === "juntar" ? "juntar" : "resumo";
-  const PERGUNTA = tarefa === "itens" ? PERGUNTA_ITENS : tarefa === "juntar" ? PERGUNTA_JUNTAR : PERGUNTA_RESUMO;
+  // As cinco leituras. `TAREFAS` num objeto só, e não numa escada de ternários: com duas dava pra
+  // ler, com cinco a escada passa a esconder qual prompt vai com qual teto — e é justamente esse
+  // par que precisa estar óbvio, porque teto errado corta a resposta no meio.
+  const PROMPTS: Record<string, string> = {
+    resumo: PERGUNTA_RESUMO, itens: PERGUNTA_ITENS, juntar: PERGUNTA_JUNTAR,
+    "itens-ganhos": PERGUNTA_GANHOS, "mapa-precos": PERGUNTA_MAPA,
+  };
+  const tarefa = PROMPTS[String(body.tarefa || "")] ? String(body.tarefa) : "resumo";
+  const PERGUNTA = PROMPTS[tarefa];
 
   // ── A LEITURA EM PARTES ──────────────────────────────────────────────────────────────────
   // `lote` amarra as N chamadas numa cobranca so. `parte`/`partes` sao pro prompt saber que esta
@@ -247,6 +311,7 @@ Deno.serve(async (req) => {
   //     indefensavel. Quem soma e o banco (`registra_uso_ia`), com `on conflict` atomico: duas
   //     partes que voltem juntas nao sobrescrevem a soma uma da outra.
   let leituraId: number | null = null;
+  let regErro: string | null = null;
   if (entrada > 0 || erro) {
     const linha = {
       usuario: user.id, email,
@@ -260,12 +325,21 @@ Deno.serve(async (req) => {
       ok: !erro, erro: erro ? erro.slice(0, 300) : null,
       lote, partes,
     };
+    /* >>> UM CONTADOR DE FATURAMENTO NAO PODE FALHAR CALADO. Este `try` existia com um `catch {}`
+           vazio, pelo motivo certo: o registro falhar nao pode engolir a leitura que a pessoa ja
+           pagou. Mas em 11/08 ele engoliu outra coisa — a tarefa `juntar` nasceu sem entrar no
+           check constraint da coluna, o insert passou a levantar erro, e o silencio transformou
+           isso em custo consumido e NAO cobrado. Ninguem teria descoberto ate a fatura da
+           Anthropic nao bater com a conta do mes.
+           Agora a leitura continua sendo entregue — e o `registrado: false` sobe junto, pra tela
+           dizer que aquela leitura NAO entrou no contador. */
     try {
       const reg = await fetch(`${SB_URL}/rest/v1/rpc/registra_uso_ia`, {
         method: "POST", headers: H_SR, body: JSON.stringify({ p: linha }),
       });
       if (reg.ok) leituraId = Number(await reg.json()) || null;
-    } catch { /* o registro falhar nao pode engolir a leitura que a pessoa ja pagou */ }
+      else regErro = "o contador respondeu " + reg.status + ": " + (await reg.text()).slice(0, 160);
+    } catch (e) { regErro = "nao consegui falar com o contador: " + String((e as Error)?.message || e); }
   }
 
   // Erro DEPOIS de consumir token traz o custo junto: a pessoa precisa saber que pagou, mesmo
@@ -275,10 +349,16 @@ Deno.serve(async (req) => {
   // se refaz com bloco menor; erro de rede se repete igual. Fazer a tela decidir isso lendo a
   // frase do erro seria amarrar comportamento a uma string que um dia alguem reescreve.
   const cortou = !!erro && /cortad|max_tokens|nao coube/i.test(erro);
+  // `registrado` é a resposta à pergunta "esta leitura entrou na conta?". Ela não é derivável do
+  // `leituraId` sozinho: numa leitura em partes, a 2ª parte pode falhar no contador enquanto a 1ª
+  // já devolveu um id — e aí o id existe e o custo desta parte não está lá.
+  const registrado = !regErro;
   if (erro) return J({ ok: false, erro, cortou, modo, tarefa, parte, partes, leituraId,
+                       registrado, regErro,
                        usd: +usd.toFixed(4), brl: cambio ? +(usd * cambio).toFixed(4) : null }, 200);
   return J({
     ok: true, dados, modo, tarefa, parte, partes, modoMotivo: body.motivo || null, leituraId,
+    registrado, regErro,
     usage: { entrada, saida }, segundos, modelo: MODELO,
     usd: +usd.toFixed(4), cambio, brl: cambio ? +(usd * cambio).toFixed(4) : null,
   });

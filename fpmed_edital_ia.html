@@ -721,7 +721,16 @@ function blocoCusto(j, segundos){
     +   ' de saída · ' + segundos + ' s · ' + MODELO
     +   (cb ? ' · câmbio R$ ' + cb.toFixed(4) + '/US$ (buscado agora)'
            : ' · <b>não consegui a cotação do dólar</b> — o valor fica em dólar, porque inventar câmbio seria pior')
-    + '<br>registrada' + (j.leituraId ? ' com o nº ' + j.leituraId : '') + ' na conta de leituras.'
+    /* >>> "ENTROU NA CONTA?" É UMA PERGUNTA COM RESPOSTA, e não uma frase de conforto. Até 11/08
+           esta linha dizia "registrada" sempre — mesmo quando o registro tinha falhado, porque o
+           erro era engolido por um `catch` vazio do outro lado. Foi assim que a tarefa `juntar`
+           consumiu crédito sem entrar no contador por meia tarde. Agora a função devolve
+           `registrado`, e quando é falso a tela diz, porque essa diferença aparece na fatura. */
+    + '<br>' + (j.registrado === false
+        ? '<b style="color:#ffb3b6">⚠️ esta leitura NÃO entrou no contador</b>'
+          + (j.regErro ? ' (' + esc(j.regErro) + ')' : '')
+          + ' — o custo acima foi consumido mesmo assim. Avise, porque ele não vai aparecer na conta do mês.'
+        : 'registrada' + (j.leituraId ? ' com o nº ' + j.leituraId : '') + ' na conta de leituras.')
     + '</div></div>';
 }
 
