@@ -593,10 +593,14 @@ Criado em 21/07/2026 copiando SO os arquivos do app do C:\globalmed.
        medicao, nunca por edicao silenciosa. O aceite esta carimbado no topo do
        proprio documento.
 
-    2. ITEM DA PROPOSTA = opcao (a): construir o EXPORT EXCEL. O PDF pela impressao
-       do navegador FICA COMO ESTA; PDF por biblioteca so se o cliente pedir um dia.
-       O item da fila deixou de se chamar "PDF timbrado" (que ja existia) e virou
-       "Export Excel da proposta".
+    2. ITEM DA PROPOSTA = opcao (c), OS DOIS, como dois subitens do mesmo numero:
+         9a. EXPORT EXCEL da proposta  (primeiro)
+         9b. PDF TIMBRADO POR BIBLIOTECA, substituindo a impressao do navegador
+       >>> SEM APAGAO: a impressao atual CONTINUA FUNCIONANDO ate o substituto estar
+           de pe. O botao so troca de motor no dia em que o novo passar nas suites -
+           nunca existe um dia sem PDF.
+       (o pedido inicial dizia "PDF timbrado", que ja existia; o dono corrigiu para
+        os dois no mesmo dia)
 
     3. CHAT DO EDITAL — a regra que faltava chegou completa:
          · aviso de custo UMA VEZ ao abrir o chat, com o preco estimado POR PERGUNTA
@@ -611,6 +615,13 @@ Criado em 21/07/2026 copiando SO os arquivos do app do C:\globalmed.
            engoliu, e a leitura consumiu credito SEM COBRANCA. Aqui o 'chat' entra
            na lista permitida primeiro; so depois o botao existe. E falha de
            registro aparece na tela, nao no vazio.
+
+
+>>> 11/08 — O DONO PASSOU A TER AUDITORIA INDEPENDENTE DO BANCO (chat arquiteto,
+    somente leitura). Os numeros dos meus relatorios passam a ser conferidos NA
+    FONTE. Isso nao muda nada no que eu tenho que fazer - so tira a minha palavra
+    do caminho, que e como tem que ser. Numero de relatorio meu ja tinha que bater
+    com o banco; agora bater ou nao bater fica visivel sem depender de mim.
 
 >>> PONTO EXATO DE RETOMADA — a fila numerada:
      1. [OK] spec da reforma (docs/spec_reforma_prime.md) — 4485c30

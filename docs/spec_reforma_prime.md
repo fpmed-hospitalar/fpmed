@@ -195,7 +195,7 @@ Acrescentada no fim da fila numerada, nesta ordem:
 |---|---|---|
 | 7 | **Puxador de itens por ID da compra** — campo "ID da compra PNCP" na proposta, baixando os itens da API pública | **sem custo de IA** — é a mesma API que a coleta já usa. Prova com compra real |
 | 8 | **Desconto em lote** — "margem de desconto %" recalculando todos os lances | **a trava PMVG continua valendo**: nunca recalcular para cima do teto |
-| 9 | **Export Excel da proposta** | **DECIDIDO em 11/08 — opção (a).** O PDF pela impressão do navegador **fica como está**; PDF por biblioteca só entra se o cliente pedir um dia. O item deixou de ser "PDF timbrado" (que já existia) e passou a ser o **Excel**, que é o que faltava |
+| 9 | **Saída da proposta — dois subitens** | **DECIDIDO em 11/08 — opção (c), os dois.** **9a. Export Excel** (primeiro). **9b. PDF timbrado por biblioteca**, substituindo a impressão do navegador **quando estiver pronto**. ⚠️ **Sem apagão: a impressão atual continua funcionando até o substituto estar de pé** — o botão só troca de motor no dia em que o novo passar nas suítes, e nunca há um dia sem PDF |
 | 10 | **Gerador de declarações** — modelos editáveis, dados do config e do negócio | buracos «marcados», como na carta de credenciamento. **Textos redigidos do zero** a partir da Lei 14.133 |
 | 11 | **Gestor de documentos** — categorias, vencimento, alerta vermelho, "baixar tudo em ZIP" | o alerta e o sino já existem |
 | 12 | **Etapas renomeáveis por config** | **CHAVES do banco intactas** — mesmo padrão de Classificação→Habilitação e Contrato→Ata |
