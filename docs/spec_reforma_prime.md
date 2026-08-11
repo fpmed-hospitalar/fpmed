@@ -83,26 +83,88 @@ Decisões do Lemuel que sobrevivem, e que a suíte trava:
 
 ---
 
+## 2b. ADENDO DE EXCELÊNCIA (11/08, ordem do Lemuel) — vale de agora em diante
+
+> "O resultado não pode parecer feito por IA — tem que parecer feito pelo melhor programador de
+> produto do mercado. **Sem pressa: qualidade manda no prazo.**"
+
+Isso **muda a ordem de trabalho**: o design system vem ANTES de qualquer tela.
+
+### O que precisa existir primeiro: `fpmed_tema.css`
+
+Tokens em variáveis CSS, e nada fora deles:
+
+| grupo | regra |
+|---|---|
+| cores | azul FPMED, verde FPMED, **8 tons de cinza**, vermelho e âmbar de aviso |
+| espaçamento | grade de 8px — 4 / 8 / 12 / 16 / 24 / 32 / 48 |
+| raios | 8px cartão · 6px botão · 999px pílula |
+| sombras | 3 níveis, suaves |
+| tipografia | **uma** família (`Inter, system-ui, -apple-system, Segoe UI, sans-serif`); escala 12/13/14/16/18/22/28; pesos 400/500/600/700 |
+
+**PROIBIDO daqui pra frente:** cor chumbada fora dos tokens · espaçamento fora da grade ·
+**emoji como ícone** · mais de 2 pesos de fonte no mesmo bloco.
+
+**Ícones:** conjunto único open-source (**Lucide, MIT**), SVG inline **copiado pro nosso repo** —
+sem CDN em runtime. Tamanho 16/20px, stroke igual em todos. Nunca ícone do Prime.
+
+### Todo estado desenhado
+
+É isso que separa profissional de protótipo — e cada um tem que existir no HTML:
+
+- **carregando** → skeleton (blocos cinza pulsando no formato dos cartões). Nunca tela branca,
+  nunca spinner solto.
+- **vazio** → ilustração SVG própria + frase útil + ação ("limpar filtros" / "buscar no Brasil").
+- **erro** → cartão de aviso com o que houve e o que fazer. Nunca vermelho gritando.
+- **hover** → cartão levanta 1px com sombra; botão escurece 8%; 150ms ease.
+- **focus** → anel visível pra teclado em **todo** elemento clicável.
+- **desabilitado**, **campo com erro**, **badge de cada fonte** → todos com estilo definido.
+
+### Acabamento fino
+
+Grade de colunas (nada "quase alinhado") · `font-variant-numeric: tabular-nums` nos valores ·
+datas por extenso curto ("abre 14/08 às 09h") · R$ com separador de milhar · **contraste AA
+(4.5:1) medido, não estimado** · cartão de resultado com largura máxima ~880px · scrollbar
+discreta, sem barra dupla, sem pulo de layout no carregamento.
+
+### Laço de revisão visual — OBRIGATÓRIO antes de publicar
+
+1. Renderizar em **3 larguras** (1366, 1920, 390 mobile) com **dados reais do banco**.
+2. Conferir contra um **checklist de 20 pontos** e listar nota item a item no relatório.
+3. Comparar lado a lado com os GIFs do Prime: *"a nossa parece tão profissional quanto?"* —
+   se não, **mais uma rodada**. Repetir até sim.
+4. Só então publicar + print final pro cliente.
+
+### Suíte de regressão visual
+
+Asserts de que: os tokens estão sendo usados (nenhuma cor fora do `fpmed_tema.css` nas telas
+reformadas) · os estados existem no HTML (skeleton, vazio, erro) · **emoji-ícone morreu** nas
+telas novas.
+
+> ⚠️ **O RASCUNHO DE MENU QUE EU JÁ ESCREVI NÃO SERVE.** `limedtec-menu.js` foi escrito antes
+> deste adendo e viola duas regras dele: usa **emoji como ícone** e tem **cores chumbadas** no
+> CSS em vez de tokens. Ele fica no repo como rascunho e **não é carregado por tela nenhuma** —
+> refazer sobre o `fpmed_tema.css` é parte do item, e não um retrabalho a lamentar.
+
+---
+
 ## 3. Esperando decisão do Lemuel — NÃO iniciar
 
 Três coisas foram anotadas e **não** entram na fila até ele decidir:
 
-### a. Link público de acompanhamento por CNPJ
-O Prime deixa o órgão/parceiro acompanhar o andamento por um link aberto, identificado por CNPJ.
+### ~~a. Link público por CNPJ~~ → **DECIDIDO em 11/08, virou item 15 da fila**
+O Lemuel respondeu o que faltava: **só visualização**, só os negócios da empresa daquele CNPJ,
+**link com código não-adivinhável**, sem login, e **nada de valores internos sensíveis** — é um
+espelho do kanban, read-only.
+> Com isso o risco que travava o item some: o CNPJ deixa de ser a chave (ele é público, qualquer
+> um digita o de outra empresa) e vira só o *rótulo*; quem autentica é o código do link.
 
-**O que precisa ser decidido antes de existir:** um link público é uma superfície de dado
-comercial exposta sem login. Hoje **toda** tabela deste sistema é `authenticated` com RLS, e o
-`anon` está revogado em todas. Abrir um caminho público exige dizer, por escrito, **exatamente
-quais campos** saem (e quais nunca saem: valor estimado? preço? margem?), e se o CNPJ sozinho é
-autenticação suficiente — CNPJ é dado público, qualquer um digita o de outra empresa.
-
-### b. Chat do edital (perguntar ao documento)
-O Prime tem chat sobre o edital lido.
-
-**O que precisa ser decidido:** é **cobrança por mensagem**. Uma leitura de edital custa hoje
-~R$ 0,30–0,80 e é registrada com o custo real. Um chat multiplica isso por quantas perguntas a
-pessoa fizer, e o fechamento de agosto já mostrou que o repasse (R$ 4,90) não cobre a
-infraestrutura (R$ 180,82). Antes de existir chat, tem que existir o modelo de cobrança dele.
+### ~~b. Chat do edital~~ → **DECIDIDO em 11/08, virou item 16 da fila**
+Perguntas sobre o edital já lido, **cada resposta registrada no contador** (`registra_uso_ia`,
+tarefa nova `'chat'`).
+> ⚠️ **O PEDIDO CHEGOU CORTADO** — a frase termina em "tarefa nova 'chat' —" e não completa.
+> Falta saber o resto: teto de perguntas? aviso de custo antes de cada pergunta ou uma vez só?
+> O item está registrado; a parte que falta está anotada e **não vai ser inventada**.
 
 ### c. Integração com Google Agenda
 Os lembretes já entram no sino. Levá-los ao Google Agenda exige OAuth do Google, consentimento
@@ -124,6 +186,8 @@ Acrescentada no fim da fila numerada, nesta ordem:
 | 12 | **Etapas renomeáveis por config** | **CHAVES do banco intactas** — mesmo padrão de Classificação→Habilitação e Contrato→Ata |
 | 13 | **Tarefas com prioridade nos cards** (alta/média/baixa + data) | alimentando o sino |
 | 14 | **Radar por raio** — "até X km de \<cidade\>" com lat/long do IBGE | **sem serviço pago**. Prova com municípios de GO |
+| 15 | **Link público de acompanhamento por CNPJ** | read-only, código não-adivinhável, sem valores internos. Ver a decisão na seção 3 |
+| 16 | **Chat do edital** | cada resposta em `registra_uso_ia` com tarefa `'chat'`. ⚠️ **pedido chegou cortado** — falta a regra de teto/aviso de custo |
 
 ---
 

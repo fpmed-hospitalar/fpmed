@@ -525,6 +525,66 @@ Criado em 21/07/2026 copiando SO os arquivos do app do C:\globalmed.
     Suite nova testa_pix (17). Ela ja pegou uma 2a copia do CNPJ escrita num COMENTARIO do
     config — que e exatamente o jeito classico de a copia nascer (alguem copia do comentario).
 
+>>> 11/08 — A REFORMA VISUAL GANHOU UM ADENDO QUE MUDA A ORDEM DE TRABALHO.
+    Ordem do Lemuel: "nao pode parecer feito por IA — tem que parecer feito pelo melhor
+    programador de produto do mercado. SEM PRESSA: qualidade manda no prazo."
+    >>> O DESIGN SYSTEM VEM ANTES DE QUALQUER TELA. `fpmed_tema.css` com tokens (cores,
+        grade de 8px, raios, 3 sombras, uma familia de fonte, escala e 4 pesos).
+        PROIBIDO: cor chumbada, espacamento fora da grade, EMOJI COMO ICONE, mais de 2
+        pesos por bloco. Icones: Lucide (MIT), SVG inline COPIADO pro repo, sem CDN.
+    >>> TODO ESTADO DESENHADO: skeleton, vazio com acao, erro que nao grita, hover, focus
+        visivel, desabilitado, campo com erro, badge por fonte.
+    >>> LACO DE REVISAO OBRIGATORIO antes de publicar: 3 larguras (1366/1920/390) com DADO
+        REAL, checklist de 20 pontos com nota item a item, e comparacao lado a lado com os
+        GIFs do Prime — repetindo ate a nossa parecer tao profissional quanto.
+    Tudo isso esta escrito em docs/spec_reforma_prime.md, secao 2b.
+
+    >>> E O RASCUNHO DE MENU QUE EU JA TINHA ESCRITO NAO SERVE. `limedtec-menu.js` foi
+        escrito ANTES do adendo e viola duas regras dele: emoji como icone e cores
+        chumbadas em vez de tokens. Ele esta no repo como RASCUNHO e NAO E CARREGADO POR
+        TELA NENHUMA — nao quebra nada, e refazer sobre o tema e parte do item.
+        Nao publiquei um menu que ja nasce fora da regra.
+
+>>> 11/08 — DOIS MANUAIS PERMANENTES ENTRARAM NO REPO E MANDAM EM TUDO.
+    docs/manual_excelencia.md — L1..L11, P1..P6, A1..A6 e o RITUAL DE ENTREGA
+      (checklist obrigatorio antes de todo publish).
+    docs/manual_design.md — REGRA ZERO (pesquisar 2-3 referencias na web antes de
+      cada tela; documentacao oficial antes de cada duvida de API), D1..D14, e o
+      PROCESSO POR TELA de 7 passos que termina no TESTE DO BATER O OLHO.
+    docs/jornadas.md — as 6 jornadas com nota honesta. Toda entrega atualiza a
+      nota da jornada que tocou, NA MESMA entrega.
+    >>> LER OS TRES NO COMECO DA SESSAO, junto deste arquivo.
+
+>>> PONTO EXATO DE RETOMADA — a fila numerada:
+     1. [OK] spec da reforma (docs/spec_reforma_prime.md) — 4485c30
+     2. [ ] fpmed_tema.css — O DESIGN SYSTEM, e ele vem primeiro (adendo de excelencia)
+     3. [ ] menu lateral CLARO, refeito sobre os tokens, com icones Lucide e a lista:
+            Buscar · Radar · Desertas · Meus Jornais · Calendario · Negocios · Documentos ·
+            Proposta · Leitor IA · Pecas · Declaracoes · Conferir (+ Favoritas "em breve")
+     4. [ ] tela ENCONTRAR no tema claro — sai o titulo gigante, sai a fileira de linkzinhos,
+            sai a caixa de filtros solta; entram barra de busca em cartao branco com filtros
+            EM LINHA, resultados em CARTOES com acoes a direita, e o chip do estoque
+            >>> MOTOR INTACTO: banco-primeiro, buscarNoBancoAmplo paginado, nacionalProtegido
+                (o bloco #nacional NUNCA mudo), avisoBrandoPNCP, filtro do ramo interno,
+                intervalo padrao hoje, "+ Incluir licitacao". A reforma e so a roupa.
+     5. [ ] kanban protagonista
+     6. [ ] calendario mensal
+     7. [ ] demais telas ganhando o tema claro, uma a uma
+     8. [ ] conferir o boletim (amanha de manha — bloqueado por tempo, nao por trabalho)
+     9..16. os itens que sairam do mapa do Prime (puxador por ID, desconto em lote, Excel da
+            proposta, declaracoes, gestor de documentos + ZIP, etapas renomeaveis, tarefas
+            com prioridade, radar por raio, link publico por CNPJ, chat do edital)
+
+>>> DUAS COISAS QUE PRECISAM DELE:
+    1. O ITEM 9 DA FILA PEDIA "PDF TIMBRADO DA PROPOSTA" — e ele JA EXISTE (gerarPDF, pela
+       impressao do navegador, com logo e dados do config). O que falta de verdade e o
+       EXCEL. Confirmar se ele quer (a) o Excel, (b) um PDF por biblioteca em vez de
+       impressao, ou (c) os dois. Descobri isso rodando tools/confere_spec.js — eu tinha
+       escrito no spec que a proposta exportava Excel, e nao exporta.
+    2. O PEDIDO DO CHAT DO EDITAL CHEGOU CORTADO ("tarefa nova 'chat' —" e para). Falta a
+       regra: teto de perguntas? aviso de custo a cada pergunta ou uma vez so? Registrei o
+       item sem inventar a parte que falta.
+
 >>> FILA ZERADA EM 11/08 — fim da 3a rodada do dia. Conferido item a item, nao suposto.
 
     A ordem numerada que ele pediu, e o que aconteceu com cada uma:
