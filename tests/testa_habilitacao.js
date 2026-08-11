@@ -86,7 +86,10 @@ ok('22. tarefa SEM data nao vira alerta (o filtro do sino e por `quando`)',
 // ══════════ 5. O ATALHO DAS PECAS ══════════
 // (o bloco tem o comentário explicando a decisão no meio, então a distância é maior)
 ok('23. *** existe o botao na fileira do rodape da ficha ***',
-  /class="dw-acoes"[\s\S]{0,900}irParaPecas\(\$\{n\.id\}\)[\s\S]{0,300}fecharDrawer\(\)/.test(N));
+  // A janela cresceu em 11/08: o "📄 Ler edital (IA)" entrou na mesma fileira, entre as Peças e
+  // os Documentos. É a fileira certa — o que este assert protege é justamente ele ser fileira,
+  // e não um botão solto no meio da ficha.
+  /class="dw-acoes"[\s\S]{0,900}irParaPecas\(\$\{n\.id\}\)[\s\S]{0,600}fecharDrawer\(\)/.test(N));
 ok('24. *** ele NAO duplica as Pecas: leva contexto e abre a tela que ja existe ***',
   /location\.href = 'fpmed_pecas\.html';/.test(N) && /atalho com contexto/i.test(N));
 ok('25. ...e o motivo (o que diverge, nelas, e prazo legal)',

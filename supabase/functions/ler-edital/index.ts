@@ -25,9 +25,14 @@
 // CONTRATO:
 //   POST /functions/v1/ler-edital
 //   header: Authorization: Bearer <JWT do Supabase, do usuario logado>
-//   body: { modo:'texto'|'pdf-nativo', texto?|pdfBase64?, motivo?, titulo?, url?, mb?,
-//           paginas?, chars?, cambio? }
-//   resposta: { ok, dados, modo, modoMotivo, usage, usd, brl, leituraId }
+//   body: { tarefa:'resumo'|'itens', modo:'texto'|'pdf-nativo', texto?|pdfBase64?, motivo?,
+//           titulo?, url?, mb?, paginas?, chars?, cambio? }
+//   resposta: { ok, dados, modo, tarefa, modoMotivo, usage, usd, brl, leituraId }
+//
+// ══ AS DUAS TAREFAS ══════════════════════════════════════════════════════════════════════════
+// `resumo` le o edital e devolve o que a pessoa precisa saber pra decidir se disputa.
+// `itens`  le o ANEXO DE ITENS e devolve a tabela — e essa vira PROPOSTA. Sao dois prompts, dois
+// tetos de saida e dois jeitos de dar errado; o que elas dividem e a permissao e o contador.
 // ============================================================
 
 const SB_URL = Deno.env.get("SUPABASE_URL")!;
@@ -37,7 +42,11 @@ const ANTHROPIC = Deno.env.get("ANTHROPIC_API_KEY");
 const MODELO = "claude-haiku-4-5";
 const USD_ENTRADA_MTOK = 1.00;   // tabela publica da Anthropic
 const USD_SAIDA_MTOK = 5.00;
-const MAX_TOKENS_SAIDA = 2000;   // a saida custa 5x a entrada; o resumo tem que caber na tela
+// A saida custa 5x a entrada, entao o teto e apertado de proposito — MAS ele muda com a tarefa.
+// Resumo cabe em 2 mil tokens. Uma tabela de 80 itens com descricao COMPLETA de medicamento
+// ("Dipirona sodica 500mg/mL solucao injetavel ampola 2mL, embalagem com...") passa fácil de 6 mil.
+// Teto de resumo aplicado a itens nao devolve tabela menor: devolve tabela CORTADA no meio.
+const MAX_SAIDA: Record<string, number> = { resumo: 2000, itens: 12000 };
 
 // ── QUEM PODE LER (piloto, decisao do Lemuel em 10/08) ──────────────────────────────────────
 // Lista EXPLICITA de e-mail. Nao e cargo: os tres usuarios da FPMED sao gestor_geral, entao
@@ -60,13 +69,38 @@ function cors(origin: string) {
 
 const H_SR = { apikey: SB_SR, Authorization: "Bearer " + SB_SR, "Content-Type": "application/json" };
 
-const PERGUNTA = `Voce esta lendo o EDITAL de uma licitacao publica brasileira para uma
+const PERGUNTA_RESUMO = `Voce esta lendo o EDITAL de uma licitacao publica brasileira para uma
 distribuidora de medicamentos e material hospitalar. Responda SOMENTE com JSON, sem texto antes
 ou depois, neste formato:
 {"objeto":"","orgao":"","modalidade":"","abertura":"","entrega_prazo":"","entrega_local":"",
 "pagamento":"","amostra":true,"registro_precos":true,"habilitacao":[],"penalidades":"",
 "pontos_de_atencao":[],"nao_encontrado":[]}
 Se algo nao estiver no documento, NAO invente: ponha o nome do campo em "nao_encontrado".`;
+
+/* ══ A EXTRACAO DA TABELA DE ITENS ═══════════════════════════════════════════════════════════
+   O que sai daqui vira PROPOSTA — ou seja, dinheiro. Por isso o prompt e mais duro que o do
+   resumo em tres pontos, e cada um corresponde a um jeito conhecido de a extracao estragar:
+     1. NAO INVENTAR ITEM que nao esta na tabela (a IA "completa" sequencia numerica se deixarem);
+     2. NAO CONVERTER quantidade nem unidade — copiar como esta escrito. Converter aqui seria uma
+        segunda regra de embalagem, brigando com a que a ponte ja aplica no lado da proposta;
+     3. DIZER QUANDO NAO ACHOU a tabela, em vez de devolver lista vazia como se o edital nao
+        tivesse itens. Lista vazia e "nao tem"; `tabela_encontrada:false` e "nao achei". */
+const PERGUNTA_ITENS = `Voce esta lendo o EDITAL de uma licitacao publica brasileira. Extraia a
+TABELA DE ITENS (o anexo com a relacao de produtos/servicos a serem cotados).
+Responda SOMENTE com JSON, sem texto antes ou depois:
+{"tabela_encontrada": true, "onde": "em que anexo/pagina a tabela estava",
+ "itens":[{"n":"numero do item como esta no edital","descricao":"descricao COMPLETA do item",
+           "quantidade":0,"unidade":"unidade de fornecimento como esta escrita",
+           "valor_unitario":0}],
+ "observacao":"o que voce nao conseguiu ler com certeza"}
+REGRAS OBRIGATORIAS:
+- Copie a descricao INTEIRA de cada item, sem resumir: ela e o que identifica o produto.
+- NAO invente item nem complete sequencia de numeracao. Se o edital pula do 12 para o 15,
+  devolva so os que existem.
+- NAO converta quantidade nem unidade. Copie como esta escrito no documento.
+- Se o valor unitario estimado nao aparecer, use null. NAO estime.
+- Se voce NAO encontrar a tabela de itens, devolva {"tabela_encontrada": false, "itens": []} e
+  explique em "observacao". Lista vazia sem esse aviso seria dizer que o edital nao tem itens.`;
 
 Deno.serve(async (req) => {
   const origin = req.headers.get("origin") || "";
@@ -100,6 +134,10 @@ Deno.serve(async (req) => {
   let body: any = {};
   try { body = await req.json(); } catch { return J({ error: "corpo invalido" }, 400); }
 
+  // ── O QUE VOCE QUER QUE EU LEIA (resumo do edital ou a tabela de itens) ──────────────────
+  const tarefa = body.tarefa === "itens" ? "itens" : "resumo";
+  const PERGUNTA = tarefa === "itens" ? PERGUNTA_ITENS : PERGUNTA_RESUMO;
+
   const modo = body.modo === "pdf-nativo" ? "pdf-nativo" : "texto";
   let bloco: any;
   if (modo === "texto") {
@@ -127,7 +165,7 @@ Deno.serve(async (req) => {
       },
       body: JSON.stringify({
         model: MODELO,
-        max_tokens: MAX_TOKENS_SAIDA,
+        max_tokens: MAX_SAIDA[tarefa],
         messages: [{ role: "user", content: [bloco, { type: "text", text: PERGUNTA }] }],
       }),
     });
@@ -139,7 +177,15 @@ Deno.serve(async (req) => {
     bruto = (j.content || []).filter((c: any) => c.type === "text").map((c: any) => c.text).join("\n");
     // >>> RESPOSTA CORTADA NAO VIRA RESUMO. Mesma regra que a Global pagou pra aprender: JSON
     //     truncado ainda parece JSON, e o resumo sai faltando campo sem sinal nenhum.
-    if (j.stop_reason === "max_tokens") throw new Error("a leitura foi cortada no limite de tamanho");
+    if (j.stop_reason === "max_tokens") {
+      // >>> TABELA CORTADA E PIOR QUE TABELA NENHUMA. Dá pra salvar os itens completos que vieram
+      //     antes do corte — e é justamente isso que nao se faz aqui. Uma lista de 40 itens de um
+      //     edital de 80 nao se parece com erro nenhum: parece um edital de 40 itens. Ela viraria
+      //     proposta, e a proposta iria pro pregao faltando metade.
+      throw new Error(tarefa === "itens"
+        ? "a tabela nao coube na resposta e voltou cortada — entregar metade dos itens como se fosse a lista inteira seria pior que nao entregar"
+        : "a leitura foi cortada no limite de tamanho");
+    }
     try {
       const i = bruto.indexOf("{"), f = bruto.lastIndexOf("}");
       dados = JSON.parse(bruto.slice(i, f + 1));
@@ -167,7 +213,7 @@ Deno.serve(async (req) => {
           edital_titulo: String(body.titulo || "").slice(0, 300) || null,
           edital_url: String(body.url || "").slice(0, 500) || null,
           edital_mb: Number(body.mb) || null,
-          modo, modo_motivo: String(body.motivo || "") || null,
+          modo, modo_motivo: String(body.motivo || "") || null, tarefa,
           paginas: Number(body.paginas) || null, chars: Number(body.chars) || null,
           modelo: MODELO, tokens_entrada: entrada, tokens_saida: saida, segundos,
           usd: +usd.toFixed(6), cambio, brl: cambio ? +(usd * cambio).toFixed(4) : null,
@@ -178,9 +224,13 @@ Deno.serve(async (req) => {
     } catch { /* o registro falhar nao pode engolir a leitura que a pessoa ja pagou */ }
   }
 
-  if (erro) return J({ ok: false, erro, modo, leituraId, usd: +usd.toFixed(4) }, 200);
+  // Erro DEPOIS de consumir token traz o custo junto: a pessoa precisa saber que pagou, mesmo
+  // sem receber a tabela. Custo escondido em erro e a forma mais rapida de a conta do mes nao
+  // fechar com a fatura.
+  if (erro) return J({ ok: false, erro, modo, tarefa, leituraId, usd: +usd.toFixed(4),
+                       brl: cambio ? +(usd * cambio).toFixed(4) : null }, 200);
   return J({
-    ok: true, dados, modo, modoMotivo: body.motivo || null, leituraId,
+    ok: true, dados, modo, tarefa, modoMotivo: body.motivo || null, leituraId,
     usage: { entrada, saida }, segundos, modelo: MODELO,
     usd: +usd.toFixed(4), cambio, brl: cambio ? +(usd * cambio).toFixed(4) : null,
   });

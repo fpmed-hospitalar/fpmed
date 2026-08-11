@@ -2611,14 +2611,26 @@ function pintaPedidoEdital(){
   const p = pedidoDoEdital();
   if(!p){ el.style.display='none'; el.innerHTML=''; return; }
   const l = p.lic || {};
+  /* >>> DUAS ORIGENS, DUAS CONFIANÇAS (11/08). Os itens chegam de dois lugares: do ÍNDICE DO PNCP
+         (a tela de Licitações, dado oficial, já cruzado com o estoque) ou de uma LEITURA POR IA do
+         PDF do edital. As duas montam a proposta pelo mesmo caminho — de propósito, pra existir uma
+         regra de conversão só — mas não merecem a mesma fé: o índice erra por estar desatualizado,
+         a leitura erra por ter pulado uma linha da tabela. E "pulou uma linha" não deixa rastro
+         nenhum na proposta montada. Por isso a origem é dita, e não implícita. */
+  const daIA = l.origem === 'ia';
   el.style.display='block';
-  el.innerHTML = `<div class="card" style="border-left:4px solid var(--verde);background:#F2FAF4">
+  el.innerHTML = `<div class="card" style="border-left:4px solid ${daIA?'#e6a817':'var(--verde)'};background:${daIA?'#FDF8EC':'#F2FAF4'}">
     <h3 style="margin-bottom:6px">📄 Chegaram ${p.itens.length} itens de um edital</h3>
     <div style="font-size:13px;color:var(--muted);line-height:1.6">
       <strong>${_escEd(l.titulo||'Licitação')}</strong>${l.orgao?' · '+_escEd(l.orgao):''}
       ${l.municipio?' · '+_escEd(l.municipio)+(l.uf?'/'+_escEd(l.uf):''):''}
-      <br>${p.itens.filter(i=>i.casouAqui).length} deles já tinham equivalente no nosso estoque no
-      cruzamento do Licitações${l.truncado?' · <strong style="color:#c06060">a leitura do edital foi truncada: pode haver mais itens</strong>':''}
+      <br>${daIA
+        ? `<strong style="color:#9a6b00">Estes itens foram LIDOS POR IA</strong> do arquivo
+           ${_escEd(l.origemArquivo||'do edital')} — não vieram do índice do PNCP. Antes de mandar a
+           proposta, confira contra o edital <strong>quantos itens ele tem</strong>: item que a
+           leitura pulou não aparece aqui como faltando, some sem deixar sinal.`
+        : `${p.itens.filter(i=>i.casouAqui).length} deles já tinham equivalente no nosso estoque no
+           cruzamento do Licitações`}${l.truncado?' · <strong style="color:#c06060">a leitura do edital foi truncada: pode haver mais itens</strong>':''}
     </div>
     <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
       <button class="btn btn-primary btn-sm" onclick="importarPedidoEdital()">➕ Importar os ${p.itens.length} itens</button>

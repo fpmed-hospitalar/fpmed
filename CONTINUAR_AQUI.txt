@@ -525,6 +525,86 @@ Criado em 21/07/2026 copiando SO os arquivos do app do C:\globalmed.
     Suite nova testa_pix (17). Ela ja pegou uma 2a copia do CNPJ escrita num COMENTARIO do
     config — que e exatamente o jeito classico de a copia nascer (alguem copia do comentario).
 
+>>> 11/08 — O LEITOR DE EDITAL PASSOU A EXTRAIR A TABELA DE ITENS. PROVA: 35 DE 35.
+    O leitor ganhou uma SEGUNDA leitura (`tarefa: 'itens'`), com prompt proprio, teto de saida
+    proprio e cobranca propria. Nao e um botao a mais: sao duas leituras que erram diferente.
+
+    >>> A PROVA REAL, contra gabarito de FORA (tools/prova_itens_edital.js):
+        edital ..... EPRP 050/26 MEDICAMENTOS - MUNICIPIO DE POCOS DE CALDAS (PNCP
+                     18629840000183-1-000125/2026), 53 paginas, 2,22 MB, 117.575 caracteres
+        gabarito ... o PNCP declara 35 itens (API de itens da propria compra)
+        a IA leu ... 35 itens
+        cobertura .. 100% dos numeros de item · QUANTIDADE identica em 35 de 35 (0 divergencias)
+        custo ...... R$ 0,2654 (39.013 tokens de entrada · 2.601 de saida · 18s · modo texto)
+        registro ... usos_ia nº 4
+        Ela ate disse onde achou: "ANEXO I - TERMO DE REFERENCIA, secao 3 (paginas 25-31)", e
+        avisou que nao havia valor unitario porque e registro de precos - o que e verdade.
+    >>> A 1a RODADA DA PROVA ACUSOU 74% DE COBERTURA, E O ERRO ERA MEU, nao da extracao. O PNCP
+        guarda o item como `1` e o edital imprime `01`; eu comparei como texto. O prompt CONTINUA
+        mandando copiar o numero como esta escrito - numero do item e o que o pregoeiro chama em
+        voz alta na sessao, e normalizar na origem faria a nossa planilha discordar do edital na
+        hora do lance. Quem normaliza e o COMPARADOR (`normNum`), e so ele.
+    >>> A 1a rodada tambem escolheu uma "Resposta de Esclarecimento" como se fosse o edital: o
+        primeiro PDF da pasta do PNCP nao e o edital, e o primeiro que o orgao subiu. Agora a
+        escolha e por PONTUACAO, e esclarecimento/impugnacao/ata/aviso sao descartados.
+    >>> `--conferir <json>` refaz a conferencia do que ja foi lido, SEM pagar de novo. Existe
+        porque o defeito pode estar no comparador, e repetir a chamada seria gastar credito pra
+        corrigir um erro que nao esta do lado da IA.
+
+    AS TRES SAIDAS, na tela (pedido do Lemuel):
+      · TABELA na propria tela, com item sem quantidade MARCADO em vermelho (nao com zero: zero
+        e um numero, e numero ninguem confere) e total somando SO o que tem preco, dizendo
+        quantos ficaram de fora da soma;
+      · BAIXAR EXCEL (SheetJS, baixado so no clique - nao pesa o boot de quem nao usa). O nome do
+        arquivo sai `itens_<edital>_lido-por-IA.xlsx`: o .xlsx vive semanas na area de trabalho
+        de alguem, longe de qualquer aviso da tela, e o nome e o unico recado que viaja junto.
+        Celula sem quantidade sai VAZIA, e nao zero;
+      · COPIAR LISTA em TSV (cola direto em Excel/Sheets ja nas colunas; virgula quebraria em
+        toda descricao de medicamento, que e cheia delas);
+      · MONTAR PROPOSTA COM ESTES ITENS, pela MESMA ponte do edital do PNCP - mesma chave de
+        sessao, mesmo formato, mesmo `unidadePack` do motor. Nao e economia de codigo: duas
+        regras de conversao de embalagem sao o erro de 100x esperando (500 unidades viradas em
+        500 caixas num documento que vale como proposta comercial). Onde a unidade nao permite a
+        conta, o item entra com 1 + etiqueta, igual ao PNCP.
+
+    A HONESTIDADE, ponto a ponto:
+      · LEITURA CORTADA BLOQUEIA. Da pra salvar os itens completos que vieram antes do corte, e e
+        exatamente isso que NAO se faz: 40 itens de um edital de 80 nao se parecem com erro
+        nenhum, se parecem com um edital de 40 - e viram proposta faltando metade.
+      · "NAO ACHEI" != "NAO TEM". A funcao devolve `tabela_encontrada:false` e a tela mostra isso
+        com cara propria, explicando o caso comum (a relacao esta em ANEXO separado).
+      · O AVISO DE CONFERIR E O CABECALHO do resultado, e diz COMO conferir: "o edital tem quantos
+        itens?". Item que a leitura pulou nao aparece como faltando - some sem deixar sinal.
+      · A GIOVANA TRATA AS DUAS ORIGENS DIFERENTE. O pacote leva `origem:'ia'` e o cartao de
+        importacao muda de cor e de texto. As duas montam a proposta pelo mesmo caminho (de
+        proposito), mas nao merecem a mesma fe: o indice do PNCP erra por estar desatualizado, a
+        leitura erra por ter pulado uma linha da tabela.
+      · ERRO QUE CUSTOU DINHEIRO APARECE COM O CUSTO. A funcao devolve `usd`/`brl` junto do erro e
+        a tela diz "esta tentativa ja custou R$ X e esta registrada". Custo escondido em erro e a
+        forma mais rapida de a conta do mes nao fechar com a fatura.
+
+    O BOTAO NA FICHA DO NEGOCIO: "📄 Ler edital (IA)" entrou na FILEIRA DO RODAPE (junto de
+    Arquivar · Recurso · Documentos · Fechar), e so aparece pra quem tem o piloto. Quem impede de
+    verdade continua sendo a edge function, que confere o JWT e responde 403 - e isso esta escrito
+    no codigo, com o que fazer se as duas listas divergirem (vale a do servidor; o pior que
+    acontece e um botao inutil, nunca uma leitura paga por quem nao devia).
+    >>> O PDF NAO VAI DA FICHA. A ficha nao guarda o arquivo do edital; o que viaja e so o nome do
+        certame, pra proposta montada nascer identificada.
+
+    BANCO: ddl/usos_ia_tarefa.sql - coluna `tarefa` ('resumo'|'itens') em usos_ia, ADITIVA, rodada
+    2x. `tipo` NAO foi reaproveitado: ele responde outra pergunta (QUAL ferramenta gastou), e
+    enfiar 'edital-itens' la faria a conta do mes mostrar duas ferramentas onde ha uma. A view
+    v_leituras_cobranca leva a coluna por `create or replace` (replace preserva grants; o preco e
+    a coluna entrar no fim da lista, que e cosmetica - grant perdido e chamado).
+
+    TELA: o titulo deixou de dizer "PROVA DE CUSTO". A prova acabou e virou decisao. Tambem foi
+    apagada a copia MORTA do prompt que estava na tela - prompt duplicado e o par que diverge sem
+    ninguem notar. Edge function ler-edital v3. Suite nova testa_itens_edital (77).
+    TOTAL: 2.270 asserts / 0 falhas / 68 suites. sw VERSAO limedtec-fpmed-2026-08-11-5.
+
+    >>> AINDA PENDENTE deste pedido: o leitor continua SEM entrada no menu. Quem nao souber o
+        endereco so chega nele pelo botao da ficha do negocio. Registrado pra proxima rodada.
+
 >>> 11/08 — FASE HABILITACAO: rotulo, checklist enxuto, tarefas do dia a dia e atalho das Pecas.
     1. ROTULO "Classificação" -> "HABILITAÇÃO". *** A CHAVE `classificacao` NAO FOI TOCADA. ***
        Ela esta em 2.555 linhas de `negocios`, no check constraint, no MAPA_STATUS do semeador e

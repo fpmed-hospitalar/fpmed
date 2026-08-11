@@ -41,7 +41,9 @@ ok('6. ...e ele diz que CUSTA DINHEIRO, com os numeros medidos',
 
 // ══════════ 2. O PRECO APARECE ANTES DO CLIQUE ══════════
 ok('7. *** a tela estima o custo assim que o arquivo e escolhido ***',
-  /estimativa: ~/.test(TELA) && /el\('info-arq'\)\.innerHTML/.test(TELA));
+  // 11/08: a estimativa passou a ser DUAS (resumo e tabela de itens gastam saídas muito
+  // diferentes). O que este assert protege continua igual: o preço aparece ANTES do clique.
+  /estimativa:/.test(TELA) && /el\('info-arq'\)\.innerHTML/.test(TELA));
 ok('8. ...e o motivo (preco que so aparece depois de gastar nao e preco)',
   /Preço que só aparece depois de gastar não é preço/.test(TELA));
 ok('9. o preco por token e o da tabela publica do Haiku (US$ 1 entrada / US$ 5 saida)',
@@ -75,7 +77,10 @@ ok('19. e a razao da janelinha (20 s parados parecem tela travada)',
 // ══════════ 5. O QUE ELE NAO ACHOU ══════════
 // A mesma regra do motor do teto CMED: nao encontrado != ok.
 ok('20. *** o prompt PROIBE inventar e manda listar o que nao achou ***',
-  /NAO invente: ponha o nome do campo em "nao_encontrado"/.test(TELA)
+  // 11/08: a cópia MORTA do prompt que estava na tela foi apagada. Ela não era usada — quem
+  // pergunta é a edge function — e prompt duplicado é o par que diverge sem ninguém notar: a
+  // tela mostraria o texto de uma pergunta que o servidor não faz mais.
+  /NAO invente: ponha o nome do campo em "nao_encontrado"/.test(FN)
   && /NAO invente: ponha o campo em "nao_encontrado"/.test(PROVA));
 ok('21. *** e a tela mostra os nao-encontrados em DESTAQUE, nao escondidos no fim ***',
   /O que ele NÃO achou no edital/.test(TELA));
@@ -110,7 +115,10 @@ ok('31. os dois lados usam o MESMO modelo', /claude-haiku-4-5/.test(TELA) && /cl
 // edge function `ler-edital`, que e onde moram a permissao e o contador. O limite foi junto,
 // e e assim que tem que ser: parametro de custo do lado que o usuario nao edita.
 ok('32. a saida e limitada, e o limite mora no SERVIDOR (custo de saida e 5x o de entrada)',
-  /MAX_TOKENS_SAIDA = 2000/.test(FN) && /max_tokens: 2000/.test(PROVA));
+  // 11/08: virou teto POR TAREFA (resumo 2000, itens 12000). O limite continua morando no
+  // servidor — que é o ponto do assert; um teto que a tela mandasse seria um teto negociável.
+  /const MAX_SAIDA: Record<string, number> = \{ resumo: 2000, itens: 12000 \};/.test(FN)
+  && /max_tokens: MAX_SAIDA\[tarefa\]/.test(FN) && /max_tokens: 2000/.test(PROVA));
 ok('33. ...e o motivo esta dito na ferramenta',
   /o custo de saida e 5x o de entrada/.test(PROVA));
 

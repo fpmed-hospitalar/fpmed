@@ -883,6 +883,7 @@ function corpoDrawer(n, obs, carregando){
            tela: ele leva os dados do certame e a tela de Peças faz o resto. Duplicar as Peças
            aqui criaria o par que diverge — e o que diverge, nelas, é prazo legal. -->
       <button onclick="irParaPecas(${n.id})" title="abre as Peças jurídicas com os dados deste certame preenchidos">⚖️ Recurso / esclarecimento</button>
+      ${podeLerEdital() ? `<button onclick="lerEditalIA(${n.id})" title="lê o PDF do edital com IA — cada leitura tem custo e fica registrada">📄 Ler edital (IA)</button>` : ''}
       <button onclick="location.href='fpmed_documentos.html'">📄 Documentos</button>
       <button onclick="fecharDrawer()">Fechar</button>
     </div>`;
@@ -999,6 +1000,36 @@ function irParaPecas(id){
     }));
   }catch(e){ /* sem sessionStorage a tela de Peças abre em branco, que é o comportamento de antes */ }
   location.href = 'fpmed_pecas.html';
+}
+
+/* ── LER O EDITAL COM IA, A PARTIR DA FICHA ──────────────────────────────────────────────────
+   O leitor está em PILOTO: liberado só pro gestor de licitação, porque cada leitura custa
+   dinheiro e é cobrada. Aqui o botão nem aparece pra quem não pode.
+
+   >>> E ESCONDER O BOTÃO NÃO É A PERMISSÃO. Quem impede de verdade é a edge function `ler-edital`,
+       que confere o JWT no servidor e responde 403 pra quem não está na lista — testado com login
+       real. Esta lista aqui é só pra tela não oferecer o que vai ser negado: botão que promete e
+       dá erro é pior que botão nenhum. As duas listas dizerem a mesma coisa é escolha de conforto;
+       se um dia divergirem, quem vale é a do servidor, e o pior que acontece é um botão inútil —
+       nunca uma leitura paga por quem não devia.
+   >>> O QUE VAI JUNTO é só o nome do certame, pra proposta montada lá nascer identificada. O PDF
+       do edital NÃO vai daqui: a ficha não guarda o arquivo, e fingir que guarda faria a pessoa
+       clicar esperando que o edital já estivesse lá. */
+const LEITORES_EDITAL = ['licitacao@fpmed.com.br'];
+function podeLerEdital(){
+  try{ return LEITORES_EDITAL.includes(String((window.gmAuth && gmAuth.user && gmAuth.user.email) || '').toLowerCase()); }
+  catch(e){ return false; }
+}
+function lerEditalIA(id){
+  const n = NEG.find(x => x.id === id); if(!n) return;
+  try{
+    sessionStorage.setItem('fpmed_edital_negocio', JSON.stringify({
+      de: 'negocios', negocio_id: n.id, quando: Date.now(),
+      titulo: n.titulo || n.objeto || null, orgao: n.orgao || null,
+      numero: n.numero || null, portal: n.portal || null, abertura: n.abertura || null,
+    }));
+  }catch(e){ /* sem sessionStorage o leitor abre sem contexto, que é o comportamento normal dele */ }
+  location.href = 'fpmed_edital_ia.html';
 }
 
 /* ── TAREFAS PERSONALIZADAS ──────────────────────────────────────────────────────────────────

@@ -3,13 +3,21 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Leitor de edital com IA — FPMED (PROVA DE CUSTO)</title>
+<title>Leitor de edital com IA — FPMED</title>
 <!-- ══════════════════════════════════════════════════════════════════════════════════════════
-     LEITOR DE EDITAL COM IA — módulo 2.8 da spec · 10/08/2026 · **NÃO LIBERADO**
+     LEITOR DE EDITAL COM IA — módulo 2.8 da spec · 10/08/2026 · **PILOTO (gestor de licitação)**
+     11/08: a tela deixou de se chamar "prova de custo". A prova acabou e virou decisão — o
+     Lemuel liberou em piloto. Título de tela que descreve a fase do projeto envelhece sozinho.
 
-     ESTA TELA EXISTE, FUNCIONA E NÃO ESTÁ NO MENU. De propósito. Ela é o único item da spec que
-     custa DINHEIRO POR USO, e a decisão de ligar é do Lemuel — então o fluxo foi construído e
-     MEDIDO, e a porta ficou fechada até ele bater o martelo.
+     ELA FAZ DUAS LEITURAS, e são leituras diferentes de verdade, não um botão a mais:
+       · RESUMO — o que o edital exige (objeto, prazos, habilitação, armadilhas);
+       · TABELA DE ITENS — o anexo de itens, estruturado, que vira PROPOSTA pela ponte que já
+         existe (mesmo casamento contra o estoque e mesma trava CMED da ponte do PNCP).
+     A segunda custa mais (a saída é longa) e erra diferente — por isso tem prompt próprio, teto
+     de saída próprio e um aviso próprio na tela.
+
+     ESTA TELA CUSTA DINHEIRO POR USO. É o único item da spec assim, e por isso o fluxo foi
+     construído E MEDIDO antes de ser ligado.
 
      O QUE FOI MEDIDO (dois editais reais do PNCP, claude-haiku-4-5, 10/08):
        0,17 MB ·  51.449 tokens de entrada · 22 s · R$ 0,31
@@ -29,6 +37,10 @@
 <script src="limedtec-config.js"></script>
 <script src="limedtec-tema.js"></script>
 <script src="gm-auth.js?v=sessao-06ago"></script>
+<!-- O MOTOR ENTRA AQUI POR CAUSA DA PONTE. `unidadePack` é quem converte a unidade do edital
+     ("CX 100 UN") em quantas unidades são. Reescrever essa regra nesta tela criaria uma segunda
+     tabela de embalagens no sistema — e duas tabelas de embalagem é um erro de 100× esperando. -->
+<script src="fpmed_teto_cmed.js"></script>
 <style>
 :root{--bg:#0B1622;--painel:#132234;--linha:#22374F;--muted:#8AA0B6;--azul:#2CA9E0;--verde:#8DC63F;--erro:#e5484d}
 *{box-sizing:border-box}
@@ -114,11 +126,25 @@ td.k{width:190px;color:var(--muted)}
     </div>
     <input type="file" id="arq" accept="application/pdf" class="campo">
     <div id="info-arq" class="hint" style="margin-top:8px"></div>
+    <!-- DOIS BOTÕES, E NÃO UM BOTÃO COM CAIXINHA. São duas leituras, cada uma com o seu preço e
+         o seu jeito de errar; quem clica precisa ver que está escolhendo entre duas coisas, e
+         não marcando uma opção do mesmo pedido. Cada leitura é cobrada por si. -->
     <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
-      <button class="btn" id="bt-ler" disabled onclick="lerEdital()">Ler o edital</button>
-      <button class="btn sec" onclick="location.href='fpmed_licitacoes.html'">Voltar</button>
+      <button class="btn" id="bt-ler" disabled onclick="lerEdital('resumo')">📋 Ler o edital (resumo)</button>
+      <button class="btn" id="bt-itens" disabled onclick="lerEdital('itens')"
+              style="background:var(--verde);color:#0B1622">📊 Extrair a tabela de itens</button>
+      <button class="btn sec" onclick="voltar()">Voltar</button>
+    </div>
+    <div class="hint" style="margin-top:8px">
+      O <b>resumo</b> responde “vale a pena disputar?”. A <b>tabela de itens</b> responde “o que
+      eu tenho que cotar?” e sai direto pra montar a proposta. São duas leituras separadas —
+      duas cobranças, se você usar as duas.
     </div>
   </div>
+
+  <!-- DE ONDE VIM: preenchido quando a tela é aberta pelo botão da ficha do negócio. Sem isso, o
+       "Voltar" devolvia todo mundo pras Licitações, inclusive quem veio do funil. -->
+  <div class="caixa" id="cx-negocio" style="display:none;border-left:4px solid var(--verde)"></div>
 
   <div class="caixa" id="cx-passos" style="display:none">
     <b>Lendo</b>
@@ -208,12 +234,17 @@ const TOKENS_POR_MB = 123000;   // medido: 165.479 tokens / 1,34 MB
 const esc = s => String(s==null?'':s).replace(/[<>&"]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c]));
 const el = id => document.getElementById(id);
 
-const PASSOS = [
+// O 3º passo muda de texto conforme a tarefa: "Lendo com a IA — objeto, prazos" numa extração de
+// itens descreveria uma leitura que não é a que está acontecendo.
+const PASSOS_DE = t => ([
   { t:'Conferindo o arquivo',   d:'tamanho, formato e se cabe na leitura' },
   { t:'Extraindo o texto',      d:'aqui no navegador; se vier pobre, mando o PDF inteiro' },
-  { t:'Lendo com a IA',         d:'objeto, prazos, habilitação e armadilhas' },
-  { t:'Conferindo a resposta',  d:'o que ele achou e o que ele não achou' },
-];
+  { t:'Lendo com a IA',         d: t === 'itens' ? 'procurando o anexo de itens e copiando a tabela'
+                                                 : 'objeto, prazos, habilitação e armadilhas' },
+  { t:'Conferindo a resposta',  d: t === 'itens' ? 'quantos itens vieram e o que ficou em dúvida'
+                                                 : 'o que ele achou e o que ele não achou' },
+]);
+let PASSOS = PASSOS_DE('resumo');
 let _passo = -1;
 function pintaPassos(falhouEm){
   el('cx-passos').style.display = 'block';
@@ -233,14 +264,21 @@ function falhou(i, msg){
 let ARQUIVO = null;
 el('arq').addEventListener('change', e => {
   ARQUIVO = e.target.files && e.target.files[0];
-  el('bt-ler').disabled = !ARQUIVO;
+  travaBotoes(!ARQUIVO);
+  ITENS_LIDOS = null;   // arquivo novo, tabela velha não vale mais
   if(!ARQUIVO){ el('info-arq').textContent = ''; return; }
   const mb = ARQUIVO.size / 1024 / 1024;
   // DIZ O CUSTO ESTIMADO ANTES DO CLIQUE. Preço que só aparece depois de gastar não é preço.
+  // >>> DUAS ESTIMATIVAS, porque são duas leituras. A entrada é a mesma (o documento inteiro vai
+  //     nas duas), o que muda é a SAÍDA: um resumo cabe em ~1.500 tokens e uma tabela de itens
+  //     com descrição completa passa de 8.000. Mostrar um preço só faria a extração de itens
+  //     chegar mais cara do que foi anunciada.
   const tok = Math.round(mb * TOKENS_POR_MB);
-  const usd = (tok/1e6)*USD_ENTRADA_MTOK + (1500/1e6)*USD_SAIDA_MTOK;
+  const custo = saidaTok => (tok/1e6)*USD_ENTRADA_MTOK + (saidaTok/1e6)*USD_SAIDA_MTOK;
   el('info-arq').innerHTML = esc(ARQUIVO.name) + ' · <b>' + mb.toFixed(2) + ' MB</b>'
-    + ' · estimativa: ~' + tok.toLocaleString('pt-BR') + ' tokens, cerca de US$ ' + usd.toFixed(3)
+    + ' · ~' + tok.toLocaleString('pt-BR') + ' tokens de entrada'
+    + ' · estimativa: <b>resumo</b> ~US$ ' + custo(1500).toFixed(3)
+    + ' · <b>tabela de itens</b> ~US$ ' + custo(8000).toFixed(3)
     + (mb > TETO_MB ? ' · <b style="color:#ffb3b6">acima do limite de leitura</b>' : '');
 });
 
@@ -253,15 +291,19 @@ async function cambio(){
   }catch(e){ return null; }
 }
 
-async function lerEdital(){
+function travaBotoes(v){ el('bt-ler').disabled = v; el('bt-itens').disabled = v; }
+
+async function lerEdital(tarefa){
   if(!ARQUIVO) return;
+  tarefa = tarefa === 'itens' ? 'itens' : 'resumo';
+  PASSOS = PASSOS_DE(tarefa);
   el('saida').innerHTML = '';
-  el('bt-ler').disabled = true;
+  travaBotoes(true);
 
   passo(0);
   const mb = ARQUIVO.size / 1024 / 1024;
   if(mb > TETO_MB){
-    el('bt-ler').disabled = false;
+    travaBotoes(false);
     return falhou(0, 'O arquivo tem ' + mb.toFixed(2) + ' MB e o limite de uma leitura é de cerca de '
       + TETO_MB + ' MB — acima disso o edital não cabe inteiro na leitura. Preferi recusar a mandar '
       + 'só o pedaço que cabe: um resumo de meio edital apresentado como se fosse do edital todo '
@@ -271,7 +313,7 @@ async function lerEdital(){
   // ── PASSO 2: O HÍBRIDO DECIDE AQUI ──────────────────────────────────────────────────────
   passo(1);
   const buf = await ARQUIVO.arrayBuffer();
-  let corpo = { titulo: ARQUIVO.name, mb: +mb.toFixed(2), cambio: await cambio() };
+  let corpo = { tarefa, titulo: ARQUIVO.name, mb: +mb.toFixed(2), cambio: await cambio() };
   try{
     const ex = await pdfParaTexto(buf.slice(0));
     if(ex.texto.trim().length >= MIN_CHARS_TEXTO){
@@ -288,7 +330,7 @@ async function lerEdital(){
     // Nem extrair deu. Ainda dá pra ler pelo PDF nativo — mas o motivo fica registrado.
     corpo.modo = 'pdf-nativo'; corpo.motivo = 'sem-texto';
     try{ corpo.pdfBase64 = await paraBase64(ARQUIVO); }
-    catch(e2){ el('bt-ler').disabled = false; return falhou(1, e2.message); }
+    catch(e2){ travaBotoes(false); return falhou(1, e2.message); }
   }
   el('passos').querySelectorAll('.passo .d')[1].textContent = corpo.modo === 'texto'
     ? ('texto extraído aqui: ' + corpo.chars.toLocaleString('pt-BR') + ' caracteres em ' + corpo.paginas + ' páginas')
@@ -309,21 +351,28 @@ async function lerEdital(){
       signal: AbortSignal.timeout(300000),
     });
     const txt = await r.text();
-    if(r.status === 403){ el('bt-ler').disabled = false;
+    if(r.status === 403){ travaBotoes(false);
       el('av-sem-permissao').style.display = 'block';
       return falhou(2, 'este acesso está em piloto, liberado só para o gestor de licitação.'); }
     if(!r.ok) throw new Error('o serviço de leitura respondeu ' + r.status + ' — ' + txt.slice(0,160));
     j = JSON.parse(txt);
-    if(j.ok === false) throw new Error(j.erro || 'a leitura não deu certo');
-  }catch(e){ el('bt-ler').disabled = false; return falhou(2, e.message); }
+    // ERRO COM CUSTO JUNTO. Quando a leitura falha DEPOIS de consumir token (uma tabela que não
+    // coube, por exemplo), o dinheiro já foi. Dizer só "não deu certo" esconderia uma cobrança
+    // que vai aparecer na conta do mês sem explicação.
+    if(j.ok === false) throw new Error((j.erro || 'a leitura não deu certo')
+      + (j.usd ? ' · esta tentativa já custou ' + (j.brl != null ? 'R$ ' + Number(j.brl).toFixed(2)
+                                                                : 'US$ ' + Number(j.usd).toFixed(4))
+                 + ' e está registrada' : ''));
+  }catch(e){ travaBotoes(false); carregarLeituras(); return falhou(2, e.message); }
 
   passo(3);
-  if(!j.dados){ el('bt-ler').disabled = false;
+  if(!j.dados){ travaBotoes(false);
     return falhou(3, 'a leitura voltou, mas não no formato esperado — não vou tentar adivinhar o que ela quis dizer.'); }
 
   _passo = 4; pintaPassos();
-  el('bt-ler').disabled = false;
-  mostra(j, Math.round((Date.now()-t0)/1000));
+  travaBotoes(false);
+  const seg = Math.round((Date.now()-t0)/1000);
+  if(tarefa === 'itens') mostraItens(j, seg); else mostra(j, seg);
   carregarLeituras();   // a leitura recém-registrada aparece na hora na conta da pessoa
 }
 
@@ -348,17 +397,31 @@ function tokenDaSessao(){
   return null;
 }
 
-const PERGUNTA = `Voce esta lendo o EDITAL de uma licitacao publica brasileira para uma
-distribuidora de medicamentos e material hospitalar. Responda SOMENTE com JSON, sem texto antes
-ou depois, neste formato:
-{"objeto":"","orgao":"","modalidade":"","abertura":"","entrega_prazo":"","entrega_local":"",
-"pagamento":"","amostra":true,"registro_precos":true,"habilitacao":[],"penalidades":"",
-"pontos_de_atencao":[],"nao_encontrado":[]}
-Se algo nao estiver no documento, NAO invente: ponha o nome do campo em "nao_encontrado".`;
+/* ── O BLOCO DE CUSTO É UM SÓ PRAS DUAS LEITURAS ────────────────────────────────────────────
+   Ele nasceu dentro do `mostra` e foi separado em 11/08, quando a extração de itens virou a
+   segunda leitura. Duplicar o bloco daria duas versões do mesmo extrato — e é questão de tempo
+   até uma delas parar de mostrar o câmbio, ou o modo, e ninguém notar por semanas. */
+function blocoCusto(j, segundos){
+  const entrada = j.usage.entrada, saida = j.usage.saida, usd = j.usd, cb = j.cambio;
+  return '<div class="caixa"><b>O que esta leitura custou</b>'
+    + '<div class="custo" style="margin:8px 0">'
+    +   (cb ? 'R$ ' + (usd*cb).toFixed(2) : 'US$ ' + usd.toFixed(4))
+    + '</div><div class="hint">'
+    // O MODO APARECE JUNTO DO CUSTO, e não numa nota de rodapé: é ele que explica o número.
+    + '<b>modo: ' + (j.modo === 'texto' ? 'texto extraído aqui no navegador' : 'PDF inteiro')
+    + '</b>' + (j.modoMotivo === 'extracao-pobre' ? ' (a extração de texto veio pobre — edital escaneado)'
+              : j.modoMotivo === 'sem-texto' ? ' (não deu pra extrair texto deste PDF)' : '')
+    + ' · <b>' + (j.tarefa === 'itens' ? 'tabela de itens' : 'resumo do edital') + '</b><br>'
+    +   entrada.toLocaleString('pt-BR') + ' tokens de entrada · ' + saida.toLocaleString('pt-BR')
+    +   ' de saída · ' + segundos + ' s · ' + MODELO
+    +   (cb ? ' · câmbio R$ ' + cb.toFixed(4) + '/US$ (buscado agora)'
+           : ' · <b>não consegui a cotação do dólar</b> — o valor fica em dólar, porque inventar câmbio seria pior')
+    + '<br>registrada' + (j.leituraId ? ' com o nº ' + j.leituraId : '') + ' na conta de leituras.'
+    + '</div></div>';
+}
 
 function mostra(j, segundos){
-  const d = j.dados, entrada = j.usage.entrada, saida = j.usage.saida;
-  const usd = j.usd, cb = j.cambio;
+  const d = j.dados;
 
   const linha = (k, v) => '<tr><td class="k">'+esc(k)+'</td><td>'+(v||'<span class="hint">—</span>')+'</td></tr>';
   const sn = b => b === true ? '<span class="pill sim">sim</span>'
@@ -385,20 +448,233 @@ function mostra(j, segundos){
           + 'não foi encontrado. Confira no documento antes de decidir por estes pontos.</div>'
           + lista(d.nao_encontrado) + '</div>'
         : '')
-    + '<div class="caixa"><b>O que esta leitura custou</b>'
-    + '<div class="custo" style="margin:8px 0">'
-    +   (cb ? 'R$ ' + (usd*cb).toFixed(2) : 'US$ ' + usd.toFixed(4))
-    + '</div><div class="hint">'
-    // O MODO APARECE JUNTO DO CUSTO, e não numa nota de rodapé: é ele que explica o número.
-    + '<b>modo: ' + (j.modo === 'texto' ? 'texto extraído aqui no navegador' : 'PDF inteiro')
-    + '</b>' + (j.modoMotivo === 'extracao-pobre' ? ' (a extração de texto veio pobre — edital escaneado)'
-              : j.modoMotivo === 'sem-texto' ? ' (não deu pra extrair texto deste PDF)' : '') + '<br>'
-    +   entrada.toLocaleString('pt-BR') + ' tokens de entrada · ' + saida.toLocaleString('pt-BR')
-    +   ' de saída · ' + segundos + ' s · ' + MODELO
-    +   (cb ? ' · câmbio R$ ' + cb.toFixed(4) + '/US$ (buscado agora)'
-           : ' · <b>não consegui a cotação do dólar</b> — o valor fica em dólar, porque inventar câmbio seria pior')
-    + '<br>registrada' + (j.leituraId ? ' com o nº ' + j.leituraId : '') + ' na conta de leituras.'
-    + '</div></div>';
+    + blocoCusto(j, segundos);
+}
+
+/* ══ A TABELA DE ITENS ═══════════════════════════════════════════════════════════════════════
+   Aqui a leitura deixa de ser informação e passa a ser DOCUMENTO COMERCIAL: o que sair desta
+   tabela vira proposta, e proposta errada num pregão é preço errado assinado. Por isso a tela
+   trata a saída da IA como leitura de terceiro, e não como dado do sistema:
+
+   1. LISTA VAZIA NÃO É "EDITAL SEM ITENS". A função devolve `tabela_encontrada` justamente pra
+      separar "não tem" de "não achei", e a tela mostra os dois com cara diferente.
+   2. ITEM SEM QUANTIDADE OU SEM UNIDADE APARECE MARCADO, e não sumindo nem preenchido com zero.
+      Zero numa coluna de quantidade é um número — e número não faz ninguém conferir.
+   3. O TOTAL SÓ SOMA O QUE TEM PREÇO, e diz quantos ficaram de fora. Um "total estimado" que
+      ignora em silêncio 30 itens sem valor é menor que a verdade e parece completo.
+   4. O AVISO DE CONFERIR NÃO SAI DA TELA. Não é um disclaimer de rodapé: é o cabeçalho do bloco.  */
+let ITENS_LIDOS = null;   // guardado pra Excel / cópia / ponte, sem reler nada
+
+const nBR = (v, d) => Number(v).toLocaleString('pt-BR', {minimumFractionDigits:d, maximumFractionDigits:d});
+function numOuNulo(v){ const n = Number(v); return (v == null || v === '' || !isFinite(n)) ? null : n; }
+
+function mostraItens(j, segundos){
+  const d = j.dados || {};
+  const itens = Array.isArray(d.itens) ? d.itens : [];
+  ITENS_LIDOS = { itens, onde: d.onde || null, observacao: d.observacao || null, titulo: ARQUIVO ? ARQUIVO.name : '' };
+
+  if(d.tabela_encontrada === false || !itens.length){
+    ITENS_LIDOS = null;
+    el('saida').innerHTML =
+      '<div class="aviso err"><b>Não achei a tabela de itens neste documento.</b>'
+      + '<div class="hint" style="margin:6px 0">Isto <b>não</b> quer dizer que o edital não tenha itens — '
+      + 'quer dizer que não foram encontrados neste arquivo. Costuma acontecer quando a relação de itens '
+      + 'está num ANEXO separado (planilha ou “termo de referência” em arquivo próprio): abra o anexo e '
+      + 'leia ele, não o edital.</div>'
+      + (d.observacao ? '<div>O que a leitura disse: <i>'+esc(d.observacao)+'</i></div>' : '')
+      + '</div>' + blocoCusto(j, segundos);
+    return;
+  }
+
+  const semQtd = itens.filter(i => numOuNulo(i.quantidade) == null).length;
+  const semUnd = itens.filter(i => !String(i.unidade||'').trim()).length;
+  const comPreco = itens.filter(i => numOuNulo(i.valor_unitario) != null);
+  const total = comPreco.reduce((s,i) => s + numOuNulo(i.valor_unitario) * (numOuNulo(i.quantidade)||0), 0);
+
+  const linhas = itens.map((i,k) => {
+    const q = numOuNulo(i.quantidade), vu = numOuNulo(i.valor_unitario);
+    const falta = s => '<span class="pill" style="color:#ffb3b6;border-color:rgba(229,72,77,.5)">'+s+'</span>';
+    return '<tr>'
+      + '<td style="white-space:nowrap">'+esc(i.n != null && i.n !== '' ? i.n : (k+1))+'</td>'
+      + '<td>'+esc(i.descricao||'')+'</td>'
+      + '<td style="text-align:right;white-space:nowrap">'+(q == null ? falta('sem qtd') : nBR(q, 0))+'</td>'
+      + '<td>'+(String(i.unidade||'').trim() ? esc(i.unidade) : falta('sem unidade'))+'</td>'
+      + '<td style="text-align:right;white-space:nowrap">'+(vu == null ? '<span class="hint">—</span>' : 'R$ '+nBR(vu,4))+'</td>'
+      + '<td style="text-align:right;white-space:nowrap">'+((vu != null && q != null) ? 'R$ '+nBR(vu*q,2) : '<span class="hint">—</span>')+'</td>'
+      + '</tr>';
+  }).join('');
+
+  el('saida').innerHTML =
+    '<div class="aviso"><b>⚠️ Confira esta tabela contra o edital antes de usar.</b>'
+    + '<div class="hint" style="margin-top:4px">Ela foi <b>lida por IA</b>, não veio do índice oficial. '
+    + 'A conferência que importa é simples: <b>o edital tem quantos itens?</b> Se o número não bater com os '
+    + '<b>'+itens.length+'</b> abaixo, falta alguma coisa — e o que falta não aparece sozinho.</div></div>'
+
+    + '<div class="caixa"><b>Itens encontrados: '+itens.length+'</b>'
+    + (d.onde ? ' <span class="hint">· '+esc(d.onde)+'</span>' : '')
+    + '<div class="hint" style="margin:6px 0">'
+    +   (comPreco.length
+          ? 'Total estimado <b>R$ '+nBR(total,2)+'</b>, somando só os '+comPreco.length+' itens com valor'
+            + (comPreco.length < itens.length
+                ? ' — <b style="color:#ffd98a">'+(itens.length-comPreco.length)+' item(ns) sem valor estimado ficaram de fora da soma</b>' : '')
+          : 'Nenhum item trouxe valor unitário estimado — não há total a somar.')
+    + (semQtd ? '<br><b style="color:#ffb3b6">'+semQtd+' item(ns) sem quantidade</b> — entram na proposta com 1 e etiqueta de conferir.' : '')
+    + (semUnd ? '<br><b style="color:#ffb3b6">'+semUnd+' item(ns) sem unidade de fornecimento</b> — sem ela não dá pra converter pra nossa caixa.' : '')
+    + '</div>'
+    + '<div style="overflow:auto"><table><thead><tr><th>nº</th><th>descrição</th><th style="text-align:right">qtd</th>'
+    +   '<th>unidade</th><th style="text-align:right">unit. estimado</th><th style="text-align:right">total</th>'
+    + '</tr></thead><tbody>'+linhas+'</tbody></table></div>'
+    + (d.observacao ? '<div class="hint" style="margin-top:10px"><b>O que a leitura não leu com certeza:</b> '+esc(d.observacao)+'</div>' : '')
+    + '<div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap">'
+    +   '<button class="btn" onclick="montarProposta()" style="background:var(--verde);color:#0B1622">🧾 Montar proposta com estes itens</button>'
+    +   '<button class="btn sec" onclick="baixarExcel()">⬇ Baixar Excel</button>'
+    +   '<button class="btn sec" onclick="copiarLista()" id="bt-copiar">📋 Copiar lista</button>'
+    + '</div>'
+    + '<div class="hint" style="margin-top:8px">A proposta é montada pela <b>mesma ponte</b> do edital do PNCP: '
+    +   'cada descrição é cruzada com o nosso estoque e a quantidade é convertida pra nossa embalagem. '
+    +   'Onde a unidade do edital não permitir a conta, o item entra com <b>1</b> e etiqueta de conferir — nunca com palpite.</div>'
+    + '</div>'
+    + blocoCusto(j, segundos);
+}
+
+/* ── BAIXAR EXCEL ────────────────────────────────────────────────────────────────────────────
+   O SheetJS só é baixado QUANDO ALGUÉM CLICA. Carregar 900 kB de biblioteca no boot de uma tela
+   em que a maioria das visitas nem gera tabela é cobrar de todo mundo o que poucos usam. */
+const XLSX_CDN = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+let _xlsx = null;
+function carregarXlsx(){
+  if(window.XLSX) return Promise.resolve(window.XLSX);
+  if(_xlsx) return _xlsx;
+  _xlsx = new Promise((res, rej) => {
+    const s = document.createElement('script');
+    s.src = XLSX_CDN;
+    s.onload = () => res(window.XLSX);
+    s.onerror = () => rej(new Error('não consegui carregar o gerador de planilha (precisa de internet)'));
+    document.head.appendChild(s);
+  });
+  return _xlsx;
+}
+// As COLUNAS DA PLANILHA são as da tela, na mesma ordem. Planilha que reorganiza o que a pessoa
+// acabou de ver obriga a reconferir tudo — e o motivo de baixar é justamente não reconferir.
+function linhasPlanilha(){
+  return ITENS_LIDOS.itens.map((i,k) => {
+    const q = numOuNulo(i.quantidade), vu = numOuNulo(i.valor_unitario);
+    return {
+      'Item': (i.n != null && i.n !== '') ? i.n : (k+1),
+      'Descrição': String(i.descricao||''),
+      'Quantidade': q,                                    // null = célula VAZIA, não zero
+      'Unidade': String(i.unidade||''),
+      'Valor unitário estimado': vu,
+      'Total estimado': (q != null && vu != null) ? +(q*vu).toFixed(2) : null,
+    };
+  });
+}
+async function baixarExcel(){
+  if(!ITENS_LIDOS) return;
+  try{
+    const X = await carregarXlsx();
+    const ws = X.utils.json_to_sheet(linhasPlanilha());
+    ws['!cols'] = [{wch:8},{wch:70},{wch:12},{wch:14},{wch:20},{wch:16}];
+    const wb = X.utils.book_new();
+    X.utils.book_append_sheet(wb, ws, 'Itens do edital');
+    // O NOME DO ARQUIVO CARREGA O AVISO. O .xlsx sai desta tela e vive semanas na área de
+    // trabalho de alguém, longe de qualquer aviso da tela. "lido-por-IA" no nome é o único
+    // recado que viaja junto com o arquivo.
+    const base = String(ITENS_LIDOS.titulo||'edital').replace(/\.pdf$/i,'').replace(/[^\w\-. ]+/g,'_').slice(0,60);
+    X.writeFile(wb, 'itens_' + base + '_lido-por-IA.xlsx');
+  }catch(e){ alert(e.message); }
+}
+// CÓPIA EM TSV (separado por TAB): cola direto em Excel e Google Sheets já nas colunas certas.
+// Vírgula quebraria em toda descrição de medicamento, que é cheia delas.
+function copiarLista(){
+  if(!ITENS_LIDOS) return;
+  const cab = ['Item','Descrição','Quantidade','Unidade','Valor unitário estimado'];
+  const corpo = ITENS_LIDOS.itens.map((i,k) => [
+    (i.n != null && i.n !== '') ? i.n : (k+1),
+    String(i.descricao||'').replace(/[\t\r\n]+/g,' '),
+    numOuNulo(i.quantidade) == null ? '' : numOuNulo(i.quantidade),
+    String(i.unidade||'').replace(/[\t\r\n]+/g,' '),
+    numOuNulo(i.valor_unitario) == null ? '' : String(numOuNulo(i.valor_unitario)).replace('.', ','),
+  ].join('\t'));
+  const txt = [cab.join('\t')].concat(corpo).join('\n');
+  const bt = el('bt-copiar');
+  navigator.clipboard.writeText(txt).then(
+    () => { bt.textContent = '✓ copiado ('+corpo.length+' linhas)'; setTimeout(()=>bt.textContent='📋 Copiar lista', 2500); },
+    () => { bt.textContent = '× não consegui copiar'; setTimeout(()=>bt.textContent='📋 Copiar lista', 2500); });
+}
+
+/* ── A PONTE: ITENS LIDOS POR IA → PROPOSTA ──────────────────────────────────────────────────
+   Ela escreve NO MESMO FORMATO que o `itensProPedido` das Licitações e na MESMA chave de sessão.
+   Não é economia de código: é a garantia de que item de edital entra na proposta por UM caminho
+   só. Dois caminhos seriam duas regras de conversão de quantidade, e é exatamente aí que mora o
+   erro de 100× (500 unidades virando 500 caixas).
+
+   >>> A CONVERSÃO DE QUANTIDADE É A MESMA `unidadePack` do motor, aplicada à unidade que a IA
+       COPIOU do edital. Onde ela não souber ler a unidade, `qtdUnidades` vai null — e a Giovana
+       põe 1 + etiqueta, como já faz com o edital do PNCP. Chutar aqui seria pior que no PNCP:
+       lá a unidade veio do índice oficial; aqui veio de uma leitura. */
+function montarProposta(){
+  if(!ITENS_LIDOS || !ITENS_LIDOS.itens.length) return;
+  const M = window.LimedtecTetoCMED || {};
+  if(typeof M.unidadePack !== 'function'){
+    alert('O motor de embalagem não carregou — sem ele a quantidade seria chute. Recarregue a tela.');
+    return;
+  }
+  const neg = negocioDaSessao();
+  const pacote = {
+    de: 'edital-ia', quando: Date.now(),
+    lic: {
+      titulo: (neg && neg.titulo) || ITENS_LIDOS.titulo || 'Edital lido por IA',
+      numero: (neg && neg.numero) || null,
+      orgao: (neg && neg.orgao) || null, municipio: null, uf: null,
+      portal: (neg && neg.portal) || null, abertura: (neg && neg.abertura) || null,
+      truncado: false, lidos: ITENS_LIDOS.itens.length, casados: null,
+      // >>> O AVISO VIAJA COM O PACOTE. A Giovana não tem como saber, olhando os itens, que eles
+      //     vieram de leitura por IA em vez do índice do PNCP — e as duas origens merecem
+      //     confianças diferentes na hora de conferir a quantidade.
+      origem: 'ia', origemArquivo: ITENS_LIDOS.titulo || null,
+    },
+    itens: ITENS_LIDOS.itens.map((i,k) => {
+      const q = numOuNulo(i.quantidade);
+      const und = String(i.unidade||'');
+      const pack = M.unidadePack(und);
+      return {
+        n: (i.n != null && i.n !== '') ? String(i.n) : String(k+1),
+        descricao: String(i.descricao||'').replace(/\s+/g,' ').trim(),
+        qtdEdital: q, unidade: und,
+        packEdital: pack,                            // null = não sei quantas unidades tem
+        qtdUnidades: (pack && q) ? q * pack : null,
+        unitEdital: numOuNulo(i.valor_unitario),
+        casouAqui: null,                             // ninguém cruzou contra o estoque ainda
+      };
+    }),
+  };
+  try{ sessionStorage.setItem('fpmed_pedido_edital', JSON.stringify(pacote)); }
+  catch(e){ alert('Não consegui guardar os itens pra levar às Propostas: ' + e.message); return; }
+  location.href = 'fpmed_giovana.html';
+}
+
+/* ── DE ONDE EU VIM (a ficha do negócio) ─────────────────────────────────────────────────────
+   O botão "📄 Ler edital (IA)" da ficha deixa o contexto aqui. Ele serve a duas coisas: o
+   "Voltar" devolver pro funil em vez das Licitações, e o pacote da proposta já nascer com o
+   nome do certame. Consumir NÃO: quem veio da ficha pode ler dois anexos seguidos. */
+function negocioDaSessao(){
+  try{ return JSON.parse(sessionStorage.getItem('fpmed_edital_negocio') || 'null'); }catch(e){ return null; }
+}
+function voltar(){
+  const n = negocioDaSessao();
+  location.href = n ? 'fpmed_negocios.html' : 'fpmed_licitacoes.html';
+}
+function pintaNegocio(){
+  const n = negocioDaSessao(); const cx = el('cx-negocio');
+  if(!n){ cx.style.display = 'none'; return; }
+  cx.style.display = 'block';
+  cx.innerHTML = '<b>📌 Lendo para: ' + esc(n.titulo || 'negócio') + '</b>'
+    + '<div class="hint" style="margin-top:4px">'
+    + (n.orgao ? esc(n.orgao) + ' · ' : '') + (n.numero ? 'nº ' + esc(n.numero) : '')
+    + '<br>O edital não vem de lá: <b>o PDF é você que escolhe aqui</b>. O que veio do negócio é só '
+    + 'o nome, pra proposta montada nascer identificada.</div>'
+    + '<div style="margin-top:10px"><button class="btn sec" onclick="location.href=\'fpmed_negocios.html\'">← voltar ao negócio</button></div>';
 }
 
 /* ── AS LEITURAS REGISTRADAS ─────────────────────────────────────────────────────────────────
@@ -469,7 +745,8 @@ function aplicaGate(){
   const pode = LEITORES_TELA.includes(email);
   el('av-sem-permissao').style.display = pode ? 'none' : 'block';
   el('arq').disabled = !pode;
-  if(!pode) el('bt-ler').disabled = true;
+  if(!pode) travaBotoes(true);
+  pintaNegocio();
   carregarLeituras();
 }
 document.addEventListener('gm-auth-ready', aplicaGate);
