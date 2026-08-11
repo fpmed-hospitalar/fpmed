@@ -261,6 +261,24 @@ textarea.anot:focus{border-color:var(--azul)}
 .tf{display:flex;gap:9px;align-items:flex-start;padding:6px 0;font-size:12.5px;cursor:pointer;line-height:1.45}
 .tf input{margin-top:2px;accent-color:var(--verde);cursor:pointer}
 .tf.feita span{color:var(--muted);text-decoration:line-through}
+/* ── AS CAIXINHAS COMO BOTÃO ── cartão que é botão precisa PARECER botão, senão a função existe
+   só pra quem leu o commit. Cursor de mão, borda que acende e um empurrãozinho pra cima. ── */
+.kpi.bt{cursor:pointer;transition:border-color .16s,transform .12s,background .16s}
+.kpi.bt:hover{border-color:var(--azul);background:var(--painel2);transform:translateY(-2px)}
+.kpi.bt:active{transform:translateY(0)}
+.kpi.bt::after{content:'›';position:absolute;top:8px;right:11px;color:var(--muted);font-size:15px;opacity:.55}
+.kpi{position:relative}
+/* ── O PAINEL DAS CAIXINHAS ── */
+#painel-kpi{background:var(--painel);border:1px solid var(--linha);border-radius:12px;padding:16px 18px;margin:14px 0}
+.pk-topo{display:flex;align-items:center;gap:12px;margin-bottom:10px;flex-wrap:wrap;font-size:14px;color:#fff}
+.pk-conta{background:var(--painel2);border:1px solid var(--linha);border-radius:9px;padding:11px 13px;font-size:13px;color:#fff;margin-bottom:8px}
+.pk-tab{width:100%;border-collapse:collapse;font-size:12.5px}
+.pk-tab th{text-align:left;padding:7px;border-bottom:1px solid var(--linha);color:var(--muted);font-size:10.5px;text-transform:uppercase}
+.pk-tab td{padding:7px;border-bottom:1px solid rgba(34,55,79,.45)}
+.pk-tab tbody tr{cursor:pointer}
+.pk-tab tbody tr:hover{background:var(--painel2)}
+.pk-tab tfoot td{border-top:2px solid var(--linha);border-bottom:0;padding-top:9px;color:#fff}
+.pk-dif{font-size:10.5px;color:#e0a04a;margin-top:2px}
 /* ── PROPOSTA ANEXADA ── */
 .prop-novo{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:12px 0 6px}
 .prop-novo input[type=file]{background:var(--painel2);color:var(--texto);border:1px solid var(--linha);
@@ -377,6 +395,9 @@ textarea.anot:focus{border-color:var(--azul)}
   </div>
 
   <div class="kpis" id="kpis"></div>
+  <!-- O painel abre ENTRE as caixinhas e a lista, e não numa tela nova: é o detalhe do número
+       que está logo acima, e o caminho de volta é fechar — não é navegar. -->
+  <div id="painel-kpi" style="display:none"></div>
   <div id="corpo"><div class="vazio">Carregando…</div></div>
 </div>
 
@@ -604,16 +625,18 @@ function pinta(){
   }).join('') + (FASE_SEL ? `<div class="chip" onclick="selFase(null)">✕ limpar fase</div>` : '');
 
   const gestor = ehGestor();
-  const ganhos = NEG.filter(n => n.valor_ganho > 0);
-  const disputados = NEG.filter(n => n.estagio==='classificacao' || n.valor_ganho > 0);
-  const total = ganhos.reduce((s,n)=>s+Number(n.valor_ganho||0),0);
+  const k = numerosDoTopo();
   document.getElementById('kpis').style.display='grid';
+  /* ── AS CAIXINHAS VIRARAM BOTÕES (11/08) ─────────────────────────────────────────────────
+     Cada uma abre o detalhe de onde o número veio. Cartão que é botão precisa PARECER botão:
+     daí o cursor de mão e o hover — sem isso ninguém descobre que dá pra clicar, e a função
+     existe só pra quem leu o commit. */
   document.getElementById('kpis').innerHTML = `
-    <div class="kpi"><b>${NEG.filter(n=>!n.arquivado).length}</b><span>no funil agora</span></div>
-    <div class="kpi"><b>${NEG.length.toLocaleString('pt-BR')}</b><span>no histórico</span></div>
-    <div class="kpi"><b>${ganhos.length}</b><span>ganhas</span></div>
-    <div class="kpi"><b>${disputados.length ? (ganhos.length/disputados.length*100).toFixed(1)+'%' : '—'}</b><span>taxa de vitória</span></div>
-    ${gestor ? `<div class="kpi"><b style="font-size:16px">${brl(total)}</b><span>total ganho</span></div>` : ''}`;
+    <div class="kpi bt" onclick="abrirPainel('funil')" title="mostra os negócios ativos"><b>${k.noFunil}</b><span>no funil agora</span></div>
+    <div class="kpi bt" onclick="abrirPainel('historico')" title="todos os negócios, inclusive arquivados"><b>${k.historico.toLocaleString('pt-BR')}</b><span>no histórico</span></div>
+    <div class="kpi bt" onclick="abrirPainel('ganhas')" title="a lista das ganhas, com valor de cada uma"><b>${k.ganhos.length}</b><span>ganhas</span></div>
+    <div class="kpi bt" onclick="abrirPainel('taxa')" title="de onde sai a conta"><b>${k.taxaTxt}</b><span>taxa de vitória</span></div>
+    ${gestor ? `<div class="kpi bt" onclick="abrirPainel('total')" title="a soma das ganhas"><b style="font-size:16px">${brl(k.total)}</b><span>total ganho</span></div>` : ''}`;
 
   pintaNotif();          // o sino conta o funil inteiro, não o que os filtros deixaram na tela
   const l = visiveis();
@@ -806,7 +829,7 @@ async function abrirDrawer(id){
     document.getElementById('dw-body').innerHTML = corpoDrawer(n, null, false);
   }
   if(ABERTO === id){ carregarRastro(id); carregarLembretes(id); carregarCredenciamentos(id);
-                     carregarProposta(id); carregarAta(id); }
+                     carregarProposta(id); carregarAta(id); carregarItensGanhos(id); }
 }
 function fecharDrawer(){
   ABERTO = null;
@@ -1013,6 +1036,10 @@ function corpoDrawer(n, obs, carregando){
         </div><div class="salvo" id="ata-msg"></div>`
         : '<div class="salvo">só quem grava pode anexar documento.</div>'}
       </div>
+      <!-- O QUADRO DO RESULTADO vem ANTES dos botões de IA, e essa ordem é a decisão: quem abre
+           um negócio ganho quer VER o que ganhou, não ser convidado a pagar uma leitura. O botão
+           de ler só interessa a quem ainda não confirmou. -->
+      <div class="dw-sec" id="ata-resultado"></div>
       <div class="dw-sec" id="ata-relatorios"></div>
       <div class="dw-sec" id="ata-saida"></div>
     </div>
@@ -1662,6 +1689,213 @@ function carregarXlsxNeg(){
   return _xlsxNeg;
 }
 
+/* ══ OS NÚMEROS DO TOPO — UM LUGAR SÓ ════════════════════════════════════════════════════════
+   As caixinhas viraram botões, e os painéis que elas abrem mostram A MESMA lista que gerou o
+   número. Se cada um contasse por conta própria, o dia em que a definição mudasse teria dois
+   resultados na mesma tela — e o operador não teria como saber qual acreditar.
+
+   ══ A TAXA DE VITÓRIA: O QUE ELA É DE VERDADE ══════════════════════════════════════════════
+   Foi pedido pra conferir de onde o número vem e ESCREVER. Conferido no banco em 11/08:
+     · GANHAS ......... negócio com `valor_ganho > 0`. São 105, e todas estão na fase Ata.
+     · O DENOMINADOR .. era `estagio='classificacao' OR valor_ganho>0` = 696.
+   Ou seja: quem chegou à Habilitação e não ganhou conta como PERDIDA, e quem parou antes
+   (Oportunidade, Qualificação) não conta em lugar nenhum. Isso está certo — perder na
+   habilitação é perder; desistir na triagem não é disputa.
+
+   >>> MAS HAVIA UMA DISTORÇÃO, e ela foi corrigida: o denominador contava também os negócios que
+       ainda ESTÃO na Habilitação, ou seja, em disputa. Um pregão que acontece semana que vem
+       entrava na conta como já perdido. Hoje isso é 1 de 696 e quase não muda o número — mas
+       numa semana com 20 disputas abertas a taxa despencaria sozinha, sem nada ter dado errado.
+       A regra passou a ser: só entra no denominador o que JÁ ACABOU (arquivado) ou já ganhou.
+   >>> E A TELA DIZ A CONTA. "10,6%" sem denominador é um número que ninguém pode conferir. */
+function numerosDoTopo(){
+  const ganhos = NEG.filter(n => Number(n.valor_ganho) > 0);
+  // DECIDIDAS = ganhou, ou chegou à Habilitação e o processo já terminou.
+  const perdidas = NEG.filter(n => n.estagio === 'classificacao' && n.arquivado && !(Number(n.valor_ganho) > 0));
+  const decididas = ganhos.length + perdidas.length;
+  const emDisputa = NEG.filter(n => n.estagio === 'classificacao' && !n.arquivado).length;
+  return {
+    ganhos, perdidas, decididas, emDisputa,
+    noFunil: NEG.filter(n => !n.arquivado).length,
+    historico: NEG.length,
+    total: ganhos.reduce((s,n) => s + Number(n.valor_ganho||0), 0),
+    taxa: decididas ? (ganhos.length / decididas * 100) : null,
+    taxaTxt: decididas ? (ganhos.length / decididas * 100).toFixed(1) + '%' : '—',
+  };
+}
+
+let ITENS_GANHOS_MAPA = {};   // negocio_id -> {itens, soma, diferenca}, pro painel das ganhas
+
+/* ── O PAINEL ────────────────────────────────────────────────────────────────────────────────
+   Painel dentro do próprio Negócios, e não uma tela nova: o pedido foi explícito ("sem criar
+   tela nova pesada"), e uma tela a mais teria o seu próprio boot, a sua própria sessão e o seu
+   próprio jeito de discordar desta sobre o que é uma "ganha". */
+function fecharPainel(){
+  const p = document.getElementById('painel-kpi');
+  if(p){ p.style.display = 'none'; p.innerHTML = ''; }
+}
+async function abrirPainel(qual){
+  const p = document.getElementById('painel-kpi'); if(!p) return;
+  p.style.display = 'block';
+  p.scrollIntoView({behavior:'smooth', block:'nearest'});
+
+  // "no funil" e "histórico" não abrem lista própria: eles MEXEM NOS FILTROS da tela, que já é
+  // a lista. Duplicar a lista aqui seria manter dois lugares que mostram a mesma coisa.
+  if(qual === 'funil' || qual === 'historico'){
+    document.getElementById('f-arquivados').checked = (qual === 'historico');
+    FASE_SEL = null;
+    /* A BUSCA POR ÓRGÃO/Nº NASCE ESCONDIDA nesta tela (só aparece pela lupa). No histórico ela
+       é obrigatória: mil e tantos negócios sem campo de busca é uma lista pra rolar, não pra
+       usar — e a busca foi parte do pedido. Então abrir o histórico REVELA o campo, e limpa o
+       que estivesse escrito nele, porque um filtro sobrando explicaria mal o número de cima. */
+    const b = document.getElementById('f-busca');
+    if(b){ b.value = ''; b.style.display = (qual === 'historico') ? '' : 'none'; if(qual === 'historico') setTimeout(()=>b.focus(), 60); }
+    pinta();
+    const k = numerosDoTopo();
+    p.innerHTML = '<div class="pk-topo"><b>' + (qual === 'funil'
+        ? k.noFunil + ' no funil agora' : k.historico.toLocaleString('pt-BR') + ' no histórico')
+      + '</b><button class="btn-ed sec" onclick="fecharPainel()">fechar</button></div>'
+      + '<div class="salvo">' + (qual === 'funil'
+          ? 'A lista abaixo está mostrando <b>só os ativos</b> — os filtros foram limpos.'
+          : 'A lista abaixo está mostrando <b>tudo</b>, inclusive os arquivados: os negócios do '
+            + 'Calendário 2025 e os que saíram do funil. Use a busca por órgão ou nº.')
+      + '</div>';
+    return;
+  }
+
+  p.innerHTML = '<div class="pk-topo"><b>carregando…</b><button class="btn-ed sec" onclick="fecharPainel()">fechar</button></div>';
+  // A SOMA DOS ITENS vem do banco, e não da tela: é ela que precisa BATER com o valor da ficha,
+  // e uma conta feita aqui seria uma terceira versão do mesmo número.
+  try{
+    const r = await fetch(`${SB_URL}/rest/v1/v_negocios_ganhos`
+      + '?select=id,itens_confirmados,soma_itens,diferenca&limit=2000', {headers:SB_H});
+    ITENS_GANHOS_MAPA = {};
+    if(r.ok) for(const x of await r.json()) ITENS_GANHOS_MAPA[x.id] = x;
+  }catch(e){ ITENS_GANHOS_MAPA = {}; }
+  pintaPainelGanhas(qual);
+}
+
+function pintaPainelGanhas(qual){
+  const p = document.getElementById('painel-kpi');
+  const k = numerosDoTopo();
+  // ORDENADA POR VALOR, como pedido: o relatório de ganhos começa pelo que pesa.
+  const linhas = k.ganhos.slice().sort((a,b) => Number(b.valor_ganho||0) - Number(a.valor_ganho||0));
+  window._painelGanhas = linhas;
+
+  const titulo = qual === 'taxa' ? 'Taxa de vitória' : qual === 'total' ? 'Total ganho' : 'Negócios ganhos';
+  // >>> A CONTA APARECE POR EXTENSO. "10,6%" é um número que ninguém confere; "105 ganhas de 695
+  //     decididas" é uma frase que qualquer um refaz na calculadora.
+  const contexto = qual === 'taxa'
+    ? `<div class="pk-conta"><b>${k.ganhos.length} ganhas</b> de <b>${k.decididas} decididas</b> = <b>${k.taxaTxt}</b>
+        <div class="salvo" style="margin-top:6px">
+          <b>Decididas</b> = as que a empresa ganhou (${k.ganhos.length}) + as que chegaram à Habilitação e o
+          processo já terminou (${k.perdidas.length}). Quem parou antes da Habilitação (triagem, qualificação)
+          <b>não entra</b>: desistir na triagem não é perder uma disputa.
+          ${k.emDisputa ? `<br><b>${k.emDisputa}</b> negócio(s) ainda em disputa <b>não contam</b> — nem como ganho, nem como perda.` : ''}
+        </div></div>`
+    : qual === 'total'
+    ? `<div class="pk-conta"><b>${brl(k.total)}</b> é a soma do valor ganho das ${k.ganhos.length} abaixo.</div>`
+    : '';
+
+  const comItens = linhas.filter(n => (ITENS_GANHOS_MAPA[n.id]||{}).itens_confirmados > 0).length;
+  const somaTotal = linhas.reduce((s,n) => s + Number(n.valor_ganho||0), 0);
+
+  p.innerHTML = '<div class="pk-topo"><b>' + titulo + ' · ' + linhas.length + ' negócio(s)</b>'
+      + '<span style="margin-left:auto;display:flex;gap:8px">'
+      + '<button class="btn-ed sec" onclick="excelGanhas()">⬇ Excel</button>'
+      + '<button class="btn-ed sec" onclick="imprimirGanhas()">🖨️ Imprimir</button>'
+      + '<button class="btn-ed sec" onclick="fecharPainel()">fechar</button></span></div>'
+    + contexto
+    + '<div class="salvo" style="margin:8px 0">'
+    +   comItens + ' de ' + linhas.length + ' têm os itens detalhados gravados. '
+    +   'Os demais vieram do histórico do calendário, que guarda o valor total sem item a item — '
+    +   '<b>isso é normal, não é erro</b>.</div>'
+    + '<div style="max-height:430px;overflow:auto"><table class="pk-tab">'
+    + '<thead><tr>' + ['ÓRGÃO','Nº','MUNICÍPIO','ABERTURA','ITENS','VALOR GANHO'].map(h =>
+        '<th>'+h+'</th>').join('') + '</tr></thead><tbody>'
+    + linhas.map(n => {
+        const g = ITENS_GANHOS_MAPA[n.id] || {};
+        // A DIFERENÇA APARECE, e não é escondida — mas só quando HÁ itens pra comparar.
+        const dif = (g.diferenca != null && Math.abs(Number(g.diferenca)) >= 0.01)
+          ? `<div class="pk-dif">ficha ${brl(n.valor_ganho)} · itens ${brl(g.soma_itens)} — conferir</div>` : '';
+        return `<tr onclick="irPara(${n.id})" title="abrir a ficha deste negócio">
+          <td>${esc(String(n.orgao||'—').slice(0,42))}${dif}</td>
+          <td>${esc(n.numero||'—')}</td>
+          <td>${esc(n.municipio||'—')}${n.uf?' · '+esc(n.uf):''}</td>
+          <td>${n.abertura ? esc(new Date(n.abertura).toLocaleDateString('pt-BR')) : '—'}</td>
+          <td style="text-align:right">${g.itens_confirmados ? g.itens_confirmados : '<span class="salvo">—</span>'}</td>
+          <td style="text-align:right"><b>${brl(n.valor_ganho)}</b></td>
+        </tr>`;
+      }).join('')
+    + '</tbody><tfoot><tr>'
+    // >>> O RODAPÉ TEM QUE BATER COM O CARTÃO. É a mesma soma, da mesma lista — se um dia
+    //     divergirem, é porque alguém criou uma segunda contagem, e é isso que o assert trava.
+    + '<td colspan="5" style="text-align:right"><b>total</b></td>'
+    + '<td style="text-align:right"><b>' + brl(somaTotal) + '</b></td>'
+    + '</tr></tfoot></table></div>';
+}
+
+function imprimirGanhas(){
+  const linhas = window._painelGanhas || []; if(!linhas.length) return;
+  const k = numerosDoTopo();
+  const emp = (window.LIMEDTEC_CLIENTE && LIMEDTEC_CLIENTE.empresa) || {};
+  const j = window.open('', '_blank');
+  if(!j){ alert('o navegador bloqueou a janela — libere o pop-up'); return; }
+  j.document.write('<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Negócios ganhos</title>'
+    + '<style>body{font:12px/1.5 system-ui,sans-serif;max-width:940px;margin:26px auto;padding:0 20px;color:#111}'
+    + 'h1{font-size:17px;margin:0 0 4px} table{width:100%;border-collapse:collapse;margin-top:12px}'
+    + 'th,td{padding:5px 6px;border-bottom:1px solid #ddd;text-align:left} th{font-size:10px;text-transform:uppercase;color:#666}'
+    + 'td.n,th.n{text-align:right} tfoot td{border-top:2px solid #333;font-weight:700}'
+    + '.acao{margin:14px 0} button{font:inherit;padding:7px 14px;border-radius:7px;border:1px solid #ccc;background:#f5f5f5;cursor:pointer}'
+    + '@media print{.acao{display:none}}</style></head><body>'
+    + '<h1>Negócios ganhos</h1>'
+    + '<div>' + esc(emp.razaoSocial || emp.nome || '') + (emp.cnpj ? ' · CNPJ ' + esc(emp.cnpj) : '') + '</div>'
+    + '<div style="color:#555;margin-top:6px">' + linhas.length + ' negócio(s) · taxa de vitória '
+    +   esc(k.taxaTxt) + ' (' + k.ganhos.length + ' ganhas de ' + k.decididas + ' decididas)'
+    +   '<br>gerado em ' + new Date().toLocaleString('pt-BR') + '</div>'
+    + '<div class="acao"><button onclick="window.print()">🖨️ Imprimir / PDF</button></div>'
+    + '<table><thead><tr><th>Órgão</th><th>Nº</th><th>Município</th><th>Abertura</th><th class="n">Itens</th><th class="n">Valor ganho</th></tr></thead><tbody>'
+    + linhas.map(n => { const g = ITENS_GANHOS_MAPA[n.id] || {};
+        return '<tr><td>' + esc(String(n.orgao||'—').slice(0,60)) + '</td><td>' + esc(n.numero||'—') + '</td>'
+        + '<td>' + esc(n.municipio||'—') + (n.uf ? ' · ' + esc(n.uf) : '') + '</td>'
+        + '<td>' + (n.abertura ? esc(new Date(n.abertura).toLocaleDateString('pt-BR')) : '—') + '</td>'
+        + '<td class="n">' + (g.itens_confirmados || '—') + '</td>'
+        + '<td class="n">' + brl(n.valor_ganho).replace('R$ ','R$ ') + '</td></tr>'; }).join('')
+    + '</tbody><tfoot><tr><td colspan="5" class="n">total</td><td class="n">'
+    +   brl(linhas.reduce((s,n)=>s+Number(n.valor_ganho||0),0)) + '</td></tr></tfoot></table>'
+    + '<div style="margin-top:20px;font-size:11px;color:#555">A coluna <b>Itens</b> vazia quer dizer que o '
+    + 'resultado veio do histórico do calendário, que guarda o valor total sem detalhe por item — não é erro.</div>'
+    + '</body></html>');
+  j.document.close();
+}
+
+function excelGanhas(){
+  const linhas = window._painelGanhas || []; if(!linhas.length) return;
+  const k = numerosDoTopo();
+  carregarXlsxNeg().then(X => {
+    const ws = X.utils.json_to_sheet(linhas.map(n => { const g = ITENS_GANHOS_MAPA[n.id] || {};
+      return {
+        'Órgão': n.orgao || '', 'Nº': n.numero || '',
+        'Município': n.municipio || '', 'UF': n.uf || '',
+        'Modalidade': n.modalidade || '', 'Portal': n.portal || '',
+        'Abertura': n.abertura ? new Date(n.abertura).toLocaleDateString('pt-BR') : '',
+        'Itens confirmados': g.itens_confirmados || null,
+        'Soma dos itens': g.soma_itens ?? null,
+        'Valor ganho': Number(n.valor_ganho) || null,
+      }; }));
+    ws['!cols'] = [{wch:46},{wch:16},{wch:22},{wch:6},{wch:18},{wch:16},{wch:12},{wch:16},{wch:16},{wch:16}];
+    X.utils.sheet_add_aoa(ws, [[],
+      ['TOTAL GANHO', '', '', '', '', '', '', '', '', linhas.reduce((s,n)=>s+Number(n.valor_ganho||0),0)],
+      ['Taxa de vitória: ' + k.taxaTxt + ' (' + k.ganhos.length + ' ganhas de ' + k.decididas + ' decididas)'],
+      ['"Itens confirmados" vazio = resultado veio do histórico do calendário, sem detalhe por item. Não é erro.'],
+      ['Gerado em ' + new Date().toLocaleString('pt-BR')],
+    ], { origin: -1 });
+    const wb = X.utils.book_new();
+    X.utils.book_append_sheet(wb, ws, 'Negócios ganhos');
+    X.writeFile(wb, 'negocios-ganhos.xlsx');
+  }).catch(e => alert(e.message));
+}
+
 /* ══ GERENCIAMENTO DE ATA ═════════════════════════════════════════════════════════════════════
    A fase final: os documentos assinados, o que se ganhou, e por quanto se perdeu.
 
@@ -1748,6 +1982,88 @@ function pintaBotoesAta(id, porCat){
         ? `<button class="btn-ed sec" onclick="lerAtaIA(${id},'mapa-precos')">📉 Mapa de preços da disputa</button>`
         : '<span class="salvo">Anexe <b>Ata da sessão</b> ou <b>Retorno de preços</b> para montar o mapa.</span>')
     + '</div>';
+}
+
+/* ══ O QUADRO DO RESULTADO — "clicou no processo ganho, já tá lá o que ganhou" ═══════════════
+   Este é o quadro que o Lemuel descreveu. Ele lê do BANCO (a confirmação mais nova), e não de
+   documento nenhum: quem confirmou uma vez não paga leitura de novo pra ver o que ganhou.
+
+   >>> O NEGÓCIO ANTIGO DO CALENDÁRIO NÃO FICA COM TABELA VAZIA. Ele tem valor e não tem itens —
+       isso é o normal de quem foi importado, não uma falta. Tabela vazia com cabeçalho pareceria
+       um erro de carregamento e faria alguém procurar um defeito que não existe. Em vez disso, o
+       quadro diz o que ele é: resultado importado do histórico, sem detalhe por item.
+   >>> E QUANDO OS DOIS NÚMEROS DIVERGEM, A TELA MOSTRA A DIFERENÇA. Escondê-la seria escolher em
+       qual dos dois acreditar — e essa escolha é de quem confere, não da tela. */
+let ITENS_GANHOS = [];
+async function carregarItensGanhos(id){
+  const box = document.getElementById('ata-resultado'); if(!box) return;
+  const n = NEG.find(x => x.id === id) || {};
+  const ganhou = Number(n.valor_ganho) > 0;
+  if(!ganhou){ box.innerHTML = ''; ITENS_GANHOS = []; return; }
+  try{
+    const r = await fetch(`${SB_URL}/rest/v1/v_negocio_itens_ganhos?negocio_id=eq.${id}`
+      + '&select=*&order=item_n.asc', {headers:SB_H});
+    ITENS_GANHOS = r.ok ? await r.json() : [];
+    pintaItensGanhos(id);
+  }catch(e){
+    // "não sei" e "não tem" outra vez: um erro de leitura mostrando "sem detalhe por item"
+    // faria alguém concluir que o resultado nunca foi confirmado — e confirmar de novo.
+    box.innerHTML = '<h4>Resultado</h4><div class="salvo">não consegui ler os itens ('+esc(e.message)+') — '
+      + 'isto <b>não</b> quer dizer que não existam.</div>';
+  }
+}
+
+function pintaItensGanhos(id){
+  const box = document.getElementById('ata-resultado'); if(!box) return;
+  const n = NEG.find(x => x.id === id) || {};
+  const cnt = document.getElementById('dw-ata-n');
+  const num = v => { const x = Number(v); return isFinite(x) && v != null ? x : null; };
+
+  if(!ITENS_GANHOS.length){
+    box.innerHTML = '<h4>Resultado</h4>'
+      + '<div class="pk-conta" style="border-color:rgba(124,197,118,.45)">'
+      +   '<b style="color:var(--verde)">Ganho · ' + brl(n.valor_ganho) + '</b>'
+      +   '<div class="salvo" style="margin-top:6px">Resultado <b>importado do histórico</b> — '
+      +   'sem detalhe por item. Os negócios do Calendário guardam o valor total, e não a relação '
+      +   'de itens; para ter o detalhe, anexe o documento de resultado e use o relatório abaixo.</div>'
+      + '</div>';
+    return;
+  }
+  const soma = ITENS_GANHOS.reduce((s,x) => s + (num(x.total) || 0), 0);
+  const dif = Number(n.valor_ganho||0) - soma;
+  const semMarca = ITENS_GANHOS.filter(x => !x.marca).length;
+  const quando = ITENS_GANHOS[0] ? new Date(ITENS_GANHOS[0].confirmado_em) : null;
+  if(cnt) cnt.textContent = ITENS_GANHOS.length;
+
+  box.innerHTML = '<h4>Resultado</h4>'
+    + '<div class="pk-conta" style="border-color:rgba(124,197,118,.45)">'
+    +   '<b style="color:var(--verde)">Ganhou ' + ITENS_GANHOS.length + ' item(ns) · ' + brl(soma) + '</b>'
+    +   '<div class="salvo" style="margin-top:6px">'
+    +     'confirmado' + (quando ? ' em ' + esc(quando.toLocaleDateString('pt-BR')) : '')
+    +     (ITENS_GANHOS[0] && ITENS_GANHOS[0].confirmado_por ? ' por ' + esc(String(ITENS_GANHOS[0].confirmado_por).split('@')[0]) : '')
+    +     (ITENS_GANHOS[0] && ITENS_GANHOS[0].confirmacao > 1 ? ' · <b>' + ITENS_GANHOS[0].confirmacao + 'ª confirmação</b> (as anteriores ficam no rastro)' : '')
+    +   '</div>'
+    // A DIFERENÇA, quando existe, aparece aqui — no lugar onde os dois números estão juntos.
+    +   (Math.abs(dif) >= 0.01
+        ? '<div class="salvo" style="margin-top:6px;color:#e0a04a"><b>⚠️ Conferir:</b> valor da ficha '
+          + brl(n.valor_ganho) + ' · soma dos itens ' + brl(soma) + ' — diferença de ' + brl(Math.abs(dif)) + '.</div>'
+        : '')
+    + '</div>'
+    + '<div style="max-height:300px;overflow:auto"><table class="pk-tab">'
+    + '<thead><tr>' + ['Nº','ITEM','MARCA','QTD','UNIT.','TOTAL'].map(h => '<th>'+h+'</th>').join('') + '</tr></thead><tbody>'
+    + ITENS_GANHOS.map(x => `<tr style="cursor:default">
+        <td>${esc(x.item_n || '—')}</td>
+        <td>${esc(String(x.descricao||'').slice(0,64))}</td>
+        <td>${x.marca ? esc(x.marca) + (x.marca_origem === 'estoque' ? ' <span class="salvo">(do estoque)</span>' : '')
+                      : '<span class="salvo">sem marca no documento</span>'}</td>
+        <td style="text-align:right">${num(x.quantidade) != null ? Number(x.quantidade).toLocaleString('pt-BR') : '—'}</td>
+        <td style="text-align:right">${brl(num(x.valor_unitario))}</td>
+        <td style="text-align:right"><b>${brl(num(x.total))}</b></td>
+      </tr>`).join('')
+    + '</tbody><tfoot><tr><td colspan="5" style="text-align:right"><b>total</b></td>'
+    +   '<td style="text-align:right"><b>' + brl(soma) + '</b></td></tr></tfoot></table></div>'
+    + (semMarca ? '<div class="salvo" style="margin-top:6px">' + semMarca + ' item(ns) sem marca: o documento '
+        + 'não trouxe. <b>Marca em branco é marca não sabida</b> — nunca preenchida por dedução.</div>' : '');
 }
 
 async function anexarAta(id){
@@ -1902,7 +2218,7 @@ function pintaGanhos(id){
               sozinha num campo que a empresa usa pra decidir onde disputar. Confira a tabela acima
               e confirme — a confirmação fica no histórico com a marca de que veio de leitura.
             </div>
-            <button class="btn-ed" onclick="confirmarValorGanho(${id}, ${total.toFixed(2)})">✓ Confirmar ${brl(total)} como valor ganho</button>
+            <button class="btn-ed" onclick="confirmarValorGanho(${id}, ${total.toFixed(2)})">✓ Confirmar ${brl(total)} e gravar os ${g.length} itens</button>
           </div>`
         : (comTotal.length ? '<div class="salvo" style="margin-top:10px">O valor ganho é campo de gestor.</div>' : ''))
     + custoDaLeitura(RELATORIO_ATA.custo);
@@ -1912,7 +2228,10 @@ async function confirmarValorGanho(id, valor){
   const n = NEG.find(x => x.id === id); if(!n) return;
   const saida = document.getElementById('ata-saida');
   const antes = n.valor_ganho;
-  if(!confirm('Gravar ' + brl(valor) + ' como valor ganho deste negócio?'
+  const itensIA = (RELATORIO_ATA && RELATORIO_ATA.dados && Array.isArray(RELATORIO_ATA.dados.ganhos))
+    ? RELATORIO_ATA.dados.ganhos : [];
+  if(!confirm('Gravar ' + brl(valor) + ' como valor ganho deste negócio'
+    + (itensIA.length ? ' e os ' + itensIA.length + ' itens do resultado' : '') + '?'
     + (antes ? '\n\nO valor atual é ' + brl(antes) + ' e será substituído.' : '')
     + '\n\nEste número alimenta a taxa de vitória.')) return;
   try{
@@ -1929,8 +2248,43 @@ async function confirmarValorGanho(id, valor){
         nota: 'confirmado a partir do relatório de itens ganhos lido por IA ('
               + (RELATORIO_ATA && RELATORIO_ATA.anexo ? RELATORIO_ATA.anexo.arquivo_nome : 'documento') + ')' })
     }).catch(()=>{});
-    saida.innerHTML += '<div class="salvo ok" style="margin-top:8px">✓ valor ganho gravado como ' + brl(valor) + ' — a confirmação está no histórico.</div>';
-    carregarRastro(id); pinta();
+    /* ── E OS ITENS VÃO JUNTO ────────────────────────────────────────────────────────────────
+       O relatório deixou de ser papel: o que foi confirmado fica no banco, ligado ao negócio.
+       Assim "o que a gente ganhou naquele pregão?" tem resposta sem reabrir documento nenhum —
+       e sem pagar outra leitura de IA pela mesma informação.
+       >>> A MARCA NUNCA É INVENTADA. Vem da ata quando o documento trouxer (`marca_origem:'ata'`)
+           e fica VAZIA quando não trouxer. O casamento com o estoque é o terceiro caminho e ainda
+           não foi ligado aqui — enquanto não estiver, vazio é vazio, e a tela põe etiqueta.
+       >>> GRAVAR OS ITENS FALHAR NÃO DESFAZ O VALOR. São duas gravações e a primeira já valeu;
+           dizer "não deu certo" faria a pessoa confirmar de novo e criar uma segunda confirmação
+           de um valor que já estava lá. */
+    let msgItens = '';
+    if(itensIA.length){
+      const num = v => { const x = Number(v); return isFinite(x) && v != null && v !== '' ? x : null; };
+      const linhas = itensIA.map(x => ({
+        negocio_id: id,
+        item_n: x.n == null ? null : String(x.n).slice(0,40),
+        descricao: String(x.descricao || '').slice(0, 600) || '(sem descrição no documento)',
+        marca: x.marca ? String(x.marca).slice(0,120) : null,
+        marca_origem: x.marca ? 'ata' : null,
+        quantidade: num(x.quantidade),
+        valor_unitario: num(x.valor_unitario),
+        total: num(x.total) != null ? num(x.total)
+             : (num(x.quantidade) != null && num(x.valor_unitario) != null ? num(x.quantidade) * num(x.valor_unitario) : null),
+        origem: 'ia',
+        confirmado_por: (window.gmAuth && gmAuth.user && gmAuth.user.email) || null,
+      }));
+      try{
+        const ri = await fetch(`${SB_URL}/rest/v1/negocio_itens_ganhos`, {method:'POST',
+          headers: Object.assign({}, SB_H, {'Content-Type':'application/json'}), body: JSON.stringify(linhas)});
+        msgItens = ri.ok
+          ? ' · ' + linhas.length + ' item(ns) gravados'
+          : ' · <b style="color:#ff9d92">os itens NÃO foram gravados (HTTP ' + ri.status + ')</b> — o valor sim';
+      }catch(e){ msgItens = ' · <b style="color:#ff9d92">os itens não foram gravados: ' + esc(e.message) + '</b>'; }
+    }
+    saida.innerHTML += '<div class="salvo ok" style="margin-top:8px">✓ valor ganho gravado como ' + brl(valor)
+      + msgItens + ' — a confirmação está no histórico.</div>';
+    carregarRastro(id); carregarItensGanhos(id); pinta();
   }catch(e){ saida.innerHTML += '<div class="salvo erro" style="margin-top:8px">não consegui gravar: ' + esc(e.message) + '</div>'; }
 }
 

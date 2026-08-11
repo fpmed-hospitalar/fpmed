@@ -41,7 +41,10 @@ ok('4. o rotulo sai de UM lugar (FASES) — etiquetas, quadros e filtros leem da
   /const nomeFase = k => \(FASES\.find\(f=>f\.k===k\)\|\|\{\}\)\.n \|\| k;/.test(N));
 ok('5. e o motivo esta escrito (rotulo e apresentacao; chave e identidade)',
   /Rótulo é apresentação; chave é identidade/.test(N));
-ok('6. o filtro/contador de disputados continua usando a CHAVE', /n\.estagio==='classificacao'/.test(N));
+// 11/08 à tarde: a conta da taxa de vitória saiu de dentro do `pinta()` e virou `numerosDoTopo()`,
+// com o denominador corrigido (negócio ainda EM disputa deixou de contar como perdido). A chave
+// `classificacao` continua sendo a usada — que é o que este assert protege.
+ok('6. o filtro/contador de disputados continua usando a CHAVE', /n\.estagio === 'classificacao'/.test(N));
 
 // ══════════ 2. A TAREFA QUE VIROU BOTAO ══════════
 ok('7. *** "Enviar proposta atualizada" saiu do checklist fixo ***',
