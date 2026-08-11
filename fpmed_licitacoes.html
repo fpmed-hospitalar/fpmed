@@ -124,8 +124,18 @@ select:focus,input:focus{outline:none;border-color:var(--azul)}
        com conteúdo de 375px, campos cortados na direita e barra de rolagem horizontal.
        `box-sizing:border-box` já existia e não resolve isto: o problema não é o padding, é o
        piso de largura do item. */
-#avancada .grid3 > *{min-width:0}
+/* >>> A REGRA VALE PRA TUDO DENTRO DA COLUNA, e não só pros filhos do `.grid3` — foi o erro da
+       1ª tentativa. Eu mirei no grid, medi de novo e continuava 375px de conteúdo em 245px de
+       coluna: quem estourava era a FILEIRA DE BOTÕES do fim (um flex com o texto do refino e
+       dois botões), que o meu seletor não alcançava. Mirar no lugar errado e medir de novo é
+       barato; mirar no lugar errado e não medir teria ido pro ar cortado. */
+#avancada div,#avancada span,#avancada select,#avancada input{min-width:0}
 #avancada select,#avancada input,#avancada textarea{max-width:100%}
+/* A fileira de ações empilha na coluna: "margin-left:auto" numa largura de 245px empurra o
+   botão pra fora em vez de alinhar à direita. */
+#avancada .grid3 ~ div{flex-direction:column;align-items:stretch !important}
+#avancada .grid3 ~ div .btn{margin-left:0 !important;width:100%}
+#avancada .intervalo{flex-wrap:wrap}
 #avancada{overflow-x:hidden}
 .grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px}
 .grid3 label{display:block;font-size:11px;font-weight:600;color:var(--muted);margin-bottom:5px;text-transform:uppercase;letter-spacing:.3px}
