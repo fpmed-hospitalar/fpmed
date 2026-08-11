@@ -424,7 +424,10 @@ select:focus,input:focus{outline:none;border-color:var(--azul)}
   </div>
 
   <div class="kpis" id="kpis" style="display:none">
-    <div class="kpi"><b id="k-total">—</b><span>publicadas no dia</span></div>
+    <!-- O rótulo era "publicadas no dia" e mentia sempre que o período tinha mais de um dia —
+         numa busca de 26/07 a 11/08 ele dizia "no dia" sobre 17 dias. Agora o próprio texto é
+         escrito pelo render, com o período que foi de fato consultado. -->
+    <div class="kpi"><b id="k-total">—</b><span id="k-total-rot">publicadas</span></div>
     <div class="kpi"><b id="k-filtro">—</b><span>batem na busca</span></div>
     <div class="kpi"><b id="k-valor">—</b><span>estimado somado</span></div>
     <div class="kpi"><b id="k-prazo">—</b><span>com proposta aberta</span></div>
@@ -825,21 +828,52 @@ function porNumero(){
 // O PNCP não sai de cena: ele vira ATUALIZAÇÃO, no botão. E quando o banco não tem aquela
 // janela (como agora, que a coleta ainda não rodou com a API no ar), a tela cai pro modo ao
 // vivo sozinha — nunca mostra vazio dizendo que não há licitação.
-async function buscarNoBanco(uf, mod, de, ate){
-  const iso = s => s.slice(0,4)+'-'+s.slice(4,6)+'-'+s.slice(6,8);
-  let q = `${SB_URL}/rest/v1/licitacoes?select=bruto&data_publicacao=gte.${iso(de)}&data_publicacao=lte.${iso(ate)}`
-        + `&order=data_publicacao.desc&limit=1000`;
-  if (uf)  q += `&uf=eq.${encodeURIComponent(uf)}`;
-  if (mod) q += `&modalidade_cod=eq.${encodeURIComponent(mod)}`;
+/* ── LEITURA PAGINADA DO ÍNDICE ──────────────────────────────────────────────────────────────
+   *** DEFEITO MEDIDO EM 11/08, e é o pior tipo: a busca dizia ZERO sabendo menos do que sabia. ***
+   As duas consultas ao banco pediam `limit=1000` e paravam aí. O PostgREST desta instância também
+   corta em 1000 por resposta. Com o índice em 1.881 linhas, **881 nunca chegavam à tela** — e como
+   quem filtra a palavra é o navegador, o "0 batem" era calculado sobre o pedaço carregado.
+   O operador via "nenhuma licitação de albumina" quando a resposta honesta seria "nenhuma NAS QUE
+   EU CARREGUEI". Uma tela que responde 0 com meia base é pior que uma tela que não responde.
+   >>> Já é a SEGUNDA vez que o teto de 1000 desta instância morde este projeto (a primeira foi o
+       dicionário CMED, que paginava em 2000 e lia 1.000 de 6.283 achando que lia tudo). Por isso
+       agora existe UMA função de paginação, e as duas consultas passam por ela.
+   >>> O TETO DE SEGURANÇA É DECLARADO E DITO: 20 páginas (20 mil linhas). Se um dia bater nele, a
+       tela AVISA que leu parcial em vez de fingir que leu tudo — é exatamente o erro que este
+       conserto está desfazendo. */
+const PAG_BANCO = 1000, TETO_PAGINAS_BANCO = 20;
+window._bancoTruncou = false;
+async function lerPaginado(qBase){
   const ctrl = new AbortController();
   const t = setTimeout(()=>ctrl.abort(), TIMEOUT_MS);
   try{
-    const r = await fetch(q, {headers:SB_H, signal:ctrl.signal});
-    if(!r.ok) return null;                       // banco fora ou sem permissão: cai pro ao vivo
-    const j = await r.json();
-    return Array.isArray(j) ? j.map(x => x.bruto).filter(Boolean) : null;
+    let out = [], de = 0;
+    for(let p = 0; p < TETO_PAGINAS_BANCO; p++){
+      const r = await fetch(qBase, {
+        headers: Object.assign({ Range: de + '-' + (de + PAG_BANCO - 1) }, SB_H),
+        signal: ctrl.signal,
+      });
+      if(!r.ok) return out.length ? out : null;   // sem nada lido, é "não sei"; com algo, devolve
+      const j = await r.json();
+      if(!Array.isArray(j) || !j.length) return out;
+      out = out.concat(j);
+      if(j.length < PAG_BANCO) return out;        // veio página incompleta: acabou
+      de += PAG_BANCO;
+    }
+    window._bancoTruncou = true;                  // bateu no teto: a tela precisa DIZER isso
+    return out;
   }catch(e){ return null; }
   finally{ clearTimeout(t); }
+}
+
+async function buscarNoBanco(uf, mod, de, ate){
+  const iso = s => s.slice(0,4)+'-'+s.slice(4,6)+'-'+s.slice(6,8);
+  let q = `${SB_URL}/rest/v1/licitacoes?select=bruto&data_publicacao=gte.${iso(de)}&data_publicacao=lte.${iso(ate)}`
+        + `&order=data_publicacao.desc`;
+  if (uf)  q += `&uf=eq.${encodeURIComponent(uf)}`;
+  if (mod) q += `&modalidade_cod=eq.${encodeURIComponent(mod)}`;
+  const j = await lerPaginado(q);
+  return j ? j.map(x => x.bruto).filter(Boolean) : null;
 }
 // ── O ÍNDICE INTEIRO, sem janela de data (10/08) ──────────────────────────────────────────
 // Usado quando a janela escolhida não tem nada E o operador digitou um termo. Não filtra por
@@ -848,18 +882,13 @@ async function buscarNoBanco(uf, mod, de, ate){
 // ("farmaceutico" não casaria com "FARMACÊUTICO"), então ele perderia justamente o que o do
 // navegador acha. Com o índice na casa dos milhares, trazer e filtrar aqui é instantâneo.
 async function buscarNoBancoAmplo(uf, mod){
-  let q = `${SB_URL}/rest/v1/licitacoes?select=bruto&order=data_publicacao.desc&limit=1000`;
+  // Esta é a consulta do "procurei no índice INTEIRO" — era a que mais mentia parando em 1000,
+  // porque é justamente a que promete ter olhado tudo.
+  let q = `${SB_URL}/rest/v1/licitacoes?select=bruto&order=data_publicacao.desc`;
   if (uf)  q += `&uf=eq.${encodeURIComponent(uf)}`;
   if (mod) q += `&modalidade_cod=eq.${encodeURIComponent(mod)}`;
-  const ctrl = new AbortController();
-  const t = setTimeout(()=>ctrl.abort(), TIMEOUT_MS);
-  try{
-    const r = await fetch(q, {headers:SB_H, signal:ctrl.signal});
-    if(!r.ok) return null;
-    const j = await r.json();
-    return Array.isArray(j) ? j.map(x => x.bruto).filter(Boolean) : null;
-  }catch(e){ return null; }
-  finally{ clearTimeout(t); }
+  const j = await lerPaginado(q);
+  return j ? j.map(x => x.bruto).filter(Boolean) : null;
 }
 
 // A FAIXA DISCRETA: o PNCP caiu, mas há resultado na tela. Fica ACIMA da lista, some sozinha do
@@ -1740,6 +1769,17 @@ function render(todos, kws, excl, aviso, procedencia){
 
   document.getElementById('kpis').style.display='grid';   // era 'flex' e anulava o grid-template do CSS
   document.getElementById('k-total').textContent   = todos.length;
+  /* O RÓTULO DIZ O PERÍODO QUE FOI CONSULTADO, e não "no dia" fixo. Numa busca de 26/07 a 11/08
+     o texto antigo afirmava "publicadas no dia" sobre 17 dias — número certo, legenda errada, que
+     é o jeito mais barato de alguém tirar a conclusão errada de um dado correto. */
+  (function(){
+    const rot = document.getElementById('k-total-rot'); if(!rot) return;
+    const de = (document.getElementById('f-de')||{}).value, ate = (document.getElementById('f-ate')||{}).value;
+    const dm = s => s ? s.slice(8,10)+'/'+s.slice(5,7) : '';
+    rot.textContent = !de || !ate ? 'publicadas'
+      : de === ate ? 'publicadas em ' + dm(de)
+      : 'publicadas de ' + dm(de) + ' a ' + dm(ate);
+  })();
   document.getElementById('k-filtro').textContent  = hits.length;
   document.getElementById('k-valor').textContent   = brl(soma);
   document.getElementById('k-prazo').textContent   = abertas.length;

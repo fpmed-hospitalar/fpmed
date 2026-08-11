@@ -525,6 +525,33 @@ Criado em 21/07/2026 copiando SO os arquivos do app do C:\globalmed.
     Suite nova testa_pix (17). Ela ja pegou uma 2a copia do CNPJ escrita num COMENTARIO do
     config — que e exatamente o jeito classico de a copia nascer (alguem copia do comentario).
 
+>>> 11/08 — !! A BUSCA DIZIA "ZERO" SABENDO MENOS DO QUE SABIA. Investigacao da "albumina". !!
+    Relato: Natanael buscou "albumina" de 26/07 a 11/08 e deu 0, com a tela mostrando 207 linhas.
+    AS TRES RESPOSTAS QUE ELE PEDIU:
+    1. ALBUMINA EXISTE NO INDICE? **NAO.** Li as 1.881 linhas paginando e procurei sem acento no
+       `objeto` E no `bruto` inteiro: ZERO ocorrencia. Naquele periodo nao houve licitacao de
+       albumina no que nos coletamos. O "0" estava CERTO — por acaso.
+    2. QUANTAS LINHAS O PERIODO TEM DE VERDADE? **1.881** (o indice inteiro cabe nesse periodo: a
+       coleta so comecou a encher em 04/08). So GO: 752.
+    3. E POR QUE E "POR ACASO": *** as duas consultas ao banco pediam `limit=1000` e paravam ai,
+       e o PostgREST desta instancia TAMBEM corta em 1000. 881 linhas NUNCA chegavam a tela. ***
+       Como quem filtra a palavra e o navegador, o "0 batem" era calculado sobre o pedaco
+       carregado. Se a albumina estivesse nas 881 de fora, a tela teria dito 0 do mesmo jeito.
+       Tela que responde 0 com meia base e pior que tela que nao responde.
+    >>> SEGUNDA VEZ QUE O TETO DE 1000 DESTA INSTANCIA MORDE. A primeira foi o dicionario CMED
+        (paginava em 2000, lia 1.000 de 6.283 achando que lia tudo, item 1B). Por isso agora ha
+        UMA funcao `lerPaginado` e as DUAS consultas passam por ela — nao dois lacos parecidos.
+    CORRIGIDO E PROVADO CONTRA O BANCO REAL: antes 1.000 linhas · depois **1.881** = o indice
+    inteiro. Teto de seguranca DECLARADO (20 paginas) e, se bater nele, a tela marca leitura
+    parcial em vez de fingir que leu tudo — que e o erro que este conserto desfaz.
+    >>> E O ROTULO MENTIA JUNTO: o KPI dizia "publicadas NO DIA" num periodo de 17 dias. Numero
+        certo, legenda errada — o jeito mais barato de alguem tirar a conclusao errada de um dado
+        correto. Agora ele escreve o periodo consultado ("publicadas de 26/07 a 11/08").
+    >>> O QUE **NAO** MUDOU, de proposito: o termo continua NAO indo pro banco. O filtro do
+        PostgREST e sensivel a acento ("farmaceutico" nao casa com "FARMACÊUTICO") e perderia
+        justamente o que o semAcento do navegador acha. Quem filtra palavra segue sendo o render.
+    Suite nova testa_cobertura_busca (16). Total: 2.131 asserts / 0 falhas / 65 suites.
+
 >>> 11/08 — "IR PRO FUNIL" no cartao da lista (e da agenda).
     A lista responde "o que eu tenho"; o funil responde "em que pe esta". Quem via um negocio na
     lista e queria o segundo trocava de visao e CACAVA o card entre as colunas — e o titulo do
