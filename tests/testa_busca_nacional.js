@@ -52,8 +52,24 @@ ok('10. ...e o motivo esta escrito (misturar faria tratar como igual o que nao e
   /misturar as duas numa lista só faria o operador\s*tratar como igual o que não é/.test(uc(L)));
 ok('11. *** cada bloco se identifica: 🌎 nacional ao vivo x o indice acima ***',
   /🌎 <b>Busca nacional no PNCP<\/b> \(ao vivo\)/.test(L));
-ok('12. *** o nacional e disparado DEPOIS, pra nao segurar o indice ***',
-  /dispararBuscaNacional\(\);/.test(L) && /Segurar a tela esperando a rede/.test(uc(L)));
+/* ── 11/08, DEFEITO EM PRODUCAO: O BLOCO NAO PINTAVA COM 0 NO INDICE ────────────────────────
+   O disparo estava DEPOIS do `return` do caso vazio, entao com "0 batem" a busca nacional nunca
+   rodava — justamente a hora em que ela mais faz falta. O operador viu "0 batem" e nada embaixo
+   e concluiu que o recurso nao estava no ar; estava, e o PNCP tambem (medido: HTTP 200 em 102ms).
+   Estes tres asserts existem pra que isso nao volte. */
+ok('12. *** o disparo vem ANTES do return do caso vazio ***',
+  L.indexOf('nacionalProtegido();') < L.indexOf('lista.innerHTML=h; return;')
+  && L.indexOf('nacionalProtegido();') > 0);
+ok('12b. *** e o caso "0 no indice" AVISA que esta procurando no Brasil ***',
+  /Procurando "' \+ esc\(termoNacional\(\)\) \+ '" no PNCP nacional logo abaixo/.test(L)
+  && /ZERO NO ÍNDICE NÃO É ZERO NO BRASIL/.test(L));
+ok('12c. *** sem termo o bloco tambem NAO some calado: explica o gesto ***',
+  /digite <b>um único termo<\/b> no campo de busca/.test(L)
+  && /só aparece quando alguém adivinha o gesto certo é um recurso que ninguém acha/.test(uc(L)));
+ok('12d. *** e um erro sincrono nao derruba a lista inteira ***',
+  /function nacionalProtegido\(\)/.test(L) && /a busca nacional falhou aqui na tela/.test(L));
+ok('12e. ...com a regra escrita (busca que falha calada parece busca que nao existe)',
+  /BUSCA QUE FALHA CALADA PARECE BUSCA QUE NÃO EXISTE/.test(L));
 ok('13. resposta lenta de uma busca antiga nao pinta em cima da nova',
   /const meu = \+\+_nacToken;/.test(L) && /if\(meu !== _nacToken\) return;/.test(L));
 

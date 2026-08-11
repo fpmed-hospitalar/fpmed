@@ -1831,11 +1831,26 @@ function termoNacional(){
   return partes[0].length >= 3 ? partes[0] : null;
 }
 
+/* ══ O BLOCO NACIONAL NUNCA FICA MUDO ════════════════════════════════════════════════════════
+   Regra dura, escrita depois do defeito de 11/08: com termo no campo, este bloco pinta SEMPRE —
+   resultado, "consultei e não achou", ou "não consegui consultar agora". Nunca nada.
+   >>> BUSCA QUE FALHA CALADA PARECE BUSCA QUE NÃO EXISTE. Foi exatamente o que aconteceu: o
+       operador viu "0 batem" e nenhum bloco embaixo, e concluiu que a busca nacional não estava
+       no ar. Estava — e o PNCP também. O que faltava era a chamada, que eu tinha posto depois do
+       `return` do caso vazio.
+   >>> E SEM TERMO ELE TAMBÉM NÃO SOME EM SILÊNCIO: explica o que fazer pra usar. Um recurso que
+       só aparece quando alguém adivinha o gesto certo é um recurso que ninguém acha. */
 let _nacToken = 0;
 async function dispararBuscaNacional(){
   const box = document.getElementById('nacional'); if(!box) return;
   const termo = termoNacional();
-  if(!termo){ box.style.display = 'none'; box.innerHTML = ''; return; }
+  if(!termo){
+    box.style.display = 'block';
+    box.innerHTML = '<div class="contagem" style="opacity:.8"><span>🌎 <b>Busca nacional no PNCP</b> — '
+      + 'digite <b>um único termo</b> no campo de busca (ex.: <i>albumina</i>) e procure de novo: '
+      + 'aí eu consulto o Brasil inteiro, além do nosso índice.</span></div>';
+    return;
+  }
   const uf = (document.getElementById('f-uf') || {}).value || '';
   // Cada busca invalida a anterior: sem isto, uma resposta lenta de "albumina" pintaria em cima
   // do resultado de "dipirona" que a pessoa pediu depois.
@@ -1849,6 +1864,19 @@ async function dispararBuscaNacional(){
   }catch(e){
     if(meu !== _nacToken) return;
     pintaNacional(termo, uf, null, e.message);
+  }
+}
+/* E O `render()` CHAMA ISTO DENTRO DE UM ESCUDO. Se `dispararBuscaNacional` estourar de forma
+   síncrona (um id que sumiu do HTML, por exemplo), o `render` inteiro morreria — e a tela ficaria
+   sem lista NENHUMA por causa de um recurso secundário. O escudo troca "tela quebrada" por "bloco
+   nacional dizendo que quebrou", que é o desfecho certo dos dois. */
+function nacionalProtegido(){
+  try{ dispararBuscaNacional(); }
+  catch(e){
+    const box = document.getElementById('nacional');
+    if(box){ box.style.display = 'block';
+      box.innerHTML = '<div class="contagem" style="opacity:.85"><span>🌎 <b>a busca nacional falhou aqui na tela</b> ('
+        + esc(e.message) + '). O que está acima é o nosso índice, e continua valendo.</span></div>'; }
   }
 }
 
@@ -1960,12 +1988,22 @@ function render(todos, kws, excl, aviso, procedencia){
        + pills.map(x=>'<span class="pill">'+esc(x)+'</span>').join('')
        + '<a class="hint" style="cursor:pointer;text-decoration:underline;color:var(--azul-claro)" onclick="limparRefino()">limpar</a></div>';
   }
+  /* >>> A BUSCA NACIONAL DISPARA AQUI, ANTES do `return` do caso vazio — e esta linha é o
+         conserto de um defeito que eu mesmo criei em 11/08. Ela estava logo abaixo, depois deste
+         `if`, e por isso **nunca rodava justamente quando mais fazia falta**: índice com ZERO
+         resultado é exatamente a hora em que o operador quer saber se o Brasil tem aquilo.
+         O print do Lemuel era esse caso: "0 batem" e nenhum bloco nacional embaixo. */
+  nacionalProtegido();
+
   if(!hits.length){
     h += '<div class="aviso">Nenhuma licitação bate na busca.<div class="hint" style="margin-top:6px">'
        + todos.length+' publicada(s) no período com esses filtros.'
        + (pills.length ? ' <b>Há refino ligado</b> — talvez seja ele, e não a busca.' : ' Tente limpar as palavras-chave.')
        + (r.desertas ? '<br>A marca de <b>deserta por item</b> só existe depois de ler os itens daquela licitação'
                      + ' (botão “Cruzar”): antes disso o PNCP não conta essa situação na busca.' : '')
+       // ZERO NO ÍNDICE NÃO É ZERO NO BRASIL, e a tela precisa dizer as duas coisas.
+       + (termoNacional() ? '<br><b>Procurando "' + esc(termoNacional()) + '" no PNCP nacional logo abaixo</b> — '
+            + 'o nosso índice cobre 7 UFs; o PNCP cobre o país todo.' : '')
        + '</div></div>';
     lista.innerHTML=h; return;
   }
@@ -1991,11 +2029,6 @@ function render(todos, kws, excl, aviso, procedencia){
      + '<button class="btn sec mini" id="bt-todos" onclick="cruzarTodos()" '
      +   'title="lê os itens de cada edital em lotes de 3 e marca os que temos">🎯 Cruzar todas com o estoque</button>'
      + '</div>';
-
-  // A BUSCA NACIONAL É DISPARADA DEPOIS, e não junto: o índice é instantâneo e o PNCP leva
-  // segundos. Segurar a tela esperando a rede pra mostrar o que já está na memória seria trocar
-  // uma resposta rápida e certa por uma lenta e igual.
-  dispararBuscaNacional();
 
   window._hits = hits;                       // os cards chamam verItens(i) por índice
   hits.forEach((l, i) => {
