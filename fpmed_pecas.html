@@ -337,7 +337,47 @@ document.getElementById('tipos').innerHTML = TIPOS.map(t =>
 document.getElementById('f-cidade').value = EMP.cidade || '';
 
 let _iniciado = false;
-function iniciar(){ if(_iniciado) return; _iniciado = true; carregarHist(); }
+/* ── O CERTAME QUE VEIO DA FICHA DO NEGÓCIO (11/08) ──────────────────────────────────────────
+   O funil manda órgão, nº e data da sessão; esta tela faz o resto. É atalho com contexto, e não
+   uma segunda tela de peças — o que diverge, se houvesse duas, é prazo legal.
+   >>> SÓ PREENCHE CAMPO VAZIO. Se a pessoa já tinha começado a escrever aqui, o que ela digitou
+       vale mais que o que veio de lá — sobrescrever seria perder trabalho sem avisar.
+   >>> E CONSOME UMA VEZ: recarregar a página depois não repõe os campos por baixo do que a
+       pessoa já mudou. */
+function certameDoFunil(){
+  let d = null;
+  try{
+    const cru = sessionStorage.getItem('fpmed_peca_certame');
+    if(!cru) return;
+    d = JSON.parse(cru);
+    sessionStorage.removeItem('fpmed_peca_certame');
+  }catch(e){ return; }
+  if(!d) return;
+  const por = (id, val) => {
+    const el = document.getElementById(id);
+    if(el && !String(el.value||'').trim() && val) el.value = val;
+  };
+  por('f-orgao', d.orgao);
+  por('f-compra', [d.modalidade, d.numero].filter(Boolean).join(' ') || d.numero);
+  if(d.abertura) por('f-sessao', String(d.abertura).slice(0,10));
+  // a cidade da assinatura é a da EMPRESA, não a do órgão: quem assina a peça é a FPMED
+  try{
+    const e = (window.LIMEDTEC_CLIENTE && LIMEDTEC_CLIENTE.empresa) || {};
+    por('f-cidade', e.cidade || null);
+  }catch(e){}
+  const box = document.getElementById('prazo-box');
+  if(box){
+    const av = document.createElement('div');
+    av.style.cssText = 'margin:8px 0;padding:8px 11px;border-radius:8px;font-size:12px;'
+      + 'border:1px solid rgba(44,169,224,.45);color:#bfe0f4;background:rgba(44,169,224,.08)';
+    av.innerHTML = 'Dados do certame trazidos do funil. <b>Os fatos, o fundamento e o pedido '
+      + 'continuam sendo seus</b> — a ficha não sabe o que aconteceu na sessão.';
+    box.parentNode.insertBefore(av, box);
+  }
+  if(typeof render === 'function') render();
+}
+
+function iniciar(){ if(_iniciado) return; _iniciado = true; certameDoFunil(); carregarHist(); }
 if(window.gmAuth) iniciar();
 else { document.addEventListener('gm-auth-ready', iniciar, { once:true }); setTimeout(iniciar, 12000); }
 </script>

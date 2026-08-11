@@ -227,11 +227,17 @@ ok('anotação que não salvou avisa pra copiar o texto antes de sair', /copie o
 ok('mover no kanban grava', /await gravar\(id, \{ estagio: fase \}\)/.test(src));
 ok('...e volta o card pro lugar se a gravação falhar', /n\.estagio = antes; pinta\(\)/.test(src));
 ok('mudar o estágio pelo drawer também desfaz na falha', /n\.estagio = antes; abrirDrawer\(id\)/.test(src));
-ok('marcar tarefa desfaz na falha', /n\.tarefas\[i\]\.feita = antes/.test(src));
+// 11/08: o CHECKLIST FIXO das 15 tarefas saiu da tela (decisao do Lemuel — a equipe nao usa),
+// e com ele a `marcaTarefa`. Nao ha mais o que desfazer porque nao ha mais o que marcar.
+// O que o assert protege agora e o que ficou no lugar: o DADO nao foi apagado.
+ok('o checklist fixo saiu da TELA, nao do BANCO', /Some da tela, não do banco/.test(src));
 ok('arquivar grava', /gravar\(id, \{ arquivado:true \}\)/.test(src));
 ok('*** existe DESARQUIVAR — é como a linha arquivada por engano volta ***',
   /async function desarquivar\(id\)/.test(src) && /arquivado:false/.test(src));
-ok('...e quem volta pro funil volta com o checklist', /campos\.tarefas = novasTarefas\(\)/.test(src));
+// E desarquivar NAO cria mais as 15: com o checklist fora da tela, isso gravaria dado que
+// ninguem ve — e dado invisivel e o que um dia alguem acha e nao sabe se vale.
+ok('...e quem volta pro funil NAO ganha checklist invisivel',
+  !/campos\.tarefas = novasTarefas\(\)/.test(src) && /novo não se cria/.test(src));
 ok('o PATCH carimba atualizado_em', /atualizado_em: new Date\(\)\.toISOString\(\)/.test(src));
 ok('403 no PATCH explica que só gestor grava', /só gestor grava no funil/.test(src));
 

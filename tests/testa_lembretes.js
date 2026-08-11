@@ -72,7 +72,10 @@ ok('23. *** falha ao ler vira "NAO SEI", nunca "nada agendado" ***',
 ok('24. *** lembrete entra no badge (fica aceso ate alguem RESOLVER) ***',
   /const total = n\.urgentes \+ docsRuins \+ lemAbertos;/.test(tela));
 ok('25. clicar no aviso abre o negocio dono do lembrete', /onclick="irPara\(\$\{l\.negocio_id\}\)"/.test(tela));
-ok('26. lembrete atrasado e marcado como tal', /atrasado\?' · atrasado'/.test(tela));
+// 11/08: a linha do sino passou a servir lembrete E tarefa, entao o sufixo concorda com o
+// genero ("atrasado"/"atrasada"). O que este assert protege continua sendo o mesmo: quem
+// esta atrasado aparece marcado, e nao se confunde com quem esta no prazo.
+ok('26. lembrete atrasado e marcado como tal', /atrasado\?' · atrasad'\+\(eTarefa\?'a':'o'\)/.test(tela));
 ok('27. *** vem DEPOIS das sessoes: sessao tem hora do orgao e nao se remarca ***',
   /sessão tem hora marcada pelo\s+órgão e não se remarca/.test(tela.replace(/\s+/g,' '))
   || /não se remarca/.test(tela));

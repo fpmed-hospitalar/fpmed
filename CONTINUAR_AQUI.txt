@@ -525,6 +525,52 @@ Criado em 21/07/2026 copiando SO os arquivos do app do C:\globalmed.
     Suite nova testa_pix (17). Ela ja pegou uma 2a copia do CNPJ escrita num COMENTARIO do
     config — que e exatamente o jeito classico de a copia nascer (alguem copia do comentario).
 
+>>> 11/08 — FASE HABILITACAO: rotulo, checklist enxuto, tarefas do dia a dia e atalho das Pecas.
+    1. ROTULO "Classificação" -> "HABILITAÇÃO". *** A CHAVE `classificacao` NAO FOI TOCADA. ***
+       Ela esta em 2.555 linhas de `negocios`, no check constraint, no MAPA_STATUS do semeador e
+       no historico de alteracoes. Renomear o VALOR exigiria migracao de dado + DDL + reescrever
+       historico pra mudar uma palavra que so existe pra ser lida. Rotulo e apresentacao; chave e
+       identidade. E como o rotulo sai de UM lugar (`FASES`), etiquetas, quadros, filtros e
+       contadores mudaram juntos — uma linha.
+    2. "Enviar proposta atualizada" SAIU do checklist: virou botao de verdade. Checkbox que
+       duplica acao real pode estar MARCADO enquanto a acao nao aconteceu — o checklist afirmando
+       o que nao foi feito. REGRA GERAL registrada: todo item que virar funcao real sai da lista.
+       >>> O QUE JA ESTA GRAVADO NAO FOI MEXIDO: negocio antigo segue com os 15 itens no JSONB.
+           Apagar item de checklist de negocio fechado seria reescrever o que a pessoa marcou.
+    2b. CORRECAO DELE NA MESMA RODADA: sai o CHECKLIST FIXO INTEIRO, e nao so um item — as 15
+       caixinhas, o "4/15" da aba e o medidor com a barrinha nos cards da lista e do funil. Razao
+       dele: a equipe nao usa. A aba Tarefas virou SO as personalizadas.
+       >>> O DADO NAO FOI APAGADO. `negocios.tarefas` (JSONB) continua com o que foi marcado em
+           2.555 negocios. Some da tela, nao do banco — se um dia quiserem de volta, esta inteiro.
+       >>> E PAREI DE CRIAR: desarquivar nao gera mais as 15. Com o checklist fora da tela, isso
+           gravaria dado que ninguem ve — e dado invisivel e o que um dia alguem acha e nao sabe
+           se vale. `novasTarefas` fica no codigo como a LEGENDA do que aquele campo significa;
+           sem ela, os 2.555 registros viram JSONB sem explicacao. `marcaTarefa` e o CSS do
+           checklist foram removidos: codigo morto guardado "por via das duvidas" e o que
+           envelhece errado, e o git guarda tudo.
+    3. TAREFAS PERSONALIZADAS na aba Tarefas (texto + data OPCIONAL + prioridade).
+       >>> ELAS MORAM NA TABELA `lembretes`, separadas por `tipo` ('lembrete'|'tarefa'). Uma
+           "tarefa com data e prioridade" E um lembrete, campo a campo — tabela nova seria duas
+           tabelas iguais, dois caminhos ate o sino e dois lugares pra corrigir. E a `tipo` existe
+           porque as duas ABAS respondem perguntas diferentes (a regra das 4 abas, de 08/08).
+       >>> A DATA E OPCIONAL E A TELA DIZ O QUE MUDA ("com data, entra no sino"): campo de data
+           obrigatorio faria a pessoa inventar uma, e data inventada vira alerta que ninguem quer
+           — que e como se aprende a ignorar o sino.
+       No sino as duas aparecem, e ele DIZ qual e qual: "tarefa atrasada" e "lembrete atrasado"
+       pedem coisas diferentes de quem le. DDL aditivo ddl/lembretes_tipo.sql (rodado 2x).
+    4. ATALHO "⚖️ Recurso / esclarecimento" no rodape da ficha: abre as PECAS que ja existem com
+       orgao, nº e data da sessao preenchidos (por sessionStorage — objeto de edital tem centenas
+       de caracteres e URL enorme e o que alguem cola cortado). NAO duplica as Pecas: o que
+       diverge, se houvesse duas, e PRAZO LEGAL. So preenche campo VAZIO (o que a pessoa ja
+       digitou vale mais) e a tela DIZ que fatos, fundamento e pedido continuam sendo dela — a
+       ficha nao sabe o que aconteceu na sessao.
+    Suite nova testa_habilitacao (31). Total: 2.187 asserts / 0 falhas / 67 suites.
+    >>> FALTA DESTE PEDIDO, e e dependencia real: os DOIS botoes de ANEXO ("proposta ajustada" e
+        "documentacao") precisam do anexo por negocio — bucket + tabela de versoes — que e
+        exatamente o item "PROPOSTA ANEXADA + COMPARATIVO PMVG" que ja esta na fila. Nao fiz meia
+        versao: botao de anexar que nao guarda versao seria pior que botao nenhum. Os dois saem
+        juntos quando aquele item entrar.
+
 >>> 11/08 — LEMBRETE AUTOMATICO DA ABERTURA DA SESSAO (ficha, sino e e-mail).
     >>> A DECISAO QUE FAZ O PEDIDO FUNCIONAR: o lembrete da sessao e **DERIVADO** de
         `negocios.abertura`, e NAO uma linha gravada em `lembretes`. Ele pediu "se a abertura for

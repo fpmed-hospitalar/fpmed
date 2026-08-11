@@ -126,8 +126,6 @@ header nav a.on{background:rgba(44,169,224,.16);color:var(--azul-claro);font-wei
 .etq .num{background:rgba(44,169,224,.14);border:1px solid rgba(44,169,224,.36);color:#8ed3f5}
 .etq .obs{background:rgba(224,160,74,.14);border:1px solid rgba(224,160,74,.36);color:#e8bc7e}
 .card .prog{font-size:11.5px;color:var(--muted);margin-top:9px;display:flex;align-items:center;gap:8px}
-.card .barra-prog{flex:1;max-width:130px;height:4px;background:var(--painel2);border-radius:3px;overflow:hidden}
-.card .barra-prog i{display:block;height:100%;background:var(--verde)}
 /* AÇÕES só no hover, como no SIGA: elas não podem competir com o conteúdo do card */
 .card .acoes{position:absolute;bottom:11px;right:14px;display:flex;gap:6px;opacity:0;transition:opacity .16s}
 .card:hover .acoes{opacity:1}
@@ -260,15 +258,9 @@ textarea.anot:focus{border-color:var(--azul)}
 .rastro span{display:block;color:var(--muted);font-size:10.5px}
 .salvo.ok{color:var(--verde)}
 .salvo.erro{color:var(--vermelho)}
-.tf-secao{font-family:Montserrat;font-size:10.5px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;
-  margin:13px 0 6px;display:flex;align-items:center;gap:7px}
-.tf-secao .bola{width:8px;height:8px;border-radius:50%}
 .tf{display:flex;gap:9px;align-items:flex-start;padding:6px 0;font-size:12.5px;cursor:pointer;line-height:1.45}
 .tf input{margin-top:2px;accent-color:var(--verde);cursor:pointer}
 .tf.feita span{color:var(--muted);text-decoration:line-through}
-.dw-prog{display:flex;align-items:center;gap:9px;font-size:12px;color:var(--muted)}
-.dw-prog .b{flex:1;height:6px;background:var(--painel2);border-radius:4px;overflow:hidden}
-.dw-prog .b i{display:block;height:100%;background:var(--verde)}
 .dw-acoes{display:flex;gap:8px;flex-wrap:wrap;margin-top:24px;padding-top:16px;border-top:1px solid var(--linha)}
 .dw-acoes button{background:var(--painel2);border:1px solid var(--linha);color:var(--texto);border-radius:9px;
   padding:8px 14px;font-size:12px;font-family:inherit;cursor:pointer}
@@ -367,7 +359,12 @@ const FASES = [
   { k:'oportunidade',  n:'Oportunidade',  c:'#8DC63F' },
   { k:'qualificacao',  n:'Qualificação',  c:'#2CA9E0' },
   { k:'disputa',       n:'Disputa',       c:'#e0a04a' },
-  { k:'classificacao', n:'Classificação', c:'#8B7FD4' },
+  /* RÓTULO trocado em 11/08 (Classificação -> Habilitação), CHAVE mantida.
+     A chave `classificacao` está gravada em 2.555 linhas de `negocios`, no check constraint da
+     tabela, no MAPA_STATUS do semeador e no histórico de alterações. Renomear o VALOR exigiria
+     migração de dado + DDL + reescrever histórico, pra mudar uma palavra que só existe pra ser
+     lida. Rótulo é apresentação; chave é identidade. Quem lê vê "Habilitação"; o banco não muda. */
+  { k:'classificacao', n:'Habilitação',    c:'#8B7FD4' },
   { k:'contrato',      n:'Contrato',      c:'#1E9E6A' },
 ];
 const nomeFase = k => (FASES.find(f=>f.k===k)||{}).n || k;
@@ -389,9 +386,20 @@ const TAREFAS_MODELO = [
   ['classificacao', 'Analisar documentação dos concorrentes'],
   ['classificacao', 'Analisar produto dos concorrentes'],
   ['classificacao', 'Enviar recurso / contrarrazão'],
-  ['classificacao', 'Enviar proposta atualizada'],
+  /* "Enviar proposta atualizada" SAIU do checklist em 11/08: ela virou BOTÃO de verdade na fase
+     Habilitação (anexar a versão ajustada). Checkbox que duplica ação real é ruído — e pior que
+     ruído: ele pode estar marcado enquanto a proposta ajustada não foi anexada, e aí o checklist
+     afirma o que não aconteceu.
+     >>> REGRA GERAL, registrada aqui pra valer nas próximas: todo item do checklist que virar
+         função real SAI da lista fixa. O checklist é pra o que só existe como intenção.
+     >>> O que já está gravado NÃO é mexido: negócios antigos seguem com os 15 itens no `tarefas`
+         (JSONB), inclusive este. Apagar item de checklist de negócio fechado seria reescrever o
+         que a pessoa marcou. A lista nova vale pra quem nascer daqui pra frente. */
   ['contrato',      'Assinar contrato'],
 ];
+// `novasTarefas` não é mais chamada (o checklist saiu da tela em 11/08). Fica como a definição
+// do que aquele campo significa, para quem for ler o `negocios.tarefas` gravado — sem ela, os
+// 2.555 registros viram um JSONB sem legenda.
 const novasTarefas = () => TAREFAS_MODELO.map(([secao,texto]) => ({secao, texto, feita:false}));
 
 let NEG = [], EMPRESAS = [], VIS = 'lista', FASE_SEL = null, ERRO = null, ABERTO = null;
@@ -482,7 +490,9 @@ async function carregar(){
   // mesmo critério das sessões: o sino é do dia, não da vida inteira.
   try{
     const amanha = new Date(); amanha.setDate(amanha.getDate()+2); amanha.setHours(0,0,0,0);
-    const rl = await fetch(`${SB_URL}/rest/v1/lembretes?feito=is.false&quando=lt.${amanha.toISOString()}&select=id,negocio_id,titulo,quando,prioridade&order=quando.asc&limit=50`, {headers:SB_H});
+    // `tipo` vem junto: tarefa e lembrete entram os DOIS no sino (foi o pedido), mas o sino diz
+    // qual é qual — "tarefa atrasada" e "lembrete atrasado" pedem coisas diferentes de quem lê.
+    const rl = await fetch(`${SB_URL}/rest/v1/lembretes?feito=is.false&quando=lt.${amanha.toISOString()}&select=id,negocio_id,titulo,quando,prioridade,tipo&order=quando.asc&limit=50`, {headers:SB_H});
     LEM_SINO = rl.ok ? await rl.json() : 'erro';
   }catch(e){ LEM_SINO = 'erro'; }
   const sel = document.getElementById('f-empresa');
@@ -551,9 +561,8 @@ function pinta(){
 }
 
 function card(n, noKanban){
-  const t = Array.isArray(n.tarefas) ? n.tarefas : null;
-  const feitas = t ? t.filter(x=>x.feita).length : 0;
-  const pct = t && t.length ? Math.round(feitas/t.length*100) : 0;
+  // O medidor "4/15" saiu do card em 11/08 junto com o checklist fixo (decisão do Lemuel: a
+  // equipe não usa). O `tarefas` continua no banco — some da tela, não do dado.
   const dia = diaDe(n.abertura), hoje = hojeYMD();
   const quando = dia === hoje ? ' hoje' : (dia && dia < hoje ? ' passou' : '');
   // Os campos do card são os que a FPMED já usa na planilha: portal, órgão, número,
@@ -575,7 +584,6 @@ function card(n, noKanban){
       ${n.valor_ganho>0 && ehGestor() ? `<span class="mod">🏆 ${brl(n.valor_ganho)}</span>` : ''}
       ${n.anotacoes && String(n.anotacoes).trim() ? `<span class="obs">✎ anotado</span>` : ''}
     </div>
-    ${t ? `<div class="prog">☑ ${feitas}/${t.length}<span class="barra-prog"><i style="width:${pct}%"></i></span></div>` : ''}
     <div class="acoes">
       ${noKanban ? '' : `<button onclick="event.stopPropagation();irProFunil(${n.id})" title="abre os Quadros na coluna da fase deste negócio, com ele em destaque">ir pro funil</button>`}
       ${n.arquivado ? `<button onclick="event.stopPropagation();desarquivar(${n.id})" title="devolve pro funil">desarquivar</button>`
@@ -682,8 +690,10 @@ async function arquivar(id){
 async function desarquivar(id){
   const n = NEG.find(x => x.id === id); if(!n) return;
   try{
+    // Até 11/08, desarquivar criava as 15 tarefas do checklist. Com o checklist fora da tela,
+    // isso passaria a gravar dado que ninguém vê — e dado invisível é o que um dia alguém acha e
+    // não sabe se vale. O que já está gravado continua; novo não se cria.
     const campos = { arquivado:false };
-    if(!Array.isArray(n.tarefas)) campos.tarefas = novasTarefas();   // volta pro jogo, volta com checklist
     await gravar(id, campos);
     Object.assign(n, campos);
     pinta(); if(ABERTO===id) abrirDrawer(id);
@@ -725,9 +735,6 @@ document.addEventListener('keydown', e => { if(e.key === 'Escape' && ABERTO) fec
 
 function corpoDrawer(n, obs, carregando){
   const gestor = ehGestor();
-  const t = Array.isArray(n.tarefas) ? n.tarefas : null;
-  const feitas = t ? t.filter(x=>x.feita).length : 0;
-  const pct = t && t.length ? Math.round(feitas/t.length*100) : 0;
   const dia = diaDe(n.abertura), hoje = hojeYMD();
 
   const linha = (r, v, cls) => v ? `<dt>${r}</dt><dd class="${cls||''}">${v}</dd>` : '';
@@ -782,16 +789,14 @@ function corpoDrawer(n, obs, carregando){
   //     é a que envelhece errado (a antiga já tinha "Modalidade" que a nova não mostrava, e
   //     não mostrava "Valor estimado" que a nova mostra).
 
-  const tarefas = t ? FASES.map(f => {
-    const doGrupo = t.map((x,i)=>({x,i})).filter(o => o.x.secao === f.k);
-    if(!doGrupo.length) return '';
-    return `<div class="tf-secao"><span class="bola" style="background:${f.c}"></span>${esc(f.n)}</div>` +
-      doGrupo.map(o => `<label class="tf${o.x.feita?' feita':''}">
-        <input type="checkbox" ${o.x.feita?'checked':''} onchange="marcaTarefa(${n.id},${o.i},this.checked)">
-        <span>${esc(o.x.texto)}</span></label>`).join('');
-  }).join('')
-  : `<div style="font-size:12.5px;color:var(--muted)">Sem checklist — este negócio está arquivado.
-       <a class="lnk" style="color:var(--azul-claro);cursor:pointer" onclick="desarquivar(${n.id})">devolver ao funil</a> cria as 15 tarefas.</div>`;
+  /* ── O CHECKLIST FIXO DAS 15 TAREFAS SAIU DA TELA (11/08) ──────────────────────────────────
+     Decisão do Lemuel: a equipe não usa. Saíram as 15 caixinhas, o "4/15" da aba e o medidor
+     com a barrinha no card da lista e do funil. A aba Tarefas passa a ser só o que a pessoa
+     escreve — e isso ela usa.
+     >>> O DADO NÃO FOI APAGADO. O `negocios.tarefas` (JSONB) continua lá, com o que já foi
+         marcado em 2.555 negócios. Some da tela, não do banco: se um dia quiserem de volta, o
+         histórico do que cada um marcou está inteiro. Apagar seria reescrever o trabalho de
+         alguém pra economizar um campo que não custa nada parado. */
 
   // ══ ABAS DA FICHA (08/08) ══════════════════════════════════════════════════════════════
   // A ficha juntava tudo numa coluna só: estágio, ficha, rastro, observação da planilha,
@@ -819,7 +824,7 @@ function corpoDrawer(n, obs, carregando){
     <div class="dw-abas">
       <button class="on" data-aba="info"   onclick="abaFicha(this,'info')">Informações</button>
       <button        data-aba="lembretes"  onclick="abaFicha(this,'lembretes')">Lembretes <span id="dw-lem-n"></span></button>
-      <button        data-aba="tarefas"    onclick="abaFicha(this,'tarefas')">Tarefas${t ? ` ${feitas}/${t.length}` : ''}</button>
+      <button        data-aba="tarefas"    onclick="abaFicha(this,'tarefas')">Tarefas <span id="dw-tar-n"></span></button>
       <button        data-aba="obs"        onclick="abaFicha(this,'obs')">Observações</button>
     </div>
 
@@ -845,9 +850,18 @@ function corpoDrawer(n, obs, carregando){
 
     <div class="dw-painel" id="aba-tarefas">
       <div class="dw-sec">
-        <h4>Tarefas ${t ? `· ${feitas} de ${t.length} concluídas` : ''}</h4>
-        ${t ? `<div class="dw-prog"><span>${pct}%</span><span class="b"><i style="width:${pct}%"></i></span></div>` : ''}
-        ${tarefas}
+        <h4>Tarefas deste negócio</h4>
+        <div class="dica" style="font-size:11.5px;color:var(--muted);margin-bottom:8px">
+          Tarefa com data e hora <b>entra no sino</b> e no aviso da manhã. Sem data, fica só na lista.
+        </div>
+        <div id="tar-lista"></div>
+        <div class="lem-novo">
+          <input id="tar-titulo" placeholder="o que precisa ser feito" maxlength="200">
+          <input id="tar-quando" type="datetime-local" title="opcional — com data, entra no sino">
+          <select id="tar-prio"><option value="normal">normal</option><option value="alta">alta</option><option value="baixa">baixa</option></select>
+          <button class="btn" id="tar-bt" onclick="criarTarefa(${n.id})">+ adicionar tarefa</button>
+        </div>
+        <div class="salvo" id="tar-msg"></div>
       </div>
     </div>
 
@@ -864,6 +878,11 @@ function corpoDrawer(n, obs, carregando){
     <div class="dw-acoes">
       ${n.arquivado ? `<button onclick="desarquivar(${n.id})">↩ Devolver ao funil</button>`
                     : `<button onclick="arquivar(${n.id})">📥 Arquivar</button>`}
+      <!-- AÇÃO DA FASE HABILITAÇÃO: recurso, esclarecimento e contrarrazão são AS PEÇAS, que já
+           existem com a conta de dias úteis. Este botão é ATALHO COM CONTEXTO, não uma segunda
+           tela: ele leva os dados do certame e a tela de Peças faz o resto. Duplicar as Peças
+           aqui criaria o par que diverge — e o que diverge, nelas, é prazo legal. -->
+      <button onclick="irParaPecas(${n.id})" title="abre as Peças jurídicas com os dados deste certame preenchidos">⚖️ Recurso / esclarecimento</button>
       <button onclick="location.href='fpmed_documentos.html'">📄 Documentos</button>
       <button onclick="fecharDrawer()">Fechar</button>
     </div>`;
@@ -881,9 +900,15 @@ const PRIO_COR = { alta:'#e5675a', media:'#e0a04a', baixa:'#8fa3b8' };
 async function carregarLembretes(id){
   const box = document.getElementById('lem-lista'); if(!box) return;
   try{
+    // UMA leitura pros dois: lembrete e tarefa moram na mesma tabela (mesmos campos, mesmo
+    // caminho até o sino) e se separam pelo `tipo`. Duas chamadas seriam dois erros possíveis
+    // pra uma informação só.
     const r = await fetch(`${SB_URL}/rest/v1/lembretes?negocio_id=eq.${id}&select=*&order=quando.asc`, {headers:SB_H});
     if(!r.ok) throw new Error('HTTP ' + r.status);
-    LEMBRETES = await r.json();
+    const todos = await r.json();
+    LEMBRETES = todos.filter(x => (x.tipo || 'lembrete') === 'lembrete');
+    TAREFAS_LIVRES = todos.filter(x => x.tipo === 'tarefa');
+    pintaTarefasLivres(id);
   }catch(e){
     // erro NÃO vira "nenhum lembrete": alguém concluiria que não há nada agendado
     box.innerHTML = '<div class="salvo" style="color:#ff9d92">⚠️ não consegui ler os lembretes deste negócio.</div>';
@@ -954,6 +979,77 @@ function pintaLembretes(id){
     </div>`;
   }).join('');
 }
+/* ── ATALHO PRAS PEÇAS JURÍDICAS, COM O CERTAME JUNTO ────────────────────────────────────────
+   Recurso, esclarecimento e contrarrazão já existem na tela de Peças, com a conta de dias úteis
+   do art. 164/165. Aqui não se refaz nada: leva-se o contexto.
+   >>> O QUE VAI JUNTO é só o que a ficha SABE (órgão, portal, nº, abertura, objeto). O que a
+       peça precisa e a ficha não tem — os fatos, o fundamento, o pedido — continua sendo escrito
+       lá, no formulário guiado. Preencher meio formulário e deixar o resto parecendo pronto é
+       como sai peça com lacuna.
+   >>> Vai por sessionStorage e não pela URL: objeto de edital tem centenas de caracteres e
+       endereço enorme é o tipo de coisa que alguém copia, cola cortado e não entende por quê. */
+function irParaPecas(id){
+  const n = NEG.find(x => x.id === id); if(!n) return;
+  try{
+    sessionStorage.setItem('fpmed_peca_certame', JSON.stringify({
+      de: 'negocios', negocio_id: n.id, quando: Date.now(),
+      orgao: n.orgao || null, portal: n.portal || null, modalidade: n.modalidade || null,
+      numero: n.numero || null, abertura: n.abertura || null,
+      objeto: n.objeto || null, municipio: n.municipio || null, uf: n.uf || null,
+    }));
+  }catch(e){ /* sem sessionStorage a tela de Peças abre em branco, que é o comportamento de antes */ }
+  location.href = 'fpmed_pecas.html';
+}
+
+/* ── TAREFAS PERSONALIZADAS ──────────────────────────────────────────────────────────────────
+   Mesma tabela dos lembretes (mesmos campos, mesmo caminho até o sino), separadas pelo `tipo`.
+   >>> A DATA É OPCIONAL, e a tela DIZ o que muda: com data, entra no sino e no aviso da manhã;
+       sem data, é só uma lista. Um campo de data obrigatório faria a pessoa inventar uma — e
+       data inventada vira alerta que ninguém quer, que é como se aprende a ignorar o sino. */
+let TAREFAS_LIVRES = [];
+function pintaTarefasLivres(id){
+  const box = document.getElementById('tar-lista'); if(!box) return;
+  // O contador da aba conta as ABERTAS, não o total: "Tarefas 2" quer dizer "tem 2 pra fazer".
+  // Contar as concluídas junto faria o número nunca baixar, e número que não baixa não informa.
+  const cnt = document.getElementById('dw-tar-n');
+  const abertas = TAREFAS_LIVRES.filter(x => !x.feito).length;
+  if(cnt) cnt.textContent = abertas ? abertas : '';
+  if(!TAREFAS_LIVRES.length){ box.innerHTML = '<div class="salvo">Nenhuma tarefa neste negócio ainda. Use o campo abaixo — com data e hora, ela avisa no sino.</div>'; return; }
+  const agora = new Date();
+  box.innerHTML = TAREFAS_LIVRES.map(l => {
+    const q = l.quando ? new Date(l.quando) : null;
+    const atrasada = !l.feito && q && q < agora;
+    return `<div class="lem${l.feito?' feito':''}">
+      <input type="checkbox" ${l.feito?'checked':''} onchange="marcarLembrete(${id},${l.id},this.checked)">
+      <div><div class="t">${esc(l.titulo)}</div>
+        <div class="q">${q ? esc(q.toLocaleString('pt-BR')) + (atrasada?' · <b style="color:#ff9d92">atrasada</b>':' · no sino') : 'sem data — não avisa'}</div></div>
+      <span class="prio" style="color:${PRIO_COR[l.prioridade]||'#8fa3b8'};border-color:${PRIO_COR[l.prioridade]||'#8fa3b8'}">${esc(l.prioridade)}</span>
+    </div>`;
+  }).join('');
+}
+async function criarTarefa(id){
+  const msg = document.getElementById('tar-msg'), bt = document.getElementById('tar-bt');
+  const titulo = (document.getElementById('tar-titulo').value||'').trim();
+  const quando = document.getElementById('tar-quando').value;
+  if(!titulo){ msg.textContent = 'escreva o que precisa ser feito.'; return; }
+  bt.disabled = true; msg.textContent = 'salvando…';
+  try{
+    const n = NEG.find(x => x.id === id);
+    const r = await fetch(`${SB_URL}/rest/v1/lembretes`, {method:'POST',
+      headers: Object.assign({'Prefer':'return=representation'}, SB_H, {'Content-Type':'application/json'}),
+      body: JSON.stringify({ negocio_id: id, empresa_id: (n && n.empresa_id) || null, titulo,
+        quando: quando ? new Date(quando).toISOString() : null,
+        prioridade: document.getElementById('tar-prio').value, tipo: 'tarefa' })});
+    if(!r.ok) throw new Error('HTTP ' + r.status + (r.status===401||r.status===403 ? ' — sem permissão de gravar' : ''));
+    TAREFAS_LIVRES = TAREFAS_LIVRES.concat(await r.json());
+    document.getElementById('tar-titulo').value = ''; document.getElementById('tar-quando').value = '';
+    msg.textContent = quando ? 'tarefa salva — ela vai aparecer no sino.' : 'tarefa salva (sem data, não avisa).';
+    pintaTarefasLivres(id);
+    carregar().then(pinta);      // o sino conta o funil inteiro; recarrega pra ele já contar esta
+  }catch(e){ msg.textContent = 'não consegui salvar: ' + e.message; }
+  bt.disabled = false;
+}
+
 /* ── "AVISAR NO ZAP" — o que dá pra fazer DE GRAÇA, dito com todas as letras ─────────────────
    Mandar WhatsApp SOZINHO exige contratar (API oficial do WhatsApp Business ou provedor tipo
    Twilio): tem custo por mensagem e cadastro da empresa. Nada disso foi contratado.
@@ -1139,17 +1235,9 @@ async function mudaFase(id, fase){
   catch(e){ n.estagio = antes; abrirDrawer(id); pinta(); alert('Não consegui mudar o estágio: ' + e.message); }
 }
 
-async function marcaTarefa(id, i, feita){
-  const n = NEG.find(x => x.id === id); if(!n || !Array.isArray(n.tarefas)) return;
-  const antes = n.tarefas[i].feita;
-  n.tarefas[i].feita = feita;
-  // repinta só o progresso e o card; o drawer inteiro roubaria o foco do checkbox
-  const t = n.tarefas, fe = t.filter(x=>x.feita).length, pct = Math.round(fe/t.length*100);
-  const cx = document.querySelector('#dw-body .dw-prog');
-  if(cx) cx.innerHTML = `<span>${pct}%</span><span class="b"><i style="width:${pct}%"></i></span>`;
-  try{ await gravar(id, { tarefas: n.tarefas }); pinta(); }
-  catch(e){ n.tarefas[i].feita = antes; abrirDrawer(id); alert('Não consegui salvar a tarefa: ' + e.message); }
-}
+// `marcaTarefa` foi REMOVIDA em 11/08, junto com o checklist fixo que a chamava. Código morto
+// guardado "por via das dúvidas" é o que envelhece errado — o `negocios.tarefas` continua no
+// banco, e o git guarda esta função inteira se um dia ela voltar a ser necessária.
 
 async function salvaAnot(id, txt){
   const n = NEG.find(x => x.id === id); if(!n) return;
@@ -1223,12 +1311,15 @@ function pintaNotif(){
     h += '<div class="nf-sec">lembretes</div><div class="nf-vazio">⚠️ Não consegui ler os lembretes, então <b>não sei</b> o que está agendado.</div>';
   } else if(Array.isArray(LEM_SINO) && LEM_SINO.length){
     const agora = new Date();
-    h += '<div class="nf-sec">lembretes agendados</div>'
+    h += '<div class="nf-sec">lembretes e tarefas agendados</div>'
       + LEM_SINO.slice(0,8).map(l => {
           const q = new Date(l.quando), atrasado = q < agora;
+          // O sino DIZ se é tarefa ou lembrete: "tarefa atrasada" e "lembrete atrasado" pedem
+          // coisas diferentes de quem lê, e um rótulo só faria as duas parecerem a mesma.
+          const eTarefa = l.tipo === 'tarefa';
           return `<a class="nf ${atrasado?'hoje':''}" onclick="irPara(${l.negocio_id})">
-            <div class="q">${atrasado?'⏰':'🔔'} ${esc(l.titulo)}</div>
-            <div class="s">${q.toLocaleString('pt-BR')}${atrasado?' · atrasado':''} · prioridade ${esc(l.prioridade)}</div></a>`;
+            <div class="q">${atrasado?'⏰':(eTarefa?'✔':'🔔')} ${esc(l.titulo)}</div>
+            <div class="s">${eTarefa?'tarefa · ':''}${q.toLocaleString('pt-BR')}${atrasado?' · atrasad'+(eTarefa?'a':'o'):''} · prioridade ${esc(l.prioridade)}</div></a>`;
         }).join('');
   }
   if(!h) h = '<div class="nf-vazio">Nada abre hoje nem amanhã, nenhum documento vencendo e nenhum lembrete no prazo.<br>O sino só mostra sessão de negócio <b>ativo</b> — arquivado não avisa.</div>';
