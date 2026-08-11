@@ -42,6 +42,29 @@ const RESEND = Deno.env.get("RESEND_API_KEY");              // o que falta pra l
 const REMETENTE = Deno.env.get("BOLETIM_REMETENTE") || "FPMED <onboarding@resend.dev>";
 const URL_SISTEMA = "https://fpmed-hospitalar.github.io/fpmed/fpmed_licitacoes.html";
 
+/* ══ A TRAVA DE COMPLIANCE DO REMETENTE ═══════════════════════════════════════
+   REGRA MASTER: nenhum e-mail da FPMED sai por domínio da GlobalMed. Marca de
+   uma empresa no e-mail da outra é o mesmo cruzamento que a regra proíbe — só
+   que visível pro cliente, com o domínio impresso no cabeçalho.
+
+   >>> POR QUE ISSO É UMA TRAVA NO CÓDIGO E NÃO UM AVISO NO MANUAL.
+   Auditado em 11/08: `BOLETIM_REMETENTE` NÃO está configurado, então o remetente
+   é o `onboarding@resend.dev` — nada de errado sai hoje. O perigo é o de amanhã:
+   o Resend só entrega pra fora com DOMÍNIO VERIFICADO, e o único domínio
+   verificado na conta é o `globalmedgo.com.br`. Quer dizer que, no dia em que
+   alguém for "fazer o boletim chegar no cliente", a solução que funciona de
+   primeira é exatamente a proibida — e ela funciona, e ninguém percebe.
+   Regra que depende de alguém lembrar cede no dia da pressa (S5). Esta cede não.
+
+   O certo é verificar `fpmed.com.br` (send.fpmed.com.br) e apontar o remetente
+   pra lá. Até isso acontecer, destinatário = só o dono. */
+const DOMINIOS_PROIBIDOS = ["globalmedgo.com.br", "globalmed.com.br"];
+const dominioDe = (rem: string) => (rem.match(/@([^>\s]+)/) || [])[1]?.toLowerCase() || "";
+function remetenteProibido(rem: string) {
+  const d = dominioDe(rem);
+  return DOMINIOS_PROIBIDOS.some((p) => d === p || d.endsWith("." + p)) ? d : null;
+}
+
 const H = { apikey: SB_SR, Authorization: "Bearer " + SB_SR, "Content-Type": "application/json" };
 const TETO_LINHAS = 25;      // no e-mail; o resto vira "e mais N — abrir no sistema"
 const TETO_VISTOS = 800;     // mesma poda do `vistos` da tela: memória não cresce sem fim
@@ -147,6 +170,22 @@ Deno.serve(async (req) => {
   if (!TOKEN) return J({ error: "BOLETIM_TOKEN nao configurado" }, 503);
   if (req.method !== "POST") return J({ error: "use POST" }, 405);
   if (req.headers.get("x-boletim-token") !== TOKEN) return J({ error: "nao autorizado" }, 401);
+
+  /* A TRAVA DE COMPLIANCE, ANTES DE QUALQUER TRABALHO. Ela recusa a rodada inteira em vez de
+     pular o envio: pular deixaria o boletim "quase funcionando" e o motivo escondido no meio
+     de um relatório de sucesso. Aqui a rodada para, ninguém marca `vistos_email`, e a mensagem
+     diz o conserto — que é VERIFICAR fpmed.com.br, não trocar código. */
+  const proibido = remetenteProibido(REMETENTE);
+  if (proibido) return J({
+    ok: false,
+    compliance: "remetente_proibido",
+    erro: "O remetente do boletim esta configurado no dominio " + proibido + ", que e da GlobalMed. "
+      + "Nenhum e-mail da FPMED sai por dominio da GlobalMed - a marca de uma empresa no e-mail da "
+      + "outra e o mesmo cruzamento que a regra master proibe, so que impresso no cabecalho, visivel "
+      + "pro cliente. O conserto e verificar o dominio fpmed.com.br (send.fpmed.com.br) em "
+      + "resend.com/domains e apontar o secret BOLETIM_REMETENTE pra la. Ate isso acontecer, "
+      + "destinatario = so o dono. Nenhum e-mail foi enviado e nada foi marcado como visto.",
+  }, 200);
 
   let body: any = {};
   try { body = await req.json(); } catch { /* body é opcional */ }

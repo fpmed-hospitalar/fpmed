@@ -18,6 +18,29 @@ interface, texto de modelo de documento, ou endpoint.
 > dos modelos serão **redigidos do zero a partir das declarações padrão da Lei 14.133** — nunca
 > copiados do modelo deles. Modelo de declaração é texto autoral de alguém.
 
+### REGISTRO DE COMPLIANCE — o remetente de e-mail *(11/08, auditoria do dono)*
+
+**O único domínio verificado na conta do Resend é `globalmedgo.com.br` — e ele é PROIBIDO como
+remetente de qualquer e-mail FPMED visível a cliente.** Marca de uma empresa no e-mail da outra
+é o mesmo cruzamento que a regra master proíbe, só que impresso no cabeçalho.
+
+- **boletim para cliente:** só depois do domínio **`fpmed.com.br`** verificado (`send.fpmed.com.br`);
+- **até lá:** destinatário = **só o dono**.
+
+> **Isto virou trava no código, não recado no manual.** Estado medido em 11/08: o secret
+> `BOLETIM_REMETENTE` **não está configurado**, então o remetente cai no `onboarding@resend.dev`
+> e **não há violação hoje**. O perigo é o de amanhã — o Resend só entrega pra fora com domínio
+> verificado, então, no dia em que alguém for "fazer o boletim chegar no cliente", **a solução
+> que funciona de primeira é exatamente a proibida**. E funciona. E ninguém percebe, porque o
+> e-mail chega bonito e entregue.
+>
+> `enviar-boletim` v8 recusa a rodada inteira se o remetente estiver em domínio da GlobalMed —
+> não pula o envio, **para tudo**, porque pular deixaria o boletim "quase funcionando" com o
+> motivo escondido dentro de um relatório de sucesso. A mensagem ensina o caminho legítimo
+> (verificar `fpmed.com.br`), porque erro de compliance que só diz "proibido" faz a pessoa
+> procurar contorno — e o contorno vira o caminho.
+> Suíte: `tests/testa_remetente_compliance.js` (21 asserts, 5 mutações barradas).
+
 ---
 
 ## 1. Os módulos do Prime, e o que a FPMED já tem

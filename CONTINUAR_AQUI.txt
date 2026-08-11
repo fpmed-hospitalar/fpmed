@@ -623,6 +623,35 @@ Criado em 21/07/2026 copiando SO os arquivos do app do C:\globalmed.
     do caminho, que e como tem que ser. Numero de relatorio meu ja tinha que bater
     com o banco; agora bater ou nao bater fica visivel sem depender de mim.
 
+>>> 11/08 — AUDITORIA DO DONO (Resend) E A TRAVA DE REMETENTE.
+
+    DADO MEDIDO PELO ARQUITETO, pro item "conferir o boletim" (item 8 da fila):
+      · boletim de 11/08 entregue as 12h54 UTC (9h54 GO) — ATRASO DE ~4h30 sobre o
+        cron das 8h17 UTC; a rede das 11h23 UTC tambem nao segurou;
+      · 3 envios no total, todos delivered; o de 10/08 a noite consta clicked.
+      >>> O ATRASO CONTINUA SEM CAUSA. Isso e o item 8 e nao furei a fila por ele:
+          entrega ele mesmo nao esta quebrada (3 de 3 delivered), o que esta errado
+          e a HORA. Investigar quando chegar a vez, olhando o agendador, nao o Resend.
+
+    >>> TRAVA DE REMETENTE — ISSO SIM ERA COMPLIANCE E NAO ESPEROU A FILA.
+    O unico dominio verificado no Resend e o globalmedgo.com.br. Marca da Global no
+    e-mail da FPMED e o mesmo cruzamento que a regra master proibe, so que impresso
+    no cabecalho e visivel pro cliente.
+      · MEDIDO: o secret BOLETIM_REMETENTE NAO esta configurado. O remetente cai no
+        onboarding@resend.dev. NAO HA VIOLACAO HOJE.
+      · O PERIGO E O DE AMANHA: o Resend so entrega pra fora com dominio verificado,
+        entao no dia em que alguem for "fazer o boletim chegar no cliente", a solucao
+        que funciona de primeira e EXATAMENTE a proibida. E funciona. E ninguem ve.
+      · enviar-boletim v8 (no ar) RECUSA A RODADA INTEIRA se o remetente estiver em
+        dominio da Global. Nao pula o envio: para tudo, e a mensagem ensina o caminho
+        legitimo (verificar fpmed.com.br / send.fpmed.com.br em resend.com/domains).
+      · Suite tests/testa_remetente_compliance.js, 21 asserts, 5 mutacoes barradas.
+
+    >>> O QUE FALTA E PRECISA DE UMA AUTORIZACAO DELE: a prova ao vivo da trava.
+        Ela poe um e-mail de teste na caixa dele (usando o parametro `teste`, que NAO
+        marca vistos_email). Nao mandei sem pedir. A regra so esta provada em suite
+        e por mutacao, o que e forte — mas nao e o mesmo que ver a funcao recusando.
+
 >>> PONTO EXATO DE RETOMADA — a fila numerada:
      1. [OK] spec da reforma (docs/spec_reforma_prime.md) — 4485c30
      2. [OK] fpmed_tema.css — O DESIGN SYSTEM, e ele vem primeiro (adendo de excelencia)
