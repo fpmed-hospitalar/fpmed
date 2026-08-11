@@ -169,13 +169,25 @@ const LIC = (o) => Object.assign({
     LIC({ numeroControlePNCP: 'D', objetoCompra: 'MEDICAMENTOS E CORRELATOS', valorTotalEstimado: 0 }),
   ];
   const so = f => aplicaJornal(lista, f).map(_numCtrl);
-  ok('19. jornal sem palavra-chave nao filtra por texto', so({}).length === 4);
+  /* ── 11/08: JORNAL SEM PALAVRA PASSOU A FILTRAR PELO RAMO ─────────────────────────────────
+     Antes, `kw` vazio queria dizer "nao filtra por texto" — porque o campo da tela NUNCA ficava
+     vazio (nascia com as seis categorias como valor). Agora o campo nasce vazio de verdade, e
+     "sem palavra" virou "o ramo da FPMED", que e o que a tela mostra.
+     >>> SE ESTE ASSERT TIVESSE FICADO COMO ESTAVA, ele estaria travando o comportamento que
+         quebraria o produto: jornal sem palavra trazendo o PNCP inteiro, e o contador de "novas"
+         disparando todo dia com licitacao de qualquer ramo.
+     `B` (LOCACAO DE VEICULO) e o unico fora do ramo — e e ele que tem que sumir. */
+  ok('19. *** jornal sem palavra filtra pelo RAMO (e nao traz tudo) ***',
+    JSON.stringify(so({})) === '["A","C","D"]', so({}));
+  ok('19b. ...e o que esta fora do ramo fica de fora', so({}).indexOf('B') < 0);
   ok('20. palavra-chave e OU, com `;`', JSON.stringify(so({ kw: 'medicamento; hospitalar' })) === '["A","C","D"]', so({ kw: 'medicamento; hospitalar' }));
   ok('21. "excluir" tira quem tem o termo', so({ excluir: 'veiculo' }).indexOf('B') < 0);
   ok('22. o refino do jornal vale (portal)', JSON.stringify(so({ portal: 'BLL' })) === '["C"]');
   ok('23. *** licitacao SEM valor estimado nao some na faixa (a garantia do 4o pedaco) ***',
     so({ kw: 'medicamento', vmin: '1000000' }).indexOf('D') >= 0, so({ kw: 'medicamento', vmin: '1000000' }));
-  ok('24. acento nao decide nada (URUACU x Uruaçu)', so({ orgao: 'uruaçu' }).length === 4);
+  // O filtro de orgao continua ignorando acento — o que mudou foi o universo que chega ate ele
+  // (o ramo, e nao tudo). Por isso 3 e nao 4: `B` sai antes, por ser de outro ramo.
+  ok('24. acento nao decide nada (URUACU x Uruaçu)', so({ orgao: 'uruaçu' }).length === 3, so({ orgao: 'uruaçu' }));
 }
 
 // ══════════ 5. DDL — o que o banco tem que garantir ══════════

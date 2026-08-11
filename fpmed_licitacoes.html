@@ -299,11 +299,24 @@ select:focus,input:focus{outline:none;border-color:var(--azul)}
     <p>Busque oportunidades de dispensas, pregões…</p>
     <div class="buscabox">
       <span class="lupa">🔍</span>
-      <input id="f-kw" value="medicamento; hospitalar; material médico; farmac; soro; correlatos"
-             placeholder="Pesquisar por objeto… (separe termos por ;)"
+      <!-- ══ O CAMPO NASCE VAZIO (11/08) ═════════════════════════════════════════════════════
+           Ele vinha PREENCHIDO com as seis categorias do ramo como VALOR — e o operador tinha
+           que selecionar e apagar tudo pra buscar outra coisa. Atrito em todo uso, e a tela
+           parecendo que alguém deixou uma busca aberta ali.
+           >>> O FILTRO NÃO SUMIU, MUDOU DE LUGAR: com o campo vazio, as categorias do ramo são
+               aplicadas POR DENTRO (ver CATEGORIAS_RAMO). O comportamento padrão é o mesmo; o
+               que mudou é que ele deixou de morar num campo de texto editável.
+           >>> E A TELA DIZ ISSO, na linha de hint abaixo — senão o operador acha que a lista
+               filtra por mágica, e não entende por que "cadeira de escritório" não aparece. -->
+      <input id="f-kw" value=""
+             placeholder="busque por item — ex.: albumina, dipirona…"
              onkeydown="if(event.key==='Enter')buscaNova()">
       <button class="go" onclick="buscaNova()" title="Buscar">🔎</button>
     </div>
+    <!-- A LINHA QUE EXPLICA O VAZIO. Ela troca de texto conforme o campo, porque o que o vazio
+         faz e o que um termo faz são coisas diferentes — e quem está lendo precisa da que vale
+         agora, não das duas. -->
+    <div class="hint" id="dica-kw" style="margin-top:9px"></div>
     <div class="links">
       <a onclick="document.getElementById('avancada').classList.toggle('open')">Pesquisa avançada</a>
       <a onclick="abrirOrgaos()">Órgãos</a>
@@ -524,6 +537,37 @@ const iso = d => d.toISOString().slice(0,10);
    >>> NUNCA GRAVADO EM CACHE. A data é calculada NA ABERTURA, toda vez. Data em cache é o mesmo
        defeito da versão velha do app: o valor certo de ontem, servido hoje, sem nada parecer
        errado. */
+/* ══ O QUE O CAMPO VAZIO FILTRA ══════════════════════════════════════════════════════════════
+   Estas seis palavras eram o VALOR do campo de busca. O operador tinha que apagá-las pra
+   procurar outra coisa — atrito em todo uso, e a tela parecendo que alguém deixou uma pesquisa
+   aberta ali. Elas viraram REGRA INTERNA em 11/08.
+
+   >>> O COMPORTAMENTO PADRÃO NÃO MUDOU: campo vazio filtra pelo ramo da FPMED, exatamente como
+       antes. O que mudou é que a regra deixou de morar num campo de texto editável, onde
+       qualquer apagada acidental mudava o que a tela busca sem ninguém perceber.
+   >>> E ELAS NÃO SÃO AS `CATEGORIAS` DA ETIQUETA VERDE. Aquelas classificam o que JÁ apareceu;
+       estas decidem o que aparece. Parecem a mesma lista e respondem perguntas diferentes —
+       fundir as duas faria mexer numa etiqueta mudar o resultado da busca. */
+const CATEGORIAS_RAMO = ['medicamento', 'hospitalar', 'material medico', 'farmac', 'soro', 'correlatos'];
+
+/* O TERMO DIGITADO MANDA SOZINHO. Se a pessoa escreveu "albumina", ela quer albumina — e não
+   "albumina dentro do ramo", que é a mesma coisa com um jeito de esconder resultado. */
+function palavrasDaBusca(){
+  const cru = (document.getElementById('f-kw').value || '').trim();
+  if(!cru) return CATEGORIAS_RAMO.map(s => semAcento(s));
+  return cru.split(';').map(s => semAcento(s.trim())).filter(Boolean);
+}
+// A DICA embaixo do campo, que muda com o que está escrito. Sem ela, quem digita "cadeira" e não
+// acha nada não descobre que a tela estava filtrando o ramo por dentro.
+function pintaDicaBusca(){
+  const el = document.getElementById('dica-kw'); if(!el) return;
+  const cru = (document.getElementById('f-kw').value || '').trim();
+  el.innerHTML = cru
+    ? 'Buscando <b>' + esc(cru) + '</b> — só isso. Apague pra voltar ao ramo da FPMED.'
+    : 'Mostrando o <b>ramo da FPMED</b> (medicamento, hospitalar, material médico, farmac, soro, '
+      + 'correlatos) — digite um item pra buscar algo específico.';
+}
+
 function janelaPadrao(){
   const hoje = new Date(); hoje.setHours(12,0,0,0);
   const dow = hoje.getDay();                       // 0=domingo, 6=sábado
@@ -536,6 +580,9 @@ function janelaPadrao(){
   const j = janelaPadrao();
   document.getElementById('f-de').value = j.de;
   document.getElementById('f-ate').value = j.ate;
+  pintaDicaBusca();
+  const kw = document.getElementById('f-kw');
+  if(kw) kw.addEventListener('input', pintaDicaBusca);
 })();
 
 // ── CATEGORIAS: etiquetas verdes do que casou no objeto ───────────────────────────────────
@@ -1554,6 +1601,12 @@ function aplicaFiltros(f){
   const j = janelaDe(f);
   set('f-kw', f.kw); set('f-excluir', f.excluir); set('f-uf', f.uf); set('f-mod', f.mod);
   set('f-de', j.de); set('f-ate', j.ate);
+  /* >>> OS JORNAIS SALVOS NÃO QUEBRAM. Os que foram salvos antes de 11/08 guardaram as seis
+         categorias como TEXTO no `kw` — e continuam funcionando exatamente igual, porque um
+         `kw` preenchido sempre mandou sozinho. O que mudou foi só de onde vem o padrão quando o
+         campo está VAZIO. Jornal salvo com campo vazio (se houver) passa a filtrar pelo ramo,
+         que é o que ele mostrava na tela no dia em que foi salvo. */
+  pintaDicaBusca();
   set('f-modo', f.modo); set('f-sit', f.sit); set('f-orgao', f.orgao); set('f-srp', f.srp);
   set('f-vmin', f.vmin); set('f-vmax', f.vmax);
   // o portal é populado a partir do RESULTADO (populaPortais). Guardo a escolha e deixo o
@@ -1565,7 +1618,12 @@ function aplicaFiltros(f){
 const _numCtrl = l => String(l.numeroControlePNCP || chaveLic(l));
 // filtra uma lista de licitações pelos filtros de um jornal, SEM tocar no formulário.
 function aplicaJornal(todos, f){
-  const kws  = String(f.kw||'').split(';').map(s=>semAcento(s.trim())).filter(Boolean);
+  /* MESMA REGRA DA TELA: jornal sem palavra filtra pelo ramo. Sem esta linha, um jornal salvo
+     com o campo vazio traria o PNCP inteiro — e o contador de "novas desde a última leitura"
+     dispararia todo dia com licitação de qualquer ramo, treinando o operador a ignorá-lo. */
+  const kws  = String(f.kw||'').trim()
+    ? String(f.kw).split(';').map(s=>semAcento(s.trim())).filter(Boolean)
+    : CATEGORIAS_RAMO.map(s => semAcento(s));
   const excl = String(f.excluir||'').split(';').map(s=>semAcento(s.trim())).filter(Boolean);
   const r = refinoDe(f);
   return todos.filter(l => {
@@ -1732,7 +1790,7 @@ async function buscar(aoVivo){
   const mod  = document.getElementById('f-mod').value;
   const de   = document.getElementById('f-de').value.replace(/-/g,'');
   const ate  = (document.getElementById('f-ate').value || document.getElementById('f-de').value).replace(/-/g,'');
-  const kws  = document.getElementById('f-kw').value.split(';').map(s=>semAcento(s.trim())).filter(Boolean);
+  const kws  = palavrasDaBusca();
   const excl = document.getElementById('f-excluir').value.split(';').map(s=>semAcento(s.trim())).filter(Boolean);
   const st = document.getElementById('status'), lista = document.getElementById('lista');
   if(!de){ st.textContent='Escolha o intervalo de datas.'; return; }
