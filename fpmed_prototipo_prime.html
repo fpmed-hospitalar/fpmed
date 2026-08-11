@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FPMED · Protótipo da Reforma — padrão Prime, identidade FPMED</title>
+<style>
+/* ══════════════════════════════════════════════════════════════════
+   FPMED · PROTÓTIPO NAVEGÁVEL DA REFORMA VISUAL
+   Guia mestre construído pelo arquiteto sob o manual_design.md:
+   grade de 8px, tokens AA, hierarquia D1, estados desenhados.
+   Dados de DEMONSTRAÇÃO — o motor real fica com o Claude Code.
+   ══════════════════════════════════════════════════════════════════ */
+:root{
+  /* cores — rampa AA (o azul de ação dá 5,04:1 com branco) */
+  --azul-marca:#2CA9E0; --azul-acao:#1576A5; --azul-hover:#115D84;
+  --azul-50:#EAF6FC; --azul-100:#CFEAF8;
+  --verde-marca:#8DC63F; --verde-texto:#4E7420; --verde-50:#F2F9E8;
+  --ambar:#B45309; --ambar-50:#FEF3E2; --verm:#B42318; --verm-50:#FDECEA;
+  --c-50:#F5F7FA; --c-100:#EDF1F5; --c-200:#E3E9F0; --c-300:#CBD5E0;
+  --c-400:#A0AEC0; --c-500:#667286; --c-600:#4A5568; --c-700:#2D3748; --c-800:#1A202C;
+  --branco:#FFFFFF;
+  /* etapas do funil */
+  --et-1:#2CA9E0; --et-2:#D08700; --et-3:#D9633B; --et-4:#5B7FA6; --et-5:#6FA32C;
+  /* forma */
+  --r-card:10px; --r-bt:8px; --r-pill:999px;
+  --sombra-1:0 1px 3px rgba(16,38,60,.07);
+  --sombra-2:0 4px 14px rgba(16,38,60,.10);
+  --fonte:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;
+  --menu-l:224px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{font-size:16px}
+body{font-family:var(--fonte);background:var(--c-50);color:var(--c-800);
+  font-size:.8125rem;line-height:1.5;-webkit-font-smoothing:antialiased}
+button{font-family:inherit;cursor:pointer}
+:focus-visible{outline:2px solid var(--azul-acao);outline-offset:2px;border-radius:4px}
+b,strong{font-weight:600}
+.num{font-variant-numeric:tabular-nums}
+
+/* ── MENU LATERAL ─────────────────────────────────────────────── */
+#menu{position:fixed;left:0;top:0;bottom:0;width:var(--menu-l);background:var(--branco);
+  border-right:1px solid var(--c-200);padding:16px 0 12px;overflow-y:auto;z-index:40;
+  display:flex;flex-direction:column}
+.marca{display:flex;align-items:center;gap:10px;padding:2px 16px 14px;border-bottom:1px solid var(--c-100);margin-bottom:10px}
+.marca .cruz{width:32px;height:32px;border-radius:8px;background:var(--azul-marca);color:#fff;
+  display:grid;place-items:center;font-weight:700;font-size:17px;flex:0 0 auto}
+.marca b{display:block;font-size:14px;letter-spacing:.3px;color:#173A5E;line-height:1.15}
+.marca small{display:block;font-size:8.5px;letter-spacing:2.4px;color:var(--c-400);font-weight:600}
+.grupo{padding:12px 16px 5px;font-size:9.5px;letter-spacing:1.3px;text-transform:uppercase;
+  color:var(--c-400);font-weight:700}
+#menu a{display:flex;align-items:center;gap:10px;padding:8px 16px;color:var(--c-600);
+  font-size:12.5px;text-decoration:none;cursor:pointer;border-left:3px solid transparent;
+  transition:background .15s ease,color .15s ease}
+#menu a:hover{background:var(--c-50);color:var(--c-800)}
+#menu a.on{background:var(--azul-50);color:var(--azul-hover);border-left-color:var(--azul-marca);font-weight:600}
+#menu a svg{width:16px;height:16px;flex:0 0 auto;stroke:currentColor;fill:none;
+  stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+#menu .rodape{margin-top:auto;padding:12px 16px 4px;font-size:10.5px;color:var(--c-400);
+  border-top:1px solid var(--c-100);line-height:1.6}
+
+/* ── CABEÇALHO DA ÁREA ────────────────────────────────────────── */
+main{margin-left:var(--menu-l);min-height:100vh}
+.topo{display:flex;align-items:center;gap:14px;padding:14px 28px;background:var(--branco);
+  border-bottom:1px solid var(--c-200);position:sticky;top:0;z-index:30}
+.topo h1{font-size:16px;font-weight:600;color:var(--c-800)}
+.topo .sub{font-size:11.5px;color:var(--c-500)}
+.topo .dir{margin-left:auto;display:flex;align-items:center;gap:14px}
+.badge-emp{display:flex;align-items:center;gap:7px;border:1px solid var(--c-200);
+  border-radius:var(--r-pill);padding:5px 12px;font-size:11.5px;color:var(--c-600);background:var(--c-50)}
+.badge-emp i{width:7px;height:7px;border-radius:50%;background:var(--verde-marca)}
+.sino{position:relative;width:34px;height:34px;border:1px solid var(--c-200);border-radius:8px;
+  background:var(--branco);display:grid;place-items:center;transition:border-color .15s}
+.sino:hover{border-color:var(--c-300)}
+.sino svg{width:16px;height:16px;stroke:var(--c-600);fill:none;stroke-width:1.8;stroke-linecap:round}
+.sino em{position:absolute;top:6px;right:7px;width:7px;height:7px;border-radius:50%;
+  background:var(--verm);border:1.5px solid #fff}
+.avatar{width:34px;height:34px;border-radius:50%;background:var(--azul-50);color:var(--azul-hover);
+  display:grid;place-items:center;font-weight:700;font-size:12.5px}
+
+/* ── ÁREA / TELAS ─────────────────────────────────────────────── */
+.tela{display:none;padding:24px 28px 48px;max-width:1320px}
+.tela.on{display:block}
+
+/* ── BOTÕES ───────────────────────────────────────────────────── */
+.bt{border:0;border-radius:var(--r-bt);padding:9px 16px;font-size:12.5px;font-weight:600;
+  transition:background .15s ease,border-color .15s ease,transform .15s ease}
+.bt-azul{background:var(--azul-acao);color:#fff}
+.bt-azul:hover{background:var(--azul-hover)}
+.bt-linha{background:var(--branco);color:var(--c-600);border:1px solid var(--c-300)}
+.bt-linha:hover{border-color:var(--azul-acao);color:var(--azul-hover)}
+.bt-fantasma{background:transparent;color:var(--c-500);border:0;padding:9px 10px}
+.bt-fantasma:hover{color:var(--azul-hover)}
+
+/* ── BUSCAR ───────────────────────────────────────────────────── */
+.busca-cartao{background:var(--branco);border:1px solid var(--c-200);border-radius:var(--r-card);
+  box-shadow:var(--sombra-1);padding:18px 20px;margin-bottom:18px}
+.busca-linha{display:flex;gap:10px}
+.busca-linha .campo{flex:1;display:flex;align-items:center;gap:10px;border:1px solid var(--c-300);
+  border-radius:var(--r-bt);padding:0 14px;background:var(--branco);transition:border-color .15s}
+.busca-linha .campo:focus-within{border-color:var(--azul-acao);box-shadow:0 0 0 3px var(--azul-50)}
+.busca-linha .campo svg{width:16px;height:16px;stroke:var(--c-400);fill:none;stroke-width:2;stroke-linecap:round}
+.busca-linha input{border:0;outline:0;flex:1;font-family:inherit;font-size:13.5px;padding:11px 0;color:var(--c-800)}
+.busca-linha input::placeholder{color:var(--c-400)}
+.busca-hint{font-size:11.5px;color:var(--c-500);margin-top:9px}
+.busca-hint b{color:var(--c-600)}
+
+.grade-busca{display:grid;grid-template-columns:248px 1fr;gap:18px;align-items:start}
+.filtros{background:var(--branco);border:1px solid var(--c-200);border-radius:var(--r-card);
+  box-shadow:var(--sombra-1);padding:16px;position:sticky;top:78px}
+.filtros h5{font-size:11px;letter-spacing:1.2px;text-transform:uppercase;color:var(--c-700);margin-bottom:4px}
+.filtros .nota{font-size:10.5px;color:var(--c-500);margin-bottom:13px}
+.filtros label{display:block;font-size:10.5px;font-weight:600;letter-spacing:.3px;
+  text-transform:uppercase;color:var(--c-500);margin:12px 0 4px}
+.filtros select,.filtros input[type=date]{width:100%;border:1px solid var(--c-300);border-radius:7px;
+  padding:7px 9px;font-family:inherit;font-size:12px;color:var(--c-800);background:var(--branco)}
+.filtros .par{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.filtros .check{display:flex;align-items:center;gap:8px;margin-top:14px;font-size:12px;color:var(--c-600)}
+.filtros .check input{accent-color:var(--azul-acao);width:15px;height:15px}
+.filtros .acoes{display:flex;gap:8px;margin-top:16px}
+.filtros .acoes .bt{flex:1;padding:8px 0}
+.filtros .mais{display:block;text-align:center;margin-top:11px;font-size:11.5px;color:var(--azul-hover);
+  cursor:pointer;text-decoration:none}
+.filtros .mais:hover{text-decoration:underline}
+
+.res-topo{display:flex;align-items:baseline;gap:10px;margin-bottom:12px}
+.res-topo b{font-size:14px}
+.res-topo span{font-size:11.5px;color:var(--c-500)}
+.chip-estoque{margin-left:auto;font-size:10.5px;color:var(--c-500);background:var(--c-100);
+  border-radius:var(--r-pill);padding:3px 10px}
+
+.card-lic{background:var(--branco);border:1px solid var(--c-200);border-radius:var(--r-card);
+  box-shadow:var(--sombra-1);padding:16px 18px;margin-bottom:12px;max-width:880px;
+  display:grid;grid-template-columns:1fr auto;gap:6px 18px;
+  transition:box-shadow .15s ease,transform .15s ease,border-color .15s ease}
+.card-lic:hover{transform:translateY(-1px);box-shadow:var(--sombra-2);border-color:var(--c-300)}
+.card-lic .obj{font-size:13.5px;font-weight:600;color:var(--c-800);line-height:1.45;grid-column:1}
+.card-lic .fonte{grid-column:2;grid-row:1;align-self:start}
+.tag{display:inline-block;font-size:9.5px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;
+  border-radius:var(--r-pill);padding:3px 9px}
+.tag-indice{background:var(--azul-50);color:var(--azul-hover)}
+.tag-nac{background:var(--ambar-50);color:var(--ambar)}
+.tag-man{background:var(--c-100);color:var(--c-600)}
+.card-lic .meta{grid-column:1;display:flex;flex-wrap:wrap;gap:4px 26px;margin-top:8px}
+.md{min-width:96px}
+.md small{display:block;font-size:9.5px;font-weight:600;letter-spacing:.6px;text-transform:uppercase;color:var(--c-500)}
+.md span{font-size:12.5px;color:var(--c-800);font-weight:500}
+.md .forte{font-weight:600}
+.card-lic .acoes{grid-column:2;grid-row:2;display:flex;flex-direction:column;gap:7px;justify-content:center}
+.card-lic .acoes .bt{padding:7px 14px;font-size:12px;white-space:nowrap}
+.pagina{display:flex;align-items:center;gap:6px;margin-top:16px}
+.pagina button{min-width:32px;height:32px;border:1px solid var(--c-200);background:var(--branco);
+  border-radius:7px;font-size:12px;color:var(--c-600);transition:border-color .15s}
+.pagina button:hover{border-color:var(--azul-acao);color:var(--azul-hover)}
+.pagina button.on{background:var(--azul-acao);border-color:var(--azul-acao);color:#fff;font-weight:700}
+.pagina span{font-size:11.5px;color:var(--c-500);margin-left:8px}
+
+/* ── NEGÓCIOS / KANBAN ────────────────────────────────────────── */
+.kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:20px}
+.kpi{background:var(--branco);border:1px solid var(--c-200);border-radius:var(--r-card);
+  box-shadow:var(--sombra-1);padding:14px 16px;cursor:pointer;
+  transition:box-shadow .15s ease,transform .15s ease}
+.kpi:hover{transform:translateY(-1px);box-shadow:var(--sombra-2)}
+.kpi small{display:block;font-size:9.5px;font-weight:700;letter-spacing:.7px;text-transform:uppercase;color:var(--c-500)}
+.kpi b{display:block;font-size:22px;font-weight:700;margin-top:3px;letter-spacing:-.02em}
+.kpi .verde{color:var(--verde-texto)}
+.kanban{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;align-items:start}
+.coluna{background:var(--c-100);border-radius:var(--r-card);padding:10px}
+.coluna h4{display:flex;align-items:center;gap:8px;font-size:11px;font-weight:700;
+  letter-spacing:.7px;text-transform:uppercase;color:var(--c-600);padding:4px 6px 10px}
+.coluna h4 i{width:9px;height:9px;border-radius:3px;flex:0 0 auto}
+.coluna h4 em{font-style:normal;margin-left:auto;font-size:10.5px;color:var(--c-500);
+  background:var(--branco);border-radius:var(--r-pill);padding:1px 8px}
+.card-neg{background:var(--branco);border:1px solid var(--c-200);border-radius:9px;
+  box-shadow:var(--sombra-1);padding:12px 13px;margin-bottom:9px;cursor:pointer;
+  transition:box-shadow .15s ease,transform .15s ease}
+.card-neg:hover{transform:translateY(-1px);box-shadow:var(--sombra-2)}
+.card-neg .t{font-size:12px;font-weight:600;line-height:1.4;color:var(--c-800);
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.card-neg .o{font-size:11px;color:var(--c-500);margin-top:3px}
+.prog{display:flex;align-items:center;gap:7px;margin-top:9px}
+.prog .pontos{display:flex;gap:3px}
+.prog .pontos i{width:6px;height:6px;border-radius:50%;border:1px solid var(--c-300)}
+.prog span{font-size:10px;color:var(--c-500)}
+.card-neg .v{font-size:12px;font-weight:600;margin-top:7px;color:var(--c-700)}
+
+/* ── FICHA (modal com stepper) ────────────────────────────────── */
+#veu{position:fixed;inset:0;background:rgba(13,26,40,.45);z-index:60;display:none}
+#veu.on{display:block}
+#ficha{position:fixed;top:0;right:0;bottom:0;width:min(680px,94vw);background:var(--c-50);
+  z-index:61;box-shadow:-12px 0 40px rgba(13,26,40,.18);transform:translateX(102%);
+  transition:transform .22s ease;overflow-y:auto}
+#ficha.on{transform:none}
+.f-topo{background:var(--branco);border-bottom:1px solid var(--c-200);padding:18px 24px;
+  position:sticky;top:0;z-index:5;display:flex;align-items:flex-start;gap:12px}
+.f-topo .t{font-size:14.5px;font-weight:600;line-height:1.4}
+.f-topo .o{font-size:11.5px;color:var(--c-500);margin-top:2px}
+.f-topo .x{margin-left:auto;width:32px;height:32px;border:1px solid var(--c-200);border-radius:8px;
+  background:var(--branco);color:var(--c-500);font-size:15px;flex:0 0 auto}
+.f-topo .x:hover{border-color:var(--c-300);color:var(--c-800)}
+.f-corpo{padding:20px 24px 36px}
+.etapas-cx{background:var(--branco);border:1px solid var(--c-200);border-radius:var(--r-card);
+  box-shadow:var(--sombra-1);padding:18px 18px 14px;margin-bottom:16px}
+.etapas-cx h4{font-size:10.5px;font-weight:700;letter-spacing:1.1px;text-transform:uppercase;
+  color:var(--c-500);margin-bottom:14px}
+.passos{display:flex;position:relative}
+.passos::before{content:"";position:absolute;top:16px;left:10%;right:10%;height:2px;background:var(--c-200)}
+.passo{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;position:relative;
+  background:none;border:0;padding:0}
+.passo .bola{width:32px;height:32px;border-radius:50%;border:2px solid var(--c-300);background:var(--branco);
+  display:grid;place-items:center;font-size:12px;font-weight:700;color:var(--c-500);
+  transition:transform .15s ease}
+.passo .nm{font-size:10.5px;color:var(--c-500);text-align:center;line-height:1.3}
+.passo.feito .bola{background:var(--verde-marca);border-color:var(--verde-marca);color:#1D2A10}
+.passo.feito .nm{color:var(--c-700)}
+.passo.agora .bola{width:40px;height:40px;background:var(--azul-acao);border-color:var(--azul-acao);
+  color:#fff;font-size:14px;box-shadow:0 0 0 5px var(--azul-50);margin-top:-4px}
+.passo.agora .nm{color:var(--c-800);font-weight:700}
+.passo:hover .bola{transform:scale(1.06)}
+.etapa-legenda{margin-top:13px;padding-top:12px;border-top:1px solid var(--c-100);font-size:12px;color:var(--c-600)}
+.etapa-legenda b{color:var(--azul-hover)}
+.foco{margin-top:10px;background:var(--azul-50);border-left:3px solid var(--azul-acao);
+  border-radius:0 8px 8px 0;padding:10px 13px;font-size:12.5px;color:#0F3B57;line-height:1.55}
+.abas{display:flex;gap:7px;flex-wrap:wrap;margin:16px 0 14px}
+.abas button{border:1px solid var(--c-200);background:var(--branco);border-radius:var(--r-pill);
+  padding:7px 14px;font-size:12px;color:var(--c-600);position:relative;transition:border-color .15s,color .15s}
+.abas button:hover{border-color:var(--azul-acao);color:var(--azul-hover)}
+.abas button.on{background:var(--azul-acao);border-color:var(--azul-acao);color:#fff;font-weight:600}
+.abas button.foco-dot::after{content:"";position:absolute;top:5px;right:8px;width:6px;height:6px;
+  border-radius:50%;background:var(--verde-marca)}
+.sec{background:var(--branco);border:1px solid var(--c-200);border-radius:var(--r-card);
+  box-shadow:var(--sombra-1);padding:15px 17px;margin-bottom:12px}
+.sec h4{font-size:10.5px;font-weight:700;letter-spacing:1.1px;text-transform:uppercase;color:var(--c-500)}
+.sec .dica{font-size:11px;color:var(--c-500);margin:3px 0 10px}
+.f-dl{display:grid;grid-template-columns:120px 1fr;gap:7px 14px;font-size:12.5px}
+.f-dl dt{color:var(--c-500)}
+.f-dl dd{color:var(--c-800);font-weight:500}
+.f-acoes{display:flex;gap:8px;align-items:center;margin-top:16px;flex-wrap:wrap}
+.mais-cx{position:relative}
+.mais-menu{display:none;position:absolute;bottom:calc(100% + 6px);left:0;min-width:230px;
+  background:var(--branco);border:1px solid var(--c-200);border-radius:10px;box-shadow:var(--sombra-2);
+  padding:5px;z-index:8}
+.mais-cx.on .mais-menu{display:block}
+.mais-menu a{display:block;padding:8px 11px;border-radius:7px;font-size:12px;color:var(--c-700);cursor:pointer}
+.mais-menu a:hover{background:var(--c-50);color:var(--azul-hover)}
+.selo-pmvg{display:inline-flex;align-items:center;gap:6px;background:var(--verde-50);color:var(--verde-texto);
+  border-radius:var(--r-pill);padding:4px 11px;font-size:11px;font-weight:600}
+
+/* ── CALENDÁRIO ───────────────────────────────────────────────── */
+.cal-topo{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.cal-topo b{font-size:15px}
+.cal-topo button{width:30px;height:30px;border:1px solid var(--c-200);background:var(--branco);
+  border-radius:7px;color:var(--c-600)}
+.cal-topo button:hover{border-color:var(--azul-acao);color:var(--azul-hover)}
+.legenda{margin-left:auto;display:flex;gap:14px;font-size:10.5px;color:var(--c-500)}
+.legenda i{display:inline-block;width:8px;height:8px;border-radius:3px;margin-right:5px}
+.cal{background:var(--branco);border:1px solid var(--c-200);border-radius:var(--r-card);
+  box-shadow:var(--sombra-1);overflow:hidden}
+.cal-sem{display:grid;grid-template-columns:repeat(7,1fr);background:var(--c-50);border-bottom:1px solid var(--c-200)}
+.cal-sem div{padding:9px 10px;font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--c-500)}
+.cal-grade{display:grid;grid-template-columns:repeat(7,1fr)}
+.dia{min-height:92px;border-right:1px solid var(--c-100);border-bottom:1px solid var(--c-100);padding:7px 8px}
+.dia:nth-child(7n){border-right:0}
+.dia small{font-size:11px;color:var(--c-500);font-weight:600}
+.dia.fora small{color:var(--c-300)}
+.dia.hoje{background:var(--azul-50)}
+.dia.hoje small{color:var(--azul-hover);font-weight:800}
+.pilula{display:block;font-size:10px;font-weight:600;color:#fff;border-radius:5px;
+  padding:2.5px 7px;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;
+  transition:transform .15s ease}
+.pilula:hover{transform:translateY(-1px)}
+
+/* ── DOCUMENTOS ───────────────────────────────────────────────── */
+.doc-topo{display:flex;align-items:center;margin-bottom:14px}
+.doc-topo .bt{margin-left:auto}
+.tabela{background:var(--branco);border:1px solid var(--c-200);border-radius:var(--r-card);
+  box-shadow:var(--sombra-1);overflow:hidden;max-width:880px}
+.tabela table{width:100%;border-collapse:collapse;font-size:12.5px}
+.tabela th{text-align:left;font-size:10px;font-weight:700;letter-spacing:.7px;text-transform:uppercase;
+  color:var(--c-500);background:var(--c-50);padding:10px 16px;border-bottom:1px solid var(--c-200)}
+.tabela td{padding:12px 16px;border-bottom:1px solid var(--c-100);color:var(--c-700)}
+.tabela tr:last-child td{border-bottom:0}
+.tabela tr:hover td{background:var(--c-50)}
+.st{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;
+  border-radius:var(--r-pill);padding:3px 10px}
+.st-ok{background:var(--verde-50);color:var(--verde-texto)}
+.st-vence{background:var(--ambar-50);color:var(--ambar)}
+.st-vencida{background:var(--verm-50);color:var(--verm)}
+
+/* ── VAZIO "EM BREVE" (estado desenhado) ──────────────────────── */
+.vazio{max-width:460px;margin:64px auto;text-align:center}
+.vazio svg{width:120px;height:90px;margin-bottom:18px}
+.vazio h3{font-size:15px;font-weight:600;color:var(--c-700)}
+.vazio p{font-size:12.5px;color:var(--c-500);margin:7px 0 18px;line-height:1.6}
+
+/* rodapé de protótipo */
+.selo-proto{position:fixed;bottom:12px;right:14px;z-index:80;font-size:10px;letter-spacing:.6px;
+  background:var(--c-800);color:#fff;opacity:.82;border-radius:var(--r-pill);padding:5px 12px}
+
+@media(max-width:960px){
+  #menu{display:none}
+  main{margin-left:0}
+  .grade-busca{grid-template-columns:1fr}
+  .filtros{position:static}
+  .kpis{grid-template-columns:repeat(2,1fr)}
+  .kanban{grid-template-columns:1fr;max-width:420px}
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════════ MENU LATERAL ═══════════ -->
+<nav id="menu">
+  <div class="marca">
+    <div class="cruz">+</div>
+    <div><b>FPMED</b><small>HOSPITALAR</small></div>
+  </div>
+  <div class="grupo">Oportunidades</div>
+  <a class="on" data-tela="buscar"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>Buscar</a>
+  <a data-tela="radar"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1" fill="currentColor"/></svg>Radar</a>
+  <a data-tela="desertas"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg>Desertas</a>
+  <a data-tela="jornais"><svg viewBox="0 0 24 24"><path d="M4 5h13v14H4z"/><path d="M17 8h3v11H5"/><path d="M7 9h7M7 12.5h7M7 16h4"/></svg>Meus Jornais</a>
+  <div class="grupo">Gestão</div>
+  <a data-tela="negocios"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="4.5" height="16" rx="1"/><rect x="10" y="4" width="4.5" height="11" rx="1"/><rect x="16" y="4" width="4.5" height="7" rx="1"/></svg>Negócios</a>
+  <a data-tela="calendario"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M8 3v4M16 3v4"/></svg>Calendário</a>
+  <a data-tela="documentos"><svg viewBox="0 0 24 24"><path d="M4 7a2 2 0 0 1 2-2h4l2 2h6a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/></svg>Documentos</a>
+  <div class="grupo">Ferramentas</div>
+  <a data-tela="proposta"><svg viewBox="0 0 24 24"><path d="M7 3h7l4 4v14H7z"/><path d="M14 3v4h4M10 12h5M10 15.5h5"/></svg>Proposta</a>
+  <a data-tela="leitor"><svg viewBox="0 0 24 24"><path d="M12 3.5 13.8 9l5.7 1.8-5.7 1.8L12 18.2l-1.8-5.6L4.5 10.8 10.2 9z"/></svg>Leitor de edital</a>
+  <a data-tela="conferir"><svg viewBox="0 0 24 24"><path d="M12 4v16M6 7l6-3 6 3"/><path d="M4 13a3 3 0 0 0 6 0L7 7zM14 13a3 3 0 0 0 6 0l-3-6z"/></svg>Conferir CMED</a>
+  <a data-tela="pecas"><svg viewBox="0 0 24 24"><path d="M14 4 20 10 9 21H4v-5z"/><path d="m12.5 6.5 5 5"/></svg>Peças</a>
+  <a data-tela="declaracoes"><svg viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6z"/><path d="M9 12h7M9 15.5h7M9 8.5h3"/></svg>Declarações</a>
+  <div class="rodape">📞 (62) 3290-4241<br>Compromisso com qualidade!</div>
+</nav>
+
+<main>
+  <!-- ═══════════ CABEÇALHO ═══════════ -->
+  <header class="topo">
+    <div>
+      <h1 id="t-titulo">Buscar licitações</h1>
+      <div class="sub" id="t-sub">Índice FPMED completo até 11/08 · busca nacional em todos os estados</div>
+    </div>
+    <div class="dir">
+      <div class="badge-emp"><i></i>FPMED HOSPITALAR · Todas as empresas</div>
+      <button class="sino" title="2 avisos: sessão amanhã 09h · certidão vencendo">
+        <svg viewBox="0 0 24 24"><path d="M6 9a6 6 0 1 1 12 0c0 5 2 6 2 6H4s2-1 2-6"/><path d="M10 20a2.2 2.2 0 0 0 4 0"/></svg><em></em>
+      </button>
+      <div class="avatar">N</div>
+    </div>
+  </header>
+
+  <!-- ═══════════ TELA · BUSCAR ═══════════ -->
+  <section class="tela on" id="tela-buscar">
+    <div class="busca-cartao">
+      <div class="busca-linha">
+        <div class="campo">
+          <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+          <input type="text" placeholder="busque por item — ex.: albumina, dipirona…">
+        </div>
+        <button class="bt bt-azul">Buscar</button>
+      </div>
+      <div class="busca-hint">Mostrando o <b>ramo da FPMED</b> (medicamento, hospitalar, material médico, farmac, soro, correlatos) — digite um item pra buscar algo específico.</div>
+    </div>
+
+    <div class="grade-busca">
+      <aside class="filtros">
+        <h5>Filtros</h5>
+        <div class="nota">O que estiver preenchido vale na busca. Em branco = sem filtro.</div>
+        <label>UF</label>
+        <select><option>GO</option><option>Todas</option><option>DF</option><option>MG</option></select>
+        <label>Município</label>
+        <select><option>Todos</option><option>Goiânia</option><option>Aparecida de Goiânia</option><option>Rio Verde</option></select>
+        <label>Modalidade</label>
+        <select><option>Pregão eletrônico</option><option>Todas</option><option>Dispensa</option><option>Concorrência</option></select>
+        <label>Período</label>
+        <div class="par">
+          <input type="date" value="2026-08-11">
+          <input type="date" value="2026-08-11">
+        </div>
+        <label>Portal</label>
+        <select><option>Todos os portais</option><option>Compras.gov</option><option>BLL</option><option>Licitanet</option></select>
+        <div class="check"><input type="checkbox" checked id="ck-prazo"><label for="ck-prazo" style="all:unset;font-size:12px;color:var(--c-600);cursor:pointer">Só prazo aberto</label></div>
+        <div class="acoes">
+          <button class="bt bt-azul">Aplicar</button>
+          <button class="bt bt-linha">Limpar</button>
+        </div>
+        <a class="mais">Mais filtros ▾</a>
+      </aside>
+
+      <div>
+        <div class="res-topo">
+          <b class="num">128 oportunidades encontradas</b>
+          <span>índice completo até 11/08 · <a style="color:var(--azul-hover)">+ Incluir licitação</a></span>
+          <span class="chip-estoque num">estoque FPMED: 1.381 itens prontos</span>
+        </div>
+
+        <article class="card-lic">
+          <div class="obj">Aquisição de ALBUMINA HUMANA 20% solução injetável 50 mL, DIPIRONA SÓDICA 500 mg/mL e demais medicamentos da RENAME para abastecimento da rede estadual, conforme Termo de Referência do Anexo I</div>
+          <span class="tag tag-indice fonte">Índice FPMED</span>
+          <div class="meta">
+            <div class="md"><small>Órgão</small><span>Sec. de Estado da Saúde de Goiás</span></div>
+            <div class="md"><small>Município / UF</small><span>Goiânia · GO</span></div>
+            <div class="md"><small>Modalidade</small><span>Pregão eletrônico</span></div>
+            <div class="md"><small>Abertura</small><span class="forte num">14/08 às 09h</span></div>
+            <div class="md"><small>Valor estimado</small><span class="forte num">R$ 1.284.500,00</span></div>
+          </div>
+          <div class="acoes">
+            <button class="bt bt-azul">+ Adicionar ao funil</button>
+            <button class="bt bt-linha">Ver edital</button>
+            <button class="bt bt-fantasma">Arquivar</button>
+          </div>
+        </article>
+
+        <article class="card-lic">
+          <div class="obj">Registro de preços para aquisição de material médico-hospitalar: seringas, equipos, cateteres e luvas de procedimento para as unidades básicas de saúde</div>
+          <span class="tag tag-indice fonte">Índice FPMED</span>
+          <div class="meta">
+            <div class="md"><small>Órgão</small><span>Fundo Mun. de Saúde de Rio Verde</span></div>
+            <div class="md"><small>Município / UF</small><span>Rio Verde · GO</span></div>
+            <div class="md"><small>Modalidade</small><span>Pregão eletrônico</span></div>
+            <div class="md"><small>Abertura</small><span class="forte num">18/08 às 08h30</span></div>
+            <div class="md"><small>Valor estimado</small><span class="forte num">R$ 342.180,00</span></div>
+          </div>
+          <div class="acoes">
+            <button class="bt bt-azul">+ Adicionar ao funil</button>
+            <button class="bt bt-linha">Ver edital</button>
+            <button class="bt bt-fantasma">Arquivar</button>
+          </div>
+        </article>
+
+        <article class="card-lic">
+          <div class="obj">Aquisição emergencial de soluções parenterais de grande volume — soro fisiológico 0,9% e ringer lactato — para o Hospital Estadual de Urgências</div>
+          <span class="tag tag-nac fonte">Busca nacional</span>
+          <div class="meta">
+            <div class="md"><small>Órgão</small><span>Sec. de Saúde do Tocantins</span></div>
+            <div class="md"><small>Município / UF</small><span>Palmas · TO</span></div>
+            <div class="md"><small>Modalidade</small><span>Dispensa eletrônica</span></div>
+            <div class="md"><small>Abertura</small><span class="forte num">13/08 às 14h</span></div>
+            <div class="md"><small>Valor estimado</small><span class="forte num">R$ 96.400,00</span></div>
+          </div>
+          <div class="acoes">
+            <button class="bt bt-azul">+ Adicionar ao funil</button>
+            <button class="bt bt-linha">Ver edital</button>
+            <button class="bt bt-fantasma">Arquivar</button>
+          </div>
+        </article>
+
+        <article class="card-lic">
+          <div class="obj">Credenciamento e aquisição de medicamentos controlados (Portaria 344) — clonazepam, diazepam e biperideno — mediante ata de registro de preços</div>
+          <span class="tag tag-man fonte">Incluída manual</span>
+          <div class="meta">
+            <div class="md"><small>Órgão</small><span>Pref. de Aparecida de Goiânia</span></div>
+            <div class="md"><small>Município / UF</small><span>Aparecida de Goiânia · GO</span></div>
+            <div class="md"><small>Modalidade</small><span>Pregão presencial</span></div>
+            <div class="md"><small>Abertura</small><span class="forte num">21/08 às 09h</span></div>
+            <div class="md"><small>Valor estimado</small><span class="forte num">R$ 188.930,00</span></div>
+          </div>
+          <div class="acoes">
+            <button class="bt bt-azul">+ Adicionar ao funil</button>
+            <button class="bt bt-linha">Ver edital</button>
+            <button class="bt bt-fantasma">Arquivar</button>
+          </div>
+        </article>
+
+        <div class="pagina">
+          <button class="on">1</button><button>2</button><button>3</button><button>…</button><button>13</button>
+          <span class="num">mostrando 1–10 de 128</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════ TELA · NEGÓCIOS ═══════════ -->
+  <section class="tela" id="tela-negocios">
+    <div class="kpis">
+      <div class="kpi"><small>No funil agora</small><b class="num">37</b></div>
+      <div class="kpi"><small>No histórico</small><b class="num">2.558</b></div>
+      <div class="kpi"><small>Ganhas</small><b class="num verde">105</b></div>
+      <div class="kpi"><small>Taxa de vitória</small><b class="num verde">15,1%</b></div>
+      <div class="kpi"><small>Total ganho</small><b class="num verde" style="font-size:17px">R$ 63.034.332,63</b></div>
+    </div>
+
+    <div class="kanban">
+      <div class="coluna">
+        <h4><i style="background:var(--et-1)"></i>Oportunidade<em class="num">12</em></h4>
+        <div class="card-neg" onclick="abreFicha()">
+          <div class="t">PE 90012/2026 · Sec. Saúde GO — albumina e RENAME</div>
+          <div class="o">Goiânia · GO</div>
+          <div class="prog"><span class="pontos"><i style="background:var(--et-1);border-color:var(--et-1)"></i><i></i><i></i><i></i><i></i></span><span>etapa 1 de 5 · Oportunidade</span></div>
+          <div class="v num">R$ 1.284.500,00</div>
+        </div>
+        <div class="card-neg" onclick="abreFicha()">
+          <div class="t">DE 2044/2026 · Palmas — soluções parenterais</div>
+          <div class="o">Palmas · TO</div>
+          <div class="prog"><span class="pontos"><i style="background:var(--et-1);border-color:var(--et-1)"></i><i></i><i></i><i></i><i></i></span><span>etapa 1 de 5 · Oportunidade</span></div>
+          <div class="v num">R$ 96.400,00</div>
+        </div>
+      </div>
+      <div class="coluna">
+        <h4><i style="background:var(--et-2)"></i>Qualificação<em class="num">9</em></h4>
+        <div class="card-neg" onclick="abreFicha()">
+          <div class="t">PE 55/2026 · Rio Verde — material médico-hospitalar</div>
+          <div class="o">Rio Verde · GO</div>
+          <div class="prog"><span class="pontos"><i style="background:var(--et-1);border-color:var(--et-1)"></i><i style="background:var(--et-2);border-color:var(--et-2)"></i><i></i><i></i><i></i></span><span>etapa 2 de 5 · Qualificação</span></div>
+          <div class="v num">R$ 342.180,00</div>
+        </div>
+      </div>
+      <div class="coluna">
+        <h4><i style="background:var(--et-3)"></i>Disputa<em class="num">6</em></h4>
+        <div class="card-neg" onclick="abreFicha()">
+          <div class="t">PE 50/2026 · BLL · Hosp. das Clínicas — 48 itens farmac.</div>
+          <div class="o">Goiânia · GO · sessão 12/08 às 09h</div>
+          <div class="prog"><span class="pontos"><i style="background:var(--et-1);border-color:var(--et-1)"></i><i style="background:var(--et-2);border-color:var(--et-2)"></i><i style="background:var(--et-3);border-color:var(--et-3)"></i><i></i><i></i></span><span>etapa 3 de 5 · Disputa</span></div>
+          <div class="v num">R$ 811.240,00</div>
+        </div>
+      </div>
+      <div class="coluna">
+        <h4><i style="background:var(--et-4)"></i>Habilitação<em class="num">4</em></h4>
+        <div class="card-neg" onclick="abreFicha()">
+          <div class="t">PE 31/2026 · Anápolis — correlatos e insumos</div>
+          <div class="o">Anápolis · GO</div>
+          <div class="prog"><span class="pontos"><i style="background:var(--et-1);border-color:var(--et-1)"></i><i style="background:var(--et-2);border-color:var(--et-2)"></i><i style="background:var(--et-3);border-color:var(--et-3)"></i><i style="background:var(--et-4);border-color:var(--et-4)"></i><i></i></span><span>etapa 4 de 5 · Habilitação</span></div>
+          <div class="v num">R$ 129.600,00</div>
+        </div>
+      </div>
+      <div class="coluna">
+        <h4><i style="background:var(--et-5)"></i>Ata<em class="num">6</em></h4>
+        <div class="card-neg" onclick="abreFicha()">
+          <div class="t">PE 09/2026 · Sec. Saúde GO — soros · GANHO ✓</div>
+          <div class="o">Goiânia · GO · 14 itens ganhos</div>
+          <div class="prog"><span class="pontos"><i style="background:var(--et-1);border-color:var(--et-1)"></i><i style="background:var(--et-2);border-color:var(--et-2)"></i><i style="background:var(--et-3);border-color:var(--et-3)"></i><i style="background:var(--et-4);border-color:var(--et-4)"></i><i style="background:var(--et-5);border-color:var(--et-5)"></i></span><span>etapa 5 de 5 · Ata</span></div>
+          <div class="v num" style="color:var(--verde-texto)">R$ 2.471.300,00</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════ TELA · CALENDÁRIO ═══════════ -->
+  <section class="tela" id="tela-calendario">
+    <div class="cal-topo">
+      <button>‹</button><b>Agosto de 2026</b><button>›</button>
+      <div class="legenda">
+        <span><i style="background:var(--et-3)"></i>Sessão de disputa</span>
+        <span><i style="background:var(--et-2)"></i>Prazo de proposta</span>
+        <span><i style="background:var(--et-4)"></i>Recurso / habilitação</span>
+      </div>
+    </div>
+    <div class="cal">
+      <div class="cal-sem"><div>dom</div><div>seg</div><div>ter</div><div>qua</div><div>qui</div><div>sex</div><div>sáb</div></div>
+      <div class="cal-grade" id="cal-grade"></div>
+    </div>
+  </section>
+
+  <!-- ═══════════ TELA · DOCUMENTOS ═══════════ -->
+  <section class="tela" id="tela-documentos">
+    <div class="doc-topo">
+      <div>
+        <b style="font-size:14px">Certidões e habilitação</b>
+        <div style="font-size:11.5px;color:var(--c-500)">O sino avisa 15 dias antes de vencer — certidão vencida derruba habilitação.</div>
+      </div>
+      <button class="bt bt-azul">⤓ Baixar tudo em ZIP</button>
+    </div>
+    <div class="tabela">
+      <table>
+        <tr><th>Documento</th><th>Órgão emissor</th><th>Vencimento</th><th>Situação</th></tr>
+        <tr><td>CND Federal (RFB/PGFN)</td><td>Receita Federal</td><td class="num">04/11/2026</td><td><span class="st st-ok">Válida</span></td></tr>
+        <tr><td>CRF do FGTS</td><td>Caixa Econômica</td><td class="num">23/08/2026</td><td><span class="st st-vence">Vence em 12 dias</span></td></tr>
+        <tr><td>CND Estadual — GO</td><td>Sefaz GO</td><td class="num">02/08/2026</td><td><span class="st st-vencida">Vencida</span></td></tr>
+        <tr><td>CNDT Trabalhista</td><td>TST</td><td class="num">15/12/2026</td><td><span class="st st-ok">Válida</span></td></tr>
+        <tr><td>Alvará Sanitário</td><td>Vig. Sanitária Municipal</td><td class="num">30/04/2027</td><td><span class="st st-ok">Válida</span></td></tr>
+        <tr><td>AFE — Anvisa</td><td>Anvisa</td><td class="num">—</td><td><span class="st st-ok">Ativa</span></td></tr>
+      </table>
+    </div>
+  </section>
+
+  <!-- ═══════════ TELAS "EM BREVE" (estado vazio desenhado) ═══════════ -->
+  <section class="tela" id="tela-vazio">
+    <div class="vazio">
+      <svg viewBox="0 0 120 90" fill="none">
+        <rect x="18" y="16" width="84" height="58" rx="8" fill="#EDF1F5"/>
+        <rect x="28" y="28" width="36" height="7" rx="3.5" fill="#CBD5E0"/>
+        <rect x="28" y="41" width="64" height="5" rx="2.5" fill="#E3E9F0"/>
+        <rect x="28" y="51" width="52" height="5" rx="2.5" fill="#E3E9F0"/>
+        <circle cx="88" cy="30" r="9" fill="#2CA9E0" opacity=".25"/>
+        <path d="M84 30l3 3 5-6" stroke="#1576A5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <h3 id="vazio-t">Radar por raio — em construção</h3>
+      <p id="vazio-p">Este módulo está na fila da reforma e chega em breve: busca por “até X km da sua cidade” pra otimizar logística e entrega.</p>
+      <button class="bt bt-linha" data-tela="buscar" onclick="vaiPara('buscar')">← Voltar pro Buscar</button>
+    </div>
+  </section>
+</main>
+
+<!-- ═══════════ FICHA DO NEGÓCIO (drawer com stepper) ═══════════ -->
+<div id="veu" onclick="fechaFicha()"></div>
+<aside id="ficha" aria-label="Ficha do negócio">
+  <div class="f-topo">
+    <div>
+      <div class="t">PE 50/2026 · BLL · Hospital das Clínicas — 48 itens farmacêuticos</div>
+      <div class="o">Goiânia · GO · sessão 12/08 às 09h · <span class="num">R$ 811.240,00</span> estimado</div>
+    </div>
+    <button class="x" onclick="fechaFicha()" aria-label="fechar">✕</button>
+  </div>
+  <div class="f-corpo">
+    <div class="etapas-cx">
+      <h4>Etapa do processo</h4>
+      <div class="passos">
+        <button class="passo feito"><span class="bola">✓</span><span class="nm">Oportunidade</span></button>
+        <button class="passo feito"><span class="bola">✓</span><span class="nm">Qualificação</span></button>
+        <button class="passo agora"><span class="bola">3</span><span class="nm">Disputa</span></button>
+        <button class="passo"><span class="bola">4</span><span class="nm">Habilitação</span></button>
+        <button class="passo"><span class="bola">5</span><span class="nm">Ata</span></button>
+      </div>
+      <div class="etapa-legenda"><b>Etapa 3 de 5 · Disputa</b> · faltam 2 até Ata — clique numa etapa para mover o negócio (fica no histórico)</div>
+      <div class="foco">👉 A sessão é o que manda agora: confirme data e hora, e deixe o lembrete de abertura no sino.</div>
+    </div>
+
+    <div class="abas">
+      <button>Informações</button>
+      <button class="on foco-dot">Lembretes <span class="num">(2)</span></button>
+      <button>Proposta</button>
+      <button>Gerenciamento de Ata</button>
+      <button>Credenciamentos</button>
+      <button>Observações</button>
+    </div>
+
+    <div class="sec">
+      <h4>Lembretes agendados</h4>
+      <div class="dica">Avisam no sino e por e-mail na manhã da data — o botão do zap abre a mensagem pronta.</div>
+      <dl class="f-dl">
+        <dt>Sessão de abertura</dt><dd class="num">12/08 às 09h · sino + e-mail às 07h ✓</dd>
+        <dt>Enviar amostras</dt><dd class="num">até 15/08 · prioridade alta</dd>
+      </dl>
+    </div>
+
+    <div class="sec">
+      <h4>Proposta enviada</h4>
+      <div class="dica">Versões ficam guardadas — nada se apaga, cada envio vira uma versão nova.</div>
+      <dl class="f-dl">
+        <dt>Arquivo</dt><dd>proposta_PE50_v3.pdf · versão 3</dd>
+        <dt>Conferência</dt><dd><span class="selo-pmvg">⚖ dentro do teto PMVG · CMED de ago/2026</span></dd>
+      </dl>
+    </div>
+
+    <div class="f-acoes">
+      <button class="bt bt-azul">📱 Avisar no zap</button>
+      <button class="bt bt-linha">⚖ Conferir preços (CMED)</button>
+      <div class="mais-cx" id="maiscx">
+        <button class="bt bt-fantasma" onclick="document.getElementById('maiscx').classList.toggle('on');event.stopPropagation()">⋯ mais ações</button>
+        <div class="mais-menu">
+          <a>📄 Ler edital (IA) — piloto</a>
+          <a>⚖ Recurso / esclarecimento</a>
+          <a>📁 Documentos de habilitação</a>
+          <a>🏆 Gerenciamento de Ata</a>
+        </div>
+      </div>
+      <span style="flex:1"></span>
+      <button class="bt bt-fantasma">Arquivar</button>
+      <button class="bt bt-linha" onclick="fechaFicha()">Fechar</button>
+    </div>
+  </div>
+</aside>
+
+<div class="selo-proto">PROTÓTIPO NAVEGÁVEL · dados de demonstração</div>
+
+<script>
+/* Navegação simples do protótipo — sem armazenamento, tudo em memória. */
+const TITULOS = {
+  buscar:      ['Buscar licitações', 'Índice FPMED completo até 11/08 · busca nacional em todos os estados'],
+  negocios:    ['Negócios', 'O funil: em que pé está cada disputa — arraste os cards entre etapas'],
+  calendario:  ['Calendário', 'As sessões e prazos do mês, por cor de etapa'],
+  documentos:  ['Documentos', 'Certidões de habilitação com aviso de vencimento'],
+};
+const VAZIOS = {
+  radar:       ['Radar por raio — em construção', 'Busca por “até X km da sua cidade” pra otimizar logística e entrega. Está na fila da reforma.'],
+  desertas:    ['Desertas e republicáveis', 'Processos que não seguiram — costumam ser republicados. A tela nova chega na fila da reforma.'],
+  jornais:     ['Meus Jornais', 'Buscas salvas que mostram só o que chegou de novo desde a última olhada.'],
+  proposta:    ['Gerador de proposta', 'Puxar itens pelo ID da compra, desconto em lote com trava PMVG, Excel e PDF timbrado — em construção na fila.'],
+  leitor:      ['Leitor de edital (IA)', 'Lê edital de qualquer tamanho, extrai itens e gera resumo. Em piloto para o gestor — cada leitura tem custo e fica registrada.'],
+  conferir:    ['Conferir CMED', 'Preço da proposta contra o teto legal PMVG — a tela atual continua funcionando; a roupa nova vem na fila.'],
+  pecas:       ['Peças jurídicas', 'Impugnação, esclarecimento, recurso — com o prazo em dias úteis na frente.'],
+  declaracoes: ['Gerador de declarações', 'Modelos editáveis preenchidos com os dados da empresa, redigidos da Lei 14.133.'],
+};
+function vaiPara(k){
+  document.querySelectorAll('#menu a').forEach(a => a.classList.toggle('on', a.dataset.tela === k));
+  const ehVazio = !!VAZIOS[k];
+  document.querySelectorAll('.tela').forEach(t => t.classList.remove('on'));
+  if (ehVazio){
+    document.getElementById('vazio-t').textContent = VAZIOS[k][0];
+    document.getElementById('vazio-p').textContent = VAZIOS[k][1];
+    document.getElementById('tela-vazio').classList.add('on');
+    document.getElementById('t-titulo').textContent = VAZIOS[k][0].split(' — ')[0];
+    document.getElementById('t-sub').textContent = 'módulo da fila da reforma';
+  } else {
+    document.getElementById('tela-' + k).classList.add('on');
+    document.getElementById('t-titulo').textContent = TITULOS[k][0];
+    document.getElementById('t-sub').textContent = TITULOS[k][1];
+  }
+  window.scrollTo(0, 0);
+}
+document.querySelectorAll('#menu a').forEach(a =>
+  a.addEventListener('click', () => vaiPara(a.dataset.tela)));
+
+function abreFicha(){ document.getElementById('veu').classList.add('on');
+  document.getElementById('ficha').classList.add('on'); }
+function fechaFicha(){ document.getElementById('veu').classList.remove('on');
+  document.getElementById('ficha').classList.remove('on');
+  document.getElementById('maiscx').classList.remove('on'); }
+document.addEventListener('keydown', e => { if (e.key === 'Escape') fechaFicha(); });
+document.addEventListener('click', e => {
+  const cx = document.getElementById('maiscx');
+  if (!cx.contains(e.target)) cx.classList.remove('on');
+});
+
+/* Calendário de agosto/2026 (dom=1º dia da grade: 26/07) */
+(function(){
+  const g = document.getElementById('cal-grade');
+  const pil = {
+    3:  [['Prazo proposta · PE 55 Rio Verde', 'var(--et-2)']],
+    12: [['Sessão · PE 50 BLL 09h', 'var(--et-3)'], ['Sessão · DE 2044 Palmas 14h', 'var(--et-3)']],
+    14: [['Sessão · PE 90012 SES-GO 09h', 'var(--et-3)']],
+    15: [['Amostras · PE 50 BLL', 'var(--et-2)']],
+    18: [['Sessão · PE 55 Rio Verde 08h30', 'var(--et-3)']],
+    20: [['Recurso · PE 31 Anápolis (dia útil 3 de 5)', 'var(--et-4)']],
+    21: [['Sessão · Credenc. Aparecida 09h', 'var(--et-3)']],
+    26: [['Prazo proposta · PE 88 Jataí', 'var(--et-2)']],
+  };
+  let html = '';
+  for (let i = 0; i < 42; i++){
+    const d = new Date(2026, 6, 26 + i);           // 26/07/2026 é domingo
+    const dia = d.getDate(), fora = d.getMonth() !== 7;
+    const hoje = !fora && dia === 11;
+    let ps = '';
+    if (!fora && pil[dia]) ps = pil[dia].map(p =>
+      `<span class="pilula" style="background:${p[1]}" title="${p[0]}">${p[0]}</span>`).join('');
+    html += `<div class="dia${fora ? ' fora' : ''}${hoje ? ' hoje' : ''}"><small class="num">${dia}</small>${ps}</div>`;
+  }
+  g.innerHTML = html;
+})();
+</script>
+</body>
+</html>

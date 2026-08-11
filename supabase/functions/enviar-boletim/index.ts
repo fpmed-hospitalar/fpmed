@@ -171,11 +171,33 @@ Deno.serve(async (req) => {
   if (req.method !== "POST") return J({ error: "use POST" }, 405);
   if (req.headers.get("x-boletim-token") !== TOKEN) return J({ error: "nao autorizado" }, 401);
 
+  let body: any = {};
+  try { body = await req.json(); } catch { /* body é opcional */ }
+
+  const proibido = remetenteProibido(REMETENTE);
+
+  /* SONDA DE COMPLIANCE — `{"conferir": true}` responde QUAL DOMÍNIO está no remetente e se
+     ele está barrado, SEM ler jornal, SEM montar e-mail e SEM chamar o provedor.
+
+     >>> POR QUE ELA EXISTE. Sem ela, provar a trava ao vivo é ambíguo: se eu aponto o remetente
+     pro domínio proibido e a função MESMO ASSIM envia, eu não sei se a trava falhou ou se o
+     secret ainda não tinha propagado pro contêiner. Os dois casos parecem iguais de fora, e um
+     deles é defeito grave enquanto o outro é só pressa minha. A sonda separa os dois antes de
+     qualquer envio acontecer.
+     Domínio de remetente não é segredo — é o que vai impresso no cabeçalho de todo e-mail. */
+  if (body.conferir === true) return J({
+    ok: true,
+    remetente_dominio: dominioDe(REMETENTE) || "(sem dominio)",
+    proibido: !!proibido,
+    nota: proibido
+      ? "BARRADO: dominio da GlobalMed no remetente da FPMED. Nenhum envio aconteceria."
+      : "liberado para envio",
+  }, 200);
+
   /* A TRAVA DE COMPLIANCE, ANTES DE QUALQUER TRABALHO. Ela recusa a rodada inteira em vez de
      pular o envio: pular deixaria o boletim "quase funcionando" e o motivo escondido no meio
      de um relatório de sucesso. Aqui a rodada para, ninguém marca `vistos_email`, e a mensagem
      diz o conserto — que é VERIFICAR fpmed.com.br, não trocar código. */
-  const proibido = remetenteProibido(REMETENTE);
   if (proibido) return J({
     ok: false,
     compliance: "remetente_proibido",
@@ -187,8 +209,7 @@ Deno.serve(async (req) => {
       + "destinatario = so o dono. Nenhum e-mail foi enviado e nada foi marcado como visto.",
   }, 200);
 
-  let body: any = {};
-  try { body = await req.json(); } catch { /* body é opcional */ }
+  // `body` já foi lido lá em cima, antes da sonda e da trava — não se lê de novo aqui.
 
   // O DIA D-1, no fuso de Goiás (UTC-3). Em UTC, às 8h da manhã lá são 5h — e usar o dia UTC
   // faria o boletim de segunda falar de domingo em algumas madrugadas e de sábado em outras.

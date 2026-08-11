@@ -52,8 +52,16 @@ ok('3. ha uma funcao que decide, em vez de um if solto no meio do envio',
 ok('4. a trava roda ANTES de ler jornal, montar e-mail ou chamar o Resend',
   F.indexOf('remetenteProibido(REMETENTE)') < F.indexOf('api.resend.com') &&
   F.indexOf('remetenteProibido(REMETENTE)') < F.indexOf('rest/v1/jornais'));
+// O BLOCO da trava, recortado pelas proprias chaves - nao por distancia em
+// caracteres. A versao anterior media 400 caracteres a partir de
+// `remetenteProibido(REMETENTE)` e ficou vermelha assim que a sonda entrou no
+// meio: o codigo estava certo, a regua e que era de borracha. Assert que depende
+// de distancia quebra em toda edicao vizinha, e assert que quebra por nada treina
+// a pessoa a ignorar vermelho.
+const iTrava = F.indexOf('if (proibido) return J({');
+const bloco = iTrava < 0 ? '' : F.slice(iTrava, F.indexOf('}, 200);', iTrava));
 ok('5. e ela recusa a rodada inteira, nao pula so o envio',
-  /compliance:\s*"remetente_proibido"/.test(F) && /ok:\s*false/.test(F.slice(F.indexOf('remetenteProibido(REMETENTE)'), F.indexOf('remetenteProibido(REMETENTE)') + 400)));
+  iTrava >= 0 && /compliance:\s*"remetente_proibido"/.test(bloco) && /ok:\s*false/.test(bloco));
 
 // ── 2. o comportamento da funcao de decisao, exercitado de verdade ───────────
 // Nao adianta conferir que o codigo existe: o que importa e o que ele DECIDE.

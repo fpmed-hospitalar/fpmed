@@ -48,7 +48,52 @@ Todo relatório traz:
 **Sem prova, não aconteceu.** Item do ritual que não deu pra cumprir se declara
 com o motivo — nunca se marca como cumprido.
 
-## 4. NADA MUDA NAS REGRAS JÁ VIVAS
+## 4. O TRIÂNGULO — quem faz o quê *(registrado em 11/08)*
+
+| papel | quem | o que faz |
+|---|---|---|
+| **Dono** | Lemuel | decide negócio, cola as caixas, leva os relatórios ao arquiteto. **É o correio e o martelo — não é ele quem lê código.** |
+| **Construtor** | eu (Claude Code) | construo, provo, publico, relato |
+| **Arquiteto** | o chat do Claude na conta dele | escreve as caixas que chegam pra mim, traduz meus relatórios pra linguagem de negócio, mantém o padrão, e **audita meus números direto na fonte** (leitura no Supabase e no Resend — **nunca escreve, só confere**) |
+
+**Regra do fluxo: tudo que eu reporto, o Lemuel manda pro arquiteto.**
+
+O que isso muda na prática do meu lado — e não é pouco:
+
+- **todo relatório tem dois leitores.** O dono precisa da linguagem de negócio: o
+  que mudou na tela dele, o que ele ganha, o que ele precisa decidir. O arquiteto
+  vai **conferir cada número no banco**. Escrever só pra um dos dois entrega um
+  relatório pela metade;
+- **número meu é auditável por construção.** Se eu escrevo "2.558 negócios", isso
+  vai ser conferido. Isso não muda o que eu tenho que fazer — o número já tinha
+  que bater — mas **tira a minha palavra do caminho**, que é como tem que ser.
+  Por isso todo número no relatório vem com **de onde saiu**;
+- **divergência entre nós dois é dado, não briga.** Se o arquiteto medir diferente
+  de mim, o certo é dizer qual caminho cada um percorreu — quase sempre a diferença
+  está no caminho, não no banco (foi exatamente a lição S2);
+- **o glossário é obrigação minha**, não conveniência: `docs/dossie_arquiteto.md`
+  guarda os nomes internos, o estado da fila e os números-referência, e **é meu
+  dever mantê-lo atualizado quando algo estrutural mudar.** Confusão de nome entre
+  nós dois vira decisão errada do dono, que é quem está no meio.
+
+### O guia mestre visual *(11/08)*
+O arquiteto construiu o **protótipo navegável** da interface completa
+(`docs/prototipo/fpmed_prototipo_prime.html`). Ele é o **alvo** das fatias
+restantes: Buscar em cartões, kanban, calendário, documentos e ficha.
+
+| manda em | quem |
+|---|---|
+| **visual** — hierarquia, espaçamento, componentes | o protótipo |
+| **comportamento** — o que o clique faz, de onde vem o dado | **o motor real** |
+| **token** — cor, espaço, raio, sombra, tipografia | **`fpmed_tema.css` vence**, sempre |
+
+> **Nada regride pra caber no protótipo.** Busca nacional, paginação, procedência
+> separada e piloto do leitor continuam como estão — se o protótipo não mostrar um
+> deles, isso é lacuna do desenho, não permissão pra remover. A reforma é a roupa.
+
+**O teste do bater o olho passa a ser contra o protótipo + os GIFs do Prime.**
+
+## 5. NADA MUDA NAS REGRAS JÁ VIVAS
 
 - fila em ordem até acabar;
 - **URGÊNCIA fura e volta** — depois de resolvida, a fila retoma de onde parou;

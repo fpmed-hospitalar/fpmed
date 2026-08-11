@@ -245,6 +245,32 @@ Chave da Resend exposta.
 
 ---
 
+
+### S15 — "Deploy OK" não é "função de pé" *(11/08/2026)*
+Publiquei a `enviar-boletim` com `let body` declarado **duas vezes** no mesmo
+escopo. O deploy respondeu **"OK, versão 9, status ACTIVE"** — porque a Management
+API **recebe** o arquivo, ela não **compila** o arquivo. A função subiu quebrada e
+toda chamada passou a morrer antes da primeira linha. **Eu só descobri porque a
+minha própria sonda voltou vazia**; se eu não estivesse medindo naquele minuto, o
+boletim ficaria fora do ar até alguém reclamar de e-mail que não chegou.
+> **Regra:** todo deploy termina com **uma chamada real à função** — "aceitou o
+> arquivo" e "está de pé" são duas afirmações diferentes, e a primeira não implica
+> a segunda. E a classe de erro que derruba sem avisar virou assert:
+> `testa_edge_sanidade` lê cada edge function com uma pilha de escopos e reprova
+> nome declarado duas vezes no mesmo bloco.
+
+### S16 — O instrumento torto que acusou o arquivo certo *(11/08/2026)*
+A primeira versão de `testa_edge_sanidade` usava regex pra tirar comentário e
+string. Deu **dois vermelhos falsos de uma vez**: contou 11 chaves abrindo e 15
+fechando num arquivo saudável, e acusou redeclaração na `ler-edital`, que estava no
+ar funcionando havia dias. Comentário de fim de linha não era removido, então um
+apóstrofo dentro dele abria uma string imaginária; e a **indentação** foi usada
+como palpite de escopo — escopo não se lê por indentação.
+> **Regra:** é a S10 outra vez, e por isso ela está aqui de novo com outro nome:
+> **medida ruim se investiga na medida primeiro.** Se eu tivesse "consertado" a
+> `ler-edital`, teria quebrado uma função que estava certa por causa de um
+> instrumento torto. Instrumento que não distingue bom de ruim é pior que
+> instrumento nenhum, porque ele **parece** que mede.
 ## 5 · O JURAMENTO DO RELATÓRIO
 *O relatório não conta o que eu fiz: ele **prova**. Modelo fixo.*
 
