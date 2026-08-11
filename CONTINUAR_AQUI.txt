@@ -525,6 +525,60 @@ Criado em 21/07/2026 copiando SO os arquivos do app do C:\globalmed.
     Suite nova testa_pix (17). Ela ja pegou uma 2a copia do CNPJ escrita num COMENTARIO do
     config — que e exatamente o jeito classico de a copia nascer (alguem copia do comentario).
 
+>>> FILA — ESTADO EM 11/08, FIM DA RODADA. Conferido item a item, nao suposto.
+    [OK] 1. Extracao de itens do leitor de edital + botao na ficha + porta na barra do portal
+    [OK] 2. Credenciamento junto a industria (tabela, trilha por trigger, sino, carta)
+    [OK] 3. CMED sempre atualizada (vigencia derivada, rotina mensal, Conferidor diz a regua)
+
+    RESTAM DOIS, e eles COMPARTILHAM A MESMA FUNDACAO — por isso a ordem importa:
+
+    4. PROPOSTA ANEXADA + COMPARATIVO PMVG (pedido de 11/08)
+       · anexar PDF da proposta no bucket que ja existe, vinculado ao negocio, EMPILHANDO versoes
+         (nunca sobrescrever)
+       · comparar contra o PMVG usando o LimedtecTetoCMED que ja existe — NADA de engine nova
+       · relatorio comparativo imprimivel + Excel, com a VIGENCIA DA CMED no rodape (a view
+         v_cmed_vigencia ja existe e ja e lida pelo Conferidor — reusar `frasePelaRegua`)
+       · o resultado da ultima conferencia fica REGISTRADO no negocio + selo no card
+       · permissao: mesma regra de edicao da ficha
+
+    5. GERENCIAMENTO DE ATA (detalhado pelo Lemuel em 11/08 — substitui e amplia o "Contrato→ATA")
+       · rotulo: fase "Contrato" exibe "Ata"; a ABA da ficha vira "Gerenciamento de Ata".
+         CHAVE INTERNA INTOCADA — mesmo padrao do Habilitacao (rotulo e apresentacao, chave e
+         identidade). A chave `contrato` esta gravada em negocios, no check constraint e no
+         MAPA_STATUS, igual a `classificacao`.
+       · ANEXOS TIPADOS em 6 categorias: ATA · CONTRATO · PROPOSTA FINAL · ATA DA SESSAO ·
+         ITENS GANHOS · RETORNO DE PRECOS. Lista agrupada por tipo, cada um com data e quem subiu,
+         versoes empilham. Mesmo bucket, vinculado ao id do negocio.
+       · RELATORIO DOS ITENS GANHOS (IA): le o documento de resultado e monta item/descricao/qtd/
+         valor unitario/total ganho + "ganhou X de Y · R$ Z". O total vira SUGESTAO pro campo
+         valor ganho, com CONFIRMACAO MANUAL e rastro — IA nunca escreve sozinha em campo que
+         alimenta a taxa de vitoria.
+       · RELATORIO DE MAPA DE PRECOS (IA): le a ATA DA SESSAO / RETORNO DE PRECOS e monta o mapa
+         da disputa item a item — nosso preco, preco vencedor, demais concorrentes e valores
+         quando o documento trouxer, e a diferenca nossa pro vencedor em R$ e %. E a inteligencia
+         comercial da derrota. Exportavel (imprimir/PDF + Excel), padrao dos documentos.
+       · As duas leituras de IA seguem as regras de sempre: contador de custo (piloto do gestor),
+         leitura cortada BLOQUEIA, aviso "confira contra o documento", modo hibrido.
+       · Suite: categorias de anexo, versoes, os dois relatorios sem campo vazio, sugestao com
+         confirmacao manual.
+
+    >>> POR ONDE COMECAR: os DOIS precisam de ANEXO TIPADO E VERSIONADO no bucket, vinculado ao
+        negocio. Construir isso UMA vez, servindo os dois, e o caminho — o item 4 usa a categoria
+        "PROPOSTA FINAL" e o item 5 usa as outras cinco. Fazer o anexo dentro do item 4 e depois
+        "estender" no 5 e como nascem dois jeitos de anexar no mesmo sistema.
+    >>> E AS DUAS LEITURAS DE IA DO ITEM 5 REUSAM a edge function `ler-edital`, que ja tem
+        permissao, contador, teto por tarefa e bloqueio de leitura cortada. O que entra la sao
+        DUAS TAREFAS NOVAS (`itens-ganhos` e `mapa-precos`), do mesmo jeito que `itens` entrou
+        hoje: prompt proprio, teto proprio, `tarefa` gravada em usos_ia. Uma funcao nova seria
+        uma segunda permissao e um segundo contador pra mesma cobranca.
+    >>> AINDA ABERTO destas rodadas: os DOIS BOTOES DE ANEXO da fase Habilitacao ("Anexar proposta
+        ajustada" e "Anexar documentacao"), que estao esperando exatamente esta fundacao.
+
+    NAO FEITO POR DEPENDER DELE (sem mudanca): chat de pregao (fora do escopo), sync da Global
+    (169 commits, 5 blocos esperando ele escolher), ddl/05 (policy RESTRICTIVE esperando OK),
+    ligaduras no casamento do Conferidor/Atualizar Estoque (tecnico, sem pressa, exige medicao
+    propria antes de mexer), e `tools/fechamento_mes.js` (as duas .xlsx do fechamento mensal).
+
 >>> 11/08 — CMED SEMPRE ATUALIZADA: a regua passou a dizer o nome dela.
 
     O QUE JA EXISTIA, e vale registrar em vez de refazer por cima: o `carrega_cmed_precos.js` JA
