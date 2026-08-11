@@ -69,7 +69,17 @@ header nav a.on{background:rgba(44,169,224,.16);color:var(--azul-claro);font-wei
 .wrap{max-width:1420px;margin:0 auto;padding:0 22px 70px}
 
 /* ── barra de topo: empresa · ordenar · filtrar ── */
-.barra{display:flex;gap:12px;align-items:center;flex-wrap:wrap;padding:18px 0 4px}
+/* ══ ARRUMAÇÃO VISUAL (11/08) ═════════════════════════════════════════════════════════════════
+   O cliente disse "está faltando alguma coisa, reorganizar melhor" olhando o Licitante Prime.
+   O que o Prime faz e esta tela não fazia é AGRUPAR: lá os controles moram dentro de um painel
+   com fundo próprio, e o conteúdo respira embaixo. Aqui a barra de filtros flutuava solta sobre
+   o fundo, encostada nos chips de fase, encostada nos KPIs — três coisas de níveis diferentes
+   com o mesmo peso visual, e nenhuma delas parecendo dona de nada.
+   >>> NADA MUDA DE COMPORTAMENTO. Os mesmos controles, nos mesmos lugares, fazendo o mesmo. O
+       que muda é o que o olho entende sem ler: onde uma coisa acaba e a outra começa. */
+.barra{display:flex;gap:12px;align-items:center;flex-wrap:wrap;
+  background:var(--painel);border:1px solid var(--linha);border-radius:12px;
+  padding:13px 16px;margin-top:18px}
 .barra select,.barra input{background:var(--painel2);border:1px solid var(--linha);color:var(--texto);
   border-radius:9px;padding:8px 12px;font-family:inherit;font-size:12.5px;outline:none}
 .barra select:focus,.barra input:focus{border-color:var(--azul)}
@@ -82,7 +92,10 @@ header nav a.on{background:rgba(44,169,224,.16);color:var(--azul-claro);font-wei
 .vis button.on{background:var(--azul);color:#06202e;font-weight:700}
 
 /* ── chips de fase ── */
-.fases{display:flex;gap:9px;flex-wrap:wrap;padding:16px 0 6px}
+/* OS CHIPS DE FASE são NAVEGAÇÃO, e não filtro-de-caixinha: eles ganharam ar em volta pra não
+   parecerem a segunda fileira da barra. É a diferença entre "mais um controle" e "por onde eu
+   entro na lista". */
+.fases{display:flex;gap:9px;flex-wrap:wrap;padding:18px 0 4px}
 .chip{background:var(--painel);border:1px solid var(--linha);color:var(--texto);border-radius:22px;
   padding:8px 16px;font-size:12.5px;cursor:pointer;display:flex;align-items:center;gap:8px;
   transition:border-color .16s,transform .16s,background .16s}
@@ -105,6 +118,10 @@ header nav a.on{background:rgba(44,169,224,.16);color:var(--azul-claro);font-wei
 .card .sit-tag{position:absolute;top:9px;right:14px;font-size:9px;letter-spacing:1.2px;font-weight:800;
   border:1px solid;border-radius:20px;padding:2px 8px}
 .card .sit-tag ~ .fase-tag{top:32px}         /* a fase desce pra não colidir com a etiqueta */
+/* >>> `.fase-tag` FICOU SEM USO em 11/08 — a etiqueta de fase do card virou o `.cd-prog`, e no
+       kanban a coluna já diz a fase. A regra fica por enquanto porque CSS órfão não quebra nada
+       e apagar seletor no mesmo commit que muda o HTML é como se descobre, dias depois, que ele
+       era usado num terceiro lugar. Sai numa limpeza própria, com o grep na mão. */
 /* PARADO ≠ SUMIDO: opacidade menor diz "isto não anda agora" sem esconder de ninguém.
    O :hover devolve a opacidade cheia — cartão que não dá pra ler direito vira cartão ignorado. */
 .card.parado{opacity:.55;filter:saturate(.6)}
@@ -173,8 +190,11 @@ header nav a.on{background:rgba(44,169,224,.16);color:var(--azul-claro);font-wei
   box-shadow:var(--sombra);overflow:hidden;margin:14px 0 4px;border:1px solid var(--linha)}
 .kpi{padding:14px 17px;border-right:1px solid var(--linha)}
 .kpi:last-child{border-right:0}
-.kpi b{font-family:Montserrat;font-size:21px;font-weight:700;display:block;line-height:1.15;color:#fff}
-.kpi span{font-size:11px;color:var(--muted)}
+/* A HIERARQUIA DO NÚMERO — o padrão que o Prime usa em todo dado: rótulo pequeno e cinza EM
+   CIMA, valor grande e branco EMBAIXO. O olho encontra o número primeiro e o nome dele depois,
+   que é a ordem em que a pergunta é feita ("quanto?" antes de "quanto do quê?"). */
+.kpi b{font-family:Montserrat;font-size:22px;font-weight:700;display:block;line-height:1.1;color:#fff;margin-bottom:3px}
+.kpi span{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
 
 /* ── drawer de detalhe ── */
 #velcro{position:fixed;inset:0;background:rgba(4,10,17,.62);opacity:0;pointer-events:none;transition:opacity .2s;z-index:40}
@@ -190,13 +210,57 @@ header nav a.on{background:rgba(44,169,224,.16);color:var(--azul-claro);font-wei
 .dw-top h2{margin:0;font-family:Montserrat;font-size:15px;font-weight:700;color:#fff;padding-right:40px;line-height:1.45}
 .dw-body{padding:16px 20px 40px}
 .dw-sec{margin-top:20px}
-.dw-sec > h4{margin:0 0 9px;font-family:Montserrat;font-size:11px;font-weight:700;letter-spacing:1.3px;
+.dw-sec > h4{margin:0 0 4px;font-family:Montserrat;font-size:11px;font-weight:700;letter-spacing:1.3px;
   text-transform:uppercase;color:var(--muted)}
-.dw-fases{display:flex;gap:6px;flex-wrap:wrap}
-.dw-fases button{background:var(--painel2);border:1px solid var(--linha);color:var(--muted);border-radius:20px;
-  padding:6px 13px;font-size:11.5px;font-family:inherit;cursor:pointer;transition:.16s}
-.dw-fases button:hover{border-color:var(--azul);color:var(--texto)}
-.dw-fases button.on{background:var(--verde);border-color:var(--verde);color:#1b2c06;font-weight:700}
+/* A LINHA QUE EXPLICA A SEÇÃO. O que enchia a tela não era a quantidade de seções — era ter que
+   ADIVINHAR o que cada uma faz. Dez palavras transformam "mais um bloco" em "ah, é isso". */
+.sec-dica{font-size:11.5px;color:var(--muted);margin:0 0 10px;line-height:1.5;opacity:.9}
+/* ══ O STEPPER DE ETAPAS ══ a linha do tempo que substituiu a fileira de botões iguais ══════
+   A LINHA que conecta é o ::before do container, atrás das bolas — é ela que transforma cinco
+   caixinhas num caminho. Sem ela seriam cinco botões bonitos e a pergunta "quanto falta?"
+   continuaria sem resposta visual. */
+.dw-etapas{background:var(--painel2);border:1px solid var(--linha);border-radius:12px;padding:15px 17px 13px}
+.passos-linha{display:flex;align-items:flex-start;gap:2px;position:relative;overflow-x:auto;padding-bottom:2px}
+.passos-linha::before{content:'';position:absolute;left:9%;right:9%;top:15px;height:2px;background:var(--linha);z-index:0}
+.passos-linha .pas{flex:1;min-width:74px;background:transparent;border:0;padding:0;cursor:pointer;
+  display:flex;flex-direction:column;align-items:center;gap:6px;position:relative;z-index:1;font-family:inherit}
+.passos-linha .bola{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;
+  background:var(--painel);border:2px solid var(--linha);color:var(--muted);
+  font-size:12.5px;font-weight:700;transition:transform .16s,box-shadow .16s}
+.passos-linha .nm{font-size:11px;color:var(--muted);text-align:center;line-height:1.25;transition:color .16s}
+/* PASSADO: cor cheia, mas discreto — ele já foi, não compete pela atenção. */
+.passos-linha .pas.feito .nm{color:var(--texto)}
+/* PRESENTE: é o único que cresce. O halo faz o olho parar aqui antes de ler qualquer coisa. */
+.passos-linha .pas.agora .bola{width:38px;height:38px;font-size:15px;box-shadow:0 0 0 5px rgba(44,169,224,.16)}
+.passos-linha .pas.agora .nm{color:#fff;font-weight:700;font-size:11.5px}
+/* FUTURO: apagado. Ele existe pra dizer QUANTO FALTA, e não pra ser lido agora. */
+.passos-linha .pas.futuro .bola{opacity:.42}
+.passos-linha .pas.futuro .nm{opacity:.5}
+.passos-linha .pas:hover .bola{transform:scale(1.08)}
+.passos-linha .pas:hover .nm{color:var(--azul-claro)}
+.passos-legenda{margin-top:11px;padding-top:10px;border-top:1px solid var(--linha);font-size:12px;color:var(--muted)}
+/* "O QUE FAZER AGORA" — a frase da etapa. Fundo próprio pra ela não virar mais uma linha de
+   texto cinza no meio de outras: é a única coisa da ficha que diz o que a pessoa deve FAZER. */
+.agora-faz{margin-top:9px;background:rgba(44,169,224,.10);border-left:3px solid var(--azul);
+  border-radius:0 8px 8px 0;padding:9px 12px;font-size:12.5px;color:#dceaf6;line-height:1.5}
+/* A ABA DA ETAPA ganha um ponto — o "você está aqui" do segundo nível. Ele existe porque a
+   pessoa pode ter navegado pra outra aba e voltado, e aí o `.on` já não é a da etapa. */
+.dw-abas button.foco::after{content:'';display:inline-block;width:6px;height:6px;border-radius:50%;
+  background:var(--verde);margin-left:6px;vertical-align:middle}
+/* ── "⋯ MAIS AÇÕES" ── o resto continua a UM clique, no mesmo lugar, sempre ── */
+.mais-cx{position:relative;display:inline-block}
+.mais-menu{display:none;position:absolute;bottom:calc(100% + 6px);left:0;min-width:220px;z-index:5;
+  background:var(--painel);border:1px solid var(--linha);border-radius:10px;padding:5px;
+  box-shadow:0 10px 30px rgba(0,0,0,.45)}
+.mais-cx.on .mais-menu{display:block}
+.mais-menu a{display:block;padding:8px 11px;border-radius:7px;font-size:12px;color:var(--texto);
+  cursor:pointer;text-decoration:none;white-space:nowrap}
+.mais-menu a:hover{background:var(--painel2);color:var(--azul-claro)}
+/* ── o mini-progresso do card ── */
+.cd-prog{display:flex;align-items:center;gap:8px;margin:2px 0 7px;flex-wrap:wrap}
+.cd-prog .bolas{display:flex;gap:3px}
+.cd-prog .bolas i{width:7px;height:7px;border-radius:50%;border:1px solid var(--linha);display:block}
+.cd-prog .txt{font-size:10.5px;color:var(--muted);letter-spacing:.2px}
 .ficha{display:grid;grid-template-columns:112px 1fr;gap:7px 12px;font-size:12.5px}
 .ficha dt{color:var(--muted)}
 .ficha dd{margin:0;color:var(--texto);word-break:break-word}
@@ -692,7 +756,11 @@ function card(n, noKanban){
   const sit = n.situacao && n.situacao !== 'normal' ? n.situacao : null;
   return `<div class="card${sit&&paradoDeVez(sit)?' parado':''}" ${noKanban?`draggable="true" data-id="${n.id}"`:''} onclick="abrirDrawer(${n.id})">
     ${sit ? `<div class="sit-tag" style="color:${corSituacao(sit)};border-color:${corSituacao(sit)}">${esc(rotuloSituacao(sit))}</div>` : ''}
-    <div class="fase-tag" style="color:${corFase(n.estagio)}">${esc(nomeFase(n.estagio))}</div>
+    <!-- A ETIQUETA DE FASE SOLTA VIROU PROGRESSO. Ela dizia "Qualificação" e pronto; o card
+         agora diz em que ponto do caminho isso é. No kanban a coluna já diz a fase, então lá o
+         indicador seria a mesma informação duas vezes — e card com informação repetida é card
+         que se lê pela metade. -->
+    ${noKanban ? '' : progressoCard(n)}
     ${n.empresa_id ? `<div class="emp">${esc((EMPRESAS.find(e=>e.id===n.empresa_id)||{}).razao_social || 'empresa').split(' ').slice(0,2).join(' ')}</div>` : ''}
     <div><span class="tit" title="${esc(n.objeto||'')}">${esc([n.portal,n.modalidade,n.numero].filter(Boolean).join(' · '))}${n.orgao?' — '+esc(n.orgao):''}</span></div>
     <div class="org">${esc(n.municipio||'')}${n.uf?' · '+esc(n.uf):''}</div>
@@ -938,23 +1006,24 @@ function corpoDrawer(n, obs, carregando){
        : (obs && obs.status ? `<h4>Status na planilha</h4><div style="font-size:12.5px;color:var(--muted)">${esc(obs.status)} — sem observação escrita</div>` : ''));
 
   return `
-    <div class="dw-sec">
-      <h4>Estágio</h4>
-      <div class="dw-fases">${FASES.map(f =>
-        `<button class="${n.estagio===f.k?'on':''}" onclick="mudaFase(${n.id},'${f.k}')">${esc(f.n)}</button>`).join('')}</div>
-    </div>
+    ${stepper(n)}
 
+    <!-- ══ AS ABAS ABREM NA QUE A ETAPA PEDE ═════════════════════════════════════════════════
+         São sete, e todas continuam aqui — o que muda é qual delas já vem aberta. Quem abre um
+         negócio na Disputa cai nos Lembretes (a sessão é o que manda); na Ata, cai no
+         Gerenciamento de Ata. A aba da etapa ganha um ponto verde: é o "você está aqui" do
+         segundo nível, e ele existe porque a pessoa PODE ter navegado pra outra e voltado. -->
     <div class="dw-abas">
-      <button class="on" data-aba="info"   onclick="abaFicha(this,'info')">Informações</button>
-      <button        data-aba="lembretes"  onclick="abaFicha(this,'lembretes')">Lembretes <span id="dw-lem-n"></span></button>
-      <button        data-aba="tarefas"    onclick="abaFicha(this,'tarefas')">Tarefas <span id="dw-tar-n"></span></button>
-      <button        data-aba="prop"       onclick="abaFicha(this,'prop')">Proposta <span id="dw-prop-n"></span></button>
-      <button        data-aba="ata"        onclick="abaFicha(this,'ata')">Gerenciamento de Ata <span id="dw-ata-n"></span></button>
-      <button        data-aba="cred"       onclick="abaFicha(this,'cred')">Credenciamentos <span id="dw-cred-n"></span></button>
-      <button        data-aba="obs"        onclick="abaFicha(this,'obs')">Observações</button>
+      ${[['info','Informações',''],['lembretes','Lembretes','dw-lem-n'],['tarefas','Tarefas','dw-tar-n'],
+         ['prop','Proposta','dw-prop-n'],['ata','Gerenciamento de Ata','dw-ata-n'],
+         ['cred','Credenciamentos','dw-cred-n'],['obs','Observações','']].map(([k,rot,cnt]) => {
+        const doFoco = k === focoDa(n.estagio).aba;
+        return `<button class="${doFoco?'on':''}${doFoco?' foco':''}" data-aba="${k}" onclick="abaFicha(this,'${k}')"
+          ${doFoco?'title="é a aba desta etapa do processo"':''}>${rot}${cnt?` <span id="${cnt}"></span>`:''}</button>`;
+      }).join('')}
     </div>
 
-    <div class="dw-painel on" id="aba-info">
+    <div class="${pnl(n,"info")}" id="aba-info">
       <div class="dw-sec"><h4>Ficha${editavel?' <span class="salvo" style="font-weight:400">· editável</span>':''}</h4>${ficha}</div>
       <!-- ══ EDITAL E ANEXOS — em QUALQUER negócio ═══════════════════════════════════════════
            Não só nos incluídos à mão: o que veio do PNCP e o do Calendário também recebem o
@@ -963,6 +1032,7 @@ function corpoDrawer(n, obs, carregando){
            estar no ar no dia da sessão. -->
       <div class="dw-sec" id="aba-edital">
         <h4>Edital e anexos</h4>
+        <div class="sec-dica">O documento do certame e o que vem com ele. Fica guardado aqui — não depende do portal estar no ar.</div>
         <div id="ed-lista"><div class="salvo">carregando…</div></div>
         ${editavel ? `<div class="prop-novo">
           <select id="ed-cat">
@@ -982,9 +1052,10 @@ function corpoDrawer(n, obs, carregando){
       <div class="dw-sec" id="dw-rastro"></div>
     </div>
 
-    <div class="dw-painel" id="aba-lembretes">
+    <div class="${pnl(n,"lembretes")}" id="aba-lembretes">
       <div class="dw-sec">
         <h4>Lembretes agendados</h4>
+        <div class="sec-dica">O que você quer ser lembrado, na hora certa. Entra no sino do topo.</div>
         <div class="salvo">O sino avisa por eles. Diferente do resto do sino, lembrete não é
           fato lido do banco — é uma intenção que alguém teve, e sem escrever ela some.</div>
         ${editavel ? `<div class="lem-novo">
@@ -997,9 +1068,10 @@ function corpoDrawer(n, obs, carregando){
       </div>
     </div>
 
-    <div class="dw-painel" id="aba-tarefas">
+    <div class="${pnl(n,"tarefas")}" id="aba-tarefas">
       <div class="dw-sec">
         <h4>Tarefas deste negócio</h4>
+        <div class="sec-dica">O que precisa ser feito neste processo — com data, entra no sino também.</div>
         <div class="dica" style="font-size:11.5px;color:var(--muted);margin-bottom:8px">
           Tarefa com data e hora <b>entra no sino</b> e no aviso da manhã. Sem data, fica só na lista.
         </div>
@@ -1024,9 +1096,10 @@ function corpoDrawer(n, obs, carregando){
              Conferidor, com a MESMA leitura de PDF. Uma segunda regra de teto seria duas
              respostas para "este preço é legal?" — e uma delas estaria errada sem ninguém saber
              qual. -->
-    <div class="dw-painel" id="aba-prop">
+    <div class="${pnl(n,"prop")}" id="aba-prop">
       <div class="dw-sec">
         <h4>Proposta enviada</h4>
+        <div class="sec-dica">O PDF do que foi mandado, com as versões empilhadas: a de hoje não apaga a de ontem.</div>
         <div class="dica" style="font-size:11.5px;color:var(--muted);margin-bottom:8px">
           Anexe o PDF da proposta. <b>As versões empilham</b> — mandar de novo não apaga a
           anterior, e é assim que fica registrado o que foi enviado em cada rodada.
@@ -1040,6 +1113,7 @@ function corpoDrawer(n, obs, carregando){
       </div>
       <div class="dw-sec">
         <h4>Conferência contra o teto CMED</h4>
+        <div class="sec-dica">Preço acima do teto legal desclassifica. Aqui a proposta é lida e comparada item a item.</div>
         <div class="dica" style="font-size:11.5px;color:var(--muted);margin-bottom:8px">
           Lê os itens da proposta anexada e compara cada preço com o teto legal (PMVG para venda
           ao governo). É o <b>mesmo motor</b> do Conferidor — não uma segunda conta.
@@ -1055,9 +1129,10 @@ function corpoDrawer(n, obs, carregando){
          >>> O QUE ENTRA AQUI É O FIM DA HISTÓRIA: os documentos assinados, o que se ganhou, e —
              o que quase ninguém guarda — POR QUANTO se perdeu. O mapa de preços é a única parte
              deste sistema que serve pra aprender em vez de executar. -->
-    <div class="dw-painel" id="aba-ata">
+    <div class="${pnl(n,"ata")}" id="aba-ata">
       <div class="dw-sec">
         <h4>Documentos da ata</h4>
+        <div class="sec-dica">Ata, contrato e o que veio da sessão — cada um na sua categoria, com as versões empilhadas.</div>
         <div class="dica" style="font-size:11.5px;color:var(--muted);margin-bottom:8px">
           Cada anexo tem uma <b>categoria</b>, e as versões empilham dentro dela. Nada se
           sobrescreve e nada se apaga.
@@ -1091,9 +1166,10 @@ function corpoDrawer(n, obs, carregando){
          aba mostra os credenciamentos DA EMPRESA, e marca os que nasceram deste negócio.
          >>> Se ela mostrasse só os deste negócio, a pergunta que o operador realmente faz — "eu
              já sou credenciado na EMS?" — ficaria sem resposta na tela onde ela é feita. -->
-    <div class="dw-painel" id="aba-cred">
+    <div class="${pnl(n,"cred")}" id="aba-cred">
       <div class="dw-sec">
         <h4>Credenciamentos junto à indústria</h4>
+        <div class="sec-dica">Sem credenciamento não se cota a marca. O que está parado há dias aparece marcado.</div>
         <div class="dica" style="font-size:11.5px;color:var(--muted);margin-bottom:8px">
           O credenciamento é da <b>empresa com a indústria</b> — vale pra todos os pregões daquela
           marca, não só pra este. Os que nasceram deste negócio aparecem marcados.
@@ -1115,31 +1191,18 @@ function corpoDrawer(n, obs, carregando){
       </div>
     </div>
 
-    <div class="dw-painel" id="aba-obs">
+    <div class="${pnl(n,"obs")}" id="aba-obs">
       ${obsPlanilha ? `<div class="dw-sec">${obsPlanilha}</div>` : ''}
       <div class="dw-sec">
         <h4>Anotações</h4>
+        <div class="sec-dica">Texto livre sobre o negócio: o que antes ia na coluna OBSERVAÇÃO da planilha.</div>
         <textarea class="anot" id="dw-anot" placeholder="O que antes ia na coluna OBSERVAÇÃO da planilha escreve-se aqui — e fica junto do negócio."
           onblur="salvaAnot(${n.id}, this.value)">${esc(n.anotacoes||'')}</textarea>
         <div class="salvo" id="dw-anot-msg">salva ao sair do campo</div>
       </div>
     </div>
 
-    <div class="dw-acoes">
-      ${n.arquivado ? `<button onclick="desarquivar(${n.id})">↩ Devolver ao funil</button>`
-                    : `<button onclick="arquivar(${n.id})">📥 Arquivar</button>`}
-      <!-- AÇÃO DA FASE HABILITAÇÃO: recurso, esclarecimento e contrarrazão são AS PEÇAS, que já
-           existem com a conta de dias úteis. Este botão é ATALHO COM CONTEXTO, não uma segunda
-           tela: ele leva os dados do certame e a tela de Peças faz o resto. Duplicar as Peças
-           aqui criaria o par que diverge — e o que diverge, nelas, é prazo legal. -->
-      <button onclick="irParaPecas(${n.id})" title="abre as Peças jurídicas com os dados deste certame preenchidos">⚖️ Recurso / esclarecimento</button>
-      ${podeLerEdital() ? `<button onclick="lerEditalIA(${n.id})" title="lê o PDF do edital com IA — cada leitura tem custo e fica registrada">📄 Ler edital (IA)</button>` : ''}
-      <!-- O teto CMED é decidido na hora do preço, e a hora do preço é aqui: quem está com a
-           ficha do pregão aberto é quem vai cotar. O Conferidor já existe; isto é atalho. -->
-      <button onclick="location.href='fpmed_conferidor.html'" title="confere a proposta contra o teto legal da CMED">⚖️ Conferir preços (CMED)</button>
-      <button onclick="location.href='fpmed_documentos.html'">📄 Documentos</button>
-      <button onclick="fecharDrawer()">Fechar</button>
-    </div>`;
+    ${rodapeFicha(n)}`;
 }
 
 // ══ AS ABAS ══════════════════════════════════════════════════════════════════════════════
@@ -2176,6 +2239,168 @@ function excelGanhas(){
     X.utils.book_append_sheet(wb, ws, 'Negócios ganhos');
     X.writeFile(wb, 'negocios-ganhos.xlsx');
   }).catch(e => alert(e.message));
+}
+
+/* ══ A FAXINA DE INFORMAÇÃO ══════════════════════════════════════════════════════════════════
+   O cliente achou o sistema "muito cheio de coisa". Ele tem razão, e vale ser exato sobre o quê:
+   a ficha tem 7 abas e 6 botões no rodapé, e TODOS aparecem sempre — inclusive os que não têm
+   nada a ver com o momento do processo. Quem abre um negócio na Oportunidade vê "Gerenciamento
+   de Ata" com o mesmo peso de "Informações", e um botão de conferir preço de proposta que ainda
+   não existe.
+
+   >>> NADA É REMOVIDO. Isso é regra, não estilo: cada aba e cada botão respondem a uma pergunta
+       real, e alguém sempre precisa de um deles fora de hora (o pregão adiou, o negócio voltou de
+       fase). Tirar seria trocar "cheio demais" por "cadê aquilo".
+   >>> O QUE MUDA É A ORDEM DE CHEGADA. A ficha ABRE na aba que a etapa pede, o rodapé mostra as
+       2-3 ações daquele momento, e o resto vai pra "⋯ mais ações" — a um clique, no mesmo lugar,
+       sempre.
+
+   O MAPA ABAIXO É A ÚNICA COISA A MEXER quando o processo mudar. Ele responde, por etapa:
+   qual aba abre, o que se faz agora (uma frase), e quais botões ficam à vista. */
+const ETAPA_FOCO = {
+  oportunidade: {
+    aba: 'info',
+    faz: 'Decidir se vale disputar: leia o objeto, confira a data de abertura e anexe o edital.',
+    acoes: ['edital', 'documentos'],
+  },
+  qualificacao: {
+    aba: 'prop',
+    faz: 'Montar e conferir a proposta: preço contra o teto da CMED, e credenciamento na indústria se faltar.',
+    acoes: ['cmed', 'edital'],
+  },
+  disputa: {
+    aba: 'lembretes',
+    faz: 'A sessão é o que manda agora: confirme data e hora, e deixe o lembrete de abertura no sino.',
+    acoes: ['zap', 'cmed'],
+  },
+  classificacao: {
+    aba: 'info',
+    faz: 'Habilitação: as certidões precisam estar válidas na data da sessão. Recurso e contrarrazão têm prazo em dias úteis.',
+    acoes: ['pecas', 'documentos'],
+  },
+  contrato: {
+    aba: 'ata',
+    faz: 'Fim do processo: anexe a ata assinada e registre o que foi ganho — é isso que alimenta a taxa de vitória.',
+    acoes: ['ata', 'cmed'],
+  },
+};
+const focoDa = k => ETAPA_FOCO[k] || ETAPA_FOCO.oportunidade;
+// Qual painel já vem aberto. Fica aqui, ao lado do mapa, porque é a mesma decisão dita de outro
+// jeito — separar os dois é como um deles fica pra trás quando o processo muda.
+const pnl = (n, k) => 'dw-painel' + (k === focoDa(n.estagio).aba ? ' on' : '');
+
+/* AS AÇÕES DO RODAPÉ, num lugar só. Cada uma sabe se pode aparecer (o leitor de IA é do piloto)
+   e o que faz. Antes elas eram HTML solto dentro do template — e por isso não dava pra escolher
+   quais mostrar sem duplicar a lista. */
+function acoesDaFicha(n){
+  return {
+    // >>> O leitor de edital é do PILOTO: quem não tem permissão nem vê o botão. Esconder botão
+    //     NÃO é a permissão — quem impede é a edge function, que confere o JWT no servidor e
+    //     responde 403. Isto aqui só evita oferecer o que vai ser negado.
+    edital:     { rot: '📄 Ler edital (IA)', fn: `lerEditalIA(${n.id})`, pode: podeLerEdital(),
+                  dica: 'lê o PDF do edital com IA — cada leitura tem custo e fica registrada' },
+    // O teto CMED é decidido na hora do preço, e a hora do preço é aqui: quem está com a ficha do
+    // pregão aberto é quem vai cotar. O Conferidor já existe; isto é atalho, não segunda tela.
+    cmed:       { rot: '⚖️ Conferir preços (CMED)', fn: `location.href='fpmed_conferidor.html'`, pode: true,
+                  dica: 'confere a proposta contra o teto legal da CMED' },
+    // AÇÃO DA FASE HABILITAÇÃO: recurso, esclarecimento e contrarrazão são AS PEÇAS, que já
+    // existem com a conta de dias úteis. Este botão é ATALHO COM CONTEXTO, não uma segunda tela:
+    // ele leva os dados do certame e a tela de Peças faz o resto. Duplicar as Peças aqui criaria
+    // o par que diverge — e o que diverge, nelas, é prazo legal.
+    pecas:      { rot: '⚖️ Recurso / esclarecimento', fn: `irParaPecas(${n.id})`, pode: true,
+                  dica: 'abre as Peças jurídicas com os dados deste certame preenchidos' },
+    documentos: { rot: '📄 Documentos', fn: `location.href='fpmed_documentos.html'`, pode: true,
+                  dica: 'certidões e documentos de habilitação' },
+    zap:        { rot: '📱 Avisar no zap', fn: `avisarNoZap(${n.id})`, pode: !!n.abertura,
+                  dica: 'abre o WhatsApp com a mensagem da sessão pronta' },
+    ata:        { rot: '🏆 Gerenciamento de Ata', fn: `abaFicha(document.querySelector('[data-aba=ata]'),'ata')`, pode: true,
+                  dica: 'documentos da ata, itens ganhos e mapa de preços' },
+    arquivar:   { rot: n.arquivado ? '↩ Devolver ao funil' : '📥 Arquivar',
+                  fn: n.arquivado ? `desarquivar(${n.id})` : `arquivar(${n.id})`, pode: true,
+                  dica: n.arquivado ? 'devolve pro funil' : 'tira do funil, mantém no histórico' },
+  };
+}
+
+function rodapeFicha(n){
+  const A = acoesDaFicha(n);
+  const foco = focoDa(n.estagio);
+  // AS DA ETAPA vêm primeiro e visíveis; o resto vai pro menu. `arquivar` e `fechar` nunca entram
+  // no menu: uma é destrutiva-ish e a outra é a saída — as duas têm que estar sempre à vista.
+  const visiveis = foco.acoes.filter(k => A[k] && A[k].pode);
+  const noMenu = Object.keys(A).filter(k => k !== 'arquivar' && !visiveis.includes(k) && A[k].pode);
+  const bt = k => `<button onclick="${A[k].fn}" title="${esc(A[k].dica)}">${A[k].rot}</button>`;
+  return `<div class="dw-acoes">
+    ${visiveis.map(bt).join('')}
+    ${noMenu.length ? `<div class="mais-cx">
+      <button onclick="event.stopPropagation();this.parentNode.classList.toggle('on')" title="as outras ações continuam aqui">⋯ mais ações</button>
+      <div class="mais-menu">${noMenu.map(k =>
+        `<a onclick="${A[k].fn}" title="${esc(A[k].dica)}">${A[k].rot}</a>`).join('')}</div>
+    </div>` : ''}
+    ${bt('arquivar')}
+    <button onclick="fecharDrawer()">Fechar</button>
+  </div>`;
+}
+
+/* ══ O STEPPER DE ETAPAS ═════════════════════════════════════════════════════════════════════
+   Pedido do cliente da FPMED, com as palavras dele: "a questão das etapas: minha etapa, segunda
+   etapa, terceira etapa, finalizar o processo".
+
+   O que havia era uma fileira de cinco botões IGUAIS, e o único sinal de onde o negócio estava
+   era um deles ficar verde. Isso responde "qual é a fase?" mas não responde a pergunta que a
+   pessoa faz de verdade ao abrir a ficha: **onde eu estou no processo, e quanto falta?**
+
+   >>> AS TRÊS DIFERENÇAS QUE FAZEM O STEPPER FUNCIONAR, e nenhuma é enfeite:
+       1. PASSADO x PRESENTE x FUTURO têm pesos visuais diferentes. Etapa vencida é ✓ e some do
+          caminho; a atual é grande e colorida; as próximas são apagadas. Com cinco botões iguais,
+          o olho tem que LER os cinco pra achar o verde.
+       2. A LINHA CONECTA. É ela que transforma cinco caixinhas em um caminho — e caminho tem
+          direção, que é o que "quanto falta" quer dizer.
+       3. O NÚMERO ESTÁ ESCRITO: "etapa 3 de 5". Bolinha colorida é bonita e ambígua; "3 de 5" é
+          uma frase que não precisa ser interpretada.
+
+   >>> E CLICAR CONTINUA MOVENDO O NEGÓCIO, com a mesma `mudaFase` e o mesmo rastro. O stepper é
+       uma roupa nova numa função que já funcionava — trocar as duas coisas ao mesmo tempo seria
+       não saber qual delas quebrou. */
+function stepper(n){
+  const i = FASES.findIndex(f => f.k === n.estagio);
+  const atual = i < 0 ? 0 : i;
+  const passos = FASES.map((f, k) => {
+    const st = k < atual ? 'feito' : k === atual ? 'agora' : 'futuro';
+    const marca = k < atual ? '✓' : (k + 1);
+    return `<button class="pas ${st}" onclick="mudaFase(${n.id},'${f.k}')"
+        title="${k === atual ? 'está aqui' : 'mover para ' + esc(f.n)}">
+      <span class="bola" style="${k <= atual ? 'background:' + f.c + ';border-color:' + f.c + ';color:#0d1a28' : ''}">${marca}</span>
+      <span class="nm">${esc(f.n)}</span>
+    </button>`;
+  }).join('');
+  return `<div class="dw-sec dw-etapas">
+    <h4>Etapa do processo</h4>
+    <div class="passos-linha">${passos}</div>
+    <div class="passos-legenda">
+      <b style="color:${corFase(n.estagio)}">Etapa ${atual + 1} de ${FASES.length} · ${esc(nomeFase(n.estagio))}</b>
+      ${atual + 1 < FASES.length
+        ? ' · falta(m) ' + (FASES.length - atual - 1) + ' até ' + esc(FASES[FASES.length-1].n)
+        : ' · última etapa'}
+      <!-- O QUE FAZER AGORA — uma frase, e não uma lista de tarefas. Lista vira checklist, e o
+           checklist fixo já saiu desta tela em 11/08 porque ninguém usava. Uma frase se lê. -->
+      <div class="agora-faz">👉 ${esc(focoDa(n.estagio).faz)}</div>
+      <span class="salvo" style="display:block;margin-top:6px">clique numa etapa para mover o negócio — fica no histórico</span>
+    </div>
+  </div>`;
+}
+
+/* O MINI-PROGRESSO DO CARD. Mesma informação, no tamanho que cabe: as bolinhas dão o relance e o
+   texto dá a certeza. Sem o texto, ●●○○○ obriga a contar; sem as bolinhas, o card vira uma linha
+   de texto a mais no meio de outras. */
+function progressoCard(n){
+  const i = FASES.findIndex(f => f.k === n.estagio);
+  const atual = i < 0 ? 0 : i;
+  const bolas = FASES.map((f, k) =>
+    `<i style="background:${k <= atual ? f.c : 'transparent'};border-color:${k <= atual ? f.c : 'var(--linha)'}"></i>`).join('');
+  return `<div class="cd-prog" title="etapa ${atual+1} de ${FASES.length}: ${esc(nomeFase(n.estagio))}">
+    <span class="bolas">${bolas}</span>
+    <span class="txt">etapa ${atual+1} de ${FASES.length} · <b style="color:${corFase(n.estagio)}">${esc(nomeFase(n.estagio))}</b></span>
+  </div>`;
 }
 
 /* ══ EDITAL E ANEXOS ═════════════════════════════════════════════════════════════════════════

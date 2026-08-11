@@ -44,7 +44,7 @@ ok('1. *** a fase exibe "Ata" no funil ***', /\{ k:'contrato',      n:'Ata',/.te
 ok('2. *** e a CHAVE continua `contrato` (nada de migracao de dado) ***',
   /k:'contrato'/.test(FASES_BLOCO) && !/k:'ata'/.test(FASES_BLOCO));
 ok('3. *** a aba da ficha diz por extenso "Gerenciamento de Ata" ***',
-  /data-aba="ata"\s+onclick="abaFicha\(this,'ata'\)">Gerenciamento de Ata/.test(N));
+  /\['ata','Gerenciamento de Ata','dw-ata-n'\]/.test(N));
 ok('4. ...e a razao dos dois nomes esta escrita (espacos diferentes, nao nomes diferentes)',
   /são\s*dois lugares com espaço diferente, não dois nomes para a mesma coisa/.test(uc(N)));
 ok('5. o rotulo continua saindo de UM lugar (FASES)',

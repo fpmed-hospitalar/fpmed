@@ -57,7 +57,7 @@ ok('8. a tela DIZ que e o mesmo motor do Conferidor', /É o <b>mesmo motor<\/b> 
 
 // ══════════ 2. O ANEXO, VERSIONADO ══════════
 ok('9. *** existe a aba Proposta com contador ***',
-  /data-aba="prop"\s+onclick="abaFicha\(this,'prop'\)">Proposta <span id="dw-prop-n">/.test(N));
+  /\['prop','Proposta','dw-prop-n'\]/.test(N));
 ok('10. *** o anexo vai pro bucket que JA existe ***',
   /storage\/v1\/object\/documentos\//.test(N) && /O BUCKET E O `documentos`, QUE JA EXISTE/.test(D));
 ok('11. ...com o motivo (bucket novo = 2o conjunto de policies dizendo a mesma coisa)',

@@ -51,11 +51,15 @@ ok('12. *** e a razao esta escrita: o titulo vaza a estrategia ***',
 
 // ══════════ 3. A ABA E A TELA ══════════
 ok('13. *** a ficha tem as 4 abas ***',
-  ['info','lembretes','tarefas','obs'].every(a => tela.includes(`onclick="abaFicha(this,'${a}')"`)));
+  ['info','lembretes','tarefas','obs'].every(a => new RegExp("\\['" + a + "',").test(tela)));
+// 11/08: o "Estágio" virou o STEPPER, e o `<h4>` dele mora dentro da função `stepper()`, que no
+// ARQUIVO fica depois das abas. A ordem que importa é a RENDERIZADA — e ela se lê pela chamada
+// no template, não pela posição da definição da função.
 ok('14. *** o ESTAGIO fica FORA das abas (e estado, nao assunto) ***',
-  tela.indexOf('<h4>Estágio</h4>') < tela.indexOf('<div class="dw-abas">'));
+  tela.indexOf('${stepper(n)}') < tela.indexOf('<div class="dw-abas">')
+  && tela.indexOf('${stepper(n)}') > 0);
 ok('15. so uma aba visivel por vez', /\.dw-painel\{display:none\}/.test(tela) && /\.dw-painel\.on\{display:block\}/.test(tela));
-ok('16. a aba Lembretes mostra quantos estao abertos', /id="dw-lem-n"/.test(tela));
+ok('16. a aba Lembretes mostra quantos estao abertos', /'dw-lem-n'/.test(tela));
 ok('17. quem nao grava nao ve o formulario de agendar', /só quem grava pode agendar lembrete/.test(tela));
 ok('18. sem titulo nao agenda', /escreva o que precisa ser feito/.test(tela));
 ok('19. *** sem data nao agenda, com a razao dita ***', /lembrete sem quando não avisa nada/.test(tela));

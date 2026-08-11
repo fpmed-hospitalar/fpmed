@@ -127,7 +127,7 @@ ok('31. ...e o hover devolve a leitura (cartao ilegivel vira cartao ignorado)',
   /\.card\.parado:hover\{opacity:1/.test(tela));
 ok('32. *** nada some sozinho: nao ha filtro escondendo cancelado ***',
   !/situacao\s*!==\s*'cancelado'/.test(tela) && !/filter\(.*cancelado/.test(tela));
-ok('33. arquivar continua sendo acao manual', /onclick="arquivar\(/.test(tela));
+ok('33. arquivar continua sendo acao manual', /fn: n\.arquivado \? `desarquivar\(\$\{n\.id\}\)` : `arquivar\(\$\{n\.id\}\)`/.test(tela));
 
 console.log('\nRESULTADO: ' + p + ' ok, ' + f + ' falha(s)');
 if (f) process.exit(1);

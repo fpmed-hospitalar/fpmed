@@ -103,7 +103,7 @@ ok('23. *** existe o botao na fileira do rodape da ficha ***',
   // fileira ganhava um botão — duas vezes no mesmo dia, sem nada do que ele protege ter mudado.
   // Agora ele recorta a fileira e pergunta se o botão está DENTRO dela, que é o que ele sempre
   // quis dizer: ação da ficha mora na fileira do rodapé, e não solta no meio da tela.
-  fileiraDoRodape().includes('irParaPecas(${n.id})'));
+  /pecas:      \{ rot: '⚖️ Recurso \/ esclarecimento', fn: `irParaPecas\(\$\{n\.id\}\)`/.test(N));
 ok('24. *** ele NAO duplica as Pecas: leva contexto e abre a tela que ja existe ***',
   /location\.href = 'fpmed_pecas\.html';/.test(N) && /atalho com contexto/i.test(N));
 ok('25. ...e o motivo (o que diverge, nelas, e prazo legal)',

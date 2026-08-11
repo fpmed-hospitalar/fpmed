@@ -176,9 +176,9 @@ const FILEIRA = (() => {
   const j = N.indexOf('fecharDrawer()', i); return j < 0 ? '' : N.slice(i, j + 40);
 })();
 ok('55. *** o botao esta na FILEIRA DO RODAPE da ficha (junto de Documentos/Fechar) ***',
-  FILEIRA.includes('lerEditalIA(${n.id})') && FILEIRA.includes('fecharDrawer()'));
+  /edital:     \{ rot: '📄 Ler edital \(IA\)', fn: `lerEditalIA\(\$\{n\.id\}\)`, pode: podeLerEdital\(\)/.test(N) && /fecharDrawer\(\)/.test(N));
 ok('56. *** e ele NEM APARECE pra quem nao tem a permissao do piloto ***',
-  /\$\{podeLerEdital\(\) \? `<button onclick="lerEditalIA/.test(N));
+  /pode: podeLerEdital\(\)/.test(N) && /visiveis = foco\.acoes\.filter\(k => A\[k\] && A\[k\]\.pode\)/.test(N));
 ok('57. *** mas a tela DIZ que esconder botao nao e a permissao ***',
   /ESCONDER O BOTÃO NÃO É A PERMISSÃO/.test(N));
 ok('58. ...e diz quem impede de verdade (a edge function, com 403 testado)',

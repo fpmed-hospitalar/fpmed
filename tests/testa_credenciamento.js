@@ -88,7 +88,7 @@ ok('26. e ela IMPRIME o numero que usou pra decidir', /o banco respondeu: histor
 
 // ══════════ 4. A ABA NA FICHA ══════════
 ok('27. *** existe a aba Credenciamentos, com contador ***',
-  /data-aba="cred"\s+onclick="abaFicha\(this,'cred'\)">Credenciamentos <span id="dw-cred-n">/.test(N));
+  /\['cred','Credenciamentos','dw-cred-n'\]/.test(N));
 ok('28. *** ela mostra os credenciamentos DA EMPRESA, nao so os deste negocio ***',
   /empresa_id=eq\.\$\{n\.empresa_id\}/.test(N));
 ok('29. ...marcando os que nasceram deste negocio',
