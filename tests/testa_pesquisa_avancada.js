@@ -19,6 +19,9 @@ const fs = require('fs'), path = require('path');
 const src = fs.readFileSync(path.join(__dirname, '..', 'fpmed_licitacoes.html'), 'utf8').replace(/\r\n/g, '\n');
 const ddl = fs.readFileSync(path.join(__dirname, '..', 'ddl', 'orgaos.sql'), 'utf8');
 
+// A ancora de FIM da extracao da janela: o IIFE que aplica o padrao no DOM. Ele NAO entra na
+// extracao (a suite nao tem DOM) e precisa ser unico no arquivo.
+const FIM_JANELA = "(function(){\n  const j = janelaPadrao();";
 function bloco(ini, fim) {
   const s = src.indexOf(ini); const e = src.indexOf(fim, s);
   if (s < 0 || e < 0) throw new Error('ancora: ' + ini);
@@ -38,7 +41,7 @@ const win = { LimedtecTetoCMED: require(path.join(__dirname, '..', 'fpmed_teto_c
 // `iso` e `ultimoDiaUtil` pra decidir se a janela de data e movel ou fixa. Extrair menos que
 // isso quebraria o refino aqui por falta de dependencia, nao por defeito.
 const ctx = (new Function('document', 'window',
-  bloco('const brl =', '(function(){ const d=ultimoDiaUtil()') +
+  bloco('const brl =', FIM_JANELA) +
   bloco('const CRUZ = new Map()', 'function aderencia') +
   bloco('const _CAMPOS_REFINO', '// ══ ÓRGÃOS') +
   'return { refino, casaRefino, pillsRefino, populaPortais, desertaDe, _ehSrp, CRUZ, chaveLic, semAcento };'))(doc, win);

@@ -29,6 +29,9 @@ const ddl = fs.readFileSync(path.join(__dirname, '..', 'ddl', 'jornais.sql'), 'u
 //     regra nao a aplica, e um teste que le comentario passa com a tabela errada.
 const sql = ddl.replace(/--[^\n]*/g, '');
 
+// A ancora de FIM da extracao da janela: o IIFE que aplica o padrao no DOM. Ele NAO entra na
+// extracao (a suite nao tem DOM) e precisa ser unico no arquivo.
+const FIM_JANELA = "(function(){\n  const j = janelaPadrao();";
 function bloco(ini, fim) {
   const s = src.indexOf(ini); const e = src.indexOf(fim, s);
   if (s < 0 || e < 0) throw new Error('ancora: ' + ini);
@@ -71,23 +74,23 @@ const PRELUDIO = `
 `;
 
 const ctx = (new Function('document', 'window', 'fetch',
-  bloco('const brl =', '(function(){ const d=ultimoDiaUtil()') +
+  bloco('const brl =', FIM_JANELA) +
   bloco('const CRUZ = new Map()', 'function aderencia') +
   bloco('const _CAMPOS_REFINO', '// ══ ÓRGÃOS') +
   PRELUDIO +
   bloco('// ══ MEUS JORNAIS', '// Refino não vai à rede') +
   'return { filtrosDaTela, refinoDe, refino, janelaDe, resumoFiltros, aplicaFiltros, aplicaJornal,' +
   '         carregarJornais, pintaJornais, salvarJornal, excluirJornal, abrirJornal, registrarLeitura,' +
-  '         conferirJornais, TETO_VISTOS, _numCtrl, casaRefino, iso, ultimoDiaUtil };'))(doc, win, fetchFalso);
+  '         conferirJornais, TETO_VISTOS, _numCtrl, casaRefino, iso, janelaPadrao };'))(doc, win, fetchFalso);
 const { filtrosDaTela, refinoDe, refino, janelaDe, resumoFiltros, aplicaFiltros, aplicaJornal,
         carregarJornais, pintaJornais, salvarJornal, excluirJornal, abrirJornal, registrarLeitura,
-        conferirJornais, TETO_VISTOS, _numCtrl, iso, ultimoDiaUtil } = ctx;
+        conferirJornais, TETO_VISTOS, _numCtrl, iso, janelaPadrao } = ctx;
 
 let p = 0, f = 0;
 const ok = (n, c, e) => { if (c) p++; else { f++; console.log('  FALHA ' + n + (e !== undefined ? '  [' + JSON.stringify(e) + ']' : '')); } };
 console.log('SUITE testa_meus_jornais — busca salva, janela de data e o delta\n');
 
-const HOJE = iso(ultimoDiaUtil());
+const PAD = janelaPadrao(); const HOJE = PAD.de;
 function preenche(o) {
   for (const id of ['f-kw', 'f-excluir', 'f-portal', 'f-modo', 'f-sit', 'f-orgao', 'f-srp', 'f-vmin', 'f-vmax']) campo(id).value = '';
   campo('f-uf').value = 'GO'; campo('f-mod').value = '6';

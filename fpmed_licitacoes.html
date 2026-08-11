@@ -506,14 +506,37 @@ const { semAcento, doses, concMags, forma, unidadePack, packNosso } = window.Lim
 const ymd = d => { const p=n=>String(n).padStart(2,'0'); return d.getFullYear()+p(d.getMonth()+1)+p(d.getDate()); };
 const iso = d => d.toISOString().slice(0,10);
 
-// ÚLTIMO DIA ÚTIL: a publicação do dia corrente só aparece ao longo do dia, então abrir em "hoje"
-// deixava a tela vazia de manhã. Domingo->sexta, segunda->sexta, sábado->sexta.
-function ultimoDiaUtil(){
-  const d = new Date(); d.setHours(12,0,0,0);
-  do { d.setDate(d.getDate()-1); } while (d.getDay()===0 || d.getDay()===6);
-  return d;
+/* ══ O INTERVALO PADRÃO: HOJE ════════════════════════════════════════════════════════════════
+   Até 11/08 a tela abria no ÚLTIMO DIA ÚTIL — num dia 11 ela mostrava 10. A razão original era
+   defensável: a publicação do dia corrente só entra ao longo do dia, e abrir em "hoje" deixava a
+   tela vazia às 7h da manhã.
+   >>> MAS O PREÇO ERA ALTO DEMAIS. Quem abre a tela quer ver o que saiu HOJE; ter que corrigir a
+       data toda vez é atrito diário, e — pior — quem não repara na data acha que está vendo o dia
+       e está vendo ontem. Tela vazia de manhã é honesta; tela cheia de ontem parecendo hoje, não.
+   >>> E O QUE RESOLVIA O VAZIO JÁ EXISTE: o carimbo "índice completo até DD/MM" diz exatamente
+       até onde a coleta chegou. O problema que o último-dia-útil resolvia foi resolvido melhor
+       por outro caminho, e ele deixou de ter razão de existir.
+
+   FIM DE SEMANA É A EXCEÇÃO, e não um capricho: sábado e domingo não têm publicação. Abrir
+   "sábado→sábado" seria garantir tela vazia por natureza — então nesses dias o padrão vira
+   ÚLTIMA SEXTA → HOJE, que é um intervalo com conteúdo dentro.
+
+   >>> NUNCA GRAVADO EM CACHE. A data é calculada NA ABERTURA, toda vez. Data em cache é o mesmo
+       defeito da versão velha do app: o valor certo de ontem, servido hoje, sem nada parecer
+       errado. */
+function janelaPadrao(){
+  const hoje = new Date(); hoje.setHours(12,0,0,0);
+  const dow = hoje.getDay();                       // 0=domingo, 6=sábado
+  if(dow !== 0 && dow !== 6) return { de: iso(hoje), ate: iso(hoje) };
+  const sexta = new Date(hoje);
+  do { sexta.setDate(sexta.getDate()-1); } while (sexta.getDay() !== 5);
+  return { de: iso(sexta), ate: iso(hoje) };
 }
-(function(){ const d=ultimoDiaUtil(); document.getElementById('f-de').value=iso(d); document.getElementById('f-ate').value=iso(d); })();
+(function(){
+  const j = janelaPadrao();
+  document.getElementById('f-de').value = j.de;
+  document.getElementById('f-ate').value = j.ate;
+})();
 
 // ── CATEGORIAS: etiquetas verdes do que casou no objeto ───────────────────────────────────
 // Taxonomia do ramo da FPMED. A etiqueta mostra POR QUE a licitação apareceu na lista —
@@ -1021,8 +1044,10 @@ function filtrosDaTela(){
   // guarda-se o TIPO e a data é recalculada na abertura. Quando o operador escolheu um
   // intervalo, guardam-se as datas — e a tela DIZ que aquela janela é fixa. Adivinhar qual dos
   // dois ele quis seria o pior dos dois mundos.
-  const hoje = iso(ultimoDiaUtil());
-  const movel = (de === hoje && ate === hoje);
+  // A janela é MÓVEL quando o operador não mexeu nas datas — e o padrão agora é um INTERVALO no
+  // fim de semana, então a comparação é das duas pontas, e não de uma data só.
+  const pad = janelaPadrao();
+  const movel = (de === pad.de && ate === pad.ate);
   return {
     kw: v('f-kw'), excluir: v('f-excluir'), uf: v('f-uf'), mod: v('f-mod'),
     janela: movel ? {tipo:'movel'} : {tipo:'fixa', de, ate},
@@ -1498,16 +1523,21 @@ const TETO_VISTOS = 800;      // não deixa `vistos` crescer sem fim; corta o ma
 let JORNAIS = null;
 
 function janelaDe(f){
-  if(!f || !f.janela || f.janela.tipo === 'movel'){ const d = iso(ultimoDiaUtil()); return {de:d, ate:d}; }
+  // JORNAL COM JANELA MÓVEL RECALCULA NA ABERTURA — é o que "móvel" quer dizer. Ele acompanha o
+  // padrão da tela: mudou o padrão pra hoje, os jornais móveis passam a abrir em hoje também,
+  // sem ninguém precisar mexer em jornal salvo nenhum.
+  if(!f || !f.janela || f.janela.tipo === 'movel') return janelaPadrao();
   return {de: f.janela.de||'', ate: f.janela.ate||f.janela.de||''};
 }
 const _MOD_NOME = {'6':'Pregão eletrônico','8':'Dispensa eletrônica','4':'Concorrência eletrônica','9':'Inexigibilidade'};
 function resumoFiltros(f){
   const j = janelaDe(f), br = s => s ? s.slice(8,10)+'/'+s.slice(5,7) : '—';
   const p = [];
+  // O RÓTULO DA JANELA MÓVEL DIZ O QUE ELA É HOJE, e não o nome da regra. "último dia útil" era
+  // um rótulo que descrevia o cálculo; o operador quer saber a DATA que vai abrir.
   p.push(f.janela && f.janela.tipo === 'fixa'
     ? '📅 janela FIXA ' + br(j.de) + (j.ate!==j.de ? '–'+br(j.ate) : '')
-    : '📅 último dia útil (move sozinho)');
+    : '📅 ' + (j.de === j.ate ? 'hoje' : br(j.de)+'–'+br(j.ate)) + ' (move sozinho)');
   p.push((f.uf||'todas as UF') + ' · ' + (_MOD_NOME[f.mod] || 'modalidade '+(f.mod||'?')));
   if(f.kw) p.push('🔍 ' + f.kw);
   if(f.excluir) p.push('⛔ ' + f.excluir);

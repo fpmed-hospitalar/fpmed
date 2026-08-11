@@ -6,6 +6,9 @@ const fs = require('fs'), path = require('path');
 // CRLF -> LF: mesma razao explicada no testa_cruzamento_licitacoes.js.
 const src = fs.readFileSync(path.join(__dirname, '..', 'fpmed_licitacoes.html'), 'utf8').replace(/\r\n/g, '\n');
 
+// A ancora de FIM da extracao da janela: o IIFE que aplica o padrao no DOM. Ele NAO entra na
+// extracao (a suite nao tem DOM) e precisa ser unico no arquivo.
+const FIM_JANELA = "(function(){\n  const j = janelaPadrao();";
 function bloco(ini, fim) {
   const s = src.indexOf(ini); const e = src.indexOf(fim, s);
   if (s < 0 || e < 0) throw new Error('ancora: ' + ini);
@@ -18,9 +21,9 @@ const ctx = (new Function('window',
   bloco('const { semAcento', 'const ymd =') +
   bloco('const CATEGORIAS =', 'function categorias') +
   bloco('function categorias', '// ══ PACK') +      // âncora movida: o bloco da ADERÊNCIA virou o cruzamento por item
-  bloco('function ultimoDiaUtil', '(function(){ const d=ultimoDiaUtil') +
-  'return { categorias, ultimoDiaUtil, semAcento };'))(win);
-const { categorias, ultimoDiaUtil } = ctx;
+  bloco('const ymd =', FIM_JANELA) +
+  'return { categorias, janelaPadrao, semAcento };'))(win);
+const { categorias, janelaPadrao } = ctx;
 
 let p = 0, f = 0;
 const ok = (n, c, got) => { if (c) p++; else { f++; console.log('  FALHA ' + n + (got !== undefined ? ' [' + JSON.stringify(got) + ']' : '')); } };
@@ -46,11 +49,18 @@ ok('obra -> nenhuma etiqueta', categorias('REFORMA DE PRACA PUBLICA').length ===
 ok('objeto vazio -> nenhuma etiqueta', categorias('').length === 0);
 ok('null nao quebra', categorias(null).length === 0);
 
-// ── ÚLTIMO DIA ÚTIL ──
-const d = ultimoDiaUtil();
-ok('último dia útil nunca é sábado', d.getDay() !== 6, d.getDay());
-ok('último dia útil nunca é domingo', d.getDay() !== 0, d.getDay());
-ok('último dia útil é no passado', d < new Date(), d.toISOString());
+/* ── A JANELA PADRÃO ──────────────────────────────────────────────────────────────────────
+   Em 11/08 a regra deixou de ser "último dia útil" e passou a ser HOJE (com sexta→hoje no fim
+   de semana). Os asserts antigos travavam a regra ANTIGA — "nunca é sábado", "é no passado" —
+   e ela deixou de valer de propósito. O comportamento novo é testado NOS 7 DIAS DA SEMANA em
+   tests/testa_janela_hoje.js, que é o lugar dele; aqui fica só o que esta suíte já cobria: que
+   a função existe, devolve as duas pontas e não olha o relógio errado. */
+const j = janelaPadrao();
+ok('a janela padrão devolve as duas pontas', !!j.de && !!j.ate, j);
+ok('as duas pontas são datas ISO', /^\d{4}-\d{2}-\d{2}$/.test(j.de) && /^\d{4}-\d{2}-\d{2}$/.test(j.ate), j);
+ok('a ponta final é HOJE (nunca o passado, como era antes)',
+  j.ate === new Date(new Date().setHours(12, 0, 0, 0)).toISOString().slice(0, 10), j);
+ok('e o início nunca é depois do fim', j.de <= j.ate, j);
 
 // ══════════ A TELA PRECISA SER ALCANCAVEL ══════════
 // Achado de 05/08: o modulo estava COMPLETO e NO AR desde a rodada anterior, mas nao tinha
