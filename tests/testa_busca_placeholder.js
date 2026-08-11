@@ -82,5 +82,26 @@ ok('23. *** o assert de "sem palavra nao filtra" virou "sem palavra filtra o ram
 ok('24. ...e o comentario diz por que ele NAO podia ficar como estava',
   /ele estaria travando o comportamento que\s*quebraria o produto/.test(uc(J)));
 
+// ══════════ 6. OS FILTROS SAIRAM DA GAVETA (reforma Prime, 11/08) ══════════
+// Eles moravam atras do link "Pesquisa avancada", FECHADOS. Quem nao clicasse nao sabia que UF,
+// modalidade, valor e situacao existiam — e buscava sem saber que dava pra filtrar.
+ok('25. *** os filtros sao uma COLUNA, e nao uma gaveta ***',
+  /#painel-busca\{display:grid;grid-template-columns:262px 1fr/.test(L)
+  && !/#avancada\{display:none/.test(L));
+ok('26. *** e a coluna tem titulo "Filtros", como no Prime ***', /<h5>Filtros<\/h5>/.test(L));
+ok('27. *** eles ficam FIXOS ao rolar ***', /#avancada\{[\s\S]{0,200}position:sticky/.test(L));
+ok('28. ...com o motivo (subir ate o topo pra trocar a UF e o atrito que faz ninguem filtrar)',
+  /o tipo de atrito que faz ninguem filtrar/.test(uc(L)));
+ok('29. *** o link "Pesquisa avancada" saiu (abrir o que ja esta aberto nao faz nada) ***',
+  !/>Pesquisa avançada<\/a>/.test(L));
+ok('30. *** NENHUM filtro foi acrescentado nem tirado ***',
+  ['f-uf','f-mod','f-excluir','f-modo','f-sit','f-orgao','f-srp','f-vmin','f-vmax']
+    .every(id => new RegExp('id="' + id + '"').test(L)));
+ok('31. ...e o codigo diz isso (mesmos campos, mesmos ids, so deixaram de estar escondidos)',
+  /NENHUM FILTRO FOI ACRESCENTADO NEM TIRADO/.test(L));
+ok('32. *** `.open` continua existindo porque codigo antigo ainda o chama ***',
+  /#avancada\.open\{\}/.test(L) && /`soDesertas\(\)` e o Radar abrem a gaveta por/.test(uc(L)));
+ok('33. a coluna vira pilha no celular', /@media\(max-width:900px\)\{#painel-busca\{grid-template-columns:1fr\}\}/.test(L));
+
 console.log('\nRESULTADO: ' + p + ' ok, ' + f + ' falha(s)');
 if (f) process.exit(1);

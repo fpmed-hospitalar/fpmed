@@ -97,8 +97,27 @@ select:focus,input:focus{outline:none;border-color:var(--azul)}
 .links a:hover{color:#fff;text-decoration:underline}
 
 /* ── pesquisa avançada (expansível) ── */
-#avancada{display:none;background:var(--painel);border:1px solid var(--linha);border-radius:12px;padding:18px;margin-top:18px;box-shadow:var(--sombra);text-align:left}
-#avancada.open{display:block}
+/* ══ OS FILTROS SAÍRAM DA GAVETA (11/08) ══════════════════════════════════════════════════════
+   Eles moravam atrás do link "Pesquisa avançada", fechados. Quem não clicasse não sabia que UF,
+   modalidade, valor e situação existiam — e o operador buscava sem saber que dava pra filtrar.
+   No Licitante Prime eles são uma COLUNA FIXA à esquerda dos resultados: você vê o que pode
+   filtrar antes de precisar filtrar, e o que já está ligado fica à vista o tempo todo.
+   >>> NENHUM FILTRO FOI ACRESCENTADO NEM TIRADO. São os mesmos campos, no mesmo formulário,
+       lendo os mesmos ids. O que mudou é que eles deixaram de estar escondidos.
+   >>> `#avancada.open` CONTINUA EXISTINDO porque `soDesertas()` e o Radar abrem a gaveta por
+       código. Numa coluna sempre visível "abrir" não faz nada — e é isso que a regra vazia diz,
+       em vez de deixar o `classList.add('open')` apontando pra um seletor que sumiu. */
+#painel-busca{display:grid;grid-template-columns:262px 1fr;gap:18px;align-items:start;margin-top:18px}
+@media(max-width:900px){#painel-busca{grid-template-columns:1fr}}
+#avancada{background:var(--painel);border:1px solid var(--linha);border-radius:12px;
+  padding:16px;box-shadow:var(--sombra);text-align:left;position:sticky;top:14px;
+  max-height:calc(100vh - 28px);overflow:auto}
+#avancada.open{}   /* ver o comentário acima: a gaveta virou coluna, e "abrir" já é o estado */
+#avancada h5{margin:0 0 12px;font-family:Montserrat;font-size:12px;font-weight:800;
+  letter-spacing:1.1px;text-transform:uppercase;color:#fff}
+/* Numa coluna estreita o grid de 3 colunas vira uma pilha — os campos ficam legíveis e o
+   rótulo continua colado no seu campo. */
+#avancada .grid3{grid-template-columns:1fr;gap:11px}
 .grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px}
 .grid3 label{display:block;font-size:11px;font-weight:600;color:var(--muted);margin-bottom:5px;text-transform:uppercase;letter-spacing:.3px}
 
@@ -318,7 +337,8 @@ select:focus,input:focus{outline:none;border-color:var(--azul)}
          agora, não das duas. -->
     <div class="hint" id="dica-kw" style="margin-top:9px"></div>
     <div class="links">
-      <a onclick="document.getElementById('avancada').classList.toggle('open')">Pesquisa avançada</a>
+      <!-- "Pesquisa avançada" saiu daqui: os filtros agora são a coluna da esquerda, sempre
+           visível. Um link pra abrir o que já está aberto seria um link que não faz nada. -->
       <a onclick="abrirOrgaos()">Órgãos</a>
       <a onclick="soDesertas()" id="lk-desertas" title="processos que não seguiram: desertos/fracassados, revogados, anulados ou suspensos — costumam ser republicados">Desertas e republicáveis</a>
       <a onclick="abrirRadar()" title="cidades num raio daqui com licitação aberta — quanto vale sair de casa">Radar</a>
@@ -330,59 +350,7 @@ select:focus,input:focus{outline:none;border-color:var(--azul)}
       <a onclick="incluirLicitacaoManual()" title="a licitação existe mas não está no PNCP (BLL, convite, e-mail do órgão)">+ Incluir licitação</a>
     </div>
 
-    <div id="avancada">
-      <div class="grid3">
-        <div><label>UF</label><select id="f-uf">
-          <option value="GO" selected>GO</option><option value="">Todas</option>
-          <option>AC</option><option>AL</option><option>AM</option><option>AP</option><option>BA</option><option>CE</option>
-          <option>DF</option><option>ES</option><option>MA</option><option>MG</option><option>MS</option><option>MT</option>
-          <option>PA</option><option>PB</option><option>PE</option><option>PI</option><option>PR</option><option>RJ</option>
-          <option>RN</option><option>RO</option><option>RR</option><option>RS</option><option>SC</option><option>SE</option>
-          <option>SP</option><option>TO</option></select></div>
-        <div><label>Modalidade</label><select id="f-mod">
-          <option value="6" selected>Pregão eletrônico</option>
-          <option value="8">Dispensa eletrônica</option>
-          <option value="4">Concorrência eletrônica</option>
-          <option value="9">Inexigibilidade</option></select></div>
-        <div><label>Excluir (termos que NÃO podem aparecer)</label>
-          <input type="text" id="f-excluir" placeholder="ex.: veículo; combustível"></div>
 
-        <!-- ── FILTROS DE REFINO (06/08) ────────────────────────────────────────────────────
-             Só campos que o PNCP REALMENTE entrega — conferidos nos registros já coletados,
-             não supostos pela documentação. Estes filtram o RESULTADO (não a consulta): o
-             caminho ao vivo não aceita nenhum deles como parâmetro, e uma segunda implementação
-             server-side divergiria da primeira com o tempo. Ver comentário em `refina()`. -->
-        <div><label>Portal de origem</label><select id="f-portal" onchange="rerender()">
-          <option value="">Todos os portais</option></select>
-          <div class="hint" style="margin-top:4px">preenchido com os portais que aparecem na busca</div></div>
-        <div><label>Modo de disputa</label><select id="f-modo" onchange="rerender()">
-          <option value="">Todos</option>
-          <option>Aberto</option><option>Aberto-Fechado</option><option>Fechado</option><option>Fechado-Aberto</option>
-        </select></div>
-        <div><label>Situação</label><select id="f-sit" onchange="rerender()">
-          <option value="">Todas</option>
-          <option>Divulgada no PNCP</option><option>Revogada</option><option>Anulada</option><option>Suspensa</option>
-        </select></div>
-        <div><label>Órgão / unidade / município contém</label>
-          <input type="text" id="f-orgao" onchange="rerender()" placeholder="ex.: uruaçu; secretaria de saúde"></div>
-        <div><label>Registro de preços (SRP)</label><select id="f-srp" onchange="rerender()">
-          <option value="">Tanto faz</option>
-          <option value="so">Só registro de preços</option>
-          <option value="nao">Excluir registro de preços</option></select></div>
-        <div><label>Valor estimado (R$)</label>
-          <div class="intervalo">
-            <input type="number" id="f-vmin" onchange="rerender()" placeholder="mínimo" min="0" step="1000">
-            <span style="color:var(--muted)">–</span>
-            <input type="number" id="f-vmax" onchange="rerender()" placeholder="máximo" min="0" step="1000">
-          </div>
-          <div class="hint" style="margin-top:4px">licitação sem valor estimado entra sempre</div></div>
-      </div>
-      <div style="margin-top:14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
-        <span class="hint">o refino filtra o que já está na tela — não custa nova consulta ao PNCP</span>
-        <button class="btn sec" style="margin-left:auto" onclick="limparRefino()">Limpar refino</button>
-        <button class="btn" onclick="buscaNova()">Aplicar e buscar</button>
-      </div>
-    </div>
 
     <!-- ── ÓRGÃOS ── diretório DERIVADO do que já coletamos (nenhum crawler novo, como a spec
          pediu). É por isso que ele diz quantas licitações conhece: um diretório que finge
@@ -448,6 +416,67 @@ select:focus,input:focus{outline:none;border-color:var(--azul)}
     </div>
   </div>
 
+  <!-- ══ A GRADE DO BUSCADOR ══ filtros a esquerda, resultados a direita (padrao Prime) ══
+       Os filtros ficam FIXOS ao rolar (`position:sticky`): numa lista de 200 licitacoes,
+       ter que subir ate o topo pra mudar a UF e o tipo de atrito que faz ninguem filtrar. -->
+  <div id="painel-busca">
+    <div id="avancada">
+      <h5>Filtros</h5>
+      <div class="hint" style="margin:-6px 0 12px">O que estiver preenchido aqui vale na busca.
+           Em branco = sem filtro.</div>
+      <div class="grid3">
+        <div><label>UF</label><select id="f-uf">
+          <option value="GO" selected>GO</option><option value="">Todas</option>
+          <option>AC</option><option>AL</option><option>AM</option><option>AP</option><option>BA</option><option>CE</option>
+          <option>DF</option><option>ES</option><option>MA</option><option>MG</option><option>MS</option><option>MT</option>
+          <option>PA</option><option>PB</option><option>PE</option><option>PI</option><option>PR</option><option>RJ</option>
+          <option>RN</option><option>RO</option><option>RR</option><option>RS</option><option>SC</option><option>SE</option>
+          <option>SP</option><option>TO</option></select></div>
+        <div><label>Modalidade</label><select id="f-mod">
+          <option value="6" selected>Pregão eletrônico</option>
+          <option value="8">Dispensa eletrônica</option>
+          <option value="4">Concorrência eletrônica</option>
+          <option value="9">Inexigibilidade</option></select></div>
+        <div><label>Excluir (termos que NÃO podem aparecer)</label>
+          <input type="text" id="f-excluir" placeholder="ex.: veículo; combustível"></div>
+
+        <!-- ── FILTROS DE REFINO (06/08) ────────────────────────────────────────────────────
+             Só campos que o PNCP REALMENTE entrega — conferidos nos registros já coletados,
+             não supostos pela documentação. Estes filtram o RESULTADO (não a consulta): o
+             caminho ao vivo não aceita nenhum deles como parâmetro, e uma segunda implementação
+             server-side divergiria da primeira com o tempo. Ver comentário em `refina()`. -->
+        <div><label>Portal de origem</label><select id="f-portal" onchange="rerender()">
+          <option value="">Todos os portais</option></select>
+          <div class="hint" style="margin-top:4px">preenchido com os portais que aparecem na busca</div></div>
+        <div><label>Modo de disputa</label><select id="f-modo" onchange="rerender()">
+          <option value="">Todos</option>
+          <option>Aberto</option><option>Aberto-Fechado</option><option>Fechado</option><option>Fechado-Aberto</option>
+        </select></div>
+        <div><label>Situação</label><select id="f-sit" onchange="rerender()">
+          <option value="">Todas</option>
+          <option>Divulgada no PNCP</option><option>Revogada</option><option>Anulada</option><option>Suspensa</option>
+        </select></div>
+        <div><label>Órgão / unidade / município contém</label>
+          <input type="text" id="f-orgao" onchange="rerender()" placeholder="ex.: uruaçu; secretaria de saúde"></div>
+        <div><label>Registro de preços (SRP)</label><select id="f-srp" onchange="rerender()">
+          <option value="">Tanto faz</option>
+          <option value="so">Só registro de preços</option>
+          <option value="nao">Excluir registro de preços</option></select></div>
+        <div><label>Valor estimado (R$)</label>
+          <div class="intervalo">
+            <input type="number" id="f-vmin" onchange="rerender()" placeholder="mínimo" min="0" step="1000">
+            <span style="color:var(--muted)">–</span>
+            <input type="number" id="f-vmax" onchange="rerender()" placeholder="máximo" min="0" step="1000">
+          </div>
+          <div class="hint" style="margin-top:4px">licitação sem valor estimado entra sempre</div></div>
+      </div>
+      <div style="margin-top:14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+        <span class="hint">o refino filtra o que já está na tela — não custa nova consulta ao PNCP</span>
+        <button class="btn sec" style="margin-left:auto" onclick="limparRefino()">Limpar refino</button>
+        <button class="btn" onclick="buscaNova()">Aplicar e buscar</button>
+      </div>
+    </div>
+    <div>
   <div class="kpis" id="kpis" style="display:none">
     <!-- O rótulo era "publicadas no dia" e mentia sempre que o período tinha mais de um dia —
          numa busca de 26/07 a 11/08 ele dizia "no dia" sobre 17 dias. Agora o próprio texto é
@@ -467,6 +496,8 @@ select:focus,input:focus{outline:none;border-color:var(--azul)}
        estar no ar. São duas procedências, e misturar as duas numa lista só faria o operador
        tratar como igual o que não é. -->
   <div id="nacional" style="display:none;margin-top:26px;padding-top:18px;border-top:1px dashed var(--linha)"></div>
+    </div>
+  </div>
 </div>
 <button id="aoTopo" onclick="window.scrollTo({top:0,behavior:'smooth'})" title="Voltar ao topo">↑</button>
 
