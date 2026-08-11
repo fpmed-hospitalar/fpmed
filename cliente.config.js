@@ -81,6 +81,13 @@
       },
     ],
 
+    // ── A TELA PRINCIPAL (o destino do "← Sistema") ──────────────────────────────────────────
+    // Quem diz isto e o CLIENTE, e nao o molde: aqui o menu se chama `fpmed_sistema_final.html`,
+    // na instalacao de origem tem outro nome. As telas do molde (Usuarios e acessos) leem daqui
+    // pra montar o caminho de volta. Sem isto configurado, elas nao mostram link nenhum — link
+    // que leva a 404 e pior que link nenhum.
+    telaPrincipal: 'fpmed_sistema_final.html',
+
     // ── LICENCA ──────────────────────────────────────────────────────────────────────────────
     // Decisao do Lemuel (04/08): avisar a partir de 10 dias antes; vencida = MODO LEITURA
     // (consulta funciona, gerar documento bloqueado). NUNCA apagar nada, NUNCA travar o acesso

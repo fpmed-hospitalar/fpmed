@@ -70,8 +70,17 @@ td.k{width:190px;color:var(--muted)}
 </style>
 </head>
 <body>
-<div class="topo"><div class="regua"><h1>Leitor de edital com IA</h1>
-  <div class="hint">módulo 2.8 da spec · <b style="color:#ffd98a">prova de custo — não liberado</b></div>
+<div class="topo"><div class="regua">
+  <!-- Os DOIS caminhos, e eles não são o mesmo: "Sistema" é o menu (de onde a pessoa veio se
+       chegou pelo menu) e "Licitações" é o portal a que este leitor pertence. Ter só o segundo,
+       como estava até 10/08, deixava quem entrou pelo menu com um caminho que não é o dele. -->
+  <div style="margin-bottom:6px;font-size:12.5px">
+    <a href="fpmed_sistema_final.html" style="color:var(--muted);text-decoration:none">← Sistema</a>
+    <span style="color:var(--linha)"> · </span>
+    <a href="fpmed_licitacoes.html" style="color:var(--muted);text-decoration:none">← Licitações</a>
+  </div>
+  <h1>Leitor de edital com IA</h1>
+  <div class="hint">módulo 2.8 da spec · <b style="color:#ffd98a">piloto — liberado só para o gestor de licitação</b></div>
 </div></div>
 
 <div class="regua">

@@ -36,6 +36,12 @@
   body{ background:var(--bg); color:var(--txt); font-family:system-ui,'Segoe UI',Arial,sans-serif;
         min-height:100vh; padding:26px 18px 60px; }
   .capa{ max-width:1080px; margin:0 auto; }
+  /* O CAMINHO DE VOLTA (conserto de fabrica, 10/08). Fica ACIMA do titulo, no canto esquerdo —
+     mesmo lugar das telas do sistema. A barra do gm-auth ocupa a direita (e-mail, chave, Sair),
+     entao a esquerda e onde a volta e procurada. */
+  .voltar{ display:inline-block; color:var(--muted); text-decoration:none; font-size:12.5px;
+           margin-bottom:10px; border:1px solid var(--borda); border-radius:8px; padding:4px 10px; }
+  .voltar:hover{ color:var(--txt); border-color:var(--ciano); }
   h1{ font-size:19px; font-weight:800; letter-spacing:.3px; }
   .sub{ color:var(--muted); font-size:12.5px; margin:5px 0 20px; line-height:1.6; }
   .caixa{ background:var(--panel); border:1px solid var(--borda); border-radius:14px;
@@ -67,6 +73,10 @@
 </head>
 <body>
 <div class="capa">
+  <!-- O caminho de volta é montado pelo script (o destino vem do config do cliente), e não
+       escrito aqui: esta tela é do MOLDE e o nome da tela principal muda de cliente pra cliente.
+       Sem `telaPrincipal` no config, nada é mostrado — link pra 404 é pior que link nenhum. -->
+  <a id="lt-voltar" class="voltar" href="#" style="display:none">← Sistema</a>
   <h1>Usuários e acessos</h1>
   <div class="sub">Quem entra no sistema, com qual papel, e o que cada papel alcança.
     <b>Ninguém é apagado aqui</b> — quem sai é <b>desativado</b>, para o histórico de quem fez cada
@@ -111,6 +121,25 @@
 
 <script>
 const SB = LIMEDTEC.urlBanco(), ANON = LIMEDTEC.chaveBanco();
+
+/* ── O CAMINHO DE VOLTA (conserto de fábrica, 10/08) ──────────────────────────────────────────
+   O Lemuel abriu esta tela e não tinha como voltar: a barra do gm-auth ocupa a direita (e-mail,
+   chave, Sair) e a esquerda estava vazia. Quem entra aqui só sai pelo botão do navegador — e
+   numa tela instalada como aplicativo esse botão pode nem existir.
+   >>> POR QUE O DESTINO VEM DO CONFIG: esta tela é do MOLDE, e o menu tem NOME DIFERENTE em cada
+       instalação. Escrever o nome de um cliente aqui quebraria todos os outros — e nem em
+       comentário ele deve aparecer, porque é de comentário que se copia. Sem `telaPrincipal`
+       configurada o link fica ESCONDIDO: um "← Sistema" que leva a 404 ensina a não confiar na
+       navegação inteira, e isso é pior que o link faltar. */
+(function () {
+  var destino = LIMEDTEC.telaPrincipal && LIMEDTEC.telaPrincipal();
+  if (!destino) return;
+  var a = document.getElementById('lt-voltar');
+  if (!a) return;
+  a.href = destino;
+  a.style.display = 'inline-block';
+})();
+
 const P = window.LimedtecPapeis;
 // as chaves que o gestor pode mexer no gerente = todas menos as de gestor. A lista de PROIBIDAS
 // vive no limedtec-papeis.js (e no limedtec_pode() do banco); aqui só se pergunta a ele, para não

@@ -122,8 +122,21 @@
     Object.keys(CORES_CRUAS).forEach(function (k) { if (c[k]) el.style.setProperty(CORES_CRUAS[k], c[k]); });
   }
 
+  /* ── A TELA PRINCIPAL, PRO CAMINHO DE VOLTA ───────────────────────────────────────────────
+     CONSERTO DE FABRICA (10/08): o Lemuel achou a tela "Usuarios e acessos" — que e do MOLDE —
+     sem o "← Sistema". Quem entra nela fica sem caminho de volta e so sai pelo botao do
+     navegador. Isso vale pra QUALQUER cliente, entao o conserto e aqui, e nao no arquivo da FPMED.
+     >>> O MOLDE NAO PODE CHUMBAR O NOME DA TELA: aqui e `fpmed_sistema_final.html`, na origem e
+         outro nome. Quem sabe disso e o config do cliente. Sem `telaPrincipal` configurada, o
+         molde NAO INVENTA um link — link que leva a 404 e pior que link nenhum: o primeiro
+         quebra a confianca na navegacao inteira, o segundo so falta. */
+  function telaPrincipal() {
+    var t = cfg && cfg.telaPrincipal;
+    return (typeof t === 'string' && t.trim()) ? t.trim() : null;
+  }
+
   raiz.LIMEDTEC = { cfg: cfg, banco: banco, urlBanco: urlBanco, chaveBanco: chaveBanco,
     edge: edge, rest: rest, nome: nome, tituloJanela: tituloJanela, aplicaTema: aplicaTema,
-    empresas: empresas, empresaPrincipal: empresaPrincipal };
+    empresas: empresas, empresaPrincipal: empresaPrincipal, telaPrincipal: telaPrincipal };
   if (typeof module !== 'undefined' && module.exports) module.exports = raiz.LIMEDTEC;
 })(typeof window !== 'undefined' ? window : globalThis);

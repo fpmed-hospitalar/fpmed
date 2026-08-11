@@ -525,6 +525,33 @@ Criado em 21/07/2026 copiando SO os arquivos do app do C:\globalmed.
     Suite nova testa_pix (17). Ela ja pegou uma 2a copia do CNPJ escrita num COMENTARIO do
     config — que e exatamente o jeito classico de a copia nascer (alguem copia do comentario).
 
+>>> 10/08 — CAMINHO DE VOLTA EM TODAS AS TELAS. Ele achou UMA; a varredura achou TRES.
+    Relato dele: "Usuarios e acessos" sem o "← Sistema" — a barra do gm-auth ocupa a DIREITA
+    (e-mail, chave, Sair) e a esquerda estava vazia. Quem entra so sai pelo botao do navegador, e
+    no aplicativo INSTALADO esse botao pode nem existir.
+    VARRI AS 16 TELAS DA CASCA. Estavam sem volta:
+      limedtec-usuarios.html ....... a que ele viu (e e do MOLDE — ver abaixo)
+      fpmed_competitividade.html ... ninguem tinha reclamado
+      dashboard_clientes.html ...... idem
+    E o fpmed_edital_ia tinha botao pro portal, mas nao a seta padrao no topo — quem chegou pelo
+    MENU ficava com um caminho que nao era o dele. Agora tem os DOIS ("← Sistema" e "← Licitacoes"),
+    que nao sao a mesma coisa.
+    DISPENSADAS, e cada uma por um motivo: index (o proximo passo dela JA e o sistema),
+    fpmed_sistema_final (e o menu: voltar pra onde?) e reset-senha (fora da sessao).
+    >>> CONSERTO DE FABRICA, e nao da FPMED: a tela de Usuarios e do MOLDE, entao vale pra
+        QUALQUER cliente. Mas o molde NAO PODE CHUMBAR o nome do menu — aqui e
+        fpmed_sistema_final.html, na origem e outro. Quem sabe disso e o config:
+          limedtec-config.js passou a expor `LIMEDTEC.telaPrincipal()`
+          cliente.config.js  passou a declarar `telaPrincipal: 'fpmed_sistema_final.html'`
+        SEM CONFIG, O LINK NAO APARECE. Um "← Sistema" que leva a 404 ensina a nao confiar na
+        navegacao inteira — pior que o link faltar.
+    >>> O TESTE PEGOU UM DEFEITO MEU NA HORA: eu tinha escrito `fpmed_sistema_final.html` DENTRO
+        do comentario da tela de molde, explicando por que nao se deve chumbar. Nem em comentario
+        pode: e de comentario que se copia. Reescrito sem nome de cliente.
+    Suite nova testa_caminho_de_volta (14). Ela monta a lista de telas a partir do SHELL do
+    sw.js — lista escrita a mao envelheceria justamente no caso que ela existe pra pegar: tela
+    nova. Total: 2.092 asserts / 0 falhas / 63 suites.
+
 >>> 10/08 — BOLETIM: O TESTE CHEGOU, E FICA UMA RESTRICAO CONHECIDA ATE O DOMINIO SER VERIFICADO.
     O e-mail chegou na caixa do lemuelbarros@outlook.com (o dono da conta do Resend).
     *** ATE O DOMINIO SER VERIFICADO, O BOLETIM DAS 5h SO CHEGA NESSE ENDERECO. *** Envio pra
