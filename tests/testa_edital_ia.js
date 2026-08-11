@@ -51,7 +51,7 @@ ok('6. ...e ele diz que CUSTA DINHEIRO, com os numeros medidos',
 ok('7. *** a tela estima o custo assim que o arquivo e escolhido ***',
   // 11/08: a estimativa passou a ser DUAS (resumo e tabela de itens gastam saídas muito
   // diferentes). O que este assert protege continua igual: o preço aparece ANTES do clique.
-  /estimativa:/.test(TELA) && /el\('info-arq'\)\.innerHTML/.test(TELA));
+  /estimativa grosseira:/.test(TELA) && /el\('info-arq'\)\.innerHTML/.test(TELA));
 ok('8. ...e o motivo (preco que so aparece depois de gastar nao e preco)',
   /Preço que só aparece depois de gastar não é preço/.test(TELA));
 ok('9. o preco por token e o da tabela publica do Haiku (US$ 1 entrada / US$ 5 saida)',
@@ -63,10 +63,14 @@ ok('11. ...e o mesmo criterio vale na ferramenta de medicao',
   /inventar taxa seria pior/.test(PROVA) && /economia\.awesomeapi/.test(PROVA));
 
 // ══════════ 3. O TETO DE CONTEXTO — A TRAVA QUE IMPORTA ══════════
-ok('12. *** existe teto de tamanho e ele RECUSA antes de mandar ***',
-  /const TETO_MB = 1\.5;/.test(TELA) && /if\(mb > TETO_MB\)\{/.test(TELA));
-ok('13. *** e o motivo esta dito: meio edital resumido como se fosse o todo ***',
-  /é pior que resumo nenhum/.test(TELA.replace(/\s+/g, ' ')));
+// ── 11/08, à tarde: O TETO DEIXOU DE RECUSAR. Estes dois asserts travavam a recusa por 1,5 MB,
+//    e ela era o defeito — o Lemuel tentou ler um edital e levou um "não". O que era protegido
+//    (não apresentar meio edital como o edital inteiro) continua travado, agora do lado certo:
+//    a tela PARTE o documento e RELATA o que ficou de fora. Ver testa_leitura_partes.
+ok('12. *** o teto de MB nao recusa mais: virou o calculo de quantas partes ***',
+  !/const TETO_MB = 1\.5;/.test(TELA) && /const CHARS_POR_PARTE = 240000;/.test(TELA));
+ok('13. *** e o limite que sobrou e so o absurdo, com o motivo dito ***',
+  /const MB_ABSURDO = 100;/.test(TELA) && /preferi não gastar uma leitura pra descobrir/.test(TELA));
 ok('14. o teto vem de MEDICAO, nao de chute (tokens por MB anotados)',
   /TOKENS_POR_MB = 123000;\s*\/\/ medido: 165\.479 tokens \/ 1,34 MB/.test(TELA));
 ok('15. e a medicao de 200 mil tokens do Haiku esta registrada no cabecalho',
@@ -94,8 +98,11 @@ ok('21. *** e a tela mostra os nao-encontrados em DESTAQUE, nao escondidos no fi
   /O que ele NÃO achou no edital/.test(TELA));
 ok('22. ...dizendo que "nao achou" nao e "nao existe"',
   /não quer dizer que não exista/.test(TELA));
+// 11/08: com leitura em partes, "voltou fora do formato" deixou de ser um `if` na tela e passou
+// a ser uma parte que não entra em `respostas`. A recusa de adivinhar continua — ela mudou de
+// lugar: quando NENHUMA parte volta legível, a tela diz isso e não inventa um resumo.
 ok('23. resposta fora do formato esperado NAO vira adivinhacao',
-  /não vou tentar adivinhar o que ela quis dizer/.test(TELA));
+  /nenhuma parte do edital voltou legível/.test(TELA) && /a leitura voltou fora do formato esperado/.test(FN));
 
 // ══════════ 6. A FERRAMENTA DE MEDICAO ══════════
 ok('24. *** ela NAO libera nada: so mede ***',
@@ -125,7 +132,7 @@ ok('31. os dois lados usam o MESMO modelo', /claude-haiku-4-5/.test(TELA) && /cl
 ok('32. a saida e limitada, e o limite mora no SERVIDOR (custo de saida e 5x o de entrada)',
   // 11/08: virou teto POR TAREFA (resumo 2000, itens 12000). O limite continua morando no
   // servidor — que é o ponto do assert; um teto que a tela mandasse seria um teto negociável.
-  /const MAX_SAIDA: Record<string, number> = \{ resumo: 2000, itens: 12000 \};/.test(FN)
+  /const MAX_SAIDA: Record<string, number> = \{ resumo: 2000, itens: 12000, juntar: 3000 \};/.test(FN)
   && /max_tokens: MAX_SAIDA\[tarefa\]/.test(FN) && /max_tokens: 2000/.test(PROVA));
 ok('33. ...e o motivo esta dito na ferramenta',
   /o custo de saida e 5x o de entrada/.test(PROVA));

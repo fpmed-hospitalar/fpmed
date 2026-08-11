@@ -46,7 +46,7 @@ const USD_SAIDA_MTOK = 5.00;
 // Resumo cabe em 2 mil tokens. Uma tabela de 80 itens com descricao COMPLETA de medicamento
 // ("Dipirona sodica 500mg/mL solucao injetavel ampola 2mL, embalagem com...") passa fácil de 6 mil.
 // Teto de resumo aplicado a itens nao devolve tabela menor: devolve tabela CORTADA no meio.
-const MAX_SAIDA: Record<string, number> = { resumo: 2000, itens: 12000 };
+const MAX_SAIDA: Record<string, number> = { resumo: 2000, itens: 12000, juntar: 3000 };
 
 // ── QUEM PODE LER (piloto, decisao do Lemuel em 10/08) ──────────────────────────────────────
 // Lista EXPLICITA de e-mail. Nao e cargo: os tres usuarios da FPMED sao gestor_geral, entao
@@ -102,6 +102,27 @@ REGRAS OBRIGATORIAS:
 - Se voce NAO encontrar a tabela de itens, devolva {"tabela_encontrada": false, "itens": []} e
   explique em "observacao". Lista vazia sem esse aviso seria dizer que o edital nao tem itens.`;
 
+/* ══ A PASSADA FINAL DO RESUMO EM PARTES (map-reduce) ═════════════════════════════════════════
+   Cada parte devolve um resumo do PEDACO que leu. Juntar isso no navegador daria uma colcha:
+   cinco "objeto" diferentes, cinco "abertura", e ninguem sabendo qual vale. Entao a juncao e uma
+   leitura tambem — mas barata, porque o que entra sao os resumos, e nao o edital.
+   >>> O CONFLITO NAO E RESOLVIDO NO ESCURO. Quando duas partes discordam de um campo, a resposta
+       traz as duas versoes em `conflitos`, dizendo de que parte veio cada uma. Escolher uma
+       calado seria inventar uma certeza que a leitura nao teve. */
+const PERGUNTA_JUNTAR = `Abaixo estao RESUMOS PARCIAIS de um mesmo edital de licitacao publica
+brasileira, cada um feito a partir de UMA PARTE do documento. Junte-os num resumo unico.
+Responda SOMENTE com JSON, sem texto antes ou depois, neste formato:
+{"objeto":"","orgao":"","modalidade":"","abertura":"","entrega_prazo":"","entrega_local":"",
+"pagamento":"","amostra":true,"registro_precos":true,"habilitacao":[],"penalidades":"",
+"pontos_de_atencao":[],"nao_encontrado":[],
+ "conflitos":[{"campo":"","versoes":["parte 2 disse X","parte 4 disse Y"]}]}
+REGRAS OBRIGATORIAS:
+- NAO invente nada que nao esteja nos resumos parciais.
+- Se DUAS partes disserem coisas diferentes do mesmo campo, NAO escolha uma: ponha as duas em
+  "conflitos", dizendo de qual parte veio cada uma, e deixe o campo com a que aparecer mais vezes.
+- "habilitacao" e "pontos_de_atencao" sao LISTAS: junte todas as partes e tire so as repetidas.
+- Em "nao_encontrado" ponha so o que NENHUMA parte encontrou.`;
+
 Deno.serve(async (req) => {
   const origin = req.headers.get("origin") || "";
   const CORS = cors(ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0]);
@@ -134,9 +155,24 @@ Deno.serve(async (req) => {
   let body: any = {};
   try { body = await req.json(); } catch { return J({ error: "corpo invalido" }, 400); }
 
-  // ── O QUE VOCE QUER QUE EU LEIA (resumo do edital ou a tabela de itens) ──────────────────
-  const tarefa = body.tarefa === "itens" ? "itens" : "resumo";
-  const PERGUNTA = tarefa === "itens" ? PERGUNTA_ITENS : PERGUNTA_RESUMO;
+  // ── O QUE VOCE QUER QUE EU LEIA (resumo, tabela de itens, ou a juncao dos parciais) ──────
+  const tarefa = body.tarefa === "itens" ? "itens" : body.tarefa === "juntar" ? "juntar" : "resumo";
+  const PERGUNTA = tarefa === "itens" ? PERGUNTA_ITENS : tarefa === "juntar" ? PERGUNTA_JUNTAR : PERGUNTA_RESUMO;
+
+  // ── A LEITURA EM PARTES ──────────────────────────────────────────────────────────────────
+  // `lote` amarra as N chamadas numa cobranca so. `parte`/`partes` sao pro prompt saber que esta
+  // vendo um PEDACO — sem isso o modelo tenta responder "abertura" e "orgao" de um bloco que so
+  // tem a tabela de itens, e inventa. Dizer "voce esta vendo a parte 3 de 7" e o que autoriza
+  // ele a devolver campo vazio sem se sentir incompleto.
+  const lote = String(body.lote || "").slice(0, 80) || null;
+  const partes = Math.max(1, Math.min(200, Number(body.partes) || 1));
+  const parte = Math.max(1, Math.min(partes, Number(body.parte) || 1));
+  const cabecalhoParte = partes > 1
+    ? `Este documento foi dividido em ${partes} partes e voce esta lendo a PARTE ${parte} de ${partes}.\n`
+      + `Responda SO com o que estiver NESTA parte. Campo que nao aparecer aqui fica vazio ou em\n`
+      + `"nao_encontrado" — outra parte pode te-lo, e juntar e trabalho de outra etapa. NAO invente\n`
+      + `para preencher.\n\n`
+    : "";
 
   const modo = body.modo === "pdf-nativo" ? "pdf-nativo" : "texto";
   let bloco: any;
@@ -144,8 +180,12 @@ Deno.serve(async (req) => {
     const t = String(body.texto || "");
     // A tela ja confere isto antes de mandar; aqui e a segunda barreira. Pagar por um resumo de
     // nada e o pior desfecho possivel de uma leitura que vai ser cobrada de alguem.
-    if (t.length < 500) return J({ error: "o texto extraido veio pobre demais para valer uma leitura" }, 400);
-    bloco = { type: "text", text: "EDITAL (texto extraido do PDF):\n\n" + t };
+    // >>> A JUNCAO E A EXCECAO: o que entra nela sao resumos parciais, que sao curtos de
+    //     proposito. Exigir 500 caracteres ali recusaria justamente a etapa mais barata.
+    if (t.length < 500 && tarefa !== "juntar") {
+      return J({ error: "o texto extraido veio pobre demais para valer uma leitura" }, 400);
+    }
+    bloco = { type: "text", text: (tarefa === "juntar" ? "RESUMOS PARCIAIS:\n\n" : "EDITAL (texto extraido do PDF):\n\n") + t };
   } else {
     const b64 = String(body.pdfBase64 || "");
     if (b64.length < 1000) return J({ error: "PDF vazio ou invalido" }, 400);
@@ -166,7 +206,7 @@ Deno.serve(async (req) => {
       body: JSON.stringify({
         model: MODELO,
         max_tokens: MAX_SAIDA[tarefa],
-        messages: [{ role: "user", content: [bloco, { type: "text", text: PERGUNTA }] }],
+        messages: [{ role: "user", content: [bloco, { type: "text", text: cabecalhoParte + PERGUNTA }] }],
       }),
     });
     const txt = await r.text();
@@ -202,35 +242,43 @@ Deno.serve(async (req) => {
   // Leitura que falhou DEPOIS de consumir token tambem custou. Registrar so o que deu certo
   // faria a conta do mes ser menor que a fatura da Anthropic, e ninguem saberia explicar a
   // diferenca. Por isso `ok` e uma coluna, e nao um motivo pra nao gravar.
+  // >>> E LEITURA EM PARTES E UM REGISTRO SO. Se cada parte virasse uma linha, a conta do mes
+  //     mostraria "23 leituras" para UM edital lido — tecnicamente correto e comercialmente
+  //     indefensavel. Quem soma e o banco (`registra_uso_ia`), com `on conflict` atomico: duas
+  //     partes que voltem juntas nao sobrescrevem a soma uma da outra.
   let leituraId: number | null = null;
   if (entrada > 0 || erro) {
+    const linha = {
+      usuario: user.id, email,
+      edital_titulo: String(body.titulo || "").slice(0, 300) || null,
+      edital_url: String(body.url || "").slice(0, 500) || null,
+      edital_mb: Number(body.mb) || null,
+      modo, modo_motivo: String(body.motivo || "") || null, tarefa,
+      paginas: Number(body.paginas) || null, chars: Number(body.chars) || null,
+      modelo: MODELO, tokens_entrada: entrada, tokens_saida: saida, segundos,
+      usd: +usd.toFixed(6), cambio, brl: cambio ? +(usd * cambio).toFixed(4) : null,
+      ok: !erro, erro: erro ? erro.slice(0, 300) : null,
+      lote, partes,
+    };
     try {
-      const reg = await fetch(`${SB_URL}/rest/v1/usos_ia`, {
-        method: "POST",
-        headers: { ...H_SR, Prefer: "return=representation" },
-        body: JSON.stringify([{
-          usuario: user.id, email,
-          edital_titulo: String(body.titulo || "").slice(0, 300) || null,
-          edital_url: String(body.url || "").slice(0, 500) || null,
-          edital_mb: Number(body.mb) || null,
-          modo, modo_motivo: String(body.motivo || "") || null, tarefa,
-          paginas: Number(body.paginas) || null, chars: Number(body.chars) || null,
-          modelo: MODELO, tokens_entrada: entrada, tokens_saida: saida, segundos,
-          usd: +usd.toFixed(6), cambio, brl: cambio ? +(usd * cambio).toFixed(4) : null,
-          ok: !erro, erro: erro ? erro.slice(0, 300) : null,
-        }]),
+      const reg = await fetch(`${SB_URL}/rest/v1/rpc/registra_uso_ia`, {
+        method: "POST", headers: H_SR, body: JSON.stringify({ p: linha }),
       });
-      if (reg.ok) { const j = await reg.json(); leituraId = (j && j[0] && j[0].id) || null; }
+      if (reg.ok) leituraId = Number(await reg.json()) || null;
     } catch { /* o registro falhar nao pode engolir a leitura que a pessoa ja pagou */ }
   }
 
   // Erro DEPOIS de consumir token traz o custo junto: a pessoa precisa saber que pagou, mesmo
   // sem receber a tabela. Custo escondido em erro e a forma mais rapida de a conta do mes nao
   // fechar com a fatura.
-  if (erro) return J({ ok: false, erro, modo, tarefa, leituraId, usd: +usd.toFixed(4),
-                       brl: cambio ? +(usd * cambio).toFixed(4) : null }, 200);
+  // `cortou` volta separado do texto do erro porque a tela AGE diferente nele: leitura cortada
+  // se refaz com bloco menor; erro de rede se repete igual. Fazer a tela decidir isso lendo a
+  // frase do erro seria amarrar comportamento a uma string que um dia alguem reescreve.
+  const cortou = !!erro && /cortad|max_tokens|nao coube/i.test(erro);
+  if (erro) return J({ ok: false, erro, cortou, modo, tarefa, parte, partes, leituraId,
+                       usd: +usd.toFixed(4), brl: cambio ? +(usd * cambio).toFixed(4) : null }, 200);
   return J({
-    ok: true, dados, modo, tarefa, modoMotivo: body.motivo || null, leituraId,
+    ok: true, dados, modo, tarefa, parte, partes, modoMotivo: body.motivo || null, leituraId,
     usage: { entrada, saida }, segundos, modelo: MODELO,
     usd: +usd.toFixed(4), cambio, brl: cambio ? +(usd * cambio).toFixed(4) : null,
   });

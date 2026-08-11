@@ -223,12 +223,13 @@ async function pdfParaTexto(buf){
   return { texto: out, paginas: doc.numPages };
 }
 
-// >>> O TETO DE CONTEXTO É A TRAVA QUE IMPORTA. O Haiku lê 200 mil tokens; o edital de 1,34 MB
-//     medido em 10/08 já consumiu 165 mil. Estimando por MEGABYTE a partir dessas duas medições
-//     (~123 mil tokens por MB no caso denso), acima de ~1,5 MB o risco de não caber é real.
-//     A tela recusa ANTES de mandar. O erro que ela existe pra evitar não é gastar à toa — é
-//     resumir o pedaço que coube e apresentar como se fosse o edital inteiro.
-const TETO_MB = 1.5;
+/* >>> O TETO DE CONTEXTO CONTINUA SENDO A TRAVA QUE IMPORTA — o que mudou é o que se faz com ele.
+       O Haiku lê 200 mil tokens; o edital de 1,34 MB medido em 10/08 já consumiu 165 mil. Até
+       11/08 a tela RECUSAVA acima de ~1,5 MB, e a recusa estava certa pelo que ela sabia fazer:
+       resumir o pedaço que coube e apresentar como o edital inteiro seria pior.
+       Desde 11/08 ela PARTE o edital em vez de recusar — o teto virou o cálculo de quantas
+       partes, não um "não". O erro que se continua evitando é o mesmo, e agora ele é evitado
+       relatando o que ficou de fora em vez de não ler. */
 const TOKENS_POR_MB = 123000;   // medido: 165.479 tokens / 1,34 MB
 
 const esc = s => String(s==null?'':s).replace(/[<>&"]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c]));
@@ -275,11 +276,16 @@ el('arq').addEventListener('change', e => {
   //     chegar mais cara do que foi anunciada.
   const tok = Math.round(mb * TOKENS_POR_MB);
   const custo = saidaTok => (tok/1e6)*USD_ENTRADA_MTOK + (saidaTok/1e6)*USD_SAIDA_MTOK;
+  // A ESTIMATIVA AQUI É PELO TAMANHO DO ARQUIVO, e a de dentro do fluxo é pelo TEXTO EXTRAÍDO —
+  // que é mais fiel, e por isso é a que aparece na pergunta de "continuar?". Esta serve pra dar
+  // ordem de grandeza antes de abrir o PDF, e ela DIZ que é aproximada em vez de fingir precisão.
   el('info-arq').innerHTML = esc(ARQUIVO.name) + ' · <b>' + mb.toFixed(2) + ' MB</b>'
     + ' · ~' + tok.toLocaleString('pt-BR') + ' tokens de entrada'
-    + ' · estimativa: <b>resumo</b> ~US$ ' + custo(1500).toFixed(3)
+    + ' · estimativa grosseira: <b>resumo</b> ~US$ ' + custo(1500).toFixed(3)
     + ' · <b>tabela de itens</b> ~US$ ' + custo(8000).toFixed(3)
-    + (mb > TETO_MB ? ' · <b style="color:#ffb3b6">acima do limite de leitura</b>' : '');
+    + (mb > MB_ABSURDO
+        ? ' · <b style="color:#ffb3b6">acima de ' + MB_ABSURDO + ' MB — não parece ser um edital</b>'
+        : ' · edital grande é lido <b>em partes</b>, e o número exato aparece antes de você confirmar');
 });
 
 async function cambio(){
@@ -293,6 +299,138 @@ async function cambio(){
 
 function travaBotoes(v){ el('bt-ler').disabled = v; el('bt-itens').disabled = v; }
 
+/* ══ LEITURA EM PARTES ═══════════════════════════════════════════════════════════════════════
+   Até 11/08 esta tela RECUSAVA edital acima de 1,5 MB. A recusa estava certa pelo que ela sabia
+   fazer — mandar meio edital e chamar de edital inteiro seria pior — mas ela transformava um
+   limite técnico nosso num limite do trabalho do operador. O Lemuel tentou ler um edital e
+   levou um "não". (Conferido no contador: NENHUM registro de erro em usos_ia — a recusa
+   aconteceu aqui, antes de qualquer gasto.)
+
+   O conserto não é aumentar o teto: é PARTIR o documento. E partir traz um problema novo, que é
+   o que a maior parte deste código trata — **um pedaço lido não é o documento**. A tabela de
+   itens da parte 3 não sabe que existe a parte 4, e uma lista de 40 itens não se parece com uma
+   lista incompleta. Então:
+     · cada parte é avisada de que É uma parte (a função põe isso no prompt), pra não inventar
+       campo que está em outra;
+     · os itens são COSTURADOS com conferência de continuidade, e buraco na numeração é RELATADO;
+     · o resumo é juntado por uma passada final, e conflito entre partes aparece em vez de ser
+       resolvido no escuro;
+     · e as N chamadas viram UM registro de cobrança (`lote`), somado pelo banco.
+
+   >>> O TETO DE MB DEIXOU DE SER RECUSA e virou o cálculo de quantas partes. O que sobrou de
+       limite é só o absurdo: arquivo que não é PDF, ou grande a ponto de não ser edital. */
+const CHARS_POR_PARTE = 240000;      // ~80 mil tokens (medido: 117.575 chars = 39.013 tokens)
+const PAGS_POR_PARTE_PDF = 12;       // PDF nativo carrega IMAGEM por página; cabe muito menos
+const MB_ABSURDO = 100;              // não é edital: é outra coisa com extensão .pdf
+const CHARS_POR_TOKEN = 3.01;        // medido nos dois editais reais de 10 e 11/08
+
+// Texto PÁGINA A PÁGINA — é o que permite dizer "li as páginas 1-18" em vez de "li um pedaço".
+async function pdfPorPagina(buf){
+  const pdfjs = await carregarPdfjs();
+  const doc = await pdfjs.getDocument({ data: buf }).promise;
+  const out = [];
+  for(let p = 1; p <= doc.numPages; p++){
+    const tc = await (await doc.getPage(p)).getTextContent();
+    const linhas = [];
+    for(const it of tc.items){
+      if(!it.str || !it.str.trim()) continue;
+      const x = it.transform[4], y = it.transform[5];
+      let alvo = linhas.find(l => Math.abs(l.y - y) <= 2.5);
+      if(!alvo){ alvo = { y, itens: [] }; linhas.push(alvo); }
+      alvo.itens.push({ x, str: it.str });
+    }
+    linhas.sort((a,b) => b.y - a.y);
+    out.push({ pagina: p, texto: linhas.map(l => l.itens.sort((a,b)=>a.x-b.x).map(i=>i.str).join(' ')).join('\n') });
+  }
+  return { paginas: out, total: doc.numPages };
+}
+
+/* AGRUPA PÁGINAS EM PARTES, e o corte é SEMPRE em fim de página. Cortar no meio de uma página
+   partiria uma linha da tabela de itens ao meio: a quantidade ficaria numa parte e a descrição
+   na outra, e as duas leituras devolveriam item pela metade sem erro nenhum aparecer. */
+function partirPorPagina(paginas, limiteChars){
+  const partes = [];
+  let atual = null;
+  for(const p of paginas){
+    if(!atual || (atual.chars + p.texto.length > limiteChars && atual.chars > 0)){
+      atual = { de: p.pagina, ate: p.pagina, texto: '', chars: 0 };
+      partes.push(atual);
+    }
+    atual.ate = p.pagina;
+    atual.texto += '\n\n===== página ' + p.pagina + ' =====\n' + p.texto;
+    atual.chars += p.texto.length;
+  }
+  return partes.filter(x => x.chars > 0);
+}
+
+// PDF NATIVO EM PARTES precisa RECORTAR o PDF (o pdf.js só lê; quem escreve é o pdf-lib). Só é
+// baixado quando o edital é escaneado E grande — a maioria das leituras nunca paga por isto.
+const PDFLIB_CDN = 'https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js';
+let _pdflib = null;
+function carregarPdflib(){
+  if(window.PDFLib) return Promise.resolve(window.PDFLib);
+  if(_pdflib) return _pdflib;
+  _pdflib = new Promise((res, rej) => {
+    const s = document.createElement('script');
+    s.src = PDFLIB_CDN;
+    s.onload = () => res(window.PDFLib);
+    s.onerror = () => rej(new Error('não consegui carregar o recortador de PDF (precisa de internet)'));
+    document.head.appendChild(s);
+  });
+  return _pdflib;
+}
+async function partirPdf(buf, pagsPorParte){
+  const L = await carregarPdflib();
+  const doc = await L.PDFDocument.load(buf, { ignoreEncryption: true });
+  const n = doc.getPageCount(), partes = [];
+  for(let i = 0; i < n; i += pagsPorParte){
+    const novo = await L.PDFDocument.create();
+    const idx = []; for(let k = i; k < Math.min(i + pagsPorParte, n); k++) idx.push(k);
+    const pgs = await novo.copyPages(doc, idx);
+    pgs.forEach(pg => novo.addPage(pg));
+    const bytes = await novo.save();
+    let bin = ''; const u8 = new Uint8Array(bytes);
+    for(let k = 0; k < u8.length; k += 8192) bin += String.fromCharCode.apply(null, u8.subarray(k, k + 8192));
+    partes.push({ de: i + 1, ate: Math.min(i + pagsPorParte, n), base64: btoa(bin), chars: 0 });
+  }
+  return partes;
+}
+
+// UM id de lote por leitura. Ele é o que amarra as N chamadas numa cobrança só.
+function novoLote(){
+  return 'L' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 8);
+}
+
+let PROGRESSO = null;
+function pintaProgresso(feitas, total, texto){
+  const d = el('passos').querySelectorAll('.passo .d')[2];
+  if(d) d.textContent = 'parte ' + feitas + ' de ' + total + (texto ? ' · ' + texto : '');
+}
+
+/* UMA PARTE, com o retry de leitura cortada embutido. Ela devolve sempre um objeto — inclusive
+   quando falha — porque quem chama precisa saber QUAL parte falhou pra contar o buraco. */
+async function lerUmaParte(corpoBase, parte, i, total, lote, tarefa){
+  const tok = tokenDaSessao();
+  if(!tok) throw new Error('sua sessão expirou — entre de novo e tente outra vez');
+  const corpo = Object.assign({}, corpoBase, {
+    tarefa, lote, parte: i + 1, partes: total,
+    paginas: parte.ate - parte.de + 1, chars: parte.chars || null,
+  });
+  if(parte.base64){ corpo.modo = 'pdf-nativo'; corpo.pdfBase64 = parte.base64; }
+  else { corpo.modo = 'texto'; corpo.texto = parte.texto; }
+
+  const r = await fetch(EDGE, {
+    method:'POST',
+    headers:{ 'Content-Type':'application/json', 'Authorization': 'Bearer ' + tok },
+    body: JSON.stringify(corpo),
+    signal: AbortSignal.timeout(600000),
+  });
+  const txt = await r.text();
+  if(r.status === 403){ const e = new Error('piloto'); e.semPermissao = true; throw e; }
+  if(!r.ok) throw new Error('o serviço de leitura respondeu ' + r.status + ' — ' + txt.slice(0,160));
+  return JSON.parse(txt);
+}
+
 async function lerEdital(tarefa){
   if(!ARQUIVO) return;
   tarefa = tarefa === 'itens' ? 'itens' : 'resumo';
@@ -302,78 +440,240 @@ async function lerEdital(tarefa){
 
   passo(0);
   const mb = ARQUIVO.size / 1024 / 1024;
-  if(mb > TETO_MB){
+  // O QUE SOBROU DE RECUSA é só o absurdo. Não é "grande demais pra ler": é grande demais pra
+  // ser um edital, e mandar isso seria gastar dinheiro descobrindo que era outra coisa.
+  if(mb > MB_ABSURDO){
     travaBotoes(false);
-    return falhou(0, 'O arquivo tem ' + mb.toFixed(2) + ' MB e o limite de uma leitura é de cerca de '
-      + TETO_MB + ' MB — acima disso o edital não cabe inteiro na leitura. Preferi recusar a mandar '
-      + 'só o pedaço que cabe: um resumo de meio edital apresentado como se fosse do edital todo '
-      + 'é pior que resumo nenhum.');
+    return falhou(0, 'O arquivo tem ' + mb.toFixed(1) + ' MB. Acima de ' + MB_ABSURDO + ' MB não costuma '
+      + 'ser um edital — é mais provável que seja outro tipo de documento. Se for edital mesmo, me diga '
+      + 'que eu subo o limite; preferi não gastar uma leitura pra descobrir.');
   }
 
-  // ── PASSO 2: O HÍBRIDO DECIDE AQUI ──────────────────────────────────────────────────────
+  // ── PASSO 2: EXTRAI, DECIDE O MODO E PARTE ──────────────────────────────────────────────
   passo(1);
   const buf = await ARQUIVO.arrayBuffer();
-  let corpo = { tarefa, titulo: ARQUIVO.name, mb: +mb.toFixed(2), cambio: await cambio() };
+  const cb = await cambio();
+  let modo = 'texto', motivo = null, partes = [], totalPaginas = 0, totalChars = 0;
   try{
-    const ex = await pdfParaTexto(buf.slice(0));
-    if(ex.texto.trim().length >= MIN_CHARS_TEXTO){
-      corpo.modo = 'texto'; corpo.texto = ex.texto;
-      corpo.paginas = ex.paginas; corpo.chars = ex.texto.length;
+    const ex = await pdfPorPagina(buf.slice(0));
+    totalPaginas = ex.total;
+    totalChars = ex.paginas.reduce((s,p) => s + p.texto.length, 0);
+    if(totalChars >= MIN_CHARS_TEXTO){
+      partes = partirPorPagina(ex.paginas, CHARS_POR_PARTE);
     }else{
-      // Extração pobre = edital escaneado. Cai pro PDF nativo, que é o único que enxerga
-      // imagem — e DIZ o motivo, porque esse caminho custa mais.
-      corpo.modo = 'pdf-nativo'; corpo.motivo = 'extracao-pobre';
-      corpo.paginas = ex.paginas; corpo.chars = ex.texto.length;
-      corpo.pdfBase64 = await paraBase64(ARQUIVO);
+      // Extração pobre = edital escaneado. Cai pro PDF nativo, que é o único que enxerga imagem
+      // — e DIZ o motivo, porque esse caminho custa mais.
+      modo = 'pdf-nativo'; motivo = 'extracao-pobre';
+      partes = await partirPdf(buf.slice(0), PAGS_POR_PARTE_PDF);
     }
   }catch(e){
-    // Nem extrair deu. Ainda dá pra ler pelo PDF nativo — mas o motivo fica registrado.
-    corpo.modo = 'pdf-nativo'; corpo.motivo = 'sem-texto';
-    try{ corpo.pdfBase64 = await paraBase64(ARQUIVO); }
+    modo = 'pdf-nativo'; motivo = 'sem-texto';
+    try{ partes = await partirPdf(buf.slice(0), PAGS_POR_PARTE_PDF); }
     catch(e2){ travaBotoes(false); return falhou(1, e2.message); }
   }
-  el('passos').querySelectorAll('.passo .d')[1].textContent = corpo.modo === 'texto'
-    ? ('texto extraído aqui: ' + corpo.chars.toLocaleString('pt-BR') + ' caracteres em ' + corpo.paginas + ' páginas')
-    : ('a extração veio pobre — vou mandar o PDF inteiro (custa mais)');
+  if(!partes.length){ travaBotoes(false); return falhou(1, 'não consegui extrair nada deste PDF.'); }
 
+  el('passos').querySelectorAll('.passo .d')[1].textContent = modo === 'texto'
+    ? ('texto extraído aqui: ' + totalChars.toLocaleString('pt-BR') + ' caracteres em ' + totalPaginas + ' páginas')
+    : ('a extração veio pobre — vou mandar o PDF em pedaços (custa mais)');
+
+  // ── O CUSTO ANTES DO CLIQUE ─────────────────────────────────────────────────────────────
+  // Não é só cortesia: leitura em partes custa N vezes, e uma pessoa que clicou esperando UMA
+  // leitura de R$ 0,30 e recebe R$ 4,00 tem razão de reclamar. A pergunta é feita mesmo quando
+  // é uma parte só? Não — aí não há nada de novo pra avisar, e um alerta por clique vira um
+  // alerta que se aperta sem ler, que é como se perde o direito de avisar quando importa.
+  const tokEntrada = modo === 'texto' ? Math.round(totalChars / CHARS_POR_TOKEN)
+                                      : Math.round(mb * TOKENS_POR_MB);
+  const saidaPorParte = tarefa === 'itens' ? 8000 : 1500;
+  const usdEst = (tokEntrada/1e6)*USD_ENTRADA_MTOK + (partes.length*saidaPorParte/1e6)*USD_SAIDA_MTOK
+    + (tarefa === 'resumo' && partes.length > 1 ? (partes.length*1200/1e6)*USD_ENTRADA_MTOK + (2000/1e6)*USD_SAIDA_MTOK : 0);
+  const preco = cb ? 'R$ ' + (usdEst*cb).toFixed(2) : 'US$ ' + usdEst.toFixed(3);
+  if(partes.length > 1){
+    const segue = confirm('Este edital tem ' + totalPaginas + ' páginas e vai ser lido em '
+      + partes.length + ' partes.\n\nCusto estimado total: ' + preco
+      + '\n(é uma cobrança só, somada — não ' + partes.length + ' cobranças)\n\nContinuar?');
+    if(!segue){ travaBotoes(false); el('cx-passos').style.display='none'; return; }
+  }
+
+  // ── PASSO 3: LÊ PARTE POR PARTE ─────────────────────────────────────────────────────────
   passo(2);
+  const lote = novoLote();
   const t0 = Date.now();
-  let j;
-  try{
-    // A CHAMADA VAI ASSINADA: o servidor é quem decide se você pode ler. A tela também esconde,
-    // mas esconder botão é conforto — a permissão de verdade está do outro lado.
-    const tok = tokenDaSessao();
-    if(!tok) throw new Error('sua sessão expirou — entre de novo e tente outra vez');
-    const r = await fetch(EDGE, {
-      method:'POST',
-      headers:{ 'Content-Type':'application/json', 'Authorization': 'Bearer ' + tok },
-      body: JSON.stringify(corpo),
-      signal: AbortSignal.timeout(300000),
-    });
-    const txt = await r.text();
-    if(r.status === 403){ travaBotoes(false);
-      el('av-sem-permissao').style.display = 'block';
-      return falhou(2, 'este acesso está em piloto, liberado só para o gestor de licitação.'); }
-    if(!r.ok) throw new Error('o serviço de leitura respondeu ' + r.status + ' — ' + txt.slice(0,160));
-    j = JSON.parse(txt);
-    // ERRO COM CUSTO JUNTO. Quando a leitura falha DEPOIS de consumir token (uma tabela que não
-    // coube, por exemplo), o dinheiro já foi. Dizer só "não deu certo" esconderia uma cobrança
-    // que vai aparecer na conta do mês sem explicação.
-    if(j.ok === false) throw new Error((j.erro || 'a leitura não deu certo')
-      + (j.usd ? ' · esta tentativa já custou ' + (j.brl != null ? 'R$ ' + Number(j.brl).toFixed(2)
-                                                                : 'US$ ' + Number(j.usd).toFixed(4))
-                 + ' e está registrada' : ''));
-  }catch(e){ travaBotoes(false); carregarLeituras(); return falhou(2, e.message); }
+  const corpoBase = { titulo: ARQUIVO.name, mb: +mb.toFixed(2), cambio: cb, motivo };
+  const respostas = [], falhas = [];
+  let usdTotal = 0, leituraId = null, entradaTotal = 0, saidaTotal = 0;
 
+  for(let i = 0; i < partes.length; i++){
+    pintaProgresso(i + 1, partes.length, 'páginas ' + partes[i].de + '-' + partes[i].ate);
+    let fila = [partes[i]], tentativa = 0, okDaParte = false;
+    // >>> LEITURA CORTADA REFAZ A PARTE EM DOIS. Não é insistir igual: é diminuir o pedaço, que é
+    //     a única coisa que muda o desfecho. Duas rodadas de divisão (4 pedaços) e para — insistir
+    //     além disso é gastar dinheiro repetindo um resultado que já se sabe qual é.
+    while(fila.length && tentativa <= 2){
+      const proxima = [];
+      for(const bloco of fila){
+        let j;
+        try{ j = await lerUmaParte(corpoBase, bloco, i, partes.length, lote, tarefa); }
+        catch(e){
+          if(e.semPermissao){ travaBotoes(false); el('av-sem-permissao').style.display = 'block';
+            return falhou(2, 'este acesso está em piloto, liberado só para o gestor de licitação.'); }
+          falhas.push({ de: bloco.de, ate: bloco.ate, motivo: e.message }); continue;
+        }
+        usdTotal += Number(j.usd) || 0; leituraId = j.leituraId || leituraId;
+        if(j.usage){ entradaTotal += j.usage.entrada||0; saidaTotal += j.usage.saida||0; }
+        if(j.ok === false){
+          if(j.cortou && bloco.texto && bloco.ate > bloco.de){
+            // parte o bloco no meio das PÁGINAS dele e tenta de novo
+            const meio = Math.floor((bloco.de + bloco.ate) / 2);
+            proxima.push({ de: bloco.de, ate: meio, texto: bloco.texto.split('===== página ' + (meio+1) + ' =====')[0], chars: 0 });
+            proxima.push({ de: meio + 1, ate: bloco.ate, texto: '===== página ' + (meio+1) + ' =====' + (bloco.texto.split('===== página ' + (meio+1) + ' =====')[1]||''), chars: 0 });
+          }else{
+            falhas.push({ de: bloco.de, ate: bloco.ate, motivo: j.erro || 'a leitura não deu certo' });
+          }
+          continue;
+        }
+        if(j.dados){ respostas.push({ de: bloco.de, ate: bloco.ate, dados: j.dados }); okDaParte = true; }
+      }
+      fila = proxima; tentativa++;
+    }
+    if(fila.length) for(const b of fila) falhas.push({ de: b.de, ate: b.ate, motivo: 'nem dividida em quatro a parte coube na resposta' });
+  }
+
+  // ── PASSO 4: COSTURA ────────────────────────────────────────────────────────────────────
   passo(3);
-  if(!j.dados){ travaBotoes(false);
-    return falhou(3, 'a leitura voltou, mas não no formato esperado — não vou tentar adivinhar o que ela quis dizer.'); }
+  if(!respostas.length){
+    travaBotoes(false); carregarLeituras();
+    return falhou(3, 'nenhuma parte do edital voltou legível. ' + (falhas[0] ? falhas[0].motivo : '')
+      + (usdTotal ? ' · o que já foi consumido (' + (cb ? 'R$ '+(usdTotal*cb).toFixed(2) : 'US$ '+usdTotal.toFixed(4)) + ') está registrado.' : ''));
+  }
 
-  _passo = 4; pintaPassos();
-  travaBotoes(false);
+  const j = { modo, tarefa, modoMotivo: motivo, leituraId, cambio: cb,
+              usd: +usdTotal.toFixed(6), usage: { entrada: entradaTotal, saida: saidaTotal },
+              partes: partes.length, partesOk: respostas.length, falhas,
+              paginasLidas: respostas.map(r => r.de + '-' + r.ate) };
   const seg = Math.round((Date.now()-t0)/1000);
-  if(tarefa === 'itens') mostraItens(j, seg); else mostra(j, seg);
+
+  try{
+    if(tarefa === 'itens'){
+      j.dados = costurarItens(respostas, falhas, totalPaginas);
+      _passo = 4; pintaPassos(); travaBotoes(false);
+      mostraItens(j, seg);
+    }else{
+      j.dados = respostas.length === 1 ? respostas[0].dados
+              : await juntarResumos(respostas, corpoBase, lote, partes.length);
+      _passo = 4; pintaPassos(); travaBotoes(false);
+      mostra(j, seg);
+    }
+  }catch(e){ travaBotoes(false); carregarLeituras(); return falhou(3, e.message); }
   carregarLeituras();   // a leitura recém-registrada aparece na hora na conta da pessoa
+}
+
+/* ══ A COSTURA DOS ITENS ═════════════════════════════════════════════════════════════════════
+   Juntar listas é a parte fácil. O que essa função existe pra fazer é o resto:
+
+   1. DEDUPLICAR por nº de item. A mesma tabela pode aparecer no fim de uma parte e no começo da
+      seguinte (o corte é por página, e tabela atravessa página). Sem dedup, o item 47 entraria
+      duas vezes e a proposta sairia com quantidade dobrada.
+   2. CONFERIR A CONTINUIDADE e RELATAR O BURACO. Este é o ponto todo. "Li 1-80 e 95-120" é uma
+      informação; uma lista de 105 itens apresentada como completa é uma mentira. Buraco na
+      numeração quase sempre quer dizer que uma parte não leu direito — e o item que falta é
+      exatamente o que ninguém vai procurar.
+   3. Ordenar por número, e não pela ordem em que as partes voltaram. */
+/* O DESEMPATE ENTRE DUAS CÓPIAS DO MESMO ITEM. Conta o que está PREENCHIDO, com peso maior pra
+   descrição — é ela que identifica o produto no cruzamento contra o estoque, e é ela que a
+   tabela resumida do corpo do edital costuma cortar. Não compara "qualidade" nem escolhe pela
+   parte de origem: só prefere a que tem mais informação, que é uma regra que dá pra explicar. */
+function riquezaItem(it){
+  if(!it) return -1;
+  const d = String(it.descricao || '').trim();
+  return d.length
+    + (String(it.unidade || '').trim() ? 40 : 0)
+    + (it.quantidade != null && it.quantidade !== '' ? 40 : 0)
+    + (it.valor_unitario != null && it.valor_unitario !== '' ? 20 : 0);
+}
+
+function costurarItens(respostas, falhas, totalPaginas){
+  const vistos = new Map(), duplicados = [];
+  let algumaAchou = false;
+  const onde = [];
+  for(const r of respostas){
+    const d = r.dados || {};
+    if(d.tabela_encontrada !== false && Array.isArray(d.itens) && d.itens.length) algumaAchou = true;
+    if(d.onde) onde.push('páginas ' + r.de + '-' + r.ate + ': ' + d.onde);
+    for(const it of (Array.isArray(d.itens) ? d.itens : [])){
+      const k = String(it.n == null ? '' : it.n).trim().replace(/^0+(\d)/, '$1').toUpperCase();
+      if(!k){ continue; }
+      if(vistos.has(k)){
+        duplicados.push(k);
+        // >>> QUEM GANHA O EMPATE É A CÓPIA MAIS COMPLETA, e não a primeira que apareceu. Medido
+        //     em 11/08 num edital de 92 páginas: 45 dos 48 itens vieram nas DUAS partes, porque
+        //     o edital traz uma tabela resumida no corpo e o anexo detalhado no fim. "A primeira
+        //     ganha" teria escolhido sistematicamente a resumida — descrição curta, às vezes sem
+        //     unidade — e a proposta nasceria com a versão pobre de 45 itens.
+        if(riquezaItem(it) > riquezaItem(vistos.get(k))) vistos.set(k, Object.assign({}, it, { _parte: r.de + '-' + r.ate }));
+        continue;
+      }
+      vistos.set(k, Object.assign({}, it, { _parte: r.de + '-' + r.ate }));
+    }
+  }
+  const itens = [...vistos.values()].sort((a,b) => {
+    const na = parseInt(String(a.n).replace(/\D/g,''),10), nb = parseInt(String(b.n).replace(/\D/g,''),10);
+    return (isFinite(na)?na:1e9) - (isFinite(nb)?nb:1e9);
+  });
+
+  // ── OS BURACOS ──────────────────────────────────────────────────────────────────────────
+  const nums = itens.map(x => parseInt(String(x.n).replace(/\D/g,''),10)).filter(isFinite).sort((a,b)=>a-b);
+  const buracos = [];
+  for(let i = 1; i < nums.length; i++){
+    if(nums[i] - nums[i-1] > 1) buracos.push({ de: nums[i-1] + 1, ate: nums[i] - 1 });
+  }
+  // >>> O EDITAL PODE PULAR NUMERAÇÃO DE VERDADE (item cancelado, lote desmembrado). Por isso o
+  //     buraco é RELATADO como dúvida, e não como erro: "podem estar em página que não li
+  //     direito — confira". Afirmar que faltou seria tão desonesto quanto omitir.
+  return {
+    tabela_encontrada: algumaAchou,
+    itens,
+    onde: onde.join(' · ') || null,
+    _costura: {
+      partesComItens: respostas.filter(r => (r.dados && Array.isArray(r.dados.itens) && r.dados.itens.length)).length,
+      duplicados: [...new Set(duplicados)],
+      buracos,
+      falhas,
+      faixaLida: nums.length ? (nums[0] + '-' + nums[nums.length-1]) : null,
+      totalPaginas,
+    },
+    observacao: respostas.map(r => (r.dados||{}).observacao).filter(Boolean).join(' · ') || null,
+  };
+}
+
+/* A JUNÇÃO DOS RESUMOS — map-reduce. Ela é uma leitura também (a IA junta), mas do MESMO lote:
+   não vira uma cobrança extra, entra na soma. O que entra nela são os resumos parciais, que são
+   curtos — por isso ela é a etapa mais barata das duas. */
+async function juntarResumos(respostas, corpoBase, lote, totalPartes){
+  const texto = respostas.map(r =>
+    '--- resumo da parte (páginas ' + r.de + '-' + r.ate + ') ---\n' + JSON.stringify(r.dados)
+  ).join('\n\n');
+  const tok = tokenDaSessao();
+  const r = await fetch(EDGE, {
+    method:'POST',
+    headers:{ 'Content-Type':'application/json', 'Authorization': 'Bearer ' + tok },
+    body: JSON.stringify(Object.assign({}, corpoBase, {
+      tarefa: 'juntar', modo: 'texto', texto, lote, parte: totalPartes, partes: totalPartes })),
+    signal: AbortSignal.timeout(300000),
+  });
+  const txt = await r.text();
+  if(!r.ok) throw new Error('não consegui juntar os resumos: HTTP ' + r.status);
+  const j = JSON.parse(txt);
+  if(j.ok === false || !j.dados){
+    // >>> A JUNÇÃO FALHAR NÃO PODE PERDER O QUE JÁ FOI LIDO. Devolve os parciais com a marca de
+    //     que não foram juntados — meio resumo dito na cara é melhor que um erro que joga fora
+    //     cinco leituras já pagas.
+    return Object.assign({}, respostas[0].dados, {
+      _naoJuntou: true,
+      _parciais: respostas.map(r => ({ paginas: r.de + '-' + r.ate, dados: r.dados })),
+    });
+  }
+  return j.dados;
 }
 
 function paraBase64(f){
@@ -411,7 +711,12 @@ function blocoCusto(j, segundos){
     + '<b>modo: ' + (j.modo === 'texto' ? 'texto extraído aqui no navegador' : 'PDF inteiro')
     + '</b>' + (j.modoMotivo === 'extracao-pobre' ? ' (a extração de texto veio pobre — edital escaneado)'
               : j.modoMotivo === 'sem-texto' ? ' (não deu pra extrair texto deste PDF)' : '')
-    + ' · <b>' + (j.tarefa === 'itens' ? 'tabela de itens' : 'resumo do edital') + '</b><br>'
+    + ' · <b>' + (j.tarefa === 'itens' ? 'tabela de itens' : 'resumo do edital') + '</b>'
+    // O NÚMERO DE PARTES ENTRA JUNTO DO CUSTO porque é ele que explica o valor. Um R$ 4,00 sem
+    // "foram 12 partes" ao lado parece erro de cobrança.
+    + (j.partes > 1 ? ' · <b>' + j.partes + ' partes</b>, uma cobrança só'
+        + (j.partesOk < j.partes ? ' (<b style="color:#ffb3b6">' + (j.partes-j.partesOk) + ' falhou</b>)' : '') : '')
+    + '<br>'
     +   entrada.toLocaleString('pt-BR') + ' tokens de entrada · ' + saida.toLocaleString('pt-BR')
     +   ' de saída · ' + segundos + ' s · ' + MODELO
     +   (cb ? ' · câmbio R$ ' + cb.toFixed(4) + '/US$ (buscado agora)'
@@ -432,8 +737,35 @@ function mostra(j, segundos){
   // >>> O QUE ELE NÃO ACHOU VEM EM DESTAQUE, e não escondido no fim. Um leitor de edital que só
   //     mostra o que encontrou ensina a confiar no silêncio dele — e no edital, o campo que
   //     ninguém leu é exatamente o que derruba a proposta.
-  el('saida').innerHTML =
-    '<div class="caixa"><b>O que o edital diz</b><table>'
+  /* ── LEITURA EM PARTES: o que a junção não conseguiu esconder ────────────────────────────
+     Quando duas partes discordam de um campo, a junção NÃO escolhe calado — devolve as duas em
+     `conflitos`. E se a própria junção falhar, os parciais voltam marcados. Os dois casos
+     aparecem ANTES do resumo, porque os dois mudam o quanto se pode confiar nele. */
+  const avisoPartes =
+      (d._naoJuntou
+        ? '<div class="aviso err"><b>⚠️ Li o edital em partes, mas não consegui juntar os resumos.</b>'
+          + '<div class="hint" style="margin-top:4px">O que aparece abaixo é o resumo da <b>primeira parte só</b>. '
+          + 'Os das outras partes estão guardados e não foram perdidos — mas não vou fingir que isto é o '
+          + 'resumo do edital inteiro.</div></div>'
+        : '')
+    + (Array.isArray(d.conflitos) && d.conflitos.length
+        ? '<div class="aviso"><b>⚠️ As partes discordaram em ' + d.conflitos.length + ' campo(s).</b>'
+          + '<div class="hint" style="margin:6px 0">Não escolhi por você: partes diferentes do edital disseram '
+          + 'coisas diferentes, e o campo abaixo ficou com a versão que apareceu mais vezes.</div>'
+          + '<ul style="margin:0;padding-left:18px">'
+          + d.conflitos.map(c => '<li><b>' + esc(c.campo) + '</b>: '
+              + (Array.isArray(c.versoes) ? c.versoes.map(esc).join(' <i>x</i> ') : esc(c.versoes)) + '</li>').join('')
+          + '</ul></div>'
+        : '')
+    + (j.partes > 1 && Array.isArray(j.falhas) && j.falhas.length
+        ? '<div class="aviso err"><b>⚠️ ' + j.falhas.length + ' parte(s) do edital não voltaram.</b>'
+          + '<div class="hint" style="margin-top:4px">Páginas '
+          + j.falhas.map(f => f.de + '-' + f.ate).join(', ') + '. O que estiver nelas <b>não está</b> no '
+          + 'resumo abaixo.</div></div>'
+        : '');
+
+  el('saida').innerHTML = avisoPartes
+    + '<div class="caixa"><b>O que o edital diz</b><table>'
     + linha('Objeto', esc(d.objeto)) + linha('Órgão', esc(d.orgao))
     + linha('Modalidade', esc(d.modalidade)) + linha('Abertura', esc(d.abertura))
     + linha('Prazo de entrega', esc(d.entrega_prazo)) + linha('Local de entrega', esc(d.entrega_local))
@@ -504,8 +836,36 @@ function mostraItens(j, segundos){
       + '</tr>';
   }).join('');
 
-  el('saida').innerHTML =
-    '<div class="aviso"><b>⚠️ Confira esta tabela contra o edital antes de usar.</b>'
+  /* ── O RELATÓRIO DA COSTURA ──────────────────────────────────────────────────────────────
+     Quando o edital foi lido em partes, esta é a informação mais importante da tela — mais que a
+     tabela. Uma lista com buraco não se parece com uma lista com buraco: parece uma lista. */
+  const cost = d._costura || null;
+  let blocoCostura = '';
+  if(cost && (j.partes > 1 || (cost.falhas||[]).length || (cost.buracos||[]).length)){
+    const bur = cost.buracos || [], fal = cost.falhas || [];
+    const faixa = n => n.de === n.ate ? String(n.de) : (n.de + '-' + n.ate);
+    blocoCostura =
+      '<div class="aviso' + ((bur.length || fal.length) ? ' err' : '') + '">'
+      + '<b>' + ((bur.length || fal.length) ? '⚠️ ' : '') + 'Este edital foi lido em ' + j.partes + ' partes'
+      +   (j.partesOk < j.partes ? ' — <b>' + (j.partes - j.partesOk) + ' não voltou(aram)</b>' : '') + '.</b>'
+      + '<div class="hint" style="margin:6px 0">'
+      +   (cost.faixaLida ? 'Vieram os itens <b>' + esc(cost.faixaLida) + '</b>. ' : '')
+      +   (bur.length
+            ? '<b style="color:#ffb3b6">Faltam na numeração: ' + bur.map(faixa).join(', ') + '.</b> '
+              + 'Pode ser que o edital pule mesmo (item cancelado, lote desmembrado) ou que esses itens '
+              + 'estejam em página que não li direito. <b>Confira no edital antes de usar.</b>'
+            : 'A numeração veio <b>sem buracos</b>.')
+      + '</div>'
+      + (fal.length ? '<div class="hint"><b>Partes que não voltaram:</b><ul style="margin:4px 0;padding-left:18px">'
+          + fal.map(f => '<li>páginas ' + f.de + '-' + f.ate + ' — ' + esc(f.motivo) + '</li>').join('')
+          + '</ul>Os itens dessas páginas <b>não estão</b> na tabela abaixo.</div>' : '')
+      + ((cost.duplicados||[]).length ? '<div class="hint">' + cost.duplicados.length
+          + ' item(ns) apareceram em duas partes (a tabela atravessa a página) e entraram uma vez só.</div>' : '')
+      + '</div>';
+  }
+
+  el('saida').innerHTML = blocoCostura
+    + '<div class="aviso"><b>⚠️ Confira esta tabela contra o edital antes de usar.</b>'
     + '<div class="hint" style="margin-top:4px">Ela foi <b>lida por IA</b>, não veio do índice oficial. '
     + 'A conferência que importa é simples: <b>o edital tem quantos itens?</b> Se o número não bater com os '
     + '<b>'+itens.length+'</b> abaixo, falta alguma coisa — e o que falta não aparece sozinho.</div></div>'

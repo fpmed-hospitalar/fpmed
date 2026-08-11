@@ -35,13 +35,15 @@ const ok = (n, c, e) => { if (c) p++; else { f++; console.log('  FALHA ' + n + (
 console.log('SUITE testa_itens_edital — a tabela de itens, do PDF ate a proposta\n');
 
 // ══════════ 1. A FUNCAO TEM DUAS TAREFAS, E ELAS SAO DIFERENTES DE VERDADE ══════════
+// (11/08 à tarde: a `tarefa` virou de duas para TRÊS — entrou `juntar`, a passada final do
+//  resumo em partes. Os asserts continuam dizendo o mesmo: a tarefa decide o prompt e o teto.)
 ok('1. *** a funcao aceita `tarefa` e ela decide o prompt ***',
-  /const tarefa = body\.tarefa === "itens" \? "itens" : "resumo";/.test(F)
-  && /const PERGUNTA = tarefa === "itens" \? PERGUNTA_ITENS : PERGUNTA_RESUMO;/.test(F));
+  /const tarefa = body\.tarefa === "itens" \? "itens" : body\.tarefa === "juntar" \? "juntar" : "resumo";/.test(F)
+  && /const PERGUNTA = tarefa === "itens" \? PERGUNTA_ITENS : tarefa === "juntar" \? PERGUNTA_JUNTAR : PERGUNTA_RESUMO;/.test(F));
 ok('2. o padrao e `resumo` (corpo antigo continua funcionando igual)',
-  /body\.tarefa === "itens" \? "itens" : "resumo"/.test(F));
+  /: "resumo";/.test(F));
 ok('3. *** o teto de saida MUDA com a tarefa ***',
-  /const MAX_SAIDA: Record<string, number> = \{ resumo: 2000, itens: 12000 \};/.test(F)
+  /const MAX_SAIDA: Record<string, number> = \{ resumo: 2000, itens: 12000, juntar: 3000 \};/.test(F)
   && /max_tokens: MAX_SAIDA\[tarefa\]/.test(F));
 ok('4. ...e o motivo esta escrito (teto de resumo aplicado a itens corta a tabela)',
   /Teto de resumo aplicado a itens nao devolve tabela menor: devolve tabela CORTADA no meio/.test(F));
@@ -91,7 +93,10 @@ ok('23. *** a estimativa de custo mostra os DOIS precos antes do clique ***',
   /<b>resumo<\/b> ~US\$ ' \+ custo\(1500\)/.test(T) && /<b>tabela de itens<\/b> ~US\$ ' \+ custo\(8000\)/.test(T));
 ok('24. ...com o motivo (a entrada e igual; o que muda e a saida)',
   /o que muda é a SAÍDA/.test(um(T)));
-ok('25. o corpo da chamada leva a tarefa', /let corpo = \{ tarefa, titulo: ARQUIVO\.name/.test(T));
+// 11/08 à tarde: o corpo passou a ser montado por PARTE (`lerUmaParte`), então a tarefa viaja
+// dali. O que o assert protege é o mesmo: a tela DIZ qual leitura está pedindo.
+ok('25. o corpo da chamada leva a tarefa',
+  /tarefa, lote, parte: i \+ 1, partes: total,/.test(T));
 ok('26. o bloco de custo e UM SO pras duas leituras (nao duplicado)',
   /function blocoCusto\(j, segundos\)\{/.test(T) && (T.match(/O que esta leitura custou/g) || []).length === 1);
 ok('27. ...e ele DIZ qual das duas leituras foi', /j\.tarefa === 'itens' \? 'tabela de itens' : 'resumo do edital'/.test(T));
@@ -187,11 +192,13 @@ ok('63. *** o contexto NAO e consumido (quem veio da ficha pode ler dois anexos 
 
 // ══════════ 11. ERRO QUE CUSTOU DINHEIRO APARECE COM O CUSTO ══════════
 ok('64. *** a funcao devolve o custo JUNTO do erro ***',
-  /if \(erro\) return J\(\{ ok: false, erro, modo, tarefa, leituraId, usd: \+usd\.toFixed\(4\),/.test(F));
+  /if \(erro\) return J\(\{ ok: false, erro, cortou, modo, tarefa, parte, partes, leituraId,\s*usd: \+usd\.toFixed\(4\)/.test(F));
+// 11/08 à tarde: com leitura em partes, o custo consumido por partes que falharam vem do
+// acumulado (`usdTotal`), e não do erro de uma chamada só — mas continua sendo DITO.
 ok('65. *** e a tela mostra quanto a tentativa fracassada custou ***',
-  /esta tentativa já custou/.test(T));
+  /o que já foi consumido \(' \+ \(cb \? 'R\$ '\+\(usdTotal\*cb\)\.toFixed\(2\)/.test(T));
 ok('66. ...e recarrega a conta de leituras mesmo no erro (a cobranca ja existe)',
-  /catch\(e\)\{ travaBotoes\(false\); carregarLeituras\(\); return falhou\(2, e\.message\); \}/.test(T));
+  /travaBotoes\(false\); carregarLeituras\(\);\s*return falhou\(3,/.test(T));
 ok('67. o motivo esta escrito (custo escondido em erro faz a conta do mes nao fechar)',
   /Custo escondido em erro e a forma mais rapida de a conta do mes nao fechar com a fatura/.test(uc(F)));
 
