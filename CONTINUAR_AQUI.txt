@@ -525,6 +525,82 @@ Criado em 21/07/2026 copiando SO os arquivos do app do C:\globalmed.
     Suite nova testa_pix (17). Ela ja pegou uma 2a copia do CNPJ escrita num COMENTARIO do
     config — que e exatamente o jeito classico de a copia nascer (alguem copia do comentario).
 
+>>> 11/08 — CREDENCIAMENTO JUNTO A INDUSTRIA. A trilha sai do BANCO, e o esquecido toca o sino.
+
+    A DECISAO DE MODELAGEM, que e a metade importante deste item: o pedido veio como "secao na
+    ficha do NEGOCIO", e a secao esta la — mas o credenciamento NAO e do negocio, e da EMPRESA
+    com a INDUSTRIA. Uma distribuidora se credencia junto a EMS uma vez, e aquilo serve a todos
+    os pregoes daquela marca dali em diante.
+    >>> SE FOSSE POR NEGOCIO, cada pregao criaria um pedido novo pra mesma industria. Em tres
+        meses haveria oito linhas "EMS - solicitado" e a pergunta que o operador realmente faz —
+        "eu ja sou credenciado na EMS?" — passaria a ter oito respostas. Por isso a chave unica e
+        (empresa, industria) e o negocio entra como ORIGEM: qual pregao motivou o pedido. A aba
+        mostra os credenciamentos DA EMPRESA e marca os que nasceram daquele negocio.
+
+    A TRILHA E ESCRITA PELO BANCO, e nao pela tela. Trigger `cred_historia_t` em after insert or
+    update. Historico que a tela escreve e historico que a tela pode esquecer de escrever: basta
+    um caminho novo de atualizacao (um script, o painel do Supabase, outra tela) pra mudanca de
+    status acontecer sem rastro, e o buraco so aparece meses depois, quando alguem pergunta
+    "desde quando isso esta em analise?".
+    >>> E SO O STATUS FAZ HISTORIA. Corrigir um telefone nao e passo do processo, e um historico
+        que registra tudo vira um historico que ninguem le — que e o mesmo que nao ter.
+
+    NAO SE APAGA. Nem `credenciamentos` nem `credenciamento_historico` tem policy de DELETE — sem
+    policy a RLS nega, entao apagar nao e "dificil", e impossivel por quem entra pelo PostgREST.
+    O historico tambem nao tem UPDATE: linha de historico que se edita nao e historico.
+    >>> PROVADO NO BANCO, e nao so lido do arquivo: tests/db/testa_credenciamento_rls.js roda
+        numa transacao com ROLLBACK (nao suja nada), poe `set local role authenticated` pra RLS
+        valer de verdade, tenta o DELETE e pergunta pela LINHA — nao pelo status da resposta,
+        que e a licao que este projeto pagou em 10/08 lendo um 204 numa tabela vazia.
+        O banco respondeu: historico=3 · credenciamento sobrou=1 · historico sobrou=3.
+        (3 e o numero certo: foram 3 mudancas de status; o update de `contato_nome` no meio NAO
+        virou historia, que era exatamente o que se queria provar.)
+
+    O QUE ISTO EXISTE PRA PEGAR E O PEDIDO ESQUECIDO. Credenciamento solicitado e nao respondido
+    nao doi em lugar nenhum ate o dia do pregao, quando a empresa descobre que nao pode cotar
+    aquela marca. Entao:
+      · o cartao de um pedido parado muda a BORDA (nao so um texto no meio da linha);
+      · o contador da aba conta os PARADOS, e nao o total — "Credenciamentos 12" nao pede nada de
+        ninguem; "Credenciamentos 2" querendo dizer "2 parados" e o numero que faz agir;
+      · o sino conta os parados no badge, pela MESMA regra do documento vencido: fica aceso ate
+        alguem RESOLVER, e resolver e possivel hoje. Entra por ULTIMO na lista de propósito — e o
+        aviso mais LENTO dos quatro (sessao e hoje, certidao vence em dias, credenciamento
+        arrasta semanas), e pôr o lento no topo empurraria pra baixo o que se resolve hoje;
+      · o corte e 7 dias (o padrao que ele pediu) e mora num lugar SO: `CRED_DIAS_PARADO`. Cartao,
+        aba e sino leem dali. Tres numeros um dia discordariam sobre o que e estar parado.
+      · o filtro do sino e feito NO BANCO (`solicitado_em=lt.<data>`): trazer todos pra filtrar na
+        tela leria a lista inteira de credenciamentos toda vez que alguem abre o funil, pra usar
+        dois.
+
+    O PEDIDO (o documento): botao "📝 Gerar o pedido" em cada credenciamento, abre a carta pronta
+    pra imprimir/PDF. Os dados da empresa saem do cliente.config.js — digitar o CNPJ aqui criaria
+    a segunda copia, e numero de documento em dois lugares e numero que um dia diverge. Dado que
+    falta sai MARCADO no texto («razao social — falta no cadastro») com o aviso ANTES da carta:
+    campo em branco e campo que alguem envia sem ver. A cidade da assinatura e a da EMPRESA, e
+    nao um padrao — chutar "Goiania" numa carta assinada por uma empresa de Aparecida de Goiania
+    e errar o unico dado que ninguem confere.
+
+    DUAS DATAS, e elas nao sao a mesma coisa: `solicitado_em` (quando o pedido saiu — e a que
+    conta os dias parados) e `respondido_em` (quando a industria respondeu). Aprovado/negado
+    carimba a segunda; voltar pra "solicitado" LIMPA ela, porque o pedido refeito ainda nao foi
+    respondido e manter a data velha faria a conta de dias do novo pedido nascer errada.
+
+    NAO TOQUEI em `contatos_industria`. Ela responde outra pergunta — QUEM e o contato de cada
+    marca — e esta vazia hoje. Fundir as duas trocaria "quem eu ligo" por "em que pe esta", que
+    sao coisas diferentes.
+
+    ddl/credenciamentos.sql (aditivo, rodado 2x). Suites: testa_credenciamento (63) +
+    db/testa_credenciamento_rls (5, contra o banco). A suite foi conferida POR MUTACAO: 6
+    defeitos plantados (corte de 30 dias, contador contando o total, cidade chutada, badge sem
+    credenciamento, trigger registrando qualquer update, indice sem unicidade) — 6 pegos, 0
+    escapados. Total: 2.338 asserts / 0 falhas / 69 suites.
+    sw VERSAO limedtec-fpmed-2026-08-11-6.
+
+    >>> DOIS ASSERTS DE OUTRAS SUITES foram reescritos, e vale registrar por que: testa_lembretes
+        e testa_notificacoes casavam a SOMA INTEIRA do badge do sino, letra por letra. Com o 4o
+        termo elas quebraram sem que nada do que elas protegem tivesse mudado. Passaram a exigir
+        o que sempre quiseram — que `lemAbertos` esta dentro, e que a sessao que passou fica fora.
+
 >>> 11/08 — O LEITOR DE EDITAL PASSOU A EXTRAIR A TABELA DE ITENS. PROVA: 35 DE 35.
     O leitor ganhou uma SEGUNDA leitura (`tarefa: 'itens'`), com prompt proprio, teto de saida
     proprio e cobranca propria. Nao e um botao a mais: sao duas leituras que erram diferente.

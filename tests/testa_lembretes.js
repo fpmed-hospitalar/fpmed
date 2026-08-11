@@ -70,7 +70,11 @@ ok('22. *** o sino le lembrete ABERTO que vence ate amanha ***',
 ok('23. *** falha ao ler vira "NAO SEI", nunca "nada agendado" ***',
   /não sei<\/b> o que está agendado/.test(tela));
 ok('24. *** lembrete entra no badge (fica aceso ate alguem RESOLVER) ***',
-  /const total = n\.urgentes \+ docsRuins \+ lemAbertos;/.test(tela));
+  // 11/08: o badge ganhou um 4º termo (credenciamento parado). O assert deixou de casar a soma
+  // INTEIRA e passou a exigir o que ele sempre quis proteger — que `lemAbertos` está lá dentro.
+  // Casar a soma letra por letra fazia esta suíte quebrar toda vez que OUTRA coisa entrava no
+  // sino, o que é ruído: ela não é a dona do badge, é a dona do lembrete.
+  /const total = n\.urgentes \+ docsRuins \+ lemAbertos\b/.test(tela));
 ok('25. clicar no aviso abre o negocio dono do lembrete', /onclick="irPara\(\$\{l\.negocio_id\}\)"/.test(tela));
 // 11/08: a linha do sino passou a servir lembrete E tarefa, entao o sufixo concorda com o
 // genero ("atrasado"/"atrasada"). O que este assert protege continua sendo o mesmo: quem

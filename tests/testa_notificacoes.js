@@ -156,8 +156,12 @@ ok('30. o badge some quando nao ha nada urgente', /cnt\.style\.display = total \
 // tem mais conserto. O assert acompanha os dois somandos, e continua exigindo que `urgentes`
 // (as sessoes) conte so hoje+amanha.
 ok('31. *** documento E lembrete entram no badge; sessao atrasada continua fora ***',
-  /const total = n\.urgentes \+ docsRuins \+ lemAbertos;/.test(src)
-  && /urgentes: hojeL\.length \+ amanhaL\.length/.test(src));
+  // 11/08: o badge ganhou credenciamento parado. O que esta suíte protege continua igual e é a
+  // metade que importa — `n.urgentes` conta HOJE e AMANHÃ, e a sessão que passou fica FORA:
+  // ela não tem mais conserto, e badge que nunca zera ninguém mais olha.
+  /const total = n\.urgentes \+ docsRuins \+ lemAbertos/.test(src)
+  && /urgentes: hojeL\.length \+ amanhaL\.length/.test(src)
+  && !/const total = [^;]*passou/.test(src));
 ok('31b. o lembrete do sino so conta o que NAO foi feito', /feito=is\.false/.test(src));
 ok('31c. ...e falha ao ler lembrete vira "nao sei", como o resto do sino',
   /não sei<\/b> o que está agendado/.test(src));

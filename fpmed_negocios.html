@@ -261,6 +261,24 @@ textarea.anot:focus{border-color:var(--azul)}
 .tf{display:flex;gap:9px;align-items:flex-start;padding:6px 0;font-size:12.5px;cursor:pointer;line-height:1.45}
 .tf input{margin-top:2px;accent-color:var(--verde);cursor:pointer}
 .tf.feita span{color:var(--muted);text-decoration:line-through}
+/* ── CREDENCIAMENTOS ── */
+.cred-novo{display:grid;grid-template-columns:1fr 170px auto;gap:8px;margin:12px 0 6px}
+@media(max-width:700px){.cred-novo{grid-template-columns:1fr}}
+.cred-novo input,.cred-novo select{background:var(--painel2);color:var(--texto);border:1px solid var(--linha);
+  border-radius:8px;padding:8px 10px;font-size:12.5px;font-family:inherit}
+.cred{border:1px solid var(--linha);border-radius:10px;padding:10px 12px;margin-bottom:8px;background:var(--painel2)}
+.cred .topo{display:flex;gap:9px;align-items:center;flex-wrap:wrap}
+.cred .nome{font-size:13px;font-weight:600;color:#fff}
+.cred .selo{font-size:10px;font-weight:700;border:1px solid;border-radius:20px;padding:1px 9px;white-space:nowrap}
+.cred .meta{font-size:11px;color:var(--muted);margin-top:5px;line-height:1.6}
+/* PARADO É AVISO, e por isso ele muda a BORDA do cartão e não só um texto no meio da linha:
+   pedido esquecido é o defeito que esta seção existe pra pegar, e ele tem que saltar da lista. */
+.cred.parado{border-color:rgba(224,160,74,.55)}
+.cred .passos{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.cred .passos button{background:transparent;border:1px solid var(--linha);color:var(--muted);border-radius:8px;
+  padding:5px 10px;font-size:11.5px;font-family:inherit;cursor:pointer}
+.cred .passos button:hover{border-color:var(--azul);color:var(--azul-claro)}
+.cred .trilha{margin-top:8px;padding-top:8px;border-top:1px solid var(--linha);font-size:11px;color:var(--muted);line-height:1.7}
 .dw-acoes{display:flex;gap:8px;flex-wrap:wrap;margin-top:24px;padding-top:16px;border-top:1px solid var(--linha)}
 .dw-acoes button{background:var(--painel2);border:1px solid var(--linha);color:var(--texto);border-radius:9px;
   padding:8px 14px;font-size:12px;font-family:inherit;cursor:pointer}
@@ -412,6 +430,9 @@ let NEG = [], EMPRESAS = [], VIS = 'lista', FASE_SEL = null, ERRO = null, ABERTO
 let DOCS = null;
 // lembretes abertos que vencem ate amanha, so pro sino. Mesmos tres estados do DOCS.
 let LEM_SINO = null;
+// credenciamentos PARADOS (solicitados ha muito tempo e sem resposta), so pro sino. Mesmos tres
+// estados. O sino e o unico lugar onde um pedido esquecido dói ANTES do pregao.
+let CRED_SINO = null;
 const esc = s => String(s==null?'':s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const brl = n => n==null ? '—' : 'R$ ' + Number(n).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
 // GESTOR: a tabela inteira já é de gestor pela RLS (ddl/negocios.sql). O gate de tela aqui é a
@@ -499,6 +520,16 @@ async function carregar(){
     const rl = await fetch(`${SB_URL}/rest/v1/lembretes?feito=is.false&quando=lt.${amanha.toISOString()}&select=id,negocio_id,titulo,quando,prioridade,tipo&order=quando.asc&limit=50`, {headers:SB_H});
     LEM_SINO = rl.ok ? await rl.json() : 'erro';
   }catch(e){ LEM_SINO = 'erro'; }
+  // CREDENCIAMENTOS PARADOS pro sino. O corte é feito no BANCO (`solicitado_em=lt.<data>`) e não
+  // aqui: trazer todos pra filtrar na tela leria a lista inteira de credenciamentos da empresa
+  // toda vez que alguém abre o funil, pra usar dois.
+  try{
+    const limite = new Date(); limite.setDate(limite.getDate() - CRED_DIAS_PARADO);
+    const rc = await fetch(`${SB_URL}/rest/v1/credenciamentos?status=in.(solicitado,em_analise)`
+      + `&solicitado_em=lt.${limite.toISOString()}`
+      + '&select=id,negocio_id,industria,status,solicitado_em&order=solicitado_em.asc&limit=50', {headers:SB_H});
+    CRED_SINO = rc.ok ? await rc.json() : 'erro';
+  }catch(e){ CRED_SINO = 'erro'; }
   const sel = document.getElementById('f-empresa');
   // O seletor e o badge de empresa FICAM VISÍVEIS mesmo com uma empresa só — decisão do
   // Lemuel em 05/08, corrigindo a minha recomendação de escondê-los. Igual ao SIGA.
@@ -728,7 +759,7 @@ async function abrirDrawer(id){
   } else {
     document.getElementById('dw-body').innerHTML = corpoDrawer(n, null, false);
   }
-  if(ABERTO === id){ carregarRastro(id); carregarLembretes(id); }
+  if(ABERTO === id){ carregarRastro(id); carregarLembretes(id); carregarCredenciamentos(id); }
 }
 function fecharDrawer(){
   ABERTO = null;
@@ -829,6 +860,7 @@ function corpoDrawer(n, obs, carregando){
       <button class="on" data-aba="info"   onclick="abaFicha(this,'info')">Informações</button>
       <button        data-aba="lembretes"  onclick="abaFicha(this,'lembretes')">Lembretes <span id="dw-lem-n"></span></button>
       <button        data-aba="tarefas"    onclick="abaFicha(this,'tarefas')">Tarefas <span id="dw-tar-n"></span></button>
+      <button        data-aba="cred"       onclick="abaFicha(this,'cred')">Credenciamentos <span id="dw-cred-n"></span></button>
       <button        data-aba="obs"        onclick="abaFicha(this,'obs')">Observações</button>
     </div>
 
@@ -866,6 +898,36 @@ function corpoDrawer(n, obs, carregando){
           <button class="btn" id="tar-bt" onclick="criarTarefa(${n.id})">+ adicionar tarefa</button>
         </div>
         <div class="salvo" id="tar-msg"></div>
+      </div>
+    </div>
+
+    <!-- ══ CREDENCIAMENTO JUNTO À INDÚSTRIA (11/08) ══════════════════════════════════════════
+         O credenciamento NÃO é deste negócio: é da EMPRESA com a INDÚSTRIA, e vale pra todos os
+         pregões daquela marca (o porquê está inteiro no ddl/credenciamentos.sql). Por isso a
+         aba mostra os credenciamentos DA EMPRESA, e marca os que nasceram deste negócio.
+         >>> Se ela mostrasse só os deste negócio, a pergunta que o operador realmente faz — "eu
+             já sou credenciado na EMS?" — ficaria sem resposta na tela onde ela é feita. -->
+    <div class="dw-painel" id="aba-cred">
+      <div class="dw-sec">
+        <h4>Credenciamentos junto à indústria</h4>
+        <div class="dica" style="font-size:11.5px;color:var(--muted);margin-bottom:8px">
+          O credenciamento é da <b>empresa com a indústria</b> — vale pra todos os pregões daquela
+          marca, não só pra este. Os que nasceram deste negócio aparecem marcados.
+          <b>Nada aqui se apaga:</b> pedido negado que se refaz volta pro começo na mesma linha, e
+          a trilha guarda que já foi negado antes.
+        </div>
+        <div id="cred-lista"><div class="salvo">carregando…</div></div>
+        ${editavel ? `<div class="cred-novo">
+          <input id="cred-industria" placeholder="indústria / laboratório (ex.: EMS)" maxlength="120">
+          <select id="cred-canal">
+            <option value="">como pediu…</option>
+            <option value="email">e-mail</option><option value="portal">portal</option>
+            <option value="representante">representante</option><option value="telefone">telefone</option>
+            <option value="outro">outro</option>
+          </select>
+          <button class="btn-ed" id="cred-bt" onclick="criarCredenciamento(${n.id})">＋ Registrar pedido</button>
+        </div><div class="salvo" id="cred-msg"></div>`
+        : '<div class="salvo">só quem grava pode registrar credenciamento.</div>'}
       </div>
     </div>
 
@@ -1091,6 +1153,221 @@ async function criarTarefa(id){
   bt.disabled = false;
 }
 
+/* ══ CREDENCIAMENTO JUNTO À INDÚSTRIA ═════════════════════════════════════════════════════════
+   O que esta seção existe pra pegar não é "cadastrar credenciamento" — é o PEDIDO ESQUECIDO. Um
+   credenciamento solicitado e não respondido não dói em lugar nenhum até o dia do pregão, quando
+   a empresa descobre que não pode cotar aquela marca. Por isso o cartão de um pedido parado muda
+   de cor, e por isso o sino conta os parados.
+
+   >>> A TRILHA NÃO É ESCRITA AQUI. Quem grava a mudança de status é uma trigger no banco (ver
+       ddl/credenciamentos.sql). Esta tela só faz o UPDATE do status; o histórico aparece porque
+       o banco o escreveu. Se um dia outro caminho mudar o status — um script, o painel do
+       Supabase —, a trilha continua completa. Histórico que a tela escreve é histórico que a
+       tela pode esquecer de escrever. */
+const CRED_FASES = [
+  { k:'solicitado', n:'Solicitado', c:'#8fa3b8' },
+  { k:'em_analise', n:'Em análise', c:'#e0a04a' },
+  { k:'aprovado',   n:'Aprovado',   c:'#7CC576' },
+  { k:'negado',     n:'Negado',     c:'#e5675a' },
+];
+const credNome = k => (CRED_FASES.find(f => f.k === k) || {}).n || k;
+const credCor  = k => (CRED_FASES.find(f => f.k === k) || {}).c || '#8fa3b8';
+/* QUANTOS DIAS SEM RESPOSTA É "PARADO". O Lemuel pediu 7 como padrão. Ele mora aqui, sozinho, e
+   trocar este número muda o cartão, o contador da aba e o sino de uma vez — três lugares que, se
+   tivessem cada um o seu número, um dia discordariam sobre o que é estar parado. */
+const CRED_DIAS_PARADO = 7;
+const CRED_ABERTOS = ['solicitado','em_analise'];   // negado e aprovado já foram respondidos
+
+let CREDS = [], CRED_HIST = {};
+const diasDesde = iso => iso ? Math.floor((Date.now() - new Date(iso).getTime()) / 86400000) : null;
+function credParado(c){
+  return CRED_ABERTOS.includes(c.status) && (diasDesde(c.solicitado_em) || 0) >= CRED_DIAS_PARADO;
+}
+
+async function carregarCredenciamentos(id){
+  const box = document.getElementById('cred-lista'); if(!box) return;
+  const n = NEG.find(x => x.id === id);
+  try{
+    // Filtra pela EMPRESA, e não pelo negócio: o credenciamento vale pra todos os pregões dela.
+    const q = n && n.empresa_id ? `empresa_id=eq.${n.empresa_id}` : 'id=gt.0';
+    const r = await fetch(`${SB_URL}/rest/v1/credenciamentos?${q}&select=*&order=solicitado_em.desc`, {headers:SB_H});
+    if(!r.ok) throw new Error('HTTP ' + r.status);
+    CREDS = await r.json();
+    // A trilha vem de UMA leitura pra todos, e não uma por cartão: são 4 linhas por
+    // credenciamento, e N chamadas seriam N erros possíveis pra uma informação que cabe numa.
+    CRED_HIST = {};
+    if(CREDS.length){
+      const ids = CREDS.map(c => c.id).join(',');
+      const rh = await fetch(`${SB_URL}/rest/v1/credenciamento_historico?credenciamento_id=in.(${ids})`
+        + '&select=*&order=quando.asc', {headers:SB_H});
+      if(rh.ok) for(const h of await rh.json()) (CRED_HIST[h.credenciamento_id] ||= []).push(h);
+    }
+    pintaCredenciamentos(id);
+  }catch(e){
+    // "Não sei" e "nenhum" são coisas diferentes. Uma lista vazia num negócio que na verdade não
+    // conseguiu ler o banco faria alguém concluir que não há credenciamento — e pedir de novo.
+    CREDS = [];
+    box.innerHTML = '<div class="salvo">não consegui ler os credenciamentos ('+esc(e.message)+') — '
+      + 'isto <b>não</b> quer dizer que não existam.</div>';
+  }
+}
+
+function pintaCredenciamentos(id){
+  const box = document.getElementById('cred-lista'); if(!box) return;
+  const cnt = document.getElementById('dw-cred-n');
+  // O CONTADOR DA ABA CONTA OS PARADOS, e não o total: "Credenciamentos 12" não pede nada de
+  // ninguém. "Credenciamentos 2" querendo dizer "2 pedidos parados" é o número que faz agir.
+  const parados = CREDS.filter(credParado).length;
+  if(cnt){ cnt.textContent = parados ? parados : ''; cnt.style.color = parados ? '#e0a04a' : ''; }
+
+  if(!CREDS.length){
+    box.innerHTML = '<div class="salvo">Nenhum credenciamento registrado para esta empresa ainda.</div>';
+    return;
+  }
+  box.innerHTML = CREDS.map(c => {
+    const d = diasDesde(c.solicitado_em), parado = credParado(c);
+    const daqui = c.negocio_id === id;
+    const trilha = (CRED_HIST[c.id] || []);
+    return `<div class="cred${parado?' parado':''}">
+      <div class="topo">
+        <span class="nome">${esc(c.industria)}</span>
+        <span class="selo" style="color:${credCor(c.status)};border-color:${credCor(c.status)}">${esc(credNome(c.status))}</span>
+        ${daqui ? '<span class="selo" style="color:var(--azul-claro);border-color:var(--azul-claro)">deste negócio</span>' : ''}
+        ${parado ? `<span class="selo" style="color:#e0a04a;border-color:#e0a04a">parado há ${d} dias</span>` : ''}
+      </div>
+      <div class="meta">
+        pedido em ${esc(new Date(c.solicitado_em).toLocaleDateString('pt-BR'))}${d != null ? ` · há ${d} dia(s)` : ''}
+        ${c.canal ? ' · por ' + esc(c.canal) : ''}${c.protocolo ? ' · protocolo ' + esc(c.protocolo) : ''}
+        ${c.respondido_em ? '<br>respondido em ' + esc(new Date(c.respondido_em).toLocaleDateString('pt-BR')) : ''}
+        ${c.contato_nome ? '<br>contato: ' + esc(c.contato_nome) + (c.contato_email ? ' · ' + esc(c.contato_email) : '') : ''}
+        ${c.obs ? '<br>' + esc(c.obs) : ''}
+      </div>
+      <div class="passos">
+        ${CRED_FASES.filter(f => f.k !== c.status)
+          .map(f => `<button onclick="mudaCredenciamento(${c.id},'${f.k}',${id})">→ ${esc(f.n)}</button>`).join('')}
+        <button onclick="cartaCredenciamento(${c.id})" title="monta o pedido pronto pra enviar">📝 Gerar o pedido</button>
+      </div>
+      ${trilha.length > 1 ? `<div class="trilha"><b>Trilha</b> (escrita pelo banco, não se apaga)<br>
+        ${trilha.map(h => esc(new Date(h.quando).toLocaleDateString('pt-BR')) + ' · '
+            + (h.de_status ? esc(credNome(h.de_status)) + ' → ' : '') + '<b>' + esc(credNome(h.para_status)) + '</b>'
+            + (h.quem ? ' · ' + esc(String(h.quem).split('@')[0]) : '')).join('<br>')}</div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+async function criarCredenciamento(id){
+  const msg = document.getElementById('cred-msg'), bt = document.getElementById('cred-bt');
+  const industria = (document.getElementById('cred-industria').value||'').trim();
+  if(!industria){ msg.textContent = 'escreva a indústria ou laboratório.'; return; }
+  bt.disabled = true; msg.textContent = 'salvando…';
+  try{
+    const n = NEG.find(x => x.id === id);
+    if(!n || !n.empresa_id) throw new Error('este negócio não está vinculado a uma empresa — o credenciamento é da empresa');
+    const r = await fetch(`${SB_URL}/rest/v1/credenciamentos`, {method:'POST',
+      headers: Object.assign({'Prefer':'return=representation'}, SB_H, {'Content-Type':'application/json'}),
+      body: JSON.stringify({ empresa_id: n.empresa_id, industria, negocio_id: id,
+        canal: document.getElementById('cred-canal').value || null,
+        criado_por: (window.gmAuth && gmAuth.user && gmAuth.user.email) || null })});
+    if(r.status === 409){
+      // O ÍNDICE ÚNICO FALANDO. Não é erro do operador: é a resposta certa pra "eu já pedi isso?".
+      throw new Error('já existe um credenciamento desta empresa com "' + industria + '" — ele está na lista acima');
+    }
+    if(!r.ok) throw new Error('HTTP ' + r.status + (r.status===401||r.status===403 ? ' — sem permissão de gravar' : ''));
+    document.getElementById('cred-industria').value = '';
+    msg.textContent = 'pedido registrado. A trilha começa agora.';
+    await carregarCredenciamentos(id);
+  }catch(e){ msg.textContent = 'não consegui salvar: ' + e.message; }
+  bt.disabled = false;
+}
+
+async function mudaCredenciamento(credId, status, negId){
+  const msg = document.getElementById('cred-msg');
+  const c = CREDS.find(x => x.id === credId); if(!c) return;
+  if(msg) msg.textContent = 'atualizando…';
+  try{
+    const campos = { status, criado_por: (window.gmAuth && gmAuth.user && gmAuth.user.email) || c.criado_por };
+    // RESPONDIDO É UM FATO COM DATA. Aprovado e negado são respostas da indústria; carimbar a
+    // data aqui é o que permite dizer depois "levou 23 dias". Voltar pra solicitado LIMPA a data,
+    // porque o pedido refeito ainda não foi respondido — manter a antiga faria a conta de dias
+    // do novo pedido nascer errada.
+    campos.respondido_em = (status === 'aprovado' || status === 'negado') ? new Date().toISOString() : null;
+    const r = await fetch(`${SB_URL}/rest/v1/credenciamentos?id=eq.${credId}`, {method:'PATCH',
+      headers: Object.assign({}, SB_H, {'Content-Type':'application/json'}), body: JSON.stringify(campos)});
+    if(!r.ok) throw new Error('HTTP ' + r.status + (r.status===401||r.status===403 ? ' — sem permissão de gravar' : ''));
+    if(msg) msg.textContent = 'status atualizado — a trilha registrou.';
+    await carregarCredenciamentos(negId);
+    carregar().then(pinta);   // o sino conta os parados do funil inteiro
+  }catch(e){ if(msg) msg.textContent = 'não consegui atualizar: ' + e.message; }
+}
+
+/* ── O PEDIDO (o documento) ──────────────────────────────────────────────────────────────────
+   Gerado, e não escrito na hora, pelo mesmo motivo do aviso de sessão no zap: o que se erra numa
+   carta de credenciamento é sempre o mesmo — CNPJ trocado, razão social pela metade, esquecer de
+   dizer para qual pregão. Nada aqui é criativo; é a mesma carta com os dados certos.
+   >>> OS DADOS DA EMPRESA SAEM DO cliente.config.js, que é a fonte única deles no sistema. Digitar
+       o CNPJ aqui criaria a segunda cópia — e número de documento em dois lugares é número que
+       um dia diverge. Se o config não tiver o dado, a carta DIZ que falta, em vez de imprimir uma
+       linha vazia que passa despercebida. */
+function cartaCredenciamento(credId){
+  const c = CREDS.find(x => x.id === credId); if(!c) return;
+  const emp = (window.LIMEDTEC_CLIENTE && LIMEDTEC_CLIENTE.empresa) || {};
+  const n = c.negocio_id ? NEG.find(x => x.id === c.negocio_id) : null;
+  const falta = [];
+  const dado = (v, nome) => { if(v) return v; falta.push(nome); return '«' + nome + ' — falta no cadastro»'; };
+  const hoje = new Date().toLocaleDateString('pt-BR', {day:'2-digit', month:'long', year:'numeric'});
+
+  const corpo = [
+    'Ao Departamento Comercial de ' + c.industria,
+    '',
+    'Assunto: solicitação de credenciamento como distribuidor',
+    '',
+    'Prezados,',
+    '',
+    'A empresa ' + dado(emp.razaoSocial || emp.nome, 'razão social')
+      + ', inscrita no CNPJ ' + dado(emp.cnpj, 'CNPJ')
+      + (emp.endereco ? ', com sede em ' + emp.endereco : '')
+      + ', vem solicitar seu credenciamento junto a ' + c.industria
+      + ' para aquisição e revenda de seus produtos.',
+    '',
+    (n ? 'A solicitação decorre da participação no certame ' + (n.numero ? 'nº ' + n.numero : '')
+        + (n.orgao ? ' — ' + n.orgao : '') + (n.objeto ? ', cujo objeto é ' + n.objeto : '') + '.'
+       : 'A solicitação decorre da participação em certames públicos de fornecimento de medicamentos '
+        + 'e material hospitalar.'),
+    '',
+    'Colocamo-nos à disposição para o envio da documentação que se fizer necessária.',
+    '',
+    'Atenciosamente,',
+    '',
+    dado(emp.razaoSocial || emp.nome, 'razão social'),
+    'CNPJ ' + dado(emp.cnpj, 'CNPJ'),
+    [emp.telefone, emp.email].filter(Boolean).join(' · '),
+    '',
+    // A CIDADE DA ASSINATURA É A DA EMPRESA, e não um padrão. Chutar "Goiânia" numa carta
+    // assinada por uma empresa de Aparecida de Goiânia é errar o único dado que ninguém confere.
+    dado(emp.cidade, 'cidade da empresa') + ', ' + hoje + '.',
+  ].join('\n');
+
+  // O AVISO DO QUE FALTA VEM ANTES do texto, e o texto sai com o buraco MARCADO («…»). Uma carta
+  // com o CNPJ faltando em branco é uma carta que alguém envia sem ver.
+  const janela = window.open('', '_blank');
+  if(!janela){ alert('o navegador bloqueou a janela — libere o pop-up pra gerar o pedido'); return; }
+  janela.document.write('<!doctype html><html lang="pt-BR"><head><meta charset="utf-8">'
+    + '<title>Pedido de credenciamento — ' + esc(c.industria) + '</title>'
+    + '<style>body{font:14px/1.7 Georgia,serif;max-width:720px;margin:36px auto;padding:0 24px;color:#111}'
+    + 'pre{font:inherit;white-space:pre-wrap}'
+    + '.falta{background:#fff4d6;border-left:4px solid #e0a04a;padding:11px 14px;margin-bottom:22px;'
+    + 'font-family:system-ui,sans-serif;font-size:13px}'
+    + '.acao{margin:26px 0;font-family:system-ui,sans-serif}'
+    + 'button{font:inherit;padding:8px 16px;border-radius:8px;border:1px solid #ccc;background:#f5f5f5;cursor:pointer}'
+    + '@media print{.falta,.acao{display:none}}</style></head><body>'
+    + (falta.length ? '<div class="falta"><b>Falta no cadastro da empresa: ' + esc(falta.join(', ')) + '.</b><br>'
+        + 'O texto abaixo está com o lugar marcado entre «». Complete no cadastro e gere de novo — '
+        + 'carta com dado em branco é carta que se envia sem ver.</div>' : '')
+    + '<div class="acao"><button onclick="window.print()">🖨️ Imprimir / PDF</button></div>'
+    + '<pre>' + esc(corpo) + '</pre></body></html>');
+  janela.document.close();
+}
+
 /* ── "AVISAR NO ZAP" — o que dá pra fazer DE GRAÇA, dito com todas as letras ─────────────────
    Mandar WhatsApp SOZINHO exige contratar (API oficial do WhatsApp Business ou provedor tipo
    Twilio): tem custo por mensagem e cadastro da empresa. Nada disso foi contratado.
@@ -1309,7 +1586,11 @@ function pintaNotif(){
   // Lembrete entra no badge pela MESMA razão do documento: ele fica aceso até alguém RESOLVER,
   // e resolver é possível — é justamente para isso que ele foi criado.
   const lemAbertos = Array.isArray(LEM_SINO) ? LEM_SINO.length : 0;
-  const total = n.urgentes + docsRuins + lemAbertos;
+  // Credenciamento parado entra no badge pela MESMA regra do documento vencido: fica aceso até
+  // alguém RESOLVER, e resolver é possível hoje — basta cobrar a indústria ou registrar a
+  // resposta que já veio. É o oposto da sessão que passou, que não tem mais conserto.
+  const credParados = Array.isArray(CRED_SINO) ? CRED_SINO.length : 0;
+  const total = n.urgentes + docsRuins + lemAbertos + credParados;
   cnt.textContent = total;
   cnt.style.display = total ? '' : 'none';
   const linha = (x, cls, zap) => {
@@ -1363,7 +1644,24 @@ function pintaNotif(){
             <div class="s">${eTarefa?'tarefa · ':''}${q.toLocaleString('pt-BR')}${atrasado?' · atrasad'+(eTarefa?'a':'o'):''} · prioridade ${esc(l.prioridade)}</div></a>`;
         }).join('');
   }
-  if(!h) h = '<div class="nf-vazio">Nada abre hoje nem amanhã, nenhum documento vencendo e nenhum lembrete no prazo.<br>O sino só mostra sessão de negócio <b>ativo</b> — arquivado não avisa.</div>';
+  /* ── CREDENCIAMENTO PARADO ── por último na lista, e de propósito: ele é o mais LENTO dos
+        avisos. Sessão é hoje, certidão vence em dias, credenciamento arrasta semanas. Pôr no
+        topo o que se resolve devagar empurraria pra baixo o que se resolve hoje. */
+  if(CRED_SINO === 'erro'){
+    h += '<div class="nf-sec">credenciamentos</div><div class="nf-vazio">⚠️ Não consegui ler os credenciamentos, então <b>não sei</b> se há pedido parado.</div>';
+  } else if(Array.isArray(CRED_SINO) && CRED_SINO.length){
+    h += `<div class="nf-sec">credenciamento sem resposta há mais de ${CRED_DIAS_PARADO} dias</div>`
+      + CRED_SINO.slice(0,8).map(c => {
+          const d = diasDesde(c.solicitado_em);
+          // Sem negócio de origem o clique não teria pra onde ir — o credenciamento é da empresa,
+          // e pode ter nascido antes de qualquer negócio. Aí o item informa e não navega.
+          const vai = c.negocio_id ? `onclick="irPara(${c.negocio_id})"` : '';
+          return `<a class="nf" ${vai}>
+            <div class="q">🏭 ${esc(c.industria)}</div>
+            <div class="s">${esc(credNome(c.status))} há ${d} dia(s)${c.negocio_id?'':' · sem negócio de origem'}</div></a>`;
+        }).join('');
+  }
+  if(!h) h = '<div class="nf-vazio">Nada abre hoje nem amanhã, nenhum documento vencendo, nenhum lembrete no prazo e nenhum credenciamento parado.<br>O sino só mostra sessão de negócio <b>ativo</b> — arquivado não avisa.</div>';
   document.getElementById('notif').innerHTML = h;
 }
 function toggleNotif(ev){
