@@ -525,6 +525,77 @@ Criado em 21/07/2026 copiando SO os arquivos do app do C:\globalmed.
     Suite nova testa_pix (17). Ela ja pegou uma 2a copia do CNPJ escrita num COMENTARIO do
     config — que e exatamente o jeito classico de a copia nascer (alguem copia do comentario).
 
+>>> FILA ZERADA EM 11/08 — fim da 3a rodada do dia. Conferido item a item, nao suposto.
+
+    A ordem numerada que ele pediu, e o que aconteceu com cada uma:
+    [OK] 1. Intervalo do Encontrar abrindo em HOJE (c064aaa)
+    [OK] 2. Campo de busca nascendo vazio, com placeholder (c706dd6)
+    [OK] 3. Incluir licitacao a mao (1e29af1)
+    [--] 4. Conferir o boletim — BLOQUEADO POR TEMPO, nao por trabalho. O cron foi
+            corrigido hoje (saiu da hora cheia + rede as 08h23 UTC); saber se ele saiu no
+            horario so da amanha de manha. NAO E UM ITEM PENDENTE DE CODIGO.
+
+    E os 4 que ele listou como pendentes e ja estavam prontos quando pediu:
+      fechamento mensal (4b91e3d) · caixinhas do topo clicaveis (f40d1f7) ·
+      itens ganhos gravados (f40d1f7) · coleta "esgotou tentativas" (fbcfb65)
+
+>>> 11/08 — O INTERVALO DO ENCONTRAR PASSOU A ABRIR EM HOJE (item 1).
+    A tela abria no ULTIMO DIA UTIL — num dia 11 mostrava 10. A razao original era boa e
+    ficou registrada no codigo em vez de apagada: a publicacao do dia corrente so entra ao
+    longo do dia, e abrir em "hoje" deixava a tela vazia as 7h.
+    >>> O QUE DERRUBOU A REGRA foi o preco dela: quem nao repara na data acha que esta
+        vendo o dia e esta vendo ontem. Tela vazia de manha e honesta; tela cheia de ontem
+        parecendo hoje, nao. E o que ela resolvia ja tem outra solucao no ar — o carimbo
+        "indice completo ate DD/MM".
+    FIM DE SEMANA e excecao com motivo: sabado e domingo nao tem publicacao, entao o padrao
+    vira ULTIMA SEXTA -> HOJE. Testado nos 7 DIAS DA SEMANA com o relogio fixado em cada um
+    (testar so no dia em que a suite roda provaria terca e nunca exercitaria sabado).
+    Os jornais nao quebraram: janela MOVEL recalcula na abertura (e o que "movel" quer
+    dizer), janela FIXA continua fixa, nenhum jornal salvo foi migrado.
+
+>>> 11/08 — O CAMPO DE BUSCA NASCE VAZIO (item 2).
+    Ele vinha PREENCHIDO com as seis categorias do ramo como VALOR. Elas viraram REGRA
+    INTERNA (`CATEGORIAS_RAMO`): campo vazio filtra o ramo, campo com termo manda sozinho.
+    >>> O COMPORTAMENTO PADRAO NAO MUDOU. O que mudou e que a regra deixou de morar num
+        campo de texto editavel, onde qualquer apagada acidental mudava o que a tela busca
+        sem ninguem perceber.
+    A tela DIZ o que o vazio faz, numa linha que muda enquanto se digita — sem ela, quem
+    procura "cadeira" e nao acha nada conclui que a busca esta quebrada.
+    >>> DOIS ASSERTS da suite dos jornais foram REESCRITOS: eles travavam "sem kw = nao
+        filtra por texto", que so era verdade porque o campo nunca ficava vazio. Mantidos
+        como estavam, estariam travando o comportamento que quebraria o produto.
+
+>>> 11/08 — INCLUIR LICITACAO A MAO (item 3).
+    Dois botoes (Negocios e Encontrar); o do Encontrar LEVA pro Negocios em vez de duplicar
+    o formulario. 12 campos, os da ficha e nenhum a mais.
+    >>> O QUE NASCE E UM NEGOCIO NORMAL. Nao ha especie separada: ha um negocio cuja ORIGEM
+        foi a mao de alguem. A ficha distingue as TRES procedencias e diz ONDE CONFERIR cada
+        uma (manual -> o portal · calendario -> a planilha · PNCP -> o indice).
+    A DUPLICATA E AVISADA, E NAO IMPEDIDA — impedir obrigaria a inventar numero pra
+    contornar a trava, que e como se estraga um indice.
+    PROVADO NO BANCO: cria com CADA uma das 5 fases e CADA uma das 5 situacoes que a tela
+    oferece, conferindo que o CHECK CONSTRAINT aceita todas. Fase que a tela oferece e o
+    banco recusa seria erro que so aparece no botao de salvar, depois de digitar tudo.
+    Coluna `criado_por` (aditiva). `origem` ja existia como texto livre.
+
+>>> RESTA (nada acionavel sem ele): sync da Global (169 commits, 5 blocos esperando escolha),
+    ddl/05 (policy RESTRICTIVE esperando OK), ligaduras no casamento do Conferidor (tecnico,
+    exige medicao propria antes de mexer), e o caminho de PDF ESCANEADO nos relatorios da Ata
+    (existe no leitor de edital, nao foi ligado la).
+
+>>> DECISOES ESPERANDO ELE:
+    1. FECHAMENTO DE AGOSTO NEGATIVO: repasse R$ 4,90 x custos fixos R$ 180,82 =
+       LUCRO -R$ 179,16. No volume de hoje a margem de 50% nao cobre a infraestrutura.
+    2. AS DUAS LEITURAS DE TESTE na fatura (ids 3 e 26, R$ 0,24). O script APONTA e imprime
+       o UPDATE, mas nao executa — excluir por palavra no titulo deixaria de faturar um
+       edital de verdade chamado "prova_de_conceito.pdf".
+    3. A TAXA DE CASAMENTO do motor contra a CMED foi 6/14 mesmo alimentado com o texto da
+       PROPRIA CMED. Ele prefere "nao encontrado" a casamento errado, e a tela diz isso em
+       tres lugares — mas afrouxar ou nao e escolha dele.
+    4. UPGRADE NANO->MICRO reagendado pra 12/08 as 03:00 (a rota foi corrigida de POST pra
+       PATCH; nao apliquei de dia porque a troca reinicia o banco e a aprovacao dele foi
+       "de madrugada").
+
 >>> FILA — ESTADO EM 11/08, FIM DA 2a RODADA DO DIA. Conferido item a item, nao suposto.
     [OK] 1. Extracao de itens do leitor de edital + botao na ficha + porta na barra do portal
     [OK] 2. Credenciamento junto a industria (trilha por trigger, sino, carta)
