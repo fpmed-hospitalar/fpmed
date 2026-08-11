@@ -324,6 +324,10 @@ select:focus,input:focus{outline:none;border-color:var(--azul)}
       <a onclick="abrirRadar()" title="cidades num raio daqui com licitação aberta — quanto vale sair de casa">Radar</a>
       <a onclick="abrirJornais()" id="lk-jornais" title="buscas salvas: abre a pesquisa de novo e mostra o que chegou depois da última vez">Meus Jornais</a>
       <a onclick="porNumero()">Encontrar por Nº</a>
+      <!-- O LUGAR CERTO PRO "NÃO ACHEI" é aqui, junto da busca — é o momento em que a pessoa
+           descobre que a licitação não está no PNCP. O formulário mora no Negócios (é lá que o
+           negócio vive); este link leva pra lá com ele já aberto, em vez de duplicar a tela. -->
+      <a onclick="incluirLicitacaoManual()" title="a licitação existe mas não está no PNCP (BLL, convite, e-mail do órgão)">+ Incluir licitação</a>
     </div>
 
     <div id="avancada">
@@ -1007,6 +1011,21 @@ async function buscarNoBanco(uf, mod, de, ate){
    · A ORDEM É POR RELEVÂNCIA, NÃO POR DATA. Vem o mais parecido, não o mais novo: entre os
      primeiros de "albumina" há editais de 2023. Isso é dito na tela, porque quem procura
      oportunidade quer o de hoje — e o índice, esse sim, é ordenado por data. */
+/* ── "+ INCLUIR LICITAÇÃO" ────────────────────────────────────────────────────────────────────
+   Um link, e não um segundo formulário. O negócio mora no fpmed_negocios, com a ficha, as abas e
+   o sino; refazer o formulário aqui criaria dois jeitos de incluir a mesma coisa — e um deles
+   ficaria pra trás na primeira vez que a ficha ganhasse um campo.
+   >>> LEVA O TERMO DIGITADO JUNTO, quando há um. Quem procurou "albumina", não achou, e clicou
+       aqui, provavelmente vai escrever "albumina" no objeto — e é o único campo que esta tela
+       sabe preencher com honestidade. Órgão e número ela não sabe, e não inventa. */
+function incluirLicitacaoManual(){
+  try{
+    const termo = (document.getElementById('f-kw').value || '').trim();
+    sessionStorage.setItem('fpmed_incluir_manual', JSON.stringify({ de: 'licitacoes', objeto: termo || null }));
+  }catch(e){ /* sem sessionStorage o formulário abre em branco, que é o comportamento normal */ }
+  location.href = 'fpmed_negocios.html';
+}
+
 const PNCP_BUSCA = 'https://pncp.gov.br/api/search/';
 async function buscarNacional(termo, uf){
   if(!termo || termo.trim().length < 3) return null;

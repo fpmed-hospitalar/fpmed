@@ -241,7 +241,10 @@ ok('81. ...e o motivo de existir (tela liberada sem porta e tela nao liberada)',
   /Uma tela liberada sem porta é uma tela não\s*liberada/.test(uc(L)));
 ok('82. e ela e revelada no MESMO ponto em que a tela autentica (sem 2o boot)',
   /function _aoAutenticar\(\)\{ iniciarEstoque\(\); iniciarJornais\(\); abreLeitorNaBarra\(\); \}/.test(L)
-  && /function _aoAutenticar\(\)\{ carregar\(\); abreLeitorNaBarra\(\); \}/.test(N));
+  // 11/08: o `_aoAutenticar` do Negócios ganhou o `formManualDaSessao()` (quem chega do Encontrar
+  // com "+ Incluir licitação"). O que este assert protege é o mesmo — a barra é revelada no ponto
+  // único de autenticação, e não num segundo boot.
+  && /function _aoAutenticar\(\)\{ carregar\(\)[\s\S]{0,80}abreLeitorNaBarra\(\); \}/.test(N));
 
 console.log('\nRESULTADO: ' + p + ' ok, ' + f + ' falha(s)');
 if (f) process.exit(1);

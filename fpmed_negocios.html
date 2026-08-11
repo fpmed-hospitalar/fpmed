@@ -261,6 +261,14 @@ textarea.anot:focus{border-color:var(--azul)}
 .tf{display:flex;gap:9px;align-items:flex-start;padding:6px 0;font-size:12.5px;cursor:pointer;line-height:1.45}
 .tf input{margin-top:2px;accent-color:var(--verde);cursor:pointer}
 .tf.feita span{color:var(--muted);text-decoration:line-through}
+/* ── O FORMULÁRIO DE INCLUSÃO ── mesmo desenho dos painéis: ele abre no lugar, não em outra tela */
+#form-manual{background:var(--painel);border:1px solid var(--linha);border-radius:12px;padding:16px 18px;margin:14px 0}
+.fm-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:11px;margin-top:10px}
+.fm-c label{display:block;font-size:10.5px;font-weight:600;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:.3px}
+.fm-c input,.fm-c select,.fm-c textarea{width:100%;background:var(--painel2);color:var(--texto);
+  border:1px solid var(--linha);border-radius:8px;padding:8px 10px;font-size:12.5px;font-family:inherit}
+.fm-c textarea{resize:vertical}
+.fm-c input:focus,.fm-c select:focus,.fm-c textarea:focus{outline:none;border-color:var(--azul)}
 /* ── AS CAIXINHAS COMO BOTÃO ── cartão que é botão precisa PARECER botão, senão a função existe
    só pra quem leu o commit. Cursor de mão, borda que acende e um empurrãozinho pra cima. ── */
 .kpi.bt{cursor:pointer;transition:border-color .16s,transform .12s,background .16s}
@@ -374,6 +382,7 @@ textarea.anot:focus{border-color:var(--azul)}
       <option value="orgao">Ordenar por: Órgão</option>
     </select>
     <a class="lnk" onclick="toggleFiltro()">Filtrar</a>
+    <a class="lnk" onclick="abrirFormManual()" id="lk-manual" title="a licitação existe mas não está no PNCP (BLL, convite, e-mail do órgão)">+ Incluir licitação</a>
     <input type="text" id="f-busca" placeholder="órgão, objeto, nº…" style="display:none;min-width:230px" oninput="pinta()">
     <div class="dir">
       <label style="font-size:12.5px;color:var(--muted);display:flex;align-items:center;gap:6px;cursor:pointer">
@@ -394,6 +403,14 @@ textarea.anot:focus{border-color:var(--azul)}
     <a onclick="verArquivados()">Meus arquivos</a>
   </div>
 
+  <!-- ══ INCLUIR LICITAÇÃO À MÃO (11/08) ═══════════════════════════════════════════════════
+       O caso clássico: procurou no PNCP, procurou no Brasil inteiro, e a licitação existe assim
+       mesmo — veio da BLL, de convite, de e-mail do órgão. Sem isto, o funil só sabe do que o
+       PNCP conta, e o que não está lá não existe pra empresa.
+       >>> O QUE NASCE AQUI É UM NEGÓCIO NORMAL. Mesma ficha, mesmas abas, mesmo lembrete de
+           abertura. O que o difere é a `origem: manual` — e ela aparece na ficha, com a mesma
+           honestidade do "Calendário 2025" nos importados. -->
+  <div id="form-manual" style="display:none"></div>
   <div class="kpis" id="kpis"></div>
   <!-- O painel abre ENTRE as caixinhas e a lista, e não numa tela nova: é o detalhe do número
        que está logo acima, e o caminho de volta é fechar — não é navegar. -->
@@ -938,6 +955,11 @@ function corpoDrawer(n, obs, carregando){
 
     <div class="dw-painel on" id="aba-info">
       <div class="dw-sec"><h4>Ficha${editavel?' <span class="salvo" style="font-weight:400">· editável</span>':''}</h4>${ficha}</div>
+      <!-- DE ONDE ESTE NEGÓCIO VEIO. Três procedências, e elas não valem a mesma coisa: o do
+           PNCP tem número oficial conferível, o do calendário foi importado de uma planilha, e o
+           manual foi alguém que digitou. Quem lê a ficha meses depois precisa saber qual é —
+           não pra desconfiar, mas pra saber onde conferir. -->
+      <div class="dw-sec">${selaOrigem(n)}</div>
       <div class="dw-sec" id="dw-rastro"></div>
     </div>
 
@@ -1687,6 +1709,159 @@ function carregarXlsxNeg(){
     document.head.appendChild(s);
   });
   return _xlsxNeg;
+}
+
+/* ══ INCLUIR LICITAÇÃO À MÃO ═════════════════════════════════════════════════════════════════
+   O que nasce aqui é um NEGÓCIO NORMAL: mesma tabela, mesma ficha, mesmas abas, mesmo lembrete
+   de abertura. Não há "negócio manual" como espécie separada — há um negócio cuja ORIGEM foi a
+   mão de alguém, e isso fica dito.
+
+   >>> OS CAMPOS SÃO OS DA FICHA QUE JÁ EXISTE, e nenhum a mais. A tentação era pedir "só o
+       essencial" e deixar o resto pra depois; o resultado seria um negócio pela metade que não
+       aparece direito no funil, na agenda nem no sino — e ninguém entenderia por quê.
+   >>> A DUPLICATA É AVISADA ANTES, e não impedida. Órgão que republica o mesmo pregão existe, e
+       recusar a criação obrigaria a inventar um número diferente pra contornar a trava — que é
+       como se estraga um índice. Avisar e deixar decidir é o certo. */
+const PORTAIS_SUGERIDOS = ['BLL', 'BNC', 'Licitanet', 'Compras.gov.br', 'Portal de Compras Públicas', 'ComprasNet', 'Outro'];
+
+/* A PROCEDÊNCIA, DITA NA FICHA. Não é rótulo decorativo: é onde se confere o dado. O do PNCP tem
+   número de controle oficial; o do calendário veio de uma planilha que alguém manteve à mão; o
+   manual foi digitado aqui, por alguém, num dia. As três são legítimas e nenhuma é igual. */
+function selaOrigem(n){
+  const o = String(n.origem || '');
+  if(o === 'manual'){
+    return '<h4>Procedência</h4><div class="salvo">'
+      + '📝 <b>Incluída à mão</b>' + (n.criado_por ? ' por ' + esc(String(n.criado_por).split('@')[0]) : '')
+      + (n.criado_em ? ' em ' + esc(new Date(n.criado_em).toLocaleDateString('pt-BR')) : '')
+      + '<br>Não veio do PNCP — os dados são os que foram digitados aqui. Para conferir, o caminho '
+      + 'é o portal de origem' + (n.portal ? ' (' + esc(n.portal) + ')' : '') + '.</div>';
+  }
+  if(o === 'calendario_2025'){
+    return '<h4>Procedência</h4><div class="salvo">'
+      + '📅 <b>Importada do Calendário 2025</b><br>Veio da planilha que a equipe mantinha antes do '
+      + 'sistema. O valor total está lá; o detalhe por item, em geral, não.</div>';
+  }
+  if(o === 'licitacoes'){
+    return '<h4>Procedência</h4><div class="salvo">'
+      + '🏛️ <b>Do PNCP</b>, pela tela de Licitações' + (n.numero ? ' · nº ' + esc(n.numero) : '')
+      + '<br>Os dados vieram do índice oficial e podem ser conferidos lá.</div>';
+  }
+  return o ? '<h4>Procedência</h4><div class="salvo">origem: ' + esc(o) + '</div>' : '';
+}
+
+function fecharFormManual(){
+  const el = document.getElementById('form-manual');
+  if(el){ el.style.display = 'none'; el.innerHTML = ''; }
+}
+function abrirFormManual(){
+  const el = document.getElementById('form-manual'); if(!el) return;
+  // A MESMA REGRA DA FICHA: quem grava negócio inclui licitação. `ehGestor()` é a mesma função
+  // que decide se os campos da ficha abrem — duas regras de permissão pra mesma coisa seriam
+  // duas chances de discordarem, e a do banco (RLS) venceria as duas de qualquer jeito.
+  if(!ehGestor()){
+    el.style.display = 'block';
+    el.innerHTML = '<div class="pk-topo"><b>Incluir licitação</b>'
+      + '<button class="btn-ed sec" style="margin-left:auto" onclick="fecharFormManual()">fechar</button></div>'
+      + '<div class="salvo">Só quem grava negócio pode incluir licitação — é a mesma regra da ficha.</div>';
+    return;
+  }
+  el.style.display = 'block';
+  el.scrollIntoView({behavior:'smooth', block:'nearest'});
+  const camp = (id, rot, extra) => `<div class="fm-c"><label>${rot}</label>${extra}</div>`;
+  el.innerHTML = `
+    <div class="pk-topo"><b>+ Incluir licitação</b>
+      <span class="salvo">para o que existe mas não está no PNCP — BLL, convite, e-mail do órgão</span>
+      <button class="btn-ed sec" style="margin-left:auto" onclick="fecharFormManual()">fechar</button></div>
+    <div class="fm-grid">
+      ${camp('m-portal', 'Portal', `<input id="m-portal" list="m-portais" placeholder="BLL, BNC, Licitanet…">
+        <datalist id="m-portais">${PORTAIS_SUGERIDOS.map(x=>`<option value="${esc(x)}">`).join('')}</datalist>`)}
+      ${camp('m-numero', 'Número do certame', '<input id="m-numero" placeholder="ex.: PE 050/2026">')}
+      ${camp('m-orgao', 'Órgão', '<input id="m-orgao" placeholder="quem está comprando">')}
+      ${camp('m-municipio', 'Município', '<input id="m-municipio">')}
+      ${camp('m-uf', 'UF', '<input id="m-uf" maxlength="2" placeholder="GO" style="text-transform:uppercase">')}
+      ${camp('m-modalidade', 'Modalidade', '<input id="m-modalidade" placeholder="Pregão eletrônico, Dispensa…">')}
+      ${camp('m-abertura', 'Abertura (data e hora)', '<input id="m-abertura" type="datetime-local">')}
+      ${camp('m-situacao', 'Situação', `<select id="m-situacao">
+        <option value="normal">normal</option><option value="adiado">adiado</option>
+        <option value="suspenso">suspenso</option><option value="cancelado">cancelado</option>
+        <option value="remarcado">remarcado</option></select>`)}
+      ${camp('m-valor', 'Valor estimado (opcional)', '<input id="m-valor" type="number" step="0.01" min="0" placeholder="0,00">')}
+      ${camp('m-estagio', 'Entra no funil em', `<select id="m-estagio">${FASES.map(f =>
+        `<option value="${f.k}"${f.k==='oportunidade'?' selected':''}>${esc(f.n)}</option>`).join('')}</select>`)}
+      ${camp('m-empresa', 'Empresa', `<select id="m-empresa">${EMPRESAS.map(e =>
+        `<option value="${e.id}">${esc(e.razao_social)}</option>`).join('')}</select>`)}
+    </div>
+    <div class="fm-c" style="margin-top:10px"><label>Objeto</label>
+      <textarea id="m-objeto" rows="2" placeholder="o que está sendo comprado"></textarea></div>
+    <div style="margin-top:12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <button class="btn-ed" id="m-bt" onclick="salvarManual()">Incluir no funil</button>
+      <button class="btn-ed sec" onclick="fecharFormManual()">cancelar</button>
+      <span class="salvo" id="m-msg"></span>
+    </div>
+    <div class="salvo" style="margin-top:8px">
+      Vai nascer um negócio igual aos outros — mesma ficha, mesmas abas, e o lembrete de abertura
+      se você puser data e hora. Fica registrado que foi <b>incluída à mão</b>, por você, hoje.
+    </div>`;
+}
+
+/* ── A DUPLICATA ─────────────────────────────────────────────────────────────────────────────
+   Procura por portal + número + órgão, que é o trio que identifica um certame na prática. A
+   comparação ignora acento, maiúscula e pontuação: "PE 050/2026" e "pe050/2026" são o mesmo
+   pregão pra quem trabalha, e seriam dois pro banco. */
+const _chaveCert = s => String(s||'').normalize('NFD').replace(/\p{M}/gu,'').toUpperCase().replace(/[^A-Z0-9]/g,'');
+function achaDuplicata(portal, numero, orgao){
+  const n = _chaveCert(numero), o = _chaveCert(orgao), p = _chaveCert(portal);
+  if(!n) return null;
+  return NEG.find(x => _chaveCert(x.numero) === n
+    && (!o || !x.orgao || _chaveCert(x.orgao) === o)
+    && (!p || !x.portal || _chaveCert(x.portal) === p)) || null;
+}
+
+async function salvarManual(){
+  const msg = document.getElementById('m-msg'), bt = document.getElementById('m-bt');
+  const v = id => (document.getElementById(id).value || '').trim();
+  const orgao = v('m-orgao'), numero = v('m-numero'), portal = v('m-portal');
+  // O MÍNIMO PRA UM NEGÓCIO SER RECONHECÍVEL. Sem órgão nem número, o card do funil fica sem
+  // título e ninguém acha aquilo de novo — o negócio existiria só pra atrapalhar a contagem.
+  if(!orgao && !numero){ msg.textContent = 'escreva ao menos o órgão ou o número do certame.'; return; }
+
+  const dup = achaDuplicata(portal, numero, orgao);
+  if(dup){
+    if(!confirm('Já existe um negócio com esse número' + (dup.orgao ? ' no ' + dup.orgao : '') + '.\n\n'
+      + 'OK = abrir o que já existe\nCancelar = voltar pro formulário (pra corrigir o número)')) return;
+    fecharFormManual(); abrirDrawer(dup.id); return;
+  }
+
+  bt.disabled = true; msg.textContent = 'incluindo…';
+  try{
+    const ab = v('m-abertura');
+    const valor = parseFloat(v('m-valor').replace(',', '.'));
+    const corpo = {
+      empresa_id: Number(v('m-empresa')) || null,
+      estagio: v('m-estagio') || 'oportunidade',
+      situacao: v('m-situacao') || 'normal',
+      portal: portal || null, numero: numero || null, orgao: orgao || null,
+      municipio: v('m-municipio') || null,
+      uf: v('m-uf') ? v('m-uf').toUpperCase().slice(0,2) : null,
+      modalidade: v('m-modalidade') || null,
+      objeto: v('m-objeto') || null,
+      abertura: ab ? new Date(ab).toISOString() : null,
+      valor_estimado: isFinite(valor) && valor > 0 ? valor : null,
+      // >>> A ORIGEM É O QUE DIZ A VERDADE SOBRE ESTE REGISTRO. `manual` fica ao lado de
+      //     `calendario_2025` e `licitacoes` — três procedências, e a ficha mostra qual foi.
+      origem: 'manual',
+      criado_por: (window.gmAuth && gmAuth.user && gmAuth.user.email) || null,
+      arquivado: false,
+    };
+    const r = await fetch(`${SB_URL}/rest/v1/negocios`, {method:'POST',
+      headers: Object.assign({'Prefer':'return=representation'}, SB_H, {'Content-Type':'application/json'}),
+      body: JSON.stringify(corpo)});
+    if(!r.ok) throw new Error('HTTP ' + r.status + (r.status===401||r.status===403 ? ' — sem permissão de gravar' : ''));
+    const novo = (await r.json())[0];
+    fecharFormManual();
+    await carregar(); pinta();
+    if(novo && novo.id) abrirDrawer(novo.id);
+  }catch(e){ msg.textContent = 'não consegui incluir: ' + e.message; bt.disabled = false; }
 }
 
 /* ══ OS NÚMEROS DO TOPO — UM LUGAR SÓ ════════════════════════════════════════════════════════
@@ -3017,7 +3192,21 @@ function toggleFiltro(){
 // Mesma corrida do gm-auth que mordeu o Licitações em 05/08: com token fresco o
 // `gm-auth-ready` dispara ainda dentro do <head>, antes deste script existir. Então checa
 // primeiro se já está pronto, e só escuta o evento se não estiver.
-function _aoAutenticar(){ carregar(); abreLeitorNaBarra(); }
+/* QUEM VEIO DO ENCONTRAR clicando em "+ Incluir licitação" chega com o formulário já aberto — e
+   com o termo que ele procurou no objeto. Consumido de uma vez: recarregar a tela não pode
+   reabrir um formulário que a pessoa já fechou. */
+function formManualDaSessao(){
+  let ctx = null;
+  try{
+    ctx = JSON.parse(sessionStorage.getItem('fpmed_incluir_manual') || 'null');
+    sessionStorage.removeItem('fpmed_incluir_manual');
+  }catch(e){ return; }
+  if(!ctx) return;
+  abrirFormManual();
+  const ob = document.getElementById('m-objeto');
+  if(ob && ctx.objeto) ob.value = ctx.objeto;
+}
+function _aoAutenticar(){ carregar().then(() => { pinta(); formManualDaSessao(); }); abreLeitorNaBarra(); }
 if(window.gmAuth) _aoAutenticar();
 else document.addEventListener('gm-auth-ready', _aoAutenticar, { once:true });
 </script>
