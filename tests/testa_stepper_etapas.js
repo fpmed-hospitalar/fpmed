@@ -166,8 +166,29 @@ ok('48. *** cada acao carrega o motivo dela (nao se perderam na mudanca) ***',
   /o que diverge, nelas, é prazo legal/.test(uc(N))
   && /a hora do preço é aqui/.test(uc(N))
   && /Esconder botão\s*NÃO é a permissão/.test(uc(N)));
-ok('49. *** cada secao ganhou UMA LINHA de explicacao ***',
-  (N.match(/class="sec-dica"/g) || []).length >= 7);
+/* ── 11/08: EU SOBREPUS, E O PRINT PRO CLIENTE MOSTROU ────────────────────────────────────
+   Escrevi que "as que ja tinham explicacao ficam como estao" e acrescentei a linha em TODAS.
+   Resultado no print: duas linhas cinzas empilhadas dizendo a mesma coisa em Proposta, CMED,
+   Ata, Credenciamentos, Lembretes e Tarefas — exatamente o "muito cheio de coisa" que a faxina
+   existe pra resolver.
+   Sobraram as 2 secoes que NAO tinham explicacao nenhuma (Edital e anexos, Anotacoes). Por isso
+   o assert conta 2, e nao 7: o numero maior era o defeito. */
+ok('49. *** TODA secao tem uma linha de explicacao — a nova ou a que ja existia ***', (() => {
+  const secoes = ['Edital e anexos', 'Proposta enviada', 'Conferência contra o teto CMED',
+    'Documentos da ata', 'Credenciamentos junto à indústria', 'Lembretes agendados',
+    'Tarefas deste negócio', 'Anotações'];
+  return secoes.every(s => {
+    const i = N.indexOf('<h4>' + s);
+    if (i < 0) return false;
+    const trecho = N.slice(i, i + 620);
+    return /class="sec-dica"/.test(trecho) || /class="dica"/.test(trecho) || /class="salvo"/.test(trecho)
+      || /placeholder="/.test(trecho);
+  });
+})());
+ok('49b. *** e nenhuma tem DUAS (a linha nova nao empilhou por cima da que ja havia) ***',
+  (N.match(/class="sec-dica"/g) || []).length === 2);
+ok('49c. ...com o erro registrado, porque ele so apareceu no print pro cliente',
+  /EU SOBREPUS/.test(N) && /duas\s*linhas cinzas empilhadas dizendo a mesma coisa/.test(uc(N)));
 ok('50. ...com o motivo (o que enchia era ter que ADIVINHAR o que cada uma faz)',
   /era ter que\s*ADIVINHAR o que cada uma faz/.test(uc(N)));
 ok('51. o leitor de IA continua so pra quem tem o piloto', /pode: podeLerEdital\(\)/.test(N));

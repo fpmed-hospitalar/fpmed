@@ -213,7 +213,13 @@ header nav a.on{background:rgba(44,169,224,.16);color:var(--azul-claro);font-wei
 .dw-sec > h4{margin:0 0 4px;font-family:Montserrat;font-size:11px;font-weight:700;letter-spacing:1.3px;
   text-transform:uppercase;color:var(--muted)}
 /* A LINHA QUE EXPLICA A SEÇÃO. O que enchia a tela não era a quantidade de seções — era ter que
-   ADIVINHAR o que cada uma faz. Dez palavras transformam "mais um bloco" em "ah, é isso". */
+   ADIVINHAR o que cada uma faz. Dez palavras transformam "mais um bloco" em "ah, é isso".
+   >>> EU SOBREPUS, E SÓ VI NO PRINT PRO CLIENTE. Escrevi que "as seções que já tinham explicação
+       ficam como estão" e acrescentei a linha em TODAS — o print mostrou duas linhas cinzas
+       empilhadas dizendo a mesma coisa em Proposta, CMED, Ata, Credenciamentos, Lembretes e
+       Tarefas. Exatamente o "muito cheio de coisa" que esta faxina existe pra resolver, criado
+       por ela. Sobraram as 2 seções que não tinham explicação nenhuma; nas outras venceu a que já
+       estava, porque ela carrega o PORQUÊ e a minha só dizia o QUÊ. */
 .sec-dica{font-size:11.5px;color:var(--muted);margin:0 0 10px;line-height:1.5;opacity:.9}
 /* ══ O STEPPER DE ETAPAS ══ a linha do tempo que substituiu a fileira de botões iguais ══════
    A LINHA que conecta é o ::before do container, atrás das bolas — é ela que transforma cinco
@@ -1091,7 +1097,6 @@ function corpoDrawer(n, obs, carregando){
     <div class="${pnl(n,"lembretes")}" id="aba-lembretes">
       <div class="dw-sec">
         <h4>Lembretes agendados</h4>
-        <div class="sec-dica">O que você quer ser lembrado, na hora certa. Entra no sino do topo.</div>
         <div class="salvo">O sino avisa por eles. Diferente do resto do sino, lembrete não é
           fato lido do banco — é uma intenção que alguém teve, e sem escrever ela some.</div>
         ${editavel ? `<div class="lem-novo">
@@ -1107,7 +1112,6 @@ function corpoDrawer(n, obs, carregando){
     <div class="${pnl(n,"tarefas")}" id="aba-tarefas">
       <div class="dw-sec">
         <h4>Tarefas deste negócio</h4>
-        <div class="sec-dica">O que precisa ser feito neste processo — com data, entra no sino também.</div>
         <div class="dica" style="font-size:11.5px;color:var(--muted);margin-bottom:8px">
           Tarefa com data e hora <b>entra no sino</b> e no aviso da manhã. Sem data, fica só na lista.
         </div>
@@ -1135,7 +1139,6 @@ function corpoDrawer(n, obs, carregando){
     <div class="${pnl(n,"prop")}" id="aba-prop">
       <div class="dw-sec">
         <h4>Proposta enviada</h4>
-        <div class="sec-dica">O PDF do que foi mandado, com as versões empilhadas: a de hoje não apaga a de ontem.</div>
         <div class="dica" style="font-size:11.5px;color:var(--muted);margin-bottom:8px">
           Anexe o PDF da proposta. <b>As versões empilham</b> — mandar de novo não apaga a
           anterior, e é assim que fica registrado o que foi enviado em cada rodada.
@@ -1149,7 +1152,6 @@ function corpoDrawer(n, obs, carregando){
       </div>
       <div class="dw-sec">
         <h4>Conferência contra o teto CMED</h4>
-        <div class="sec-dica">Preço acima do teto legal desclassifica. Aqui a proposta é lida e comparada item a item.</div>
         <div class="dica" style="font-size:11.5px;color:var(--muted);margin-bottom:8px">
           Lê os itens da proposta anexada e compara cada preço com o teto legal (PMVG para venda
           ao governo). É o <b>mesmo motor</b> do Conferidor — não uma segunda conta.
@@ -1168,7 +1170,6 @@ function corpoDrawer(n, obs, carregando){
     <div class="${pnl(n,"ata")}" id="aba-ata">
       <div class="dw-sec">
         <h4>Documentos da ata</h4>
-        <div class="sec-dica">Ata, contrato e o que veio da sessão — cada um na sua categoria, com as versões empilhadas.</div>
         <div class="dica" style="font-size:11.5px;color:var(--muted);margin-bottom:8px">
           Cada anexo tem uma <b>categoria</b>, e as versões empilham dentro dela. Nada se
           sobrescreve e nada se apaga.
@@ -1205,7 +1206,6 @@ function corpoDrawer(n, obs, carregando){
     <div class="${pnl(n,"cred")}" id="aba-cred">
       <div class="dw-sec">
         <h4>Credenciamentos junto à indústria</h4>
-        <div class="sec-dica">Sem credenciamento não se cota a marca. O que está parado há dias aparece marcado.</div>
         <div class="dica" style="font-size:11.5px;color:var(--muted);margin-bottom:8px">
           O credenciamento é da <b>empresa com a indústria</b> — vale pra todos os pregões daquela
           marca, não só pra este. Os que nasceram deste negócio aparecem marcados.
