@@ -146,5 +146,24 @@ ok('56. e ela mostra o tamanho da correcao, sem defende-la',
 ok('57. os numeros medidos ficam no cabecalho da suite (nao so no commit)',
   /taxa 15,1% \(105 de 695\) · total ganho R\$ 63\.034\.332,63/.test(R('tests', 'testa_kpis_clicaveis.js')));
 
+// ══════════ 8. O TETO DE 1000 QUE FAZIA TODO NUMERO MENTIR ══════════
+// MEDIDO NO AR em 11/08, com a tela aberta: `NEG.length === 1000` e o banco com 2.558 negocios.
+// A consulta pedia `limit=3000`, e o teto NAO e do pedido — e do servidor. Pedir mais do que ele
+// da nao levanta erro: devolve 1.000 linhas, calado.
+// Todos os cartoes mentiam: historico 1.000 (real 2.558) · ganhas 23 (105) · taxa 10,6% (15,1%)
+// · total ganho R$ 12,4 mi (R$ 63,0 mi). Nenhum parecia errado.
+ok('64. *** a leitura dos negocios e PAGINADA por Range ***',
+  /async function lerNegociosPaginado\(\)/.test(N) && /Range: `\$\{de\}-\$\{ate\}`/.test(N));
+ok('65. *** e o `limit=3000` que nao resolvia saiu ***', !/negocios\?select=\*&order=abertura\.desc&limit=3000/.test(N));
+ok('66. ...com a medicao registrada (1.000 de 2.558, e os 4 numeros errados)',
+  /`NEG\.length === 1000`, e o banco com 2\.558 negócios/.test(uc(N))
+  && /taxa vitória \.\. 10,6%    \(real 15,1%\)/.test(N));
+ok('67. ...e a ligacao com o mesmo defeito da busca',
+  /É exatamente o defeito que mordeu a busca do Natanael/.test(N));
+ok('68. *** o teto de paginas existe, e bater nele AVISA na tela ***',
+  /window\._negTruncou = true;/.test(N) && /leitura truncada/.test(N));
+ok('69. ...com o motivo (20.000 truncados em silencio seriam este bug de novo)',
+  /seriam este mesmo bug de novo/.test(uc(N)));
+
 console.log('\nRESULTADO: ' + p + ' ok, ' + f + ' falha(s)');
 if (f) process.exit(1);

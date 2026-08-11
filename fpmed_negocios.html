@@ -616,14 +616,50 @@ function notificacoes(lista){
   return { hoje: hojeL, amanha: amanhaL, passou, urgentes: hojeL.length + amanhaL.length };
 }
 
+/* ══ O TETO DE 1000 DO POSTGREST — E O `limit=3000` QUE NÃO RESOLVIA ══════════════════════════
+   Medido no ar em 11/08, com a tela aberta: `NEG.length === 1000`, e o banco com 2.558 negócios.
+   A consulta pedia `limit=3000` — e o teto NÃO é do pedido, é do servidor (`db-max-rows`). Pedir
+   mais do que ele dá não dá erro: dá 1.000 linhas, calado.
+
+   >>> E TODO NÚMERO DO TOPO ESTAVA ERRADO, inclusive os que a empresa usa pra decidir:
+         histórico ..... 1.000    (real 2.558)
+         ganhas ........ 23       (real 105)
+         taxa vitória .. 10,6%    (real 15,1%)
+         total ganho ... R$ 12.450.875,10   (real R$ 63.034.332,63)
+       Nenhum deles parecia errado. É exatamente o defeito que mordeu a busca do Natanael em
+       11/08 ("dizia zero sabendo menos do que sabia"), na mesma instância e pela mesma razão —
+       e desta vez ele estava embaixo da taxa de vitória.
+
+   >>> A PAGINAÇÃO USA `Range`, e não `offset`: com `order` estável é o caminho que o PostgREST
+       documenta, e é o mesmo já usado no Licitações e no Conferidor. Teto de 20 páginas pra um
+       laço que nunca termina não virar uma tela que nunca abre — e se ele for atingido, a tela
+       DIZ, porque 20.000 negócios truncados em silêncio seriam este mesmo bug de novo. */
+const PAG_NEG = 1000, TETO_PAG_NEG = 20;
+async function lerNegociosPaginado(){
+  let out = [], pag = 0;
+  window._negTruncou = false;
+  while(pag < TETO_PAG_NEG){
+    const de = pag * PAG_NEG, ate = de + PAG_NEG - 1;
+    const r = await fetch(`${SB_URL}/rest/v1/negocios?select=*&order=abertura.desc`,
+      { headers: Object.assign({}, SB_H, { Range: `${de}-${ate}`, 'Range-Unit': 'items' }) });
+    if(!r.ok) throw new Error('o banco respondeu ' + r.status
+      + (r.status===401||r.status===403 ? ' — o funil é tela de gestor' : ''));
+    const d = await r.json();
+    out = out.concat(d);
+    if(d.length < PAG_NEG) return out;
+    pag++;
+  }
+  window._negTruncou = true;   // bateu no teto: a tela avisa em vez de fingir que leu tudo
+  return out;
+}
+
 async function carregar(){
   try{
-    const [rn, re] = await Promise.all([
-      fetch(`${SB_URL}/rest/v1/negocios?select=*&order=abertura.desc&limit=3000`, {headers:SB_H}),
+    const [neg, re] = await Promise.all([
+      lerNegociosPaginado(),
       fetch(`${SB_URL}/rest/v1/empresas?select=id,razao_social&order=id`, {headers:SB_H}),
     ]);
-    if(!rn.ok) throw new Error('o banco respondeu ' + rn.status + (rn.status===401||rn.status===403 ? ' — o funil é tela de gestor' : ''));
-    NEG = await rn.json();
+    NEG = neg;
     EMPRESAS = re.ok ? await re.json() : [];
   }catch(e){ ERRO = e.message; }
   // DOCUMENTOS pro sino (08/08). Em chamada SEPARADA e depois do funil, de propósito: se a
@@ -714,7 +750,7 @@ function pinta(){
      existe só pra quem leu o commit. */
   document.getElementById('kpis').innerHTML = `
     <div class="kpi bt" onclick="abrirPainel('funil')" title="mostra os negócios ativos"><b>${k.noFunil}</b><span>no funil agora</span></div>
-    <div class="kpi bt" onclick="abrirPainel('historico')" title="todos os negócios, inclusive arquivados"><b>${k.historico.toLocaleString('pt-BR')}</b><span>no histórico</span></div>
+    <div class="kpi bt" onclick="abrirPainel('historico')" title="todos os negócios, inclusive arquivados"><b>${k.historico.toLocaleString('pt-BR')}${window._negTruncou?'+':''}</b><span>no histórico${window._negTruncou?' (leitura truncada)':''}</span></div>
     <div class="kpi bt" onclick="abrirPainel('ganhas')" title="a lista das ganhas, com valor de cada uma"><b>${k.ganhos.length}</b><span>ganhas</span></div>
     <div class="kpi bt" onclick="abrirPainel('taxa')" title="de onde sai a conta"><b>${k.taxaTxt}</b><span>taxa de vitória</span></div>
     ${gestor ? `<div class="kpi bt" onclick="abrirPainel('total')" title="a soma das ganhas"><b style="font-size:16px">${brl(k.total)}</b><span>total ganho</span></div>` : ''}`;
