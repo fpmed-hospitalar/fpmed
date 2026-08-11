@@ -585,6 +585,33 @@ Criado em 21/07/2026 copiando SO os arquivos do app do C:\globalmed.
     pelo nome da classe, nao pelo brilho). Os tres foram corrigidos e a segunda
     rodada mordeu em 6 de 6.
 
+>>> 11/08 — TRES DECISOES DO LEMUEL, TODAS REGISTRADAS:
+
+    1. ACEITE DADO ao docs/PADRAO_EXCELENCIA.md. Ele agora e A LEI ACIMA DE TODAS,
+       inclusive acima de regra que eu mesmo escrever depois. So o dono muda o que
+       esta la; proposta minha entra pela secao 6 (documento vivo), com data e
+       medicao, nunca por edicao silenciosa. O aceite esta carimbado no topo do
+       proprio documento.
+
+    2. ITEM DA PROPOSTA = opcao (a): construir o EXPORT EXCEL. O PDF pela impressao
+       do navegador FICA COMO ESTA; PDF por biblioteca so se o cliente pedir um dia.
+       O item da fila deixou de se chamar "PDF timbrado" (que ja existia) e virou
+       "Export Excel da proposta".
+
+    3. CHAT DO EDITAL — a regra que faltava chegou completa:
+         · aviso de custo UMA VEZ ao abrir o chat, com o preco estimado POR PERGUNTA
+           >>> uma vez POR ABERTURA, nao uma vez na vida: quem abrir amanha tem que
+               ser avisado tambem, senao o aviso vira enfeite;
+         · contador discreto acumulando o custo da conversa a cada resposta;
+         · TETO DE 20 PERGUNTAS por edital, configuravel em cobranca_config;
+         · margem de repasse igual a das leituras;
+         · cada resposta = registra_uso_ia com tarefa 'chat'.
+       >>> O CHECK CONSTRAINT ENTRA ANTES DO CODIGO. Ordem dele, e e a licao S5: na
+           tarefa 'juntar' a ordem foi invertida, o insert falhou, o catch vazio
+           engoliu, e a leitura consumiu credito SEM COBRANCA. Aqui o 'chat' entra
+           na lista permitida primeiro; so depois o botao existe. E falha de
+           registro aparece na tela, nao no vazio.
+
 >>> PONTO EXATO DE RETOMADA — a fila numerada:
      1. [OK] spec da reforma (docs/spec_reforma_prime.md) — 4485c30
      2. [OK] fpmed_tema.css — O DESIGN SYSTEM, e ele vem primeiro (adendo de excelencia)

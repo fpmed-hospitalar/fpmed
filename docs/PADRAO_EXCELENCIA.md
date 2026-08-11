@@ -4,7 +4,15 @@
 este projeto já aprendeu apanhando e medindo, numa doutrina única de trabalho.
 
 Escrito em 11/08/2026, sob a ordem *"construir algo grande, não medíocre"*.
-**Aguardando o aceite de dono.** Depois do aceite, é a lei acima de todas.
+
+> ## ✔ ACEITO PELO DONO EM 11/08/2026
+> **Lemuel:** *"ACEITE DADO ao docs/PADRAO_EXCELENCIA.md. Ele passa a ser a lei
+> acima de todas, como combinado."*
+>
+> A partir desta data este documento **vence qualquer outra regra minha**,
+> inclusive as que eu mesmo escrever depois. Só o dono muda o que está aqui.
+> Mudança que eu propuser entra pela seção 6 (documento vivo), com data e
+> medição — nunca por edição silenciosa.
 
 Os quatro documentos que ele funde continuam valendo palavra por palavra —
 [`constituicao.md`](constituicao.md) · [`manual_fundamentos.md`](manual_fundamentos.md) ·

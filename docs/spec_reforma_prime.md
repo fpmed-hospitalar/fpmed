@@ -159,12 +159,27 @@ espelho do kanban, read-only.
 > Com isso o risco que travava o item some: o CNPJ deixa de ser a chave (ele é público, qualquer
 > um digita o de outra empresa) e vira só o *rótulo*; quem autentica é o código do link.
 
-### ~~b. Chat do edital~~ → **DECIDIDO em 11/08, virou item 16 da fila**
+### ~~b. Chat do edital~~ → **DECIDIDO em 11/08, virou item 16 da fila — REGRA COMPLETA**
 Perguntas sobre o edital já lido, **cada resposta registrada no contador** (`registra_uso_ia`,
-tarefa nova `'chat'`).
-> ⚠️ **O PEDIDO CHEGOU CORTADO** — a frase termina em "tarefa nova 'chat' —" e não completa.
-> Falta saber o resto: teto de perguntas? aviso de custo antes de cada pergunta ou uma vez só?
-> O item está registrado; a parte que falta está anotada e **não vai ser inventada**.
+tarefa nova `'chat'`). O pedido tinha chegado cortado; o Lemuel completou em 11/08:
+
+| regra | decisão dele |
+|---|---|
+| aviso de custo | **uma vez só, ao abrir o chat**, com o preço estimado **por pergunta** |
+| durante a conversa | **contador discreto** acumulando o custo da conversa a cada resposta |
+| teto | **20 perguntas por edital**, configurável em `cobranca_config` |
+| margem de repasse | **a mesma das leituras** |
+| registro | cada resposta = `registra_uso_ia` com tarefa `'chat'` |
+
+> ⚠️ **O CHECK CONSTRAINT ENTRA ANTES DO CÓDIGO — ordem expressa dele, e é a lição S5.**
+> Na tarefa `juntar` a sequência foi invertida: o código passou a mandar uma tarefa que o
+> constraint não conhecia, o insert falhou, o `catch {}` engoliu, e a leitura consumiu crédito
+> **sem cobrança**. Aqui o `'chat'` entra na lista permitida **primeiro**; só depois o botão
+> existe. E o `catch` vazio não volta: falha de registro aparece na tela.
+
+> **Aviso "uma vez só" não pode virar aviso que ninguém vê.** Uma vez **por abertura do chat**,
+> não uma vez na vida — senão quem abre amanhã não foi avisado de nada. E o contador discreto é
+> o que sustenta isso: o aviso informa o preço, o contador mostra a conta correndo.
 
 ### c. Integração com Google Agenda
 Os lembretes já entram no sino. Levá-los ao Google Agenda exige OAuth do Google, consentimento
@@ -180,14 +195,14 @@ Acrescentada no fim da fila numerada, nesta ordem:
 |---|---|---|
 | 7 | **Puxador de itens por ID da compra** — campo "ID da compra PNCP" na proposta, baixando os itens da API pública | **sem custo de IA** — é a mesma API que a coleta já usa. Prova com compra real |
 | 8 | **Desconto em lote** — "margem de desconto %" recalculando todos os lances | **a trava PMVG continua valendo**: nunca recalcular para cima do teto |
-| 9 | **Proposta em PDF timbrado** — logo e dados do `cliente.config.js`, pronto para assinatura | ⚠️ **o PDF timbrado JÁ EXISTE** (`gerarPDF()`, pela impressão do navegador, com logo e dados do config). O que **falta de verdade** é o **Excel** — o inverso do que o pedido supunha. Confirmar com o Lemuel se o que ele quer é (a) o Excel, (b) um PDF gerado por biblioteca em vez de impressão, ou (c) os dois |
+| 9 | **Export Excel da proposta** | **DECIDIDO em 11/08 — opção (a).** O PDF pela impressão do navegador **fica como está**; PDF por biblioteca só entra se o cliente pedir um dia. O item deixou de ser "PDF timbrado" (que já existia) e passou a ser o **Excel**, que é o que faltava |
 | 10 | **Gerador de declarações** — modelos editáveis, dados do config e do negócio | buracos «marcados», como na carta de credenciamento. **Textos redigidos do zero** a partir da Lei 14.133 |
 | 11 | **Gestor de documentos** — categorias, vencimento, alerta vermelho, "baixar tudo em ZIP" | o alerta e o sino já existem |
 | 12 | **Etapas renomeáveis por config** | **CHAVES do banco intactas** — mesmo padrão de Classificação→Habilitação e Contrato→Ata |
 | 13 | **Tarefas com prioridade nos cards** (alta/média/baixa + data) | alimentando o sino |
 | 14 | **Radar por raio** — "até X km de \<cidade\>" com lat/long do IBGE | **sem serviço pago**. Prova com municípios de GO |
 | 15 | **Link público de acompanhamento por CNPJ** | read-only, código não-adivinhável, sem valores internos. Ver a decisão na seção 3 |
-| 16 | **Chat do edital** | cada resposta em `registra_uso_ia` com tarefa `'chat'`. ⚠️ **pedido chegou cortado** — falta a regra de teto/aviso de custo |
+| 16 | **Chat do edital** | **regra completa em 11/08**: aviso de custo **uma vez ao abrir**, contador discreto acumulando, **teto de 20 perguntas** por edital em `cobranca_config`, margem igual à das leituras, cada resposta em `registra_uso_ia` tarefa `'chat'`. **Check constraint ANTES do código** (lição S5) |
 
 ---
 
