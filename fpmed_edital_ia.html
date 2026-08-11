@@ -1038,12 +1038,61 @@ function pintaNegocio(){
   const n = negocioDaSessao(); const cx = el('cx-negocio');
   if(!n){ cx.style.display = 'none'; return; }
   cx.style.display = 'block';
+  /* ── O EDITAL JÁ ANEXADO ─────────────────────────────────────────────────────────────────
+     Quando o negócio tem edital na seção de anexos, ele vem junto e a tela OFERECE ler direto.
+     Antes esta caixa dizia "o PDF é você que escolhe aqui" — verdade na época, e atrito puro
+     depois que o edital passou a morar no negócio.
+     >>> O UPLOAD CONTINUA LOGO ABAIXO, intocado. Este é um atalho, e não uma troca: quem quer
+         ler outro arquivo (um anexo, uma versão que ainda não subiu) escolhe do computador. */
   cx.innerHTML = '<b>📌 Lendo para: ' + esc(n.titulo || 'negócio') + '</b>'
     + '<div class="hint" style="margin-top:4px">'
     + (n.orgao ? esc(n.orgao) + ' · ' : '') + (n.numero ? 'nº ' + esc(n.numero) : '')
-    + '<br>O edital não vem de lá: <b>o PDF é você que escolhe aqui</b>. O que veio do negócio é só '
-    + 'o nome, pra proposta montada nascer identificada.</div>'
-    + '<div style="margin-top:10px"><button class="btn sec" onclick="location.href=\'fpmed_negocios.html\'">← voltar ao negócio</button></div>';
+    + (n.anexo
+        ? '<br>Este negócio já tem o edital anexado: <b>' + esc(n.anexo.nome) + '</b>'
+          + (n.anexo.versao > 1 ? ' (v' + n.anexo.versao + ')' : '')
+          + '. Dá pra ler ele direto, sem procurar no computador.'
+        : '<br>O edital não vem de lá: <b>o PDF é você que escolhe aqui</b>. O que veio do negócio é só '
+          + 'o nome, pra proposta montada nascer identificada.')
+    + '</div>'
+    + (n.anexo
+        ? '<div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">'
+          + '<button class="btn" onclick="usarAnexoDoNegocio()" id="bt-anexo">📎 Usar o edital anexado</button>'
+          + '<button class="btn sec" onclick="location.href=\'fpmed_negocios.html\'">← voltar ao negócio</button></div>'
+        : '<div style="margin-top:10px"><button class="btn sec" onclick="location.href=\'fpmed_negocios.html\'">← voltar ao negócio</button></div>');
+}
+
+/* BAIXA O ANEXO E O TRATA COMO SE A PESSOA TIVESSE ESCOLHIDO DO COMPUTADOR. É o mesmo `ARQUIVO`
+   que o resto da tela usa, então os dois caminhos (anexo e upload) passam pelo MESMO fluxo de
+   leitura, partição e custo. Dois fluxos seriam duas chances de um deles esquecer a partição em
+   partes, ou o aviso de custo. */
+async function usarAnexoDoNegocio(){
+  const n = negocioDaSessao(); if(!n || !n.anexo) return;
+  const bt = el('bt-anexo'); if(bt){ bt.disabled = true; bt.textContent = 'baixando…'; }
+  try{
+    const rs = await fetch(`${SB_URL}/storage/v1/object/sign/documentos/${encodeURIComponent(n.anexo.path)}`, {
+      method:'POST', headers: Object.assign({'Content-Type':'application/json'}, SB_H),
+      body: JSON.stringify({ expiresIn: 120 }) });
+    if(!rs.ok) throw new Error('não consegui abrir o anexo (HTTP ' + rs.status + ')');
+    const url = SB_URL + '/storage/v1' + (await rs.json()).signedURL;
+    const blob = await (await fetch(url)).blob();
+    ARQUIVO = new File([blob], n.anexo.nome, { type: blob.type || 'application/pdf' });
+    ITENS_LIDOS = null;
+    travaBotoes(false);
+    // A MESMA linha de informação do upload, com a mesma estimativa de custo — o operador não
+    // pode ter menos informação por ter usado o atalho.
+    const mb = ARQUIVO.size / 1024 / 1024;
+    const tok = Math.round(mb * TOKENS_POR_MB);
+    const custo = s => (tok/1e6)*USD_ENTRADA_MTOK + (s/1e6)*USD_SAIDA_MTOK;
+    el('info-arq').innerHTML = '📎 <b>' + esc(ARQUIVO.name) + '</b> (do negócio) · <b>' + mb.toFixed(2) + ' MB</b>'
+      + ' · ~' + tok.toLocaleString('pt-BR') + ' tokens de entrada'
+      + ' · estimativa grosseira: <b>resumo</b> ~US$ ' + custo(1500).toFixed(3)
+      + ' · <b>tabela de itens</b> ~US$ ' + custo(8000).toFixed(3);
+    if(bt){ bt.textContent = '✓ edital carregado — escolha a leitura abaixo'; }
+  }catch(e){
+    if(bt){ bt.disabled = false; bt.textContent = '📎 Usar o edital anexado'; }
+    el('info-arq').innerHTML = '<b style="color:#ffb3b6">não consegui baixar o anexo: ' + esc(e.message)
+      + '</b> — escolha o PDF do computador aqui embaixo.';
+  }
 }
 
 /* ── AS LEITURAS REGISTRADAS ─────────────────────────────────────────────────────────────────

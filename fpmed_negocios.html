@@ -846,7 +846,8 @@ async function abrirDrawer(id){
     document.getElementById('dw-body').innerHTML = corpoDrawer(n, null, false);
   }
   if(ABERTO === id){ carregarRastro(id); carregarLembretes(id); carregarCredenciamentos(id);
-                     carregarProposta(id); carregarAta(id); carregarItensGanhos(id); }
+                     carregarProposta(id); carregarAta(id); carregarItensGanhos(id);
+                     carregarEdital(id); }
 }
 function fecharDrawer(){
   ABERTO = null;
@@ -955,6 +956,24 @@ function corpoDrawer(n, obs, carregando){
 
     <div class="dw-painel on" id="aba-info">
       <div class="dw-sec"><h4>Ficha${editavel?' <span class="salvo" style="font-weight:400">· editável</span>':''}</h4>${ficha}</div>
+      <!-- ══ EDITAL E ANEXOS — em QUALQUER negócio ═══════════════════════════════════════════
+           Não só nos incluídos à mão: o que veio do PNCP e o do Calendário também recebem o
+           edital. O índice do PNCP guarda o LINK do arquivo no site deles; ter o PDF aqui é
+           outra coisa — é o documento na mão de quem vai disputar, que não depende do portal
+           estar no ar no dia da sessão. -->
+      <div class="dw-sec" id="aba-edital">
+        <h4>Edital e anexos</h4>
+        <div id="ed-lista"><div class="salvo">carregando…</div></div>
+        ${editavel ? `<div class="prop-novo">
+          <select id="ed-cat">
+            <option value="edital">Edital</option>
+            <option value="anexo_edital">Anexo do edital (TR, itens, planilha)</option>
+          </select>
+          <input type="file" id="ed-arq" multiple>
+          <button class="btn-ed" id="ed-bt" onclick="anexarEdital(${n.id})">📎 Anexar</button>
+        </div>` : '<div class="salvo">só quem grava pode anexar.</div>'}
+        <div class="salvo" id="ed-msg"></div>
+      </div>
       <!-- DE ONDE ESTE NEGÓCIO VEIO. Três procedências, e elas não valem a mesma coisa: o do
            PNCP tem número oficial conferível, o do calendário foi importado de uma planilha, e o
            manual foi alguém que digitou. Quem lê a ficha meses depois precisa saber qual é —
@@ -1260,13 +1279,29 @@ function abreLeitorNaBarra(){
   const a = document.getElementById('nav-edital-ia');
   if(a && podeLerEdital()) a.hidden = false;
 }
-function lerEditalIA(id){
+async function lerEditalIA(id){
   const n = NEG.find(x => x.id === id); if(!n) return;
+  /* ── SE O EDITAL JÁ ESTÁ ANEXADO, LEVA ELE ─────────────────────────────────────────────────
+     Antes, o botão sempre abria o leitor pedindo o PDF do computador — mesmo quando o edital
+     estava ali, a dois centímetros, na seção de anexos. Pedir de novo o que já se tem é o tipo
+     de atrito que faz a pessoa desistir da ferramenta.
+     >>> VAI O CAMINHO NO BUCKET, e não o arquivo: o leitor baixa por link assinado, do mesmo
+         jeito que a conferência de proposta faz. Passar megabytes por sessionStorage estouraria
+         a cota do navegador no primeiro edital de verdade.
+     >>> E O UPLOAD MANUAL CONTINUA. Quem quiser ler OUTRO arquivo (um anexo, uma versão nova que
+         ainda não subiu) escolhe do computador como sempre — o anexo é atalho, não trava. */
+  let anexo = null;
+  try{
+    const r = await fetch(`${SB_URL}/rest/v1/negocio_anexos?negocio_id=eq.${id}`
+      + '&categoria=eq.edital&select=id,arquivo_path,arquivo_nome,versao&order=versao.desc&limit=1', {headers:SB_H});
+    if(r.ok) anexo = (await r.json())[0] || null;
+  }catch(e){ /* sem o anexo o leitor abre pedindo o arquivo, que é o comportamento de antes */ }
   try{
     sessionStorage.setItem('fpmed_edital_negocio', JSON.stringify({
       de: 'negocios', negocio_id: n.id, quando: Date.now(),
       titulo: n.titulo || n.objeto || null, orgao: n.orgao || null,
       numero: n.numero || null, portal: n.portal || null, abertura: n.abertura || null,
+      anexo: anexo ? { path: anexo.arquivo_path, nome: anexo.arquivo_nome, versao: anexo.versao } : null,
     }));
   }catch(e){ /* sem sessionStorage o leitor abre sem contexto, que é o comportamento normal dele */ }
   location.href = 'fpmed_edital_ia.html';
@@ -1793,6 +1828,18 @@ function abrirFormManual(){
     </div>
     <div class="fm-c" style="margin-top:10px"><label>Objeto</label>
       <textarea id="m-objeto" rows="2" placeholder="o que está sendo comprado"></textarea></div>
+    <div class="fm-c" style="margin-top:10px"><label>Observação</label>
+      <textarea id="m-obs" rows="2" placeholder="o que o edital disse, o que você reparou, o que precisa lembrar"></textarea>
+      <div class="salvo" style="margin-top:4px">Vai para as <b>Anotações</b> da ficha — o mesmo campo
+        que antes era a coluna OBSERVAÇÃO da planilha.</div></div>
+    <!-- ══ OS ARQUIVOS, JÁ NA INCLUSÃO ═══════════════════════════════════════════════════════
+         Quem inclui à mão está com o edital aberto na frente — é o momento em que ele existe no
+         computador da pessoa. Pedir pra anexar depois é pedir pra ela procurar de novo, e é
+         assim que negócio fica sem edital. -->
+    <div class="fm-c" style="margin-top:10px"><label>📎 Edital e anexos</label>
+      <input type="file" id="m-arqs" multiple accept="application/pdf,.pdf,.xlsx,.xls,.doc,.docx">
+      <div class="salvo" style="margin-top:4px">O <b>primeiro</b> arquivo entra como <b>edital</b>;
+        os demais como <b>anexo do edital</b> (TR, relação de itens, planilhas). Dá pra trocar depois na ficha.</div></div>
     <div style="margin-top:12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
       <button class="btn-ed" id="m-bt" onclick="salvarManual()">Incluir no funil</button>
       <button class="btn-ed sec" onclick="fecharFormManual()">cancelar</button>
@@ -1845,6 +1892,10 @@ async function salvarManual(){
       uf: v('m-uf') ? v('m-uf').toUpperCase().slice(0,2) : null,
       modalidade: v('m-modalidade') || null,
       objeto: v('m-objeto') || null,
+      // A OBSERVAÇÃO VAI PRAS ANOTAÇÕES, e não pra um campo novo. É o mesmo texto livre que a
+      // aba Observações já mostra e edita — um campo separado criaria dois lugares pra mesma
+      // coisa, e o segundo seria o que ninguém lembra de ler.
+      anotacoes: v('m-obs') || null,
       abertura: ab ? new Date(ab).toISOString() : null,
       valor_estimado: isFinite(valor) && valor > 0 ? valor : null,
       // >>> A ORIGEM É O QUE DIZ A VERDADE SOBRE ESTE REGISTRO. `manual` fica ao lado de
@@ -1858,10 +1909,66 @@ async function salvarManual(){
       body: JSON.stringify(corpo)});
     if(!r.ok) throw new Error('HTTP ' + r.status + (r.status===401||r.status===403 ? ' — sem permissão de gravar' : ''));
     const novo = (await r.json())[0];
+
+    /* ── OS ARQUIVOS VÊM DEPOIS, E DE PROPÓSITO ────────────────────────────────────────────
+       O negócio JÁ ESTÁ CRIADO neste ponto. Se um upload falhar agora, o cadastro não se perde:
+       ele fica lá, e a tela diz qual arquivo faltou. O contrário — subir tudo primeiro e criar
+       o negócio no fim — perderia o cadastro inteiro por causa de um PDF grande demais, e a
+       pessoa teria que digitar os doze campos de novo. */
+    const arqs = Array.from((document.getElementById('m-arqs') || {}).files || []);
+    const falhou = [];
+    for(let i = 0; i < arqs.length; i++){
+      msg.textContent = 'negócio criado · subindo ' + (i+1) + ' de ' + arqs.length + '…';
+      // O PRIMEIRO É O EDITAL, os outros são anexos dele. É a convenção que o formulário anuncia,
+      // e ela existe pro botão de ler saber qual mandar sem ninguém precisar classificar arquivo.
+      const r2 = await subirAnexo(novo.id, arqs[i], i === 0 ? 'edital' : 'anexo_edital');
+      if(!r2.ok) falhou.push({ nome: arqs[i].name, motivo: r2.erro });
+    }
     fecharFormManual();
     await carregar(); pinta();
-    if(novo && novo.id) abrirDrawer(novo.id);
+    if(novo && novo.id){
+      abrirDrawer(novo.id);
+      if(falhou.length){
+        // >>> O AVISO VAI PRA FICHA, e não some num toast. Quem acabou de incluir precisa saber
+        //     EXATAMENTE qual arquivo não subiu — e continuar de onde parou, na tela onde o
+        //     botão de anexar está.
+        window._anexosQueFalharam = falhou;
+        setTimeout(() => {
+          const cx = document.getElementById('ed-msg');
+          if(cx) cx.innerHTML = '<b style="color:#ff9d92">⚠️ O negócio foi criado, mas '
+            + falhou.length + ' arquivo(s) NÃO subiram:</b><br>'
+            + falhou.map(x => '· ' + esc(x.nome) + ' — ' + esc(x.motivo)).join('<br>')
+            + '<br>Anexe de novo aqui embaixo.';
+        }, 400);
+      }
+    }
   }catch(e){ msg.textContent = 'não consegui incluir: ' + e.message; bt.disabled = false; }
+}
+
+/* ── SUBIR UM ANEXO — o caminho único ────────────────────────────────────────────────────────
+   Já havia dois lugares subindo arquivo (proposta e ata) com o mesmo código copiado; este é o
+   terceiro, e três cópias é onde uma delas começa a divergir. Agora as três chamam daqui.
+   Devolve `{ok, erro}` em vez de estourar: quem chama precisa CONTINUAR com os outros arquivos
+   quando um falha, e não abortar a fila inteira no primeiro tropeço. */
+async function subirAnexo(negocioId, arq, categoria){
+  try{
+    // Caminho sem acento e sem espaço: nome com caractere estranho quebra a URL assinada na hora
+    // de baixar, e o erro só aparece meses depois, na hora de precisar.
+    const limpo = arq.name.normalize('NFD').replace(/\p{M}/gu,'').toLowerCase().replace(/[^a-z0-9._-]+/g,'-');
+    const path = 'negocio-' + negocioId + '/' + categoria + '/' + Date.now() + '-' + limpo;
+    const up = await fetch(`${SB_URL}/storage/v1/object/documentos/${encodeURIComponent(path)}`, {
+      method:'POST', headers: Object.assign({}, SB_H), body: arq });
+    if(!up.ok) return { ok:false, erro: up.status===403 ? 'só gestor pode enviar arquivo' : ('o envio respondeu ' + up.status) };
+    const r = await fetch(`${SB_URL}/rest/v1/negocio_anexos`, {method:'POST',
+      headers: Object.assign({'Prefer':'return=representation'}, SB_H, {'Content-Type':'application/json'}),
+      body: JSON.stringify({ negocio_id: negocioId, categoria, arquivo_path: path,
+        arquivo_nome: arq.name, bytes: arq.size,
+        enviado_por: (window.gmAuth && gmAuth.user && gmAuth.user.email) || null })});
+    // >>> ARQUIVO NO BUCKET SEM LINHA NO BANCO É ARQUIVO QUE NINGUÉM ACHA. Se o registro falhar,
+    //     isto é uma falha — mesmo com o upload tendo dado certo.
+    if(!r.ok) return { ok:false, erro: 'o arquivo subiu, mas não consegui registrar (HTTP ' + r.status + ')' };
+    return { ok:true, linha: (await r.json())[0] };
+  }catch(e){ return { ok:false, erro: e.message }; }
 }
 
 /* ══ OS NÚMEROS DO TOPO — UM LUGAR SÓ ════════════════════════════════════════════════════════
@@ -2069,6 +2176,76 @@ function excelGanhas(){
     X.utils.book_append_sheet(wb, ws, 'Negócios ganhos');
     X.writeFile(wb, 'negocios-ganhos.xlsx');
   }).catch(e => alert(e.message));
+}
+
+/* ══ EDITAL E ANEXOS ═════════════════════════════════════════════════════════════════════════
+   Em qualquer negócio, e não só nos manuais. O índice do PNCP guarda o LINK do arquivo no site
+   deles; ter o PDF aqui é outra coisa — é o documento na mão de quem vai disputar, que não
+   depende do portal estar no ar no dia da sessão.
+
+   >>> O CLIQUE ABRE. Foi o pedido, com o exemplo dele: edital 50 da BLL, Prefeitura de Palmas —
+       clicou, abriu. Por link ASSINADO de 60 segundos, como todo anexo deste sistema: o bucket é
+       privado, e link de edital que vale para sempre é link que vaza. */
+let ANEXOS_EDITAL = [];
+async function carregarEdital(id){
+  const box = document.getElementById('ed-lista'); if(!box) return;
+  try{
+    const r = await fetch(`${SB_URL}/rest/v1/negocio_anexos?negocio_id=eq.${id}`
+      + '&categoria=in.(edital,anexo_edital)&select=*&order=categoria.asc,versao.desc', {headers:SB_H});
+    if(!r.ok) throw new Error('HTTP ' + r.status);
+    ANEXOS_EDITAL = await r.json();
+    pintaEdital(id);
+  }catch(e){
+    ANEXOS_EDITAL = [];
+    box.innerHTML = '<div class="salvo">não consegui ler os anexos ('+esc(e.message)+') — '
+      + 'isto <b>não</b> quer dizer que não existam.</div>';
+  }
+}
+const editalDoNegocio = () => ANEXOS_EDITAL.find(a => a.categoria === 'edital') || null;
+
+function pintaEdital(id){
+  const box = document.getElementById('ed-lista'); if(!box) return;
+  if(!ANEXOS_EDITAL.length){
+    box.innerHTML = '<div class="salvo">Nenhum edital anexado. Anexe aqui e ele fica junto do '
+      + 'negócio — sem depender do portal estar no ar no dia da sessão.</div>';
+    return;
+  }
+  const grupo = k => ANEXOS_EDITAL.filter(a => a.categoria === k);
+  const bloco = (k, rot) => {
+    const l = grupo(k); if(!l.length) return '';
+    return `<div style="margin-bottom:10px">
+      <div class="salvo" style="color:var(--azul-claro);font-weight:600">${rot} (${l.length})</div>
+      ${l.map(a => `<div class="anx">
+        <span class="v">v${a.versao}</span>
+        <span class="n" onclick="abrirAnexo('${esc(a.arquivo_path)}')" title="abrir o arquivo">${esc(a.arquivo_nome)}</span>
+        <span class="q">${esc(new Date(a.enviado_em).toLocaleDateString('pt-BR'))}${a.enviado_por?' · '+esc(String(a.enviado_por).split('@')[0]):''}${a.bytes?' · '+(a.bytes/1024).toFixed(0)+' KB':''}</span>
+      </div>`).join('')}</div>`;
+  };
+  box.innerHTML = bloco('edital', 'Edital') + bloco('anexo_edital', 'Anexos do edital');
+}
+
+async function anexarEdital(id){
+  const msg = document.getElementById('ed-msg'), bt = document.getElementById('ed-bt');
+  const arqs = Array.from((document.getElementById('ed-arq') || {}).files || []);
+  const cat = document.getElementById('ed-cat').value;
+  if(!arqs.length){ msg.textContent = 'escolha o arquivo.'; return; }
+  bt.disabled = true;
+  const falhou = [];
+  for(let i = 0; i < arqs.length; i++){
+    msg.textContent = 'subindo ' + (i+1) + ' de ' + arqs.length + '…';
+    const r = await subirAnexo(id, arqs[i], cat);
+    if(!r.ok) falhou.push({ nome: arqs[i].name, motivo: r.erro });
+  }
+  document.getElementById('ed-arq').value = '';
+  // O QUE SUBIU, SUBIU. Mesmo com uma falha no meio, os anteriores ficaram — dizer só "não deu
+  // certo" faria a pessoa mandar tudo de novo e criar versões duplicadas do que já estava lá.
+  msg.innerHTML = falhou.length
+    ? '<b style="color:#ff9d92">' + falhou.length + ' de ' + arqs.length + ' não subiram:</b><br>'
+      + falhou.map(x => '· ' + esc(x.nome) + ' — ' + esc(x.motivo)).join('<br>')
+      + (falhou.length < arqs.length ? '<br>Os outros ' + (arqs.length - falhou.length) + ' estão na lista acima.' : '')
+    : arqs.length + ' arquivo(s) anexado(s).';
+  await carregarEdital(id);
+  bt.disabled = false;
 }
 
 /* ══ GERENCIAMENTO DE ATA ═════════════════════════════════════════════════════════════════════

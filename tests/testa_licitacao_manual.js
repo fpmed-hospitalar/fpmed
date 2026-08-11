@@ -71,8 +71,10 @@ ok('19. ...e diz ONDE CONFERIR cada uma',
   /é o portal de origem/.test(N) && /podem ser conferidos lá/.test(N));
 ok('20. ...com o motivo (as tres sao legitimas e nenhuma e igual)',
   /As três são legítimas e nenhuma é igual/.test(uc(N)));
+// 11/08 à tarde: o bloco ganhou o aviso dos anexos que falharam, então o `abrirDrawer` deixou de
+// ser a única linha do `if`. O que o assert protege é o mesmo — quem incluiu vê a ficha na hora.
 ok('21. *** depois de criar, abre a FICHA do que nasceu ***',
-  /if\(novo && novo\.id\) abrirDrawer\(novo\.id\);/.test(N));
+  /if\(novo && novo\.id\)\{\s*abrirDrawer\(novo\.id\);/.test(N));
 
 // ══════════ 4. A DUPLICATA ══════════
 ok('22. *** existe a busca por duplicata ***', /function achaDuplicata\(portal, numero, orgao\)/.test(N));
