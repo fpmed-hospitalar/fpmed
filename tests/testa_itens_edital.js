@@ -160,8 +160,14 @@ ok('54. ...e a razao da confianca diferente esta escrita',
   /o índice erra por estar desatualizado/.test(um(G)));
 
 // ══════════ 10. O BOTAO NA FICHA DO NEGOCIO ══════════
+// Recorta a fileira em vez de casar distância: ela cresce a cada ação nova, e distância que
+// quebra sem nada do que se protege ter mudado é ruído que treina a gente a mexer no assert.
+const FILEIRA = (() => {
+  const i = N.indexOf('class="dw-acoes"'); if (i < 0) return '';
+  const j = N.indexOf('fecharDrawer()', i); return j < 0 ? '' : N.slice(i, j + 40);
+})();
 ok('55. *** o botao esta na FILEIRA DO RODAPE da ficha (junto de Documentos/Fechar) ***',
-  /class="dw-acoes"[\s\S]{0,1400}lerEditalIA\(\$\{n\.id\}\)[\s\S]{0,400}fecharDrawer\(\)/.test(N));
+  FILEIRA.includes('lerEditalIA(${n.id})') && FILEIRA.includes('fecharDrawer()'));
 ok('56. *** e ele NEM APARECE pra quem nao tem a permissao do piloto ***',
   /\$\{podeLerEdital\(\) \? `<button onclick="lerEditalIA/.test(N));
 ok('57. *** mas a tela DIZ que esconder botao nao e a permissao ***',

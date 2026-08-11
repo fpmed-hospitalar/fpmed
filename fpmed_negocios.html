@@ -950,6 +950,9 @@ function corpoDrawer(n, obs, carregando){
            aqui criaria o par que diverge — e o que diverge, nelas, é prazo legal. -->
       <button onclick="irParaPecas(${n.id})" title="abre as Peças jurídicas com os dados deste certame preenchidos">⚖️ Recurso / esclarecimento</button>
       ${podeLerEdital() ? `<button onclick="lerEditalIA(${n.id})" title="lê o PDF do edital com IA — cada leitura tem custo e fica registrada">📄 Ler edital (IA)</button>` : ''}
+      <!-- O teto CMED é decidido na hora do preço, e a hora do preço é aqui: quem está com a
+           ficha do pregão aberto é quem vai cotar. O Conferidor já existe; isto é atalho. -->
+      <button onclick="location.href='fpmed_conferidor.html'" title="confere a proposta contra o teto legal da CMED">⚖️ Conferir preços (CMED)</button>
       <button onclick="location.href='fpmed_documentos.html'">📄 Documentos</button>
       <button onclick="fecharDrawer()">Fechar</button>
     </div>`;

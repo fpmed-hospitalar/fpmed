@@ -525,6 +525,82 @@ Criado em 21/07/2026 copiando SO os arquivos do app do C:\globalmed.
     Suite nova testa_pix (17). Ela ja pegou uma 2a copia do CNPJ escrita num COMENTARIO do
     config — que e exatamente o jeito classico de a copia nascer (alguem copia do comentario).
 
+>>> 11/08 — CMED SEMPRE ATUALIZADA: a regua passou a dizer o nome dela.
+
+    O QUE JA EXISTIA, e vale registrar em vez de refazer por cima: o `carrega_cmed_precos.js` JA
+    acha o cabecalho por ANCORA (a linha que comeca em SUBSTANCIA, com >8 celulas) e JA mapeia as
+    aliquotas por NOME ("PMVG 19 %"), nao por posicao. Ou seja, metade do que o Lemuel pediu —
+    "parar se o cabecalho mudar de linha ou a coluna do PMVG 19% GO mudar de posicao" — ja estava
+    resolvida pelo desenho, e resolvida melhor do que parar: cabecalho que anda de linha e coluna
+    que anda de lugar continuam sendo achados. O que faltava era conferir ANTES da carga e DIZER.
+    >>> MEDIDO nas planilhas reais de hoje: o cabecalho da lista `site` esta na linha 42 e o da
+        `gov` na linha 54 — LINHAS DIFERENTES, na mesma edicao. E a coluna "PMVG 19 %" esta na 50,
+        e nao na 40. Uma trava por numero de linha ou por posicao de coluna estaria travando hoje,
+        sem nenhum problema existir.
+
+    1. A VIGENCIA (ddl/cmed_vigencia.sql). View `v_cmed_vigencia`, e NAO uma tabela de config.
+       A tentacao era guardar "edicao vigente: 21/07" numa linha; isso e uma INTENCAO GUARDADA, e
+       no dia em que a carga entrar pela metade ou alguem esquecer de atualizar a linha, a tela
+       afirma com confianca uma vigencia que o dado nao tem — o pior erro deste sistema, uma
+       resposta segura e errada. A view DERIVA a data das 25.702 linhas: nao tem como discordar da
+       base porque ela E a base.
+       >>> `vigente_desde` e a MAIS ANTIGA das duas listas (site e gov podem sair com dias de
+           diferenca). Anunciar a mais nova prometeria um frescor que metade da regua nao tem.
+       >>> `edicoes` denuncia carga pela metade: em condicao normal e 1.
+       HOJE: publicada 21/07/2026 · ha 21 dias · 25.702 apresentacoes · 2.722 com CAP · 1 edicao.
+
+    2. A ROTINA (tools/atualiza_cmed.js). UM comando: le a vigencia no ar, confere o layout das
+       duas planilhas, diz o que vai mudar, e so com --apply manda carregar.
+       >>> ELE NAO REIMPLEMENTA O PARSE. As 4 armadilhas da planilha (asterisco de nota, decimal
+           com virgula, "-" que nao e zero, CAP que troca a regua) ja estao resolvidas e em
+           producao no carregador. Duas leituras da mesma planilha seriam duas chances de errar em
+           silencio num numero que vira TETO LEGAL de proposta. Aqui ha conferencia; a carga e
+           delegada por execFileSync ao carregador de sempre.
+       PARA quando: falta o "Publicada em" no topo · sumiu o cabecalho · sumiu a coluna
+       "PMVG 19 %" (GO) · sumiu CÓDIGO GGREM ou CAP · a base ja tem duas edicoes convivendo ·
+       >>> e quando a planilha e MAIS VELHA que a base no ar. Essa trava faltava e e a que dói:
+           carregar edicao velha por cima da vigente REBAIXA a regua em silencio, e o erro so
+           aparece quando o pregoeiro desclassifica.
+       CONFERE DEPOIS, e nao so antes: relê a vigencia e mede o DESCONTO MEDIO DO CAP. Ele e ~21,5%
+       (medido hoje: 21,530% em 2.722 apresentacoes) e nao se move de uma edicao pra outra — se
+       vier 0% ou 60%, a coluna lida NAO era a que se pensava, e o teto sairia errado em 2.722
+       apresentacoes sem nenhum erro aparecer na tela.
+
+    3. A TRAVA FOI EXERCITADA, e nao so lida (tools/prova_trava_cmed.js). Fabrica planilhas
+       defeituosas a partir das REAIS, numa pasta temporaria, e roda o comando de verdade:
+         · coluna "PMVG 19 %" renomeada ....... PAROU  (esperado)
+         · sem "Publicada em" no topo ......... PAROU  (esperado)
+         · cabecalho 10 linhas mais abaixo .... SEGUIU (esperado)
+       O terceiro caso importa tanto quanto os dois primeiros: parar nele seria falso positivo
+       TODO MES, e alarme que toca a toa e alarme que se aprende a ignorar.
+
+    4. O CONFERIDOR DIZ QUAL REGUA USOU. Antes: "conferido contra 8 mil chaves da CMED" — que diz
+       o TAMANHO da regua e nao diz QUAL. Agora: "conferido contra N chaves da CMED publicada em
+       21/07/2026 (ha 21 dias)", com aviso quando passa de 45 dias (a CMED publica todo mes) e
+       quando ha duas edicoes convivendo. A frase sai de UM lugar (`frasePelaRegua`), porque ela
+       aparece em dois. Falhar em ler a vigencia NAO derruba a conferencia: a tela diz que nao sabe
+       a data, e nao inventa uma.
+       >>> E O .XLSX EXPORTADO LEVA A DATA DENTRO. Ele sai da tela e vive semanas no e-mail de
+           alguem: uma conferencia sem a data da CMED e uma afirmacao sem prazo de validade — daqui
+           a dois meses continua parecendo verdadeira, e o teto ja mudou.
+
+    5. ATALHO NA FICHA: "⚖️ Conferir preços (CMED)" na fileira do rodape. Atalho, nao segunda tela.
+
+    >>> O DOWNLOAD AUTOMATICO: INVESTIGADO E NAO FEITO, com o motivo. A pagina da ANVISA/CMED
+        entrega as duas planilhas por link que muda a cada publicacao, atras de uma pagina sem
+        endpoint estavel nem versionado. Um baixador por raspagem quebraria calado na primeira
+        mudanca de layout do site, e "nao baixou" viraria "a regua nao mudou" — a mentira que este
+        projeto nao aceita. Baixar as duas planilhas a mao e por na raiz continua sendo o passo
+        humano; TUDO o que vem depois esta num comando so.
+
+    Suite nova testa_cmed_vigencia (51). Total: 2.389 asserts / 0 falhas / 70 suites.
+    sw VERSAO limedtec-fpmed-2026-08-11-7.
+    >>> TRES ASSERTS DE OUTRAS SUITES foram reescritos pelo mesmo motivo, e vale a regra: eles
+        casavam a DISTANCIA entre dois botoes dentro da fileira do rodape da ficha, e quebravam a
+        cada botao novo — duas vezes no mesmo dia, sem nada do que protegem ter mudado. Agora
+        recortam a fileira e perguntam se o botao esta DENTRO dela. Distancia em regex e o tipo de
+        assert que treina a gente a mexer no teste em vez de olhar pro codigo.
+
 >>> 11/08 — CREDENCIAMENTO JUNTO A INDUSTRIA. A trilha sai do BANCO, e o esquecido toca o sino.
 
     A DECISAO DE MODELAGEM, que e a metade importante deste item: o pedido veio como "secao na

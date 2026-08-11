@@ -247,13 +247,44 @@ async function carregarIndice(){
     }
     return out;
   };
-  const [teto, dicionario] = await Promise.all([
+  /* ── A VIGÊNCIA VEM JUNTO (11/08) ────────────────────────────────────────────────────────
+     "Conferido contra 8 mil chaves da CMED" diz o TAMANHO da régua e não diz QUAL régua. São
+     coisas diferentes: a CMED publica todo mês, e uma proposta aprovada contra a edição de dois
+     meses atrás pode estar acima do teto que vale hoje — sem nada na tela ter parecido errado.
+     >>> A DATA É DERIVADA DAS PRÓPRIAS LINHAS (view v_cmed_vigencia), e não de uma configuração
+         escrita à mão. Configuração pode discordar da base; a derivada não tem como. */
+  const [teto, dicionario, vig] = await Promise.all([
     pega('cmed_teto?select=subst_norm,dose_key,apresentacoes,teto_min,teto_max,tem_cap'),
     pega('cmed_dicionario?select=marca_norm,substancia'),
+    // A vigência falhar NÃO pode derrubar a conferência: ela é a legenda do resultado, não o
+    // resultado. Sem ela a tela diz que não sabe a data — e não inventa uma.
+    fetch(`${SB_URL}/rest/v1/v_cmed_vigencia?select=*`, {headers:SB_H})
+      .then(r => r.ok ? r.json() : null).then(j => (j && j[0]) || null).catch(() => null),
   ]);
   IDX = T.indexar({ regua: [], teto, dicionario });
-  BASE = { teto: teto.length, dicionario: dicionario.length };
+  BASE = { teto: teto.length, dicionario: dicionario.length, vig };
   return IDX;
+}
+/* A FRASE DA RÉGUA, montada num lugar só porque ela aparece em dois (o resultado na tela e o
+   rodapé do que se imprime). Duas montagens seriam duas frases que um dia discordam sobre a
+   mesma data — num documento que vale como conferência de preço legal. */
+function frasePelaRegua(){
+  if(!BASE) return '';
+  const n = BASE.teto.toLocaleString('pt-BR');
+  const v = BASE.vig;
+  if(!v || !v.vigente_desde){
+    return `conferido contra ${n} chaves da CMED · <b style="color:#e6a817">não consegui ler qual edição</b> `
+         + `— confira a vigência antes de usar isto como conferência oficial`;
+  }
+  const d = new Date(String(v.vigente_desde).slice(0,10) + 'T12:00:00');
+  const dias = Number(v.dias_desde);
+  // MAIS DE 45 DIAS JÁ PASSOU DE UMA EDIÇÃO. A CMED publica todo mês; a tela avisa em vez de
+  // deixar a data lá quietinha, que é como se confere contra régua velha sem perceber.
+  const velha = isFinite(dias) && dias > 45;
+  return `conferido contra ${n} chaves da <b>CMED publicada em ${d.toLocaleDateString('pt-BR')}</b>`
+    + (isFinite(dias) ? ` (há ${dias} dias)` : '')
+    + (Number(v.edicoes) > 1 ? ` · <b style="color:#ff9d92">⚠️ a base tem ${v.edicoes} edições convivendo</b>` : '')
+    + (velha ? ' · <b style="color:#e6a817">⚠️ a CMED publica todo mês — provavelmente há edição mais nova</b>' : '');
 }
 
 async function conferir(){
@@ -288,8 +319,7 @@ function pintar(){
 
   const rot = { abaixo:'dentro do teto', acima:'ACIMA DO TETO', nao_encontrado:'não encontrado', sem_preco:'sem preço' };
   document.getElementById('resultado').style.display = 'block';
-  document.getElementById('base-msg').textContent = BASE
-    ? `conferido contra ${BASE.teto.toLocaleString('pt-BR')} chaves da CMED` : '';
+  document.getElementById('base-msg').innerHTML = frasePelaRegua();
   document.getElementById('linhas').innerHTML = RESULT.map(r => {
     const dif = r.situacao === 'acima' ? `<span style="color:#ff9d92">+${r.pctAcima}%</span>`
       : r.situacao === 'abaixo' ? `<span style="color:var(--verde)">−${r.folgaPct}% · ${brl(r.folgaRS)}</span>` : '—';
@@ -321,6 +351,20 @@ function exportar(){
     'Por': r.via || '',
   }));
   const ws = XLSX.utils.json_to_sheet(linhas);
+  /* ── A RÉGUA VAI DENTRO DA PLANILHA (11/08) ───────────────────────────────────────────────
+     Este .xlsx sai da tela e vive semanas no e-mail de alguém, longe do aviso que a tela mostra.
+     Uma conferência sem a data da CMED é uma afirmação sem prazo de validade: daqui a dois meses
+     ela continua parecendo verdadeira, e o teto já mudou. A linha entra ABAIXO da tabela, com uma
+     em branco no meio, pra não atrapalhar quem filtra ou ordena as colunas. */
+  const v = BASE && BASE.vig;
+  const regua = (v && v.vigente_desde)
+    ? 'Conferido contra a tabela CMED publicada em '
+      + new Date(String(v.vigente_desde).slice(0,10) + 'T12:00:00').toLocaleDateString('pt-BR')
+      + ' (' + Number(v.apresentacoes).toLocaleString('pt-BR') + ' apresentações)'
+    : 'ATENÇÃO: não foi possível identificar a edição da CMED usada nesta conferência.';
+  XLSX.utils.sheet_add_aoa(ws, [[], [regua],
+    ['Gerado em ' + new Date().toLocaleString('pt-BR') + ' · a CMED publica nova tabela todo mês.']],
+    { origin: -1 });
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Conferência CMED');
   const d = new Date();

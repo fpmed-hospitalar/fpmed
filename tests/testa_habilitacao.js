@@ -17,6 +17,16 @@ const N = R('fpmed_negocios.html');
 const P = R('fpmed_pecas.html');
 const DDL = R('ddl', 'lembretes_tipo.sql');
 
+// A FILEIRA DO RODAPÉ, recortada. Ela cresce (Arquivar · Recurso · Ler edital · CMED ·
+// Documentos · Fechar), e todo assert que casava a distância entre dois botões quebrava a cada
+// botão novo. Recortar o bloco e perguntar pelo conteúdo é estável e diz o que se quer dizer.
+function fileiraDoRodape() {
+  const i = N.indexOf('class="dw-acoes"');
+  if (i < 0) return '';
+  const j = N.indexOf('fecharDrawer()', i);
+  return j < 0 ? '' : N.slice(i, j + 40);
+}
+
 let p = 0, f = 0;
 const ok = (n, c, e) => { if (c) p++; else { f++; console.log('  FALHA ' + n + (e !== undefined ? '  [' + JSON.stringify(e) + ']' : '')); } };
 console.log('SUITE testa_habilitacao — rotulo, checklist e tarefas\n');
@@ -86,10 +96,11 @@ ok('22. tarefa SEM data nao vira alerta (o filtro do sino e por `quando`)',
 // ══════════ 5. O ATALHO DAS PECAS ══════════
 // (o bloco tem o comentário explicando a decisão no meio, então a distância é maior)
 ok('23. *** existe o botao na fileira do rodape da ficha ***',
-  // A janela cresceu em 11/08: o "📄 Ler edital (IA)" entrou na mesma fileira, entre as Peças e
-  // os Documentos. É a fileira certa — o que este assert protege é justamente ele ser fileira,
-  // e não um botão solto no meio da ficha.
-  /class="dw-acoes"[\s\S]{0,900}irParaPecas\(\$\{n\.id\}\)[\s\S]{0,600}fecharDrawer\(\)/.test(N));
+  // 11/08, 2ª vez: este assert casava a DISTÂNCIA até o `fecharDrawer` e quebrava toda vez que a
+  // fileira ganhava um botão — duas vezes no mesmo dia, sem nada do que ele protege ter mudado.
+  // Agora ele recorta a fileira e pergunta se o botão está DENTRO dela, que é o que ele sempre
+  // quis dizer: ação da ficha mora na fileira do rodapé, e não solta no meio da tela.
+  fileiraDoRodape().includes('irParaPecas(${n.id})'));
 ok('24. *** ele NAO duplica as Pecas: leva contexto e abre a tela que ja existe ***',
   /location\.href = 'fpmed_pecas\.html';/.test(N) && /atalho com contexto/i.test(N));
 ok('25. ...e o motivo (o que diverge, nelas, e prazo legal)',
