@@ -72,7 +72,28 @@ const dm = (iso: string) => (iso ? iso.slice(8, 10) + "/" + iso.slice(5, 7) + "/
    HTML de tabela e estilo INLINE, sem <style> e sem imagem externa: cliente de e-mail corta
    folha de estilo e bloqueia imagem por padrão, e um boletim que chega quebrado uma vez deixa
    de ser lido pra sempre. Nada de rastreador — o que se quer saber é se ele abriu o SISTEMA. */
-function montaEmail(nome: string, dia: string, itens: any[], sobraram: number, resumoFiltros: string) {
+// O bloco das sessões do dia. Fica ANTES da lista de novidades porque é o único item do e-mail
+// com hora marcada — o resto pode ser lido à tarde.
+function blocoSessoes(sessoes: any[]) {
+  if (!sessoes.length) return "";
+  const linhas = sessoes.map((s) => {
+    const hora = String(s.abertura || "").slice(11, 16);
+    const quem = [s.modalidade, s.numero].filter(Boolean).join(" ") || "Certame";
+    const onde = [s.municipio, s.uf].filter(Boolean).join("/");
+    return `<tr><td style="padding:9px 12px;border-bottom:1px solid #f0d9a8;font:13px/1.5 Arial,sans-serif;color:#5c4409">
+      <b style="font-size:15px">${esc(hora || "--:--")}</b> &nbsp; ${esc(quem)}
+      ${s.orgao ? " · " + esc(s.orgao) : ""}${onde ? " · " + esc(onde) : ""}
+      ${s.portal ? `<div style="color:#8a7433;font-size:12px;margin-top:2px">${esc(s.portal)}</div>` : ""}
+    </td></tr>`;
+  }).join("");
+  return `<div style="margin:0 22px 4px;border:1px solid #e8c96a;background:#fff8e6;border-radius:10px;overflow:hidden">
+    <div style="background:#f3dea0;padding:10px 12px;font:bold 13px Arial,sans-serif;color:#5c4409">
+      ⏰ HOJE TEM SESSÃO — ${sessoes.length} certame(s)</div>
+    <table style="width:100%;border-collapse:collapse">${linhas}</table>
+  </div>`;
+}
+
+function montaEmail(nome: string, dia: string, itens: any[], sobraram: number, resumoFiltros: string, sessoes: any[] = []) {
   const linhas = itens.map((l) => `
     <tr>
       <td style="padding:10px 12px;border-bottom:1px solid #e6edf3;font:13px/1.5 Arial,sans-serif;color:#173A5E">
@@ -93,6 +114,7 @@ function montaEmail(nome: string, dia: string, itens: any[], sobraram: number, r
       <div style="color:#fff;font-size:17px;font-weight:bold">FPMED · ${esc(nome)}</div>
       <div style="color:#8DC63F;font-size:13px;margin-top:3px">publicações de ${esc(dm(dia))}</div>
     </div>
+    ${blocoSessoes(sessoes)}
     <div style="padding:16px 22px 6px;font:13px/1.6 Arial,sans-serif;color:#4a6076">
       <b style="color:#173A5E">${itens.length}${sobraram ? "+" : ""} nova(s)</b> no seu jornal.
       <div style="color:#7a8ea3;font-size:12px;margin-top:4px">${esc(resumoFiltros)}</div>
@@ -148,6 +170,27 @@ Deno.serve(async (req) => {
       erro: "o indice ainda nao fechou o dia " + dia + " — boletim NAO enviado de proposito" });
   }
 
+  /* ══ AS SESSÕES DE HOJE ═════════════════════════════════════════════════════════════════════
+     "HOJE tem sessão: Pregão 19/2026, Prefeitura X, às 09:00" — é o aviso que muda o dia de
+     alguém, e por isso vai no TOPO do boletim, antes das licitações novas.
+     >>> ELE VEM DE `negocios.abertura`, o mesmo lugar de onde o sino lê. Não há tabela de
+         "lembrete de sessão": a abertura é FATO, e fato se lê de onde já está — se a data for
+         adiada na ficha, o e-mail de amanhã já sai com a nova, sem ninguém sincronizar nada.
+     >>> DIA DE GOIÁS, não UTC: às 5h da manhã lá são 8h UTC, e usar o dia UTC faria o "hoje" do
+         e-mail ser o dia certo por acaso e o errado nas madrugadas de virada. */
+  // `sessoesDe` existe pra PROVAR o bloco num dia que tenha sessão — num dia sem nenhuma, o
+  // caminho nunca roda e "não quebrou" não é o mesmo que "funciona". Em produção fica ausente e
+  // vale o dia de hoje.
+  const hojeGO = String(body.sessoesDe || new Date(Date.now() - 3 * 3600 * 1000).toISOString().slice(0, 10));
+  let sessoes: any[] = [];
+  try {
+    const rs = await fetch(`${SB_URL}/rest/v1/negocios`
+      + `?select=id,titulo,orgao,municipio,uf,portal,numero,modalidade,abertura,estagio`
+      + `&arquivado=is.false&abertura=gte.${hojeGO}T00:00:00&abertura=lte.${hojeGO}T23:59:59`
+      + `&order=abertura.asc`, { headers: H });
+    if (rs.ok) sessoes = await rs.json();
+  } catch { /* sem sessões conhecidas: o boletim segue sem o bloco */ }
+
   const rj = await fetch(`${SB_URL}/rest/v1/jornais?enviar_email=eq.true&select=*`, { headers: H });
   if (!rj.ok) return J({ ok: false, erro: "nao consegui ler os jornais: HTTP " + rj.status }, 200);
   const jornais = await rj.json();
@@ -198,7 +241,10 @@ Deno.serve(async (req) => {
 
     // NADA NOVO NÃO VIRA E-MAIL. Boletim que chega vazio todo dia deixa de ser aberto, e no dia
     // em que tiver algo dentro já vai estar sendo ignorado junto com os outros.
-    if (!novas.length) { pulados++; detalhe.push({ jornal: j.nome, motivo: "nada novo" }); continue; }
+    // >>> MAS SESSÃO DE HOJE MANDA O E-MAIL SAIR. Antes desta linha, um dia sem licitação nova
+    //     engolia o aviso de que HAVIA SESSÃO HOJE — o item mais urgente do sistema morrendo por
+    //     causa de uma regra que existia pra outro assunto.
+    if (!novas.length && !sessoes.length) { pulados++; detalhe.push({ jornal: j.nome, motivo: "nada novo" }); continue; }
 
     if (!RESEND) {
       semChave++;
@@ -209,7 +255,7 @@ Deno.serve(async (req) => {
     const mostrar = novas.slice(0, TETO_LINHAS);
     const html = montaEmail(j.nome, dia, mostrar, Math.max(0, novas.length - mostrar.length),
       [f.kw ? "palavras: " + f.kw : "", f.uf ? "UF " + f.uf : "", f.mod ? "modalidade " + f.mod : ""]
-        .filter(Boolean).join(" · ") || "sem filtro de palavra");
+        .filter(Boolean).join(" · ") || "sem filtro de palavra", sessoes);
 
     const re = await fetch("https://api.resend.com/emails", {
       method: "POST",
@@ -217,7 +263,11 @@ Deno.serve(async (req) => {
       body: JSON.stringify({
         from: REMETENTE,
         to: [body.teste || destino],
-        subject: `FPMED · ${novas.length} nova(s) em "${j.nome}" — ${dm(dia)}`,
+        // O ASSUNTO LIDERA COM A SESSÃO quando há uma: é o que a pessoa precisa saber olhando a
+        // lista de e-mails, sem abrir. "3 novas em Medicamentos GO" não faz ninguém correr.
+        subject: sessoes.length
+          ? `FPMED · HOJE tem sessão (${sessoes.length}) — ${dm(dia)}`
+          : `FPMED · ${novas.length} nova(s) em "${j.nome}" — ${dm(dia)}`,
         html,
       }),
     });

@@ -525,6 +525,40 @@ Criado em 21/07/2026 copiando SO os arquivos do app do C:\globalmed.
     Suite nova testa_pix (17). Ela ja pegou uma 2a copia do CNPJ escrita num COMENTARIO do
     config — que e exatamente o jeito classico de a copia nascer (alguem copia do comentario).
 
+>>> 11/08 — LEMBRETE AUTOMATICO DA ABERTURA DA SESSAO (ficha, sino e e-mail).
+    >>> A DECISAO QUE FAZ O PEDIDO FUNCIONAR: o lembrete da sessao e **DERIVADO** de
+        `negocios.abertura`, e NAO uma linha gravada em `lembretes`. Ele pediu "se a abertura for
+        editada, o lembrete acompanha sozinho" — gravar faria o OPOSTO: no dia do adiamento
+        haveria a data nova na ficha e a VELHA no lembrete, e alguem apareceria na sessao errada.
+        E e a regra que o projeto ja tinha escrito em 08/08: o sino avisa FATO (a sessao abre) e
+        fato se le de onde ja esta; LEMBRETE e INTENCAO, e intencao precisa de tabela porque sem
+        escrever mora na cabeca de quem pensou. Abertura e fato. Derivar e de graca e nunca diverge.
+        Por isso ele tambem NAO tem caixinha de "feito": ninguem conclui que a sessao vai abrir.
+    NA FICHA: aparece em primeiro lugar na aba Lembretes, marcado "automático — abertura da
+    sessão", com "É HOJE"/"é amanhã" em ambar, e conta no numero da aba.
+    NO SINO: ja mostrava hora; ganhou o botao do zap em hoje/amanha.
+    NO E-MAIL: bloco "⏰ HOJE TEM SESSÃO" no TOPO do boletim das 5h (e o unico item com hora
+    marcada; o resto pode ser lido a tarde), e o ASSUNTO passa a liderar com a sessao.
+    >>> E UMA REGRA ANTIGA PRECISOU DE EXCECAO: "nada novo nao vira e-mail" engolia o aviso de
+        sessao num dia sem licitacao nova — o item mais urgente do sistema morrendo por causa de
+        uma regra que existia pra outro assunto. Agora sessao de hoje FAZ o e-mail sair.
+    PROVADO com envio real: dia com sessao (12/08, P.E. 31/2026 as 11:00) -> e-mail entregue.
+    Pra isso a funcao ganhou `sessoesDe`: num dia sem sessao o caminho nunca roda, e "nao quebrou"
+    nao e o mesmo que "funciona".
+    >>> WHATSAPP — O QUE FOI FEITO E O QUE FICA PENDENTE DELE:
+        FEITO (de graca): botao "📱 avisar no zap" no lembrete e no sino. Abre o WhatsApp com a
+        mensagem PRONTA (wa.me sem numero: certame, orgao, local, hora, portal) e a pessoa so
+        escolhe o contato. Um clique a mais, zero mensalidade. A mensagem e montada pelo sistema
+        porque e isso que ela entrega: ninguem erra o horario nem o nº do pregao as 7h da manha.
+        *** PENDENTE, DECISAO DELE: envio 100% AUTOMATICO no zap e CONTRATACAO, nao codigo. ***
+        Exige a API oficial (WhatsApp Business Platform, via um BSP) ou um provedor tipo Twilio:
+        cadastro da empresa + verificacao do numero + custo POR CONVERSA. NAO contratei nada e
+        NAO levantei preco ainda — quando ele pedir, levanto as opcoes e o custo/mes pra ele
+        decidir. Enquanto isso o caminho gratuito acima cobre o caso.
+    >>> A RESTRICAO DO E-MAIL CONTINUA VALENDO: sem dominio verificado no Resend, o aviso de
+        sessao so chega no dono da conta (lemuelbarros@outlook.com), igual ao boletim.
+    Suite nova testa_lembrete_sessao (25). Total: 2.156 asserts / 0 falhas / 66 suites.
+
 >>> 11/08 — !! A BUSCA DIZIA "ZERO" SABENDO MENOS DO QUE SABIA. Investigacao da "albumina". !!
     Relato: Natanael buscou "albumina" de 26/07 a 11/08 e deu 0, com a tela mostrando 207 linhas.
     AS TRES RESPOSTAS QUE ELE PEDIU:

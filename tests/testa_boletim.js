@@ -82,8 +82,11 @@ ok('19. *** envio de TESTE nao carimba nada ***', /!body\.teste/.test(FN) && /te
 ok('20. falha de envio fica REGISTRADA na linha do jornal (envio mudo vira "parou de chegar")',
   /ultimo_envio_erro: deuCerto \? null :/.test(FN)
   && /add column if not exists ultimo_envio_erro/.test(DDL));
-ok('21. *** nada novo NAO vira e-mail ***',
-  /if \(!novas\.length\) \{ pulados\+\+;/.test(FN) && /deixa de ser aberto/.test(FN));
+// 11/08: a regra ganhou uma exceção, e a exceção é mais importante que a regra — SESSÃO DE HOJE
+// faz o e-mail sair mesmo sem licitação nova. Antes disso, um dia sem novidade engolia o aviso
+// de que havia sessão hoje: o item mais urgente do sistema morrendo por uma regra de outro assunto.
+ok('21. *** nada novo NAO vira e-mail — mas sessao de hoje SAI assim mesmo ***',
+  /if \(!novas\.length && !sessoes\.length\) \{ pulados\+\+;/.test(FN) && /deixa de ser aberto/.test(FN));
 
 // ══════════ 6. A PORTA ══════════
 ok('22. *** sem BOLETIM_TOKEN a funcao fica FECHADA (503), nunca aberta ***',
@@ -119,8 +122,11 @@ ok('29. duas rodadas do boletim nao se sobrepoem (mandaria o mesmo e-mail 2x)',
   const ctx = (new Function(
     'const URL_SISTEMA = "https://exemplo/fpmed_licitacoes.html";'
     + semTipos(FN.slice(FN.indexOf('const semAcento ='), FN.indexOf('/* ══ O E-MAIL')))
+    // `blocoSessoes` entrou em 11/08 e o `montaEmail` passou a chamá-lo: extrair só o segundo
+    // deixaria a suíte vermelha por falta de dependência, e não por defeito.
+    + semTipos(corpo('blocoSessoes'))
     + semTipos(corpo('montaEmail'))
-    + 'return { montaEmail, semAcento, brl, dm, esc };'))();
+    + 'return { montaEmail, blocoSessoes, semAcento, brl, dm, esc };'))();
 
   const html = ctx.montaEmail('Medicamentos GO', '2026-08-09', [
     { orgao: 'MUNICIPIO DE URUACU', municipio: 'Uruaçu', uf: 'GO', objeto: 'AQUISICAO DE MEDICAMENTOS',

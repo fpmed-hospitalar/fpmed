@@ -891,14 +891,59 @@ async function carregarLembretes(id){
   }
   pintaLembretes(id);
 }
+/* ── O LEMBRETE DA SESSÃO É DERIVADO, E NÃO UMA LINHA NO BANCO ───────────────────────────────
+   O pedido é "todo negócio com abertura ganha o lembrete SOZINHO, e se a data for editada o
+   lembrete acompanha". Gravar uma linha faria exatamente o contrário: no dia do adiamento
+   haveria a data nova na ficha e a velha no lembrete, e alguém apareceria na sessão errada.
+   >>> É a regra que este projeto já tinha escrito e que se aplica inteira aqui: o sino avisa
+       FATO (a sessão abre) e fato se lê de onde já está; LEMBRETE é INTENÇÃO, e intenção precisa
+       de tabela porque sem escrever mora na cabeça de quem pensou. A abertura da sessão é fato —
+       ela já está em `negocios.abertura`. Derivar é de graça e nunca diverge.
+   >>> Por isso ele também não tem caixinha de "feito": ninguém "conclui" que a sessão vai abrir.
+       Ele some quando o fato passa, igual ao resto do sino. */
+function lembreteDaSessao(n){
+  if(!n || !n.abertura || n.arquivado) return null;
+  const dia = diaDe(n.abertura), hoje = hojeYMD();
+  if(!dia || dia < hoje) return null;                 // sessão que já passou não é lembrete
+  const q = new Date(n.abertura);
+  const amanha = emDias(1);
+  return {
+    auto: true,
+    titulo: 'Abertura da sessão' + (n.numero ? ' — ' + n.numero : ''),
+    quando: n.abertura,
+    hora: horaDe(n.abertura) || null,
+    quandoTxt: q.toLocaleString('pt-BR'),
+    urgencia: dia === hoje ? 'hoje' : dia === amanha ? 'amanha' : null,
+    negocio: n,
+  };
+}
+
 function pintaLembretes(id){
   const box = document.getElementById('lem-lista'); if(!box) return;
   const cnt = document.getElementById('dw-lem-n');
-  const abertos = LEMBRETES.filter(l => !l.feito).length;
+  const n = NEG.find(x => x.id === id);
+  const auto = lembreteDaSessao(n);
+  const abertos = LEMBRETES.filter(l => !l.feito).length + (auto ? 1 : 0);
   if(cnt) cnt.textContent = abertos ? '(' + abertos + ')' : '';
-  if(!LEMBRETES.length){ box.innerHTML = '<div class="salvo">Nenhum lembrete agendado neste negócio.</div>'; return; }
+
+  // O automático vem PRIMEIRO e marcado como automático: quem lê precisa saber que ninguém
+  // digitou aquilo — e que apagar não é uma opção, porque não há o que apagar.
+  const cabeca = auto ? `<div class="lem" style="border-color:${auto.urgencia?'var(--ambar)':'var(--linha)'}">
+      <div style="width:16px;text-align:center">📅</div>
+      <div><div class="t">${esc(auto.titulo)}
+          ${auto.urgencia==='hoje' ? '<b style="color:var(--ambar)"> · É HOJE</b>'
+            : auto.urgencia==='amanha' ? '<b style="color:var(--ambar)"> · é amanhã</b>' : ''}</div>
+        <div class="q">${esc(auto.quandoTxt)} · <i>automático — abertura da sessão</i></div>
+        <div style="margin-top:6px"><button class="btn sec mini" onclick="event.stopPropagation();avisarNoZap(${id})"
+          title="abre o WhatsApp com a mensagem pronta — você só escolhe o contato">📱 avisar no zap</button></div>
+      </div>
+      <span class="prio" style="color:var(--azul-claro);border-color:var(--azul-claro)">sessão</span>
+    </div>` : '';
+
+  if(!LEMBRETES.length && !auto){ box.innerHTML = '<div class="salvo">Nenhum lembrete agendado neste negócio.</div>'; return; }
+  if(!LEMBRETES.length){ box.innerHTML = cabeca; return; }
   const agora = new Date();
-  box.innerHTML = LEMBRETES.map(l => {
+  box.innerHTML = cabeca + LEMBRETES.map(l => {
     const q = new Date(l.quando);
     const atrasado = !l.feito && q < agora;
     return `<div class="lem${l.feito?' feito':''}">
@@ -909,6 +954,35 @@ function pintaLembretes(id){
     </div>`;
   }).join('');
 }
+/* ── "AVISAR NO ZAP" — o que dá pra fazer DE GRAÇA, dito com todas as letras ─────────────────
+   Mandar WhatsApp SOZINHO exige contratar (API oficial do WhatsApp Business ou provedor tipo
+   Twilio): tem custo por mensagem e cadastro da empresa. Nada disso foi contratado.
+   O que existe aqui é o caminho gratuito: abrir o WhatsApp já com a MENSAGEM ESCRITA, e a
+   pessoa só escolhe o contato e aperta enviar. Um clique a mais, zero mensalidade.
+   >>> A MENSAGEM É MONTADA AQUI, e não digitada na hora, porque é isso que ela entrega: ninguém
+       erra o horário nem esquece o nº do pregão às 7h da manhã. É o mesmo motivo de a carta de
+       credenciamento ser gerada em vez de escrita. */
+function textoAvisoSessao(n){
+  const q = n.abertura ? new Date(n.abertura) : null;
+  const dia = q ? q.toLocaleDateString('pt-BR') : 'data a confirmar';
+  const hora = horaDe(n.abertura);
+  const partes = [
+    '*Sessão de licitação*',
+    [n.modalidade, n.numero].filter(Boolean).join(' ') || 'Certame',
+    n.orgao ? 'Órgão: ' + n.orgao : null,
+    (n.municipio || n.uf) ? 'Local: ' + [n.municipio, n.uf].filter(Boolean).join('/') : null,
+    'Abertura: ' + dia + (hora ? ' às ' + hora : ''),
+    n.portal ? 'Portal: ' + n.portal : null,
+  ].filter(Boolean);
+  return partes.join('\n');
+}
+function avisarNoZap(id){
+  const n = NEG.find(x => x.id === id); if(!n) return;
+  // wa.me sem número: o WhatsApp abre a lista de contatos com o texto pronto. Escolher o contato
+  // é da pessoa — o sistema não tem (nem quer ter) a agenda dela.
+  window.open('https://wa.me/?text=' + encodeURIComponent(textoAvisoSessao(n)), '_blank', 'noopener');
+}
+
 async function criarLembrete(id){
   const msg = document.getElementById('lem-msg'), bt = document.getElementById('lem-bt');
   const titulo = (document.getElementById('lem-titulo').value||'').trim();
@@ -1109,15 +1183,19 @@ function pintaNotif(){
   const total = n.urgentes + docsRuins + lemAbertos;
   cnt.textContent = total;
   cnt.style.display = total ? '' : 'none';
-  const linha = (x, cls) => {
+  const linha = (x, cls, zap) => {
     const h = horaDe(x.abertura);
+    // O "avisar no zap" só nas sessões de hoje e amanhã: é onde avisar alguém ainda muda o
+    // resultado. Na lista do que já passou ele seria só mais um botão.
     return `<a class="nf ${cls||''}" onclick="irPara(${x.id})">
       <div class="q">${h ? h + ' · ' : ''}${esc(x.orgao || x.objeto || 'negócio')}</div>
-      <div class="s">${esc([x.portal, x.numero, x.municipio].filter(Boolean).join(' · '))}</div></a>`;
+      <div class="s">${esc([x.portal, x.numero, x.municipio].filter(Boolean).join(' · '))}
+        ${zap ? `<span onclick="event.stopPropagation();avisarNoZap(${x.id})" title="abre o WhatsApp com a mensagem pronta"
+             style="margin-left:8px;cursor:pointer;color:var(--verde)">📱 avisar no zap</span>` : ''}</div></a>`;
   };
   let h = '';
-  if(n.hoje.length)   h += `<div class="nf-sec">abre hoje</div>` + n.hoje.map(x=>linha(x,'hoje')).join('');
-  if(n.amanha.length) h += `<div class="nf-sec">abre amanhã</div>` + n.amanha.map(x=>linha(x)).join('');
+  if(n.hoje.length)   h += `<div class="nf-sec">abre hoje</div>` + n.hoje.map(x=>linha(x,'hoje',true)).join('');
+  if(n.amanha.length) h += `<div class="nf-sec">abre amanhã</div>` + n.amanha.map(x=>linha(x,'',true)).join('');
   if(n.passou.length) h += `<div class="nf-sec">a sessão passou e o negócio continua na fase anterior (${n.passou.length})</div>`
                          + n.passou.slice(0,8).map(x=>linha(x)).join('');
   // ── DOCUMENTO VENCENDO ── o bloco que estava registrado como IMPOSSÍVEL ("depende de Meus
