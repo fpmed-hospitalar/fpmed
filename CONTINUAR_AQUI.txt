@@ -555,9 +555,39 @@ Criado em 21/07/2026 copiando SO os arquivos do app do C:\globalmed.
       nota da jornada que tocou, NA MESMA entrega.
     >>> LER OS TRES NO COMECO DA SESSAO, junto deste arquivo.
 
+>>> 11/08 — O PADRAO E O DESIGN SYSTEM ENTRARAM. LER NESTA ORDEM:
+    docs/constituicao.md ....... a ordem permanente do dono (o tripe e lei)
+    docs/PADRAO_EXCELENCIA.md .. O DOCUMENTO-MESTRE. Pagina de ouro (15 linhas que
+      se rele antes de CADA tarefa), linha de producao de 8 estacoes com criterio
+      de "pode passar", DEFINICAO DE PRONTO, 14 LICOES DE SANGUE (S1..S14, deste
+      projeto, cada uma com a regra que a impede de voltar), juramento do
+      relatorio, e a auto-fiscalizacao. >>> ESPERANDO O ACEITE DE DONO.
+    docs/manual_fundamentos.md · manual_excelencia.md · manual_design.md
+    docs/jornadas.md ........... 6 jornadas, nota honesta (duas vermelhas)
+
+    fpmed_tema.css — O DESIGN SYSTEM ESTA NO AR (item 2 da fila, FECHADO).
+    >>> ELE E INERTE DE PROPOSITO: nenhum seletor de elemento nu, so :root e
+        classes .fp-*. Da pra ligar em QUALQUER tela hoje sem mudar um pixel;
+        cada tela adota no dia da fatia dela. Isso e o "sem apagao" no CSS.
+    >>> LICAO S12, ACHADA MEDINDO: o #1b8dc4 que ja vivia no codigo como azul de
+        acao da 3,71:1 contra texto branco — REPROVA em AA. O botao principal do
+        sistema tinha rotulo dificil de ler e ninguem tinha notado, porque cor a
+        gente olha, nao mede. A rampa 600-900 foi refeita (600 = #1576a5, 5,04:1)
+        e testa_tema mede 22 pares a cada rodada.
+    >>> NENHUMA TELA CARREGA O TEMA AINDA, entao a VERSAO do service worker NAO
+        subiu — nao ha nada novo pro cache servir. Ela sobe na fatia do Encontrar,
+        que e a primeira tela a carregar o arquivo.
+
+    Suites: 3.070 asserts / 0 falhas / 83 suites (testa_tema 73, testa_padrao 44).
+    As duas passaram por TESTE DE MUTACAO. A primeira rodada achou 2 asserts meus
+    frouxos (contava 6 jornadas sem conferir os numeros; aceitava 1 dos 3
+    coeficientes da WCAG) e 1 assert cego no proprio testa_tema (skeleton cobrado
+    pelo nome da classe, nao pelo brilho). Os tres foram corrigidos e a segunda
+    rodada mordeu em 6 de 6.
+
 >>> PONTO EXATO DE RETOMADA — a fila numerada:
      1. [OK] spec da reforma (docs/spec_reforma_prime.md) — 4485c30
-     2. [ ] fpmed_tema.css — O DESIGN SYSTEM, e ele vem primeiro (adendo de excelencia)
+     2. [OK] fpmed_tema.css — O DESIGN SYSTEM, e ele vem primeiro (adendo de excelencia)
      3. [ ] menu lateral CLARO, refeito sobre os tokens, com icones Lucide e a lista:
             Buscar · Radar · Desertas · Meus Jornais · Calendario · Negocios · Documentos ·
             Proposta · Leitor IA · Pecas · Declaracoes · Conferir (+ Favoritas "em breve")

@@ -1,0 +1,409 @@
+/* ══════════════════════════════════════════════════════════════════════════
+   FPMED · TEMA — o design system.
+
+   Regra P6 do manual_excelencia.md: "quem abre qualquer tela do FPMED deve
+   sentir que UMA pessoa excelente fez tudo". Este arquivo é o que torna isso
+   possível — daqui pra frente, COR E ESPAÇAMENTO SÓ SAEM DAQUI.
+
+   ── COMO ESTE ARQUIVO SE COMPORTA ──────────────────────────────────────────
+   Ele é INERTE até ser usado. Não existe uma única regra de elemento nu
+   (nada de `input{}`, `button{}`, `body{}`), porque as telas antigas ainda
+   têm o CSS delas e carregar o tema não pode mudar nada sem eu mandar.
+   Só existem duas coisas:
+     · variáveis em :root  — os tokens;
+     · classes .fp-*       — os componentes.
+   Isso é o "sem apagão" aplicado ao CSS: dá pra ligar o tema em toda tela
+   hoje, e cada tela adota no dia da fatia dela.
+
+   ── IDENTIDADE ─────────────────────────────────────────────────────────────
+   Azul #2CA9E0 e verde #8DC63F são a marca FPMED, tirados do que já estava no
+   código (favicon e etiquetas), não inventados. As escalas em volta deles
+   foram construídas aqui.
+
+   ── REFERÊNCIAS (Regra Zero do manual_design.md) ───────────────────────────
+   Refactoring UI (Wathan/Schoger), via o resumo do livro e o guia de paleta:
+     · 9 tons por cor, e 8-10 tons de cinza, porque "quase tudo numa interface
+       é cinza" — texto, fundo, painel, borda, campo;
+     · cinza NUNCA puro: satura com azul pra combinar com a marca fria;
+     · nunca preto puro sobre branco puro;
+     · PROIBIDO gerar tom claro/escuro com rgba() — todo tom é declarado com
+       hex próprio, senão o contraste vira loteria em cima de fundo colorido.
+   W3C Design Tokens CG + prática corrente de token em CSS custom properties:
+     · escala de espaçamento derivada de uma unidade base, com nome por passo
+       e não por tamanho ("--esp-3", não "--esp-medio" — "médio" envelhece);
+     · conjunto FIXO de sombras como sistema de elevação, em vez de sombra
+       escrita à mão em cada lugar.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+:root{
+
+  /* ── CINZAS ────────────────────────────────────────────────────────────────
+     Dez tons, frios (tingidos de azul pra conversar com o #2CA9E0).
+     Os dois extremos de uso são lei do manual_design.md D4:
+     texto em --cinza-800 (#1a202c), fundo de página em --cinza-50 (#f7fafc).
+     Preto puro e branco puro NÃO existem como cor de texto/fundo aqui. */
+  --cinza-50:  #f7fafc;   /* fundo da página */
+  --cinza-100: #edf2f7;   /* fundo de bloco discreto, linha zebrada */
+  --cinza-200: #e2e8f0;   /* borda padrão, divisória */
+  --cinza-300: #cbd5e0;   /* borda de campo, borda em hover */
+  --cinza-400: #a0aec0;   /* placeholder, ícone desligado */
+  --cinza-500: #667286;   /* o cinza MAIS CLARO que ainda passa em AA — placeholder */
+  --cinza-600: #4a5568;   /* RÓTULO — o cinza de texto secundário (D9) */
+  --cinza-700: #2d3748;   /* texto forte alternativo */
+  --cinza-800: #1a202c;   /* TEXTO PRINCIPAL */
+  --cinza-900: #121721;   /* fundo escuro, quando houver */
+  --branco:    #ffffff;   /* fundo de cartão — só como superfície, nunca da página */
+
+  /* ── AZUL FPMED ───────────────────────────────────────────────────────────
+     #2CA9E0 é a marca e mora no 500. Regra D5: azul SÓ em ação principal e link.
+
+     Cada degrau tem UM ofício, e é o ofício que define o tom (L2 — a estrutura
+     antes do código; aqui, a função antes da cor):
+       500  preenchimento da marca (barra, etiqueta cheia) — NÃO carrega texto branco
+       600  A COR DA AÇÃO: fundo do botão principal, com texto branco por cima
+       700  texto azul e link sobre fundo claro; e o hover do botão principal
+       800  painel escuro, texto sobre fundo azul claro
+       900  o mais fundo, pra texto dentro de aviso azul
+
+     >>> ESTA RAMPA FOI CORRIGIDA POR MEDIÇÃO, NÃO POR GOSTO.
+     O #1b8dc4 — o azul que já vivia no código como hover — dá 3,71:1 contra
+     texto branco. Reprova em AA. Ou seja: o botão principal do sistema, no tom
+     que já estava em uso, tinha rótulo difícil de ler pra quem enxerga menos.
+     Ninguém tinha notado porque ninguém tinha medido. Os degraus 600 a 900
+     foram refeitos até o branco passar com folga (600 dá 5,04:1), e a suíte
+     `testa_tema` mede isso a cada rodada pra não voltar. */
+  --azul-50:  #eaf6fc;
+  --azul-100: #cfeaf8;
+  --azul-200: #a5daf3;
+  --azul-300: #74c8ec;
+  --azul-400: #4bb8e6;
+  --azul-500: #2ca9e0;   /* «» MARCA */
+  --azul-600: #1576a5;   /* fundo do botão principal — branco por cima dá 5,04:1 */
+  --azul-700: #115d84;   /* link, texto azul, hover do botão principal */
+  --azul-800: #0d4762;
+  --azul-900: #0a3446;
+
+  /* ── VERDE FPMED ──────────────────────────────────────────────────────────
+     #8DC63F é a marca e mora no 500. Regra D5: verde SÓ em positivo/sucesso.
+
+     ATENÇÃO — o verde da marca é claro: sobre branco ele dá 1,9:1 e reprova
+     como texto. Isso não é defeito do verde, é o ofício dele: verde-500 é
+     PREENCHIMENTO (pílula cheia, barra de progresso, etiqueta), com o texto
+     por cima em --cinza-800. Texto verde usa --verde-700.
+     A suíte tem um assert que EXIGE essa reprovação: no dia em que alguém
+     "consertar" o verde-500 pra passar em AA, o vermelho avisa que o que
+     mudou foi a MARCA, e não um token. */
+  --verde-50:  #f2f9e8;
+  --verde-100: #e2f2cc;
+  --verde-200: #cbe8a4;
+  --verde-300: #b3dc79;
+  --verde-400: #9fd158;
+  --verde-500: #8dc63f;   /* «» MARCA */
+  --verde-600: #6fa32c;
+  --verde-700: #4e7420;   /* texto verde sobre claro */
+  --verde-800: #3d5a19;
+  --verde-900: #2c4113;
+
+  /* ── VERMELHO — perigo, erro, prejuízo (D5: SÓ em perigo) ────────────────── */
+  --vermelho-50:  #fdecea;
+  --vermelho-100: #fbd5d0;
+  --vermelho-300: #f09a90;
+  --vermelho-500: #e0574a;
+  --vermelho-600: #c62f21;
+  --vermelho-700: #9d2318;   /* texto de erro sobre claro */
+  --vermelho-800: #7a1c13;
+
+  /* ── ÂMBAR — atenção, pendência, prazo curto (D5: SÓ em atenção) ──────────
+     O #e0a04a já era o âmbar mais usado do sistema; virou o 500. */
+  --ambar-50:  #fdf5e8;
+  --ambar-100: #f9e6c4;
+  --ambar-300: #edc07a;
+  --ambar-500: #e0a04a;
+  --ambar-600: #a8701f;
+  --ambar-700: #825616;   /* texto de aviso sobre claro */
+  --ambar-800: #5f3f10;
+
+  /* ── ESPAÇAMENTO — grade de 8px (D3) ──────────────────────────────────────
+     Nome por PASSO, não por tamanho: "médio" envelhece assim que aparece um
+     tamanho no meio; número não envelhece. O passo 1 (4px) é a meia-unidade,
+     e existe só pra colar rótulo no seu valor (D7). */
+  --esp-1: 4px;
+  --esp-2: 8px;
+  --esp-3: 12px;
+  --esp-4: 16px;
+  --esp-6: 24px;
+  --esp-8: 32px;
+  --esp-12: 48px;
+  --esp-16: 64px;
+
+  /* ── RAIOS ──────────────────────────────────────────────────────────────── */
+  --raio-cartao: 8px;
+  --raio-botao: 6px;
+  --raio-pilula: 999px;
+
+  /* ── SOMBRAS ──────────────────────────────────────────────────────────────
+     D6 manda 2 níveis dentro da página: repouso e flutuando. O terceiro nível
+     NÃO é um "meio-termo" — ele existe só pro que paira sobre a tela inteira
+     (modal, menu suspenso). Dentro da página, usar 1 e 2 e mais nada.
+     Todas pretas e translúcidas: sombra colorida é lista negra (D13). */
+  --sombra-1: 0 1px 2px rgba(18,23,33,.06), 0 1px 3px rgba(18,23,33,.08);
+  --sombra-2: 0 2px 4px rgba(18,23,33,.06), 0 4px 12px rgba(18,23,33,.10);
+  --sombra-3: 0 8px 16px rgba(18,23,33,.10), 0 16px 40px rgba(18,23,33,.16);
+
+  /* ── TIPOGRAFIA ───────────────────────────────────────────────────────────
+     UMA família. Montserrat já era a fonte da marca; o que mudou é que ela
+     deixa de ser uma APOSTA: a pilha de reserva é toda de fonte do sistema,
+     então a tela nunca fica esperando a rede pra pintar texto (A5/D14) e
+     continua legível se o Google Fonts não responder — inclusive offline,
+     que importa porque o sistema é PWA.
+     Escala fixa de 6 degraus. Altura de linha 1.5 em texto e 1.2 em título (D4). */
+  --fonte: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+           'Helvetica Neue', Arial, sans-serif;
+
+  --txt-1: 12px;   /* rótulo, etiqueta, nota de rodapé */
+  --txt-2: 14px;   /* CORPO PADRÃO — ferramenta densa lê melhor em 14 */
+  --txt-3: 16px;   /* corpo grande, valor de destaque no cartão */
+  --txt-4: 20px;   /* título de bloco */
+  --txt-5: 24px;   /* título de tela */
+  --txt-6: 32px;   /* número herói, e olhe lá */
+
+  --altura-texto: 1.5;
+  --altura-titulo: 1.2;
+
+  /* Quatro pesos existem; DOIS por bloco é o teto (regra do adendo). */
+  --peso-normal: 400;
+  --peso-medio: 500;
+  --peso-semi: 600;
+  --peso-forte: 700;
+
+  /* ── MOVIMENTO ────────────────────────────────────────────────────────────
+     150ms é o número do manual (A4). Um só, pra tudo: transição que varia de
+     lugar pra lugar é o tipo de inconsistência que ninguém sabe nomear mas
+     todo mundo sente. */
+  --transicao: 150ms ease;
+
+  /* ── LEITURA ──────────────────────────────────────────────────────────────
+     Largura máxima de linha de texto corrido. Parágrafo que atravessa um
+     monitor de 1920 é ilegível — o olho perde a linha na volta. */
+  --largura-leitura: 880px;
+
+  /* ── ANEL DE FOCO ─────────────────────────────────────────────────────────
+     Foco visível é obrigatório (adendo). Anel externo, nunca `outline:none`
+     sem substituto — quem navega por teclado precisa saber onde está. */
+  --foco: 0 0 0 3px var(--azul-200);
+}
+
+/* ══ SUPERFÍCIES ═══════════════════════════════════════════════════════════ */
+
+.fp-pagina{
+  background: var(--cinza-50);
+  color: var(--cinza-800);
+  font-family: var(--fonte);
+  font-size: var(--txt-2);
+  line-height: var(--altura-texto);
+}
+
+/* O cartão é a unidade de agrupamento do sistema. Sombra 1 em repouso e
+   borda finíssima — D6: sombra pesada + borda grossa juntas é cara de
+   template. Aqui a borda é quase invisível e existe só pra segurar o cartão
+   quando ele cai sobre um fundo claro demais. */
+.fp-cartao{
+  background: var(--branco);
+  border: 1px solid var(--cinza-200);
+  border-radius: var(--raio-cartao);
+  box-shadow: var(--sombra-1);
+  padding: var(--esp-4);
+}
+.fp-cartao--clicavel{ cursor: pointer; transition: box-shadow var(--transicao), border-color var(--transicao); }
+.fp-cartao--clicavel:hover{ box-shadow: var(--sombra-2); border-color: var(--cinza-300); }
+.fp-cartao--plano{ box-shadow: none; }
+
+/* Flutua sobre a tela inteira: só menu suspenso e modal. */
+.fp-sobreposto{
+  background: var(--branco);
+  border: 1px solid var(--cinza-200);
+  border-radius: var(--raio-cartao);
+  box-shadow: var(--sombra-3);
+}
+
+/* ══ TEXTO ═════════════════════════════════════════════════════════════════ */
+
+.fp-titulo-tela{ font-size: var(--txt-5); font-weight: var(--peso-semi); line-height: var(--altura-titulo); color: var(--cinza-800); margin: 0; }
+.fp-titulo-bloco{ font-size: var(--txt-4); font-weight: var(--peso-semi); line-height: var(--altura-titulo); color: var(--cinza-800); margin: 0; }
+.fp-texto{ font-size: var(--txt-2); color: var(--cinza-800); line-height: var(--altura-texto); }
+.fp-apoio{ font-size: var(--txt-1); color: var(--cinza-600); line-height: var(--altura-texto); }
+.fp-leitura{ max-width: var(--largura-leitura); }
+
+/* D9 — RÓTULO DESENFATIZADO, VALOR FORTE.
+   Este par é o que separa "cara de sistema antigo" de "cara de produto":
+   `Abertura: 14/08/2026 09:00:00` tudo do mesmo peso vira ruído; rótulo
+   pequeno em cima e valor forte embaixo o olho lê sem ler. */
+.fp-rotulo{
+  display: block;
+  font-size: var(--txt-1);
+  font-weight: var(--peso-semi);
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--cinza-600);
+  margin-bottom: var(--esp-1);   /* meia-unidade: o rótulo COLA no seu valor (D7) */
+}
+.fp-valor{
+  display: block;
+  font-size: var(--txt-3);
+  font-weight: var(--peso-semi);
+  color: var(--cinza-800);
+  line-height: var(--altura-titulo);
+}
+
+/* Número em tabela e em cartão: dígitos de largura igual, senão a coluna de
+   R$ dança a cada linha. */
+.fp-num{ font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1; }
+
+/* ══ BOTÕES ════════════════════════════════════════════════════════════════
+   Quatro variantes e acabou. D8: 2 a 3 ações visíveis por contexto — se a
+   tela precisa de um quinto tipo de botão, o problema é a tela. */
+
+.fp-btn{
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--esp-2);
+  padding: var(--esp-2) var(--esp-4);
+  border: 1px solid transparent;
+  border-radius: var(--raio-botao);
+  font-family: var(--fonte);
+  font-size: var(--txt-2);
+  font-weight: var(--peso-semi);
+  line-height: 1.2;
+  cursor: pointer;
+  transition: background-color var(--transicao), border-color var(--transicao), color var(--transicao), box-shadow var(--transicao);
+  white-space: nowrap;
+}
+.fp-btn:focus-visible{ outline: none; box-shadow: var(--foco); }
+.fp-btn[disabled], .fp-btn[aria-disabled="true"]{
+  cursor: not-allowed;
+  background: var(--cinza-100);
+  border-color: var(--cinza-200);
+  color: var(--cinza-400);
+  box-shadow: none;
+}
+
+/* A ação principal. UMA por contexto — é ela que o azul serve (D5). */
+.fp-btn--principal{ background: var(--azul-600); color: var(--branco); }
+.fp-btn--principal:hover:not([disabled]){ background: var(--azul-700); }
+
+/* A ação secundária: mesma importância visual de um campo, não de um botão. */
+.fp-btn--contorno{ background: var(--branco); border-color: var(--cinza-300); color: var(--cinza-800); }
+.fp-btn--contorno:hover:not([disabled]){ background: var(--cinza-50); border-color: var(--cinza-400); }
+
+/* A ação terciária: só texto, pra não competir com nada. */
+.fp-btn--texto{ background: transparent; color: var(--azul-700); padding-left: var(--esp-2); padding-right: var(--esp-2); }
+.fp-btn--texto:hover:not([disabled]){ background: var(--azul-50); }
+
+/* Perigo. Só onde há perda: excluir, cancelar proposta, encerrar. */
+.fp-btn--perigo{ background: var(--vermelho-600); color: var(--branco); }
+.fp-btn--perigo:hover:not([disabled]){ background: var(--vermelho-700); }
+
+.fp-btn--pequeno{ padding: var(--esp-1) var(--esp-3); font-size: var(--txt-1); }
+
+/* ══ CAMPOS ════════════════════════════════════════════════════════════════ */
+
+.fp-campo{
+  width: 100%;
+  box-sizing: border-box;
+  padding: var(--esp-2) var(--esp-3);
+  border: 1px solid var(--cinza-300);
+  border-radius: var(--raio-botao);
+  background: var(--branco);
+  font-family: var(--fonte);
+  font-size: var(--txt-2);
+  color: var(--cinza-800);
+  line-height: var(--altura-texto);
+  transition: border-color var(--transicao), box-shadow var(--transicao);
+}
+.fp-campo::placeholder{ color: var(--cinza-400); }
+.fp-campo:hover:not([disabled]){ border-color: var(--cinza-400); }
+.fp-campo:focus{ outline: none; border-color: var(--azul-500); box-shadow: var(--foco); }
+.fp-campo[disabled]{ background: var(--cinza-100); color: var(--cinza-400); cursor: not-allowed; }
+
+/* Campo com erro: a borda muda E a mensagem aparece. Só a cor não basta —
+   quem não distingue vermelho fica sem saber o que houve. */
+.fp-campo--erro{ border-color: var(--vermelho-600); }
+.fp-campo--erro:focus{ box-shadow: 0 0 0 3px var(--vermelho-100); }
+.fp-erro-campo{ display: block; margin-top: var(--esp-1); font-size: var(--txt-1); color: var(--vermelho-700); }
+
+/* ══ PÍLULAS / ETIQUETAS ═══════════════════════════════════════════════════
+   Fundo no tom 50/100 e texto no tom 700 pra cima: é assim que a cor
+   informa sem gritar (D5), e é assim que o texto passa em AA. */
+
+.fp-pilula{
+  display: inline-flex;
+  align-items: center;
+  gap: var(--esp-1);
+  padding: var(--esp-1) var(--esp-3);
+  border-radius: var(--raio-pilula);
+  font-size: var(--txt-1);
+  font-weight: var(--peso-semi);
+  line-height: 1.4;
+  white-space: nowrap;
+}
+.fp-pilula--neutra{ background: var(--cinza-100); color: var(--cinza-700); }
+.fp-pilula--boa{ background: var(--verde-100); color: var(--verde-700); }
+.fp-pilula--atencao{ background: var(--ambar-100); color: var(--ambar-700); }
+.fp-pilula--perigo{ background: var(--vermelho-100); color: var(--vermelho-700); }
+.fp-pilula--info{ background: var(--azul-100); color: var(--azul-700); }
+
+/* ══ AVISOS ════════════════════════════════════════════════════════════════
+   "Erro que não grita" (adendo): faixa clara, texto escuro, barra lateral
+   dando o tom. Nada de bloco vermelho saturado ocupando meia tela — susto
+   não é informação. */
+
+.fp-aviso{
+  display: flex;
+  gap: var(--esp-3);
+  padding: var(--esp-3) var(--esp-4);
+  border-radius: var(--raio-cartao);
+  border-left: 3px solid transparent;
+  font-size: var(--txt-2);
+  line-height: var(--altura-texto);
+}
+.fp-aviso--info{ background: var(--azul-50); border-left-color: var(--azul-500); color: var(--azul-900); }
+.fp-aviso--boa{ background: var(--verde-50); border-left-color: var(--verde-500); color: var(--verde-900); }
+.fp-aviso--atencao{ background: var(--ambar-50); border-left-color: var(--ambar-500); color: var(--ambar-800); }
+.fp-aviso--erro{ background: var(--vermelho-50); border-left-color: var(--vermelho-500); color: var(--vermelho-800); }
+
+/* ══ ESTADOS DE CARREGAMENTO E VAZIO ═══════════════════════════════════════ */
+
+/* Skeleton: A5 manda skeleton imediato, nunca tela branca. O bloco tem que
+   ter a MESMA altura do conteúdo que vai chegar, senão a tela pula quando o
+   dado carrega — e pulo de layout é defeito nomeado (D14). */
+.fp-skeleton{
+  background: linear-gradient(90deg, var(--cinza-100) 25%, var(--cinza-200) 37%, var(--cinza-100) 63%);
+  background-size: 400% 100%;
+  border-radius: var(--raio-botao);
+  animation: fp-brilho 1.4s ease infinite;
+}
+@keyframes fp-brilho{ 0%{ background-position: 100% 50%; } 100%{ background-position: 0 50%; } }
+.fp-skeleton--linha{ height: 12px; margin-bottom: var(--esp-2); }
+.fp-skeleton--titulo{ height: 20px; width: 40%; margin-bottom: var(--esp-3); }
+.fp-skeleton--cartao{ height: 96px; margin-bottom: var(--esp-3); border-radius: var(--raio-cartao); }
+
+/* Vazio COM AÇÃO. Estado vazio que só diz "nenhum resultado" é um beco:
+   o usuário fica sem saber se o sistema quebrou ou se ele buscou errado.
+   Todo vazio nosso diz o que houve e oferece a próxima jogada. */
+.fp-vazio{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--esp-3);
+  padding: var(--esp-12) var(--esp-6);
+  text-align: center;
+  color: var(--cinza-600);
+}
+.fp-vazio__titulo{ font-size: var(--txt-3); font-weight: var(--peso-semi); color: var(--cinza-800); }
+.fp-vazio__texto{ font-size: var(--txt-2); max-width: 420px; }
+
+@media (prefers-reduced-motion: reduce){
+  .fp-skeleton{ animation: none; }
+  .fp-cartao--clicavel, .fp-btn, .fp-campo{ transition: none; }
+}
