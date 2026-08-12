@@ -115,5 +115,34 @@ const d = (n) => new Date(Date.UTC(2026, 7, 12 - n)).toISOString().slice(0, 10);
     A.DIAS_INDICE_VELHO === 2 && A.HORAS_SEM_TENTAR === 12, [A.DIAS_INDICE_VELHO, A.HORAS_SEM_TENTAR]);
 }
 
+// ══ 10. A PARTE (A): O ALARME DE 2 FALHAS NOSSAS SEGUIDAS, NO WORKFLOW ══════════════════════
+// >>> POR QUE ISTO E COBRADO AQUI E NAO SO NO YAML: regra que mora so em arquivo de
+//     configuracao nao roda em teste nenhum. O dia em que alguem "limpar" o passo do alarme,
+//     ele some sem barulho — que e exatamente o defeito que o alarme existe pra impedir.
+{
+  const fs2 = require('fs');
+  const YML = fs2.readFileSync(path.join(__dirname, '..', '.github', 'workflows', 'coleta-pncp.yml'), 'utf8');
+
+  ok('*** 21. o workflow tem o passo do alarme ***', /- name: Alarme/.test(YML));
+  ok('22. e ele so roda quando o passo de cima CAIU (`if: failure()`)', /if: failure\(\)/.test(YML));
+  // A fronteira "falha nossa x fonte fora" nao pode ser reimplementada no alarme: ela ja existe
+  // no passo do curl, e duas definicoes de "falhou" no mesmo arquivo divergem na primeira mexida.
+  ok('*** 23. HTTP != 200 continua derrubando o passo (e a fronteira que o alarme herda) ***',
+    /if \[ "\$HTTP" != "200" \]; then[\s\S]{0,200}exit 1/.test(YML));
+  ok('*** 24. e `ok:false` (fonte fora) continua sendo AVISO, nao falha ***',
+    /if \[ "\$OK" != "true" \]; then[\s\S]{0,200}::warning::/.test(YML));
+  ok('25. o alarme le o historico pela API (permission actions:read declarada)',
+    /^\s+actions:\s+read/m.test(YML) && /actions\/workflows\/coleta-pncp\.yml\/runs/.test(YML));
+  ok('26. ...e EXCLUI a rodada de agora da contagem (senao ela se contaria)',
+    /select\(\.id != \$\{\{ github\.run_id \}\}\)/.test(YML));
+  ok('*** 27. na 1a falha e AVISO; o ALARME so sai da 2a em diante ***',
+    /-ge 2 \]; then[\s\S]{0,400}::error::/.test(YML) && /::warning::1a falha nossa/.test(YML));
+  ok('28. e o alarme diz O QUE CONFERIR, e nao so que falhou',
+    /COLETA_TOKEN ainda vale/.test(YML) && /projeto Supabase esta ativo/.test(YML));
+  // o token e o do proprio GitHub: sem segredo novo num repositorio PUBLICO
+  ok('*** 29. usa o github.token, sem segredo novo (o repo e publico) ***',
+    /GH_TOKEN: \$\{\{ github\.token \}\}/.test(YML) && !/secrets\.\w*ALARME/.test(YML));
+}
+
 console.log('\nRESULTADO: ' + p + ' ok, ' + f + ' falha(s)');
 process.exitCode = f ? 1 : 0;

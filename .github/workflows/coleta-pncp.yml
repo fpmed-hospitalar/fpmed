@@ -36,7 +36,8 @@ on:
         default: ''
 
 permissions:
-  contents: read          # o workflow não escreve nada no repositório
+  contents: read          # o workflow nao escreve nada no repositorio
+  actions:  read          # so PRA LER o historico de rodadas (o alarme de 2 falhas seguidas)
 
 concurrency:
   group: coleta-pncp
@@ -97,4 +98,58 @@ jobs:
           #     de frescor no banco (`coleta_status.ultima_ok`) continua sendo a verdade.
           if [ "$OK" != "true" ]; then
             echo "::warning::Coleta parcial — a fonte não colaborou ($ERRO). O banco ficou como estava; nada foi apagado."
+          fi
+
+      # ══ ALARME DE 2 FALHAS NOSSAS SEGUIDAS ═══════════════════════════════════════════════════
+      # A cicatriz: a coleta falhou 12 vezes seguidas entre 07 e 10/08 e voltou sozinha ao verde.
+      # Ninguem soube. "Falha que se conserta sozinha some do olhar."
+      #
+      # >>> ELE SO CONTA FALHA NOSSA. "Fonte fora do ar" nao entra, e essa regra ja estava
+      #     decidida por escrito acima: HTTP != 200 e problema NOSSO (funcao fora, token errado,
+      #     projeto pausado) e derruba o passo; `ok:false` e o PNCP nao colaborando, e vira
+      #     aviso. O alarme herda essa fronteira em vez de inventar outra — duas definicoes de
+      #     "falhou" no mesmo arquivo divergiriam na primeira vez que alguem mexesse numa.
+      #
+      # >>> POR QUE `if: failure()`: ele so roda quando o passo de cima caiu, e o passo de cima
+      #     so cai por falha NOSSA. Entao a fronteira nao precisa ser reimplementada aqui.
+      #
+      # >>> E POR QUE O JOB CONTINUA VERMELHO NA 1a: porque ele FALHOU MESMO. Engolir a primeira
+      #     pra "nao fazer barulho" apagaria o rastro que a segunda precisa ler — e este passo
+      #     descobriria um historico de sucessos onde houve falha. O que muda da 1a pra 2a nao e
+      #     a cor: e o TEXTO. A 1a diz "aconteceu"; a 2a diz "isto nao e acaso, va olhar".
+      - name: Alarme — duas falhas nossas seguidas
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -uo pipefail
+          # historico das ultimas rodadas DESTE workflow, so as ja concluidas
+          RUNS=$(gh api "repos/${GITHUB_REPOSITORY}/actions/workflows/coleta-pncp.yml/runs?status=completed&per_page=10" \
+                 --jq '[.workflow_runs[] | select(.id != ${{ github.run_id }})] | .[0:5] | map(.conclusion)' 2>/dev/null || echo '[]')
+          echo "conclusoes anteriores: $RUNS"
+
+          # quantas falhas SEGUIDAS logo antes desta (a de agora nao esta na lista)
+          SEGUIDAS=$(echo "$RUNS" | jq -r 'map(. == "failure") | index(false) // length')
+          TOTAL=$(( SEGUIDAS + 1 ))
+          echo "falhas nossas consecutivas, contando esta: $TOTAL"
+
+          {
+            echo "### Coleta PNCP — falha nossa"
+            echo ""
+            echo "Falhas consecutivas, contando esta: **$TOTAL**"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          if [ "$TOTAL" -ge 2 ]; then
+            echo "::error::ALARME: a coleta falhou $TOTAL vezes SEGUIDAS por problema NOSSO (HTTP != 200). Isto nao e a fonte fora do ar. Conferir: a edge function esta no ar? o COLETA_TOKEN ainda vale? o projeto Supabase esta ativo?"
+            {
+              echo ""
+              echo "**ALARME** — nao e acaso. Conferir, nesta ordem:"
+              echo "1. a edge function \`coletar-licitacoes\` responde?"
+              echo "2. o segredo \`COLETA_TOKEN\` ainda vale?"
+              echo "3. o projeto Supabase esta ativo (nao pausado)?"
+              echo ""
+              echo "O sino do Negocios tambem acende quando o indice fica velho ou quando o agendador para — ver \`fpmed_alarme_coleta.js\`."
+            } >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "::warning::1a falha nossa. Se a proxima rodada tambem falhar, isto vira alarme."
           fi
