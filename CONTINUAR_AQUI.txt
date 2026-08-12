@@ -887,7 +887,31 @@ Criado em 21/07/2026 copiando SO os arquivos do app do C:\globalmed.
             >>> MOTOR INTACTO: banco-primeiro, buscarNoBancoAmplo paginado, nacionalProtegido
                 (o bloco #nacional NUNCA mudo), avisoBrandoPNCP, filtro do ramo interno,
                 intervalo padrao hoje, "+ Incluir licitacao". A reforma e so a roupa.
-     5. [ ] kanban protagonista
+     5. [1/2] KANBAN PROTAGONISTA — 1a FATIA FEITA E **NAO PUBLICADA** (12/08, 3a rodada).
+             FEITO: a tela saiu do escuro e vive sobre o fpmed_tema.css (103 cores chumbadas
+             viraram token, em 2 levas conferidas por contagem); a BARRA DO PORTAL morreu —
+             era a ULTIMA das seis telas com ela — e a navegacao virou o menu lateral; o
+             KANBAN passou a ser a visao de ABERTURA, com a escolha de quem usa guardada no
+             navegador; as 5 cores das etapas viraram tokens (--etapa-1..5 no tema), porque o
+             calendario mensal (item 6) precisa das MESMAS cinco e duas listas de cor pro
+             mesmo funil e a forma mais barata de o calendario nascer discordando do kanban.
+             >>> POR QUE NAO PUBLIQUEI (e a sw.js NAO subiu de versao, de proposito): faltam
+                 tres coisas do ritual, e o padrao proibe publicar tela que nao passou no
+                 proprio checklist:
+                   a) a varredura de EMOJI COMO ICONE (D11) — sobram ~30 distintos nesta
+                      tela (🔔 ✚ 🏆 ✎ ⚠️ ⏰ ...). O conjunto de icones ja existe no
+                      limedtec-menu.js; e trabalho de substituicao, nao de decisao.
+                   b) os ESTADOS do adendo: skeleton de carregamento, vazio COM ACAO e o
+                      erro que nao grita (o cartao de erro ja virou claro; os outros dois nao).
+                   c) o LACO VISUAL nas 3 larguras (1366/1920/390) com DADO REAL, o
+                      checklist de 20 pontos e a comparacao com o prototipo.
+             >>> RETOMAR POR (a), que e o unico caminho pra (c) fazer sentido.
+             >>> SEM APAGAO ENQUANTO ISSO: o app instalado continua servindo a tela de ontem,
+                 porque a VERSAO do service worker nao mudou. Nada regrediu pra quem usa.
+             10 ASSERTS REAPONTADOS em 6 suites (licao S8, a quinta vez nesta rodada): todos
+             mediam o MEIO (a <nav class="portal">, a tinta rgba exata, o data-tema="dark", o
+             hex da bolinha) e nao a promessa (ha caminho daqui pra la, parado muda a borda, a
+             tela nao tem paleta propria, as bolinhas vencidas vem preenchidas).
      6. [ ] calendario mensal
      7. [ ] demais telas ganhando o tema claro, uma a uma
      8. [ ] conferir o boletim (amanha de manha — bloqueado por tempo, nao por trabalho)

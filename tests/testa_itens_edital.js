@@ -231,8 +231,13 @@ ok('77. e a recusa por tabela cortada tambem e RESULTADO, com o custo junto',
 
 // ══════════ 13. A TELA TEM PORTA (ate 11/08 ela nao tinha) ══════════
 const _MENU_LEITOR = R('limedtec-menu.js');
-ok('78. *** a entrada do leitor existe: no menu (Encontrar) e na barra (Negocios) ***',
-  /id: 'leitor'/.test(_MENU_LEITOR) && /limedtec-menu\.js/.test(L) && /id="nav-edital-ia"/.test(N));
+// >>> REAPONTADO EM 12/08: a barra do portal morreu tambem no Negocios, e a entrada do Leitor
+//     passou a existir num lugar so — o menu lateral, carregado pelas duas telas. Era esse o
+//     ponto: a lista do piloto vivia copiada em tres arquivos, e foi assim que a entrada entrou
+//     em duas telas e faltou nas outras quatro.
+ok('78. *** a entrada do leitor existe UMA VEZ, no menu, e as duas telas o carregam ***',
+  /id: 'leitor'/.test(_MENU_LEITOR) && /limedtec-menu\.js/.test(L) && /limedtec-menu\.js/.test(N)
+  && /data-limedtec-menu/.test(N));
 ok('79. *** e nasce ESCONDIDA, revelada so pra quem tem o piloto ***',
   /m\.permissao \? ' hidden data-permissao=/.test(_MENU_LEITOR)
   && /function revelarPara\(email\)/.test(_MENU_LEITOR)

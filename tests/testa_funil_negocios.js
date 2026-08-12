@@ -276,8 +276,10 @@ ok('403 no PATCH explica que só gestor grava', /só gestor grava no funil/.test
   const lic = fs.readFileSync(path.join(raiz, 'fpmed_licitacoes.html'), 'utf8');
   ok('*** ...e e alcancavel de dentro de Licitacoes (menu lateral, desde 12/08) ***',
     alcanca(lic, 'fpmed_negocios.html'));
-  ok('*** e o caminho de volta existe: a aba Negocios leva pro Encontrar ***',
-    /<nav class="portal">[\s\S]{0,400}href="fpmed_licitacoes\.html"/.test(fs.readFileSync(path.join(raiz, 'fpmed_negocios.html'), 'utf8')));
+  // >>> REAPONTADO EM 12/08: a barra do portal morreu no Negocios (navegacao unica). A promessa
+  //     e "o caminho de volta existe", nao "existe uma <nav class=portal>".
+  ok('*** e o caminho de volta existe: do Negocios se chega ao Encontrar ***',
+    alcanca(fs.readFileSync(path.join(raiz, 'fpmed_negocios.html'), 'utf8'), 'fpmed_licitacoes.html'));
   ok('link antigo nao morre: ?aba=negocios cai na aba certa',
     /aba === 'negocios'[\s\S]{0,80}location\.replace\('fpmed_negocios\.html'\)/.test(lic));
   ok('...e some pra quem não pode ver (mesmo gate da Competitividade e do Licitações)',
@@ -294,11 +296,26 @@ ok('403 no PATCH explica que só gestor grava', /só gestor grava no funil/.test
   ok('...e e alcancavel de Licitacoes, na mesma janela',
     alcanca(fs.readFileSync(path.join(raiz, 'fpmed_licitacoes.html'), 'utf8'), 'fpmed_negocios.html'));
   ok('a tela de Negócios tem o pill "← Sistema" de volta', /<a href="fpmed_sistema_final\.html">/.test(src));
-  ok('...e o caminho pro Licitações, que é o irmão dela no módulo', /<a href="fpmed_licitacoes\.html">/.test(src));
+  ok('...e o caminho pro Licitações, que é o irmão dela no módulo', alcanca(src, 'fpmed_licitacoes.html'));
 }
 
-// ── tema: esta tela é dona da própria paleta (regressão de 05/08) ──
-ok('o <html> declara data-tema="dark"', /<html lang="pt-BR" data-tema="dark">/.test(src));
+/* ── TEMA ── REAPONTADO EM 12/08, e aqui a promessa VIROU DE LADO, não foi só o meio que mudou.
+   O assert antigo era `o <html> declara data-tema="dark"`, e ele guardava uma regressão real de
+   05/08: o tema do cliente entrava como style inline no <html> e vencia o :root desta tela,
+   porque ela tinha PALETA PRÓPRIA. O `data-tema` era a declaração "não escreva cor aqui".
+   >>> A CONDIÇÃO QUE O JUSTIFICAVA ACABOU. A tela não tem mais paleta própria: ela vive sobre o
+       fpmed_tema.css, como as outras. Manter o `data-tema` agora seria blindar contra o tema do
+       cliente uma tela que DEVE seguir o tema do cliente — ou seja, o assert estaria guardando o
+       contrário do que a casa decidiu.
+   O que fica cobrado é o que importa hoje: ela carrega o design system e não voltou a ter uma
+   paleta paralela com valor próprio. */
+// a cobranca e na ETIQUETA <html>, e nao na palavra solta: o comentario que EXPLICA a mudanca
+// cita `data-tema="dark"` pra contar o que saiu — e assert que proibe falar do que saiu apaga a
+// explicacao junto com o codigo. (Mesma armadilha que ja mordeu no testa_alarme_email hoje.)
+ok('a tela carrega o design system (e nao tem mais paleta propria)',
+  /<link rel="stylesheet" href="fpmed_tema\.css">/.test(src) && !/<html[^>]*data-tema/.test(src));
+ok('...e os apelidos do legado APONTAM pra token, sem valor proprio',
+  /--painel:\s*var\(--branco\)/.test(src) && /--texto:\s*var\(--cinza-800\)/.test(src));
 
 console.log('\nRESULTADO: ' + p + ' ok, ' + f + ' falha(s)');
 process.exitCode = f ? 1 : 0;

@@ -86,9 +86,12 @@ ok('19. *** toda policy filtra por bucket_id (senao valeria pra qualquer bucket 
 ok('20. o link do arquivo e ASSINADO e curto, nao publico', /storage\/v1\/object\/sign/.test(tela) && /expiresIn: 60/.test(tela));
 
 // ══════════ 4. A TELA ══════════
-ok('21. entrou como 3a aba do portal, nas outras duas telas',
-  alcanca(lic, 'fpmed_documentos.html') &&
-  /<nav class="portal">[\s\S]{0,500}href="fpmed_documentos\.html"/.test(neg));
+// >>> REAPONTADO EM 12/08: a BARRA DO PORTAL morreu nas duas telas (navegacao unica pelo menu
+//     lateral). A promessa e "da pra chegar em Documentos das outras duas telas do modulo" — a
+//     barra era o meio. O `alcanca` cobra as tres condicoes: a tela carrega o menu, monta o menu,
+//     e o menu declara o destino.
+ok('21. da pra chegar em Documentos das outras duas telas do modulo',
+  alcanca(lic, 'fpmed_documentos.html') && alcanca(neg, 'fpmed_documentos.html'));
 ok('22. ...e ela mesma carrega a barra do portal (o caminho de volta)',
   /<nav class="portal">[\s\S]{0,300}href="fpmed_licitacoes\.html"/.test(tela));
 ok('23. *** a regua de situacao vem ANTES da lista (a pergunta e "tem algo vencido?") ***',

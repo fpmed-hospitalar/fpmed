@@ -83,7 +83,10 @@ ok('13. *** existe, e diz "etapa X de 5" por extenso ***',
   progressoCard({ estagio: 'disputa' }).includes('etapa 3 de 5'));
 ok('14. *** com bolinhas: as vencidas e a atual preenchidas ***', (() => {
   const h = progressoCard({ estagio: 'disputa' });
-  const cheias = (h.match(/background:#[0-9A-Fa-f]{6}/g) || []).length;
+  // as cores das 5 etapas viraram token em 12/08 (`--etapa-1..5` no fpmed_tema.css); antes eram
+  // hex chumbado dentro da tela. A promessa e "as vencidas e a atual vem preenchidas", e o que
+  // conta e QUANTAS bolinhas recebem cor — nao em que formato a cor esta escrita.
+  const cheias = (h.match(/background:(#[0-9A-Fa-f]{6}|var\(--etapa-\d\))/g) || []).length;
   return cheias === 3;   // oportunidade, qualificacao, disputa
 })(), progressoCard({ estagio: 'disputa' }));
 ok('15. ...e as futuras vazias', progressoCard({ estagio: 'disputa' }).includes('background:transparent'));

@@ -116,8 +116,11 @@ ok('39. *** e ele mora num lugar SO (cartao, aba e sino leem dali) ***',
   (N.match(/CRED_DIAS_PARADO/g) || []).length >= 3 && !/>= 7\b/.test(N.replace(/CRED_DIAS_PARADO = 7/, '')));
 ok('40. ...com o motivo (tres numeros um dia discordariam sobre o que e estar parado)',
   /três lugares que, se\s*tivessem cada um o seu número, um dia discordariam/.test(uc(N)));
+// >>> REAPONTADO EM 12/08 (tema claro): cobrava a TINTA EXATA `rgba(224,160,74,.55)`. A promessa
+//     e "parado muda a BORDA do cartao, e nao so um texto no meio da linha" — a cor e o meio, e
+//     ela virou token quando a tela deixou de ser escura.
 ok('41. *** parado muda a BORDA do cartao, e nao so um texto ***',
-  /\.cred\.parado\{border-color:rgba\(224,160,74,\.55\)\}/.test(N));
+  /\.cred\.parado\{border-color:var\(--ambar-\d00\)\}/.test(N));
 ok('42. ...com o motivo (e o defeito que a secao existe pra pegar)',
   /pedido esquecido é o defeito que esta seção existe pra pegar/.test(uc(N)));
 ok('43. *** o sino conta os parados no badge ***',

@@ -119,7 +119,7 @@ nome antigo, é erro meu:
 | 4 | **Encontrar no tema claro + navegação única** | ✅ `bd35ff1` — publicado, laço visual nas 3 larguras |
 | 4b | **Segurança: CVE-2024-4367 no PDF.js** | ✅ `a220dee` — `isEvalSupported:false` nas 5 chamadas |
 | 4c | **Alarme de coleta** | ✅ **as três partes** — (A) workflow `26bd2d3` · (B) sino `08dd8a1` · (C) **e-mail do dono** `12/08` |
-| 5 | Kanban protagonista | ⬅️ **é onde eu estou** |
+| 5 | **Kanban protagonista** | 🔧 **1ª fatia feita, NÃO PUBLICADA** — tema claro, navegação única, kanban de abertura, cores de etapa em token. **Falta**: varredura de emoji-ícone, os estados e o laço visual. Sem `sw.js` novo, então o app segue servindo a tela de ontem |
 | — | *(ver §2b: fila de fundação e itens que param pra decisão)* | |
 | 6 | Calendário mensal | |
 | 7 | Demais telas ganhando o tema, uma a uma | |

@@ -127,6 +127,28 @@
      Nome por PASSO, não por tamanho: "médio" envelhece assim que aparece um
      tamanho no meio; número não envelhece. O passo 1 (4px) é a meia-unidade,
      e existe só pra colar rótulo no seu valor (D7). */
+  /* ══ AS CINCO ETAPAS DO FUNIL ══════════════════════════════════════════════
+     Elas entraram no tema em 12/08, com o item 5 ("kanban protagonista"), e
+     vinham CHUMBADAS dentro do fpmed_negocios.html — cinco cores de identidade
+     morando num arquivo de tela.
+
+     >>> POR QUE ELAS NÃO SÃO A RAMPA DA MARCA. Etapa não é estado: Disputa não
+         é "pior" que Qualificação, é DEPOIS. Então o que estas cinco precisam
+         não é intensidade, é serem DISTINGUÍVEIS entre si — inclusive por quem
+         não separa verde de vermelho. Por isso elas variam em MATIZ e também em
+         claridade, e não são cinco tons do mesmo azul.
+     >>> E POR QUE A COR NUNCA ANDA SOZINHA: em toda tela onde uma destas
+         aparece, o NOME da etapa aparece junto. A cor acelera quem já conhece;
+         ela nunca é a única portadora da informação (D-acessibilidade).
+     Valores do protótipo do arquiteto (docs/prototipo), que é o alvo visual
+     declarado da reforma. Usadas como MARCADOR (bolinha, topo de coluna), não
+     como fundo de texto. */
+  --etapa-1: #2CA9E0;   /* Oportunidade */
+  --etapa-2: #D08700;   /* Qualificação */
+  --etapa-3: #D9633B;   /* Disputa      */
+  --etapa-4: #5B7FA6;   /* Habilitação  */
+  --etapa-5: #6FA32C;   /* Ata          */
+
   --esp-1: 4px;
   --esp-2: 8px;
   --esp-3: 12px;

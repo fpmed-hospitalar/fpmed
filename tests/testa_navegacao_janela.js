@@ -79,18 +79,25 @@ console.log('SUITE testa_navegacao_janela — uma janela so, navegacao por cima\
   // 12/08: o Encontrar deixou de ter barra — ele foi a 1a tela a adotar a navegação única.
   ok('17. o Encontrar navega pelo menu lateral (a barra saiu na navegação única)',
     /limedtec-menu\.js/.test(lic) && /data-limedtec-menu/.test(lic) && !barra(lic));
-  ok('18. a aba Negocios tem a MESMA barra (senao viram dois sistemas parecidos)', !!barra(neg));
-  ok('19. *** a barra nao abre janela nova em nenhuma das duas ***',
-    !/target=|window\.open/.test(barra(lic)) && !/target=|window\.open/.test(barra(neg)));
+  /* >>> 12/08 — A BARRA MORREU NAS DUAS, e a promessa deste bloco nunca foi "as duas telas tem a
+     mesma barra": era "as duas navegam pelo MESMO lugar, senao viram dois sistemas parecidos".
+     A barra era o meio, e era o meio RUIM — ela estava copiada em seis telas, e foi assim que a
+     entrada do Leitor entrou em duas e faltou nas outras quatro. Agora o lugar unico e o menu. */
+  ok('18. o Negocios navega pelo MESMO menu do Encontrar (uma navegacao so, nao duas iguais)',
+    /limedtec-menu\.js/.test(neg) && /data-limedtec-menu/.test(neg) && !barra(neg));
+  ok('19. *** a navegacao nao abre janela nova em nenhuma das duas ***',
+    !/target=|window\.open/.test(_MENU_SRC));
   ok('20. de Encontrar da pra ir pra Negocios', alcanca(lic, 'fpmed_negocios.html'));
-  ok('21. ...e de Negocios da pra voltar pro Encontrar', /href="fpmed_licitacoes\.html"/.test(barra(neg)));
+  ok('21. ...e de Negocios da pra voltar pro Encontrar', alcanca(neg, 'fpmed_licitacoes.html'));
   // A promessa e ORIENTACAO: quem olha tem que saber onde esta. No Encontrar quem cumpre isso
   // agora e o menu, que DERIVA o modulo do nome do arquivo e acende com `lm-on` +
   // `aria-current`. Derivar e mais forte que marcar na mao: nao ha como a tela esquecer.
-  ok('22. cada tela marca onde se esta (o Encontrar, pelo menu; o Negocios, pela barra)',
+  // Agora as DUAS se orientam pelo mesmo mecanismo: o menu DERIVA o modulo do nome do arquivo e
+  // acende com `lm-on` + `aria-current`. Derivar e mais forte que marcar na mao — nao ha como a
+  // tela esquecer de se marcar, que era exatamente o risco de cada tela ter a sua barra.
+  ok('22. cada tela marca onde se esta, e pelo MESMO mecanismo (o menu, que deriva do arquivo)',
     /lm-on/.test(_MENU_SRC) && /aria-current="page"/.test(_MENU_SRC)
-    && /limedtec-menu\.js/.test(lic)
-    && (/<a class="on"[^>]*>Negocios|<a class="on"[^>]*>Negócios/.test(barra(neg))));
+    && /limedtec-menu\.js/.test(lic) && /limedtec-menu\.js/.test(neg));
   ok('23. o menu lateral ficou com UMA entrada pro modulo (sem badge PNCP/FUNIL)',
     !/nav-negocios/.test(sistema) && !/>PNCP</.test(sistema) && !/>FUNIL</.test(sistema));
 }

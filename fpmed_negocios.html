@@ -1,8 +1,11 @@
 <!DOCTYPE html>
-<!-- data-tema="dark": esta tela é dona da própria paleta, como a de Licitações. Sem isso o
-     --bg claro do cliente entra como style inline no <html> e vence o :root daqui (regressão
-     medida em 05/08). A regra vive no limedtec-config.js. -->
-<html lang="pt-BR" data-tema="dark">
+<!-- ESTA TELA DEIXOU DE SER ESCURA (12/08, item 5 da reforma: "kanban protagonista").
+     Ela declarava data-tema="dark" porque era dona da própria paleta — o que mandava o
+     aplicaTema não escrever cor aqui. Agora ela vive sobre os tokens do fpmed_tema.css,
+     logo é uma tela normal do sistema e o tema do cliente volta a valer nela. Mesma
+     decisão e mesmo caminho da tela Encontrar, fechada ontem (bd35ff1): a FPMED é tema
+     claro por DECISÃO DE MARCA, e as duas telas do módulo não podem ter dois tons. -->
+<html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -12,6 +15,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/png" sizes="192x192" href="icones/limedtec-192.png">
 <link rel="apple-touch-icon" href="icones/limedtec-192.png">
+<link rel="stylesheet" href="fpmed_tema.css">
 <script src="cliente.config.js"></script>
 <script src="limedtec-config.js"></script>
 <script src="limedtec-tema.js"></script>
@@ -19,28 +23,76 @@
 <script src="gm-auth.js?v=sessao-06ago"></script>
 <script src="fpmed_alarme_coleta.js"></script>
 <style>
-/* Mesma paleta da tela de Licitações — as duas são o módulo, e módulo com dois tons de escuro
-   parece dois sistemas. */
-:root{--azul:#2CA9E0;--azul-claro:#5CC3F0;--verde:#8DC63F;--verde-esc:#2c4a08;--muted:#8fa3b8;
-      --bg:#0B1622;--painel:#132234;--painel2:#182B41;--linha:#22374f;--texto:#e6edf5;
-      --roxo:#8B7FD4;--vermelho:#e5675a;--ambar:#e0a04a;
-      --sombra:0 1px 3px rgba(0,0,0,.35),0 8px 26px rgba(0,0,0,.28)}
+/* ══════════════════════════════════════════════════════════════════════════════════════════════
+   NEGÓCIOS · TEMA CLARO — item 5 da fila da reforma ("kanban protagonista").
+   Alvo visual: docs/prototipo/fpmed_prototipo_prime.html · tokens: fpmed_tema.css
+
+   ── O MESMO CAMINHO DA TELA ENCONTRAR, E DE PROPÓSITO ─────────────────────────────────────────
+   As duas são O MESMO MÓDULO. Uma clara e a outra escura não é "duas telas", é o cliente
+   achando que entrou em outro sistema no meio do trabalho. A Encontrar virou ontem (bd35ff1);
+   esta era a última escura.
+
+   ── OS NOMES ANTIGOS VIRARAM APELIDOS DOS TOKENS (o "sem apagão" no CSS) ──────────────────────
+   O <script> desta tela escreve `var(--linha)`, `var(--muted)`, `var(--verde)` e `var(--azul)`
+   DENTRO de HTML gerado — e nenhuma varredura de folha de estilo enxerga isso. Apagar os nomes
+   antigos deixaria esses pedaços sem cor, e o defeito só apareceria no dia em que alguém
+   abrisse aquele painel.
+   >>> ENTÃO CADA NOME VELHO APONTA PRA UM TOKEN, e NENHUM tem valor próprio. Não é uma segunda
+       paleta: é uma camada de tradução que some sozinha quando a última referência antiga sair
+       do script. Regra nova escreve o token direto.
+
+   ── E POR QUE ALGUNS APELIDOS TROCAM DE "TOM" ────────────────────────────────────────────────
+   `--azul-claro` era um azul CLARO porque vivia sobre fundo escuro. Sobre fundo claro o mesmo
+   OFÍCIO (título de card, link, ênfase) exige o tom ESCURO — inverter o fundo sem inverter a
+   rampa é como se produz texto ilegível que passa despercebido porque "a cor está certa".
+   ══════════════════════════════════════════════════════════════════════════════════════════════ */
+:root{
+  /* apelidos do legado -> tokens. NENHUM valor próprio mora aqui. */
+  --azul:        var(--azul-500);
+  --azul-claro:  var(--azul-700);   /* ofício de texto/link: sobre claro, o tom escuro */
+  --verde:       var(--verde-700);  /* apelido = ofício de TEXTO. Fundo usa --verde-500 direto:
+                                       o 700 é o único que passa em AA sobre branco. */
+  --verde-esc:   var(--verde-900);
+  --muted:       var(--cinza-600);
+  --bg:          var(--cinza-50);
+  --painel:      var(--branco);
+  --painel2:     var(--cinza-50);
+  --linha:       var(--cinza-200);
+  --texto:       var(--cinza-800);
+  --roxo:        #6C5CC4;           /* a única cor sem token: identifica EMPRESA no card
+                                       multi-empresa. Entra no tema quando o item 12
+                                       (etapas/empresas editáveis) definir a família. */
+  --vermelho:    var(--vermelho-600);
+  --ambar:       var(--ambar-600);  /* âmbar sobre branco: o 500 não passa em AA como texto */
+  --sombra:      var(--sombra-1);
+}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);font-family:Inter,system-ui,sans-serif;color:var(--texto)}
+body{
+  margin:0;
+  background:var(--cinza-50);
+  color:var(--cinza-800);
+  font-family:var(--fonte);
+  font-size:var(--txt-2);
+  line-height:var(--altura-texto);
+  /* o menu lateral é `position:fixed` com 224px; sem esta margem o conteúdo nasce por baixo
+     dele. Em ≤900px o menu vira faixa no topo e a margem sai. Igual à tela Encontrar. */
+  margin-left:224px;
+}
+@media(max-width:900px){ body{ margin-left:0 } }
 .faixa-int{max-width:1420px;margin:0 auto;padding:0 22px;display:flex;align-items:center;gap:13px;width:100%}
-.topfaixa{background:#08111B;color:var(--muted);padding:7px 0;font-size:12.5px;border-bottom:1px solid rgba(34,55,79,.55)}
-.topfaixa a{color:var(--azul-claro);text-decoration:none;background:rgba(44,169,224,.13);padding:3px 11px;
+.topfaixa{background:var(--cinza-100);color:var(--cinza-600);padding:7px 0;font-size:12.5px;border-bottom:1px solid var(--cinza-200)}
+.topfaixa a{color:var(--azul-700);text-decoration:none;background:var(--azul-50);padding:3px 11px;
   border-radius:20px;font-size:12px;transition:background .16s,transform .16s}
-.topfaixa a:hover{background:rgba(44,169,224,.26);transform:translateY(-1px)}
+.topfaixa a:hover{background:var(--azul-100);transform:translateY(-1px)}
 header{background:var(--painel);border-bottom:1px solid var(--linha);padding:14px 0;
-  box-shadow:0 1px 0 rgba(255,255,255,.03),0 6px 22px rgba(0,0,0,.28)}
+  box-shadow:var(--sombra-1)}
 header .marca{display:flex;align-items:center;gap:9px}
 header .cruz{width:30px;height:30px;border-radius:7px;background:var(--azul);display:grid;place-items:center;
   color:#fff;font-size:19px;font-weight:700;line-height:1;box-shadow:0 2px 10px rgba(44,169,224,.35)}
-header .nome{font-family:Montserrat;font-weight:800;font-size:17px;color:#fff;letter-spacing:.6px}
+header .nome{font-family:Montserrat;font-weight:800;font-size:17px;color:var(--cinza-800);letter-spacing:.6px}
 header .nome small{display:block;font-size:8px;letter-spacing:2.6px;color:var(--muted);font-weight:600;margin-top:-2px}
 header .sep{width:1px;height:22px;background:var(--linha);margin:0 4px}
-header h1{font-family:Montserrat;font-size:18px;margin:0;color:#b3c4d6;font-weight:600}
+header h1{font-family:Montserrat;font-size:18px;margin:0;color:var(--cinza-600);font-weight:600}
 /* submenu NEGOCIOS, como no SIGA */
 /* a barra do PORTAL empurra tudo pra direita; o submenu vem colado nela, sem novo margin-left
    (dois `margin-left:auto` no mesmo flex separariam as duas barras nas pontas da tela) */
@@ -54,17 +106,17 @@ header nav a.on{background:rgba(44,169,224,.16);color:var(--azul-claro);font-wei
 .sino{background:var(--painel2);border:1px solid var(--linha);color:var(--texto);border-radius:10px;
   width:38px;height:34px;font-size:15px;cursor:pointer;position:relative;transition:border-color .16s,transform .16s}
 .sino:hover{border-color:var(--azul);transform:translateY(-1px)}
-.sino .cnt{position:absolute;top:-6px;right:-6px;background:var(--ambar);color:#3a2708;border-radius:11px;
+.sino .cnt{position:absolute;top:-6px;right:-6px;background:var(--ambar-600);color:var(--branco);border-radius:11px;
   min-width:19px;height:19px;font-size:11px;font-weight:800;font-family:Montserrat;line-height:19px;padding:0 5px}
 #notif{display:none;position:absolute;right:0;top:42px;width:380px;max-height:70vh;overflow:auto;z-index:40;
-  background:var(--painel);border:1px solid var(--linha);border-radius:13px;box-shadow:0 10px 40px rgba(0,0,0,.5);padding:8px}
+  background:var(--painel);border:1px solid var(--linha);border-radius:13px;box-shadow:var(--sombra-3);padding:8px}
 #notif.open{display:block}
 .nf-sec{font-size:10.5px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);font-weight:700;padding:10px 10px 5px}
 .nf{display:block;padding:9px 11px;border-radius:9px;cursor:pointer;border:1px solid transparent;transition:background .14s,border-color .14s}
-.nf:hover{background:var(--painel2);border-color:rgba(44,169,224,.4)}
-.nf .q{font-size:12.5px;color:#fff;font-weight:600}
+.nf:hover{background:var(--azul-50);border-color:var(--azul-200)}
+.nf .q{font-size:12.5px;color:var(--cinza-800);font-weight:600}
 .nf .s{font-size:11.5px;color:var(--muted);line-height:1.45;margin-top:2px}
-.nf.hoje .q{color:var(--ambar)}
+.nf.hoje .q{color:var(--ambar-700)}
 .nf-vazio{padding:16px 12px;font-size:12.5px;color:var(--muted);line-height:1.5}
 .nf-nota{padding:10px 12px;margin-top:6px;border-top:1px solid var(--linha);font-size:11px;color:var(--muted);line-height:1.5}
 .wrap{max-width:1420px;margin:0 auto;padding:0 22px 70px}
@@ -102,7 +154,7 @@ header nav a.on{background:rgba(44,169,224,.16);color:var(--azul-claro);font-wei
   transition:border-color .16s,transform .16s,background .16s}
 .chip:hover{border-color:var(--azul);transform:translateY(-1px)}
 .chip .n{font-family:Montserrat;font-weight:700;font-size:12px;color:var(--muted)}
-.chip.on{background:var(--verde);border-color:var(--verde);color:#1b2c06;font-weight:700}
+.chip.on{background:var(--verde-500);border-color:var(--verde-500);color:var(--verde-900);font-weight:700}
 .chip.on .n{color:#2c4a08}
 .chip .bola{width:9px;height:9px;border-radius:50%}
 .sublinks{display:flex;gap:18px;padding:4px 0 10px;font-size:12.5px}
@@ -112,7 +164,7 @@ header nav a.on{background:rgba(44,169,224,.16);color:var(--azul-claro);font-wei
 /* ── card do negócio ── */
 .card{background:var(--painel);border:1px solid var(--linha);border-radius:13px;padding:15px 17px;margin-bottom:12px;
   box-shadow:var(--sombra);position:relative;cursor:pointer;transition:border-color .18s,transform .18s,box-shadow .18s}
-.card:hover{border-color:rgba(44,169,224,.5);transform:translateY(-2px);box-shadow:0 4px 10px rgba(0,0,0,.4),0 14px 34px rgba(0,0,0,.3)}
+.card:hover{border-color:var(--azul-300);transform:translateY(-1px);box-shadow:var(--sombra-2)}
 .card .fase-tag{position:absolute;top:11px;right:14px;font-size:9px;letter-spacing:1.3px;text-transform:uppercase;
   font-weight:800;color:var(--verde)}
 /* ── SITUAÇÃO DO CERTAME (08/08) ── etiqueta + esmaecido, mas o cartão CONTINUA no funil ── */
@@ -129,20 +181,20 @@ header nav a.on{background:rgba(44,169,224,.16);color:var(--azul-claro);font-wei
 .card.parado:hover{opacity:1;filter:none}
 .card .tit{font-family:Montserrat;font-weight:700;font-size:13.5px;color:var(--azul-claro);text-decoration:none;
   display:inline-block;line-height:1.45;padding-right:96px}
-.card:hover .tit{color:#fff;text-decoration:underline}
-.card .emp{display:inline-block;background:rgba(139,127,212,.18);border:1px solid rgba(139,127,212,.4);
-  color:#b9b0ee;border-radius:20px;padding:2px 9px;font-size:10px;font-weight:700;margin-bottom:7px}
-.card .org{font-size:12.5px;color:#c3d1e0;margin-top:2px}
+.card:hover .tit{color:var(--azul-800);text-decoration:underline}
+.card .emp{display:inline-block;background:#efedfa;border:1px solid #d8d3f2;
+  color:var(--roxo);border-radius:20px;padding:2px 9px;font-size:10px;font-weight:700;margin-bottom:7px}
+.card .org{font-size:12.5px;color:var(--cinza-600);margin-top:2px}
 .card .ab{font-size:12px;color:var(--muted);margin-top:6px}
-.card .ab b{color:#cfe0ef}
-.card .ab.hoje b{color:var(--ambar)}
-.card .ab.passou b{color:#9aa8b6}
+.card .ab b{color:var(--cinza-800)}
+.card .ab.hoje b{color:var(--ambar-700)}
+.card .ab.passou b{color:var(--cinza-500)}
 .card .etq{display:flex;gap:6px;flex-wrap:wrap;margin-top:9px}
 .etq span{font-size:10px;font-weight:600;border-radius:20px;padding:2px 9px}
-.etq .fonte{background:rgba(143,163,184,.15);border:1px solid rgba(143,163,184,.35);color:#b6c6d6}
-.etq .mod{background:rgba(141,198,63,.15);border:1px solid rgba(141,198,63,.4);color:#b7e07a}
-.etq .num{background:rgba(44,169,224,.14);border:1px solid rgba(44,169,224,.36);color:#8ed3f5}
-.etq .obs{background:rgba(224,160,74,.14);border:1px solid rgba(224,160,74,.36);color:#e8bc7e}
+.etq .fonte{background:var(--cinza-100);border:1px solid var(--cinza-200);color:var(--cinza-600)}
+.etq .mod{background:var(--verde-50);border:1px solid var(--verde-200);color:var(--verde-700)}
+.etq .num{background:var(--azul-50);border:1px solid var(--azul-200);color:var(--azul-700)}
+.etq .obs{background:var(--ambar-50);border:1px solid var(--ambar-100);color:var(--ambar-700)}
 .card .prog{font-size:11.5px;color:var(--muted);margin-top:9px;display:flex;align-items:center;gap:8px}
 /* AÇÕES só no hover, como no SIGA: elas não podem competir com o conteúdo do card */
 .card .acoes{position:absolute;bottom:11px;right:14px;display:flex;gap:6px;opacity:0;transition:opacity .16s}
@@ -161,11 +213,11 @@ header nav a.on{background:rgba(44,169,224,.16);color:var(--azul-claro);font-wei
 
 /* ── kanban ── */
 .kb{display:flex;gap:14px;overflow-x:auto;padding:8px 2px 20px;align-items:flex-start}
-.col{flex:0 0 300px;background:rgba(19,34,52,.5);border:1px solid var(--linha);border-radius:13px;padding:12px}
+.col{flex:0 0 300px;background:var(--cinza-100);border:1px solid var(--cinza-200);border-radius:var(--raio-cartao);padding:12px}
 .col h3{margin:0 0 10px;font-family:Montserrat;font-size:12.5px;font-weight:700;display:flex;align-items:center;gap:8px}
 .col h3 .bola{width:10px;height:10px;border-radius:50%}
 .col h3 .n{margin-left:auto;font-size:11.5px;color:var(--muted);font-weight:600}
-.col.alvo{border-color:var(--azul);background:rgba(44,169,224,.07)}
+.col.alvo{border-color:var(--azul-500);background:var(--azul-50)}
 .col .vazia{border:1px dashed var(--linha);border-radius:11px;padding:26px 14px;text-align:center;
   font-size:12px;color:var(--muted)}
 .kb .card{cursor:grab;margin-bottom:10px}
@@ -174,11 +226,11 @@ header nav a.on{background:rgba(44,169,224,.16);color:var(--azul-claro);font-wei
 
 /* ── agenda: o substituto direto do Calendário 2025 ── */
 .ag-dia{display:flex;align-items:baseline;gap:10px;margin:20px 0 9px;padding-bottom:6px;border-bottom:1px solid var(--linha)}
-.ag-dia .d{font-family:Montserrat;font-weight:800;font-size:15px;color:#fff}
+.ag-dia .d{font-family:Montserrat;font-weight:800;font-size:15px;color:var(--cinza-800)}
 .ag-dia .sem{font-size:12px;color:var(--muted);text-transform:capitalize}
 .ag-dia .q{margin-left:auto;font-size:11.5px;color:var(--muted)}
-.ag-dia.hoje .d{color:var(--ambar)}
-.ag-dia.hoje .sem::after{content:' · HOJE';color:var(--ambar);font-weight:700;letter-spacing:.6px}
+.ag-dia.hoje .d{color:var(--ambar-700)}
+.ag-dia.hoje .sem::after{content:' · HOJE';color:var(--ambar-700);font-weight:700;letter-spacing:.6px}
 .ag-lin{display:flex;gap:14px;align-items:flex-start;margin-bottom:10px}
 .ag-hora{flex:0 0 62px;text-align:right;font-family:Montserrat;font-weight:700;font-size:14px;color:var(--azul-claro);padding-top:15px}
 .ag-lin .card{flex:1;margin-bottom:0}
@@ -186,7 +238,7 @@ header nav a.on{background:rgba(44,169,224,.16);color:var(--azul-claro);font-wei
   text-transform:uppercase;color:var(--muted)}
 
 .vazio{text-align:center;padding:46px 20px;color:var(--muted);font-size:13.5px;
-  background:rgba(19,34,52,.42);border:1px dashed var(--linha);border-radius:14px}
+  background:var(--branco);border:1px dashed var(--cinza-300);border-radius:var(--raio-cartao)}
 .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));background:var(--painel);border-radius:14px;
   box-shadow:var(--sombra);overflow:hidden;margin:14px 0 4px;border:1px solid var(--linha)}
 .kpi{padding:14px 17px;border-right:1px solid var(--linha)}
@@ -194,21 +246,21 @@ header nav a.on{background:rgba(44,169,224,.16);color:var(--azul-claro);font-wei
 /* A HIERARQUIA DO NÚMERO — o padrão que o Prime usa em todo dado: rótulo pequeno e cinza EM
    CIMA, valor grande e branco EMBAIXO. O olho encontra o número primeiro e o nome dele depois,
    que é a ordem em que a pergunta é feita ("quanto?" antes de "quanto do quê?"). */
-.kpi b{font-family:Montserrat;font-size:22px;font-weight:700;display:block;line-height:1.1;color:#fff;margin-bottom:3px}
+.kpi b{font-family:Montserrat;font-size:22px;font-weight:700;display:block;line-height:1.1;color:var(--cinza-800);margin-bottom:3px}
 .kpi span{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
 
 /* ── drawer de detalhe ── */
-#velcro{position:fixed;inset:0;background:rgba(4,10,17,.62);opacity:0;pointer-events:none;transition:opacity .2s;z-index:40}
+#velcro{position:fixed;inset:0;background:rgba(18,23,33,.45);opacity:0;pointer-events:none;transition:opacity .2s;z-index:40}
 #velcro.on{opacity:1;pointer-events:auto}
 #drawer{position:fixed;top:0;right:0;bottom:0;width:min(560px,100vw);background:var(--painel);
-  border-left:1px solid var(--linha);box-shadow:-14px 0 44px rgba(0,0,0,.5);z-index:41;
+  border-left:1px solid var(--linha);box-shadow:var(--sombra-3);z-index:41;
   transform:translateX(100%);transition:transform .22s ease;overflow-y:auto}
 #drawer.on{transform:none}
 .dw-top{position:sticky;top:0;background:var(--painel);border-bottom:1px solid var(--linha);padding:15px 20px;z-index:2}
 .dw-top .x{position:absolute;top:13px;right:16px;background:var(--painel2);border:1px solid var(--linha);
   color:var(--muted);border-radius:8px;width:28px;height:28px;cursor:pointer;font-size:15px;line-height:1}
 .dw-top .x:hover{border-color:var(--azul);color:var(--azul-claro)}
-.dw-top h2{margin:0;font-family:Montserrat;font-size:15px;font-weight:700;color:#fff;padding-right:40px;line-height:1.45}
+.dw-top h2{margin:0;font-family:Montserrat;font-size:15px;font-weight:700;color:var(--cinza-800);padding-right:40px;line-height:1.45}
 .dw-body{padding:16px 20px 40px}
 .dw-sec{margin-top:20px}
 .dw-sec > h4{margin:0 0 4px;font-family:Montserrat;font-size:11px;font-weight:700;letter-spacing:1.3px;
@@ -239,7 +291,7 @@ header nav a.on{background:rgba(44,169,224,.16);color:var(--azul-claro);font-wei
 .passos-linha .pas.feito .nm{color:var(--texto)}
 /* PRESENTE: é o único que cresce. O halo faz o olho parar aqui antes de ler qualquer coisa. */
 .passos-linha .pas.agora .bola{width:38px;height:38px;font-size:15px;box-shadow:0 0 0 5px rgba(44,169,224,.16)}
-.passos-linha .pas.agora .nm{color:#fff;font-weight:700;font-size:11.5px}
+.passos-linha .pas.agora .nm{color:var(--cinza-800);font-weight:700;font-size:11.5px}
 /* FUTURO: apagado. Ele existe pra dizer QUANTO FALTA, e não pra ser lido agora. */
 .passos-linha .pas.futuro .bola{opacity:.42}
 .passos-linha .pas.futuro .nm{opacity:.5}
@@ -248,17 +300,17 @@ header nav a.on{background:rgba(44,169,224,.16);color:var(--azul-claro);font-wei
 .passos-legenda{margin-top:11px;padding-top:10px;border-top:1px solid var(--linha);font-size:12px;color:var(--muted)}
 /* "O QUE FAZER AGORA" — a frase da etapa. Fundo próprio pra ela não virar mais uma linha de
    texto cinza no meio de outras: é a única coisa da ficha que diz o que a pessoa deve FAZER. */
-.agora-faz{margin-top:9px;background:rgba(44,169,224,.10);border-left:3px solid var(--azul);
-  border-radius:0 8px 8px 0;padding:9px 12px;font-size:12.5px;color:#dceaf6;line-height:1.5}
+.agora-faz{margin-top:9px;background:var(--azul-50);border-left:3px solid var(--azul-500);
+  border-radius:0 8px 8px 0;padding:9px 12px;font-size:12.5px;color:var(--cinza-800);line-height:1.5}
 /* A ABA DA ETAPA ganha um ponto — o "você está aqui" do segundo nível. Ele existe porque a
    pessoa pode ter navegado pra outra aba e voltado, e aí o `.on` já não é a da etapa. */
 .dw-abas button.foco::after{content:'';display:inline-block;width:6px;height:6px;border-radius:50%;
-  background:var(--verde);margin-left:6px;vertical-align:middle}
+  background:var(--verde-500);margin-left:6px;vertical-align:middle}
 /* ── "⋯ MAIS AÇÕES" ── o resto continua a UM clique, no mesmo lugar, sempre ── */
 .mais-cx{position:relative;display:inline-block}
 .mais-menu{display:none;position:absolute;bottom:calc(100% + 6px);left:0;min-width:220px;z-index:5;
   background:var(--painel);border:1px solid var(--linha);border-radius:10px;padding:5px;
-  box-shadow:0 10px 30px rgba(0,0,0,.45)}
+  box-shadow:var(--sombra-2)}
 .mais-cx.on .mais-menu{display:block}
 .mais-menu a{display:block;padding:8px 11px;border-radius:7px;font-size:12px;color:var(--texto);
   cursor:pointer;text-decoration:none;white-space:nowrap}
@@ -271,9 +323,9 @@ header nav a.on{background:rgba(44,169,224,.16);color:var(--azul-claro);font-wei
 .ficha{display:grid;grid-template-columns:112px 1fr;gap:7px 12px;font-size:12.5px}
 .ficha dt{color:var(--muted)}
 .ficha dd{margin:0;color:var(--texto);word-break:break-word}
-.ficha dd.ganho{color:#b7e07a;font-weight:700}
-.dw-obs{background:var(--painel2);border:1px solid var(--linha);border-left:3px solid var(--ambar);
-  border-radius:9px;padding:11px 13px;font-size:12.5px;color:#d6c6ac;white-space:pre-wrap;line-height:1.55}
+.ficha dd.ganho{color:var(--verde-700);font-weight:700}
+.dw-obs{background:var(--ambar-50);border:1px solid var(--ambar-100);border-left:3px solid var(--ambar-600);
+  border-radius:9px;padding:11px 13px;font-size:12.5px;color:var(--cinza-800);white-space:pre-wrap;line-height:1.55}
 textarea.anot{width:100%;min-height:110px;background:var(--painel2);border:1px solid var(--linha);color:var(--texto);
   border-radius:10px;padding:11px 13px;font-family:inherit;font-size:12.5px;line-height:1.55;outline:none;resize:vertical}
 textarea.anot:focus{border-color:var(--azul)}
@@ -318,7 +370,7 @@ textarea.anot:focus{border-color:var(--azul)}
 .lem-novo input,.lem-novo select{background:var(--painel2);color:var(--texto);border:1px solid var(--linha);
   border-radius:8px;padding:8px 10px;font-size:12.5px;font-family:inherit}
 .lem{display:flex;gap:10px;align-items:flex-start;padding:9px 0;border-bottom:1px solid var(--linha)}
-.lem .t{font-size:12.5px;color:#fff;line-height:1.4}
+.lem .t{font-size:12.5px;color:var(--cinza-800);line-height:1.4}
 .lem .q{font-size:11px;color:var(--muted);margin-top:2px}
 .lem .prio{margin-left:auto;font-size:10px;font-weight:700;border:1px solid;border-radius:20px;padding:1px 8px;white-space:nowrap}
 /* feito continua VISÍVEL, só apagado: some seria perder a prova de que a coisa foi feita */
@@ -330,7 +382,7 @@ textarea.anot:focus{border-color:var(--azul)}
 .salvo.ok{color:var(--verde)}
 .salvo.erro{color:var(--vermelho)}
 .tf{display:flex;gap:9px;align-items:flex-start;padding:6px 0;font-size:12.5px;cursor:pointer;line-height:1.45}
-.tf input{margin-top:2px;accent-color:var(--verde);cursor:pointer}
+.tf input{margin-top:2px;accent-color:var(--verde-600);cursor:pointer}
 .tf.feita span{color:var(--muted);text-decoration:line-through}
 /* ── O FORMULÁRIO DE INCLUSÃO ── mesmo desenho dos painéis: ele abre no lugar, não em outra tela */
 #form-manual{background:var(--painel);border:1px solid var(--linha);border-radius:12px;padding:16px 18px;margin:14px 0}
@@ -349,15 +401,15 @@ textarea.anot:focus{border-color:var(--azul)}
 .kpi{position:relative}
 /* ── O PAINEL DAS CAIXINHAS ── */
 #painel-kpi{background:var(--painel);border:1px solid var(--linha);border-radius:12px;padding:16px 18px;margin:14px 0}
-.pk-topo{display:flex;align-items:center;gap:12px;margin-bottom:10px;flex-wrap:wrap;font-size:14px;color:#fff}
-.pk-conta{background:var(--painel2);border:1px solid var(--linha);border-radius:9px;padding:11px 13px;font-size:13px;color:#fff;margin-bottom:8px}
+.pk-topo{display:flex;align-items:center;gap:12px;margin-bottom:10px;flex-wrap:wrap;font-size:14px;color:var(--cinza-800)}
+.pk-conta{background:var(--painel2);border:1px solid var(--linha);border-radius:9px;padding:11px 13px;font-size:13px;color:var(--cinza-800);margin-bottom:8px}
 .pk-tab{width:100%;border-collapse:collapse;font-size:12.5px}
 .pk-tab th{text-align:left;padding:7px;border-bottom:1px solid var(--linha);color:var(--muted);font-size:10.5px;text-transform:uppercase}
-.pk-tab td{padding:7px;border-bottom:1px solid rgba(34,55,79,.45)}
+.pk-tab td{padding:7px;border-bottom:1px solid var(--cinza-100)}
 .pk-tab tbody tr{cursor:pointer}
 .pk-tab tbody tr:hover{background:var(--painel2)}
-.pk-tab tfoot td{border-top:2px solid var(--linha);border-bottom:0;padding-top:9px;color:#fff}
-.pk-dif{font-size:10.5px;color:#e0a04a;margin-top:2px}
+.pk-tab tfoot td{border-top:2px solid var(--cinza-300);border-bottom:0;padding-top:9px;color:var(--cinza-800)}
+.pk-dif{font-size:10.5px;color:var(--ambar-700);margin-top:2px}
 /* ── PROPOSTA ANEXADA ── */
 .prop-novo{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:12px 0 6px}
 .prop-novo input[type=file]{background:var(--painel2);color:var(--texto);border:1px solid var(--linha);
@@ -365,15 +417,15 @@ textarea.anot:focus{border-color:var(--azul)}
 .anx{display:flex;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--linha);font-size:12.5px}
 .anx .v{font-size:10px;font-weight:700;color:var(--azul-claro);border:1px solid var(--azul-claro);
   border-radius:20px;padding:1px 8px;white-space:nowrap}
-.anx .n{color:#fff;flex:1;cursor:pointer;text-decoration:underline;text-decoration-color:var(--linha)}
+.anx .n{color:var(--cinza-800);flex:1;cursor:pointer;text-decoration:underline;text-decoration-color:var(--linha)}
 .anx .q{color:var(--muted);font-size:11px;white-space:nowrap}
 /* O placar da conferência: mesmo desenho do Conferidor, de propósito — é o mesmo resultado. */
 .pl-conf{display:grid;grid-template-columns:repeat(auto-fit,minmax(96px,1fr));gap:8px;margin:10px 0}
 .pl-conf div{background:var(--painel2);border:1px solid var(--linha);border-radius:9px;padding:9px 10px;text-align:center}
-.pl-conf b{display:block;font-family:Montserrat,sans-serif;font-size:19px;color:#fff}
+.pl-conf b{display:block;font-family:Montserrat,sans-serif;font-size:19px;color:var(--cinza-800)}
 .pl-conf span{font-size:10.5px;color:var(--muted)}
-.pl-conf .acima b{color:#ff9d92} .pl-conf .acima{border-color:rgba(229,103,90,.5)}
-.pl-conf .ok b{color:var(--verde)}
+.pl-conf .acima b{color:var(--vermelho-700)} .pl-conf .acima{border-color:var(--vermelho-300)}
+.pl-conf .ok b{color:var(--verde-700)}
 /* ── CREDENCIAMENTOS ── */
 .cred-novo{display:grid;grid-template-columns:1fr 170px auto;gap:8px;margin:12px 0 6px}
 @media(max-width:700px){.cred-novo{grid-template-columns:1fr}}
@@ -381,12 +433,12 @@ textarea.anot:focus{border-color:var(--azul)}
   border-radius:8px;padding:8px 10px;font-size:12.5px;font-family:inherit}
 .cred{border:1px solid var(--linha);border-radius:10px;padding:10px 12px;margin-bottom:8px;background:var(--painel2)}
 .cred .topo{display:flex;gap:9px;align-items:center;flex-wrap:wrap}
-.cred .nome{font-size:13px;font-weight:600;color:#fff}
+.cred .nome{font-size:13px;font-weight:600;color:var(--cinza-800)}
 .cred .selo{font-size:10px;font-weight:700;border:1px solid;border-radius:20px;padding:1px 9px;white-space:nowrap}
 .cred .meta{font-size:11px;color:var(--muted);margin-top:5px;line-height:1.6}
 /* PARADO É AVISO, e por isso ele muda a BORDA do cartão e não só um texto no meio da linha:
    pedido esquecido é o defeito que esta seção existe pra pegar, e ele tem que saltar da lista. */
-.cred.parado{border-color:rgba(224,160,74,.55)}
+.cred.parado{border-color:var(--ambar-300)}
 .cred .passos{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
 .cred .passos button{background:transparent;border:1px solid var(--linha);color:var(--muted);border-radius:8px;
   padding:5px 10px;font-size:11.5px;font-family:inherit;cursor:pointer}
@@ -403,36 +455,27 @@ textarea.anot:focus{border-color:var(--azul)}
 <div class="topfaixa" data-limedtec-instalar>
   <div class="faixa-int">
     <a href="fpmed_sistema_final.html">← Sistema</a>
-    <a href="fpmed_licitacoes.html">🏛️ Licitações</a>
-    <span>📞 (62) 3290-4241</span>
+    <span><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" width="14" height="14" style="stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;vertical-align:-2px"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2.2 2A16 16 0 0 1 3 6.2 2 2 0 0 1 5 4z"/></svg> (62) 3290-4241</span><span>·</span><span>Compromisso com qualidade!</span>
   </div>
 </div>
+<div data-limedtec-menu></div>
 <header>
   <div class="faixa-int">
-    <div class="marca"><div class="cruz">✚</div><div class="nome">FPMED<small>HOSPITALAR</small></div></div>
-    <div class="sep"></div>
     <h1>Negócios</h1>
-    <!-- ══ A BARRA DO PORTAL (08/08) ══ idêntica à da aba Encontrar. É ela que faz as duas
-         telas serem um lugar só. O menu lateral do sistema tem UMA entrada — "Licitações" — e a
-         troca entre as abas acontece por aqui, na mesma janela.
-         Ela vem ANTES do submenu (Funil/Quadros/Agenda) porque são dois níveis diferentes:
-         em cima, em que ABA do módulo você está; embaixo, como você olha o funil. -->
-    <nav class="portal">
-      <a href="fpmed_licitacoes.html" title="Buscar oportunidades no PNCP">Encontrar</a>
-      <a class="on" title="Funil, quadros e agenda">Negócios</a>
-      <a href="fpmed_documentos.html" title="Certidões e documentos de habilitação, com aviso de vencimento">Documentos</a>
-      <a href="fpmed_declaracoes.html" title="Modelos de declaração de habilitação, preenchidos com os dados da empresa">Declarações</a>
-      <a href="fpmed_pecas.html" title="Impugnação, esclarecimento, recurso e contrarrazões — com o prazo na frente">Peças</a>
-      <a href="fpmed_conferidor.html" title="Confere o preço da proposta contra o teto legal da CMED">Conferir</a>
-      <!-- Mesma entrada escondida da aba Encontrar. Se aparecesse só lá, as duas telas voltariam
-           a ser dois sistemas parecidos em vez de um lugar só — que é o que a barra evita. -->
-      <a href="fpmed_edital_ia.html" id="nav-edital-ia" hidden
-         title="Lê o PDF do edital com IA — piloto; cada leitura tem custo e fica registrada">Ler edital ✨</a>
-    </nav>
-    <div class="sep"></div>
+    <!-- ══ A BARRA DO PORTAL MORREU AQUI (12/08 — NAVEGAÇÃO ÚNICA) ═══════════════════════════
+         Ela oferecia sete entradas, e o menu lateral tem as sete — paridade conferida entrada
+         por entrada contra o limedtec-menu.js ANTES de apagar, do mesmo jeito que na Encontrar
+         (bd35ff1). Esta era a ÚLTIMA tela com a barra: era ela a "cópia em seis telas" que fez
+         a entrada do Leitor existir em duas e faltar nas outras quatro.
+         >>> O "← Sistema" continua na faixa de topo, por ordem expressa: tela sem porta de
+             saída é beco.
+         >>> E A MARCA SAIU DAQUI porque o menu lateral já a carrega. Dois logotipos na mesma
+             dobra não é reforço de marca, é desalinhamento.
+         >>> O QUE FICOU NO HEADER é só o que é DESTA tela: o nome dela, as três visões e o
+             sino. Isso é o segundo nível de navegação; o primeiro agora é o menu. -->
     <nav>
-      <a class="on" onclick="setVis('lista')">Funil de Licitações</a>
-      <a onclick="setVis('quadros')">Quadros</a>
+      <a onclick="setVis('lista')">Funil de Licitações</a>
+      <a class="on" onclick="setVis('quadros')">Quadros</a>
       <a onclick="setVis('agenda')">Agenda</a>
     </nav>
     <!-- SININHO: o que abre hoje e amanhã. Fica no header do módulo porque é aqui que o dia
@@ -500,26 +543,32 @@ const SB_URL = 'https://xzdowrksuswekwffoluk.supabase.co';
 const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh6ZG93cmtzdXN3ZWt3ZmZvbHVrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ2NzE2MTMsImV4cCI6MjEwMDI0NzYxM30.Pk-SlV_pZdniESyrajDdfHdHcnmyCwCMtP_TrShh75Y';
 const SB_H = { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY, 'Content-Type': 'application/json' };
 
-// As 5 fases, na ordem do funil. A bolinha colorida é o que deixa a coluna reconhecível de
-// relance no kanban — no SIGA é o mesmo recurso.
+/* As 5 fases, na ordem do funil. A bolinha colorida é o que deixa a coluna reconhecível de
+   relance no kanban.
+   >>> AS CORES SAÍRAM DAQUI EM 12/08 e viraram tokens (`--etapa-1..5` no fpmed_tema.css).
+       Elas eram cinco cores de IDENTIDADE morando num arquivo de tela — e o calendário mensal
+       (item 6) precisa exatamente das mesmas cinco. Duas listas de cor para o mesmo funil é a
+       forma mais barata de o calendário nascer discordando do kanban.
+   >>> A COR NUNCA ANDA SOZINHA: em todo lugar onde uma destas aparece, o NOME da etapa aparece
+       junto. Ela acelera quem já conhece; não é a única portadora da informação. */
 const FASES = [
-  { k:'oportunidade',  n:'Oportunidade',  c:'#8DC63F' },
-  { k:'qualificacao',  n:'Qualificação',  c:'#2CA9E0' },
-  { k:'disputa',       n:'Disputa',       c:'#e0a04a' },
+  { k:'oportunidade',  n:'Oportunidade',  c:'var(--etapa-1)' },
+  { k:'qualificacao',  n:'Qualificação',  c:'var(--etapa-2)' },
+  { k:'disputa',       n:'Disputa',       c:'var(--etapa-3)' },
   /* RÓTULO trocado em 11/08 (Classificação -> Habilitação), CHAVE mantida.
      A chave `classificacao` está gravada em 2.555 linhas de `negocios`, no check constraint da
      tabela, no MAPA_STATUS do semeador e no histórico de alterações. Renomear o VALOR exigiria
      migração de dado + DDL + reescrever histórico, pra mudar uma palavra que só existe pra ser
      lida. Rótulo é apresentação; chave é identidade. Quem lê vê "Habilitação"; o banco não muda. */
-  { k:'classificacao', n:'Habilitação',    c:'#8B7FD4' },
+  { k:'classificacao', n:'Habilitação',    c:'var(--etapa-4)' },
   /* MESMO PADRÃO, 11/08 à tarde (Contrato -> Ata), e pela MESMA razão: a chave `contrato` está
      no check constraint, no MAPA_STATUS e no histórico. O que o Lemuel pediu foi que a etiqueta
      do funil ficasse curta ("Ata") e a ABA da ficha por extenso ("Gerenciamento de Ata") — são
      dois lugares com espaço diferente, não dois nomes para a mesma coisa. */
-  { k:'contrato',      n:'Ata',           c:'#1E9E6A' },
+  { k:'contrato',      n:'Ata',           c:'var(--etapa-5)' },
 ];
 const nomeFase = k => (FASES.find(f=>f.k===k)||{}).n || k;
-const corFase  = k => (FASES.find(f=>f.k===k)||{}).c || '#8fa3b8';
+const corFase  = k => (FASES.find(f=>f.k===k)||{}).c || 'var(--cinza-500)';
 
 // AS 15 TAREFAS-MODELO — a mesma lista do tools/semeia_negocios.js (spec 6.2). Aqui elas
 // servem pro negócio que NASCE na tela e pro arquivado que ainda não tem checklist.
@@ -553,7 +602,21 @@ const TAREFAS_MODELO = [
 // 2.555 registros viram um JSONB sem legenda.
 const novasTarefas = () => TAREFAS_MODELO.map(([secao,texto]) => ({secao, texto, feita:false}));
 
-let NEG = [], EMPRESAS = [], VIS = 'lista', FASE_SEL = null, ERRO = null, ABERTO = null;
+/* ══ O KANBAN VIROU A VISÃO DE ABERTURA (12/08, item 5: "kanban protagonista") ═══════════════
+   A tela abria na LISTA — 200 cartões empilhados em ordem de data. Lista responde "o que
+   existe?"; o funil responde "em que pé está cada coisa?", e é essa a pergunta de quem abre o
+   Negócios de manhã. O Prime abre no quadro pelo mesmo motivo, e a spec da reforma nomeia o
+   item exatamente assim.
+   >>> A LISTA NÃO MORREU, mudou de lugar: ela continua a um clique e é melhor que o quadro
+       quando a pergunta é "onde está aquele pregão de Anápolis?" — ordenar e buscar são coisas
+       de lista. Trocar o padrão não é apagar a opção.
+   >>> E A ESCOLHA DE QUEM USA VENCE A MINHA: `setVis` guarda a última visão, e quem trabalha na
+       Agenda continua caindo na Agenda amanhã. Padrão é o que vale pra quem ainda não escolheu. */
+const VIS_PADRAO = 'quadros';
+let NEG = [], EMPRESAS = [], VIS = (function(){
+  try { const v = localStorage.getItem('fpmed_neg_vis'); return ['lista','quadros','agenda'].includes(v) ? v : VIS_PADRAO; }
+  catch(_) { return VIS_PADRAO; }   // navegador com armazenamento bloqueado: cai no padrão
+})(), FASE_SEL = null, ERRO = null, ABERTO = null;
 // documentos da empresa, só para o sino. `null` = ainda não li · `'erro'` = não consegui ler ·
 // array = li. Os três estados são diferentes e a tela trata os três (ver pintaNotif).
 let DOCS = null;
@@ -740,7 +803,7 @@ function visiveis(){
 function pinta(){
   if(ERRO){
     document.getElementById('corpo').innerHTML =
-      `<div class="vazio" style="border-color:#5a2622;background:#2a1614;color:#f2a99f"><b>⚠️ Não consegui carregar os negócios</b><div style="margin-top:8px;font-size:12px">${esc(ERRO)}</div></div>`;
+      `<div class="vazio" style="border-color:var(--vermelho-300);background:var(--vermelho-50);color:var(--vermelho-800)"><b>⚠️ Não consegui carregar os negócios</b><div style="margin-top:8px;font-size:12px">${esc(ERRO)}</div></div>`;
     document.getElementById('kpis').style.display='none';
     // o sino NÃO pode dizer "nada abre hoje" quando o que houve foi falha de leitura: com a
     // lista vazia por erro, "nenhum aviso" e "não sei" são a mesma tela — e não são a mesma coisa.
@@ -794,8 +857,8 @@ function seloConferencia(id){
   const c = CONF_POR_NEGOCIO[id];
   if(!c) return '';
   return c.acima > 0
-    ? `<span class="mod" style="color:#ff9d92;border-color:rgba(229,103,90,.55)" title="conferido contra a CMED: ${c.acima} item(ns) acima do teto legal">⚠️ ${c.acima} acima do teto</span>`
-    : `<span class="mod" style="color:var(--verde);border-color:rgba(124,197,118,.5)" title="conferido contra a CMED: nenhum item acima do teto">⚖️ dentro do teto</span>`;
+    ? `<span class="mod" style="color:var(--vermelho-700);border-color:var(--vermelho-300)" title="conferido contra a CMED: ${c.acima} item(ns) acima do teto legal">⚠️ ${c.acima} acima do teto</span>`
+    : `<span class="mod" style="color:var(--verde-700);border-color:var(--verde-300)" title="conferido contra a CMED: nenhum item acima do teto">⚖️ dentro do teto</span>`;
 }
 
 function card(n, noKanban){
@@ -1261,7 +1324,7 @@ function abaFicha(bt, qual){
 
 // ══ LEMBRETES ════════════════════════════════════════════════════════════════════════════
 let LEMBRETES = [];
-const PRIO_COR = { alta:'#e5675a', media:'#e0a04a', baixa:'#8fa3b8' };
+const PRIO_COR = { alta:'var(--vermelho-700)', media:'var(--ambar-700)', baixa:'var(--cinza-500)' };
 async function carregarLembretes(id){
   const box = document.getElementById('lem-lista'); if(!box) return;
   try{
@@ -1276,7 +1339,7 @@ async function carregarLembretes(id){
     pintaTarefasLivres(id);
   }catch(e){
     // erro NÃO vira "nenhum lembrete": alguém concluiria que não há nada agendado
-    box.innerHTML = '<div class="salvo" style="color:#ff9d92">⚠️ não consegui ler os lembretes deste negócio.</div>';
+    box.innerHTML = '<div class="salvo" style="color:var(--vermelho-700)">⚠️ não consegui ler os lembretes deste negócio.</div>';
     return;
   }
   pintaLembretes(id);
@@ -1339,8 +1402,8 @@ function pintaLembretes(id){
     return `<div class="lem${l.feito?' feito':''}">
       <input type="checkbox" ${l.feito?'checked':''} onchange="marcarLembrete(${id},${l.id},this.checked)">
       <div><div class="t">${esc(l.titulo)}</div>
-        <div class="q">${q.toLocaleString('pt-BR')}${atrasado?' · <b style="color:#ff9d92">atrasado</b>':''}</div></div>
-      <span class="prio" style="color:${PRIO_COR[l.prioridade]||'#8fa3b8'};border-color:${PRIO_COR[l.prioridade]||'#8fa3b8'}">${esc(l.prioridade)}</span>
+        <div class="q">${q.toLocaleString('pt-BR')}${atrasado?' · <b style="color:var(--vermelho-700)">atrasado</b>':''}</div></div>
+      <span class="prio" style="color:${PRIO_COR[l.prioridade]||'var(--cinza-500)'};border-color:${PRIO_COR[l.prioridade]||'var(--cinza-500)'}">${esc(l.prioridade)}</span>
     </div>`;
   }).join('');
 }
@@ -1384,11 +1447,18 @@ function podeLerEdital(){
   try{ return LEITORES_EDITAL.includes(String((window.gmAuth && gmAuth.user && gmAuth.user.email) || '').toLowerCase()); }
   catch(e){ return false; }
 }
-// A MESMA regra revela a entrada da barra do portal. Uma tela liberada sem porta é uma tela não
-// liberada — até 11/08 o leitor só era alcançável por quem soubesse o endereço.
+/* A MESMA regra revela a entrada do Leitor — agora NO MENU LATERAL, e não mais numa barra
+   própria desta tela. A lista do piloto vivia copiada em três lugares; hoje mora uma vez só, no
+   `limedtec-menu.js`, ao lado do módulo que ela governa.
+   >>> O MENU CONTINUA BURRO DE PROPÓSITO: ele não lê sessão nem chama banco. Ele guarda a lista
+       e expõe `revelarPara(email)`; quem tem a sessão é a tela, e é ela que pergunta.
+   >>> E ISTO NÃO É A PERMISSÃO. Quem barra é a edge function, com 403. Isto só evita OFERECER o
+       que vai ser negado. */
 function abreLeitorNaBarra(){
-  const a = document.getElementById('nav-edital-ia');
-  if(a && podeLerEdital()) a.hidden = false;
+  try {
+    const email = (window.gmAuth && gmAuth.user && gmAuth.user.email) || '';
+    if (window.LimedtecMenu && LimedtecMenu.revelarPara) LimedtecMenu.revelarPara(email);
+  } catch(_) { /* sem menu montado a tela segue inteira; a entrada só não aparece */ }
 }
 async function lerEditalIA(id){
   const n = NEG.find(x => x.id === id); if(!n) return;
@@ -1439,8 +1509,8 @@ function pintaTarefasLivres(id){
     return `<div class="lem${l.feito?' feito':''}">
       <input type="checkbox" ${l.feito?'checked':''} onchange="marcarLembrete(${id},${l.id},this.checked)">
       <div><div class="t">${esc(l.titulo)}</div>
-        <div class="q">${q ? esc(q.toLocaleString('pt-BR')) + (atrasada?' · <b style="color:#ff9d92">atrasada</b>':' · no sino') : 'sem data — não avisa'}</div></div>
-      <span class="prio" style="color:${PRIO_COR[l.prioridade]||'#8fa3b8'};border-color:${PRIO_COR[l.prioridade]||'#8fa3b8'}">${esc(l.prioridade)}</span>
+        <div class="q">${q ? esc(q.toLocaleString('pt-BR')) + (atrasada?' · <b style="color:var(--vermelho-700)">atrasada</b>':' · no sino') : 'sem data — não avisa'}</div></div>
+      <span class="prio" style="color:${PRIO_COR[l.prioridade]||'var(--cinza-500)'};border-color:${PRIO_COR[l.prioridade]||'var(--cinza-500)'}">${esc(l.prioridade)}</span>
     </div>`;
   }).join('');
 }
@@ -1690,11 +1760,11 @@ async function pdfParaTextoNeg(buf){
 
 function fraseReguaNeg(){
   const v = CMED_VIG;
-  if(!v || !v.vigente_desde) return '<b style="color:#e0a04a">não consegui identificar a edição da CMED usada</b>';
+  if(!v || !v.vigente_desde) return '<b style="color:var(--ambar-700)">não consegui identificar a edição da CMED usada</b>';
   const d = new Date(String(v.vigente_desde).slice(0,10) + 'T12:00:00');
   return 'régua: <b>CMED publicada em ' + d.toLocaleDateString('pt-BR') + '</b>'
     + (isFinite(Number(v.dias_desde)) ? ' (há ' + v.dias_desde + ' dias)' : '')
-    + (Number(v.dias_desde) > 45 ? ' · <b style="color:#e0a04a">a CMED publica todo mês — pode haver edição mais nova</b>' : '');
+    + (Number(v.dias_desde) > 45 ? ' · <b style="color:var(--ambar-700)">a CMED publica todo mês — pode haver edição mais nova</b>' : '');
 }
 
 function pintaConferencia(id){
@@ -1731,7 +1801,7 @@ function pintaConferencia(id){
         <td style="padding:6px;border-bottom:1px solid rgba(34,55,79,.4)">${esc(String(r.descricao).slice(0,90))}</td>
         <td style="padding:6px;text-align:right;border-bottom:1px solid rgba(34,55,79,.4)">${brl(r.precoUnit)}</td>
         <td style="padding:6px;text-align:right;border-bottom:1px solid rgba(34,55,79,.4)">${brl(r.teto)}</td>
-        <td style="padding:6px;border-bottom:1px solid rgba(34,55,79,.4);color:${r.situacao==='acima'?'#ff9d92':r.situacao==='abaixo'?'var(--verde)':'var(--muted)'}">
+        <td style="padding:6px;border-bottom:1px solid rgba(34,55,79,.4);color:${r.situacao==='acima'?'var(--vermelho-700)':r.situacao==='abaixo'?'var(--verde)':'var(--muted)'}">
           ${esc(rot[r.situacao]||r.situacao)}${r.situacao==='acima'?` <b>+${r.pctAcima}%</b>`:''}</td>
       </tr>`).join('')
     + `</tbody></table></div>
@@ -1748,7 +1818,7 @@ function pintaConferencias(id){
   box.innerHTML += '<div class="salvo" style="margin-top:10px"><b>Conferências anteriores</b></div>'
     + CONFERENCIAS.map(c => `<div class="anx">
         <span class="q">${esc(new Date(c.quando).toLocaleDateString('pt-BR'))}</span>
-        <span class="n" style="cursor:default;text-decoration:none">${c.itens} itens · <b style="color:${c.acima?'#ff9d92':'var(--verde)'}">${c.acima} acima</b> · ${c.nao_encontrados} não achados</span>
+        <span class="n" style="cursor:default;text-decoration:none">${c.itens} itens · <b style="color:${c.acima?'var(--vermelho-700)':'var(--verde)'}">${c.acima} acima</b> · ${c.nao_encontrados} não achados</span>
         <span class="q">${c.cmed_vigente_desde ? 'CMED ' + esc(new Date(c.cmed_vigente_desde + 'T12:00:00').toLocaleDateString('pt-BR')) : 'régua não registrada'}</span>
       </div>`).join('');
 }
@@ -2049,7 +2119,7 @@ async function salvarManual(){
         window._anexosQueFalharam = falhou;
         setTimeout(() => {
           const cx = document.getElementById('ed-msg');
-          if(cx) cx.innerHTML = '<b style="color:#ff9d92">⚠️ O negócio foi criado, mas '
+          if(cx) cx.innerHTML = '<b style="color:var(--vermelho-700)">⚠️ O negócio foi criado, mas '
             + falhou.length + ' arquivo(s) NÃO subiram:</b><br>'
             + falhou.map(x => '· ' + esc(x.nome) + ' — ' + esc(x.motivo)).join('<br>')
             + '<br>Anexe de novo aqui embaixo.';
@@ -2420,7 +2490,7 @@ function stepper(n){
     const marca = k < atual ? '✓' : (k + 1);
     return `<button class="pas ${st}" onclick="mudaFase(${n.id},'${f.k}')"
         title="${k === atual ? 'está aqui' : 'mover para ' + esc(f.n)}">
-      <span class="bola" style="${k <= atual ? 'background:' + f.c + ';border-color:' + f.c + ';color:#0d1a28' : ''}">${marca}</span>
+      <span class="bola" style="${k <= atual ? 'background:' + f.c + ';border-color:' + f.c + ';color:var(--cinza-900)' : ''}">${marca}</span>
       <span class="nm">${esc(f.n)}</span>
     </button>`;
   }).join('');
@@ -2516,7 +2586,7 @@ async function anexarEdital(id){
   // O QUE SUBIU, SUBIU. Mesmo com uma falha no meio, os anteriores ficaram — dizer só "não deu
   // certo" faria a pessoa mandar tudo de novo e criar versões duplicadas do que já estava lá.
   msg.innerHTML = falhou.length
-    ? '<b style="color:#ff9d92">' + falhou.length + ' de ' + arqs.length + ' não subiram:</b><br>'
+    ? '<b style="color:var(--vermelho-700)">' + falhou.length + ' de ' + arqs.length + ' não subiram:</b><br>'
       + falhou.map(x => '· ' + esc(x.nome) + ' — ' + esc(x.motivo)).join('<br>')
       + (falhou.length < arqs.length ? '<br>Os outros ' + (arqs.length - falhou.length) + ' estão na lista acima.' : '')
     : arqs.length + ' arquivo(s) anexado(s).';
@@ -2673,7 +2743,7 @@ function pintaItensGanhos(id){
     +   '</div>'
     // A DIFERENÇA, quando existe, aparece aqui — no lugar onde os dois números estão juntos.
     +   (Math.abs(dif) >= 0.01
-        ? '<div class="salvo" style="margin-top:6px;color:#e0a04a"><b>⚠️ Conferir:</b> valor da ficha '
+        ? '<div class="salvo" style="margin-top:6px;color:var(--ambar-700)"><b>⚠️ Conferir:</b> valor da ficha '
           + brl(n.valor_ganho) + ' · soma dos itens ' + brl(soma) + ' — diferença de ' + brl(Math.abs(dif)) + '.</div>'
         : '')
     + '</div>'
@@ -2762,7 +2832,7 @@ async function lerAtaIA(id, tarefa){
 
     RELATORIO_ATA = { tarefa, anexo, dados: j.dados, custo: j, negocio: id };
     if(tarefa === 'itens-ganhos') pintaGanhos(id); else pintaMapa(id);
-  }catch(e){ saida.innerHTML = '<div class="aviso-err salvo" style="color:#ff9d92">⚠️ ' + esc(e.message) + '</div>'; }
+  }catch(e){ saida.innerHTML = '<div class="aviso-err salvo" style="color:var(--vermelho-700)">⚠️ ' + esc(e.message) + '</div>'; }
 }
 
 function tokenSessaoNeg(){
@@ -2786,7 +2856,7 @@ function custoDaLeitura(j){
   return '<div class="salvo" style="margin-top:10px">'
     + 'custo desta leitura: <b>' + (j.brl != null ? 'R$ ' + Number(j.brl).toFixed(2) : 'US$ ' + Number(j.usd||0).toFixed(4)) + '</b>'
     + (j.registrado === false
-        ? ' · <b style="color:#ff9d92">⚠️ NÃO entrou no contador</b>' + (j.regErro ? ' (' + esc(j.regErro) + ')' : '')
+        ? ' · <b style="color:var(--vermelho-700)">⚠️ NÃO entrou no contador</b>' + (j.regErro ? ' (' + esc(j.regErro) + ')' : '')
         : (j.leituraId ? ' · registrada com o nº ' + j.leituraId : ''))
     + '</div>';
 }
@@ -2799,7 +2869,7 @@ function pintaGanhos(id){
   const saida = document.getElementById('ata-saida');
   const d = RELATORIO_ATA.dados, g = Array.isArray(d.ganhos) ? d.ganhos : [];
   if(d.encontrado === false || (!g.length && !(d.perdidos||[]).length)){
-    saida.innerHTML = '<div class="aviso-err salvo" style="color:#ffd98a">Não achei resultado neste documento. '
+    saida.innerHTML = '<div class="aviso-err salvo" style="color:var(--ambar-700)">Não achei resultado neste documento. '
       + '<b>Isto não quer dizer que a empresa não ganhou nada</b> — quer dizer que não foi encontrado aqui.'
       + (d.observacao ? '<br>O que a leitura disse: <i>' + esc(d.observacao) + '</i>' : '') + '</div>'
       + custoDaLeitura(RELATORIO_ATA.custo);
@@ -2811,13 +2881,13 @@ function pintaGanhos(id){
   const y = num(d.itens_no_documento);
 
   saida.innerHTML =
-      '<div class="aviso-err salvo" style="color:#ffd98a;margin-bottom:8px">⚠️ <b>Confira contra o documento antes de usar.</b> '
+      '<div class="aviso-err salvo" style="color:var(--ambar-700);margin-bottom:8px">⚠️ <b>Confira contra o documento antes de usar.</b> '
     +   'Isto foi lido por IA. O número que importa conferir é simples: o documento tem quantos itens?</div>'
     + '<h4>O que ganhamos</h4>'
     + '<div class="salvo" style="margin-bottom:8px">'
     +   '<b>' + g.length + (y ? ' de ' + y : '') + ' item(ns)</b>'
     +   (comTotal.length ? ' · total <b>' + brl(total) + '</b>'
-          + (comTotal.length < g.length ? ' <span style="color:#e0a04a">(' + (g.length-comTotal.length) + ' sem valor legível ficaram de fora da soma)</span>' : '')
+          + (comTotal.length < g.length ? ' <span style="color:var(--ambar-700)">(' + (g.length-comTotal.length) + ' sem valor legível ficaram de fora da soma)</span>' : '')
         : ' · nenhum item trouxe valor — não há total a somar')
     +   (d.empresa ? '<br>lido como: ' + esc(d.empresa) : '')
     + '</div>'
@@ -2835,7 +2905,7 @@ function pintaGanhos(id){
             <td style="padding:5px;text-align:right;border-bottom:1px solid rgba(34,55,79,.4)">${brl(num(x.total)!=null?num(x.total):(num(x.quantidade)!=null&&num(x.valor_unitario)!=null?num(x.quantidade)*num(x.valor_unitario):null))}</td>
           </tr>`).join('') + '</tbody></table></div>' : '')
     + ((d.nao_consegui_ler||[]).length
-        ? '<div class="salvo" style="margin-top:8px;color:#ffd98a"><b>O que a leitura NÃO conseguiu ler ('+d.nao_consegui_ler.length+'):</b><br>'
+        ? '<div class="salvo" style="margin-top:8px;color:var(--ambar-700)"><b>O que a leitura NÃO conseguiu ler ('+d.nao_consegui_ler.length+'):</b><br>'
           + d.nao_consegui_ler.map(esc).join('<br>') + '</div>' : '')
     // ── A SUGESTÃO, COM CONFIRMAÇÃO DE GENTE ──────────────────────────────────────────────
     + (comTotal.length && ehGestor()
@@ -2907,8 +2977,8 @@ async function confirmarValorGanho(id, valor){
           headers: Object.assign({}, SB_H, {'Content-Type':'application/json'}), body: JSON.stringify(linhas)});
         msgItens = ri.ok
           ? ' · ' + linhas.length + ' item(ns) gravados'
-          : ' · <b style="color:#ff9d92">os itens NÃO foram gravados (HTTP ' + ri.status + ')</b> — o valor sim';
-      }catch(e){ msgItens = ' · <b style="color:#ff9d92">os itens não foram gravados: ' + esc(e.message) + '</b>'; }
+          : ' · <b style="color:var(--vermelho-700)">os itens NÃO foram gravados (HTTP ' + ri.status + ')</b> — o valor sim';
+      }catch(e){ msgItens = ' · <b style="color:var(--vermelho-700)">os itens não foram gravados: ' + esc(e.message) + '</b>'; }
     }
     saida.innerHTML += '<div class="salvo ok" style="margin-top:8px">✓ valor ganho gravado como ' + brl(valor)
       + msgItens + ' — a confirmação está no histórico.</div>';
@@ -2925,7 +2995,7 @@ function pintaMapa(id){
   const saida = document.getElementById('ata-saida');
   const d = RELATORIO_ATA.dados, itens = Array.isArray(d.itens) ? d.itens : [];
   if(d.encontrado === false || !itens.length){
-    saida.innerHTML = '<div class="aviso-err salvo" style="color:#ffd98a">Não achei um mapa de preços neste documento. '
+    saida.innerHTML = '<div class="aviso-err salvo" style="color:var(--ambar-700)">Não achei um mapa de preços neste documento. '
       + '<b>Isto não quer dizer que não houve disputa</b> — quer dizer que não foi encontrado aqui.'
       + (d.observacao ? '<br>' + esc(d.observacao) : '') + '</div>' + custoDaLeitura(RELATORIO_ATA.custo);
     return;
@@ -2945,13 +3015,13 @@ function pintaMapa(id){
   const perto = perdidos.filter(l => l.difPct != null && l.difPct <= 5).length;
 
   saida.innerHTML =
-      '<div class="aviso-err salvo" style="color:#ffd98a;margin-bottom:8px">⚠️ <b>Confira contra a ata antes de usar.</b> '
+      '<div class="aviso-err salvo" style="color:var(--ambar-700);margin-bottom:8px">⚠️ <b>Confira contra a ata antes de usar.</b> '
     +   'Isto foi lido por IA. As diferenças em R$ e % foram calculadas aqui, com aritmética — a IA só copiou os valores.</div>'
     + '<h4>Mapa de preços da disputa</h4>'
     + '<div class="salvo" style="margin-bottom:8px">'
     +   itens.length + ' item(ns) no mapa · <b style="color:var(--verde)">' + ganhos.length + ' ganhos</b>'
-    +   ' · <b style="color:#ff9d92">' + perdidos.length + ' perdidos</b>'
-    +   (perto ? ' · <b style="color:#e0a04a">' + perto + ' perdidos por 5% ou menos</b>' : '')
+    +   ' · <b style="color:var(--vermelho-700)">' + perdidos.length + ' perdidos</b>'
+    +   (perto ? ' · <b style="color:var(--ambar-700)">' + perto + ' perdidos por 5% ou menos</b>' : '')
     +   (d.nossa_empresa ? '<br>lido como: ' + esc(d.nossa_empresa) : '')
     + '</div>'
     + '<div style="max-height:320px;overflow:auto"><table style="width:100%;border-collapse:collapse;font-size:12px">'
@@ -2965,12 +3035,12 @@ function pintaMapa(id){
         <td style="padding:5px;text-align:right;border-bottom:1px solid rgba(34,55,79,.4)">${brl(l._nosso)}</td>
         <td style="padding:5px;border-bottom:1px solid rgba(34,55,79,.4)">${esc(String(l.vencedor||'—').slice(0,26))}</td>
         <td style="padding:5px;text-align:right;border-bottom:1px solid rgba(34,55,79,.4)">${brl(l._venc)}</td>
-        <td style="padding:5px;text-align:right;border-bottom:1px solid rgba(34,55,79,.4);color:${l.difRS>0?'#ff9d92':l.difRS<0?'var(--verde)':'var(--muted)'}">
+        <td style="padding:5px;text-align:right;border-bottom:1px solid rgba(34,55,79,.4);color:${l.difRS>0?'var(--vermelho-700)':l.difRS<0?'var(--verde)':'var(--muted)'}">
           ${l.difRS==null?'—':(l.difRS>0?'+':'') + brl(l.difRS) + (l.difPct!=null?' ('+(l.difPct>0?'+':'')+l.difPct+'%)':'')}</td>
       </tr>`).join('')
     + '</tbody></table></div>'
     + ((d.nao_consegui_ler||[]).length
-        ? '<div class="salvo" style="margin-top:8px;color:#ffd98a"><b>Não consegui ler ('+d.nao_consegui_ler.length+'):</b> '
+        ? '<div class="salvo" style="margin-top:8px;color:var(--ambar-700)"><b>Não consegui ler ('+d.nao_consegui_ler.length+'):</b> '
           + d.nao_consegui_ler.map(esc).join(' · ') + '</div>' : '')
     + `<div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
         <button class="btn-ed sec" onclick="imprimirMapa(${id})">🖨️ Relatório (imprimir/PDF)</button>
@@ -3052,13 +3122,13 @@ function excelMapa(){
        Supabase —, a trilha continua completa. Histórico que a tela escreve é histórico que a
        tela pode esquecer de escrever. */
 const CRED_FASES = [
-  { k:'solicitado', n:'Solicitado', c:'#8fa3b8' },
-  { k:'em_analise', n:'Em análise', c:'#e0a04a' },
-  { k:'aprovado',   n:'Aprovado',   c:'#7CC576' },
-  { k:'negado',     n:'Negado',     c:'#e5675a' },
+  { k:'solicitado', n:'Solicitado', c:'var(--cinza-500)' },
+  { k:'em_analise', n:'Em análise', c:'var(--ambar-700)' },
+  { k:'aprovado',   n:'Aprovado',   c:'var(--verde-700)' },
+  { k:'negado',     n:'Negado',     c:'var(--vermelho-700)' },
 ];
 const credNome = k => (CRED_FASES.find(f => f.k === k) || {}).n || k;
-const credCor  = k => (CRED_FASES.find(f => f.k === k) || {}).c || '#8fa3b8';
+const credCor  = k => (CRED_FASES.find(f => f.k === k) || {}).c || 'var(--cinza-500)';
 /* QUANTOS DIAS SEM RESPOSTA É "PARADO". O Lemuel pediu 7 como padrão. Ele mora aqui, sozinho, e
    trocar este número muda o cartão, o contador da aba e o sino de uma vez — três lugares que, se
    tivessem cada um o seu número, um dia discordariam sobre o que é estar parado. */
@@ -3105,7 +3175,7 @@ function pintaCredenciamentos(id){
   // O CONTADOR DA ABA CONTA OS PARADOS, e não o total: "Credenciamentos 12" não pede nada de
   // ninguém. "Credenciamentos 2" querendo dizer "2 pedidos parados" é o número que faz agir.
   const parados = CREDS.filter(credParado).length;
-  if(cnt){ cnt.textContent = parados ? parados : ''; cnt.style.color = parados ? '#e0a04a' : ''; }
+  if(cnt){ cnt.textContent = parados ? parados : ''; cnt.style.color = parados ? 'var(--ambar-700)' : ''; }
 
   if(!CREDS.length){
     box.innerHTML = '<div class="salvo">Nenhum credenciamento registrado para esta empresa ainda.</div>';
@@ -3120,7 +3190,7 @@ function pintaCredenciamentos(id){
         <span class="nome">${esc(c.industria)}</span>
         <span class="selo" style="color:${credCor(c.status)};border-color:${credCor(c.status)}">${esc(credNome(c.status))}</span>
         ${daqui ? '<span class="selo" style="color:var(--azul-claro);border-color:var(--azul-claro)">deste negócio</span>' : ''}
-        ${parado ? `<span class="selo" style="color:#e0a04a;border-color:#e0a04a">parado há ${d} dias</span>` : ''}
+        ${parado ? `<span class="selo" style="color:var(--ambar-700);border-color:var(--ambar-700)">parado há ${d} dias</span>` : ''}
       </div>
       <div class="meta">
         pedido em ${esc(new Date(c.solicitado_em).toLocaleDateString('pt-BR'))}${d != null ? ` · há ${d} dia(s)` : ''}
@@ -3322,10 +3392,10 @@ async function marcarLembrete(negId, id, feito){
 // coisas faria a empresa perder a informação de onde parou quando ele voltar.
 const SITUACOES = [
   { k:'normal',    n:'Normal',    cor:null },
-  { k:'adiado',    n:'ADIADO',    cor:'#e0a04a' },
-  { k:'remarcado', n:'REMARCADO', cor:'#5CC3F0' },
-  { k:'suspenso',  n:'SUSPENSO',  cor:'#e0a04a' },
-  { k:'cancelado', n:'CANCELADO', cor:'#e5675a' },
+  { k:'adiado',    n:'ADIADO',    cor:'var(--ambar-700)' },
+  { k:'remarcado', n:'REMARCADO', cor:'var(--azul-700)' },
+  { k:'suspenso',  n:'SUSPENSO',  cor:'var(--ambar-700)' },
+  { k:'cancelado', n:'CANCELADO', cor:'var(--vermelho-700)' },
 ];
 const rotuloSituacao = k => (SITUACOES.find(s=>s.k===k)||{}).n || k;
 const corSituacao    = k => (SITUACOES.find(s=>s.k===k)||{}).cor || null;
@@ -3589,6 +3659,11 @@ document.addEventListener('click', e => {
 
 function setVis(v){
   VIS = v;
+  // A ESCOLHA FICA GUARDADA (12/08). Antes, quem trabalhava na Agenda voltava pro padrão a cada
+  // recarga — e o sistema "esquecendo" o que a pessoa acabou de escolher é o tipo de atrito que
+  // ninguém reporta como defeito e todo mundo sente. Guardar a visão é preferência de tela, não
+  // dado de negócio: mora no navegador, não no banco.
+  try { localStorage.setItem('fpmed_neg_vis', v); } catch(_) { /* armazenamento bloqueado: só não lembra */ }
   ['lista','quadros','agenda'].forEach(x => {
     const b = document.getElementById('v-'+x); if(b) b.classList.toggle('on', x===v);
   });
@@ -3639,7 +3714,7 @@ function avisoFunil(txt, erro){
   const d = document.createElement('div');
   d.className = 'vazio';
   d.style.cssText = 'margin-bottom:12px;padding:10px 14px;text-align:left;font-size:12.5px'
-    + (erro ? ';border-color:#5a2622;background:#2a1614;color:#f2a99f' : '');
+    + (erro ? ';border-color:var(--vermelho-300);background:var(--vermelho-50);color:var(--vermelho-800)' : '');
   d.textContent = txt;
   c.insertBefore(d, c.firstChild);
   setTimeout(() => { if(d.parentNode) d.parentNode.removeChild(d); }, 6000);
@@ -3681,10 +3756,17 @@ function formManualDaSessao(){
   const ob = document.getElementById('m-objeto');
   if(ob && ctx.objeto) ob.value = ctx.objeto;
 }
+/* O SUBMENU DE VISÃO NASCE CASADO COM A VISÃO QUE VAI SER PINTADA. O HTML marca "Quadros" como
+   ativo porque esse é o padrão; se a pessoa tinha escolhido Agenda, o header diria uma coisa e o
+   corpo mostraria outra — e navegação que mente sobre onde você está é pior que navegação feia. */
+document.querySelectorAll('header nav a').forEach((a,i) =>
+  a.classList.toggle('on', (i===0&&VIS==='lista')||(i===1&&VIS==='quadros')||(i===2&&VIS==='agenda')));
+
 function _aoAutenticar(){ carregar().then(() => { pinta(); formManualDaSessao(); }); abreLeitorNaBarra(); }
 if(window.gmAuth) _aoAutenticar();
 else document.addEventListener('gm-auth-ready', _aoAutenticar, { once:true });
 </script>
+<script src="limedtec-menu.js"></script>
 <script src="limedtec-pwa.js" defer></script>
 </body>
 </html>
