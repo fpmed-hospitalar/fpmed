@@ -119,9 +119,9 @@ nome antigo, é erro meu:
 | 4 | **Encontrar no tema claro + navegação única** | ✅ `bd35ff1` — publicado, laço visual nas 3 larguras |
 | 4b | **Segurança: CVE-2024-4367 no PDF.js** | ✅ `a220dee` — `isEvalSupported:false` nas 5 chamadas |
 | 4c | **Alarme de coleta** | ✅ **as três partes** — (A) workflow `26bd2d3` · (B) sino `08dd8a1` · (C) **e-mail do dono** `12/08` |
-| 5 | **Kanban protagonista** | 🔧 **1ª fatia feita, NÃO PUBLICADA** — tema claro, navegação única, kanban de abertura, cores de etapa em token. **Falta**: varredura de emoji-ícone, os estados e o laço visual. Sem `sw.js` novo, então o app segue servindo a tela de ontem |
+| 5 | **Kanban protagonista** | ✅ **PUBLICADO** `9979e7c` — tema claro, navegação única, kanban de abertura, cores de etapa em token, 59 emoji-ícone → sprite SVG, estados desenhados, laço visual 3/3 sem rolagem. `sw.js` → `-2026-08-12-25` |
+| 6 | **Calendário mensal** | ⬅️ **é onde eu estou** — pílulas por cor de etapa; as cores já são token (`--etapa-1..5`), foi por isso que elas saíram da tela no item 5 |
 | — | *(ver §2b: fila de fundação e itens que param pra decisão)* | |
-| 6 | Calendário mensal | |
 | 7 | Demais telas ganhando o tema, uma a uma | |
 | 8 | **Conferir o boletim** | dado do arquiteto guardado: atraso de ~4h30 em 11/08. Entrega OK (3/3 `delivered`); **o errado é a hora — investigar o agendador, não o Resend** |
 | 9 | **Saída da proposta** — **9a Excel**, depois **9b PDF por biblioteca** | decidido opção (c). A impressão atual continua até o substituto passar nas suítes |
@@ -236,7 +236,7 @@ cada sessão e atualizo a cada entrega. **É lá que está o ponto exato de reto
 | site no ar | ✅ **10/10 telas HTTP 200**, PWA instalável | `node tools/prova_pos_trancamento.js` |
 | repositório | ⚠️ **público de novo** (`private=false`) — foi o que trouxe o Pages de volta; o trancamento de 11/08 está desfeito e **é decisão dele** | idem, seção 1 |
 | coleta | ✅ em dia — `licitacoes` com 3.197 linhas, publicações até hoje | `node tools/prova_automacoes_vivas.js` |
-| service worker no ar | `limedtec-fpmed-2026-08-11-24` | idem, seção 4 |
+| service worker no ar | `limedtec-fpmed-2026-08-12-25` (subiu com o item 5) | idem, seção 4 |
 
 **Commit** — mensagem em português, primeira linha dizendo o que mudou pro usuário
 (não "fix" nem "update"), corpo explicando **por que** e o que foi medido. Um commit

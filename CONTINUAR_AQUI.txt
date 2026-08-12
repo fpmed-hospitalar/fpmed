@@ -905,7 +905,27 @@ Criado em 21/07/2026 copiando SO os arquivos do app do C:\globalmed.
             >>> MOTOR INTACTO: banco-primeiro, buscarNoBancoAmplo paginado, nacionalProtegido
                 (o bloco #nacional NUNCA mudo), avisoBrandoPNCP, filtro do ramo interno,
                 intervalo padrao hoje, "+ Incluir licitacao". A reforma e so a roupa.
-     5. [1/2] KANBAN PROTAGONISTA — 1a FATIA FEITA E **NAO PUBLICADA** (12/08, 3a rodada).
+     5. [OK] KANBAN PROTAGONISTA — FECHADO E PUBLICADO (9979e7c). sw.js -> -2026-08-12-25.
+             A 2a fatia entregou o que faltava do ritual: 59 emoji-icone viraram SPRITE SVG
+             (os glifos tipograficos ficaram, e isso e fronteira declarada), o esqueleto e o
+             vazio-com-acao entraram, e o LACO VISUAL rodou nas 3 larguras
+             (tools/laco_visual_negocios.html) — 3/3 sem rolagem horizontal.
+             >>> O LACO ACHOU 4 DEFEITOS QUE SUITE NENHUMA PEGARIA:
+                 (a) 53px de rolagem em 390 — e NAO era o menu (medi: contido). Era o header,
+                     flex sem wrap. Quebra em 900px, o mesmo ponto do menu.
+                 (b) TRES controles pra mesma coisa (cabecalho + barra + links soltos), com o
+                     mesmo modo chamado "Lista" num e "Funil de Licitacoes" no outro. Os tres
+                     chamavam setVis e ficavam sincronizados — por isso tudo passava.
+                 (c) "Funil de Licitacoes" virou mentira: o funil agora e o QUADRO. Os nomes
+                     passaram a dizer o formato (Quadros · Lista · Agenda).
+                 (d) O sw.js NAO tinha fpmed_tema.css nem limedtec-menu.js — e a Encontrar ja
+                     estava NO AR desde ontem dependendo dos dois. Offline ela abriria sem
+                     tema e sem navegacao. Corrigido junto.
+             >>> DIVIDA DECLARADA: o mapa visao->link e por INDICE e vive em DOIS lugares (o
+                 setVis e o boot). Trocar a ordem dos links acendeu o link errado hoje porque
+                 so um dos dois foi corrigido. O certo e `data-vis` no proprio link.
+
+     5-hist. [ref] o registro da 1a fatia (12/08), mantido pelo que ele explica:
              FEITO: a tela saiu do escuro e vive sobre o fpmed_tema.css (103 cores chumbadas
              viraram token, em 2 levas conferidas por contagem); a BARRA DO PORTAL morreu —
              era a ULTIMA das seis telas com ela — e a navegacao virou o menu lateral; o
