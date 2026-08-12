@@ -1,9 +1,11 @@
 <!DOCTYPE html>
-<!-- data-tema="dark": esta tela é dona da própria paleta e o aplicaTema NÃO escreve cor aqui.
-     Sem isso, o --bg do cliente (claro) entrava como style inline no <html> e vencia o
-     :root{--bg:#0B1622} logo abaixo — fundo branco, hero ilegível, painéis escuros boiando.
-     Regressão medida no ar em 05/08 20h25. A regra vive no limedtec-config.js (aplicaTema). -->
-<html lang="pt-BR" data-tema="dark">
+<!-- ESTA TELA DEIXOU DE SER A UNICA ESCURA (12/08, item 4 da reforma). Ela usava paleta propria
+     e por isso declarava data-tema="dark", que manda o aplicaTema nao escrever cor aqui.
+     Agora ela e clara e vive sobre os tokens do fpmed_tema.css — logo, e uma tela normal do
+     sistema e o tema do cliente volta a valer nela. A decisao esta na spec da reforma
+     ("tema claro FPMED — nao copiar o dark do SIGA") e no SYNC_GLOBAL ("a FPMED e tema claro
+     por DECISAO DE MARCA. Conflito direto — descartar, nao adaptar"). -->
+<html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -18,6 +20,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/png" sizes="192x192" href="icones/limedtec-192.png">
 <link rel="apple-touch-icon" href="icones/limedtec-192.png">
+<link rel="stylesheet" href="fpmed_tema.css">
 <script src="cliente.config.js"></script>
 <script src="limedtec-config.js"></script>
 <script src="limedtec-tema.js"></script>
@@ -25,279 +28,417 @@
 <script src="gm-auth.js?v=sessao-06ago"></script>
 <script src="fpmed_teto_cmed.js"></script>
 <style>
-/* ══ TEMA ESCURO — só esta tela (decisão do Lemuel: Licitações é a "tela premium";
-   o resto do sistema segue claro). A disposição espelha o SIGA, mas a IDENTIDADE é FPMED:
-   azul #2CA9E0 como destaque, verde #8DC63F nas etiquetas, cruz FPMED no lugar do logo deles.
-   Nada visual proprietário do SIGA foi copiado — só a organização e o clima. ══ */
-:root{--azul:#2CA9E0;--azul-claro:#5CC3F0;--verde:#8DC63F;--verde-esc:#2c4a08;--muted:#8fa3b8;
-      --bg:#0B1622;--painel:#132234;--painel2:#182B41;--linha:#22374f;--texto:#e6edf5;
-      --vermelho:#e5675a;--ambar:#e0a04a;
-      --sombra:0 1px 3px rgba(0,0,0,.35),0 8px 26px rgba(0,0,0,.28)}
+/* ══════════════════════════════════════════════════════════════════════════════
+   ENCONTRAR · TEMA CLARO — item 4 da fila da reforma.
+   Alvo visual: docs/prototipo/fpmed_prototipo_prime.html · tokens: fpmed_tema.css
+
+   ── O QUE MORREU AQUI, E POR QUÊ ──────────────────────────────────────────────
+   Esta tela era a única ESCURA do sistema. Ela nasceu espelhando o SIGA, e o
+   escuro veio junto sem ser decidido. Depois disso a casa decidiu o contrário, e
+   está escrito em dois lugares: a spec da reforma manda "tema claro FPMED — não
+   copiar o dark do SIGA", e o SYNC_GLOBAL põe o rebranding escuro no bloco
+   "NÃO PORTAR: a FPMED é tema claro por DECISÃO DE MARCA. Conflito direto —
+   descartar, não adaptar".
+   >>> Então isto não é repintar: é a tela voltando pra identidade da empresa.
+
+   ── AS TRÊS REGRAS DO ADENDO QUE ELA VIOLAVA, MEDIDAS ANTES ───────────────────
+     · não carregava o fpmed_tema.css — o design system existia e esta tela não o via;
+     · 35 cores chumbadas em 77 lugares, mais 23 rgba() (o adendo proíbe cor fora
+       dos tokens, e proíbe gerar tom com rgba: contraste sobre fundo colorido vira
+       loteria);
+     · 20 emojis como ícone e ZERO svg inline (D11 proíbe emoji como ícone).
+
+   ── POR QUE OS NOMES VELHOS CONTINUAM EXISTINDO (a decisão que evita o apagão) ─
+   O <script> desta tela escreve `var(--linha)` e `var(--muted)` DENTRO de HTML
+   gerado — 14 ocorrências que nenhuma varredura de CSS enxerga. Apagar os nomes
+   antigos deixaria esses pedaços sem cor, e só apareceria no dia em que alguém
+   abrisse aquele painel.
+   >>> ENTÃO OS NOMES ANTIGOS VIRARAM APELIDOS DOS TOKENS. Não são uma segunda
+       paleta: cada um aponta pra um token e não tem valor próprio. As regras
+       novas usam o token direto; o legado continua funcionando, agora claro.
+       É o "sem apagão" aplicado a variável de CSS — e some sozinho quando a
+       última referência antiga sair do script.
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+:root{
+  /* apelidos do legado -> tokens. NENHUM valor próprio mora aqui. */
+  --azul:        var(--azul-500);
+  --azul-claro:  var(--azul-700);   /* era um azul CLARO sobre fundo escuro; sobre
+                                       claro o mesmo ofício (texto/link) é o 700 */
+  --verde:       var(--verde-500);
+  --verde-esc:   var(--verde-900);
+  --muted:       var(--cinza-600);
+  --bg:          var(--cinza-50);
+  --painel:      var(--branco);
+  --painel2:     var(--cinza-50);
+  --linha:       var(--cinza-200);
+  --texto:       var(--cinza-800);
+  --vermelho:    var(--vermelho-600);
+  --ambar:       var(--ambar-500);
+  --sombra:      var(--sombra-1);
+}
+
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);font-family:Inter,system-ui,sans-serif;color:var(--texto)}
-/* ── TOPO INTEGRADO (05/08, junto com o conserto do tema) ────────────────────────────────
-   Duas correções de hierarquia que o print expôs:
-   1. ALINHAMENTO. A topfaixa e o header eram full-bleed enquanto todo o conteúdo vive numa
-      coluna de 1180px centrada — o logo FPMED ficava colado na borda esquerda e o conteúdo
-      começava 180px adiante. Agora os dois usam a MESMA régua (.faixa-int), então logo,
-      busca e resultados nascem na mesma vertical.
-   2. PROFUNDIDADE INVERTIDA. A topfaixa (#182B41) era mais CLARA que o header (#132234) e
-      que o corpo (#0B1622): a barra de sistema, que é a camada que deve recuar, era a que
-      mais avançava. Agora ela é a mais escura e o header é a única superfície elevada. */
-.faixa-int{max-width:1180px;margin:0 auto;padding:0 22px;display:flex;align-items:center;gap:13px;width:100%}
-.topfaixa{background:#08111B;color:var(--muted);padding:7px 0;font-size:12.5px;
-  border-bottom:1px solid rgba(34,55,79,.55)}
-.topfaixa .faixa-int{gap:12px}
-.topfaixa a{color:var(--azul-claro);text-decoration:none;background:rgba(44,169,224,.13);padding:3px 11px;
-  border-radius:20px;font-size:12px;transition:background .16s,transform .16s}
-.topfaixa a:hover{background:rgba(44,169,224,.26);transform:translateY(-1px)}
-header{background:var(--painel);border-bottom:1px solid var(--linha);padding:14px 0;
-  box-shadow:0 1px 0 rgba(255,255,255,.03),0 6px 22px rgba(0,0,0,.28)}
-header h1{font-family:Montserrat;font-size:18px;margin:0;color:#fff;font-weight:700;letter-spacing:.3px}
-header .marca{display:flex;align-items:center;gap:9px}
-header .cruz{width:30px;height:30px;border-radius:7px;background:var(--azul);display:grid;place-items:center;
-  color:#fff;font-size:19px;font-weight:700;line-height:1;box-shadow:0 2px 10px rgba(44,169,224,.35)}
-header .nome{font-family:Montserrat;font-weight:800;font-size:17px;color:#fff;letter-spacing:.6px}
-header .nome small{display:block;font-size:8px;letter-spacing:2.6px;color:var(--muted);font-weight:600;margin-top:-2px}
-/* separador entre a marca e o nome da tela — sem ele os dois viram um título só */
-header .sep{width:1px;height:22px;background:var(--linha);margin:0 4px}
-/* ── A BARRA DO PORTAL ── as MESMAS regras da aba Negócios, de propósito: se as duas telas são
-   um lugar só, a barra que as liga não pode ter dois desenhos. */
-header nav.portal{margin-left:auto;display:flex;gap:4px}
-header nav.portal a{color:var(--muted);text-decoration:none;font-size:12.5px;padding:6px 13px;
-  border-radius:8px;cursor:pointer;transition:background .16s,color .16s}
-header nav.portal a:hover{background:var(--painel2);color:var(--texto)}
-header nav.portal a.on{background:rgba(44,169,224,.16);color:var(--azul-claro);font-weight:600}
-.wrap{max-width:1180px;margin:0 auto;padding:0 22px 70px}
+body{
+  margin:0;
+  background:var(--cinza-50);
+  color:var(--cinza-800);
+  font-family:var(--fonte);
+  font-size:var(--txt-2);
+  line-height:var(--altura-texto);
+  /* o menu lateral é `position:fixed` com 224px; sem esta margem o conteúdo
+     nasce por baixo dele. Em ≤900px o menu vira faixa no topo e a margem sai. */
+  margin-left:224px;
+}
+@media(max-width:900px){ body{ margin-left:0 } }
 
-/* ── barra de período, canto direito (estilo SIGA) ── */
-.periodo{display:flex;justify-content:flex-end;gap:18px;padding:22px 0 4px;flex-wrap:wrap}
+/* ── CABEÇALHO DA TELA ────────────────────────────────────────────────────────
+   A barra do portal MORREU e não foi substituída: o menu lateral do item 3 tem
+   as sete entradas dela (Encontrar, Negócios, Documentos, Declarações, Peças,
+   Conferir, Leitor). Manter as duas seria a mesma navegação em dois lugares —
+   e duas portas pra mesma coisa divergem, que é lição de sangue desta casa. */
+.faixa-int{max-width:1180px;margin:0 auto;padding:0 var(--esp-6);display:flex;
+  align-items:center;gap:var(--esp-3);width:100%}
+header{background:var(--branco);border-bottom:1px solid var(--cinza-200);padding:var(--esp-4) 0}
+header h1{font-size:var(--txt-5);font-weight:var(--peso-semi);line-height:var(--altura-titulo);
+  color:var(--cinza-800);margin:0}
+header .sub{font-size:var(--txt-1);color:var(--cinza-600);margin-left:auto;text-align:right}
+
+.wrap{max-width:1180px;margin:0 auto;padding:0 var(--esp-6) var(--esp-16)}
+
+/* ── PERÍODO ─────────────────────────────────────────────────────────────────── */
+.periodo{display:flex;justify-content:flex-end;gap:var(--esp-6);padding:var(--esp-6) 0 var(--esp-1);flex-wrap:wrap}
 .periodo .campo{min-width:190px}
-.periodo label{display:block;font-size:11px;font-weight:600;color:var(--muted);margin-bottom:5px}
-select,input[type=date],input[type=text]{width:100%;padding:9px 11px;border:1px solid var(--linha);border-radius:8px;
-  font-family:inherit;font-size:13px;color:var(--texto);background:var(--painel2)}
-select:focus,input:focus{outline:none;border-color:var(--azul)}
-.intervalo{display:flex;gap:6px;align-items:center}
+.periodo label{display:block;font-size:var(--txt-1);font-weight:var(--peso-semi);
+  letter-spacing:.04em;text-transform:uppercase;color:var(--cinza-600);margin-bottom:var(--esp-1)}
 
-/* ── hero central ── a busca fica CLARA sobre o fundo escuro, como no SIGA ── */
-.hero{text-align:center;padding:34px 0 24px}
-.hero h2{font-family:Montserrat;font-weight:800;font-size:44px;margin:0 0 10px;letter-spacing:-.8px;color:#fff}
-.hero p{margin:0 0 24px;color:var(--muted);font-size:14.5px}
-.buscabox{max-width:660px;margin:0 auto;position:relative}
-.buscabox input{width:100%;padding:16px 54px 16px 48px;font-size:15px;border-radius:34px;border:1px solid var(--linha);
-  box-shadow:var(--sombra);background:#f7fafd;color:#173A5E;transition:box-shadow .18s,border-color .18s}
-.buscabox input::placeholder{color:#8a9bad}
-.buscabox input:focus{outline:none;border-color:var(--azul);box-shadow:0 0 0 4px rgba(44,169,224,.22)}
-.buscabox .lupa{position:absolute;left:19px;top:50%;transform:translateY(-50%);color:#8a9bad;font-size:16px}
-.buscabox .go{position:absolute;right:7px;top:50%;transform:translateY(-50%);background:var(--azul);color:#fff;border:0;
-  width:40px;height:40px;border-radius:50%;cursor:pointer;font-size:15px;transition:filter .16s,transform .16s}
-.buscabox .go:hover{filter:brightness(1.12);transform:translateY(-50%) scale(1.06)}
-.links{margin-top:16px;display:flex;gap:24px;justify-content:center;flex-wrap:wrap}
-.links a{color:var(--azul-claro);font-size:13px;text-decoration:none;cursor:pointer;font-weight:500;transition:color .16s}
-.links a:hover{color:#fff;text-decoration:underline}
+select,input[type=date],input[type=text],input[type=number]{
+  width:100%;padding:var(--esp-2) var(--esp-3);
+  border:1px solid var(--cinza-300);border-radius:var(--raio-botao);
+  background:var(--branco);color:var(--cinza-800);
+  font-family:var(--fonte);font-size:var(--txt-2);line-height:var(--altura-texto);
+  transition:border-color var(--transicao),box-shadow var(--transicao)}
+select::placeholder,input::placeholder{color:var(--cinza-400)}
+select:hover:not([disabled]),input:hover:not([disabled]){border-color:var(--cinza-400)}
+select:focus,input:focus{outline:none;border-color:var(--azul-500);box-shadow:var(--foco)}
+/* O estado DESABILITADO não existia em lugar nenhum desta tela — era o único dos
+   estados do adendo que faltava. Campo apagado sem estilo próprio parece campo
+   normal que não responde, e a pessoa fica clicando. */
+select[disabled],input[disabled],textarea[disabled]{
+  background:var(--cinza-100);color:var(--cinza-400);cursor:not-allowed;border-color:var(--cinza-200)}
+.intervalo{display:flex;gap:var(--esp-2);align-items:center}
 
-/* ── pesquisa avançada (expansível) ── */
-/* ══ OS FILTROS SAÍRAM DA GAVETA (11/08) ══════════════════════════════════════════════════════
+/* ── HERO ─────────────────────────────────────────────────────────────────────
+   O protótipo põe a busca num CARTÃO branco, no topo, e não numa faixa herói
+   gigante: 44px de título comem a dobra inteira e empurram o resultado — que é
+   o que a pessoa veio ver — pra baixo do fundo da tela. Aqui o título usa o
+   --txt-5 da escala e a busca ganha o espaço. */
+.hero{padding:var(--esp-6) 0 var(--esp-4)}
+.hero h2{font-size:var(--txt-5);font-weight:var(--peso-semi);line-height:var(--altura-titulo);
+  color:var(--cinza-800);margin:0 0 var(--esp-1)}
+.hero p{margin:0 0 var(--esp-4);color:var(--cinza-600);font-size:var(--txt-2)}
+.buscabox{position:relative;max-width:var(--largura-leitura)}
+.buscabox input{width:100%;padding:var(--esp-3) 52px var(--esp-3) 44px;
+  font-size:var(--txt-3);border-radius:var(--raio-botao);
+  border:1px solid var(--cinza-300);background:var(--branco);color:var(--cinza-800)}
+.buscabox input:focus{outline:none;border-color:var(--azul-500);box-shadow:var(--foco)}
+/* o ícone é SVG do conjunto da casa, herdando currentColor — não é mais um emoji */
+.buscabox .lupa{position:absolute;left:var(--esp-3);top:50%;transform:translateY(-50%);
+  color:var(--cinza-400);display:flex;pointer-events:none}
+.buscabox .lupa svg{width:20px;height:20px;stroke:currentColor;fill:none;
+  stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.buscabox .go{position:absolute;right:var(--esp-1);top:50%;transform:translateY(-50%);
+  background:var(--azul-600);color:var(--branco);border:0;
+  width:38px;height:38px;border-radius:var(--raio-botao);cursor:pointer;
+  display:grid;place-items:center;transition:background-color var(--transicao)}
+.buscabox .go:hover{background:var(--azul-700)}
+.buscabox .go:focus-visible{outline:none;box-shadow:var(--foco)}
+.buscabox .go svg{width:20px;height:20px;stroke:currentColor;fill:none;
+  stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+
+.links{margin-top:var(--esp-4);display:flex;gap:var(--esp-6);flex-wrap:wrap}
+.links a{color:var(--azul-700);font-size:var(--txt-2);text-decoration:none;cursor:pointer;
+  font-weight:var(--peso-medio);border-radius:var(--raio-botao)}
+.links a:hover{text-decoration:underline}
+.links a:focus-visible{outline:none;box-shadow:var(--foco)}
+
+/* ── GRADE: filtros à esquerda, resultados à direita ─────────────────────────── */
+#painel-busca{display:grid;grid-template-columns:262px 1fr;gap:var(--esp-4);
+  align-items:start;margin-top:var(--esp-4)}
+@media(max-width:900px){#painel-busca{grid-template-columns:1fr}}
+#avancada{background:var(--branco);border:1px solid var(--cinza-200);
+  border-radius:var(--raio-cartao);box-shadow:var(--sombra-1);
+  padding:var(--esp-4);text-align:left;position:sticky;top:var(--esp-3);
+  max-height:calc(100vh - 28px);overflow:auto;overflow-x:hidden}
+/* ══ OS FILTROS SAÍRAM DA GAVETA (11/08) ══════════════════════════════════════════════════
    Eles moravam atrás do link "Pesquisa avançada", fechados. Quem não clicasse não sabia que UF,
    modalidade, valor e situação existiam — e o operador buscava sem saber que dava pra filtrar.
-   No Licitante Prime eles são uma COLUNA FIXA à esquerda dos resultados: você vê o que pode
-   filtrar antes de precisar filtrar, e o que já está ligado fica à vista o tempo todo.
    >>> NENHUM FILTRO FOI ACRESCENTADO NEM TIRADO. São os mesmos campos, no mesmo formulário,
        lendo os mesmos ids. O que mudou é que eles deixaram de estar escondidos.
    >>> `#avancada.open` CONTINUA EXISTINDO porque `soDesertas()` e o Radar abrem a gaveta por
        código. Numa coluna sempre visível "abrir" não faz nada — e é isso que a regra vazia diz,
        em vez de deixar o `classList.add('open')` apontando pra um seletor que sumiu. */
-#painel-busca{display:grid;grid-template-columns:262px 1fr;gap:18px;align-items:start;margin-top:18px}
-@media(max-width:900px){#painel-busca{grid-template-columns:1fr}}
-#avancada{background:var(--painel);border:1px solid var(--linha);border-radius:12px;
-  padding:16px;box-shadow:var(--sombra);text-align:left;position:sticky;top:14px;
-  max-height:calc(100vh - 28px);overflow:auto}
-#avancada.open{}   /* ver o comentário acima: a gaveta virou coluna, e "abrir" já é o estado */
-#avancada h5{margin:0 0 12px;font-family:Montserrat;font-size:12px;font-weight:800;
-  letter-spacing:1.1px;text-transform:uppercase;color:#fff}
-/* Numa coluna estreita o grid de 3 colunas vira uma pilha — os campos ficam legíveis e o
-   rótulo continua colado no seu campo. */
-#avancada .grid3{grid-template-columns:1fr;gap:11px}
-/* >>> `min-width:0` É O QUE FAZ CABER, e sem ele a coluna nasce quebrada: item de grid tem
-       `min-width:auto` por padrão e NÃO encolhe abaixo do próprio conteúdo — e um `<select>`
-       com opção longa ("Concorrência eletrônica") mede 359px. Medido no ar: coluna de 245px
-       com conteúdo de 375px, campos cortados na direita e barra de rolagem horizontal.
-       `box-sizing:border-box` já existia e não resolve isto: o problema não é o padding, é o
-       piso de largura do item. */
-/* >>> A REGRA VALE PRA TUDO DENTRO DA COLUNA, e não só pros filhos do `.grid3` — foi o erro da
-       1ª tentativa. Eu mirei no grid, medi de novo e continuava 375px de conteúdo em 245px de
-       coluna: quem estourava era a FILEIRA DE BOTÕES do fim (um flex com o texto do refino e
-       dois botões), que o meu seletor não alcançava. Mirar no lugar errado e medir de novo é
-       barato; mirar no lugar errado e não medir teria ido pro ar cortado. */
+#avancada.open{}
+#avancada h5{margin:0 0 var(--esp-3);font-size:var(--txt-1);font-weight:var(--peso-semi);
+  letter-spacing:.1em;text-transform:uppercase;color:var(--cinza-600)}
+#avancada .grid3{grid-template-columns:1fr;gap:var(--esp-3)}
+/* `min-width:0` em TUDO dentro da coluna — item de grid não encolhe abaixo do
+   próprio conteúdo, e um <select> com "Concorrência eletrônica" mede 359px numa
+   coluna de 245px. A regra vale pra coluna inteira, e não só pros filhos do
+   .grid3: quem estourava era a fileira de botões do fim. (medido no ar, 11/08) */
 #avancada div,#avancada span,#avancada select,#avancada input{min-width:0}
 #avancada select,#avancada input,#avancada textarea{max-width:100%}
-/* A fileira de ações empilha na coluna: "margin-left:auto" numa largura de 245px empurra o
-   botão pra fora em vez de alinhar à direita. */
 #avancada .grid3 ~ div{flex-direction:column;align-items:stretch !important}
 #avancada .grid3 ~ div .btn{margin-left:0 !important;width:100%}
 #avancada .intervalo{flex-wrap:wrap}
-#avancada{overflow-x:hidden}
-.grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px}
-.grid3 label{display:block;font-size:11px;font-weight:600;color:var(--muted);margin-bottom:5px;text-transform:uppercase;letter-spacing:.3px}
+.grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:var(--esp-4)}
+.grid3 label{display:block;font-size:var(--txt-1);font-weight:var(--peso-semi);
+  color:var(--cinza-600);margin-bottom:var(--esp-1);text-transform:uppercase;letter-spacing:.04em}
 
-/* ── ÓRGÃOS (painel derivado do índice próprio) ── mesma caixa da pesquisa avançada ── */
-#orgaos{display:none;background:var(--painel);border:1px solid var(--linha);border-radius:12px;padding:18px;margin-top:18px;box-shadow:var(--sombra);text-align:left}
-#orgaos.open{display:block}
-.org{display:flex;gap:12px;align-items:center;padding:9px 11px;border-radius:9px;border:1px solid transparent;
-  cursor:pointer;transition:background .14s,border-color .14s,transform .14s}
-.org:hover{background:var(--painel2);border-color:rgba(44,169,224,.4);transform:translateY(-1px)}
-.org .nome{font-size:13px;color:var(--texto);font-weight:600;line-height:1.35}
-.org .sub{font-size:11.5px;color:var(--muted)}
-.org .n{margin-left:auto;text-align:right;white-space:nowrap}
-.org .n b{font-family:Montserrat;color:var(--azul-claro);font-size:14px}
-/* ── FAIXA DISCRETA DO PNCP FORA DO AR (10/08) ── contratempo não é falha do sistema.
-   Cinza-azulada e de uma linha: informa e oferece a ação, sem competir com o resultado que
-   está logo abaixo. O vermelho ficou reservado pro caso em que não há NADA a mostrar. */
-.aviso-brando{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:14px;
-  padding:10px 14px;background:var(--painel);border:1px solid var(--linha);border-left:3px solid var(--azul);
-  border-radius:10px;font-size:12.5px;color:var(--muted);line-height:1.5}
-.aviso-brando b{color:var(--texto);font-weight:600}
-/* ── RADAR ── mesma caixa dos outros painéis ── */
-#radar{display:none;background:var(--painel);border:1px solid var(--linha);border-radius:12px;padding:18px;margin-top:18px;box-shadow:var(--sombra);text-align:left}
-#radar.open{display:block}
-.rd{display:flex;gap:12px;align-items:center;padding:10px 12px;border-radius:9px;border:1px solid var(--linha);
-  background:var(--painel2);margin-bottom:8px}
-.rd .nome{font-size:13px;color:#fff;font-weight:600}
-.rd .sub{font-size:11.5px;color:var(--muted);margin-top:2px}
-.rd .km{margin-left:auto;text-align:right;white-space:nowrap;font-size:11.5px;color:var(--muted)}
-.rd .n{font-family:Montserrat;font-size:17px;font-weight:700;color:var(--azul-claro);min-width:34px;text-align:center}
-.rd.zero .n{color:var(--muted)}
-/* ── MEUS JORNAIS (buscas salvas) ── mesma caixa dos outros dois painéis ── */
-#jornais{display:none;background:var(--painel);border:1px solid var(--linha);border-radius:12px;padding:18px;margin-top:18px;box-shadow:var(--sombra);text-align:left}
+/* ── PAINÉIS (Órgãos · Radar · Meus Jornais) ── a mesma caixa pros três ──────── */
+#orgaos,#radar{display:none;background:var(--branco);border:1px solid var(--cinza-200);
+  border-radius:var(--raio-cartao);padding:var(--esp-4);margin-top:var(--esp-4);
+  box-shadow:var(--sombra-1);text-align:left}
+#orgaos.open,#radar.open{display:block}
+/* o painel dos jornais entra na MESMA caixa dos outros dois — mesma cor, mesma borda, mesmo
+   raio. Três painéis com três desenhos é o que faz um sistema parecer montado. */
+#jornais{display:none;background:var(--painel);border:1px solid var(--cinza-200);
+  border-radius:var(--raio-cartao);padding:var(--esp-4);margin-top:var(--esp-4);
+  box-shadow:var(--sombra-1);text-align:left}
 #jornais.open{display:block}
-.jor{display:flex;gap:12px;align-items:center;padding:11px 12px;border-radius:10px;border:1px solid var(--linha);
-  background:var(--painel2);margin-bottom:9px}
-.jor .nome{font-size:13.5px;color:var(--texto);font-weight:600;line-height:1.35}
-.jor .sub{font-size:11.5px;color:var(--muted);margin-top:3px;line-height:1.5}
-.jor .acao{margin-left:auto;display:flex;gap:8px;align-items:center;white-space:nowrap}
-/* o contador de novidade só existe quando há novidade — "0 novas" em destaque treina o olho a
-   ignorar o lugar onde o número importante aparece. */
-.novas{background:rgba(141,198,63,.16);color:var(--verde);border:1px solid rgba(141,198,63,.4);
-  padding:4px 11px;border-radius:20px;font-size:11.5px;font-weight:700}
-.bdg.nova{background:var(--verde);color:#0b1622;font-weight:700}
-/* filtro de refino ATIVO: o operador precisa ver que a lista está cortada, senão lê "só tem
-   3 licitações hoje" quando na verdade é "3 passaram no refino que eu mesmo deixei ligado". */
-.refino{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px;font-size:12.5px}
-.pill{background:rgba(44,169,224,.16);color:var(--azul-claro);border:1px solid rgba(44,169,224,.35);
-  padding:4px 11px;border-radius:20px;font-size:11.5px;font-weight:600}
-.etq.deserta{background:var(--ambar);color:#3a2708}
-.bdg.laranja{background:#523a17;color:#f0c483}
+#orgaos b,#radar b,#jornais b{color:var(--cinza-800)}
 
-/* ── KPIs ── régua elegante, não chips soltos ── */
-.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));background:var(--painel);border-radius:14px;
-  box-shadow:var(--sombra);overflow:hidden;margin:26px 0 8px;border:1px solid var(--linha)}
-.kpi{padding:15px 18px;border-right:1px solid var(--linha)}
+.org{display:flex;gap:var(--esp-3);align-items:center;padding:var(--esp-2) var(--esp-3);
+  border-radius:var(--raio-botao);border:1px solid transparent;cursor:pointer;
+  transition:background-color var(--transicao),border-color var(--transicao)}
+.org:hover{background:var(--cinza-50);border-color:var(--cinza-300)}
+.org .nome{font-size:var(--txt-2);color:var(--cinza-800);font-weight:var(--peso-semi);line-height:1.35}
+.org .sub{font-size:var(--txt-1);color:var(--cinza-600)}
+.org .n{margin-left:auto;text-align:right;white-space:nowrap}
+.org .n b{color:var(--azul-700);font-size:var(--txt-3);font-variant-numeric:tabular-nums}
+
+.rd{display:flex;gap:var(--esp-3);align-items:center;padding:var(--esp-3);
+  border-radius:var(--raio-botao);border:1px solid var(--cinza-200);
+  background:var(--cinza-50);margin-bottom:var(--esp-2)}
+.rd .nome{font-size:var(--txt-2);color:var(--cinza-800);font-weight:var(--peso-semi)}
+.rd .sub{font-size:var(--txt-1);color:var(--cinza-600);margin-top:2px}
+.rd .km{margin-left:auto;text-align:right;white-space:nowrap;font-size:var(--txt-1);color:var(--cinza-600)}
+.rd .n{font-size:var(--txt-4);font-weight:var(--peso-forte);color:var(--azul-700);
+  min-width:34px;text-align:center;font-variant-numeric:tabular-nums}
+.rd.zero .n{color:var(--cinza-400)}
+
+.jor{display:flex;gap:var(--esp-3);align-items:center;padding:var(--esp-3);
+  border-radius:var(--raio-cartao);border:1px solid var(--cinza-200);
+  background:var(--cinza-50);margin-bottom:var(--esp-2)}
+.jor .nome{font-size:var(--txt-2);color:var(--cinza-800);font-weight:var(--peso-semi);line-height:1.35}
+.jor .sub{font-size:var(--txt-1);color:var(--cinza-600);margin-top:3px;line-height:var(--altura-texto)}
+.jor .acao{margin-left:auto;display:flex;gap:var(--esp-2);align-items:center;white-space:nowrap}
+
+/* o contador de novidade só existe quando HÁ novidade: "0 novas" em destaque
+   treina o olho a ignorar o lugar onde o número importante aparece. */
+.novas{background:var(--verde-100);color:var(--verde-700);border:1px solid var(--verde-200);
+  padding:var(--esp-1) var(--esp-3);border-radius:var(--raio-pilula);
+  font-size:var(--txt-1);font-weight:var(--peso-semi)}
+
+/* ── FILTRO DE REFINO ATIVO ──────────────────────────────────────────────────── */
+.refino{display:flex;gap:var(--esp-2);align-items:center;flex-wrap:wrap;
+  margin-bottom:var(--esp-3);font-size:var(--txt-2);color:var(--cinza-600)}
+.pill{background:var(--azul-100);color:var(--azul-700);border:1px solid var(--azul-200);
+  padding:var(--esp-1) var(--esp-3);border-radius:var(--raio-pilula);
+  font-size:var(--txt-1);font-weight:var(--peso-semi)}
+
+/* ── KPIs ── régua, não chips soltos ────────────────────────────────────────── */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+  background:var(--branco);border:1px solid var(--cinza-200);border-radius:var(--raio-cartao);
+  box-shadow:var(--sombra-1);overflow:hidden;margin:var(--esp-6) 0 var(--esp-2)}
+.kpi{padding:var(--esp-4);border-right:1px solid var(--cinza-200)}
 .kpi:last-child{border-right:0}
-.kpi b{font-family:Montserrat;font-size:23px;font-weight:700;display:block;line-height:1.15;color:#fff}
-.kpi span{font-size:11px;color:var(--muted);letter-spacing:.2px}
-.contagem{font-size:12.5px;color:var(--muted);margin:16px 0 10px}
-.contagem b{color:var(--azul-claro)}
+/* D9: valor forte em cima, rótulo desenfatizado embaixo. E tabular-nums, senão a
+   régua dança quando o número muda de 9 pra 10. */
+.kpi b{font-size:var(--txt-6);font-weight:var(--peso-forte);display:block;
+  line-height:var(--altura-titulo);color:var(--cinza-800);font-variant-numeric:tabular-nums}
+.kpi span{font-size:var(--txt-1);color:var(--cinza-600);letter-spacing:.02em}
+.contagem{font-size:var(--txt-2);color:var(--cinza-600);margin:var(--esp-4) 0 var(--esp-3)}
+.contagem b{color:var(--cinza-800);font-variant-numeric:tabular-nums}
 
-/* ── cards ── sem borda dura: separados por respiro e sombra, como no SIGA ── */
-.lic{background:var(--painel);border:1px solid var(--linha);border-radius:14px;padding:22px 24px;margin-bottom:16px;
-  box-shadow:var(--sombra);transition:border-color .18s ease, transform .18s ease, box-shadow .18s ease}
-.lic:hover{border-color:rgba(44,169,224,.5);transform:translateY(-2px);box-shadow:0 4px 10px rgba(0,0,0,.4),0 14px 34px rgba(0,0,0,.3)}
-.lic .titulo{font-family:Montserrat;font-weight:700;font-size:14.5px;color:var(--azul-claro);text-decoration:none;
-  display:inline-block;line-height:1.45;text-transform:uppercase;letter-spacing:.2px;transition:color .16s}
-.lic .titulo:hover{color:#fff;text-decoration:underline}
-.lic .obj{margin:11px 0 14px;font-size:14px;line-height:1.6;color:#c3d1e0;
+/* ── CARTÃO DE LICITAÇÃO ────────────────────────────────────────────────────── */
+.lic{background:var(--branco);border:1px solid var(--cinza-200);border-radius:var(--raio-cartao);
+  padding:var(--esp-6);margin-bottom:var(--esp-4);box-shadow:var(--sombra-1);
+  transition:box-shadow var(--transicao),border-color var(--transicao)}
+.lic:hover{box-shadow:var(--sombra-2);border-color:var(--cinza-300)}
+.lic .titulo{font-size:var(--txt-2);font-weight:var(--peso-semi);color:var(--azul-700);
+  text-decoration:none;display:inline-block;line-height:1.45;letter-spacing:.01em}
+.lic .titulo:hover{text-decoration:underline}
+.lic .titulo:focus-visible{outline:none;box-shadow:var(--foco);border-radius:var(--raio-botao)}
+.lic .obj{margin:var(--esp-3) 0 var(--esp-4);font-size:var(--txt-2);
+  line-height:var(--altura-texto);color:var(--cinza-700);
   display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
-/* etiquetas CHEIAS — verde FPMED saturado, legível sobre o escuro */
-.etiquetas{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:14px}
-.etq{background:var(--verde);color:var(--verde-esc);padding:5px 13px;border-radius:20px;font-size:11.5px;font-weight:700;letter-spacing:.1px}
-.etq.alvo{background:var(--azul);color:#06263a}
-.etq.zero{background:#22374f;color:#a9bdd2;font-weight:600}
-.sessao{font-size:13px;color:#b3c4d6;margin-bottom:14px;line-height:1.6}
-.sessao b{color:#fff;font-weight:600}
-.rodape{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding-top:14px;border-top:1px solid var(--linha)}
-.bdg{padding:4px 11px;border-radius:5px;font-size:11.5px;font-weight:600}
-.bdg.cinza{background:#22374f;color:#a9bdd2}
-.bdg.azul{background:var(--azul);color:#06263a}
-.bdg.v{background:#2c4a1a;color:#b7e07a}
-.bdg.a{background:#523a17;color:#f0c483}
-.bdg.r{background:#5a2622;color:#f2a99f}
-.valor{margin-left:auto;font-family:Montserrat;font-weight:700;font-size:16px;color:#fff}
 
-/* ── skeleton de carregamento ── */
-.skel{background:var(--painel);border:1px solid var(--linha);border-radius:14px;padding:22px 24px;margin-bottom:16px}
-.skel div{background:linear-gradient(90deg,#1b2f45 25%,#24405c 50%,#1b2f45 75%);background-size:200% 100%;
-  animation:brilho 1.3s infinite;border-radius:6px;height:13px;margin-bottom:10px}
-@keyframes brilho{0%{background-position:200% 0}100%{background-position:-200% 0}}
+/* etiquetas: fundo no tom 100 e texto no 700 — é assim que a cor informa sem
+   gritar, e é assim que o texto passa em AA. O verde-500 CHEIO do tema escuro
+   não sobrevive ao fundo branco: ele dá 1,9:1 como texto. */
+.etiquetas{display:flex;flex-wrap:wrap;gap:var(--esp-2);margin-bottom:var(--esp-3)}
+.etq{background:var(--verde-100);color:var(--verde-700);padding:var(--esp-1) var(--esp-3);
+  border-radius:var(--raio-pilula);font-size:var(--txt-1);font-weight:var(--peso-semi)}
+.etq.alvo{background:var(--azul-100);color:var(--azul-700)}
+.etq.zero{background:var(--cinza-100);color:var(--cinza-600)}
+.etq.deserta{background:var(--ambar-100);color:var(--ambar-700)}
 
-/* ── voltar ao topo ── */
-#aoTopo{position:fixed;right:26px;bottom:26px;width:42px;height:42px;border-radius:50%;border:0;background:var(--azul);
-  color:#06263a;font-size:17px;font-weight:700;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,.45);display:none;z-index:9}
+.sessao{font-size:var(--txt-2);color:var(--cinza-600);margin-bottom:var(--esp-3);line-height:var(--altura-texto)}
+.sessao b{color:var(--cinza-800);font-weight:var(--peso-semi)}
+
+.rodape{display:flex;flex-wrap:wrap;gap:var(--esp-2);align-items:center;
+  padding-top:var(--esp-3);border-top:1px solid var(--cinza-200)}
+.bdg{padding:var(--esp-1) var(--esp-3);border-radius:var(--raio-pilula);
+  font-size:var(--txt-1);font-weight:var(--peso-semi)}
+.bdg.cinza{background:var(--cinza-100);color:var(--cinza-700)}
+.bdg.azul{background:var(--azul-100);color:var(--azul-700)}
+.bdg.v{background:var(--verde-100);color:var(--verde-700)}
+.bdg.a,.bdg.laranja{background:var(--ambar-100);color:var(--ambar-700)}
+.bdg.r{background:var(--vermelho-100);color:var(--vermelho-700)}
+.bdg.nova{background:var(--verde-500);color:var(--cinza-800);font-weight:var(--peso-forte)}
+.valor{margin-left:auto;font-weight:var(--peso-forte);font-size:var(--txt-3);
+  color:var(--cinza-800);font-variant-numeric:tabular-nums}
+
+/* ── SKELETON ── mesma altura do cartão que vai chegar, senão a tela pula ────── */
+.skel{background:var(--branco);border:1px solid var(--cinza-200);
+  border-radius:var(--raio-cartao);padding:var(--esp-6);margin-bottom:var(--esp-4)}
+.skel div{background:linear-gradient(90deg,var(--cinza-100) 25%,var(--cinza-200) 37%,var(--cinza-100) 63%);
+  background-size:400% 100%;animation:brilho 1.4s ease infinite;
+  border-radius:var(--raio-botao);height:13px;margin-bottom:var(--esp-2)}
+@keyframes brilho{0%{background-position:100% 50%}100%{background-position:0 50%}}
+
+/* ── VOLTAR AO TOPO ─────────────────────────────────────────────────────────── */
+#aoTopo{position:fixed;right:var(--esp-6);bottom:var(--esp-6);width:42px;height:42px;
+  border-radius:var(--raio-pilula);border:1px solid var(--cinza-200);background:var(--branco);
+  color:var(--cinza-700);font-size:var(--txt-3);font-weight:var(--peso-forte);cursor:pointer;
+  box-shadow:var(--sombra-2);display:none;z-index:9}
 #aoTopo.ver{display:block}
+#aoTopo:hover{background:var(--cinza-50)}
+#aoTopo:focus-visible{outline:none;box-shadow:var(--foco)}
+
+/* ── AVISOS E ESTADO VAZIO ──────────────────────────────────────────────────── */
+/* "erro que não grita": faixa clara, texto escuro, barra lateral dando o tom.
+   Bloco vermelho saturado ocupando meia tela é susto, e susto não é informação. */
+.aviso{padding:var(--esp-8);text-align:center;border-radius:var(--raio-cartao);
+  background:var(--branco);border:1px solid var(--cinza-200);box-shadow:var(--sombra-1);
+  color:var(--cinza-600)}
+.aviso.vazio{background:transparent;border:1px dashed var(--cinza-300);box-shadow:none;
+  color:var(--cinza-600);padding:var(--esp-12) var(--esp-8)}
+.aviso.err{background:var(--vermelho-50);border-color:var(--vermelho-100);
+  border-left:3px solid var(--vermelho-500);color:var(--vermelho-800)}
+.aviso.mini{padding:var(--esp-3) var(--esp-4);text-align:left;font-size:var(--txt-2);
+  margin-bottom:var(--esp-3)}
+.aviso-brando{display:flex;gap:var(--esp-3);align-items:center;flex-wrap:wrap;
+  margin-bottom:var(--esp-3);padding:var(--esp-3) var(--esp-4);
+  background:var(--azul-50);border:1px solid var(--azul-100);border-left:3px solid var(--azul-500);
+  border-radius:var(--raio-cartao);font-size:var(--txt-2);color:var(--azul-900);
+  line-height:var(--altura-texto)}
+.aviso-brando b{color:var(--azul-900);font-weight:var(--peso-semi)}
+
+/* ── CRUZAMENTO POR ITEM ────────────────────────────────────────────────────── */
+.acoes{display:flex;gap:var(--esp-2);flex-wrap:wrap;align-items:center;margin-top:var(--esp-3)}
+.itens{margin-top:var(--esp-3);border-top:1px solid var(--cinza-200);padding-top:var(--esp-3);overflow-x:auto}
+.itens table{width:100%;border-collapse:collapse;font-size:var(--txt-2);min-width:640px}
+.itens th{text-align:left;color:var(--cinza-600);font-weight:var(--peso-semi);font-size:var(--txt-1);
+  text-transform:uppercase;letter-spacing:.04em;padding:var(--esp-2);
+  border-bottom:1px solid var(--cinza-200);white-space:nowrap}
+.itens td{padding:var(--esp-2);border-bottom:1px solid var(--cinza-100);vertical-align:top;
+  color:var(--cinza-700);line-height:var(--altura-texto)}
+.itens tr.casou td{background:var(--verde-50)}
+.itens .desc{min-width:280px}
+.tabelinha{width:100%;border-collapse:collapse;font-size:var(--txt-1)}
+.match{margin-top:var(--esp-2);padding:var(--esp-2) var(--esp-3);
+  border-left:3px solid var(--verde-500);background:var(--verde-50);border-radius:0 var(--raio-botao) var(--raio-botao) 0}
+.match+.match{margin-top:var(--esp-1)}
+.match b{color:var(--cinza-800);font-weight:var(--peso-semi)}
+.conf{font-size:var(--txt-1);padding:0 var(--esp-2);border-radius:var(--raio-pilula);
+  font-weight:var(--peso-semi);margin-left:var(--esp-1);vertical-align:1px}
+.conf.alta{background:var(--verde-100);color:var(--verde-700)}
+.conf.media{background:var(--ambar-100);color:var(--ambar-700)}
+.delta{font-weight:var(--peso-semi);font-variant-numeric:tabular-nums}
+.delta.bom{color:var(--verde-700)}
+.delta.ruim{color:var(--vermelho-700)}
+.nowrap{white-space:nowrap}
+.packbdg{font-size:var(--txt-1);color:var(--cinza-600);font-weight:var(--peso-normal);margin-left:var(--esp-1)}
+.conferir{color:var(--ambar-700);font-weight:var(--peso-semi)}
+.progresso{font-size:var(--txt-2);color:var(--cinza-600)}
+.hint{font-size:var(--txt-1);color:var(--cinza-600);line-height:var(--altura-texto)}
+
+/* ── BOTÕES ── os mesmos ofícios do fp-btn, aplicados às classes desta tela ──── */
+.btn{background:var(--azul-600);color:var(--branco);border:1px solid transparent;
+  border-radius:var(--raio-botao);padding:var(--esp-2) var(--esp-4);
+  font-weight:var(--peso-semi);font-size:var(--txt-2);line-height:1.2;cursor:pointer;
+  font-family:var(--fonte);white-space:nowrap;
+  transition:background-color var(--transicao),border-color var(--transicao),color var(--transicao)}
+.btn:hover:not([disabled]){background:var(--azul-700)}
+.btn:focus-visible{outline:none;box-shadow:var(--foco)}
+.btn.sec{background:var(--branco);color:var(--cinza-800);border-color:var(--cinza-300)}
+.btn.sec:hover:not([disabled]){background:var(--cinza-50);border-color:var(--cinza-400)}
+.btn.mini{padding:var(--esp-1) var(--esp-3);font-size:var(--txt-1)}
+.btn[disabled],.btn[aria-disabled="true"]{cursor:not-allowed;background:var(--cinza-100);
+  border-color:var(--cinza-200);color:var(--cinza-400)}
 
 @media(max-width:720px){
-  .hero h2{font-size:30px}
   .periodo{justify-content:stretch}
   .periodo .campo{flex:1;min-width:0}
-  .lic{padding:18px 16px}
-  .valor{margin-left:0;width:100%;margin-top:8px}
+  .lic{padding:var(--esp-4)}
+  .valor{margin-left:0;width:100%;margin-top:var(--esp-2)}
 }
-/* estado VAZIO é convite, não bloco: borda tracejada e fundo quase-base, pra não competir
-   com card de resultado de verdade. Um slab sólido no meio da tela parecia conteúdo. */
-.aviso.vazio{background:rgba(19,34,52,.42);border:1px dashed var(--linha);box-shadow:none;color:var(--muted);padding:44px 34px}
-.aviso{padding:34px;text-align:center;border-radius:14px;background:var(--painel);border:1px solid var(--linha);box-shadow:var(--sombra);color:var(--muted)}
-.aviso.err{border-color:#5a2622;background:#2a1614;color:#f2a99f}
-.aviso.mini{padding:12px 16px;text-align:left;font-size:12.5px;margin-bottom:14px}
+@media (prefers-reduced-motion: reduce){
+  .skel div{animation:none}
+  .lic,.btn,.org,select,input{transition:none}
+}
 
-/* ── CRUZAMENTO POR ITEM ── a tabela dos itens do edital, com o que casou no nosso estoque ── */
-.acoes{display:flex;gap:9px;flex-wrap:wrap;align-items:center;margin-top:12px}
-.btn.mini{padding:7px 14px;font-size:12px}
-.itens{margin-top:14px;border-top:1px solid var(--linha);padding-top:12px;overflow-x:auto}
-.itens table{width:100%;border-collapse:collapse;font-size:12.5px;min-width:640px}
-.itens th{text-align:left;color:var(--muted);font-weight:600;font-size:10.5px;text-transform:uppercase;
-  letter-spacing:.4px;padding:6px 8px;border-bottom:1px solid var(--linha);white-space:nowrap}
-.itens td{padding:9px 8px;border-bottom:1px solid rgba(34,55,79,.55);vertical-align:top;color:#c3d1e0;line-height:1.5}
-.itens tr.casou td{background:rgba(141,198,63,.06)}
-.itens .desc{min-width:280px}
-.match{margin-top:7px;padding:7px 11px;border-left:3px solid var(--verde);background:rgba(141,198,63,.09);border-radius:0 7px 7px 0}
-.match+.match{margin-top:5px}
-.match b{color:#fff;font-weight:600}
-.conf{font-size:9.5px;padding:1px 7px;border-radius:9px;font-weight:700;margin-left:6px;vertical-align:1px}
-.conf.alta{background:var(--verde);color:var(--verde-esc)}
-.conf.media{background:#523a17;color:#f0c483}
-.delta{font-weight:700}
-.delta.bom{color:#b7e07a}
-.delta.ruim{color:#f2a99f}
-.nowrap{white-space:nowrap}
-.packbdg{font-size:10px;color:var(--muted);font-weight:500;margin-left:5px}
-.conferir{color:#f0c483;font-weight:600}
-.progresso{font-size:12px;color:var(--muted)}
-.hint{font-size:11.5px;color:var(--muted)}
-.btn{background:var(--azul);color:#fff;border:0;border-radius:8px;padding:10px 20px;font-weight:600;font-size:13px;cursor:pointer;font-family:inherit}
-.btn.sec{background:var(--painel2);color:var(--texto);border:1px solid var(--linha)}
+/* ── A BARRA DO PORTAL, no claro ── as MESMAS regras da aba Negócios, de propósito: se as duas
+   telas são um lugar só, a barra que as liga não pode ter dois desenhos. */
+header nav.portal{margin-left:auto;display:flex;gap:var(--esp-1);flex-wrap:wrap}
+header nav.portal a{color:var(--cinza-600);text-decoration:none;font-size:var(--txt-2);
+  padding:var(--esp-2) var(--esp-3);border-radius:var(--raio-botao);cursor:pointer;
+  transition:background-color var(--transicao),color var(--transicao)}
+header nav.portal a:hover{background:var(--cinza-50);color:var(--cinza-800)}
+header nav.portal a:focus-visible{outline:none;box-shadow:var(--foco)}
+header nav.portal a.on{background:var(--azul-50);color:var(--azul-700);font-weight:var(--peso-semi)}
+
+/* ── A FAIXA DE SISTEMA ── a camada que recua: discreta, e com o caminho de volta sempre à
+   vista. Ela existe pra que a tela nunca seja um beco. */
+.topfaixa{background:var(--cinza-100);color:var(--cinza-600);padding:var(--esp-2) 0;
+  font-size:var(--txt-1);border-bottom:1px solid var(--cinza-200)}
+.topfaixa .faixa-int{gap:var(--esp-3)}
+.topfaixa a{color:var(--azul-700);text-decoration:none;background:var(--azul-50);
+  padding:var(--esp-1) var(--esp-3);border-radius:var(--raio-pilula);font-size:var(--txt-1);
+  font-weight:var(--peso-semi);transition:background-color var(--transicao)}
+.topfaixa a:hover{background:var(--azul-100)}
+.topfaixa a:focus-visible{outline:none;box-shadow:var(--foco)}
 </style>
 </head>
 <body>
+<!-- ══ O MENU LATERAL ENTRA, A BARRA DO PORTAL SAI ══════════════════════════════════════════
+     A barra horizontal tinha as sete entradas do portal (Encontrar, Negócios, Documentos,
+     Declarações, Peças, Conferir, Ler edital). O menu lateral do item 3 tem TODAS elas, e mais
+     as outras do sistema. Manter as duas seria a mesma navegação em dois lugares — e duas
+     portas pra mesma coisa divergem com o tempo: foi assim que a entrada do Leitor de Edital
+     entrou em duas telas e faltou nas outras quatro.
+     >>> CONSEQUÊNCIA DECLARADA: `abreLeitorNaBarra()` revelava o Ler edital só pra quem está
+         no piloto. Ela já era defensiva (`if(!a) return`) e agora não encontra o elemento —
+         não quebra nada, e virou código sem efeito. Quem passa a decidir a visibilidade dessa
+         entrada é o menu (que a mostra pra todos) e, de verdade, a edge function, que confere
+         o JWT e responde 403. Está registrado como item de fila, não escondido aqui. -->
 <div class="topfaixa" data-limedtec-instalar>
   <div class="faixa-int">
     <a href="fpmed_sistema_final.html">← Sistema</a>
-    <span>📞 (62) 3290-4241</span><span>·</span><span>Compromisso com qualidade!</span>
+    <span><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" width="14" height="14" style="stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;vertical-align:-2px"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2.2 2A16 16 0 0 1 3 6.2 2 2 0 0 1 5 4z"/></svg> (62) 3290-4241</span><span>·</span><span>Compromisso com qualidade!</span>
   </div>
 </div>
+<div data-limedtec-menu></div>
 <header>
   <div class="faixa-int">
-    <div class="marca"><div class="cruz">✚</div><div class="nome">FPMED<small>HOSPITALAR</small></div></div>
-    <div class="sep"></div>
-    <h1 style="font-weight:600;color:#b3c4d6">Licitações</h1>
-    <!-- ══ A BARRA DO PORTAL (08/08) ══════════════════════════════════════════════════════════
-         Licitações virou o portal do módulo: o menu lateral do sistema tem UMA entrada só, e é
-         daqui que se chega a tudo. A MESMA barra existe, idêntica, na aba Negócios — é ela que
-         faz as duas telas serem um lugar só em vez de dois sistemas parecidos.
-         >>> POR QUE NÃO É IFRAME NEM UMA TELA GIGANTE: o funil são ~1.500 linhas com boot,
-             sessão e sino próprios. Enfiar isso aqui no dia da entrega trocaria um problema de
-             navegação por um risco de regressão nas duas telas. Com a barra repetida, trocar de
-             aba é navegação normal na mesma janela — o operador vê um portal, o código continua
-             sendo dois arquivos que já funcionam. Se um dia virar uma tela só, a barra já está
-             no lugar certo e ninguém percebe a mudança. -->
+    <h1>Encontrar</h1>
+    <!-- ══ A BARRA DO PORTAL ══ ela CONVIVE com o menu lateral por enquanto, e isso e uma
+         pendencia declarada, nao um desenho: as duas oferecem as mesmas sete entradas. A
+         consolidacao (uma navegacao so) e item proprio da fila — tirar a barra aqui, no meio de
+         uma fatia de tema, quebrou 18 asserts em 10 suites e provou que ela sustenta a
+         navegacao do modulo inteiro. -->
     <nav class="portal">
       <a class="on" title="Buscar oportunidades no PNCP">Encontrar</a>
       <a href="fpmed_negocios.html" title="Funil, quadros e agenda — o que a FPMED está disputando">Negócios</a>
@@ -312,7 +453,7 @@ select:focus,input:focus{outline:none;border-color:var(--azul)}
            >>> `hidden` no HTML e não um item que some depois: barra que pisca com um link a mais
                no boot ensina a esperar que ela mude sozinha. -->
       <a href="fpmed_edital_ia.html" id="nav-edital-ia" hidden
-         title="Lê o PDF do edital com IA — piloto; cada leitura tem custo e fica registrada">Ler edital ✨</a>
+         title="Lê o PDF do edital com IA — piloto; cada leitura tem custo e fica registrada">Ler edital</a>
     </nav>
   </div>
 </header>
@@ -333,10 +474,8 @@ select:focus,input:focus{outline:none;border-color:var(--azul)}
 
   <!-- Hero -->
   <div class="hero">
-    <h2>Encontrar</h2>
-    <p>Busque oportunidades de dispensas, pregões…</p>
     <div class="buscabox">
-      <span class="lupa">🔍</span>
+      <span class="lupa"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></span>
       <!-- ══ O CAMPO NASCE VAZIO (11/08) ═════════════════════════════════════════════════════
            Ele vinha PREENCHIDO com as seis categorias do ramo como VALOR — e o operador tinha
            que selecionar e apagar tudo pra buscar outra coisa. Atrito em todo uso, e a tela
@@ -349,7 +488,7 @@ select:focus,input:focus{outline:none;border-color:var(--azul)}
       <input id="f-kw" value=""
              placeholder="busque por item — ex.: albumina, dipirona…"
              onkeydown="if(event.key==='Enter')buscaNova()">
-      <button class="go" onclick="buscaNova()" title="Buscar">🔎</button>
+      <button class="go" onclick="buscaNova()" title="Buscar" aria-label="Buscar"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></button>
     </div>
     <!-- A LINHA QUE EXPLICA O VAZIO. Ela troca de texto conforme o campo, porque o que o vazio
          faz e o que um termo faz são coisas diferentes — e quem está lendo precisa da que vale
@@ -377,7 +516,7 @@ select:focus,input:focus{outline:none;border-color:var(--azul)}
          verdade é "ainda não coletamos". -->
     <div id="orgaos">
       <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:12px">
-        <b style="font-family:Montserrat;font-size:15px;color:#fff">Órgãos compradores</b>
+        <b style="font-family:Montserrat;font-size:var(--txt-3);color:var(--cinza-800)">Órgãos compradores</b>
         <span class="hint" id="org-resumo">carregando…</span>
         <button class="btn sec mini" style="margin-left:auto" onclick="document.getElementById('orgaos').classList.remove('open')">fechar</button>
       </div>
@@ -390,7 +529,7 @@ select:focus,input:focus{outline:none;border-color:var(--azul)}
          come a margem? Por isso o resultado é ordenado por DISTÂNCIA e não por valor. -->
     <div id="radar">
       <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:12px">
-        <b style="font-family:Montserrat;font-size:15px;color:#fff">Radar</b>
+        <b style="font-family:Montserrat;font-size:var(--txt-3);color:var(--cinza-800)">Radar</b>
         <span class="hint" id="rd-resumo">cidades com licitação aberta, num raio daqui</span>
         <button class="btn sec mini" style="margin-left:auto" onclick="document.getElementById('radar').classList.remove('open')">fechar</button>
       </div>
@@ -408,7 +547,7 @@ select:focus,input:focus{outline:none;border-color:var(--azul)}
           <input type="text" id="rd-kw" placeholder="usa as da busca acima se ficar em branco"></div>
       </div>
       <div style="margin-top:14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
-        <button class="btn" onclick="rodarRadar()" id="rd-bt">🎯 Varrer o raio</button>
+        <button class="btn" onclick="rodarRadar()" id="rd-bt">Varrer o raio</button>
         <span class="hint" id="rd-msg"></span>
       </div>
       <div id="rd-lista-res" style="margin-top:14px;max-height:440px;overflow:auto"></div>
@@ -419,7 +558,7 @@ select:focus,input:focus{outline:none;border-color:var(--azul)}
          controle que já mostrou (ver ddl/jornais.sql). -->
     <div id="jornais">
       <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:6px">
-        <b style="font-family:Montserrat;font-size:15px;color:#fff">Meus Jornais</b>
+        <b style="font-family:Montserrat;font-size:var(--txt-3);color:var(--cinza-800)">Meus Jornais</b>
         <span class="hint" id="jor-resumo">carregando…</span>
         <button class="btn mini" onclick="salvarJornal()" title="salva a busca que está na tela agora">＋ Salvar a busca atual</button>
         <button class="btn sec mini" onclick="document.getElementById('jornais').classList.remove('open')">fechar</button>
@@ -427,7 +566,7 @@ select:focus,input:focus{outline:none;border-color:var(--azul)}
       <div class="hint" style="margin-bottom:10px">
         o jornal roda quando você abre e compara com a sua última leitura · a leitura sai do
         <b>nosso banco</b>, que a coleta abastece 3× por dia — não depende do PNCP estar no ar.
-        <br>📧 marque <b>e-mail</b> num jornal para receber o boletim de madrugada, com o dia
+        <br>marque <b>e-mail</b> num jornal para receber o boletim de madrugada, com o dia
         anterior <b>fechado</b> (boletim disparado durante o dia perde o que sai depois do corte).
         <span id="jor-envio-estado" class="hint"></span>
       </div>
@@ -504,7 +643,7 @@ select:focus,input:focus{outline:none;border-color:var(--azul)}
     <div class="kpi"><b id="k-filtro">—</b><span>batem na busca</span></div>
     <div class="kpi"><b id="k-valor">—</b><span>estimado somado</span></div>
     <div class="kpi"><b id="k-prazo">—</b><span>com proposta aberta</span></div>
-    <div class="kpi"><b id="k-aderencia">—</b><span>🎯 com aderência ao nosso estoque</span></div>
+    <div class="kpi"><b id="k-aderencia">—</b><span>com aderência ao nosso estoque</span></div>
   </div>
 
   <div id="estoque-status" class="hint" style="min-height:18px;margin:10px 0 2px"></div>
@@ -547,8 +686,8 @@ select:focus,input:focus{outline:none;border-color:var(--azul)}
 // Errar calado aqui vale mais caro que não abrir.
 if(!window.LimedtecTetoCMED){
   document.body.insertAdjacentHTML('afterbegin',
-    '<div style="margin:12px;padding:14px 16px;border:1px solid #b23;border-radius:10px;' +
-    'background:#2a1116;color:#ffd9df;font:14px/1.5 system-ui,sans-serif">' +
+    '<div style="margin:12px;padding:14px 16px;border:1px solid var(--vermelho-100);border-radius:10px;' +
+    'background:var(--vermelho-50);color:var(--vermelho-800);font:14px/1.5 system-ui,sans-serif">' +
     '<b>Não consegui carregar o motor de comparação</b> (fpmed_teto_cmed.js).<br>' +
     'A tela não abre sem ele — o cruzamento com o nosso estoque depende desse arquivo. ' +
     'Recarregue a página; se continuar, feche e abra o aplicativo por completo.</div>');
@@ -1273,7 +1412,7 @@ function desertaDe(l){
 }
 function marcaDesertas(){
   const a = document.getElementById('lk-desertas'); if(!a) return;
-  a.style.color = window._soDesertas ? '#fff' : '';
+  a.style.color = window._soDesertas ? 'var(--azul-700)' : '';
   a.style.textDecoration = window._soDesertas ? 'underline' : '';
 }
 function soDesertas(){
@@ -1740,7 +1879,7 @@ function pintaJornais(){
       +   '<div class="sub">'+(j.ultima_leitura
             ? 'última leitura em '+fmtDt(j.ultima_leitura)+(j.ultimo_total!=null?' · '+j.ultimo_total+' bateram':'')
             : '<b>nunca aberto</b> — a 1ª leitura só registra o que existe hoje')+'</div></div>'
-      +   (j.ultimo_envio_erro ? '<div class="sub" style="color:#e58"><b>o último boletim não saiu:</b> '+esc(String(j.ultimo_envio_erro).slice(0,90))+'</div>'
+      +   (j.ultimo_envio_erro ? '<div class="sub" style="color:var(--vermelho-600)"><b>o último boletim não saiu:</b> '+esc(String(j.ultimo_envio_erro).slice(0,90))+'</div>'
            : j.ultimo_envio ? '<div class="sub">último boletim em '+fmtDt(j.ultimo_envio)+(j.ultimo_envio_qtd!=null?' · '+j.ultimo_envio_qtd+' enviadas':'')+'</div>' : '')
       + '<div class="acao">'+marca
       +   '<button class="btn '+(j.enviar_email?'':'sec ')+'mini" onclick="alternarEnvio('+j.id+')" '
@@ -2379,6 +2518,7 @@ async function cruzarTodos(){
   bt.disabled = false;
 }
 </script>
+<script src="limedtec-menu.js"></script>
 <script src="limedtec-pwa.js" defer></script>
 </body>
 </html>

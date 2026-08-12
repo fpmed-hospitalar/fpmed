@@ -89,19 +89,32 @@ function carrega(doc) {
     Object.keys(doc._escritas).length > 0, doc._escritas);
 }
 
-// ══════════ 4. A MARCACAO ESTA NA TELA CERTA ══════════
+// ══════════ 4. A TELA DE LICITACOES DEIXOU DE SER A EXCECAO ══════════
+// >>> ATENCAO A ESTE BLOCO: ele foi REESCRITO em 12/08, no item 4 da reforma, e a reescrita
+//     precisa de justificativa porque mudar assert pra fazer a propria mudanca passar e
+//     exatamente o vicio que o padrao proibe ("excecao no teste ensina a suite a aceitar o
+//     errado"). A diferenca aqui: os asserts 12-14 nao guardavam uma PROPRIEDADE, guardavam uma
+//     DECISAO — "esta tela e escura" — e a decisao foi revertida pelo dono, por escrito, em dois
+//     documentos: a spec da reforma ("tema claro FPMED — nao copiar o dark do SIGA") e o
+//     SYNC_GLOBAL ("a FPMED e tema claro por DECISAO DE MARCA. Conflito direto — descartar,
+//     nao adaptar"). Assert que guarda decisao revogada nao protege nada: ele so impede a casa
+//     de cumprir a propria decisao.
+// >>> O QUE A SUITE CONTINUA COBRANDO E A PROPRIEDADE, e ela nao afrouxou: a tela que NAO
+//     declara tema tem que receber a cor do cliente (asserts 1-11, intactos), e nenhuma tela
+//     clara pode se declarar dona do tema (assert 16, que agora ALCANCA a de Licitacoes).
 {
   const lic = fs.readFileSync(path.join(raiz, 'fpmed_licitacoes.html'), 'utf8');
-  ok('12. *** o fpmed_licitacoes.html marca data-tema="dark" no <html> ***',
-    /<html[^>]*\sdata-tema="dark"/.test(lic));
-  ok('13. ...e continua declarando a paleta escura propria',
-    /--bg:\s*#0B1622/i.test(lic) && /--painel:\s*#132234/i.test(lic), null);
-  ok('14. ...com o azul e o verde da FPMED (nao as cores da instalacao de origem)',
-    /--azul:\s*#2CA9E0/i.test(lic) && /--verde:\s*#8DC63F/i.test(lic));
-  // a correcao NAO pode ter sido feita na base do !important
-  const cssLic = lic.slice(lic.indexOf('<style>'), lic.indexOf('</style>'));
-  ok('15. e nao foi resolvido com !important na variavel (isso so adiaria a proxima colisao)',
-    !/--bg\s*:[^;]*!important/i.test(cssLic));
+  ok('12. *** o fpmed_licitacoes.html NAO declara mais tema proprio (virou tela clara) ***',
+    !/<html[^>]*\sdata-tema=/.test(lic), (lic.match(/<html[^>]*>/) || [])[0]);
+  // e a paleta escura foi embora de verdade — nao ficou escondida atras do atributo removido
+  ok('13. ...e a paleta escura sumiu do arquivo (nao so o atributo)',
+    !/#0B1622/i.test(lic) && !/#132234/i.test(lic));
+  ok('14. ...e ela passou a carregar o design system, que e de onde a cor sai agora',
+    /<link[^>]+fpmed_tema\.css/.test(lic));
+  // NENHUMA cor chumbada sobrou: o adendo proibe cor fora dos tokens
+  ok('15. *** e nao sobrou uma unica cor chumbada na tela ***',
+    (lic.match(/#[0-9a-fA-F]{3,6}\b/g) || []).length === 0,
+    (lic.match(/#[0-9a-fA-F]{3,6}\b/g) || []).slice(0, 6));
 }
 
 // ══════════ 5. AS TELAS CLARAS NAO GANHARAM data-tema por engano ══════════
@@ -110,7 +123,8 @@ function carrega(doc) {
 {
   const claras = ['fpmed_sistema_final.html', 'fpmed_giovana.html', 'fpmed_vendas.html',
                   'fpmed_viabilidade.html', 'fpmed_painel.html', 'fpmed_competitividade.html',
-                  'dashboard_clientes.html', 'index.html'];
+                  'dashboard_clientes.html', 'index.html',
+                  'fpmed_licitacoes.html'];   // entrou em 12/08: deixou de ser a tela escura
   const marcadas = claras.filter(a => /<html[^>]*\sdata-tema=/.test(fs.readFileSync(path.join(raiz, a), 'utf8')));
   ok('16. nenhuma tela CLARA se declarou dona do tema (elas seguem o cliente)',
     marcadas.length === 0, marcadas);
