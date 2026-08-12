@@ -761,7 +761,25 @@ Criado em 21/07/2026 copiando SO os arquivos do app do C:\globalmed.
     MAIS URGENTES QUE QUALQUER ITEM DA FILA.
 ############################################################################
 
-  (1) O SITE ESTA FORA DO AR.  >>> O CLIENTE ESTA SEM SISTEMA. <<<
+  >>> [RESOLVIDO 12/08, REMEDIDO] O ITEM (1) ABAIXO NAO VALE MAIS: O SITE ESTA NO AR.
+      Medido agora (node tools/prova_pos_trancamento.js): 10 de 10 telas HTTP 200,
+      PWA instalavel, sw servido com VERSAO limedtec-fpmed-2026-08-11-24.
+      >>> E O MOTIVO IMPORTA, porque ele reabre uma decisao dele: o site voltou
+          porque o REPOSITORIO VOLTOU A SER PUBLICO (private=false, medido sem
+          autenticacao; raw e clone anonimo respondem 200). Foi a saida de emergencia
+          que estava escrita aqui embaixo — e ela funcionou. Mas o TRANCAMENTO que ele
+          decidiu em 11/08 esta DESFEITO: o molde LIMEDTEC (35 DDLs, 94 suites, o
+          kit_cliente) esta clonavel por qualquer um de novo.
+          NAO E URGENCIA DE SISTEMA — nao ha segredo exposto (isso foi medido em 11/08
+          e continua valendo; a unica chave publica e a anon, que e publica por
+          natureza). E decisao DELE: manter publico e ter o site, ou resolver a
+          cobranca do Team e trancar de novo. Enquanto nao decidir, fica assim.
+      >>> LICAO S17 NASCEU DAQUI: eu repeti no relatorio o "site fora do ar" que estava
+          ESCRITO neste arquivo, sem abrir uma URL. Estado do mundo se REMEDE na hora de
+          afirmar; o arquivo registra o que era verdade quando foi escrito, e ele nao
+          avisa quando deixa de ser.
+
+  (1) [DADO DE 11/08, JA SUPERADO] O SITE ESTA FORA DO AR.
       O repositorio virou PRIVADO e o GitHub Pages parou junto: as 10 telas
       respondem HTTP 404, e o dominio inteiro fpmed-hospitalar.github.io
       tambem. Medido duas vezes com quebra-cache.

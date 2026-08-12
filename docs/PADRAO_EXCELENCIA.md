@@ -271,6 +271,28 @@ como palpite de escopo — escopo não se lê por indentação.
 > `ler-edital`, teria quebrado uma função que estava certa por causa de um
 > instrumento torto. Instrumento que não distingue bom de ruim é pior que
 > instrumento nenhum, porque ele **parece** que mede.
+### S17 — Status copiado é status errado *(12/08/2026)*
+Duas vezes no mesmo dia eu afirmei, com todas as letras, uma coisa **que já não era
+verdade** — e as duas vezes a fonte foi a mesma: **um estado escrito, não remedido.**
+
+- *"A coleta do PNCP está falhando há ~6 dias"* — escrito em caixa alta no
+  `CONTINUAR_AQUI` como uma das duas urgências do projeto. A coleta estava rodando e
+  gravando; o número tinha saído de uma prova que media **a tabela errada**.
+- *"O site continua fora do ar"* — eu **repeti no relatório** o que o arquivo dizia,
+  sem abrir uma única URL. O arquiteto mediu e o site respondia 200. Estava no ar.
+
+O que os dois têm em comum não é descuido de medição: é **medição que não aconteceu**.
+Um número errado, quando escrito com precisão e em caixa alta, deixa de ser lido como
+afirmação e passa a ser lido como fato consumado — inclusive por mim, dias depois.
+> **Regra:** **estado do mundo se REMEDE na hora de afirmar, nunca se copia do que
+> está escrito.** Vale pra: site no ar, versão de função no ar, contagem de tabela,
+> workflow rodando, secret configurado, plano de cobrança. O arquivo registra o que
+> era verdade **quando foi escrito** — e ele não avisa quando deixa de ser.
+> Na prática: se a frase do relatório é sobre o estado do mundo, ela vem com o comando
+> que a mediu **nesta sessão**, ou não vem.
+> *(É a S10/S16 num terceiro disfarce: lá o instrumento estava torto; aqui ele nem foi
+> ligado — e não ligar produz a mesma certeza errada, de graça.)*
+
 ## 5 · O JURAMENTO DO RELATÓRIO
 *O relatório não conta o que eu fiz: ele **prova**. Modelo fixo.*
 

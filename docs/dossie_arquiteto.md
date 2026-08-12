@@ -223,6 +223,21 @@ sync da Global (5 blocos); a policy RESTRICTIVE do `ddl/05`.
 **Estado e retomada** — `CONTINUAR_AQUI.txt` é o arquivo que eu leio no início de
 cada sessão e atualizo a cada entrega. **É lá que está o ponto exato de retomada.**
 
+> ⚠️ **E ELE NÃO É FONTE DE ESTADO DO MUNDO** *(lição S17, 12/08)*. Ele guarda
+> decisões, motivos e onde parei — isso não vence. Mas *"o site está fora"*, *"a
+> coleta está falhando"*, *"a função está na v12"* são **medições com data**, e eu já
+> repeti duas delas, erradas, por lê-las ali em vez de remedir. **Se a frase é sobre o
+> estado do mundo, ela vem com o comando que a mediu na sessão, ou não vem.**
+
+**Estado do sistema em 12/08, remedido nesta sessão** *(e não copiado)*:
+
+| o quê | medido agora | como remedir |
+|---|---|---|
+| site no ar | ✅ **10/10 telas HTTP 200**, PWA instalável | `node tools/prova_pos_trancamento.js` |
+| repositório | ⚠️ **público de novo** (`private=false`) — foi o que trouxe o Pages de volta; o trancamento de 11/08 está desfeito e **é decisão dele** | idem, seção 1 |
+| coleta | ✅ em dia — `licitacoes` com 3.197 linhas, publicações até hoje | `node tools/prova_automacoes_vivas.js` |
+| service worker no ar | `limedtec-fpmed-2026-08-11-24` | idem, seção 4 |
+
 **Commit** — mensagem em português, primeira linha dizendo o que mudou pro usuário
 (não "fix" nem "update"), corpo explicando **por que** e o que foi medido. Um commit
 por item da fila, com `CONTINUAR_AQUI` atualizado no mesmo commit.
