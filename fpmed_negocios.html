@@ -17,6 +17,7 @@
 <script src="limedtec-tema.js"></script>
 <script src="limedtec-licenca.js"></script>
 <script src="gm-auth.js?v=sessao-06ago"></script>
+<script src="fpmed_alarme_coleta.js"></script>
 <style>
 /* Mesma paleta da tela de Licitações — as duas são o módulo, e módulo com dois tons de escuro
    parece dois sistemas. */
@@ -561,6 +562,9 @@ let LEM_SINO = null;
 // credenciamentos PARADOS (solicitados ha muito tempo e sem resposta), so pro sino. Mesmos tres
 // estados. O sino e o unico lugar onde um pedido esquecido dói ANTES do pregao.
 let CRED_SINO = null;
+// A COLETA pro sino (12/08). Mesma regra das outras fontes: `null` = ainda nao li ·
+// `'erro'` = nao consegui ler. Lista vazia diria "esta tudo em dia", e nao e isso que houve.
+let COLETA_SINO = null;
 const esc = s => String(s==null?'':s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const brl = n => n==null ? '—' : 'R$ ' + Number(n).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
 // GESTOR: a tabela inteira já é de gestor pela RLS (ddl/negocios.sql). O gate de tela aqui é a
@@ -694,6 +698,14 @@ async function carregar(){
       + '&select=id,negocio_id,industria,status,solicitado_em&order=solicitado_em.asc&limit=50', {headers:SB_H});
     CRED_SINO = rc.ok ? await rc.json() : 'erro';
   }catch(e){ CRED_SINO = 'erro'; }
+  // ESTADO DA COLETA pro sino. Em chamada separada, como as outras: se ela falhar, o funil — que
+  // e o motivo de a tela existir — continua abrindo.
+  // >>> POR QUE ESTA TELA E NAO O ENCONTRAR: o sino mora aqui. E quem precisa saber que o indice
+  //     esta velho e justamente quem esta montando o funil do mes, nao quem ja abriu a busca.
+  try{
+    const rk = await fetch(`${SB_URL}/rest/v1/coleta_status?fonte=eq.PNCP&select=ultima_ok,ultima_tentativa,ultimo_erro,ultimo_dia_ok`, {headers:SB_H});
+    COLETA_SINO = rk.ok ? ((await rk.json())[0] || null) : 'erro';
+  }catch(e){ COLETA_SINO = 'erro'; }
   // A CONFERÊNCIA MAIS NOVA DE CADA NEGÓCIO, pro selo do card. Vem ordenada da mais nova pra
   // mais velha e só a primeira de cada negócio entra — as anteriores continuam no banco, mas o
   // card mostra o estado de HOJE, não a história.
@@ -3465,7 +3477,13 @@ function pintaNotif(){
   // alguém RESOLVER, e resolver é possível hoje — basta cobrar a indústria ou registrar a
   // resposta que já veio. É o oposto da sessão que passou, que não tem mais conserto.
   const credParados = Array.isArray(CRED_SINO) ? CRED_SINO.length : 0;
-  const total = n.urgentes + docsRuins + lemAbertos + credParados;
+  // A COLETA entra no badge pela MESMA regra do documento vencido: fica acesa ate alguem
+  // RESOLVER, e resolver e possivel hoje. E conta UM, nao o numero de dias de atraso: o badge
+  // diz "ha coisa pra ver", e inflar o numero com a gravidade faria 5 dias de atraso parecerem
+  // 5 problemas.
+  const coletaRuim = (COLETA_SINO === 'erro' || (COLETA_SINO && window.AlarmeColeta
+    && AlarmeColeta.avaliar(COLETA_SINO, new Date()))) ? 1 : 0;
+  const total = n.urgentes + docsRuins + lemAbertos + credParados + coletaRuim;
   cnt.textContent = total;
   cnt.style.display = total ? '' : 'none';
   const linha = (x, cls, zap) => {
@@ -3483,6 +3501,22 @@ function pintaNotif(){
   if(n.amanha.length) h += `<div class="nf-sec">abre amanhã</div>` + n.amanha.map(x=>linha(x,'',true)).join('');
   if(n.passou.length) h += `<div class="nf-sec">a sessão passou e o negócio continua na fase anterior (${n.passou.length})</div>`
                          + n.passou.slice(0,8).map(x=>linha(x)).join('');
+  // ── ESTADO DA COLETA ── vem ANTES de tudo, e a razao e de hierarquia: os outros avisos sao
+  //    sobre UM negocio; este e sobre a FERRAMENTA. Indice velho quer dizer que a lista que a
+  //    pessoa esta olhando pode estar INCOMPLETA — ela precisa saber disso antes de decidir o
+  //    que disputar, e nao depois de rolar seis avisos.
+  if(COLETA_SINO === 'erro'){
+    h = '<div class="nf-sec">coleta</div><div class="nf-vazio">⚠️ Não consegui ler o estado da coleta, então <b>não sei</b> se o índice está em dia.</div>' + h;
+  } else if(window.AlarmeColeta){
+    const va = AlarmeColeta.avaliar(COLETA_SINO, new Date());
+    if(va){
+      h = '<div class="nf-sec">a busca de licitações</div>'
+        + `<a class="nf ${va.nivel==='grave'?'hoje':''}" href="fpmed_licitacoes.html">
+             <div class="q">${va.nivel==='grave'?'⛔':'⚠️'} ${esc(va.titulo)}</div>
+             <div class="s">${esc(va.detalhe)}</div></a>`
+        + h;
+    }
+  }
   // ── DOCUMENTO VENCENDO ── o bloco que estava registrado como IMPOSSÍVEL ("depende de Meus
   //    Documentos, que não existe"). Existe desde 08/08, então ele entra.
   //    >>> ELE VEM PRIMEIRO NA LISTA, e não no fim: certidão vencida DESCLASSIFICA. Uma sessão
@@ -3536,7 +3570,7 @@ function pintaNotif(){
             <div class="s">${esc(credNome(c.status))} há ${d} dia(s)${c.negocio_id?'':' · sem negócio de origem'}</div></a>`;
         }).join('');
   }
-  if(!h) h = '<div class="nf-vazio">Nada abre hoje nem amanhã, nenhum documento vencendo, nenhum lembrete no prazo e nenhum credenciamento parado.<br>O sino só mostra sessão de negócio <b>ativo</b> — arquivado não avisa.</div>';
+  if(!h) h = '<div class="nf-vazio">Nada abre hoje nem amanhã, nenhum documento vencendo, nenhum lembrete no prazo, nenhum credenciamento parado e a <b>coleta em dia</b>.<br>O sino só mostra sessão de negócio <b>ativo</b> — arquivado não avisa.</div>';
   document.getElementById('notif').innerHTML = h;
 }
 function toggleNotif(ev){

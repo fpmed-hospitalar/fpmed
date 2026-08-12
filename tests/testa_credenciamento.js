@@ -122,7 +122,11 @@ ok('42. ...com o motivo (e o defeito que a secao existe pra pegar)',
   /pedido esquecido é o defeito que esta seção existe pra pegar/.test(uc(N)));
 ok('43. *** o sino conta os parados no badge ***',
   /const credParados = Array\.isArray\(CRED_SINO\) \? CRED_SINO\.length : 0;/.test(N)
-  && /const total = n\.urgentes \+ docsRuins \+ lemAbertos \+ credParados;/.test(N));
+  // >>> O ASSERT MEDIA A SOMA INTEIRA, e reprovava no dia em que uma QUARTA fonte entrasse no
+  //     sino (entrou: o alarme da coleta, 12/08). A promessa e "credParados entra no badge",
+  //     e nao "a soma tem exatamente estas quatro parcelas". Contar a letra reprova o desenho
+  //     certo, que e o jeito mais rapido de ensinar alguem a ignorar a suite. (licao S8)
+  && /const total = [^;]*\bcredParados\b[^;]*;/.test(N));
 ok('44. ...pela mesma regra do documento vencido (fica aceso ate alguem RESOLVER)',
   /fica aceso até\s*alguém RESOLVER, e resolver é possível hoje/.test(uc(N)));
 ok('45. *** o corte do sino e feito no BANCO, nao na tela ***',

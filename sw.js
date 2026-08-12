@@ -36,7 +36,8 @@ const SHELL = [
   './fpmed_declaracoes.html',          // Declaracoes — 4a aba do portal, modulo 2.10 da spec
   './fpmed_pecas.html',                // Pecas juridicas — 5a aba, modulo 2.9 da spec
   './fpmed_conferidor.html',           // Conferidor de proposta x teto CMED — 6a aba
-  './fpmed_teto_cmed.js',              // o motor "meu preco x teto", compartilhado
+  './fpmed_teto_cmed.js',
+  './fpmed_alarme_coleta.js',        // o sino do Negocios depende dele              // o motor "meu preco x teto", compartilhado
   './fpmed_competitividade.html',      // aqui ELA ENTRA (na instalacao de origem estava fora por
                                        // ficar no .gitignore; na FPMED e versionada e vai pro ar)
   './dashboard_clientes.html',         // demo 100% ficticio (nao ha dado real dentro)
