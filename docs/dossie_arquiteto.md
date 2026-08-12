@@ -99,9 +99,12 @@ nome antigo, é erro meu:
 |---|---|---|
 | 1 | Spec da reforma (`docs/spec_reforma_prime.md`) | ✅ `4485c30` |
 | 2 | **`fpmed_tema.css` — o design system** | ✅ `c0b12e1` |
-| 3 | **Menu lateral refeito sobre os tokens** | ⬅️ **é onde eu estou** |
-| 4 | **Encontrar no tema claro** (urgência; anda junto do 3) | a seguir |
+| 3 | **Menu lateral refeito sobre os tokens** | ✅ `8082d77` · ganhou **portão de permissão** em `bd35ff1` |
+| 4 | **Encontrar no tema claro + navegação única** | ✅ `bd35ff1` — publicado, laço visual nas 3 larguras |
+| 4b | **Segurança: CVE-2024-4367 no PDF.js** | ✅ `a220dee` — `isEvalSupported:false` nas 5 chamadas |
+| 4c | **Alarme de coleta** | ⬅️ **PRÓXIMO** — decidido, ver §2b |
 | 5 | Kanban protagonista | |
+| — | *(ver §2b: fila de fundação e itens que param pra decisão)* | |
 | 6 | Calendário mensal | |
 | 7 | Demais telas ganhando o tema, uma a uma | |
 | 8 | **Conferir o boletim** | dado do arquiteto guardado: atraso de ~4h30 em 11/08. Entrega OK (3/3 `delivered`); **o errado é a hora — investigar o agendador, não o Resend** |
@@ -110,6 +113,59 @@ nome antigo, é erro meu:
 | 11 | Desconto em lote com trava PMVG | |
 | 12 | Gerador de declarações (textos do zero, Lei 14.133) | |
 | 13 | Gestor de documentos + ZIP | |
+
+---
+
+## 2b · O QUE FOI DECIDIDO E AINDA NÃO FOI CONSTRUÍDO — 12/08/2026
+
+> Escrito aqui porque **decisão que só existe numa conversa não sobrevive à conversa**.
+> Quem retomar começa por este bloco, na ordem.
+
+### 4c. ALARME DE COLETA — decidido pelo Lemuel: **AS DUAS**
+
+A cicatriz: a *Coleta PNCP* falhou **12 vezes seguidas entre 07 e 10/08** e voltou sozinha ao
+verde. Ninguém soube. *"Falha que se conserta sozinha some do olhar."*
+
+| | o que vigia | o que só ela pega |
+|---|---|---|
+| **(A)** | 2 falhas **consecutivas** do workflow | *"rodou e falhou"* — 429, token errado, função fora |
+| **(B)** | frescor de `coleta_status.ultima_ok` | *"nem rodou"* — apagão, agendador desligado, projeto pausado |
+
+**Aviso por sino + e-mail pro dono.**
+
+> ⚠️ **A TRAVA DE COMPLIANCE VALE AQUI TAMBÉM, e é fácil esquecer:** o e-mail sai por
+> `enviar-boletim`, que **recusa a rodada inteira** se o remetente estiver em domínio da
+> GlobalMed. Enquanto `fpmed.com.br` não estiver verificado no Resend, **destinatário = só o
+> dono**. Alarme não é motivo pra furar a regra do remetente.
+
+> **E o alarme não pode virar o barulho que ele existe pra evitar:** o próprio
+> `coleta-pncp.yml` já decidiu, por escrito, NÃO pintar o job de vermelho quando o PNCP cai —
+> *"um X vermelho diário treina qualquer um a ignorar o CI"*. O alarme novo tem que respeitar
+> isso: **fonte fora ≠ nós quebrados**. O (A) conta falha NOSSA (HTTP ≠ 200), não coleta parcial.
+
+### Fila de fundação, na ordem (constrói direto — é técnico)
+
+1. Manuais de arquitetura → `docs/arquitetura_referencia.md`, marcando **item a item** o que a
+   FPMED já tem vs. evolução futura
+2. Busca exata entre aspas no Encontrar (*phrase match*) + auditar se a busca usa
+   `tsvector`+`unaccent` com índice — **medir o ganho e relatar antes de migrar**
+3. Consolidar a navegação **no Negócios** (a barra do portal ainda existe lá; o Encontrar já saiu)
+4. Diagnóstico do PNCP: cota/429, `TAM_PAGINA`, rodízio de UF, buracos de dia — **medido no banco**
+
+### PARA e relata — risco ou dinheiro, o Lemuel decide
+
+- **pgvector** para o leitor de edital — relatar ganho **medido** contra o chunking atual
+- **Gateway de pagamento** (Asaas/Iugu/Stripe) + webhook — só a planta, só quando ele decidir cobrar
+- **Cobertura de fontes novas** (AGM, Portal de Compras Públicas, BLL, Licitanet…) — tabela
+  cobertura × custo em GO; ele escolhe quais conectar
+- **Envio direto ao portal** — só caminho **oficial**. Se o único caminho for **guardar senha de
+  portal**, **não construir** e trazer pra ele decidir
+
+### Segurança — declarados, sem urgência (o eval já está desligado)
+
+- Subir o **PDF.js para 4.2.67+**, com prova de que a extração de texto não regrediu (a 4.x é
+  ESM e mudou a API de worker — mexe em 4 telas)
+- Destino do **`xlsx`**: o conserto **não existe no npm**; a SheetJS publica só no CDN próprio
 | 14 | Etapas renomeáveis por config (chaves do banco intactas) | |
 | 15 | Tarefas com prioridade nos cards | |
 | 16 | Radar por raio (lat/long do IBGE) | |
