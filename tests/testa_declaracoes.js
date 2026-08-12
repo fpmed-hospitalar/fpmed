@@ -21,6 +21,22 @@
 'use strict';
 const fs = require('fs'), path = require('path');
 const raiz = path.join(__dirname, '..');
+
+/* ── ALCANCE (12/08, navegação única) ──────────────────────────────────────────────────────
+   A barra do portal morreu: as sete entradas dela agora saem só do menu lateral. Estes asserts
+   sempre protegeram "há caminho daqui pra tela X", e não "existe uma <nav class=portal>" — a
+   barra era o MEIO, o alcance é o FIM. O predicado abaixo aceita os dois meios e não afrouxa
+   nenhum: pelo menu, exige que a tela MONTE o menu, CARREGUE o script, e que o destino esteja
+   declarado lá. Três condições, não uma. */
+const _MENU_SRC = require('fs').readFileSync(require('path').join(raiz, 'limedtec-menu.js'), 'utf8');
+const alcanca = (src, destino) => {
+  const d = destino.replace(/\./g, '\\.');
+  if (new RegExp('href="' + d + '"').test(src)) return true;             // caminho direto na tela
+  return /limedtec-menu\.js/.test(src)                                   // a tela carrega o menu
+      && /data-limedtec-menu/.test(src)                                  // ...e o monta
+      && new RegExp("href: '" + d + "'").test(_MENU_SRC);                // ...e o menu leva lá
+};
+
 const ler = f => fs.readFileSync(path.join(raiz, f), 'utf8').replace(/\r\n/g, '\n');
 
 const tela = ler('fpmed_declaracoes.html');
@@ -87,7 +103,7 @@ ok('25. da pra amarrar a declaracao ao negocio do funil', /negocio_id\s+bigint r
 // ══════════ 6. A TELA NO PORTAL ══════════
 {
   for (const t of ['fpmed_licitacoes.html', 'fpmed_negocios.html', 'fpmed_documentos.html']) {
-    ok('26.' + t + ' tem a aba Declaracoes', /href="fpmed_declaracoes\.html"/.test(ler(t)));
+    ok('26.' + t + ' alcanca as Declaracoes (barra ou menu lateral)', alcanca(ler(t), 'fpmed_declaracoes.html'));
   }
   ok('27. a propria tela carrega a barra do portal (caminho de volta)',
     /<nav class="portal">[\s\S]{0,400}href="fpmed_licitacoes\.html"/.test(tela));

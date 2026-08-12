@@ -103,7 +103,21 @@
 
     { g: 'Ferramentas' },
     { id: 'proposta', rotulo: 'Proposta', href: 'fpmed_giovana.html', tela: 'fpmed_giovana' },
-    { id: 'leitor', rotulo: 'Leitor de edital', href: 'fpmed_edital_ia.html', tela: 'fpmed_edital_ia' },
+    /* ── A ÚNICA ENTRADA COM PORTÃO (12/08) ───────────────────────────────────────
+       O Leitor é piloto: ele nasce ESCONDIDO e só é revelado pra quem está na lista.
+       Isso não é segurança — quem barra de verdade é a edge function, que confere o
+       JWT e responde 403. É pra NÃO OFERECER o que vai ser negado: porta na cara é
+       atrito, e atrito repetido ensina a pessoa a desconfiar do menu inteiro.
+
+       >>> A LISTA MORA AQUI PORQUE ELA ESTAVA EM TRÊS LUGARES. O mesmo array vivia
+       copiado no Encontrar, na ficha do negócio e na tela do Leitor — a doença que
+       este arquivo inteiro existe pra curar (a barra do portal estava em 6 telas, e
+       foi assim que a entrada do Leitor entrou em 2 e faltou em 4).
+       >>> E O MENU CONTINUA BURRO, de propósito: ele não lê sessão, não chama banco,
+       não sabe quem está logado. Ele guarda a LISTA (que é dado sobre módulo) e
+       expõe `revelarPara(email)`. Quem tem a sessão é a tela, e é ela que pergunta. */
+    { id: 'leitor', rotulo: 'Leitor de edital', href: 'fpmed_edital_ia.html', tela: 'fpmed_edital_ia',
+      permissao: ['licitacao@fpmed.com.br'] },
     { id: 'conferir', rotulo: 'Conferir CMED', href: 'fpmed_conferidor.html', tela: 'fpmed_conferidor' },
     { id: 'pecas', rotulo: 'Peças', href: 'fpmed_pecas.html', tela: 'fpmed_pecas' },
     { id: 'declaracoes', rotulo: 'Declarações', href: 'fpmed_declaracoes.html', tela: 'fpmed_declaracoes' },
@@ -233,8 +247,13 @@
         continue;
       }
       var on = (m.id === atual);
+      /* `hidden` NO HTML, e não um item que some depois de pintado: menu que pisca com
+         um link a mais no boot ensina a pessoa a esperar que ele mude sozinho — e aí
+         ela para de confiar no que está vendo. Nasce escondido, é revelado. */
       h.push('<a href="' + m.href + '" class="' + (on ? 'lm-on' : '') + '"' +
-        (on ? ' aria-current="page"' : '') + '>' + svg(m.id) + m.rotulo + '</a>');
+        (on ? ' aria-current="page"' : '') +
+        (m.permissao ? ' hidden data-permissao="' + m.id + '"' : '') +
+        '>' + svg(m.id) + m.rotulo + '</a>');
     }
 
     h.push('<div class="lm-rodape"><span>' + svg('telefone') + '(62) 3290-4241</span>' +
@@ -256,8 +275,31 @@
     else iniciar();
   }
 
+  /* ── REVELAR O QUE TEM PORTÃO ────────────────────────────────────────────────────
+     A tela sabe quem está logado; o menu sabe quais módulos têm lista. Cada um faz a
+     parte que só ele pode fazer, e a decisão fica num lugar só.
+     >>> É TOLERANTE POR CONSTRUÇÃO: sem e-mail, com e-mail fora da lista, ou com o
+     menu ainda não montado, ele simplesmente não revela nada. Nunca estoura — porque
+     quem chama isso é o boot da tela, e derrubar o boot por causa de um item de menu
+     seria trocar um atrito por uma tela morta.
+     >>> DEVOLVE QUANTOS REVELOU, pra suíte poder cobrar o comportamento em vez de
+     confiar que "deve ter funcionado". */
+  function revelarPara(email) {
+    var e = String(email || '').trim().toLowerCase();
+    if (!e) return 0;
+    var n = 0;
+    for (var i = 0; i < MODULOS.length; i++) {
+      var m = MODULOS[i];
+      if (!m.permissao || m.permissao.indexOf(e) < 0) continue;
+      var el = document.querySelector('#limedtec-menu [data-permissao="' + m.id + '"]');
+      if (el) { el.hidden = false; n++; }
+    }
+    return n;
+  }
+
   /* Exportado pra suíte e pra tela que precise montar depois (modal, troca de aba). */
   if (typeof window !== 'undefined') {
-    window.LimedtecMenu = { montar: montar, moduloAtual: moduloAtual, MODULOS: MODULOS, ICONE: ICONE, CSS: CSS };
+    window.LimedtecMenu = { montar: montar, moduloAtual: moduloAtual, MODULOS: MODULOS,
+      ICONE: ICONE, CSS: CSS, revelarPara: revelarPara };
   }
 })();

@@ -230,15 +230,17 @@ ok('77. e a recusa por tabela cortada tambem e RESULTADO, com o custo junto',
   /ISTO TAMBEM E RESULTADO, e nao falha do script/.test(P));
 
 // ══════════ 13. A TELA TEM PORTA (ate 11/08 ela nao tinha) ══════════
-ok('78. *** a entrada do leitor existe na barra do portal, nas DUAS abas ***',
-  /id="nav-edital-ia"/.test(L) && /id="nav-edital-ia"/.test(N));
+const _MENU_LEITOR = R('limedtec-menu.js');
+ok('78. *** a entrada do leitor existe: no menu (Encontrar) e na barra (Negocios) ***',
+  /id: 'leitor'/.test(_MENU_LEITOR) && /limedtec-menu\.js/.test(L) && /id="nav-edital-ia"/.test(N));
 ok('79. *** e nasce ESCONDIDA, revelada so pra quem tem o piloto ***',
-  /<a href="fpmed_edital_ia\.html" id="nav-edital-ia" hidden/.test(L)
+  /m\.permissao \? ' hidden data-permissao=/.test(_MENU_LEITOR)
+  && /function revelarPara\(email\)/.test(_MENU_LEITOR)
   && /function abreLeitorNaBarra\(\)/.test(L) && /function abreLeitorNaBarra\(\)/.test(N));
-ok('80. ...via `hidden` no HTML, e nao sumindo depois (barra que pisca ensina a esperar mudanca)',
-  /barra que pisca com um link a mais\s*no boot/.test(uc(L)));
-ok('81. ...e o motivo de existir (tela liberada sem porta e tela nao liberada)',
-  /Uma tela liberada sem porta é uma tela não\s*liberada/.test(uc(L)));
+ok('80. ...via `hidden` no HTML, e nao sumindo depois (menu que pisca ensina a esperar mudanca)',
+  /menu que pisca com\s*um link a mais no boot/.test(uc(_MENU_LEITOR)));
+ok('81. ...e o motivo de existir (nao oferecer o que a edge function vai negar)',
+  /N[ÃA]O OFERECER o que vai ser negado/.test(uc(_MENU_LEITOR)));
 ok('82. e ela e revelada no MESMO ponto em que a tela autentica (sem 2o boot)',
   /function _aoAutenticar\(\)\{ iniciarEstoque\(\); iniciarJornais\(\); abreLeitorNaBarra\(\); \}/.test(L)
   // 11/08: o `_aoAutenticar` do Negócios ganhou o `formManualDaSessao()` (quem chega do Encontrar

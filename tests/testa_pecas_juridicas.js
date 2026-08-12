@@ -23,6 +23,22 @@
 'use strict';
 const fs = require('fs'), path = require('path');
 const raiz = path.join(__dirname, '..');
+
+/* ── ALCANCE (12/08, navegação única) ──────────────────────────────────────────────────────
+   A barra do portal morreu: as sete entradas dela agora saem só do menu lateral. Estes asserts
+   sempre protegeram "há caminho daqui pra tela X", e não "existe uma <nav class=portal>" — a
+   barra era o MEIO, o alcance é o FIM. O predicado abaixo aceita os dois meios e não afrouxa
+   nenhum: pelo menu, exige que a tela MONTE o menu, CARREGUE o script, e que o destino esteja
+   declarado lá. Três condições, não uma. */
+const _MENU_SRC = require('fs').readFileSync(require('path').join(raiz, 'limedtec-menu.js'), 'utf8');
+const alcanca = (src, destino) => {
+  const d = destino.replace(/\./g, '\\.');
+  if (new RegExp('href="' + d + '"').test(src)) return true;             // caminho direto na tela
+  return /limedtec-menu\.js/.test(src)                                   // a tela carrega o menu
+      && /data-limedtec-menu/.test(src)                                  // ...e o monta
+      && new RegExp("href: '" + d + "'").test(_MENU_SRC);                // ...e o menu leva lá
+};
+
 const ler = f => fs.readFileSync(path.join(raiz, f), 'utf8').replace(/\r\n/g, '\n');
 
 const tela = ler('fpmed_pecas.html');
@@ -106,7 +122,7 @@ ok('30. so gestor emite', /pj_ins[\s\S]{0,90}cargo_gestor\(\)/.test(ddl));
 ok('31. anon revogado', /revoke all on public\.pecas_juridicas from anon/.test(ddl));
 {
   for (const t of ['fpmed_licitacoes.html','fpmed_negocios.html','fpmed_documentos.html','fpmed_declaracoes.html']) {
-    ok('32.' + t + ' tem a aba Peças', /href="fpmed_pecas\.html"/.test(ler(t)));
+    ok('32.' + t + ' alcanca as Peças (barra ou menu lateral)', alcanca(ler(t), 'fpmed_pecas.html'));
   }
   ok('33. a propria tela tem a barra do portal', /<nav class="portal">[\s\S]{0,500}href="fpmed_licitacoes\.html"/.test(tela));
   ok('34. entrou na casca do app', /'\.\/fpmed_pecas\.html'/.test(sw));

@@ -380,8 +380,14 @@ select[disabled],input[disabled],textarea[disabled]{
   border-color:var(--cinza-200);color:var(--cinza-400)}
 
 @media(max-width:720px){
-  .periodo{justify-content:stretch}
-  .periodo .campo{flex:1;min-width:0}
+  /* a linha inteira empilha, e os campos podem encolher DE VERDADE */
+  .periodo{justify-content:stretch;flex-wrap:wrap;gap:var(--esp-3)}
+  .periodo .campo{flex:1 1 100%;min-width:0}
+  .periodo .intervalo{flex-wrap:wrap}
+  /* >>> ESTA é a linha que fecha a conta: campo de formulário tem largura intrínseca e ignora
+         o min-width:0 do pai. Sem zerar no PRÓPRIO campo, o input de data segura 160px e a
+         página inteira ganha rolagem horizontal. */
+  .periodo input,.periodo select{min-width:0;width:100%}
   .lic{padding:var(--esp-4)}
   .valor{margin-left:0;width:100%;margin-top:var(--esp-2)}
 }
@@ -390,15 +396,6 @@ select[disabled],input[disabled],textarea[disabled]{
   .lic,.btn,.org,select,input{transition:none}
 }
 
-/* ── A BARRA DO PORTAL, no claro ── as MESMAS regras da aba Negócios, de propósito: se as duas
-   telas são um lugar só, a barra que as liga não pode ter dois desenhos. */
-header nav.portal{margin-left:auto;display:flex;gap:var(--esp-1);flex-wrap:wrap}
-header nav.portal a{color:var(--cinza-600);text-decoration:none;font-size:var(--txt-2);
-  padding:var(--esp-2) var(--esp-3);border-radius:var(--raio-botao);cursor:pointer;
-  transition:background-color var(--transicao),color var(--transicao)}
-header nav.portal a:hover{background:var(--cinza-50);color:var(--cinza-800)}
-header nav.portal a:focus-visible{outline:none;box-shadow:var(--foco)}
-header nav.portal a.on{background:var(--azul-50);color:var(--azul-700);font-weight:var(--peso-semi)}
 
 /* ── A FAIXA DE SISTEMA ── a camada que recua: discreta, e com o caminho de volta sempre à
    vista. Ela existe pra que a tela nunca seja um beco. */
@@ -439,22 +436,16 @@ header nav.portal a.on{background:var(--azul-50);color:var(--azul-700);font-weig
          consolidacao (uma navegacao so) e item proprio da fila — tirar a barra aqui, no meio de
          uma fatia de tema, quebrou 18 asserts em 10 suites e provou que ela sustenta a
          navegacao do modulo inteiro. -->
-    <nav class="portal">
-      <a class="on" title="Buscar oportunidades no PNCP">Encontrar</a>
-      <a href="fpmed_negocios.html" title="Funil, quadros e agenda — o que a FPMED está disputando">Negócios</a>
-      <a href="fpmed_documentos.html" title="Certidões e documentos de habilitação, com aviso de vencimento">Documentos</a>
-      <a href="fpmed_declaracoes.html" title="Modelos de declaração de habilitação, preenchidos com os dados da empresa">Declarações</a>
-      <a href="fpmed_pecas.html" title="Impugnação, esclarecimento, recurso e contrarrazões — com o prazo na frente">Peças</a>
-      <a href="fpmed_conferidor.html" title="Confere o preço da proposta contra o teto legal da CMED">Conferir</a>
-      <!-- LER EDITAL entra na barra ESCONDIDO e só é revelado pra quem tem o piloto (ver
-           `abreLeitorNaBarra`). Até 11/08 a tela existia e não tinha caminho nenhum: quem não
-           soubesse o endereço não chegava nela. Uma tela liberada sem porta é uma tela não
-           liberada.
-           >>> `hidden` no HTML e não um item que some depois: barra que pisca com um link a mais
-               no boot ensina a esperar que ela mude sozinha. -->
-      <a href="fpmed_edital_ia.html" id="nav-edital-ia" hidden
-         title="Lê o PDF do edital com IA — piloto; cada leitura tem custo e fica registrada">Ler edital</a>
-    </nav>
+    <!-- ══ A BARRA DO PORTAL MORREU AQUI (12/08 — NAVEGAÇÃO ÚNICA) ══════════════════════════
+         Ela oferecia sete entradas que o menu lateral já tem, todas — paridade conferida entrada
+         por entrada, contra o limedtec-menu.js, ANTES de apagar. Duas portas pra mesma coisa
+         divergem com o tempo, e esta casa já pagou: a barra estava copiada em SEIS telas, e foi
+         assim que a entrada do Leitor entrou em duas e faltou nas outras quatro.
+         >>> O "← Sistema" continua na faixa de topo, por ordem expressa: tela sem porta de saída
+             é beco, e duas suítes diferentes já me pegaram nisso.
+         >>> E ELA RESOLVE O MOBILE DE RAIZ: em 390px a barra quebrava em três linhas brigando
+             com o título. O menu já vira faixa horizontal rolável sozinho nessa largura. -->
+
   </div>
 </header>
 
@@ -1021,11 +1012,18 @@ async function iniciarJornais(){
 /* A ENTRADA DO LEITOR DE EDITAL na barra. Mesma lista da ficha do negócio e da própria tela do
    leitor — e, como lá, ela NÃO é a permissão: quem impede é a edge function, que confere o JWT e
    responde 403. Isto aqui só evita oferecer o que vai ser negado. */
-const LEITORES_EDITAL = ['licitacao@fpmed.com.br'];
+/* A LISTA DO PILOTO SAIU DAQUI e foi pro limedtec-menu.js, junto do módulo — ela vivia copiada
+   em TRÊS lugares (esta tela, a ficha do negócio e a própria tela do Leitor), que é a mesma
+   doença da barra em seis telas. Agora existe uma cópia só, e ela mora ao lado do que ela
+   governa.
+   >>> A ENTRADA CONTINUA NASCENDO ESCONDIDA e sendo revelada, não sumindo depois de pintada:
+       menu que pisca com um link a mais no boot ensina a esperar que ele mude sozinho.
+   >>> E ISTO NÃO É A PERMISSÃO: quem barra é a edge function, que confere o JWT e responde 403.
+       Isto só evita OFERECER o que vai ser negado — porta na cara é atrito, e atrito repetido
+       ensina a desconfiar do menu inteiro. */
 function abreLeitorNaBarra(){
-  const a = document.getElementById('nav-edital-ia'); if(!a) return;
-  const email = String((window.gmAuth && gmAuth.user && gmAuth.user.email) || '').toLowerCase();
-  if(LEITORES_EDITAL.includes(email)) a.hidden = false;
+  const email = String((window.gmAuth && gmAuth.user && gmAuth.user.email) || '');
+  if (window.LimedtecMenu && LimedtecMenu.revelarPara) LimedtecMenu.revelarPara(email);
 }
 function _aoAutenticar(){ iniciarEstoque(); iniciarJornais(); abreLeitorNaBarra(); }
 if(window.gmAuth) _aoAutenticar();

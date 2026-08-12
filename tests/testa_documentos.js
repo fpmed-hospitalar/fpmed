@@ -20,6 +20,22 @@
 'use strict';
 const fs = require('fs'), path = require('path');
 const raiz = path.join(__dirname, '..');
+
+/* ── ALCANCE (12/08, navegação única) ──────────────────────────────────────────────────────
+   A barra do portal morreu: as sete entradas dela agora saem só do menu lateral. Estes asserts
+   sempre protegeram "há caminho daqui pra tela X", e não "existe uma <nav class=portal>" — a
+   barra era o MEIO, o alcance é o FIM. O predicado abaixo aceita os dois meios e não afrouxa
+   nenhum: pelo menu, exige que a tela MONTE o menu, CARREGUE o script, e que o destino esteja
+   declarado lá. Três condições, não uma. */
+const _MENU_SRC = require('fs').readFileSync(require('path').join(raiz, 'limedtec-menu.js'), 'utf8');
+const alcanca = (src, destino) => {
+  const d = destino.replace(/\./g, '\\.');
+  if (new RegExp('href="' + d + '"').test(src)) return true;             // caminho direto na tela
+  return /limedtec-menu\.js/.test(src)                                   // a tela carrega o menu
+      && /data-limedtec-menu/.test(src)                                  // ...e o monta
+      && new RegExp("href: '" + d + "'").test(_MENU_SRC);                // ...e o menu leva lá
+};
+
 const ler = f => fs.readFileSync(path.join(raiz, f), 'utf8').replace(/\r\n/g, '\n');
 
 const tela = ler('fpmed_documentos.html');
@@ -71,7 +87,7 @@ ok('20. o link do arquivo e ASSINADO e curto, nao publico', /storage\/v1\/object
 
 // ══════════ 4. A TELA ══════════
 ok('21. entrou como 3a aba do portal, nas outras duas telas',
-  /<nav class="portal">[\s\S]{0,500}href="fpmed_documentos\.html"/.test(lic) &&
+  alcanca(lic, 'fpmed_documentos.html') &&
   /<nav class="portal">[\s\S]{0,500}href="fpmed_documentos\.html"/.test(neg));
 ok('22. ...e ela mesma carrega a barra do portal (o caminho de volta)',
   /<nav class="portal">[\s\S]{0,300}href="fpmed_licitacoes\.html"/.test(tela));

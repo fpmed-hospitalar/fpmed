@@ -14,6 +14,22 @@
 'use strict';
 const fs = require('fs'), path = require('path');
 const raiz = path.join(__dirname, '..');
+
+/* ── ALCANCE (12/08, navegação única) ──────────────────────────────────────────────────────
+   A barra do portal morreu: as sete entradas dela agora saem só do menu lateral. Estes asserts
+   sempre protegeram "há caminho daqui pra tela X", e não "existe uma <nav class=portal>" — a
+   barra era o MEIO, o alcance é o FIM. O predicado abaixo aceita os dois meios e não afrouxa
+   nenhum: pelo menu, exige que a tela MONTE o menu, CARREGUE o script, e que o destino esteja
+   declarado lá. Três condições, não uma. */
+const _MENU_SRC = require('fs').readFileSync(require('path').join(raiz, 'limedtec-menu.js'), 'utf8');
+const alcanca = (src, destino) => {
+  const d = destino.replace(/\./g, '\\.');
+  if (new RegExp('href="' + d + '"').test(src)) return true;             // caminho direto na tela
+  return /limedtec-menu\.js/.test(src)                                   // a tela carrega o menu
+      && /data-limedtec-menu/.test(src)                                  // ...e o monta
+      && new RegExp("href: '" + d + "'").test(_MENU_SRC);                // ...e o menu leva lá
+};
+
 // CRLF -> LF: mesma razao explicada no testa_cruzamento_licitacoes.js.
 const src = fs.readFileSync(path.join(raiz, 'fpmed_negocios.html'), 'utf8').replace(/\r\n/g, '\n');
 const semeia = require(path.join(raiz, 'tools', 'semeia_negocios.js'));
@@ -258,8 +274,8 @@ ok('403 no PATCH explica que só gestor grava', /só gestor grava no funil/.test
   ok('*** Negocios NAO tem entrada propria no menu lateral (uma porta so pro modulo) ***',
     !/nav-item[^>]*onclick="location\.href='fpmed_negocios\.html'"/.test(sf));
   const lic = fs.readFileSync(path.join(raiz, 'fpmed_licitacoes.html'), 'utf8');
-  ok('*** ...e e alcancavel pela barra do PORTAL, dentro de Licitacoes ***',
-    /<nav class="portal">[\s\S]{0,400}href="fpmed_negocios\.html"/.test(lic));
+  ok('*** ...e e alcancavel de dentro de Licitacoes (menu lateral, desde 12/08) ***',
+    alcanca(lic, 'fpmed_negocios.html'));
   ok('*** e o caminho de volta existe: a aba Negocios leva pro Encontrar ***',
     /<nav class="portal">[\s\S]{0,400}href="fpmed_licitacoes\.html"/.test(fs.readFileSync(path.join(raiz, 'fpmed_negocios.html'), 'utf8')));
   ok('link antigo nao morre: ?aba=negocios cai na aba certa',
@@ -275,9 +291,8 @@ ok('403 no PATCH explica que só gestor grava', /só gestor grava no funil/.test
   // (esta linha ja mudou DUAS vezes em 2 dias, e as duas por decisao de produto, nao por
   //  defeito: 07/08 o atalho do manifest saiu; 08/08 a entrada de menu virou aba do portal.
   //  O que ela protege desde sempre e o mesmo: a tela tem que ser ALCANCAVEL de algum lugar.)
-  ok('...e e alcancavel pela barra do portal, na mesma janela',
-    /<nav class="portal">[\s\S]{0,400}href="fpmed_negocios\.html"/.test(
-      fs.readFileSync(path.join(raiz, 'fpmed_licitacoes.html'), 'utf8')));
+  ok('...e e alcancavel de Licitacoes, na mesma janela',
+    alcanca(fs.readFileSync(path.join(raiz, 'fpmed_licitacoes.html'), 'utf8'), 'fpmed_negocios.html'));
   ok('a tela de Negócios tem o pill "← Sistema" de volta', /<a href="fpmed_sistema_final\.html">/.test(src));
   ok('...e o caminho pro Licitações, que é o irmão dela no módulo', /<a href="fpmed_licitacoes\.html">/.test(src));
 }

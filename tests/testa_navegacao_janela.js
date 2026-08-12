@@ -16,6 +16,22 @@
 'use strict';
 const fs = require('fs'), path = require('path');
 const raiz = path.join(__dirname, '..');
+
+/* ── ALCANCE (12/08, navegação única) ──────────────────────────────────────────────────────
+   A barra do portal morreu: as sete entradas dela agora saem só do menu lateral. Estes asserts
+   sempre protegeram "há caminho daqui pra tela X", e não "existe uma <nav class=portal>" — a
+   barra era o MEIO, o alcance é o FIM. O predicado abaixo aceita os dois meios e não afrouxa
+   nenhum: pelo menu, exige que a tela MONTE o menu, CARREGUE o script, e que o destino esteja
+   declarado lá. Três condições, não uma. */
+const _MENU_SRC = require('fs').readFileSync(require('path').join(raiz, 'limedtec-menu.js'), 'utf8');
+const alcanca = (src, destino) => {
+  const d = destino.replace(/\./g, '\\.');
+  if (new RegExp('href="' + d + '"').test(src)) return true;             // caminho direto na tela
+  return /limedtec-menu\.js/.test(src)                                   // a tela carrega o menu
+      && /data-limedtec-menu/.test(src)                                  // ...e o monta
+      && new RegExp("href: '" + d + "'").test(_MENU_SRC);                // ...e o menu leva lá
+};
+
 const ler = f => fs.readFileSync(path.join(raiz, f), 'utf8').replace(/\r\n/g, '\n');
 
 const sistema = ler('fpmed_sistema_final.html');
@@ -60,14 +76,21 @@ console.log('SUITE testa_navegacao_janela — uma janela so, navegacao por cima\
 {
   const lic = ler('fpmed_licitacoes.html'), neg = ler('fpmed_negocios.html');
   const barra = s => (s.match(/<nav class="portal">[\s\S]*?<\/nav>/) || [''])[0];
-  ok('17. a aba Encontrar tem a barra do portal', !!barra(lic));
+  // 12/08: o Encontrar deixou de ter barra — ele foi a 1a tela a adotar a navegação única.
+  ok('17. o Encontrar navega pelo menu lateral (a barra saiu na navegação única)',
+    /limedtec-menu\.js/.test(lic) && /data-limedtec-menu/.test(lic) && !barra(lic));
   ok('18. a aba Negocios tem a MESMA barra (senao viram dois sistemas parecidos)', !!barra(neg));
   ok('19. *** a barra nao abre janela nova em nenhuma das duas ***',
     !/target=|window\.open/.test(barra(lic)) && !/target=|window\.open/.test(barra(neg)));
-  ok('20. de Encontrar da pra ir pra Negocios', /href="fpmed_negocios\.html"/.test(barra(lic)));
+  ok('20. de Encontrar da pra ir pra Negocios', alcanca(lic, 'fpmed_negocios.html'));
   ok('21. ...e de Negocios da pra voltar pro Encontrar', /href="fpmed_licitacoes\.html"/.test(barra(neg)));
-  ok('22. cada tela marca a PROPRIA aba como ativa (senao ninguem sabe onde esta)',
-    /<a class="on"[^>]*>Encontrar</.test(barra(lic)) && /<a class="on"[^>]*>Negocios|<a class="on"[^>]*>Negócios/.test(barra(neg)));
+  // A promessa e ORIENTACAO: quem olha tem que saber onde esta. No Encontrar quem cumpre isso
+  // agora e o menu, que DERIVA o modulo do nome do arquivo e acende com `lm-on` +
+  // `aria-current`. Derivar e mais forte que marcar na mao: nao ha como a tela esquecer.
+  ok('22. cada tela marca onde se esta (o Encontrar, pelo menu; o Negocios, pela barra)',
+    /lm-on/.test(_MENU_SRC) && /aria-current="page"/.test(_MENU_SRC)
+    && /limedtec-menu\.js/.test(lic)
+    && (/<a class="on"[^>]*>Negocios|<a class="on"[^>]*>Negócios/.test(barra(neg))));
   ok('23. o menu lateral ficou com UMA entrada pro modulo (sem badge PNCP/FUNIL)',
     !/nav-negocios/.test(sistema) && !/>PNCP</.test(sistema) && !/>FUNIL</.test(sistema));
 }
