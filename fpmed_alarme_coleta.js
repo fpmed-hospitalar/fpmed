@@ -69,6 +69,19 @@
   var DIAS_INDICE_VELHO = 2;    // ver (1) acima
   var HORAS_SEM_TENTAR  = 12;   // ver (2) acima
 
+  /* A data do banco vem `2026-08-08` (tipo `date`) e quem lê escreve 08/08/2026.
+     >>> ACHADO OLHANDO O E-MAIL QUE CHEGOU, na prova ao vivo de 12/08: a frase saía com a data
+         em ISO no meio de um texto todo em português, e no mesmo e-mail que escrevia
+         "11/08/2026" duas linhas acima. Formato de data misturado dentro da MESMA mensagem faz
+         quem lê parar pra conferir se são a mesma coisa — e o alarme é lido com pressa.
+     Ela mora aqui, e não em cada canal, porque a frase é UMA só: o sino e o e-mail dizem a mesma
+     notícia, e dois formatadores seriam duas notícias parecidas. */
+  function ddmm(d) {
+    var s = String(d || '');
+    var m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    return m ? m[3] + '/' + m[2] + '/' + m[1] : s;   // formato inesperado: devolve cru, sem inventar
+  }
+
   /* Recebe a LINHA e o AGORA. O `agora` entra por parâmetro, e não por `new Date()`
      lá dentro, porque senão o teste não consegue perguntar "e daqui a 3 dias?" —
      e um alarme que só dá pra testar esperando 3 dias não é testado. */
@@ -109,7 +122,7 @@
     var atraso = Math.floor((hojeUTC - dia.getTime()) / 864e5);
     if (atraso >= DIAS_INDICE_VELHO) {
       return { nivel: 'grave', titulo: 'O índice está atrasado',
-               detalhe: 'O último dia coletado por inteiro foi ' + linha.ultimo_dia_ok
+               detalhe: 'O último dia coletado por inteiro foi ' + ddmm(linha.ultimo_dia_ok)
                       + ' — há ' + atraso + ' dias. Licitação publicada depois disso pode não estar na busca.',
                atraso: atraso };
     }

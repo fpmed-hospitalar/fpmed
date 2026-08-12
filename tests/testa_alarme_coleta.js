@@ -57,6 +57,13 @@ const d = (n) => new Date(Date.UTC(2026, 7, 12 - n)).toISOString().slice(0, 10);
   const v = A.avaliar({ ultima_tentativa: h(1), ultimo_dia_ok: d(2) }, AGORA);
   ok('*** 5. dois dias de atraso -> ALARMA (e o limite decidido) ***', !!v && v.nivel === 'grave', v);
   ok('6. e diz o numero, nao so que "esta atrasado"', !!v && v.atraso === 2, v && v.atraso);
+  /* >>> ESTE ASSERT NASCEU DE OLHAR O E-MAIL QUE CHEGOU (prova ao vivo de 12/08), e nao de ler
+     codigo: a frase saia com a data em ISO ("2026-08-08") no meio de um texto todo em portugues,
+     no mesmo e-mail que escrevia "11/08/2026" duas linhas acima. A suite estava VERDE — ela
+     cobrava o conteudo da frase e nunca o FORMATO. Formato misturado dentro da mesma mensagem faz
+     quem le parar pra conferir se sao a mesma coisa, e alarme e lido com pressa. */
+  ok('*** 6b. a data sai em DD/MM/AAAA, e nao no ISO do banco ***',
+    !!v && /foi 10\/08\/2026 —/.test(v.detalhe) && !/\d{4}-\d{2}-\d{2}/.test(v.detalhe), v && v.detalhe);
   ok('7. e diz a CONSEQUENCIA (licitacao nova pode nao estar na busca)',
     !!v && /pode n[aã]o estar na busca/.test(v.detalhe), v && v.detalhe);
   const v5 = A.avaliar({ ultima_tentativa: h(1), ultimo_dia_ok: d(5) }, AGORA);

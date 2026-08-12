@@ -180,9 +180,31 @@ function montaEmail(nome: string, dia: string, itens: any[], sobraram: number, r
        boletim daquele dia. Não é um destinatário novo: é quem já ia ser servido.
    Sem números inventados: ele repete o que a linha da `coleta_status` diz, e nada além. */
 function montaAlarme(v: any, st: any, dia: string) {
-  const linha = (rot: string, val: unknown) =>
+  /* ══ NADA DE CARIMBO CRU NESTE E-MAIL ═══════════════════════════════════════════════════════
+     ACHADO NA PROVA AO VIVO DE 12/08 — e só olhando o e-mail que CHEGOU. A tabela imprimia
+     `2026-08-12T15:56:08.88+00:00` no meio de um texto todo em português, e datas em ISO
+     (`2026-08-08`) no mesmo e-mail que escreve `11/08/2026` duas linhas acima.
+     >>> E O PIOR NÃO ERA A FEIURA, ERA O FUSO. O carimbo é UTC, e Goiás é UTC−3: quem lesse
+         "15:56" concluiria que a coleta tinha rodado às 15:56 da tarde, quando foram 12:56.
+         Hora sem fuso não é imprecisa, é ERRADA — e erra pra mais, bem no campo que a pessoa
+         usa pra decidir se a coleta acabou de tentar ou parou de manhã.
+     Por isso `hm` diz a hora de GOIÁS e escreve "(horário de Goiás)" ao lado: a única hora que
+     não precisa de rótulo é a que já está no fuso de quem lê — e mesmo essa merece o rótulo
+     quando o dado nasceu em UTC. */
+  const hm = (iso: unknown) => {
+    if (!iso) return "—";
+    const d = new Date(String(iso));
+    if (isNaN(+d)) return String(iso);            // veio algo que não é data: mostra cru, sem inventar
+    const go = new Date(+d - 3 * 3600 * 1000);    // UTC−3, o fuso de Goiás
+    const p = (n: number) => String(n).padStart(2, "0");
+    return `${p(go.getUTCDate())}/${p(go.getUTCMonth() + 1)} às ${p(go.getUTCHours())}:${p(go.getUTCMinutes())}`
+         + ` <span style="font-weight:400;color:#7a8ea3">(horário de Goiás)</span>`;
+  };
+  // data pura (`date`, sem hora) — DD/MM/AAAA, o mesmo formato do resto do e-mail
+  const dia_ = (d: unknown) => (d ? dm(String(d).slice(0, 10)) : "—");
+  const linha = (rot: string, val: unknown, jaEhHtml = false) =>
     `<tr><td style="padding:6px 0;font:13px Arial,sans-serif;color:#7a8ea3">${esc(rot)}</td>
-         <td style="padding:6px 0;font:bold 13px Arial,sans-serif;color:#173A5E">${esc(val ?? "—")}</td></tr>`;
+         <td style="padding:6px 0;font:bold 13px Arial,sans-serif;color:#173A5E">${jaEhHtml ? val : esc(val ?? "—")}</td></tr>`;
   return `<div style="background:#f4f7fa;padding:22px 0;font-family:Arial,sans-serif">
   <div style="max-width:640px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;border:1px solid #dfe7ee">
     <div style="background:#8a2b2b;padding:18px 22px">
@@ -198,8 +220,8 @@ function montaAlarme(v: any, st: any, dia: string) {
     </div>
     <div style="padding:10px 22px">
       <table style="width:100%;border-collapse:collapse">
-        ${linha("último dia coletado por inteiro", st?.ultimo_dia_ok)}
-        ${linha("última tentativa da coleta", st?.ultima_tentativa)}
+        ${linha("último dia coletado por inteiro", dia_(st?.ultimo_dia_ok))}
+        ${linha("última tentativa da coleta", hm(st?.ultima_tentativa), true)}
         ${linha("último erro registrado", st?.ultimo_erro)}
       </table>
     </div>

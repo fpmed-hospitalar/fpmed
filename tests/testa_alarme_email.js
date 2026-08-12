@@ -99,6 +99,18 @@ let COLADO = '';
     /Por isso o boletim de \$\{esc\(dm\(dia\)\)\} n[aã]o foi enviado/.test(FN));
   ok('15. ...e diz o que conferir, na ordem, em vez de so anunciar a falha',
     /COLETA_TOKEN/.test(FN) && /coletar-licitacoes/.test(FN) && /Actions/.test(FN));
+  /* ══ OS DOIS ASSERTS QUE SO EXISTEM PORQUE EU OLHEI O E-MAIL QUE CHEGOU ════════════════════
+     A prova ao vivo de 12/08 entregou a mensagem na caixa do dono e ela trazia
+     `2026-08-12T15:56:08.88+00:00` numa tabela cujo resto estava todo em portugues.
+     >>> E O DEFEITO GRAVE NAO ERA A FEIURA, ERA O FUSO: o carimbo e UTC e Goias e UTC-3. Quem
+         lesse "15:56" concluiria que a coleta tinha tentado as 15:56 da tarde, quando foram
+         12:56 — ou seja, o campo que serve pra decidir "ela acabou de tentar ou parou de
+         manha?" errava PRA MAIS, em tres horas. Hora sem fuso nao e imprecisa, e errada. */
+  ok('*** 15b. a hora sai no fuso de GOIAS e diz que e (o carimbo do banco e UTC) ***',
+    /hor[aá]rio de Goi[aá]s/.test(FN) && /3 \* 3600 \* 1000/.test(FN.split('function montaAlarme')[1] || ''));
+  ok('15c. e nenhum carimbo cru vai pro e-mail: a data passa por formatador',
+    /linha\("[^"]*última tentativa[^"]*", hm\(/.test(FN)
+    && /linha\("[^"]*último dia[^"]*", dia_\(/.test(FN));
   // ancora SEM ACENTO de proposito: um dia alguem reescreve o comentario acentuado logo abaixo
   // do bloco e este assert quebraria por motivo que nao tem nada a ver com a promessa dele.
   ok('16. o alarme NAO marca vistos_email (nada foi contado sobre licitacao nenhuma)',
