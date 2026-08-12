@@ -1,0 +1,164 @@
+// SUITE testa_menu_lateral - o menu de modulos, item 3 da reforma.
+//
+// == O QUE ESTA SUITE GUARDA ===================================================
+// Tres coisas, e as tres ja custaram caro em algum lugar deste projeto:
+//
+//  1. QUE O MENU NAO SE MONTE SOZINHO. Incluir o script numa tela nao pode mudar
+//     nada; o menu so aparece onde houver [data-limedtec-menu]. E o "sem apagao"
+//     aplicado a navegacao: menu que nasce em 15 telas de uma vez, se nascer
+//     torto, nasce torto em 15 lugares.
+//  2. QUE COR E ESPACO VENHAM SO DO TEMA. A versao anterior deste arquivo tinha
+//     cor chumbada e EMOJI como icone. Ela nunca foi ao ar - mas so porque
+//     alguem leu. Agora quem le e o assert.
+//  3. QUE O MODULO ACESO SEJA O CERTO. Menu a gente nao le, a gente clica: item
+//     errado aceso passa meses sem ninguem reparar.
+//
+//   node tests/testa_menu_lateral.js
+'use strict';
+const fs = require('fs'), path = require('path');
+const R = (...p) => fs.readFileSync(path.join(__dirname, '..', ...p), 'utf8').replace(/\r\n/g, '\n');
+const M = R('limedtec-menu.js');
+const uc = s => s.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s*\n\s*(?:\/\/|\*)?\s*/g, ' ');
+
+let p = 0, f = 0;
+const ok = (n, c, e) => { if (c) p++; else { f++; console.log('  FALHA ' + n + (e !== undefined ? '  [' + JSON.stringify(e) + ']' : '')); } };
+console.log('SUITE testa_menu_lateral - o menu de modulos\n');
+
+// ── 1. o menu roda de verdade, num DOM de mentira ────────────────────────────
+// Em vez de procurar texto no arquivo, a suite EXECUTA o modulo contra um DOM
+// minimo e olha o que saiu. Assert que le codigo prova que o codigo esta escrito;
+// assert que roda o codigo prova que ele funciona.
+function domFalso(url, hash) {
+  const feitos = [];
+  const el = (tag) => ({
+    tag, id: '', className: '', attrs: {}, filhos: [], _html: '', textContent: '',
+    setAttribute(k, v) { this.attrs[k] = v; }, getAttribute(k) { return this.attrs[k] === undefined ? null : this.attrs[k]; },
+    appendChild(c) { this.filhos.push(c); feitos.push(c); return c; },
+    set innerHTML(v) { this._html = v; }, get innerHTML() { return this._html; },
+  });
+  const head = el('head');
+  const doc = {
+    readyState: 'complete', head,
+    createElement: (t) => el(t),
+    getElementById: (id) => feitos.find(x => x.id === id) || null,
+    querySelector: (sel) => (/fpmed_tema\.css/.test(sel)
+      ? feitos.find(x => x.tag === 'link' && /fpmed_tema\.css/.test(x.href || '')) || null : null),
+    /* A pagina de mentira TEM conteudo (um <body>), mas NAO tem ponto de montagem.
+       Isso e o que torna o assert 2 capaz de morder: se alguem trocar o seletor
+       [data-limedtec-menu] por qualquer outro que exista na pagina, o menu monta
+       e o teste fica vermelho. Antes esta funcao devolvia [] pra tudo, e ai a
+       mutacao "menu passa a se montar sozinho" passava VERDE - o DOM falso era
+       incapaz de reproduzir o defeito que a suite dizia guardar. */
+    querySelectorAll: (sel) => (String(sel).indexOf('data-limedtec-menu') >= 0 ? [] : [el('body')]),
+    addEventListener() {},
+  };
+  const win = { location: { pathname: url, hash: hash || '' }, document: doc };
+  return { win, doc, feitos };
+}
+
+function carrega(url, hash) {
+  const { win, doc, feitos } = domFalso(url, hash);
+  const fn = new Function('window', 'document', M + '\nreturn window.LimedtecMenu;');
+  const api = fn(win, doc);
+  return { api, doc, feitos, win };
+}
+
+let n = 1;
+const base = carrega('/fpmed_licitacoes.html');
+ok(n + '. o arquivo carrega e exporta a API', !!(base.api && base.api.montar)); n++;
+ok(n + '. carregar NAO monta nada sozinho (sem [data-limedtec-menu], nada acontece)',
+  base.feitos.filter(x => x.tag === 'nav').length === 0); n++;
+
+// ── 2. o modulo aceso ────────────────────────────────────────────────────────
+const CASOS = [
+  ['/fpmed_licitacoes.html', '', 'buscar', 'a tela Encontrar acende Buscar'],
+  ['/fpmed_licitacoes.html', '#radar', 'radar', 'o mesmo arquivo com #radar acende Radar'],
+  ['/fpmed_licitacoes.html', '#jornais', 'jornais', 'e com #jornais acende Meus Jornais'],
+  ['/fpmed_licitacoes.html', '#lk-desertas', 'desertas', 'e com #lk-desertas acende Desertas'],
+  ['/fpmed_negocios.html', '', 'negocios', 'Negocios'],
+  ['/fpmed_edital_ia.html', '', 'leitor', 'Leitor de edital'],
+  ['/fpmed_conferidor.html', '', 'conferir', 'Conferir CMED'],
+  ['/fpmed_giovana.html', '', 'proposta', 'Proposta'],
+  ['/fpmed_documentos.html', '', 'documentos', 'Documentos'],
+  ['/fpmed_sistema_final.html', '', 'sistema', 'Sistema comercial'],
+  ['/uma_tela_que_nao_esta_no_menu.html', '', null, 'tela de fora nao acende NADA (em vez de acender a primeira)'],
+];
+for (const [url, hash, esperado, porque] of CASOS) {
+  const c = carrega(url, hash);
+  const deu = c.api.moduloAtual(null);
+  ok(n + '. ' + porque, deu === esperado, { deu, esperado }); n++;
+}
+
+// ── 3. a montagem ────────────────────────────────────────────────────────────
+const c = carrega('/fpmed_negocios.html');
+const alvo = { attrs: {}, filhos: [], setAttribute(k, v) { this.attrs[k] = v; }, getAttribute(k) { return this.attrs[k] === undefined ? null : this.attrs[k]; }, appendChild(x) { this.filhos.push(x); } };
+const nav = c.api.montar(alvo);
+ok(n + '. montar() devolve o <nav> e o pendura no alvo', !!nav && alvo.filhos.length === 1); n++;
+ok(n + '. o nav tem rotulo de acessibilidade', nav.getAttribute('aria-label') === 'Modulos do sistema'
+  || /Módulos do sistema/.test(nav.getAttribute('aria-label') || '')); n++;
+const html = nav.innerHTML;
+ok(n + '. montar() duas vezes no mesmo alvo nao duplica o menu',
+  c.api.montar(alvo) === null && alvo.filhos.length === 1); n++;
+ok(n + '. o modulo da tela aberta esta marcado com aria-current',
+  /aria-current="page"/.test(html) && (html.match(/aria-current/g) || []).length === 1); n++;
+ok(n + '. e a marcacao nao e so cor: tem a classe que aplica fundo, cor E barra',
+  /class="lm-on"/.test(html)); n++;
+ok(n + '. o Calendario aparece DESLIGADO com "em breve" (nao some, e nao leva a 404)',
+  /lm-off/.test(html) && /em breve/.test(html) && !/href="[^"]*calendario/.test(html)); n++;
+ok(n + '. o tema e carregado se a tela ainda nao tiver',
+  c.feitos.some(x => x.tag === 'link' && /fpmed_tema\.css/.test(x.href || ''))); n++;
+
+// ── 4. todo item leva a uma tela QUE EXISTE ──────────────────────────────────
+// Este e o assert que impede a falha mais burra e mais provavel: renomear um
+// arquivo e deixar o menu apontando pro nome velho. O menu vira um campo minado
+// de 404 e ninguem descobre ate um cliente clicar.
+const hrefs = [...html.matchAll(/href="([^"#]+)(?:#[^"]*)?"/g)].map(x => x[1]);
+const faltando = hrefs.filter(h => !fs.existsSync(path.join(__dirname, '..', h)));
+ok(n + '. TODO link do menu aponta pra um arquivo que existe no repo', faltando.length === 0, faltando); n++;
+ok(n + '. e ha link de verdade (o assert acima nao passa por lista vazia)', hrefs.length >= 10, hrefs.length); n++;
+
+// ── 5. as regras do tema e do adendo ─────────────────────────────────────────
+const CSS = c.api.CSS;
+ok(n + '. ZERO cor chumbada no CSS do menu - tudo vem de var()',
+  (CSS.match(/#[0-9a-fA-F]{3,8}\b|\brgba?\(/g) || []).length === 0,
+  (CSS.match(/#[0-9a-fA-F]{3,8}\b|\brgba?\(/g) || [])); n++;
+ok(n + '. ZERO espacamento literal em padding/margin/gap',
+  (CSS.match(/(?:padding|margin|gap)[a-z-]*\s*:\s*[^;}]*?\b\d+px/g) || []).length === 0,
+  (CSS.match(/(?:padding|margin|gap)[a-z-]*\s*:\s*[^;}]*?\b\d+px/g) || [])); n++;
+ok(n + '. ZERO emoji no arquivo inteiro (a versao anterior usava emoji como icone)',
+  !/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/u.test(M)); n++;
+ok(n + '. todo seletor do CSS mora sob #limedtec-menu (nao vaza pra tela que hospeda)',
+  (CSS.match(/^[^@\s][^{]*\{/gm) || []).every(s => /#limedtec-menu/.test(s)),
+  (CSS.match(/^[^@\s][^{]*\{/gm) || []).filter(s => !/#limedtec-menu/.test(s))); n++;
+ok(n + '. o texto usa a escala do tema, nao numero solto',
+  !/font-size:\s*\d/.test(CSS)); n++;
+ok(n + '. a transicao usa o token de 150ms', /transition:[^;]*var\(--transicao\)/.test(CSS)); n++;
+ok(n + '. ha foco visivel no link (quem navega por teclado precisa saber onde esta)',
+  /:focus-visible\{[^}]*var\(--foco\)/.test(CSS.replace(/\s+/g, ' ').replace(/ \{/g, '{'))); n++;
+
+// ── 6. os icones ─────────────────────────────────────────────────────────────
+const ICONE = c.api.ICONE;
+const MODULOS = c.api.MODULOS.filter(x => x.id);
+ok(n + '. todo modulo tem icone', MODULOS.every(m => ICONE[m.id]),
+  MODULOS.filter(m => !ICONE[m.id]).map(m => m.id)); n++;
+ok(n + '. o telefone do rodape usa ICONE, nao emoji (D11)',
+  !!ICONE.telefone && /svg\('telefone'\)/.test(M)); n++;
+ok(n + '. os SVG sao todos do mesmo grid 24x24',
+  (html.match(/viewBox="([^"]+)"/g) || []).every(v => /0 0 24 24/.test(v))); n++;
+ok(n + '. e todos com o mesmo traco', (CSS.match(/stroke-width:\s*([\d.]+)/g) || []).length === 1); n++;
+ok(n + '. icone e decorativo pro leitor de tela (o rotulo ja diz o nome)',
+  (html.match(/<svg/g) || []).length === (html.match(/aria-hidden="true"/g) || []).length); n++;
+
+// ── 7. estreito ──────────────────────────────────────────────────────────────
+ok(n + '. em tela estreita o menu NAO some - vira faixa horizontal',
+  /max-width:900px/.test(CSS) && /flex-direction:row/.test(CSS) && !/display:none[^}]*#limedtec-menu\{/.test(CSS)); n++;
+
+// ── 8. a memoria do porque (L6) ──────────────────────────────────────────────
+ok(n + '. o arquivo registra por que o menu nao se monta sozinho', /sem apagao/i.test(uc(M))); n++;
+ok(n + '. e registra as divergencias com o prototipo, com o motivo de cada uma',
+  /DIVERGENCIAS COM O PROTOTIPO/i.test(uc(M)) && /Emoji como icone e PROIBIDO/i.test(uc(M))); n++;
+ok(n + '. e deixa a decisao dos icones em aberto pro dono, sem fingir que e Lucide',
+  /nao inventei paths dizendo que eram Lucide/i.test(uc(M))); n++;
+
+console.log('\nRESULTADO: ' + p + ' ok, ' + f + ' falha(s)');
+if (f) process.exit(1);

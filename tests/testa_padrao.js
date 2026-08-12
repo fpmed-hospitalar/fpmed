@@ -144,8 +144,8 @@ ok(n + '. ZERO cor fora do :root - a regra que sustenta o P6 inteiro',
   (fora.match(/#[0-9a-fA-F]{3,8}\b|\brgba?\(/g) || []).length === 0,
   (fora.match(/#[0-9a-fA-F]{3,8}\b|\brgba?\(/g) || [])); n++;
 ok(n + '. ZERO espacamento literal em padding/margin/gap',
-  (fora.match(/(?:padding|margin|gap)[a-z-]*\s*:\s*[^;]*?\b\d+px/g) || []).length === 0,
-  (fora.match(/(?:padding|margin|gap)[a-z-]*\s*:\s*[^;]*?\b\d+px/g) || [])); n++;
+  (fora.match(/(?:padding|margin|gap)[a-z-]*\s*:\s*[^;}]*?\b\d+px/g) || []).length === 0,
+  (fora.match(/(?:padding|margin|gap)[a-z-]*\s*:\s*[^;}]*?\b\d+px/g) || [])); n++;
 
 // "Sem apagao" aplicado ao CSS: carregar o tema em qualquer tela nao muda um pixel
 // sozinho. E o que permite adotar tela a tela em vez de tudo de uma vez.

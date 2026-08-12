@@ -91,7 +91,7 @@ ok('19. toda classe do tema tem prefixo fp- (nao colide com o CSS que ja existe 
 // fim da consistencia - e a janela quebrada da lei L8.
 const corSolta = (foraDaRaiz.match(/#[0-9a-fA-F]{3,8}\b|\brgba?\(/g) || []);
 ok('20. ZERO cor literal fora do :root - toda cor vem de var()', corSolta.length === 0, corSolta);
-const espSolto = (foraDaRaiz.match(/(?:padding|margin|gap)[a-z-]*\s*:\s*[^;]*?\b\d+px/g) || []);
+const espSolto = (foraDaRaiz.match(/(?:padding|margin|gap)[a-z-]*\s*:\s*[^;}]*?\b\d+px/g) || []);
 ok('21. ZERO espacamento literal em padding/margin/gap - todo espaco vem de var()', espSolto.length === 0, espSolto);
 const msSolto = (foraDaRaiz.match(/transition\s*:\s*[^;]*?\b\d+m?s/g) || []);
 ok('22. ZERO duracao literal de transicao fora do token', msSolto.length === 0, msSolto);

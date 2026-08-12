@@ -1,200 +1,256 @@
-/* ══════════════════════════════════════════════════════════════════════════════════════════════
-   limedtec-menu.js — O MENU LATERAL DE MÓDULOS. Reforma visual de 11/08/2026, referência de
-   ESTRUTURA no Licitante Prime (ver docs/spec_reforma_prime.md).
+/* ══════════════════════════════════════════════════════════════════════════════
+   LIMEDTEC · MENU LATERAL DE MÓDULOS
+   Item 3 da fila da reforma. Alvo visual: docs/prototipo/fpmed_prototipo_prime.html
 
-   ══ POR QUE UM ARQUIVO SÓ, E NÃO HTML EM CADA TELA ═════════════════════════════════════════
-   A barra horizontal `nav.portal` que ele substitui estava COPIADA em 6 telas. Toda vez que uma
-   entrada nova entrava, era preciso lembrar de mexer nas 6 — e isso já cobrou o preço: a entrada
-   do Leitor de Edital foi posta na Encontrar e na Negócios, e as outras quatro ficaram sem ela.
-   Aqui a lista mora UMA vez. Acrescentar módulo é uma linha, e ela vale em todo lugar.
+   ── FRONTEIRA DESTE ARQUIVO (F9: o que entra e o que sai, em 3 linhas) ─────────
+   ENTRA:  o nome do arquivo da tela aberta (window.location) e, opcionalmente,
+           `data-modulo` no elemento de montagem.
+   SAI:    um <nav id="limedtec-menu"> pintado, com o módulo atual marcado.
+   NÃO FAZ: não busca dado, não lê banco, não guarda estado, não altera a tela.
 
-   ══ COMPLIANCE ════════════════════════════════════════════════════════════════════════════════
-   Referência de LAYOUT (menu lateral de módulos, item ativo destacado) e nada mais. Nenhum
-   código, ícone, cor ou texto do Prime. As cores são as da marca FPMED — azul #2CA9E0 e verde
-   #8DC63F, os mesmos do resto do sistema.
+   ── POR QUE ELE NÃO SE MONTA SOZINHO ──────────────────────────────────────────
+   Incluir o <script> numa tela NÃO faz nada. O menu só aparece onde existir um
+   elemento `[data-limedtec-menu]`. Isso é o "sem apagão" outra vez: dá pra pôr o
+   script em todas as telas hoje e nenhuma muda; cada uma ganha o menu no dia da
+   fatia dela. Menu que aparece sozinho em 15 telas ao mesmo tempo é o oposto de
+   fatia fina — e se sair torto, sai torto em 15 lugares de uma vez.
 
-   ══ O QUE O MENU NÃO FAZ ══════════════════════════════════════════════════════════════════════
-   Ele não decide permissão. O Leitor de Edital só aparece pra quem está no piloto — mas quem
-   IMPEDE é a edge function, que confere o JWT no servidor e responde 403. Esconder item de menu
-   é conforto, não trava.
-   ══════════════════════════════════════════════════════════════════════════════════════════════ */
-(function (raiz) {
+   ── ESTE ARQUIVO FOI REESCRITO DO ZERO ────────────────────────────────────────
+   A primeira versão foi escrita ANTES do adendo de excelência e violava duas
+   regras dele: usava EMOJI como ícone (D11) e tinha cor chumbada no CSS em vez
+   de token (D5/P6). Ela nunca foi carregada por tela nenhuma — ficou no repo
+   como rascunho justamente pra não entrar no ar torta. O que sobreviveu dela é
+   a ideia que continua certa: a lista de módulos mora UMA vez. A barra que ela
+   substitui estava copiada em 6 telas, e isso já cobrou o preço — a entrada do
+   Leitor de Edital entrou em duas e faltou nas outras quatro.
+
+   ── AS DIVERGÊNCIAS COM O PROTÓTIPO, E POR QUE CADA UMA ───────────────────────
+   A constituição manda: o protótipo manda no visual, mas onde divergir em TOKEN,
+   vence o fpmed_tema.css. Três divergências, todas declaradas:
+
+   1. TAMANHOS DE TEXTO. O protótipo usa 12,5px nos links e 9,5px nos grupos —
+      não existem na nossa escala. Aqui: --txt-2 (14px) nos links e --txt-1 (12px)
+      nos grupos. O menu fica um fio maior e ganha legibilidade; a hierarquia
+      (grupo menor e mais claro que o item) fica idêntica à do protótipo.
+
+   2. O TELEFONE DO RODAPÉ. O protótipo escreve "(62) 3290-4241" precedido de um
+      emoji de telefone. Emoji como ícone é PROIBIDO por D11 — e essa regra não é
+      token, é regra, então ela não cede pro protótipo. Aqui o telefone usa o
+      ícone do mesmo conjunto dos outros.
+
+   3. OS ÍCONES. A regra pede Lucide (MIT) copiado pro repo. O conjunto que está
+      aqui é o DO PROTÓTIPO — desenhado pela nossa própria equipe, no mesmo grid
+      24×24, mesmo traço, mesmas pontas arredondadas. Ele cumpre o que a regra
+      quer (UM conjunto só, tamanho e traço iguais) e ainda evita a pergunta de
+      licença de terceiro. >>> DECISÃO PRO LEMUEL: fica assim, ou baixamos os
+      arquivos oficiais do Lucide? Eu não inventei paths dizendo que eram Lucide.
+
+   ── COMPLIANCE ────────────────────────────────────────────────────────────────
+   Referência de LAYOUT e COMPORTAMENTO apenas. Nenhum código, ícone, cor ou texto
+   de terceiro. Identidade FPMED — azul #2CA9E0 e verde #8DC63F, pelos tokens.
+   ══════════════════════════════════════════════════════════════════════════════ */
+(function () {
   'use strict';
 
-  /* OS MÓDULOS, na ordem que o Lemuel declarou. `arq: null` = ainda não existe: entra
-     ACINZENTADO com selo "em breve" em vez de sumir, porque o cliente PERGUNTOU por ele — e um
-     módulo que não aparece parece um módulo que não vai existir. */
+  /* Os ícones. Todos 24×24, traço de 1.8, pontas arredondadas — o conjunto é UM só,
+     e é isso que faz o menu parecer desenhado por uma pessoa, não montado. */
+  var ICONE = {
+    buscar: '<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>',
+    radar: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1" fill="currentColor"/>',
+    desertas: '<path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/>',
+    jornais: '<path d="M4 5h13v14H4z"/><path d="M17 8h3v11H5"/><path d="M7 9h7M7 12.5h7M7 16h4"/>',
+    negocios: '<rect x="4" y="4" width="4.5" height="16" rx="1"/><rect x="10" y="4" width="4.5" height="11" rx="1"/><rect x="16" y="4" width="4.5" height="7" rx="1"/>',
+    calendario: '<rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M8 3v4M16 3v4"/>',
+    documentos: '<path d="M4 7a2 2 0 0 1 2-2h4l2 2h6a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/>',
+    proposta: '<path d="M7 3h7l4 4v14H7z"/><path d="M14 3v4h4M10 12h5M10 15.5h5"/>',
+    leitor: '<path d="M12 3.5 13.8 9l5.7 1.8-5.7 1.8L12 18.2l-1.8-5.6L4.5 10.8 10.2 9z"/>',
+    conferir: '<path d="M12 4v16M6 7l6-3 6 3"/><path d="M4 13a3 3 0 0 0 6 0L7 7zM14 13a3 3 0 0 0 6 0l-3-6z"/>',
+    pecas: '<path d="M14 4 20 10 9 21H4v-5z"/><path d="m12.5 6.5 5 5"/>',
+    declaracoes: '<path d="M6 3h9l4 4v14H6z"/><path d="M9 12h7M9 15.5h7M9 8.5h3"/>',
+    sistema: '<rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8M12 17v4"/>',
+    telefone: '<path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2.2 2A16 16 0 0 1 3 6.2 2 2 0 0 1 5 4z"/>'
+  };
+
+  /* O MAPA. Cada módulo diz para onde vai e como se reconhece que já se está nele.
+
+     >>> RADAR, DESERTAS E JORNAIS NÃO SÃO TELAS. Conferido no código: são seções
+     DENTRO do Encontrar (`id="radar"`, `id="jornais"`, e os atalhos `lk-desertas`
+     e `lk-jornais`). Tratá-las como telas separadas quebraria o clique dentro da
+     própria tela e deixaria o menu marcando o módulo errado. Por isso `ancora`:
+     estando no Encontrar, rola até a seção; vindo de fora, abre o Encontrar já
+     na seção certa. */
   var MODULOS = [
-    { k:'buscar',      rot:'Buscar',       ic:'🔍', arq:'fpmed_licitacoes.html',
-      dica:'oportunidades no PNCP — nosso índice e a busca nacional' },
-    { k:'radar',       rot:'Radar',        ic:'🎯', arq:'fpmed_licitacoes.html#radar',
-      dica:'cidades num raio daqui com licitação aberta' },
-    { k:'desertas',    rot:'Desertas',     ic:'🔁', arq:'fpmed_licitacoes.html#desertas',
-      dica:'processos que não seguiram — costumam ser republicados' },
-    { k:'jornais',     rot:'Meus Jornais', ic:'📰', arq:'fpmed_licitacoes.html#jornais',
-      dica:'buscas salvas: mostra o que chegou desde a última vez' },
-    { k:'calendario',  rot:'Calendário',   ic:'📅', arq:'fpmed_negocios.html#agenda',
-      dica:'as sessões por dia e hora' },
-    { k:'negocios',    rot:'Negócios',     ic:'📊', arq:'fpmed_negocios.html',
-      dica:'o funil: em que pé está cada disputa' },
-    { k:'documentos',  rot:'Documentos',   ic:'📁', arq:'fpmed_documentos.html',
-      dica:'certidões de habilitação, com aviso de vencimento' },
-    { k:'proposta',    rot:'Proposta',     ic:'🧾', arq:'fpmed_giovana.html',
-      dica:'montar a proposta comercial' },
-    { k:'edital-ia',   rot:'Leitor IA',    ic:'✨', arq:'fpmed_edital_ia.html', piloto:true,
-      dica:'lê o PDF do edital com IA — cada leitura tem custo e fica registrada' },
-    { k:'pecas',       rot:'Peças',        ic:'📜', arq:'fpmed_pecas.html',
-      dica:'impugnação, esclarecimento, recurso — com o prazo na frente' },
-    { k:'declaracoes', rot:'Declarações',  ic:'✍️', arq:'fpmed_declaracoes.html',
-      dica:'modelos de declaração preenchidos com os dados da empresa' },
-    { k:'conferir',    rot:'Conferir',     ic:'⚖️', arq:'fpmed_conferidor.html',
-      dica:'preço da proposta contra o teto legal da CMED' },
-    { k:'favoritas',   rot:'Favoritas',    ic:'⭐', arq:null,
-      dica:'salvar licitações pra olhar depois' },
+    { g: 'Oportunidades' },
+    { id: 'buscar', rotulo: 'Buscar', href: 'fpmed_licitacoes.html', tela: 'fpmed_licitacoes' },
+    { id: 'radar', rotulo: 'Radar', href: 'fpmed_licitacoes.html#radar', ancora: 'radar' },
+    { id: 'desertas', rotulo: 'Desertas', href: 'fpmed_licitacoes.html#lk-desertas', ancora: 'lk-desertas' },
+    { id: 'jornais', rotulo: 'Meus Jornais', href: 'fpmed_licitacoes.html#jornais', ancora: 'jornais' },
+
+    { g: 'Gestão' },
+    { id: 'negocios', rotulo: 'Negócios', href: 'fpmed_negocios.html', tela: 'fpmed_negocios' },
+    /* Calendário ainda não existe — é o item 6 da fila. Ele aparece DESLIGADO, com
+       "em breve", em vez de sumir: menu que muda de tamanho a cada entrega faz a
+       pessoa reaprender onde as coisas ficam. E link que leva a 404 é pior ainda. */
+    { id: 'calendario', rotulo: 'Calendário', emBreve: true },
+    { id: 'documentos', rotulo: 'Documentos', href: 'fpmed_documentos.html', tela: 'fpmed_documentos' },
+
+    { g: 'Ferramentas' },
+    { id: 'proposta', rotulo: 'Proposta', href: 'fpmed_giovana.html', tela: 'fpmed_giovana' },
+    { id: 'leitor', rotulo: 'Leitor de edital', href: 'fpmed_edital_ia.html', tela: 'fpmed_edital_ia' },
+    { id: 'conferir', rotulo: 'Conferir CMED', href: 'fpmed_conferidor.html', tela: 'fpmed_conferidor' },
+    { id: 'pecas', rotulo: 'Peças', href: 'fpmed_pecas.html', tela: 'fpmed_pecas' },
+    { id: 'declaracoes', rotulo: 'Declarações', href: 'fpmed_declaracoes.html', tela: 'fpmed_declaracoes' },
+    { id: 'sistema', rotulo: 'Sistema comercial', href: 'fpmed_sistema_final.html', tela: 'fpmed_sistema_final' }
   ];
 
-  // Quem pode ver o leitor. MESMA lista das telas — e, como lá, NÃO é a permissão.
-  var LEITORES = ['licitacao@fpmed.com.br'];
-  function podeLeitor() {
-    try {
-      var e = (raiz.gmAuth && raiz.gmAuth.user && raiz.gmAuth.user.email) || '';
-      return LEITORES.indexOf(String(e).toLowerCase()) >= 0;
-    } catch (x) { return false; }
-  }
-
-  /* QUAL MÓDULO ESTÁ ABERTO — sai do nome do arquivo, e não de uma variável que cada tela teria
-     que declarar. Variável por tela é a mesma armadilha da barra copiada: uma esquece, e o menu
-     não marca nada. */
-  function moduloAtual() {
-    var f = (location.pathname.split('/').pop() || '').toLowerCase();
-    var h = (location.hash || '').toLowerCase();
-    if (f.indexOf('licitacoes') >= 0) {
-      if (h.indexOf('radar') >= 0) return 'radar';
-      if (h.indexOf('desertas') >= 0) return 'desertas';
-      if (h.indexOf('jornais') >= 0) return 'jornais';
-      return 'buscar';
+  /* Qual módulo está aberto. DERIVA do arquivo; o `data-modulo` só existe pra tela
+     que precise dizer outra coisa. Derivar em vez de configurar evita a classe de
+     defeito mais chata de menu: a tela que esqueceu de se identificar e fica com o
+     item errado aceso pra sempre — e ninguém percebe, porque menu a gente não lê,
+     a gente só clica. */
+  function moduloAtual(alvo) {
+    var dito = alvo && alvo.getAttribute && alvo.getAttribute('data-modulo');
+    if (dito) return dito;
+    var arq = (window.location.pathname.split('/').pop() || '').replace(/\.html?$/i, '');
+    var h = (window.location.hash || '').replace('#', '');
+    if (arq === 'fpmed_licitacoes' && h) {
+      for (var i = 0; i < MODULOS.length; i++) if (MODULOS[i].ancora === h) return MODULOS[i].id;
     }
-    if (f.indexOf('negocios') >= 0) return h.indexOf('agenda') >= 0 ? 'calendario' : 'negocios';
-    if (f.indexOf('documentos') >= 0) return 'documentos';
-    if (f.indexOf('giovana') >= 0) return 'proposta';
-    if (f.indexOf('conferidor') >= 0) return 'conferir';
-    if (f.indexOf('pecas') >= 0) return 'pecas';
-    if (f.indexOf('declaracoes') >= 0) return 'declaracoes';
-    if (f.indexOf('edital_ia') >= 0) return 'edital-ia';
-    return '';
+    for (var j = 0; j < MODULOS.length; j++) if (MODULOS[j].tela === arq) return MODULOS[j].id;
+    return null;
   }
 
-  /* ══ O TEMA CLARO ══════════════════════════════════════════════════════════════════════════
-     O menu nasce claro porque a reforma é claro. Ele NÃO impõe o tema ao resto da tela: cada
-     tela ganha o tema na vez dela (a Encontrar foi a primeira). Um menu claro ao lado de uma
-     tela escura fica estranho por um dia; um menu que reescreve o CSS de telas que ainda não
-     foram reformadas quebra seis telas de uma vez. */
+  /* O tema é a única fonte de cor e espaçamento. Se a tela ainda não o carregou, o
+     menu carrega — e isso é seguro POR CONSTRUÇÃO: o fpmed_tema.css não tem um
+     único seletor de elemento nu, então entrar numa tela antiga não muda um pixel
+     dela. Foi exatamente pra isso que ele nasceu inerte. */
+  function garanteTema() {
+    if (document.querySelector('link[href*="fpmed_tema.css"]')) return;
+    var l = document.createElement('link');
+    l.rel = 'stylesheet'; l.href = 'fpmed_tema.css';
+    document.head.appendChild(l);
+  }
+
+  /* Todo o CSS mora sob #limedtec-menu. Nada aqui pode vazar pra tela que hospeda:
+     o menu é convidado, e convidado não mexe na mobília da casa. */
   var CSS = [
-    ':root{--lm-larg:216px}',
-    '#lm-menu{position:fixed;left:0;top:0;bottom:0;width:var(--lm-larg);z-index:60;overflow-y:auto;',
-    '  background:#fff;border-right:1px solid #E3E9F0;padding:16px 0 20px;',
-    '  font-family:Inter,system-ui,sans-serif;box-shadow:0 0 24px rgba(16,38,60,.06)}',
-    '#lm-menu .marca{display:flex;align-items:center;gap:10px;padding:0 16px 15px;',
-    '  border-bottom:1px solid #EEF2F7;margin-bottom:11px}',
-    '#lm-menu .marca .cruz{width:30px;height:30px;border-radius:8px;background:#2CA9E0;color:#fff;',
-    '  display:grid;place-items:center;font-size:16px;font-weight:700;flex:0 0 auto}',
-    '#lm-menu .marca b{color:#173A5E;font-family:Montserrat,sans-serif;font-size:14px;letter-spacing:.4px;line-height:1.1;display:block}',
-    '#lm-menu .marca small{display:block;color:#8A9BAD;font-size:8.5px;letter-spacing:2.2px}',
-    '#lm-menu .grupo{padding:11px 16px 5px;font-size:9.5px;letter-spacing:1.2px;text-transform:uppercase;color:#A6B4C4;font-weight:700}',
-    '#lm-menu a{display:flex;align-items:center;gap:10px;padding:9px 16px;color:#4A5B6E;',
-    '  text-decoration:none;font-size:12.5px;cursor:pointer;border-left:3px solid transparent;',
-    '  transition:background .15s,color .15s,border-color .15s}',
-    '#lm-menu a:hover{background:#F4F8FC;color:#173A5E}',
-    /* O ATIVO é o único com barra azul e fundo: o "você está aqui" tem que ser achado de
-       relance, e não lido item por item. */
-    '#lm-menu a.on{background:#EAF6FD;color:#12699A;border-left-color:#2CA9E0;font-weight:600}',
-    '#lm-menu a .ic{width:18px;text-align:center;font-size:13.5px;flex:0 0 auto}',
-    /* "EM BREVE" não é link: acinzentado, sem cursor de mão, e diz o que é. Item que parece
-       clicável e não faz nada ensina a desconfiar do menu inteiro. */
-    '#lm-menu a.breve{opacity:.45;cursor:default}',
-    '#lm-menu a.breve:hover{background:none;color:#4A5B6E}',
-    '#lm-menu .breve-tag{margin-left:auto;font-size:8px;letter-spacing:.6px;text-transform:uppercase;',
-    '  border:1px solid #D7E0EA;color:#8A9BAD;border-radius:20px;padding:1px 6px}',
-    '#lm-menu .sep{height:1px;background:#EEF2F7;margin:11px 16px}',
-    '#lm-menu .rodape{padding:9px 16px 0;font-size:10.5px;color:#8A9BAD;line-height:1.5}',
-    // O CORPO ANDA PRA DIREITA. `padding-left`, e não `margin`, pra não brigar com telas que já
-    // usam margin no body.
-    'body{padding-left:var(--lm-larg)}',
-    /* GAVETA no estreito: 216px de coluna num telefone não sobra tela pro conteúdo, e o menu
-       existe pra levar a ele. O ☰ fica fixo e o menu desliza por cima. */
-    '#lm-abrir{display:none;position:fixed;left:10px;top:10px;z-index:62;width:38px;height:38px;',
-    '  border-radius:10px;border:1px solid #E3E9F0;background:#fff;color:#173A5E;font-size:17px;',
-    '  cursor:pointer;box-shadow:0 2px 10px rgba(16,38,60,.12)}',
-    '#lm-velcro{display:none;position:fixed;inset:0;background:rgba(16,38,60,.35);z-index:59}',
-    '@media(max-width:900px){',
-    '  body{padding-left:0}',
-    '  #lm-abrir{display:block}',
-    '  #lm-velcro.on{display:block}',
-    '  #lm-menu{transform:translateX(-100%);transition:transform .22s}',
-    '  #lm-menu.on{transform:translateX(0)}',
-    '}',
-    /* A BARRA HORIZONTAL ANTIGA some onde o menu existe — as duas juntas seriam duas navegações
-       pro mesmo lugar, e o operador teria que decidir qual usar. */
-    'nav.portal{display:none !important}',
+    '#limedtec-menu{position:fixed;left:0;top:0;bottom:0;width:224px;z-index:40;',
+    '  display:flex;flex-direction:column;overflow-y:auto;',
+    '  background:var(--branco);border-right:1px solid var(--cinza-200);',
+    '  font-family:var(--fonte);padding:var(--esp-2) 0 var(--esp-3)}',
+
+    '#limedtec-menu .lm-marca{display:flex;align-items:center;gap:var(--esp-3);',
+    '  padding:var(--esp-2) var(--esp-4) var(--esp-4);',
+    '  border-bottom:1px solid var(--cinza-100);margin-bottom:var(--esp-2)}',
+    '#limedtec-menu .lm-cruz{width:32px;height:32px;flex:0 0 auto;border-radius:var(--raio-botao);',
+    '  background:var(--azul-500);color:var(--branco);display:grid;place-items:center;',
+    '  font-weight:var(--peso-forte);font-size:var(--txt-4);line-height:1}',
+    '#limedtec-menu .lm-marca b{display:block;font-size:var(--txt-2);font-weight:var(--peso-semi);',
+    '  color:var(--azul-800);line-height:1.15}',
+    '#limedtec-menu .lm-marca small{display:block;font-size:var(--txt-1);letter-spacing:.18em;',
+    '  color:var(--cinza-400);font-weight:var(--peso-semi);line-height:1.4}',
+
+    /* O rótulo de grupo é o que transforma 14 links numa lista organizada: sem ele
+       o olho tem que ler tudo pra achar. Menor e mais claro que os itens, sempre. */
+    '#limedtec-menu .lm-grupo{padding:var(--esp-3) var(--esp-4) var(--esp-1);',
+    '  font-size:var(--txt-1);letter-spacing:.1em;text-transform:uppercase;',
+    '  color:var(--cinza-400);font-weight:var(--peso-semi)}',
+
+    '#limedtec-menu a,#limedtec-menu .lm-off{display:flex;align-items:center;gap:var(--esp-3);',
+    '  padding:var(--esp-2) var(--esp-4);font-size:var(--txt-2);text-decoration:none;',
+    '  color:var(--cinza-600);border-left:3px solid transparent;',
+    '  transition:background-color var(--transicao),color var(--transicao)}',
+    '#limedtec-menu a{cursor:pointer}',
+    '#limedtec-menu a:hover{background:var(--cinza-50);color:var(--cinza-800)}',
+    '#limedtec-menu a:focus-visible{outline:none;box-shadow:var(--foco)}',
+
+    /* O item aceso usa TRÊS sinais: fundo, cor e a barra da esquerda. Não é
+       exagero — quem não distingue o azul do cinza ainda enxerga a barra e o peso.
+       Cor sozinha marcando estado é a falha de acessibilidade mais comum que existe. */
+    '#limedtec-menu a.lm-on{background:var(--azul-50);color:var(--azul-700);',
+    '  border-left-color:var(--azul-500);font-weight:var(--peso-semi)}',
+
+    '#limedtec-menu .lm-off{color:var(--cinza-400);cursor:default}',
+    '#limedtec-menu .lm-breve{margin-left:auto;font-size:var(--txt-1);',
+    '  color:var(--cinza-400);font-weight:var(--peso-normal)}',
+
+    '#limedtec-menu svg{width:20px;height:20px;flex:0 0 auto;stroke:currentColor;fill:none;',
+    '  stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}',
+
+    '#limedtec-menu .lm-rodape{margin-top:auto;padding:var(--esp-3) var(--esp-4) 0;',
+    '  border-top:1px solid var(--cinza-100);font-size:var(--txt-1);color:var(--cinza-500);',
+    '  line-height:1.6}',
+    '#limedtec-menu .lm-rodape span{display:flex;align-items:center;gap:var(--esp-2)}',
+    '#limedtec-menu .lm-rodape svg{width:16px;height:16px}',
+
+    /* Em tela estreita o menu vira uma faixa horizontal rolável no topo. Escondê-lo
+       não é opção: sumiria a navegação inteira do sistema no celular. */
+    '@media (max-width:900px){',
+    '  #limedtec-menu{position:static;width:auto;flex-direction:row;overflow-x:auto;',
+    '    border-right:none;border-bottom:1px solid var(--cinza-200);padding:0}',
+    '  #limedtec-menu .lm-marca,#limedtec-menu .lm-grupo,#limedtec-menu .lm-rodape{display:none}',
+    '  #limedtec-menu a,#limedtec-menu .lm-off{white-space:nowrap;border-left:none;',
+    '    border-bottom:3px solid transparent}',
+    '  #limedtec-menu a.lm-on{border-left-color:transparent;border-bottom-color:var(--azul-500)}}'
   ].join('\n');
 
-  function pinta() {
-    if (document.getElementById('lm-menu')) return;   // um só, mesmo se o boot rodar duas vezes
-    if (!document.getElementById('lm-css')) {
-      var st = document.createElement('style');
-      st.id = 'lm-css'; st.textContent = CSS;
-      document.head.appendChild(st);
-    }
-    var atual = moduloAtual();
-    var cli = (raiz.LIMEDTEC_CLIENTE && raiz.LIMEDTEC_CLIENTE.empresa) || {};
-    var nome = (raiz.LIMEDTEC_CLIENTE && raiz.LIMEDTEC_CLIENTE.nome) || 'FPMED';
-
-    var h = '<div class="marca"><div class="cruz">✚</div>'
-          + '<div><b>' + nome + '</b><small>HOSPITALAR</small></div></div>';
-    MODULOS.forEach(function (m) {
-      if (m.piloto && !podeLeitor()) return;
-      if (!m.arq) {
-        h += '<a class="breve" title="' + m.dica + ' — ainda não está pronto">'
-           + '<span class="ic">' + m.ic + '</span>' + m.rot
-           + '<span class="breve-tag">em breve</span></a>';
-        return;
-      }
-      h += '<a href="' + m.arq + '"' + (m.k === atual ? ' class="on"' : '')
-         + ' title="' + m.dica + '"><span class="ic">' + m.ic + '</span>' + m.rot + '</a>';
-    });
-    h += '<div class="sep"></div>'
-       + '<a href="fpmed_sistema_final.html" title="volta pro sistema interno">'
-       + '<span class="ic">←</span>Sistema</a>'
-       + '<div class="rodape">' + (cli.telefone ? '📞 ' + cli.telefone : '') + '</div>';
-
-    var nav = document.createElement('nav');
-    nav.id = 'lm-menu'; nav.innerHTML = h;
-    var velcro = document.createElement('div'); velcro.id = 'lm-velcro';
-    var bt = document.createElement('button');
-    bt.id = 'lm-abrir'; bt.type = 'button'; bt.textContent = '☰';
-    bt.setAttribute('aria-label', 'abrir o menu');
-    var abre = function (v) { nav.classList.toggle('on', v); velcro.classList.toggle('on', v); };
-    bt.onclick = function () { abre(!nav.classList.contains('on')); };
-    velcro.onclick = function () { abre(false); };
-    // Clicar num item fecha a gaveta: no celular o menu cobre a tela, e ficar aberto por cima do
-    // que a pessoa acabou de pedir é o mesmo que não ter navegado.
-    nav.addEventListener('click', function (e) { if (e.target.closest('a')) abre(false); });
-
-    document.body.insertBefore(velcro, document.body.firstChild);
-    document.body.insertBefore(nav, document.body.firstChild);
-    document.body.insertBefore(bt, document.body.firstChild);
+  function svg(nome) {
+    return '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">' + (ICONE[nome] || '') + '</svg>';
   }
 
-  /* MESMA CORRIDA DO gm-auth de 05/08: com token fresco ele dispara `gm-auth-ready` ainda dentro
-     do <head>, antes deste arquivo existir. Pinta agora se der, e REPINTA quando o evento chegar
-     — o item do piloto depende de saber quem está logado. */
-  if (document.body) pinta();
-  else document.addEventListener('DOMContentLoaded', pinta, { once: true });
-  document.addEventListener('gm-auth-ready', function () {
-    var n = document.getElementById('lm-menu');
-    if (n) n.parentNode.removeChild(n);
-    pinta();
-  });
+  function montar(alvo) {
+    if (!alvo || alvo.getAttribute('data-montado') === '1') return null;
+    garanteTema();
 
-  raiz.LimedtecMenu = { MODULOS: MODULOS, moduloAtual: moduloAtual, pinta: pinta };
-})(typeof window !== 'undefined' ? window : globalThis);
+    if (!document.getElementById('limedtec-menu-css')) {
+      var st = document.createElement('style');
+      st.id = 'limedtec-menu-css';
+      st.textContent = CSS;
+      document.head.appendChild(st);
+    }
+
+    var atual = moduloAtual(alvo);
+    var nav = document.createElement('nav');
+    nav.id = 'limedtec-menu';
+    nav.setAttribute('aria-label', 'Módulos do sistema');
+
+    var h = ['<div class="lm-marca"><div class="lm-cruz">+</div>',
+      '<div><b>FPMED</b><small>HOSPITALAR</small></div></div>'];
+
+    for (var i = 0; i < MODULOS.length; i++) {
+      var m = MODULOS[i];
+      if (m.g) { h.push('<div class="lm-grupo">' + m.g + '</div>'); continue; }
+      if (m.emBreve) {
+        h.push('<div class="lm-off" aria-disabled="true">' + svg(m.id) + m.rotulo +
+          '<span class="lm-breve">em breve</span></div>');
+        continue;
+      }
+      var on = (m.id === atual);
+      h.push('<a href="' + m.href + '" class="' + (on ? 'lm-on' : '') + '"' +
+        (on ? ' aria-current="page"' : '') + '>' + svg(m.id) + m.rotulo + '</a>');
+    }
+
+    h.push('<div class="lm-rodape"><span>' + svg('telefone') + '(62) 3290-4241</span>' +
+      'Compromisso com qualidade!</div>');
+
+    nav.innerHTML = h.join('');
+    alvo.appendChild(nav);
+    alvo.setAttribute('data-montado', '1');
+    return nav;
+  }
+
+  function iniciar() {
+    var alvos = document.querySelectorAll('[data-limedtec-menu]');
+    for (var i = 0; i < alvos.length; i++) montar(alvos[i]);
+  }
+
+  if (typeof document !== 'undefined') {
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', iniciar);
+    else iniciar();
+  }
+
+  /* Exportado pra suíte e pra tela que precise montar depois (modal, troca de aba). */
+  if (typeof window !== 'undefined') {
+    window.LimedtecMenu = { montar: montar, moduloAtual: moduloAtual, MODULOS: MODULOS, ICONE: ICONE, CSS: CSS };
+  }
+})();

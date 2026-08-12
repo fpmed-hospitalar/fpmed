@@ -708,10 +708,58 @@ Criado em 21/07/2026 copiando SO os arquivos do app do C:\globalmed.
     tirar o boletim do agendador do GitHub e chama-lo pelo pg_cron do Supabase,
     que roda no banco e nao disputa fila com o mundo inteiro.
 
+>>> 11/08 — ITEM 3 FECHADO: O MENU LATERAL, REFEITO DO ZERO SOBRE OS TOKENS.
+
+    limedtec-menu.js — 14 modulos em 3 grupos (Oportunidades · Gestao ·
+    Ferramentas), alvo visual no prototipo do arquiteto.
+
+    >>> ELE NAO SE MONTA SOZINHO, DE PROPOSITO. Incluir o <script> numa tela NAO
+        faz nada: o menu so aparece onde houver [data-limedtec-menu]. Da pra por
+        o script em todas as telas hoje e nenhuma muda; cada uma ganha o menu no
+        dia da fatia dela. Menu que nasce em 15 telas de uma vez, se nascer torto,
+        nasce torto em 15 lugares.
+
+    >>> RADAR, DESERTAS E JORNAIS NAO SAO TELAS. Conferi no codigo: sao SECOES
+        dentro do Encontrar (id="radar", id="jornais", lk-desertas). Tratar como
+        tela separada quebraria o clique dentro da propria tela. Por isso ancora:
+        estando no Encontrar rola ate a secao, vindo de fora abre ja na secao.
+
+    >>> CALENDARIO APARECE DESLIGADO, com "em breve". Nao some e nao vira link
+        quebrado: menu que muda de tamanho a cada entrega faz a pessoa reaprender
+        onde as coisas ficam, e link pra 404 e pior ainda. Ele acende no item 6.
+
+    AS TRES DIVERGENCIAS COM O PROTOTIPO, todas declaradas no topo do arquivo:
+      1. tamanhos de texto — o prototipo usa 12,5px/9,5px, que nao existem na
+         nossa escala; aqui --txt-2 e --txt-1. Token vence, por ordem da
+         constituicao. A hierarquia fica identica.
+      2. o telefone do rodape — o prototipo usa EMOJI de telefone. Emoji como
+         icone e proibido por D11, e isso e regra, nao token: nao cede.
+      3. os icones — a regra pede Lucide (MIT). O conjunto aqui e o DO PROTOTIPO,
+         desenhado pela nossa equipe, mesmo grid 24x24 e mesmo traco. Cumpre o
+         que a regra quer (UM conjunto so) e evita licenca de terceiro.
+         >>> DECISAO PRO LEMUEL: fica assim ou baixamos os arquivos do Lucide?
+             Eu NAO inventei paths dizendo que eram Lucide.
+
+    tests/testa_menu_lateral.js — 38 asserts. A suite EXECUTA o modulo contra um
+    DOM de mentira e olha o que saiu, em vez de procurar texto no arquivo.
+    Mutacao: 10 de 10 barradas — mas a primeira rodada foi 9 de 10, e a que
+    passou era a mais importante ("o menu passa a se montar sozinho"). O furo era
+    do meu DOM falso, que devolvia lista vazia pra QUALQUER seletor: ele era
+    incapaz de reproduzir o defeito que a suite dizia guardar. Corrigido — agora
+    a pagina de mentira tem <body> mas nao tem ponto de montagem.
+
+    >>> NENHUMA TELA CARREGA O MENU AINDA. Ele entra junto com a fatia do
+        Encontrar (item 4), que e a primeira tela a montar. Por isso a VERSAO do
+        service worker NAO subiu: nao ha nada novo pro cache servir.
+
+    E corrigi o mesmo regex torto em TRES suites (menu, tema, padrao): a busca por
+    espacamento literal atravessava o } e acusava a regra seguinte. Instrumento
+    errado em tres lugares e a licao S16 tentando acontecer de novo.
+
 >>> PONTO EXATO DE RETOMADA — a fila numerada:
      1. [OK] spec da reforma (docs/spec_reforma_prime.md) — 4485c30
      2. [OK] fpmed_tema.css — O DESIGN SYSTEM, e ele vem primeiro (adendo de excelencia)
-     3. [ ] menu lateral CLARO, refeito sobre os tokens, com icones Lucide e a lista:
+     3. [OK] menu lateral CLARO, refeito sobre os tokens, com icones Lucide e a lista:
             Buscar · Radar · Desertas · Meus Jornais · Calendario · Negocios · Documentos ·
             Proposta · Leitor IA · Pecas · Declaracoes · Conferir (+ Favoritas "em breve")
      4. [ ] tela ENCONTRAR no tema claro — sai o titulo gigante, sai a fileira de linkzinhos,
