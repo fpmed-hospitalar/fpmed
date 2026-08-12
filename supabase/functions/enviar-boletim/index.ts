@@ -35,6 +35,15 @@
 //     criar a conta: tudo pronto, faltando a chave.
 // ============================================================
 
+/* ══ O MOTOR DO ALARME DA COLETA, COLADO AQUI PELO DEPLOY ════════════════════════════════════
+   A linha abaixo NÃO é comentário morto: o `tools/deploy_edge.js` a substitui pelo conteúdo do
+   `fpmed_alarme_coleta.js` na hora de publicar. O repositório guarda UMA cópia da regra "isto é
+   alarme?", e ela é a mesma que o sino do Negócios lê. Reescrever a regra aqui em TypeScript
+   criaria a segunda definição — e no dia em que uma mudasse, o sino diria uma coisa e o e-mail
+   diria outra sobre o mesmo banco. */
+// @inline fpmed_alarme_coleta.js
+const ALARME: any = (globalThis as any).AlarmeColeta || null;
+
 const SB_URL = Deno.env.get("SUPABASE_URL")!;
 const SB_SR = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;   // injetada pela plataforma
 const TOKEN = Deno.env.get("BOLETIM_TOKEN");                // segredo dedicado do agendador
@@ -161,6 +170,60 @@ function montaEmail(nome: string, dia: string, itens: any[], sobraram: number, r
 </div>`;
 }
 
+/* ══ O E-MAIL DE ALARME ══════════════════════════════════════════════════════════════════════
+   ELE NÃO É UM BOLETIM MAGRO — é a explicação da ausência do boletim. Quando o índice está
+   atrasado, esta função JÁ SE RECUSAVA a enviar (a regra "boletim vazio é lido como 'não teve
+   nada'"), e a decisão registrada era que a AUSÊNCIA seria lida como "algo está errado".
+   >>> MAS AUSÊNCIA NÃO É MENSAGEM. Ninguém repara no e-mail que não chegou — foi exatamente
+       assim que 12 falhas seguidas de coleta passaram despercebidas entre 07 e 10/08. O alarme
+       transforma o silêncio em aviso, e vai para as MESMAS pessoas que estavam esperando o
+       boletim daquele dia. Não é um destinatário novo: é quem já ia ser servido.
+   Sem números inventados: ele repete o que a linha da `coleta_status` diz, e nada além. */
+function montaAlarme(v: any, st: any, dia: string) {
+  const linha = (rot: string, val: unknown) =>
+    `<tr><td style="padding:6px 0;font:13px Arial,sans-serif;color:#7a8ea3">${esc(rot)}</td>
+         <td style="padding:6px 0;font:bold 13px Arial,sans-serif;color:#173A5E">${esc(val ?? "—")}</td></tr>`;
+  return `<div style="background:#f4f7fa;padding:22px 0;font-family:Arial,sans-serif">
+  <div style="max-width:640px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;border:1px solid #dfe7ee">
+    <div style="background:#8a2b2b;padding:18px 22px">
+      <div style="color:#fff;font-size:17px;font-weight:bold">FPMED · a busca de licitações pode estar incompleta</div>
+      <div style="color:#f3c9c9;font-size:13px;margin-top:3px">${esc(v.titulo)}</div>
+    </div>
+    <div style="padding:18px 22px 4px;font:14px/1.65 Arial,sans-serif;color:#33475b">
+      ${esc(v.detalhe)}
+    </div>
+    <div style="padding:6px 22px 4px;font:13px/1.6 Arial,sans-serif;color:#33475b">
+      <b>Por isso o boletim de ${esc(dm(dia))} não foi enviado.</b> Um boletim curto seria lido
+      como "teve pouca coisa" — e o que houve foi coleta incompleta, que é outra conversa.
+    </div>
+    <div style="padding:10px 22px">
+      <table style="width:100%;border-collapse:collapse">
+        ${linha("último dia coletado por inteiro", st?.ultimo_dia_ok)}
+        ${linha("última tentativa da coleta", st?.ultima_tentativa)}
+        ${linha("último erro registrado", st?.ultimo_erro)}
+      </table>
+    </div>
+    <div style="padding:6px 22px 4px;font:13px/1.7 Arial,sans-serif;color:#33475b">
+      <b>O que conferir, nesta ordem:</b><br>
+      1. a coleta do PNCP rodou hoje? (GitHub → Actions → <i>Coleta PNCP</i>)<br>
+      2. a edge function <code>coletar-licitacoes</code> responde?<br>
+      3. o segredo <code>COLETA_TOKEN</code> ainda vale?<br>
+      4. o projeto do banco está ativo (não pausado)?
+    </div>
+    <div style="padding:16px 22px 22px">
+      <a href="${URL_SISTEMA}" style="display:inline-block;background:#2CA9E0;color:#fff;text-decoration:none;
+         padding:11px 20px;border-radius:8px;font:bold 14px Arial,sans-serif">Abrir a busca mesmo assim</a>
+    </div>
+    <div style="padding:14px 22px;background:#f8fafc;border-top:1px solid #e6edf3;
+         font:11px/1.6 Arial,sans-serif;color:#7a8ea3">
+      A busca continua funcionando — ela mostra o que já foi coletado. O risco é o do que
+      <b>não</b> foi: licitação publicada depois do último dia fechado pode não aparecer.
+      <br>Este aviso sai no máximo uma vez por dia, no lugar do boletim que faltou.
+    </div>
+  </div>
+</div>`;
+}
+
 Deno.serve(async (req) => {
   const J = (o: unknown, status = 200) =>
     new Response(JSON.stringify(o), { status, headers: { "Content-Type": "application/json" } });
@@ -185,14 +248,33 @@ Deno.serve(async (req) => {
      deles é defeito grave enquanto o outro é só pressa minha. A sonda separa os dois antes de
      qualquer envio acontecer.
      Domínio de remetente não é segredo — é o que vai impresso no cabeçalho de todo e-mail. */
-  if (body.conferir === true) return J({
-    ok: true,
-    remetente_dominio: dominioDe(REMETENTE) || "(sem dominio)",
-    proibido: !!proibido,
-    nota: proibido
-      ? "BARRADO: dominio da GlobalMed no remetente da FPMED. Nenhum envio aconteceria."
-      : "liberado para envio",
-  }, 200);
+  /* A sonda responde TAMBÉM o veredito do alarme da coleta, e pela mesma razão que ela existe:
+     provar sem efeito. É o único jeito de perguntar "o alarme dispararia agora?" sem colocar um
+     e-mail na caixa de alguém — e um alarme que só dá pra conferir disparando é um alarme que
+     ninguém confere. `motor_alarme:false` denuncia deploy feito sem a diretiva `@inline`. */
+  if (body.conferir === true) {
+    let st: any = null;
+    try {
+      const r = await fetch(`${SB_URL}/rest/v1/coleta_status?fonte=eq.PNCP&select=*`, { headers: H });
+      const j = await r.json();
+      if (Array.isArray(j) && j[0]) st = j[0];
+    } catch { /* vira "nao sei" no veredito, que é o que o motor responde pra linha ausente */ }
+    const v = ALARME ? ALARME.avaliar(st, new Date()) : null;
+    return J({
+      ok: true,
+      remetente_dominio: dominioDe(REMETENTE) || "(sem dominio)",
+      proibido: !!proibido,
+      nota: proibido
+        ? "BARRADO: dominio da GlobalMed no remetente da FPMED. Nenhum envio aconteceria."
+        : "liberado para envio",
+      motor_alarme: !!ALARME,
+      alarme: ALARME ? (v || null) : "MOTOR AUSENTE — deploy sem a diretiva @inline",
+      alarme_resumo: ALARME ? ALARME.resumo(v) : null,
+      alarme_ultimo_email: st?.alarme_email_em || null,
+      coleta: st ? { ultimo_dia_ok: st.ultimo_dia_ok, ultima_tentativa: st.ultima_tentativa,
+                     ultimo_erro: st.ultimo_erro } : null,
+    }, 200);
+  }
 
   /* A TRAVA DE COMPLIANCE, ANTES DE QUALQUER TRABALHO. Ela recusa a rodada inteira em vez de
      pular o envio: pular deixaria o boletim "quase funcionando" e o motivo escondido no meio
@@ -217,18 +299,24 @@ Deno.serve(async (req) => {
   const ontem = new Date(agoraGO); ontem.setUTCDate(ontem.getUTCDate() - 1);
   const dia = String(body.dia || ontem.toISOString().slice(0, 10));
 
-  // >>> O ÍNDICE FECHOU ESSE DIA? Se não fechou, o boletim NÃO SAI. Um boletim curto é lido
-  //     como "teve pouca coisa"; o que houve foi coleta incompleta, que é outra conversa.
-  let ultimoDiaOk: string | null = null;
+  /* ══ O ESTADO DA COLETA — A LINHA INTEIRA, e não só o carimbo do dia ═════════════════════════
+     Antes daqui saía só o `ultimo_dia_ok`, que responde "o índice fechou esse dia?". O alarme
+     precisa de mais: `ultima_tentativa` é o que denuncia o pior caso — agendador parado, com o
+     carimbo de dia CONGELADO num valor bom. Nele o índice PARECE em dia porque ninguém está
+     olhando pra ele. */
+  let statusColeta: any = null;
   try {
-    const r = await fetch(`${SB_URL}/rest/v1/coleta_status?fonte=eq.PNCP&select=ultimo_dia_ok`, { headers: H });
+    const r = await fetch(`${SB_URL}/rest/v1/coleta_status?fonte=eq.PNCP&select=*`, { headers: H });
     const j = await r.json();
-    if (Array.isArray(j) && j[0]?.ultimo_dia_ok) ultimoDiaOk = String(j[0].ultimo_dia_ok).slice(0, 10);
+    if (Array.isArray(j) && j[0]) statusColeta = j[0];
   } catch { /* trata como não sabido */ }
-  if (!body.forcar && (!ultimoDiaOk || ultimoDiaOk < dia)) {
-    return J({ ok: false, dia, ultimoDiaOk, enviados: 0,
-      erro: "o indice ainda nao fechou o dia " + dia + " — boletim NAO enviado de proposito" });
-  }
+  const ultimoDiaOk: string | null = statusColeta?.ultimo_dia_ok
+    ? String(statusColeta.ultimo_dia_ok).slice(0, 10) : null;
+
+  /* O veredito vem do motor colado no topo — o MESMO que o sino do Negócios lê.
+     Sem motor (deploy feito sem a diretiva `@inline`) a resposta DIZ isso: função que perde uma
+     capacidade em silêncio é a que faz alguém confiar num alarme que não existe mais. */
+  const alarme = ALARME ? ALARME.avaliar(statusColeta, new Date()) : null;
 
   /* ══ AS SESSÕES DE HOJE ═════════════════════════════════════════════════════════════════════
      "HOJE tem sessão: Pregão 19/2026, Prefeitura X, às 09:00" — é o aviso que muda o dia de
@@ -269,6 +357,72 @@ Deno.serve(async (req) => {
     const ju = await ru.json();
     for (const u of (ju.users || ju || [])) if (u?.id && u?.email) donos.set(u.id, u.email);
   } catch { /* sem isso, só valem os email_destino explícitos */ }
+
+  /* ══ O ALARME DA COLETA — ANTES DO BOLETIM, E NO LUGAR DELE ═════════════════════════════════
+     Com a coleta parada, o boletim de hoje seria mentira: ele contaria "as novidades do dia" a
+     partir de um índice que não recebeu o dia. Então a ordem é esta — primeiro o aviso, e o
+     boletim não sai.
+     >>> DESTINATÁRIO: os MESMOS assinantes do boletim, e ninguém a mais. Não é um canal novo,
+         é o canal que já existia dizendo por que não veio o de sempre. E a trava de compliance
+         do remetente já rodou lá em cima: alarme não é motivo pra furar a regra do domínio.
+     >>> UMA VEZ POR DIA. Esta função roda 2× (o cron das 08:17 e a rede das 11:23), e o mesmo
+         aviso duas vezes na mesma manhã ensina a ignorar os dois. A trava é o carimbo
+         `alarme_email_em`, com 20h — ver o ddl/alarme_coleta_email.sql. */
+  if (alarme && !body.forcar) {
+    const HORAS_ENTRE_AVISOS = 20;
+    const ultimo = statusColeta?.alarme_email_em ? new Date(statusColeta.alarme_email_em) : null;
+    const horasDesde = ultimo && !isNaN(+ultimo) ? (Date.now() - +ultimo) / 36e5 : Infinity;
+    const base = { ok: false, dia, ultimoDiaOk, enviados: 0,
+                   alarme: { nivel: alarme.nivel, titulo: alarme.titulo, detalhe: alarme.detalhe },
+                   erro: ALARME.resumo(alarme) + " — boletim NAO enviado de proposito" };
+
+    if (horasDesde < HORAS_ENTRE_AVISOS) {
+      return J({ ...base, alarmeEnviado: 0,
+        nota: "alarme ja avisado ha " + Math.round(horasDesde) + "h; o proximo sai depois de "
+            + HORAS_ENTRE_AVISOS + "h (esta funcao roda 2x por dia)" });
+    }
+    if (!RESEND) return J({ ...base, alarmeEnviado: 0, chaveConfigurada: false,
+      nota: "RESEND_API_KEY nao configurada — o alarme nao foi enviado e NADA foi carimbado" });
+
+    // um destino por pessoa: dois jornais do mesmo dono não viram dois e-mails do mesmo aviso
+    const destinos = [...new Set(jornais
+      .map((j: any) => body.teste || j.email_destino || donos.get(j.usuario))
+      .filter(Boolean))] as string[];
+    if (!destinos.length) return J({ ...base, alarmeEnviado: 0,
+      nota: "sem destinatario conhecido — ninguem foi avisado" });
+
+    let avisados = 0; const falhas: string[] = [];
+    for (const para of destinos) {
+      const re = await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: { Authorization: "Bearer " + RESEND, "Content-Type": "application/json" },
+        body: JSON.stringify({ from: REMETENTE, to: [para],
+          subject: "FPMED · " + ALARME.resumo(alarme), html: montaAlarme(alarme, statusColeta, dia) }),
+      });
+      if (re.status >= 200 && re.status < 300) avisados++;
+      else falhas.push(para + ": HTTP " + re.status + " " + (await re.text()).slice(0, 120));
+    }
+
+    /* SÓ CARIMBA SE ALGUÉM FOI AVISADO. Carimbar antes faria a trava de 20h calar o aviso de
+       amanhã por causa de uma tentativa que não chegou a ninguém — o silêncio de novo. */
+    if (avisados) {
+      await fetch(`${SB_URL}/rest/v1/coleta_status?fonte=eq.PNCP`, {
+        method: "PATCH", headers: { ...H, Prefer: "return=minimal" },
+        body: JSON.stringify({ alarme_email_em: new Date().toISOString() }),
+      }).catch(() => {});
+    }
+    return J({ ...base, alarmeEnviado: avisados, alarmeFalhas: falhas });
+  }
+
+  // >>> O ÍNDICE FECHOU ESSE DIA? Se não fechou, o boletim NÃO SAI. Um boletim curto é lido
+  //     como "teve pouca coisa"; o que houve foi coleta incompleta, que é outra conversa.
+  //     >>> ESTE CAMINHO SOBROU PRA FAIXA DE TOLERÂNCIA DO ALARME: um único dia de atraso não
+  //         alarma (a volta leva algumas rodadas), mas também não rende boletim honesto.
+  //         Silêncio de um dia é aceitável; de dois em diante o bloco acima manda o aviso.
+  if (!body.forcar && (!ultimoDiaOk || ultimoDiaOk < dia)) {
+    return J({ ok: false, dia, ultimoDiaOk, enviados: 0, motorAlarme: !!ALARME,
+      erro: "o indice ainda nao fechou o dia " + dia + " — boletim NAO enviado de proposito" });
+  }
 
   let enviados = 0, pulados = 0, semChave = 0;
   const detalhe: any[] = [];

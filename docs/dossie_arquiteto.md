@@ -62,10 +62,14 @@ nome antigo, é erro meu:
 
 | função | versão | o que faz |
 |---|---|---|
-| `coletar-licitacoes` | v10 | puxa do PNCP e alimenta **`licitacoes`** (não a `licitacoes_acompanhadas` — ver a correção acima). Roda por cron, com rodízio de UF |
-| `enviar-boletim` | **v12** | monta e envia o boletim dos jornais. Carrega a **trava de compliance de remetente** e a **sonda** `{"conferir":true}` |
-| `ler-edital` | v5 | leitura de edital por IA, **em partes**. 5 tarefas: `resumo`, `itens`, `juntar`, `itens-ganhos`, `mapa-precos` |
-| `ler-pedido` | v8 | leitura de pedido/cotação |
+| `coletar-licitacoes` | v14 | puxa do PNCP e alimenta **`licitacoes`** (não a `licitacoes_acompanhadas` — ver a correção acima). Roda por cron, com rodízio de UF |
+| `enviar-boletim` | **v15** | monta e envia o boletim dos jornais. Carrega a **trava de compliance de remetente**, o **alarme da coleta por e-mail** (motor colado por `@inline`) e a **sonda** `{"conferir":true}` |
+| `ler-edital` | v9 | leitura de edital por IA, **em partes**. 5 tarefas: `resumo`, `itens`, `juntar`, `itens-ganhos`, `mapa-precos` |
+| `ler-pedido` | v12 | leitura de pedido/cotação |
+
+> **As versões acima foram lidas do projeto em 12/08.** Elas sobem a cada deploy — se este
+> dossiê disser v12 e a API disser v15, **o desatualizado é o dossiê**, e o comando que
+> resolve é `node tools/deploy_edge.js --so-ver`.
 
 **Segredos usados (pelos nomes):** `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`,
 `ANTHROPIC_API_KEY`, `COLETA_TOKEN`, `BOLETIM_TOKEN`, `RESEND_API_KEY`.
@@ -114,8 +118,8 @@ nome antigo, é erro meu:
 | 3 | **Menu lateral refeito sobre os tokens** | ✅ `8082d77` · ganhou **portão de permissão** em `bd35ff1` |
 | 4 | **Encontrar no tema claro + navegação única** | ✅ `bd35ff1` — publicado, laço visual nas 3 larguras |
 | 4b | **Segurança: CVE-2024-4367 no PDF.js** | ✅ `a220dee` — `isEvalSupported:false` nas 5 chamadas |
-| 4c | **Alarme de coleta** | ⬅️ **PRÓXIMO** — decidido, ver §2b |
-| 5 | Kanban protagonista | |
+| 4c | **Alarme de coleta** | ✅ **as três partes** — (A) workflow `26bd2d3` · (B) sino `08dd8a1` · (C) **e-mail do dono** `12/08` |
+| 5 | Kanban protagonista | ⬅️ **é onde eu estou** |
 | — | *(ver §2b: fila de fundação e itens que param pra decisão)* | |
 | 6 | Calendário mensal | |
 | 7 | Demais telas ganhando o tema, uma a uma | |
@@ -154,6 +158,24 @@ verde. Ninguém soube. *"Falha que se conserta sozinha some do olhar."*
 > `coleta-pncp.yml` já decidiu, por escrito, NÃO pintar o job de vermelho quando o PNCP cai —
 > *"um X vermelho diário treina qualquer um a ignorar o CI"*. O alarme novo tem que respeitar
 > isso: **fonte fora ≠ nós quebrados**. O (A) conta falha NOSSA (HTTP ≠ 200), não coleta parcial.
+
+**FECHADO EM 12/08, nas três partes.** O e-mail (C) entrou onde o silêncio já morava: o
+`enviar-boletim` **já se recusava** a enviar com o índice atrasado, e a decisão escrita era que
+a ausência do boletim seria lida como "algo está errado". **Ausência não é mensagem** — foi
+assim que 12 falhas seguidas passaram despercebidas. Agora, no lugar do silêncio, sai um aviso
+**pros mesmos assinantes que esperavam o boletim daquele dia** (canal que já existia, nenhum
+destinatário novo), com trava de repetição de 20 h — a função roda 2× por dia.
+
+> **A regra mora num arquivo só, e agora ela roda em dois tempos de execução.** O
+> `fpmed_alarme_coleta.js` é **colado** dentro da edge function pelo `deploy_edge.js` na hora de
+> publicar (diretiva `// @inline`). Reescrevê-la em TypeScript criaria a segunda definição de
+> "isto é alarme?", e no dia em que uma mudasse o sino diria uma coisa e o e-mail outra sobre o
+> mesmo banco. **Provado no ar** (`tools/prova_alarme_email.js`, 5/5): o veredito que o servidor
+> calcula e o que eu calculo aqui fora são o mesmo.
+>
+> **O que falta e é dele:** a prova do disparo *chegando na caixa*. Ela exige (a) autorização
+> pra um e-mail de verdade na caixa dele e (b) fingir índice atrasado, que seria um `UPDATE` em
+> `coleta_status` — **pulei e anotei**, como manda a regra da rodada.
 
 ### Fila de fundação, na ordem (constrói direto — é técnico)
 
@@ -224,7 +246,7 @@ Hoje: `limedtec-fpmed-2026-08-11-24`.
 
 | medida | valor em 11/08 |
 |---|---|
-| suítes / asserts | **88 suítes · 3.18x asserts · 0 falhas** (o número exato sai no relatório de cada entrega) |
+| suítes / asserts | **89 suítes · 3.210 asserts · 0 falhas** (12/08; o número exato sai no relatório de cada entrega) |
 | `negocios` | **2.558** |
 | `licitacoes` (índice da coleta) | **3.197** em 12/08 · publicações até 12/08 |
 | `licitacoes_acompanhadas` (participação) | 2.555, parada em 06/08 — **é o esperado** |
@@ -232,7 +254,7 @@ Hoje: `limedtec-fpmed-2026-08-11-24`.
 | `cmed_precos` / `cmed_teto` | 25.702 / 4.875 |
 | `usos_ia` | 8 registros |
 | service worker | `limedtec-fpmed-2026-08-11-24` |
-| edge functions | coletar v10 · boletim **v12** · ler-edital v5 · ler-pedido v8 |
+| edge functions | coletar **v14** · boletim **v15** · ler-edital **v9** · ler-pedido **v12** (lidas em 12/08) |
 | contraste do botão principal | **5,04:1** (era 3,71:1 — reprovava em AA) |
 | casamento CMED na última medição | **6 de 14** itens |
 | fechamento de agosto até 11/08 | **−R$ 179,16** |

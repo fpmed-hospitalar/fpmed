@@ -127,4 +127,18 @@
 
   if (typeof module !== 'undefined' && module.exports) module.exports = api;   // suíte
   if (raiz) raiz.AlarmeColeta = api;                                           // telas
-})(typeof window !== 'undefined' ? window : null);
+})(
+  /* ── OS TRÊS LUGARES QUE LEEM ESTA REGRA, E COMO CADA UM A ALCANÇA ──────────
+     navegador ... `window`, pelo <script> das telas.
+     node ........ `module.exports`, na suíte e na `prova_automacoes_vivas`.
+     DENO ........ `globalThis`, dentro da edge function do boletim — o
+                   `deploy_edge.js` COLA ESTE ARQUIVO no `index.ts` na hora de
+                   publicar (a diretiva `@inline`), então lá não há `window` nem
+                   `module` pra pendurar a API.
+     >>> O `globalThis` não é enfeite de portabilidade: sem ele o e-mail do dono
+         precisaria de uma SEGUNDA cópia da regra em TypeScript, e aí o sino e o
+         e-mail diriam coisas diferentes sobre o mesmo banco. É a mesma doença da
+         barra do portal copiada em seis telas. */
+  typeof window !== 'undefined' ? window
+    : (typeof globalThis !== 'undefined' ? globalThis : null)
+);

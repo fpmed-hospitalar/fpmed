@@ -51,8 +51,16 @@ ok('5. e a razao da regra de ouro esta no YML, nao so no codigo',
   /ESPERAR O DIA FECHAR/.test(YML) && /perderia EM SILÊNCIO/.test(YML));
 
 // ══════════ 2. INDICE INCOMPLETO NAO VIRA BOLETIM ══════════
-ok('6. *** confere `ultimo_dia_ok` antes de mandar qualquer coisa ***',
-  /coleta_status\?fonte=eq\.PNCP&select=ultimo_dia_ok/.test(FN));
+// >>> REAPONTADO EM 12/08 (licao S8, mais uma vez). Este assert cobrava o `select=ultimo_dia_ok`
+//     LITERAL. Quando o alarme da coleta entrou, a funcao passou a ler a LINHA INTEIRA
+//     (`select=*`) — porque `ultima_tentativa` e o campo que denuncia o pior caso, o agendador
+//     parado com o carimbo de dia congelado num valor bom. A promessa sempre foi "ele confere o
+//     estado da coleta antes de mandar qualquer coisa"; a lista de colunas era o MEIO.
+//     Assert que trava o meio reprova a melhoria e nao protege nada.
+ok('6. *** confere o estado da coleta antes de mandar qualquer coisa ***',
+  /coleta_status\?fonte=eq\.PNCP&select=/.test(FN)
+  && /ultimoDiaOk[^\n]*statusColeta\?\.ultimo_dia_ok/.test(FN)
+  && FN.indexOf('coleta_status?fonte=eq.PNCP') < FN.indexOf('https://api.resend.com/emails'));
 ok('7. *** e se o indice nao fechou o dia, NAO ENVIA e diz por que ***',
   /if \(!body\.forcar && \(!ultimoDiaOk \|\| ultimoDiaOk < dia\)\)/.test(FN)
   && /boletim NAO enviado de proposito/.test(FN));
@@ -104,8 +112,14 @@ ok('24. so aceita POST', /req\.method !== "POST"/.test(FN));
 ok('25. *** a service_role vem da PLATAFORMA, nunca do CI ***',
   /Deno\.env\.get\("SUPABASE_SERVICE_ROLE_KEY"\)/.test(FN)
   && !/secrets\.[A-Za-z_]*SERVICE/i.test(YML) && !/eyJ/.test(YML));
+// >>> REAPONTADO EM 12/08. Ele cobrava a AUSENCIA DA PALAVRA "COLETA_TOKEN" no arquivo — e o
+//     e-mail de alarme da coleta CITA esse nome na lista de "o que conferir", que e justamente
+//     o que torna o aviso util pra quem o recebe. A promessa e "esta funcao nao USA o token da
+//     coleta", e usar e ler do ambiente. Palavra citada em texto pro humano nao e uso.
 ok('26. *** o token do boletim e SEPARADO do da coleta ***',
-  /BOLETIM_TOKEN/.test(FN) && !/COLETA_TOKEN/.test(FN)
+  /Deno\.env\.get\("BOLETIM_TOKEN"\)/.test(FN)
+  && !/Deno\.env\.get\("COLETA_TOKEN"\)/.test(FN)
+  && !/x-coleta-token/.test(FN)
   && /CADA AGENDADOR TEM O SEU/.test(R('tools', 'deploy_edge.js')));
 ok('27. o verify_jwt=false esta declarado no config.toml, nao so no deploy',
   /\[functions\.enviar-boletim\]\s*\nverify_jwt = false/.test(CFG));

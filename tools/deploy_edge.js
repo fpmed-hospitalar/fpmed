@@ -90,11 +90,39 @@ function geraToken() {
   console.log(`${nome} gerado e gravado no segredos.local.txt  (len ${t.length})`);
 }
 
+/* ══ A DIRETIVA `@inline` — UMA REGRA, DOIS TEMPOS DE EXECUCAO ═══════════════════════════════
+   PROBLEMA REAL: o veredito "a coleta esta em dia?" e lido em tres lugares — o sino (navegador),
+   a prova viva (node) e o e-mail do dono (Deno, dentro da edge function). Os dois primeiros
+   fazem `require`/`<script>` do fpmed_alarme_coleta.js. O terceiro nao alcanca o disco daqui:
+   a Management API sobe UM arquivo, o index.ts.
+   >>> A saida FACIL seria reescrever a regra em TypeScript dentro da funcao. Ai passam a existir
+       DUAS definicoes de "isto e alarme?", e no dia em que uma mudar o sino diz uma coisa e o
+       e-mail diz outra sobre o MESMO banco — e a pessoa nao sabe em qual acreditar.
+   ENTAO O REPOSITORIO GUARDA UMA COPIA SO e o deploy COLA o arquivo no lugar da diretiva. O que
+   sobe e artefato gerado, e nao copia mantida a mao: ninguem edita o texto colado.
+   >>> E ELE ANUNCIA O QUE COLOU (linha "inline:") — build silencioso e o jeito de alguem
+       debugar por horas um codigo que nao e o que esta na tela dele. */
+function colaInlines(src, origem) {
+  const RE = /^[ \t]*\/\/[ \t]*@inline[ \t]+(\S+)[ \t]*$/gm;
+  return src.replace(RE, (linha, alvo) => {
+    const abs = path.join('C:/fpmed', alvo);           // sempre a partir da raiz do repo
+    if (!fs.existsSync(abs)) {
+      console.error(`ERRO: ${origem} pede @inline ${alvo}, e o arquivo nao existe.`);
+      process.exit(1);
+    }
+    const dep = fs.readFileSync(abs, 'utf8');
+    console.log(`  inline: ${alvo}  (${dep.split('\n').length} linhas)`);
+    return `// ── COLADO PELO deploy_edge.js A PARTIR DE ${alvo} — NAO EDITE AQUI ──\n`
+         + dep
+         + `\n// ── fim de ${alvo} ──`;
+  });
+}
+
 async function deploy(slug) {
   const dir = path.join('C:/fpmed/supabase/functions', slug);
   const entry = path.join(dir, 'index.ts');
   if (!fs.existsSync(entry)) { console.error(`nao achei ${entry}`); process.exit(1); }
-  const src = fs.readFileSync(entry, 'utf8');
+  const src = colaInlines(fs.readFileSync(entry, 'utf8'), slug + '/index.ts');
 
   // verify_jwt=false: quem autentica e o x-coleta-token. Exigir JWT junto obrigaria o agendador
   // a carregar TAMBEM uma chave do Supabase — dois segredos pra uma porta so. Mesmo desenho da
@@ -148,6 +176,12 @@ async function chamaFuncao(slug) {
   console.log(`com token   -> HTTP ${r.status}  em ${Math.round((Date.now() - t0) / 1000)}s`);
   console.log(txt.slice(0, 800));
 }
+
+/* A suíte precisa do `colaInlines` — e só dele. Sem esta guarda, um `require` deste arquivo
+   dispararia o main: ele lê o segredos.local.txt e conversa com a API do Supabase. Teste que
+   chama a produção pra conferir uma função de texto é teste que quebra quando a rede cai. */
+module.exports = { colaInlines };
+if (require.main !== module) return;
 
 (async () => {
   if (tem('--gera-token')) { geraToken(); return; }

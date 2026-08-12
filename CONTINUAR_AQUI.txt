@@ -824,13 +824,64 @@ Criado em 21/07/2026 copiando SO os arquivos do app do C:\globalmed.
     node tools/prova_trava_remetente.js
 
 ############################################################################
+>>> 12/08, 3a RODADA — ITEM 4c FECHADO NAS TRES PARTES. LEIA ESTE BLOCO ANTES.
+############################################################################
+
+  (1) O VERMELHO FALSO DA PROVA VIVA (commit 4f64726). A prova_automacoes_vivas
+      media a tabela ERRADA e dela saiu o diagnostico "A COLETA ESTA FALHANDO HA
+      ~6 DIAS" que abre o bloco de cima. Detalhe completo no proprio bloco, no
+      lugar onde o diagnostico errado esta marcado sem ser apagado.
+      RESUMO: `licitacoes` = O INDICE DA COLETA (3.197 linhas, coletado_em de
+      hoje, VIVA). `licitacoes_acompanhadas` = historico de participacao, parada
+      em 06/08 e isso e o NORMAL dela.
+
+  (2) O E-MAIL DO ALARME DE COLETA — a parte (C), que faltava do item 4c.
+      A decisao registrada era "aviso por sino + e-mail pro dono". O sino (B) e o
+      workflow (A) fecharam na rodada passada; o e-mail entrou agora.
+      >>> ONDE ELE ENTROU, E POR QUE ALI: o `enviar-boletim` JA SE RECUSAVA a
+          enviar com o indice atrasado, e a decisao escrita era que a AUSENCIA do
+          boletim seria lida como "algo esta errado". MAS AUSENCIA NAO E MENSAGEM
+          — ninguem repara no e-mail que nao chegou, e foi assim que 12 falhas
+          seguidas passaram despercebidas. Agora, no lugar do silencio, sai um
+          aviso pros MESMOS assinantes que esperavam o boletim daquele dia.
+          Canal que ja existia; nenhum destinatario novo; a trava de compliance
+          do remetente roda ANTES (alarme nao fura regra de dominio).
+      >>> UMA REGRA SO, DOIS TEMPOS DE EXECUCAO. O fpmed_alarme_coleta.js e
+          COLADO dentro da edge function pelo deploy_edge.js na hora de publicar
+          (diretiva `// @inline`). Reescrever a regra em TypeScript criaria a
+          segunda definicao de "isto e alarme?", e no dia em que uma mudasse o
+          sino diria uma coisa e o e-mail outra sobre o MESMO banco.
+      >>> TRAVA DE REPETICAO de 20h (ddl/alarme_coleta_email.sql, aditivo, rodado
+          2x): a funcao roda 2x por dia (cron 08:17 + rede 11:23) e o mesmo aviso
+          duas vezes na mesma manha ensina a ignorar os dois. 20h e nao 24h pra
+          que o atraso do agendador nao pule um dia inteiro.
+      PROVADO NO AR (node tools/prova_alarme_email.js -> 5 ok / 0 falha): a
+      funcao v15 carrega o motor (motor_alarme=true) e o veredito que o SERVIDOR
+      calcula sobre o banco de verdade e o mesmo que eu calculo aqui fora.
+      Suites: testa_alarme_email (28, mutacao 5/5) -> 3.210 asserts / 0 falhas /
+      89 suites.
+      >>> FALTA E E DELE (pulei e anotei, como manda a regra da rodada): a prova
+          do disparo CHEGANDO NA CAIXA. Ela exige (a) autorizacao pra um e-mail
+          de verdade na caixa dele e (b) fingir indice atrasado, que seria um
+          UPDATE em coleta_status. Nao fiz nem um nem outro.
+      >>> DOIS ASSERTS REAPONTADOS no testa_boletim (licao S8, de novo): o 6
+          cobrava `select=ultimo_dia_ok` LITERAL e a funcao passou a ler a linha
+          inteira (ultima_tentativa e o campo que pega o agendador parado); o 26
+          cobrava a AUSENCIA DA PALAVRA "COLETA_TOKEN" no arquivo, e o e-mail de
+          alarme CITA esse nome na lista de "o que conferir" — que e justamente o
+          que torna o aviso util. Os dois mediam o MEIO, nao a promessa.
+
+############################################################################
 >>> PONTO EXATO DE RETOMADA — a fila numerada:
      1. [OK] spec da reforma (docs/spec_reforma_prime.md) — 4485c30
      2. [OK] fpmed_tema.css — O DESIGN SYSTEM, e ele vem primeiro (adendo de excelencia)
      3. [OK] menu lateral CLARO, refeito sobre os tokens, com icones Lucide e a lista:
             Buscar · Radar · Desertas · Meus Jornais · Calendario · Negocios · Documentos ·
             Proposta · Leitor IA · Pecas · Declaracoes · Conferir (+ Favoritas "em breve")
-     4. [ ] tela ENCONTRAR no tema claro — sai o titulo gigante, sai a fileira de linkzinhos,
+     4. [OK] tela ENCONTRAR no tema claro (bd35ff1) · 4b [OK] CVE-2024-4367 no PDF.js (a220dee)
+             4c [OK] ALARME DE COLETA nas TRES partes: (A) workflow 26bd2d3 · (B) sino 08dd8a1 ·
+                     (C) e-mail do dono, 12/08 — ver o bloco "12/08, 3a RODADA" acima
+     4-hist. [ref] o texto original do item 4, mantido pelo que ele decidiu:
             sai a caixa de filtros solta; entram barra de busca em cartao branco com filtros
             EM LINHA, resultados em CARTOES com acoes a direita, e o chip do estoque
             >>> MOTOR INTACTO: banco-primeiro, buscarNoBancoAmplo paginado, nacionalProtegido
