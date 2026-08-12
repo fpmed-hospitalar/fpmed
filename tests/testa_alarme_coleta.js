@@ -144,5 +144,36 @@ const d = (n) => new Date(Date.UTC(2026, 7, 12 - n)).toISOString().slice(0, 10);
     /GH_TOKEN: \$\{\{ github\.token \}\}/.test(YML) && !/secrets\.\w*ALARME/.test(YML));
 }
 
+// ══ 11. O TERCEIRO LEITOR: A PROVA VIVA ═════════════════════════════════════════════════════
+// >>> A CICATRIZ DESTE BLOCO (12/08): a `prova_automacoes_vivas` media a tabela ERRADA. Ela
+//     olhava `licitacoes_acompanhadas` (o historico de participacao, parado em 06/08 porque
+//     ninguem acompanhou certame novo) e concluia "o indice nao recebe licitacao ha 160 horas".
+//     O indice de verdade e a `licitacoes` — 3.197 linhas, coletado_em do proprio dia.
+//     >>> E O ESTRAGO NAO FOI O [FALHA] FEIO: o diagnostico "A COLETA ESTA FALHANDO HA ~6 DIAS"
+//         foi escrito no CONTINUAR_AQUI a partir daquele numero. Instrumento errado nao produz
+//         duvida, produz CERTEZA errada — e ninguem reconfere o que ja esta escrito.
+// >>> E o veredito dela passou a sair DESTE motor. Tres leitores (sino, e-mail, prova), uma
+//     regra so: o limiar proprio que ela tinha ("30h sem linha nova") acusaria todo domingo,
+//     quando nao ha publicacao pra coletar.
+{
+  const fs3 = require('fs');
+  const PROVA = fs3.readFileSync(path.join(__dirname, '..', 'tools', 'prova_automacoes_vivas.js'), 'utf8');
+
+  ok('*** 30. a prova viva le a `licitacoes` — o indice que a coleta alimenta ***',
+    /get\('licitacoes\?select=coletado_em/.test(PROVA));
+  ok('*** 31. e NAO julga a coleta pela `licitacoes_acompanhadas` (a tabela do vermelho falso) ***',
+    !/diz\([^)]*licitacoes_acompanhadas/.test(PROVA)
+    && !/const lic = await get\('licitacoes_acompanhadas/.test(PROVA));
+  ok('32. as duas tabelas aparecem na saida com o que CADA UMA e (a confusao ja custou caro)',
+    /O INDICE DA COLETA/.test(PROVA) && /NAO e a coleta/.test(PROVA));
+  ok('*** 33. e o veredito dela sai DESTE motor, nao de um limiar proprio ***',
+    /require\('\.\.\/fpmed_alarme_coleta\.js'\)/.test(PROVA) && /ALARME\.avaliar\(/.test(PROVA));
+  // O limiar velho era `diz(h <= 30, 'o indice recebeu licitacao nas ultimas 30h')`. Cobro a
+  // AUSENCIA DO CODIGO, e não a da palavra: o cabeçalho CONTA a cicatriz e tem que poder citar
+  // o número que ela custou. Suíte que proíbe falar do defeito apaga a explicação junto com ele.
+  ok('34. o limiar proprio de "30h sem linha nova" saiu do codigo (ele acusaria todo domingo)',
+    !/diz\(h <= 30/.test(PROVA));
+}
+
 console.log('\nRESULTADO: ' + p + ' ok, ' + f + ' falha(s)');
 process.exitCode = f ? 1 : 0;

@@ -19,7 +19,8 @@ Escrito em **11/08/2026**. Mantido por mim (Claude Code) quando algo estrutural 
 | tabela | linhas | o que é |
 |---|---:|---|
 | `negocios` | **2.558** | o funil. Cada linha é um certame acompanhado. **É a tabela mais importante do sistema.** |
-| `licitacoes_acompanhadas` | 2.555 | o índice de licitações coletadas do PNCP (a matéria-prima da busca) |
+| `licitacoes` | **3.197** | **O ÍNDICE DA COLETA** — o que a edge function grava, o que a tela *Encontrar* consulta primeiro e de onde o boletim tira as novidades. **É a matéria-prima da busca** |
+| `licitacoes_acompanhadas` | 2.555 | o **histórico próprio de participação** (a semente do *Calendário 2025*). Só cresce quando alguém acompanha um certame novo — **não é a coleta** |
 | `municipios` | 5.571 | IBGE, com lat/long — base do radar por raio |
 | `cotacoes` | 8.832 | os itens/produtos, com preço e saldo. **A coluna `estoque_em` diz QUANDO aquele saldo foi visto** |
 | `cmed_precos` | **25.702** | a tabela CMED de preços (PF/PMVG) |
@@ -35,8 +36,19 @@ Escrito em **11/08/2026**. Mantido por mim (Claude Code) quando algo estrutural 
 | `coleta_status` | 1 | estado da coleta entre execuções (rodízio de UF) |
 | `negocio_anexos` · `negocio_itens_ganhos` · `lembretes` · `documentos` · `declaracoes` · `pecas_juridicas` · `clientes` · `fornecedores` | 0 | existem e estão vazias — funcionalidade construída, ainda não usada com dado real |
 
-**Três correções que a conferência de hoje impôs** — se o arquiteto me vir usando o
+**Quatro correções que a conferência impôs** — se o arquiteto me vir usando o
 nome antigo, é erro meu:
+
+- **`licitacoes` ≠ `licitacoes_acompanhadas`, e eu já paguei por confundir as duas**
+  *(achado em 12/08)*. Este dossiê dizia, na linha acima, que o índice do PNCP era a
+  `licitacoes_acompanhadas` — e a `tools/prova_automacoes_vivas.js` media aquela tabela
+  pra julgar a coleta. Como ela está parada em 06/08 (ninguém acompanhou certame novo
+  desde então), a prova acusava *"o índice não recebe licitação há 160 horas"*, **com a
+  coleta rodando e gravando**. Foi desse número que saiu o diagnóstico
+  *"A COLETA ESTÁ FALHANDO HÁ ~6 DIAS"* escrito no `CONTINUAR_AQUI`.
+  **Instrumento errado não produz dúvida, produz certeza errada** — e ninguém reconfere
+  o que já está escrito. Corrigido nos dois lugares, com 5 asserts guardando
+  (`testa_alarme_coleta` 30–34, mutação 3/3).
 
 - **`anexos_edital` NÃO é tabela.** É um `ALTER` que troca o *check* de categoria da
   `negocio_anexos` (acrescenta `edital` e `anexo_edital` às 7 categorias que já existiam).
@@ -50,7 +62,7 @@ nome antigo, é erro meu:
 
 | função | versão | o que faz |
 |---|---|---|
-| `coletar-licitacoes` | v10 | puxa do PNCP e alimenta `licitacoes_acompanhadas`. Roda por cron, com rodízio de UF |
+| `coletar-licitacoes` | v10 | puxa do PNCP e alimenta **`licitacoes`** (não a `licitacoes_acompanhadas` — ver a correção acima). Roda por cron, com rodízio de UF |
 | `enviar-boletim` | **v12** | monta e envia o boletim dos jornais. Carrega a **trava de compliance de remetente** e a **sonda** `{"conferir":true}` |
 | `ler-edital` | v5 | leitura de edital por IA, **em partes**. 5 tarefas: `resumo`, `itens`, `juntar`, `itens-ganhos`, `mapa-precos` |
 | `ler-pedido` | v8 | leitura de pedido/cotação |
@@ -212,9 +224,10 @@ Hoje: `limedtec-fpmed-2026-08-11-24`.
 
 | medida | valor em 11/08 |
 |---|---|
-| suítes / asserts | **85 suítes · 3.10x asserts · 0 falhas** (o número exato sai no relatório de cada entrega) |
+| suítes / asserts | **88 suítes · 3.18x asserts · 0 falhas** (o número exato sai no relatório de cada entrega) |
 | `negocios` | **2.558** |
-| `licitacoes_acompanhadas` | 2.555 |
+| `licitacoes` (índice da coleta) | **3.197** em 12/08 · publicações até 12/08 |
+| `licitacoes_acompanhadas` (participação) | 2.555, parada em 06/08 — **é o esperado** |
 | `cotacoes` | 8.832 |
 | `cmed_precos` / `cmed_teto` | 25.702 / 4.875 |
 | `usos_ia` | 8 registros |
@@ -224,7 +237,7 @@ Hoje: `limedtec-fpmed-2026-08-11-24`.
 | casamento CMED na última medição | **6 de 14** itens |
 | fechamento de agosto até 11/08 | **−R$ 179,16** |
 
-### Duas armadilhas de medição que vão nos separar se não estiverem escritas
+### Três armadilhas de medição que vão nos separar se não estiverem escritas
 
 1. **O PostgREST devolve no máximo 1.000 linhas.** `limit=3000` **não funciona** — ele
    responde 1.000 calado. Contagem certa se faz com `Prefer: count=exact` + `Range`.
@@ -233,6 +246,11 @@ Hoje: `limedtec-fpmed-2026-08-11-24`.
 2. **`estagio` é minúsculo e sem acento** — `oportunidade`, `qualificacao`,
    `classificacao`, `disputa`, `contrato`. Filtrar por `Ganho` devolve zero, e zero
    aqui quer dizer "filtro errado", não "nenhum negócio ganho".
+3. **"O índice" é a `licitacoes`, e nunca a `licitacoes_acompanhadas`.** Se um de nós
+   dois disser "o índice está parado desde 06/08", o outro tem que perguntar **qual
+   tabela** antes de concordar: a segunda está parada em 06/08 **e isso é o normal
+   dela**. Esta armadilha não é teórica — ela já virou um diagnóstico errado de seis
+   dias no `CONTINUAR_AQUI` (ver a 4ª correção da seção 1.1).
 
 ---
 

@@ -10,10 +10,33 @@
 // carimbou. É a mesma doutrina da lição S2 — medir pelo caminho de quem usa, e
 // não pelo caminho que é mais fácil de medir.
 //
+// ══ O VERMELHO FALSO QUE ESTA FERRAMENTA DEU DURANTE DIAS (corrigido 12/08) ═══
+// Ela media `licitacoes_acompanhadas` e concluía "o índice não recebe licitação
+// há 160 horas". DUAS TABELAS DISPUTAM O NOME "ÍNDICE", e ela olhava a errada:
+//
+//   `licitacoes` ................. É O ÍNDICE DA COLETA. É onde a edge function
+//        grava, é o que a tela Encontrar consulta primeiro e é de onde o boletim
+//        tira as novidades. Medido em 12/08: 3.197 linhas, coletado_em de hoje.
+//   `licitacoes_acompanhadas` .... é o HISTÓRICO PRÓPRIO DE PARTICIPAÇÃO (a
+//        semente do Calendário 2025). Ela está parada em 06/08 porque ninguém
+//        acompanhou certame novo desde então — e isso NÃO é defeito de coleta.
+//
+// >>> O PREÇO DISSO NÃO FOI SÓ UM [FALHA] FEIO: o diagnóstico "A COLETA ESTÁ
+//     FALHANDO HÁ ~6 DIAS" foi escrito no CONTINUAR_AQUI a partir deste número.
+//     A coleta estava rodando; quem estava errado era o instrumento. Medir a
+//     coisa errada com precisão é pior que não medir — vira certeza.
+//
+// ══ E O VEREDITO AGORA SAI DO MESMO MOTOR DO SINO ════════════════════════════
+// A pergunta "isto é alarme?" tem UMA resposta, em `fpmed_alarme_coleta.js`, e
+// três leitores: o sino do Negócios, o e-mail do dono e esta prova. Antes daqui
+// eu tinha um limiar próprio ("30h sem linha nova"), que é uma SEGUNDA regra —
+// e ela acusaria todo domingo, quando não há publicação pra coletar.
+//
 //   node tools/prova_automacoes_vivas.js
 // ============================================================================
 'use strict';
 const fs = require('fs');
+const ALARME = require('../fpmed_alarme_coleta.js');
 
 const seg = fs.readFileSync('C:/fpmed/segredos.local.txt', 'utf8');
 const URL = (seg.match(/https:\/\/[a-z]{20}\.supabase\.co/) || [])[0];
@@ -49,20 +72,41 @@ const quando = (d) => { const x = dt(d); return x ? x.toISOString().slice(0, 16)
     const s = st[0];
     const campos = Object.keys(s).filter(k => /data|hora|ultim|_ok|_em$/i.test(k));
     for (const c of campos) console.log('    ' + c.padEnd(22) + quando(s[c]) + (horas(s[c]) !== null ? '   (' + horas(s[c]) + 'h atras)' : ''));
-    const marcos = campos.map(c => s[c]).filter(Boolean).map(d => new Date(d)).sort((a, b) => b - a);
-    const maisNovo = marcos[0];
-    diz(!!maisNovo && horas(maisNovo) <= 14,
-      'a coleta gravou nas ultimas 14h (o intervalo entre duas rodadas do cron e 6h)',
-      maisNovo ? horas(maisNovo) + 'h atras' : 'sem carimbo');
+
+    /* O VEREDITO VEM DO MOTOR DO SINO, e não de um limiar escrito aqui. Ver o
+       cabeçalho: dois limiares para a mesma pergunta divergem, e o daqui já
+       divergia — ele acusava "carimbo velho" onde a regra de lá tolera a janela
+       normal de 6h. Quem manda é `fpmed_alarme_coleta.js`. */
+    const v = ALARME.avaliar(s, agora);
+    diz(v === null, 'o motor do alarme (o MESMO do sino) diz que a coleta esta em dia',
+      v ? v.titulo + ' — ' + v.detalhe : 'sem alarme');
   } else diz(false, 'li a coleta_status', 'nao voltou linha');
 
-  // O que ela TROUXE: carimbo é intenção, linha nova é resultado.
-  const lic = await get('licitacoes_acompanhadas?select=criado_em&order=criado_em.desc&limit=1');
-  if (lic && lic[0]) {
-    const h = horas(lic[0].criado_em);
-    console.log('    licitacao mais recente no indice: ' + quando(lic[0].criado_em) + '   (' + h + 'h atras)');
-    diz(h <= 30, 'o indice recebeu licitacao nas ultimas 30h', h + 'h');
-  } else console.log('    (a tabela nao tem criado_em ou nao voltou — nao conto como falha)');
+  /* ══ AS DUAS TABELAS, COM O NOME DE CADA UMA DITO ═══════════════════════════
+     Elas já foram confundidas uma vez e o custo foi um diagnóstico inteiro
+     errado (ver cabeçalho). Aqui as duas aparecem SEMPRE, lado a lado, com o
+     que cada uma é — quem lê a saída não precisa lembrar a diferença. */
+  const contar = async (tab) => {
+    const r = await fetch(URL + '/rest/v1/' + tab + '?select=id&limit=1',
+      { headers: { ...H, Prefer: 'count=exact', Range: '0-0' } }).catch(() => null);
+    return r ? (r.headers.get('content-range') || '').split('/')[1] : '?';
+  };
+
+  // O ÍNDICE DA COLETA — carimbo é intenção, linha nova é resultado.
+  const lic = await get('licitacoes?select=coletado_em&order=coletado_em.desc&limit=1');
+  const pub = await get('licitacoes?select=data_publicacao&order=data_publicacao.desc&limit=1');
+  console.log('    `licitacoes` (O INDICE DA COLETA — a tela Encontrar le daqui)');
+  console.log('        linhas ................ ' + await contar('licitacoes'));
+  if (lic && lic[0]) console.log('        coletado por ultimo ... ' + quando(lic[0].coletado_em)
+    + '   (' + horas(lic[0].coletado_em) + 'h atras)');
+  if (pub && pub[0]) console.log('        publicacao mais nova .. ' + String(pub[0].data_publicacao));
+
+  // A OUTRA — mostrada de propósito, pra ninguém achar que ela é a coleta.
+  const ac = await get('licitacoes_acompanhadas?select=criado_em&order=criado_em.desc&limit=1');
+  console.log('    `licitacoes_acompanhadas` (HISTORICO DE PARTICIPACAO — NAO e a coleta)');
+  console.log('        linhas ................ ' + await contar('licitacoes_acompanhadas'));
+  if (ac && ac[0]) console.log('        acompanhado por ultimo  ' + quando(ac[0].criado_em)
+    + '   (parada aqui e normal: so cresce quando alguem acompanha certame novo)');
 
   console.log('\n=== O BOLETIM (cron 08:17 UTC) ===');
   const j = await get('jornais?select=*');

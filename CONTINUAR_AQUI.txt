@@ -777,6 +777,27 @@ Criado em 21/07/2026 copiando SO os arquivos do app do C:\globalmed.
       DEPOIS: node tools/prova_pos_trancamento.js  (hoje da 9 ok / 10 falhas;
       a parte de SEGURANCA ja esta 9 de 9 — quem tranca funcionou.)
 
+  >>> [CORRIGIDO 12/08, 3a RODADA] O ITEM (2) ABAIXO ESTAVA ERRADO, E O ERRO ERA DO
+      MEU INSTRUMENTO. A coleta NAO estava falhando ha 6 dias — ela estava rodando e
+      gravando. O que media a "licitacao mais nova no indice" era a
+      tools/prova_automacoes_vivas.js, e ela olhava a tabela ERRADA:
+        licitacoes ................. O INDICE DA COLETA. Medido em 12/08: 3.197 linhas,
+                                     coletado_em de HOJE, publicacoes 10/08 (1.468),
+                                     11/08 (1.310) e 12/08 (38).
+        licitacoes_acompanhadas .... o HISTORICO DE PARTICIPACAO (semente do Calendario).
+                                     Parada em 06/08 porque ninguem acompanhou certame
+                                     novo desde entao — e isso e o NORMAL dela.
+      >>> A LICAO: instrumento errado nao produz duvida, produz CERTEZA errada. O
+          "142 HORAS atras" abaixo foi escrito com precisao, virou diagnostico, e
+          ninguem reconfere o que ja esta escrito.
+      Corrigido nos 3 lugares (a prova, o dossie e aqui), com 5 asserts guardando
+      (testa_alarme_coleta 30-34, mutacao 3/3). A prova agora tira o veredito do MESMO
+      motor do sino (fpmed_alarme_coleta.js) em vez de um limiar proprio de "30h sem
+      linha nova" — aquele acusaria todo domingo, quando nao ha publicacao pra coletar.
+      >>> O QUE SOBRA DE VERDADEIRO no item (2): ha BURACOS DE DIA no indice, de 06 e
+          07/08 (29 e 188 publicacoes, contra ~1.400 nos dias normais). Isso e real e e
+          o item 4 da fila de fundacao (diagnostico do PNCP), nao um apagao em curso.
+
   (2) A COLETA DO PNCP ESTA FALHANDO HA ~6 DIAS. E NAO E O TRANCAMENTO.
       coleta_status: ultima_ok = NUNCA, ultimo_erro = "esgotou as tentativas",
       ultima_tentativa 11/08 21:41 UTC. A licitacao mais nova no indice e de
