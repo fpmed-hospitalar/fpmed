@@ -652,6 +652,62 @@ Criado em 21/07/2026 copiando SO os arquivos do app do C:\globalmed.
         marca vistos_email). Nao mandei sem pedir. A regra so esta provada em suite
         e por mutacao, o que e forte — mas nao e o mesmo que ver a funcao recusando.
 
+>>> 11/08 — DECISAO DO DONO: TRANCAR O REPOSITORIO. E A VIRADA AINDA NAO PEGOU.
+
+    A DECISAO E O MOTIVO, pra ficar registrado:
+    O que se protegeu NAO foi segredo — a medicao mostrou que nao havia nenhum
+    exposto (so a chave anon, que e publica por natureza; nenhuma service_role,
+    o segredos.local.txt fora do git, backups/ fora do git, e os sk-ant-/sbp_ do
+    historico eram placeholder de documentacao). O QUE SE PROTEGEU FOI O PRODUTO:
+    35 arquivos de DDL com o esquema inteiro, 94 suites com as regras de negocio,
+    o kit_cliente com o roteiro de instalacao — o MOLDE LIMEDTEC deixou de ser
+    clonavel por qualquer um. Nao era sigilo, era propriedade.
+    Ele assinou o Team da organizacao (organizacao, nao conta pessoal — por isso
+    Team e nao Pro) e mandou trancar.
+
+    >>> MAS A MEDICAO DIZ QUE O REPOSITORIO CONTINUA PUBLICO. Tres leituras
+        independentes da API, com quebra-cache, sem autenticacao nenhuma:
+          private=false  ·  visibility=public  ·  nas tres
+        E o conteudo continua baixavel por quem esta deslogado:
+          raw COMPLIANCE.md ......... HTTP 200
+          raw CONTINUAR_AQUI.txt .... HTTP 200
+          raw ddl/negocios.sql ...... HTTP 200
+          raw kit_cliente/MOLDE.txt . HTTP 200
+          clone anonimo ............. HTTP 200 (aceita)
+        O plano pode ter sido assinado; a MUDANCA DE VISIBILIDADE nao foi aplicada,
+        ou foi aplicada e nao salvou. NAO MEXI: mudar visibilidade de repositorio
+        e decisao e acao do dono, e eu nao tenho como fazer isso pelo git.
+
+    >>> O QUE JA ESTA PROVADO E VERDE: o site nao caiu. 10 de 10 telas no ar
+        (index, licitacoes, negocios, edital_ia, reset-senha, manifest, sw.js,
+        fpmed_tema.css, cliente.config.js, logo), PWA instalavel com os 4 icones,
+        service worker servido com a VERSAO certa. Ou seja: quando a virada pegar,
+        o "sem apagao" ja esta medido do lado do site.
+
+    >>> E ACHEI UM FURO NO MEU PROPRIO TESTE. A lista de arquivos que eu tentava
+        baixar comecava com README.md — que NAO EXISTE neste repo. O 404 de
+        "arquivo inexistente" e identico ao 404 de "repo trancado", e o teste deu
+        VERDE por motivo errado. Verde por motivo errado e pior que vermelho:
+        ele encerra a investigacao. Lista trocada por arquivos que existem.
+
+    tools/prova_pos_trancamento.js — roda tudo isso de novo em um comando, e a
+    hora que ele der 24 de 24, a virada pegou.
+
+>>> CAUSA DO ATRASO DO BOLETIM (item 8) — ACHADA, e ja estava medida no repo:
+    NAO e a funcao e NAO e o token. E o AGENDADOR DO GITHUB ACTIONS. Cron do
+    GitHub nao e relogio: e fila, e ela atrasa mais no minuto :00 de hora cheia,
+    que e o horario mais disputado da plataforma.
+      · medido em 11/08: cron 08:00 UTC, ultimo_envio gravado 12:55 UTC = 4h55;
+      · medido de novo hoje: Coleta PNCP agendada 21:00, RODOU 21:39 = 39 min.
+    O conserto ja aplicado no workflow: o horario saiu de 08:00 e foi pra 08:17 —
+    sair da hora cheia e o unico controle que se tem sobre a fila do GitHub.
+    >>> FALTA CONFERIR SE PEGOU: preciso de um dia de execucao no horario novo.
+        E ATENCAO: com o repo privado, /actions/runs some da API publica — a
+        conferencia vai precisar de token, ou de olhar a aba Actions na tela.
+    Se 17 minutos nao bastarem, o proximo passo NAO e mexer no cron de novo: e
+    tirar o boletim do agendador do GitHub e chama-lo pelo pg_cron do Supabase,
+    que roda no banco e nao disputa fila com o mundo inteiro.
+
 >>> PONTO EXATO DE RETOMADA — a fila numerada:
      1. [OK] spec da reforma (docs/spec_reforma_prime.md) — 4485c30
      2. [OK] fpmed_tema.css — O DESIGN SYSTEM, e ele vem primeiro (adendo de excelencia)
