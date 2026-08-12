@@ -1089,7 +1089,15 @@ Criado em 21/07/2026 copiando SO os arquivos do app do C:\globalmed.
      7. [ ] **ESTOU AQUI** — SPRINT DE ACABAMENTO ESTETICO, alvo = a amostra APROVADA
             (C:\Users\lemue\Downloads\fpmed_encontrar_amostra.html). Absorveu o pedido
             do menu em 3 grupos. Encontrar primeiro (publica e prova), depois Negocios.
-            Comeca conferindo o achado do gm-auth.js (pastilha escura + 2 emoji).
+            >>> O PLANO JA ESTA ESCRITO E MEDIDO: **docs/plano_item7_acabamento.md**.
+                Nao recomecar do zero — ele tem a tabela dos 9 cinzas que mudam, os 4
+                pares da amostra que REPROVAM em AA (todos o #9AA7B8 carregando texto:
+                2,44:1 nos rotulos do cartao rico, nos rotulos de grupo do menu e no
+                placeholder; 2,23:1 no contador da faceta), a saida que preserva o
+                visual (o efeito de "rotulo fraco" vem do tamanho + caixa alta +
+                espacamento, nao da cor — entao escurece so a cor pro #64748B, 4,76:1),
+                a ordem de ataque em 4 fatias e o conflito do "Calendario em breve".
+            >>> COMECA PELA FATIA 1 (os tokens), que e a que o testa_tema remede sozinho.
      8. [ ] CMED COMO CAMADA DE BASE — PMVG por baixo de todo preco; tira "Conferir CMED"
             do menu e deixa a busca crua num canto discreto. Fundacao de dados primeiro.
      8b.[ ] demais telas ganhando o tema claro, uma a uma (8 ainda escuras — e o que
