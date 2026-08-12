@@ -756,6 +756,53 @@ Criado em 21/07/2026 copiando SO os arquivos do app do C:\globalmed.
     espacamento literal atravessava o } e acusava a regra seguinte. Instrumento
     errado em tres lugares e a licao S16 tentando acontecer de novo.
 
+############################################################################
+>>> 12/08 — LEIA ISTO PRIMEIRO. DUAS COISAS QUEBRADAS AGORA, E AS DUAS SAO
+    MAIS URGENTES QUE QUALQUER ITEM DA FILA.
+############################################################################
+
+  (1) O SITE ESTA FORA DO AR.  >>> O CLIENTE ESTA SEM SISTEMA. <<<
+      O repositorio virou PRIVADO e o GitHub Pages parou junto: as 10 telas
+      respondem HTTP 404, e o dominio inteiro fpmed-hospitalar.github.io
+      tambem. Medido duas vezes com quebra-cache.
+      CAUSA: Pages nao publica de repo privado sem plano pago ATIVO. O Team
+      foi assinado; ativo e outra coisa.
+      O QUE FALTA (e do dono, nao meu):
+        · conferir em github.com/organizations/fpmed-hospitalar/settings/billing
+          se o plano diz Team ou Free;
+        · se disser Free: Settings > General > Danger Zone > Make public,
+          o site volta em 1-3 min, e tranca-se depois com a cobranca resolvida;
+        · se disser Team: Settings > Pages, conferir Source = branch master,
+          pasta / (root), e Save pra forcar build novo.
+      DEPOIS: node tools/prova_pos_trancamento.js  (hoje da 9 ok / 10 falhas;
+      a parte de SEGURANCA ja esta 9 de 9 — quem tranca funcionou.)
+
+  (2) A COLETA DO PNCP ESTA FALHANDO HA ~6 DIAS. E NAO E O TRANCAMENTO.
+      coleta_status: ultima_ok = NUNCA, ultimo_erro = "esgotou as tentativas",
+      ultima_tentativa 11/08 21:41 UTC. A licitacao mais nova no indice e de
+      06/08 02:22 — 142 HORAS atras.
+      >>> E O PNCP ESTA NO AR: medi agora, API de consulta HTTP 200 com 1.773
+          registros no periodo, e a busca por texto HTTP 200 com 3.640
+          resultados. PNCP respondendo + coleta desistindo = O DEFEITO E NOSSO.
+      O workflow fica VERDE porque ele RODA — quem falha e o que ele faz por
+      dentro. Foi exatamente por isso que a prova nova olha o BANCO e nao o
+      GitHub (tools/prova_automacoes_vivas.js).
+      IMPACTO: a tela Encontrar busca no banco primeiro. O banco parou de
+      crescer, e o cliente ve resultado velho sem ter como saber.
+      >>> PERGUNTA PENDENTE PRO LEMUEL: isso entra como URGENCIA (fura a fila)
+          ou fica atras do item 4? Minha recomendacao: URGENCIA. Reformar a
+          tela em cima de um indice de 6 dias atras deixa ela bonita e errada.
+
+  O QUE CONTINUA FUNCIONANDO: o boletim (carimbou envio 11/08 12:55 UTC, 12h
+  atras) e o banco inteiro. A trava de compliance do remetente esta no ar e foi
+  provada AO VIVO hoje: recusou, zero e-mail, secret removido.
+
+  ITEM 2 DA ULTIMA CAIXA CHEGOU CORTADO ("...parametro teste,"). O teste ao vivo
+  ja tinha sido executado hoje com autorizacao; nao repeti sem saber se o resto
+  da caixa mudava alguma coisa. Repetir e um comando:
+    node tools/prova_trava_remetente.js
+
+############################################################################
 >>> PONTO EXATO DE RETOMADA — a fila numerada:
      1. [OK] spec da reforma (docs/spec_reforma_prime.md) — 4485c30
      2. [OK] fpmed_tema.css — O DESIGN SYSTEM, e ele vem primeiro (adendo de excelencia)

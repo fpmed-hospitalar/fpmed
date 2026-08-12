@@ -38,12 +38,19 @@
       token, é regra, então ela não cede pro protótipo. Aqui o telefone usa o
       ícone do mesmo conjunto dos outros.
 
-   3. OS ÍCONES. A regra pede Lucide (MIT) copiado pro repo. O conjunto que está
-      aqui é o DO PROTÓTIPO — desenhado pela nossa própria equipe, no mesmo grid
-      24×24, mesmo traço, mesmas pontas arredondadas. Ele cumpre o que a regra
-      quer (UM conjunto só, tamanho e traço iguais) e ainda evita a pergunta de
-      licença de terceiro. >>> DECISÃO PRO LEMUEL: fica assim, ou baixamos os
-      arquivos oficiais do Lucide? Eu não inventei paths dizendo que eram Lucide.
+   3. OS ÍCONES. A regra original pedia Lucide (MIT) copiado pro repo. O conjunto
+      que está aqui é o DO PROTÓTIPO — desenhado pela nossa própria equipe, no
+      mesmo grid 24×24, mesmo traço, mesmas pontas arredondadas.
+      >>> DECIDIDO PELO LEMUEL EM 11/08: FICA O NOSSO CONJUNTO. Consistente,
+      autoral, sem licença de terceiro — e cumpre o que a regra realmente queria
+      (UM conjunto só, tamanho e traço iguais em todo o sistema). Lucide sai da
+      regra e entra "o conjunto FPMED". Eu não inventei paths dizendo que eram
+      Lucide, e é por isso que essa escolha pôde ser feita com o dado certo.
+
+      >>> CONSEQUÊNCIA, pra quem vier depois: ícone novo se desenha AQUI, no
+      mesmo grid 24×24 e traço 1.8. Não se baixa de biblioteca nenhuma — meio
+      conjunto de um lugar e meio de outro é exatamente o que faz um sistema
+      parecer montado em vez de desenhado.
 
    ── COMPLIANCE ────────────────────────────────────────────────────────────────
    Referência de LAYOUT e COMPORTAMENTO apenas. Nenhum código, ícone, cor ou texto

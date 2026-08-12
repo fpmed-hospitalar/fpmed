@@ -88,9 +88,18 @@ acabamento, nunca na convenção** — o usuário não pode ter que aprender o n
 jeito de fazer um botão.
 
 ### D11. Ícone só com significado
-Conjunto único (Lucide, SVG inline copiado pro repo, sem CDN), tamanho e traço
-iguais, e **só onde comunica algo**. Ícone de decoração sai.
-**Emoji como ícone: proibido** (já era lei; aqui é reforço).
+Conjunto único, tamanho e traço iguais, e **só onde comunica algo**. Ícone de
+decoração sai. **Emoji como ícone: proibido** (já era lei; aqui é reforço).
+
+> **DECIDIDO em 11/08 — o conjunto é o NOSSO.** A regra dizia "Lucide (MIT)".
+> Passa a ser o **conjunto autoral FPMED**, nascido no protótipo: 24×24, traço 1.8,
+> pontas arredondadas. O nome "Lucide" era o meio; o fim era a consistência — e um
+> conjunto autoral entrega o fim sem a pergunta de licença de terceiro.
+>
+> **Ícone novo se DESENHA no conjunto. Não se baixa de biblioteca nenhuma.**
+> Meio conjunto de um lugar e meio de outro é o que faz um sistema parecer
+> *montado* em vez de *desenhado* — e é a coisa que o olho percebe sem saber nomear.
+> Mora em `limedtec-menu.js`; cobrado por `testa_menu_lateral.js`.
 
 ### D12. Desenhar com o pior dado real
 Testar toda tela com:

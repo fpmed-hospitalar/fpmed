@@ -18,6 +18,25 @@ interface, texto de modelo de documento, ou endpoint.
 > dos modelos serão **redigidos do zero a partir das declarações padrão da Lei 14.133** — nunca
 > copiados do modelo deles. Modelo de declaração é texto autoral de alguém.
 
+### DECISÃO — o conjunto de ícones é NOSSO *(11/08, decidido pelo Lemuel)*
+
+A regra original do adendo pedia **Lucide (MIT)**, em SVG inline copiado pro repo.
+**Mudou:** o conjunto oficial do FPMED passa a ser o **conjunto autoral**, nascido no
+protótipo do arquiteto — 24×24, traço 1.8, pontas arredondadas.
+
+**Por quê:** é consistente, é nosso, e não tem pergunta de licença de terceiro. E
+cumpre o que a regra realmente queria — **um conjunto só, tamanho e traço iguais em
+todo o sistema**. O nome "Lucide" na regra era o meio; o fim era a consistência.
+
+> **A consequência é a parte que importa:** ícone novo se **desenha** no conjunto,
+> no mesmo grid. **Não se baixa de biblioteca nenhuma.** Meio conjunto de um lugar e
+> meio de outro é exatamente o que faz um sistema parecer *montado* em vez de
+> *desenhado* — e é a coisa que o olho percebe sem saber nomear.
+>
+> Registrado em `limedtec-menu.js` (onde o conjunto mora) e cobrado por
+> `testa_menu_lateral.js`: todo módulo tem ícone, todos no mesmo grid, todos com o
+> mesmo traço.
+
 ### REGISTRO DE COMPLIANCE — o remetente de e-mail *(11/08, auditoria do dono)*
 
 **O único domínio verificado na conta do Resend é `globalmedgo.com.br` — e ele é PROIBIDO como
