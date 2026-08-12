@@ -205,7 +205,10 @@ function carregarPdfjs(){
 // edital é a linha que amarra o item ao prazo e ao valor.
 async function pdfParaTexto(buf){
   const pdfjs = await carregarPdfjs();
-  const doc = await pdfjs.getDocument({ data: buf }).promise;
+  /* CVE-2024-4367: o PDF vem de FORA (PNCP, portal, e-mail) e a aba esta logada. Sem
+     `isEvalSupported:false` um PDF preparado executa script aqui dentro. Mitigacao oficial da
+     Mozilla; nao custa nada porque estas telas extraem TEXTO, nao renderizam pagina. */
+    const doc = await pdfjs.getDocument({ data: buf, isEvalSupported: false }).promise;
   let out = '';
   for(let p = 1; p <= doc.numPages; p++){
     const tc = await (await doc.getPage(p)).getTextContent();
@@ -327,7 +330,7 @@ const CHARS_POR_TOKEN = 3.01;        // medido nos dois editais reais de 10 e 11
 // Texto PÁGINA A PÁGINA — é o que permite dizer "li as páginas 1-18" em vez de "li um pedaço".
 async function pdfPorPagina(buf){
   const pdfjs = await carregarPdfjs();
-  const doc = await pdfjs.getDocument({ data: buf }).promise;
+  const doc = await pdfjs.getDocument({ data: buf, isEvalSupported: false }).promise;
   const out = [];
   for(let p = 1; p <= doc.numPages; p++){
     const tc = await (await doc.getPage(p)).getTextContent();

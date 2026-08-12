@@ -182,7 +182,10 @@ function carregarPdfjs(){
 // sai embaralhado coluna a coluna e a descrição perde o preço de vista.
 async function pdfParaTexto(buf){
   const pdfjs = await carregarPdfjs();
-  const doc = await pdfjs.getDocument({ data: buf }).promise;
+  /* CVE-2024-4367: o PDF vem de FORA (PNCP, portal, e-mail) e a aba esta logada. Sem
+     `isEvalSupported:false` um PDF preparado executa script aqui dentro. Mitigacao oficial da
+     Mozilla; nao custa nada porque estas telas extraem TEXTO, nao renderizam pagina. */
+    const doc = await pdfjs.getDocument({ data: buf, isEvalSupported: false }).promise;
   let out = '';
   for(let p = 1; p <= doc.numPages; p++){
     const tc = await (await doc.getPage(p)).getTextContent();

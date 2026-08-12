@@ -5711,7 +5711,10 @@ function egCarregarPdfjs(){
 // de 2.5pt), ordena linhas de cima p/ baixo (Y desc no PDF) e itens por X.
 async function egPdfExtrairTexto(arrayBuffer){
   const pdfjs = await egCarregarPdfjs();
-  const doc = await pdfjs.getDocument({ data: arrayBuffer }).promise;
+  /* CVE-2024-4367: o PDF vem de FORA (PNCP, portal, e-mail) e a aba esta logada. Sem
+     `isEvalSupported:false` um PDF preparado executa script aqui dentro. Mitigacao oficial da
+     Mozilla; nao custa nada porque estas telas extraem TEXTO, nao renderizam pagina. */
+    const doc = await pdfjs.getDocument({ data: arrayBuffer, isEvalSupported: false }).promise;
   const paginas = [];
   for (let p = 1; p <= doc.numPages; p++) {
     const page = await doc.getPage(p);
