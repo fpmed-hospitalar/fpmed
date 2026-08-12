@@ -66,6 +66,27 @@
   --ambar:       var(--ambar-600);  /* âmbar sobre branco: o 500 não passa em AA como texto */
   --sombra:      var(--sombra-1);
 }
+/* ══ OS ÍCONES ══════════════════════════════════════════════════════════════════════════════
+   D11 proíbe EMOJI COMO ÍCONE, e esta tela tinha 59 deles. O motivo da regra não é gosto:
+   emoji é FONTE, não desenho. Ele muda de forma em cada sistema (o <svg class="ic" aria-hidden="true"><use href="#ic-alerta"/></svg> é amarelo no Windows,
+   laranja no Android, e no Outlook às vezes não é nada), não herda a cor do texto ao lado, não
+   se alinha à grade dos outros e não tem traço em comum com desenho nenhum. Um punhado deles
+   numa tela é o que faz a interface parecer montada, e não desenhada.
+
+   >>> COMO ELES ENTRARAM: um SPRITE inline, no topo do <body> — cada ícone existe UMA vez como
+       <symbol> e é usado por referência (<use href="#ic-...">). Repetir o SVG inteiro 19 vezes
+       seria copiar desenho, e desenho copiado diverge igual a regra copiada.
+   >>> MESMO GRID DO MENU: 24×24, traço 1.8, pontas arredondadas — o conjunto é UM só no
+       sistema inteiro. `currentColor` faz o ícone herdar a cor de quem o contém, então ele
+       acompanha o estado (aviso fica âmbar, erro fica vermelho) sem uma linha de CSS a mais.
+   >>> E O TAMANHO É EM `em`, não em px: o ícone cresce com o texto ao lado dele. Ícone que não
+       acompanha a fonte é o que fica pequeno demais no título e grande demais na etiqueta. */
+.ic{width:1em;height:1em;stroke:currentColor;fill:none;stroke-width:1.8;
+  stroke-linecap:round;stroke-linejoin:round;vertical-align:-.14em;flex:0 0 auto}
+.ic-g{width:1.25em;height:1.25em}
+/* O sprite não ocupa espaço nem é lido em voz alta: ele é só o dicionário de desenhos. */
+#ic-sprite{position:absolute;width:0;height:0;overflow:hidden}
+
 *{box-sizing:border-box}
 body{
   margin:0;
@@ -449,9 +470,57 @@ textarea.anot:focus{border-color:var(--azul)}
   padding:8px 14px;font-size:12px;font-family:inherit;cursor:pointer}
 .dw-acoes button:hover{border-color:var(--azul);color:var(--azul-claro)}
 @media(max-width:760px){.col{flex:0 0 84vw}.ag-hora{flex:0 0 48px;font-size:12.5px}.ficha{grid-template-columns:96px 1fr}}
+
+/* ══ O CABEÇALHO NO CELULAR ══════════════════════════════════════════════════════════════════
+   MEDIDO no laço visual, e não suposto: em 390px o documento tinha 53px de rolagem horizontal.
+   O culpado NÃO era o menu lateral (ele já vira faixa com `overflow-x:auto` e estava contido em
+   375, conferido) — era o `header`: `scrollWidth` 443 contra 375 de largura.
+   A `.faixa-int` é flex SEM `flex-wrap`, e o título + as três visões + o sino somam ~390px numa
+   linha de 331px úteis. Sem permissão pra quebrar, o flex empurra pra fora.
+   >>> POR QUE QUEBRAR A LINHA E NÃO ENCOLHER O TEXTO: as três visões são NAVEGAÇÃO, e rótulo de
+       navegação encolhido vira adivinhação ("Funil de Lic..."). Numa tela estreita sobra altura,
+       nunca largura — então a segunda linha é o recurso barato aqui.
+   >>> E O SINO FICA NA PRIMEIRA LINHA, colado à direita: ele é o único item do cabeçalho com
+       urgência, e mandá-lo pra segunda linha o esconderia abaixo da dobra em telas curtas.
+   >>> 900px e não 760: é o MESMO ponto em que o menu lateral vira faixa horizontal. Dois pontos
+       de quebra diferentes fariam a tela se reorganizar duas vezes durante o mesmo arrasto. */
+@media(max-width:900px){
+  header .faixa-int{flex-wrap:wrap;row-gap:10px}
+  header h1{font-size:16px}
+  header .sino-cx{margin-left:auto}
+  /* a fileira de visões desce inteira e rola sozinha se ainda não couber — rolagem DENTRO do
+     controle, que é o certo; rolagem da PÁGINA inteira é o defeito que isto conserta. */
+  header nav{order:3;width:100%;overflow-x:auto;padding-bottom:2px;scrollbar-width:thin}
+  header nav a{white-space:nowrap}
+}
 </style>
 </head>
 <body>
+<!-- ══ O DICIONÁRIO DE ÍCONES ══ Lucide (MIT), copiado pro repo, sem CDN. Cada desenho existe
+     UMA vez aqui e é referenciado por <use href="#ic-..."> onde for preciso. `aria-hidden` no
+     sprite inteiro: quem lê em voz alta pula tudo isto e vai direto ao texto — o ícone SEMPRE
+     acompanha uma palavra nesta tela, então ele nunca é a única portadora do sentido. -->
+<svg id="ic-sprite" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg"><defs>
+  <symbol id="ic-alerta" viewBox="0 0 24 24"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></symbol>
+  <symbol id="ic-bloqueado" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m5.6 5.6 12.8 12.8"/></symbol>
+  <symbol id="ic-impressora" viewBox="0 0 24 24"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v8H6z"/></symbol>
+  <symbol id="ic-baixar" viewBox="0 0 24 24"><path d="M12 3v12"/><path d="m7 11 5 5 5-5"/><path d="M4 20h16"/></symbol>
+  <symbol id="ic-clipe" viewBox="0 0 24 24"><path d="M13.2 20.5 21 12.7a4.5 4.5 0 0 0-6.4-6.4L5.6 15.4a2.5 2.5 0 0 0 3.5 3.5l8.1-8.1"/></symbol>
+  <symbol id="ic-balanca" viewBox="0 0 24 24"><path d="M12 3v18"/><path d="M7 21h10"/><path d="M5 7h14"/><path d="m5 7-3 6h6z"/><path d="m19 7-3 6h6z"/></symbol>
+  <symbol id="ic-trofeu" viewBox="0 0 24 24"><path d="M6 4h12v6a6 6 0 0 1-12 0z"/><path d="M6 6H4a2 2 0 0 0 2 4"/><path d="M18 6h2a2 2 0 0 1-2 4"/><path d="M10 16h4v4h-4z"/><path d="M8 20h8"/></symbol>
+  <symbol id="ic-telefone" viewBox="0 0 24 24"><rect x="6" y="2" width="12" height="20" rx="2"/><path d="M11 18.5h2"/></symbol>
+  <symbol id="ic-nota" viewBox="0 0 24 24"><path d="M5 3h8l5 5v13H5z"/><path d="M13 3v5h5"/><path d="M9 13h5M9 16.5h4"/></symbol>
+  <symbol id="ic-documento" viewBox="0 0 24 24"><path d="M5 3h8l5 5v13H5z"/><path d="M13 3v5h5"/></symbol>
+  <symbol id="ic-calendario" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/></symbol>
+  <symbol id="ic-sino" viewBox="0 0 24 24"><path d="M18 9a6 6 0 1 0-12 0c0 5-2 6-2 6h16s-2-1-2-6"/><path d="M10.5 20a2 2 0 0 0 3 0"/></symbol>
+  <symbol id="ic-relogio" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+  <symbol id="ic-orgao" viewBox="0 0 24 24"><path d="M3 21h18"/><path d="M5.5 21V10M10 21V10M14 21V10M18.5 21V10"/><path d="m12 3 9 5H3z"/></symbol>
+  <symbol id="ic-queda" viewBox="0 0 24 24"><path d="M22 17 13.5 8.5 9 13 2 6"/><path d="M16 17h6v-6"/></symbol>
+  <symbol id="ic-lapis" viewBox="0 0 24 24"><path d="M17 3.5a2.1 2.1 0 0 1 3 3L7.5 19 3 20.5 4.5 16z"/></symbol>
+  <symbol id="ic-industria" viewBox="0 0 24 24"><path d="M3 21V9l6 4V9l6 4V4h6v17z"/><path d="M7.5 21v-3M12 21v-3M16.5 21v-3"/></symbol>
+  <symbol id="ic-entrada" viewBox="0 0 24 24"><path d="M3 12h5l2 3h4l2-3h5"/><path d="M4.5 6h15L21 12v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-6z"/></symbol>
+  <symbol id="ic-seta" viewBox="0 0 24 24"><path d="M4 12h14"/><path d="m13 6 6 6-6 6"/></symbol>
+</defs></svg>
 <div class="topfaixa" data-limedtec-instalar>
   <div class="faixa-int">
     <a href="fpmed_sistema_final.html">← Sistema</a>
@@ -473,15 +542,19 @@ textarea.anot:focus{border-color:var(--azul)}
              dobra não é reforço de marca, é desalinhamento.
          >>> O QUE FICOU NO HEADER é só o que é DESTA tela: o nome dela, as três visões e o
              sino. Isso é o segundo nível de navegação; o primeiro agora é o menu. -->
+    <!-- >>> "Funil de Licitações" ERA O RÓTULO DA LISTA, e virou mentira em 12/08: o funil
+             agora é o QUADRO, que é a visão de abertura. Rótulo que diz "funil" apontando pra
+             lista faria a pessoa procurar o funil no lugar errado. Os três nomes passaram a
+             dizer o FORMATO, que é o que muda entre eles. -->
     <nav>
-      <a onclick="setVis('lista')">Funil de Licitações</a>
-      <a class="on" onclick="setVis('quadros')">Quadros</a>
+      <a onclick="setVis('quadros')" class="on">Quadros</a>
+      <a onclick="setVis('lista')">Lista</a>
       <a onclick="setVis('agenda')">Agenda</a>
     </nav>
     <!-- SININHO: o que abre hoje e amanhã. Fica no header do módulo porque é aqui que o dia
          de trabalho acontece — a Agenda mostra o mês, o sino mostra o que não pode passar. -->
     <div class="sino-cx">
-      <button class="sino" id="sino" onclick="toggleNotif(event)" title="Avisos de sessão">🔔<span class="cnt" id="sino-n" style="display:none">0</span></button>
+      <button class="sino" id="sino" onclick="toggleNotif(event)" title="Avisos de sessão"><svg class="ic ic-g" aria-hidden="true"><use href="#ic-sino"/></svg><span class="cnt" id="sino-n" style="display:none">0</span></button>
       <div id="notif"><div class="nf-vazio">carregando…</div></div>
     </div>
   </div>
@@ -502,18 +575,22 @@ textarea.anot:focus{border-color:var(--azul)}
       <label style="font-size:12.5px;color:var(--muted);display:flex;align-items:center;gap:6px;cursor:pointer">
         <input type="checkbox" id="f-arquivados" onchange="pinta()" style="accent-color:var(--azul)"> ver arquivados
       </label>
-      <div class="vis">
-        <button id="v-lista" class="on" onclick="setVis('lista')">Lista</button>
-        <button id="v-quadros" onclick="setVis('quadros')">Quadros</button>
-        <button id="v-agenda" onclick="setVis('agenda')">Agenda</button>
-      </div>
+      <!-- ══ O SEGUNDO SELETOR DE VISÃO MORREU AQUI (12/08, achado no laço visual) ═══════════
+           A tela tinha TRÊS controles para a mesma coisa: este, o do cabeçalho e dois links
+           soltos abaixo dos chips. E o mesmo modo se chamava "Lista" aqui e "Funil de
+           Licitações" lá em cima — dois nomes para a mesma visão, na mesma tela.
+           >>> É A MESMA DOENÇA DA BARRA DO PORTAL, que eu acabei de matar por duas portas pra
+               mesma coisa. Nenhuma suíte pegaria: os três chamavam `setVis` e ficavam
+               sincronizados, então tudo passava. Só olhando a tela é que três controles
+               aparecem como três controles.
+           Ficou o do CABEÇALHO, porque é lá que mora o "onde eu estou". -->
     </div>
   </div>
 
   <div class="fases" id="fases"></div>
+  <!-- "Quadros" e "Agenda" saíram daqui: eram a TERCEIRA cópia do seletor de visão. Sobrou o
+       que não é visão — "Meus arquivos" é escopo, e por isso continua. -->
   <div class="sublinks">
-    <a onclick="setVis('quadros')">Quadros</a>
-    <a onclick="setVis('agenda')">Agenda</a>
     <a onclick="verArquivados()">Meus arquivos</a>
   </div>
 
@@ -529,7 +606,28 @@ textarea.anot:focus{border-color:var(--azul)}
   <!-- O painel abre ENTRE as caixinhas e a lista, e não numa tela nova: é o detalhe do número
        que está logo acima, e o caminho de volta é fechar — não é navegar. -->
   <div id="painel-kpi" style="display:none"></div>
-  <div id="corpo"><div class="vazio">Carregando…</div></div>
+  <!-- ══ O PRIMEIRO QUADRO É UM ESQUELETO, e ele está no HTML — não no JavaScript ═══════════
+       A5 manda skeleton imediato, nunca tela branca. Se ele fosse pintado pelo script, a tela
+       ficaria em branco justamente no pedaço que ele existe pra cobrir: entre o HTML chegar e
+       o JS rodar. Escrito aqui, ele aparece no primeiro quadro que o navegador desenha.
+       >>> E ELE TEM A FORMA DO QUE VEM DEPOIS (cinco colunas, cartões da altura certa), porque
+           esqueleto de forma errada é pior que nenhum: a tela PULA quando o dado chega, e pulo
+           de layout é defeito nomeado (D14). Quem olha já entende "vem um quadro com colunas". -->
+  <div id="corpo" aria-busy="true">
+    <div class="kb" aria-hidden="true">
+      <div class="col"><div class="fp-skeleton fp-skeleton--titulo" style="width:60%"></div>
+        <div class="fp-skeleton fp-skeleton--cartao"></div><div class="fp-skeleton fp-skeleton--cartao"></div></div>
+      <div class="col"><div class="fp-skeleton fp-skeleton--titulo" style="width:55%"></div>
+        <div class="fp-skeleton fp-skeleton--cartao"></div></div>
+      <div class="col"><div class="fp-skeleton fp-skeleton--titulo" style="width:50%"></div>
+        <div class="fp-skeleton fp-skeleton--cartao"></div><div class="fp-skeleton fp-skeleton--cartao"></div></div>
+      <div class="col"><div class="fp-skeleton fp-skeleton--titulo" style="width:58%"></div>
+        <div class="fp-skeleton fp-skeleton--cartao"></div></div>
+      <div class="col"><div class="fp-skeleton fp-skeleton--titulo" style="width:45%"></div>
+        <div class="fp-skeleton fp-skeleton--cartao"></div></div>
+    </div>
+    <span class="fp-so-leitor">Carregando os negócios…</span>
+  </div>
 </div>
 
 <div id="velcro" onclick="fecharDrawer()"></div>
@@ -803,13 +901,13 @@ function visiveis(){
 function pinta(){
   if(ERRO){
     document.getElementById('corpo').innerHTML =
-      `<div class="vazio" style="border-color:var(--vermelho-300);background:var(--vermelho-50);color:var(--vermelho-800)"><b>⚠️ Não consegui carregar os negócios</b><div style="margin-top:8px;font-size:12px">${esc(ERRO)}</div></div>`;
+      `<div class="vazio" style="border-color:var(--vermelho-300);background:var(--vermelho-50);color:var(--vermelho-800)"><b><svg class="ic" aria-hidden="true"><use href="#ic-alerta"/></svg> Não consegui carregar os negócios</b><div style="margin-top:8px;font-size:12px">${esc(ERRO)}</div></div>`;
     document.getElementById('kpis').style.display='none';
     // o sino NÃO pode dizer "nada abre hoje" quando o que houve foi falha de leitura: com a
     // lista vazia por erro, "nenhum aviso" e "não sei" são a mesma tela — e não são a mesma coisa.
     document.getElementById('sino-n').style.display='none';
     document.getElementById('notif').innerHTML =
-      '<div class="nf-vazio">⚠️ Não consegui ler os negócios, então <b>não sei</b> o que abre hoje.<br>Recarregue a página.</div>';
+      '<div class="nf-vazio"><svg class="ic" aria-hidden="true"><use href="#ic-alerta"/></svg> Não consegui ler os negócios, então <b>não sei</b> o que abre hoje.<br>Recarregue a página.</div>';
     return;
   }
   const arq = document.getElementById('f-arquivados').checked;
@@ -841,8 +939,50 @@ function pinta(){
   const corpo = document.getElementById('corpo');
   if(VIS === 'quadros') { corpo.innerHTML = kanban(l); ligarArrasto(); aplicarDestaque(); return; }
   if(VIS === 'agenda')  { corpo.innerHTML = agenda(l); return; }
-  corpo.innerHTML = l.length ? l.slice(0,200).map(n => card(n)).join('')
-    : '<div class="vazio">Nenhum negócio com esses filtros.</div>';
+  corpo.innerHTML = l.length ? l.slice(0,200).map(n => card(n)).join('') : vazioComAcao();
+}
+
+/* ══ O VAZIO QUE NÃO É BECO ══════════════════════════════════════════════════════════════════
+   Ele dizia "Nenhum negócio com esses filtros." e parava ali. O problema desse texto não é ser
+   curto: é que ele deixa a pessoa sem saber SE O SISTEMA QUEBROU OU SE ELA FILTROU ERRADO — e
+   as duas hipóteses pedem ações opostas (chamar alguém x mexer no filtro).
+   >>> ENTÃO ELE DIZ QUAL FILTRO ESTÁ SEGURANDO O RESULTADO, com o valor na frente, e oferece a
+       próxima jogada. Um "limpar filtros" genérico não ensina nada; dizer "a fase Disputa e a
+       busca por 'anápolis'" mostra onde a pessoa se enganou, e ela aprende a ferramenta.
+   >>> E O CASO SEM FILTRO NENHUM É OUTRO TEXTO, de propósito: aí o funil está mesmo vazio, e a
+       ação certa não é limpar coisa nenhuma — é incluir a primeira licitação. */
+function vazioComAcao(){
+  const arq = document.getElementById('f-arquivados').checked;
+  const emp = document.getElementById('f-empresa');
+  const q   = (document.getElementById('f-busca').value||'').trim();
+  const ativos = [];
+  if(FASE_SEL) ativos.push('fase <b>' + esc(nomeFase(FASE_SEL)) + '</b>');
+  if(q) ativos.push('busca por <b>' + esc(q) + '</b>');
+  if(emp.value) ativos.push('empresa <b>' + esc(emp.options[emp.selectedIndex].text) + '</b>');
+  if(!arq) ativos.push('somente <b>não arquivados</b>');
+
+  // sem NENHUM filtro de conteúdo, o funil está vazio de verdade
+  const soPadrao = !FASE_SEL && !q && !emp.value;
+  return `<div class="fp-vazio">
+    <div class="fp-vazio__titulo">${soPadrao ? 'Nenhum negócio no funil ainda' : 'Nenhum negócio com esses filtros'}</div>
+    <div class="fp-vazio__texto">${soPadrao
+      ? 'Quando uma licitação virar negócio, ela aparece aqui — pela busca do Encontrar ou incluída à mão.'
+      : 'Está filtrando por ' + ativos.join(' · ') + '.'}</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center">
+      ${soPadrao ? '' : `<button class="btn-ed sec" onclick="limparFiltros()">Limpar os filtros</button>`}
+      <button class="btn-ed" onclick="abrirFormManual()">+ Incluir licitação</button>
+    </div>
+  </div>`;
+}
+
+function limparFiltros(){
+  FASE_SEL = null;
+  document.getElementById('f-busca').value = '';
+  document.getElementById('f-empresa').value = '';
+  // "ver arquivados" NÃO é ligado aqui: ele não estava escondendo nada por engano — é uma
+  // escolha de escopo que a pessoa fez. Limpar filtro não pode trazer de volta o que ela
+  // arquivou de propósito.
+  pinta();
 }
 
 /* ── O SELO DA CONFERÊNCIA NO CARD ───────────────────────────────────────────────────────────
@@ -857,8 +997,8 @@ function seloConferencia(id){
   const c = CONF_POR_NEGOCIO[id];
   if(!c) return '';
   return c.acima > 0
-    ? `<span class="mod" style="color:var(--vermelho-700);border-color:var(--vermelho-300)" title="conferido contra a CMED: ${c.acima} item(ns) acima do teto legal">⚠️ ${c.acima} acima do teto</span>`
-    : `<span class="mod" style="color:var(--verde-700);border-color:var(--verde-300)" title="conferido contra a CMED: nenhum item acima do teto">⚖️ dentro do teto</span>`;
+    ? `<span class="mod" style="color:var(--vermelho-700);border-color:var(--vermelho-300)" title="conferido contra a CMED: ${c.acima} item(ns) acima do teto legal"><svg class="ic" aria-hidden="true"><use href="#ic-alerta"/></svg> ${c.acima} acima do teto</span>`
+    : `<span class="mod" style="color:var(--verde-700);border-color:var(--verde-300)" title="conferido contra a CMED: nenhum item acima do teto"><svg class="ic" aria-hidden="true"><use href="#ic-balanca"/></svg> dentro do teto</span>`;
 }
 
 function card(n, noKanban){
@@ -886,8 +1026,8 @@ function card(n, noKanban){
       ${n.portal ? `<span class="fonte">Fonte: ${esc(n.portal)}</span>` : ''}
       ${n.modalidade ? `<span class="mod">${esc(n.modalidade)}</span>` : ''}
       ${n.numero ? `<span class="num">nº ${esc(n.numero)}</span>` : ''}
-      ${n.valor_ganho>0 && ehGestor() ? `<span class="mod">🏆 ${brl(n.valor_ganho)}</span>` : ''}
-      ${n.anotacoes && String(n.anotacoes).trim() ? `<span class="obs">✎ anotado</span>` : ''}
+      ${n.valor_ganho>0 && ehGestor() ? `<span class="mod"><svg class="ic" aria-hidden="true"><use href="#ic-trofeu"/></svg> ${brl(n.valor_ganho)}</span>` : ''}
+      ${n.anotacoes && String(n.anotacoes).trim() ? `<span class="obs"><svg class="ic" aria-hidden="true"><use href="#ic-lapis"/></svg> anotado</span>` : ''}
       ${seloConferencia(n.id)}
     </div>
     <div class="acoes">
@@ -1069,7 +1209,7 @@ function corpoDrawer(n, obs, carregando){
     <div class="fc" id="fc-${k}">
       <div class="fc-r"><span class="fc-rot">${rot}</span>
         <span class="fc-val" id="fcv-${k}">${mostrado || '<i>—</i>'}</span>
-        ${editavel ? `<button class="fc-bt" onclick="editarCampo(${n.id},'${k}')">✏ Alterar</button>` : ''}</div>
+        ${editavel ? `<button class="fc-bt" onclick="editarCampo(${n.id},'${k}')"><svg class="ic" aria-hidden="true"><use href="#ic-lapis"/></svg> Alterar</button>` : ''}</div>
       ${extra || ''}
     </div>`;
   const ficha = `<div class="ficha-fc">
@@ -1084,7 +1224,7 @@ function corpoDrawer(n, obs, carregando){
       ${campo('objeto', 'Objeto', null, esc(n.objeto||''))}
       ${campo('valor_estimado', 'Valor estimado', null, n.valor_estimado!=null ? brl(n.valor_estimado) : '')}
       ${gestor ? campo('valor_ganho', 'Valor do contrato ganho', null,
-          n.valor_ganho>0 ? `<b style="color:var(--verde)">🏆 ${brl(n.valor_ganho)}</b>` : 'ainda não ganho') : ''}
+          n.valor_ganho>0 ? `<b style="color:var(--verde)"><svg class="ic" aria-hidden="true"><use href="#ic-trofeu"/></svg> ${brl(n.valor_ganho)}</b>` : 'ainda não ganho') : ''}
       <div class="fc"><div class="fc-r"><span class="fc-rot">Município</span>
         <span class="fc-val">${esc([n.municipio, n.uf].filter(Boolean).join(' · ')) || '<i>—</i>'}</span></div></div>
       <div class="fc"><div class="fc-r"><span class="fc-rot">Origem</span>
@@ -1157,7 +1297,7 @@ function corpoDrawer(n, obs, carregando){
             <option value="anexo_edital">Anexo do edital (TR, itens, planilha)</option>
           </select>
           <input type="file" id="ed-arq" multiple>
-          <button class="btn-ed" id="ed-bt" onclick="anexarEdital(${n.id})">📎 Anexar</button>
+          <button class="btn-ed" id="ed-bt" onclick="anexarEdital(${n.id})"><svg class="ic" aria-hidden="true"><use href="#ic-clipe"/></svg> Anexar</button>
         </div>` : '<div class="salvo">só quem grava pode anexar.</div>'}
         <div class="salvo" id="ed-msg"></div>
       </div>
@@ -1221,7 +1361,7 @@ function corpoDrawer(n, obs, carregando){
         <div id="prop-lista"><div class="salvo">carregando…</div></div>
         ${editavel ? `<div class="prop-novo">
           <input type="file" id="prop-arq" accept="application/pdf">
-          <button class="btn-ed" id="prop-bt" onclick="anexarProposta(${n.id})">📎 Anexar proposta</button>
+          <button class="btn-ed" id="prop-bt" onclick="anexarProposta(${n.id})"><svg class="ic" aria-hidden="true"><use href="#ic-clipe"/></svg> Anexar proposta</button>
         </div><div class="salvo" id="prop-msg"></div>`
         : '<div class="salvo">só quem grava pode anexar proposta.</div>'}
       </div>
@@ -1260,7 +1400,7 @@ function corpoDrawer(n, obs, carregando){
             <option value="retorno_precos">Retorno de preços</option>
           </select>
           <input type="file" id="ata-arq" accept="application/pdf">
-          <button class="btn-ed" id="ata-bt" onclick="anexarAta(${n.id})">📎 Anexar</button>
+          <button class="btn-ed" id="ata-bt" onclick="anexarAta(${n.id})"><svg class="ic" aria-hidden="true"><use href="#ic-clipe"/></svg> Anexar</button>
         </div><div class="salvo" id="ata-msg"></div>`
         : '<div class="salvo">só quem grava pode anexar documento.</div>'}
       </div>
@@ -1339,7 +1479,7 @@ async function carregarLembretes(id){
     pintaTarefasLivres(id);
   }catch(e){
     // erro NÃO vira "nenhum lembrete": alguém concluiria que não há nada agendado
-    box.innerHTML = '<div class="salvo" style="color:var(--vermelho-700)">⚠️ não consegui ler os lembretes deste negócio.</div>';
+    box.innerHTML = '<div class="salvo" style="color:var(--vermelho-700)"><svg class="ic" aria-hidden="true"><use href="#ic-alerta"/></svg> não consegui ler os lembretes deste negócio.</div>';
     return;
   }
   pintaLembretes(id);
@@ -1382,13 +1522,13 @@ function pintaLembretes(id){
   // O automático vem PRIMEIRO e marcado como automático: quem lê precisa saber que ninguém
   // digitou aquilo — e que apagar não é uma opção, porque não há o que apagar.
   const cabeca = auto ? `<div class="lem" style="border-color:${auto.urgencia?'var(--ambar)':'var(--linha)'}">
-      <div style="width:16px;text-align:center">📅</div>
+      <div style="width:16px;text-align:center"><svg class="ic" aria-hidden="true"><use href="#ic-calendario"/></svg></div>
       <div><div class="t">${esc(auto.titulo)}
           ${auto.urgencia==='hoje' ? '<b style="color:var(--ambar)"> · É HOJE</b>'
             : auto.urgencia==='amanha' ? '<b style="color:var(--ambar)"> · é amanhã</b>' : ''}</div>
         <div class="q">${esc(auto.quandoTxt)} · <i>automático — abertura da sessão</i></div>
         <div style="margin-top:6px"><button class="btn sec mini" onclick="event.stopPropagation();avisarNoZap(${id})"
-          title="abre o WhatsApp com a mensagem pronta — você só escolhe o contato">📱 avisar no zap</button></div>
+          title="abre o WhatsApp com a mensagem pronta — você só escolhe o contato"><svg class="ic" aria-hidden="true"><use href="#ic-telefone"/></svg> avisar no zap</button></div>
       </div>
       <span class="prio" style="color:var(--azul-claro);border-color:var(--azul-claro)">sessão</span>
     </div>` : '';
@@ -1584,7 +1724,7 @@ function pintaProposta(id){
         <span class="n" onclick="abrirAnexo('${esc(a.arquivo_path)}')" title="abrir">${esc(a.arquivo_nome)}</span>
         <span class="q">${esc(new Date(a.enviado_em).toLocaleDateString('pt-BR'))}${a.enviado_por?' · '+esc(String(a.enviado_por).split('@')[0]):''}${a.bytes?' · '+(a.bytes/1024).toFixed(0)+' KB':''}</span>
       </div>`).join('')
-      + `<div style="margin-top:10px"><button class="btn-ed" onclick="conferirProposta(${id})" id="conf-bt">⚖️ Conferir a v${ANEXOS[0].versao} contra o teto CMED</button></div>`
+      + `<div style="margin-top:10px"><button class="btn-ed" onclick="conferirProposta(${id})" id="conf-bt"><svg class="ic" aria-hidden="true"><use href="#ic-balanca"/></svg> Conferir a v${ANEXOS[0].versao} contra o teto CMED</button></div>`
     : '<div class="salvo">Nenhuma proposta anexada ainda.</div>';
 
   pintaConferencias(id);
@@ -1716,7 +1856,7 @@ async function conferirProposta(id){
     pintaConferencia(id);
     await carregarProposta(id);
     carregar().then(pinta);   // o selo do card lê a conferência mais nova
-  }catch(e){ msg.textContent = '⚠️ ' + e.message; }
+  }catch(e){ msg.textContent = '<svg class="ic" aria-hidden="true"><use href="#ic-alerta"/></svg> ' + e.message; }
   if(bt) bt.disabled = false;
 }
 
@@ -1806,8 +1946,8 @@ function pintaConferencia(id){
       </tr>`).join('')
     + `</tbody></table></div>
        <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
-         <button class="btn-ed sec" onclick="imprimirConferencia(${id})">🖨️ Relatório (imprimir/PDF)</button>
-         <button class="btn-ed sec" onclick="excelConferencia()">⬇ Baixar Excel</button>
+         <button class="btn-ed sec" onclick="imprimirConferencia(${id})"><svg class="ic" aria-hidden="true"><use href="#ic-impressora"/></svg> Relatório (imprimir/PDF)</button>
+         <button class="btn-ed sec" onclick="excelConferencia()"><svg class="ic" aria-hidden="true"><use href="#ic-baixar"/></svg> Baixar Excel</button>
        </div>`;
 }
 
@@ -1856,7 +1996,7 @@ function imprimirConferencia(id){
     +   (n.orgao ? esc(n.orgao) + ' · ' : '') + (n.numero ? 'nº ' + esc(n.numero) : '')
     +   '<br>proposta: ' + esc(anexo.arquivo_nome) + ' (versão ' + anexo.versao + ')'
     +   '<br>conferida em ' + esc(quando.toLocaleString('pt-BR')) + '</div>'
-    + '<div class="acao"><button onclick="window.print()">🖨️ Imprimir / PDF</button></div>'
+    + '<div class="acao"><button onclick="window.print()">Imprimir / PDF</button></div>'
     + '<div class="placar">'
     +   '<div><b class="ok">' + res.ok + '</b>dentro do teto</div>'
     +   '<div><b class="acima">' + res.acima + '</b>ACIMA do teto</div>'
@@ -1950,19 +2090,19 @@ function selaOrigem(n){
   const o = String(n.origem || '');
   if(o === 'manual'){
     return '<h4>Procedência</h4><div class="salvo">'
-      + '📝 <b>Incluída à mão</b>' + (n.criado_por ? ' por ' + esc(String(n.criado_por).split('@')[0]) : '')
+      + '<svg class="ic" aria-hidden="true"><use href="#ic-nota"/></svg> <b>Incluída à mão</b>' + (n.criado_por ? ' por ' + esc(String(n.criado_por).split('@')[0]) : '')
       + (n.criado_em ? ' em ' + esc(new Date(n.criado_em).toLocaleDateString('pt-BR')) : '')
       + '<br>Não veio do PNCP — os dados são os que foram digitados aqui. Para conferir, o caminho '
       + 'é o portal de origem' + (n.portal ? ' (' + esc(n.portal) + ')' : '') + '.</div>';
   }
   if(o === 'calendario_2025'){
     return '<h4>Procedência</h4><div class="salvo">'
-      + '📅 <b>Importada do Calendário 2025</b><br>Veio da planilha que a equipe mantinha antes do '
+      + '<svg class="ic" aria-hidden="true"><use href="#ic-calendario"/></svg> <b>Importada do Calendário 2025</b><br>Veio da planilha que a equipe mantinha antes do '
       + 'sistema. O valor total está lá; o detalhe por item, em geral, não.</div>';
   }
   if(o === 'licitacoes'){
     return '<h4>Procedência</h4><div class="salvo">'
-      + '🏛️ <b>Do PNCP</b>, pela tela de Licitações' + (n.numero ? ' · nº ' + esc(n.numero) : '')
+      + '<svg class="ic" aria-hidden="true"><use href="#ic-orgao"/></svg> <b>Do PNCP</b>, pela tela de Licitações' + (n.numero ? ' · nº ' + esc(n.numero) : '')
       + '<br>Os dados vieram do índice oficial e podem ser conferidos lá.</div>';
   }
   return o ? '<h4>Procedência</h4><div class="salvo">origem: ' + esc(o) + '</div>' : '';
@@ -2020,7 +2160,7 @@ function abrirFormManual(){
          Quem inclui à mão está com o edital aberto na frente — é o momento em que ele existe no
          computador da pessoa. Pedir pra anexar depois é pedir pra ela procurar de novo, e é
          assim que negócio fica sem edital. -->
-    <div class="fm-c" style="margin-top:10px"><label>📎 Edital e anexos</label>
+    <div class="fm-c" style="margin-top:10px"><label><svg class="ic" aria-hidden="true"><use href="#ic-clipe"/></svg> Edital e anexos</label>
       <input type="file" id="m-arqs" multiple accept="application/pdf,.pdf,.xlsx,.xls,.doc,.docx">
       <div class="salvo" style="margin-top:4px">O <b>primeiro</b> arquivo entra como <b>edital</b>;
         os demais como <b>anexo do edital</b> (TR, relação de itens, planilhas). Dá pra trocar depois na ficha.</div></div>
@@ -2119,7 +2259,7 @@ async function salvarManual(){
         window._anexosQueFalharam = falhou;
         setTimeout(() => {
           const cx = document.getElementById('ed-msg');
-          if(cx) cx.innerHTML = '<b style="color:var(--vermelho-700)">⚠️ O negócio foi criado, mas '
+          if(cx) cx.innerHTML = '<b style="color:var(--vermelho-700)"><svg class="ic" aria-hidden="true"><use href="#ic-alerta"/></svg> O negócio foi criado, mas '
             + falhou.length + ' arquivo(s) NÃO subiram:</b><br>'
             + falhou.map(x => '· ' + esc(x.nome) + ' — ' + esc(x.motivo)).join('<br>')
             + '<br>Anexe de novo aqui embaixo.';
@@ -2268,8 +2408,8 @@ function pintaPainelGanhas(qual){
 
   p.innerHTML = '<div class="pk-topo"><b>' + titulo + ' · ' + linhas.length + ' negócio(s)</b>'
       + '<span style="margin-left:auto;display:flex;gap:8px">'
-      + '<button class="btn-ed sec" onclick="excelGanhas()">⬇ Excel</button>'
-      + '<button class="btn-ed sec" onclick="imprimirGanhas()">🖨️ Imprimir</button>'
+      + '<button class="btn-ed sec" onclick="excelGanhas()"><svg class="ic" aria-hidden="true"><use href="#ic-baixar"/></svg> Excel</button>'
+      + '<button class="btn-ed sec" onclick="imprimirGanhas()"><svg class="ic" aria-hidden="true"><use href="#ic-impressora"/></svg> Imprimir</button>'
       + '<button class="btn-ed sec" onclick="fecharPainel()">fechar</button></span></div>'
     + contexto
     + '<div class="salvo" style="margin:8px 0">'
@@ -2319,7 +2459,7 @@ function imprimirGanhas(){
     + '<div style="color:#555;margin-top:6px">' + linhas.length + ' negócio(s) · taxa de vitória '
     +   esc(k.taxaTxt) + ' (' + k.ganhos.length + ' ganhas de ' + k.decididas + ' decididas)'
     +   '<br>gerado em ' + new Date().toLocaleString('pt-BR') + '</div>'
-    + '<div class="acao"><button onclick="window.print()">🖨️ Imprimir / PDF</button></div>'
+    + '<div class="acao"><button onclick="window.print()">Imprimir / PDF</button></div>'
     + '<table><thead><tr><th>Órgão</th><th>Nº</th><th>Município</th><th>Abertura</th><th class="n">Itens</th><th class="n">Valor ganho</th></tr></thead><tbody>'
     + linhas.map(n => { const g = ITENS_GANHOS_MAPA[n.id] || {};
         return '<tr><td>' + esc(String(n.orgao||'—').slice(0,60)) + '</td><td>' + esc(n.numero||'—') + '</td>'
@@ -2418,25 +2558,25 @@ function acoesDaFicha(n){
     // >>> O leitor de edital é do PILOTO: quem não tem permissão nem vê o botão. Esconder botão
     //     NÃO é a permissão — quem impede é a edge function, que confere o JWT no servidor e
     //     responde 403. Isto aqui só evita oferecer o que vai ser negado.
-    edital:     { rot: '📄 Ler edital (IA)', fn: `lerEditalIA(${n.id})`, pode: podeLerEdital(),
+    edital:     { rot: '<svg class="ic" aria-hidden="true"><use href="#ic-documento"/></svg> Ler edital (IA)', fn: `lerEditalIA(${n.id})`, pode: podeLerEdital(),
                   dica: 'lê o PDF do edital com IA — cada leitura tem custo e fica registrada' },
     // O teto CMED é decidido na hora do preço, e a hora do preço é aqui: quem está com a ficha do
     // pregão aberto é quem vai cotar. O Conferidor já existe; isto é atalho, não segunda tela.
-    cmed:       { rot: '⚖️ Conferir preços (CMED)', fn: `location.href='fpmed_conferidor.html'`, pode: true,
+    cmed:       { rot: '<svg class="ic" aria-hidden="true"><use href="#ic-balanca"/></svg> Conferir preços (CMED)', fn: `location.href='fpmed_conferidor.html'`, pode: true,
                   dica: 'confere a proposta contra o teto legal da CMED' },
     // AÇÃO DA FASE HABILITAÇÃO: recurso, esclarecimento e contrarrazão são AS PEÇAS, que já
     // existem com a conta de dias úteis. Este botão é ATALHO COM CONTEXTO, não uma segunda tela:
     // ele leva os dados do certame e a tela de Peças faz o resto. Duplicar as Peças aqui criaria
     // o par que diverge — e o que diverge, nelas, é prazo legal.
-    pecas:      { rot: '⚖️ Recurso / esclarecimento', fn: `irParaPecas(${n.id})`, pode: true,
+    pecas:      { rot: '<svg class="ic" aria-hidden="true"><use href="#ic-balanca"/></svg> Recurso / esclarecimento', fn: `irParaPecas(${n.id})`, pode: true,
                   dica: 'abre as Peças jurídicas com os dados deste certame preenchidos' },
-    documentos: { rot: '📄 Documentos', fn: `location.href='fpmed_documentos.html'`, pode: true,
+    documentos: { rot: '<svg class="ic" aria-hidden="true"><use href="#ic-documento"/></svg> Documentos', fn: `location.href='fpmed_documentos.html'`, pode: true,
                   dica: 'certidões e documentos de habilitação' },
-    zap:        { rot: '📱 Avisar no zap', fn: `avisarNoZap(${n.id})`, pode: !!n.abertura,
+    zap:        { rot: '<svg class="ic" aria-hidden="true"><use href="#ic-telefone"/></svg> Avisar no zap', fn: `avisarNoZap(${n.id})`, pode: !!n.abertura,
                   dica: 'abre o WhatsApp com a mensagem da sessão pronta' },
-    ata:        { rot: '🏆 Gerenciamento de Ata', fn: `abaFicha(document.querySelector('[data-aba=ata]'),'ata')`, pode: true,
+    ata:        { rot: '<svg class="ic" aria-hidden="true"><use href="#ic-trofeu"/></svg> Gerenciamento de Ata', fn: `abaFicha(document.querySelector('[data-aba=ata]'),'ata')`, pode: true,
                   dica: 'documentos da ata, itens ganhos e mapa de preços' },
-    arquivar:   { rot: n.arquivado ? '↩ Devolver ao funil' : '📥 Arquivar',
+    arquivar:   { rot: n.arquivado ? '↩ Devolver ao funil' : '<svg class="ic" aria-hidden="true"><use href="#ic-entrada"/></svg> Arquivar',
                   fn: n.arquivado ? `desarquivar(${n.id})` : `arquivar(${n.id})`, pode: true,
                   dica: n.arquivado ? 'devolve pro funil' : 'tira do funil, mantém no histórico' },
   };
@@ -2504,7 +2644,7 @@ function stepper(n){
         : ' · última etapa'}
       <!-- O QUE FAZER AGORA — uma frase, e não uma lista de tarefas. Lista vira checklist, e o
            checklist fixo já saiu desta tela em 11/08 porque ninguém usava. Uma frase se lê. -->
-      <div class="agora-faz">👉 ${esc(focoDa(n.estagio).faz)}</div>
+      <div class="agora-faz"><svg class="ic" aria-hidden="true"><use href="#ic-seta"/></svg> ${esc(focoDa(n.estagio).faz)}</div>
       <span class="salvo" style="display:block;margin-top:6px">clique numa etapa para mover o negócio — fica no histórico</span>
     </div>
   </div>`;
@@ -2674,10 +2814,10 @@ function pintaBotoesAta(id, porCat){
     +   'bloqueada — nunca entregue pela metade.</div>'
     + '<div style="display:flex;gap:8px;flex-wrap:wrap">'
     + (temGanhos
-        ? `<button class="btn-ed" onclick="lerAtaIA(${id},'itens-ganhos')">🏆 O que eu ganhei</button>`
+        ? `<button class="btn-ed" onclick="lerAtaIA(${id},'itens-ganhos')"><svg class="ic" aria-hidden="true"><use href="#ic-trofeu"/></svg> O que eu ganhei</button>`
         : '<span class="salvo">Anexe <b>Itens ganhos</b> ou <b>Ata da sessão</b> para ler o que foi ganho.</span>')
     + (temMapa
-        ? `<button class="btn-ed sec" onclick="lerAtaIA(${id},'mapa-precos')">📉 Mapa de preços da disputa</button>`
+        ? `<button class="btn-ed sec" onclick="lerAtaIA(${id},'mapa-precos')"><svg class="ic" aria-hidden="true"><use href="#ic-queda"/></svg> Mapa de preços da disputa</button>`
         : '<span class="salvo">Anexe <b>Ata da sessão</b> ou <b>Retorno de preços</b> para montar o mapa.</span>')
     + '</div>';
 }
@@ -2743,7 +2883,7 @@ function pintaItensGanhos(id){
     +   '</div>'
     // A DIFERENÇA, quando existe, aparece aqui — no lugar onde os dois números estão juntos.
     +   (Math.abs(dif) >= 0.01
-        ? '<div class="salvo" style="margin-top:6px;color:var(--ambar-700)"><b>⚠️ Conferir:</b> valor da ficha '
+        ? '<div class="salvo" style="margin-top:6px;color:var(--ambar-700)"><b><svg class="ic" aria-hidden="true"><use href="#ic-alerta"/></svg> Conferir:</b> valor da ficha '
           + brl(n.valor_ganho) + ' · soma dos itens ' + brl(soma) + ' — diferença de ' + brl(Math.abs(dif)) + '.</div>'
         : '')
     + '</div>'
@@ -2832,7 +2972,7 @@ async function lerAtaIA(id, tarefa){
 
     RELATORIO_ATA = { tarefa, anexo, dados: j.dados, custo: j, negocio: id };
     if(tarefa === 'itens-ganhos') pintaGanhos(id); else pintaMapa(id);
-  }catch(e){ saida.innerHTML = '<div class="aviso-err salvo" style="color:var(--vermelho-700)">⚠️ ' + esc(e.message) + '</div>'; }
+  }catch(e){ saida.innerHTML = '<div class="aviso-err salvo" style="color:var(--vermelho-700)"><svg class="ic" aria-hidden="true"><use href="#ic-alerta"/></svg> ' + esc(e.message) + '</div>'; }
 }
 
 function tokenSessaoNeg(){
@@ -2856,7 +2996,7 @@ function custoDaLeitura(j){
   return '<div class="salvo" style="margin-top:10px">'
     + 'custo desta leitura: <b>' + (j.brl != null ? 'R$ ' + Number(j.brl).toFixed(2) : 'US$ ' + Number(j.usd||0).toFixed(4)) + '</b>'
     + (j.registrado === false
-        ? ' · <b style="color:var(--vermelho-700)">⚠️ NÃO entrou no contador</b>' + (j.regErro ? ' (' + esc(j.regErro) + ')' : '')
+        ? ' · <b style="color:var(--vermelho-700)"><svg class="ic" aria-hidden="true"><use href="#ic-alerta"/></svg> NÃO entrou no contador</b>' + (j.regErro ? ' (' + esc(j.regErro) + ')' : '')
         : (j.leituraId ? ' · registrada com o nº ' + j.leituraId : ''))
     + '</div>';
 }
@@ -2881,7 +3021,7 @@ function pintaGanhos(id){
   const y = num(d.itens_no_documento);
 
   saida.innerHTML =
-      '<div class="aviso-err salvo" style="color:var(--ambar-700);margin-bottom:8px">⚠️ <b>Confira contra o documento antes de usar.</b> '
+      '<div class="aviso-err salvo" style="color:var(--ambar-700);margin-bottom:8px"><svg class="ic" aria-hidden="true"><use href="#ic-alerta"/></svg> <b>Confira contra o documento antes de usar.</b> '
     +   'Isto foi lido por IA. O número que importa conferir é simples: o documento tem quantos itens?</div>'
     + '<h4>O que ganhamos</h4>'
     + '<div class="salvo" style="margin-bottom:8px">'
@@ -3015,7 +3155,7 @@ function pintaMapa(id){
   const perto = perdidos.filter(l => l.difPct != null && l.difPct <= 5).length;
 
   saida.innerHTML =
-      '<div class="aviso-err salvo" style="color:var(--ambar-700);margin-bottom:8px">⚠️ <b>Confira contra a ata antes de usar.</b> '
+      '<div class="aviso-err salvo" style="color:var(--ambar-700);margin-bottom:8px"><svg class="ic" aria-hidden="true"><use href="#ic-alerta"/></svg> <b>Confira contra a ata antes de usar.</b> '
     +   'Isto foi lido por IA. As diferenças em R$ e % foram calculadas aqui, com aritmética — a IA só copiou os valores.</div>'
     + '<h4>Mapa de preços da disputa</h4>'
     + '<div class="salvo" style="margin-bottom:8px">'
@@ -3043,8 +3183,8 @@ function pintaMapa(id){
         ? '<div class="salvo" style="margin-top:8px;color:var(--ambar-700)"><b>Não consegui ler ('+d.nao_consegui_ler.length+'):</b> '
           + d.nao_consegui_ler.map(esc).join(' · ') + '</div>' : '')
     + `<div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
-        <button class="btn-ed sec" onclick="imprimirMapa(${id})">🖨️ Relatório (imprimir/PDF)</button>
-        <button class="btn-ed sec" onclick="excelMapa()">⬇ Baixar Excel</button>
+        <button class="btn-ed sec" onclick="imprimirMapa(${id})"><svg class="ic" aria-hidden="true"><use href="#ic-impressora"/></svg> Relatório (imprimir/PDF)</button>
+        <button class="btn-ed sec" onclick="excelMapa()"><svg class="ic" aria-hidden="true"><use href="#ic-baixar"/></svg> Baixar Excel</button>
       </div>`
     + custoDaLeitura(RELATORIO_ATA.custo);
   RELATORIO_ATA.linhas = linhas;
@@ -3071,7 +3211,7 @@ function imprimirMapa(id){
     + '<div>' + esc(emp.razaoSocial || emp.nome || '') + '</div>'
     + '<div style="color:#555;margin-top:6px">' + (n.orgao ? esc(n.orgao) + ' · ' : '') + (n.numero ? 'nº ' + esc(n.numero) : '')
     +   '<br>documento: ' + esc(RELATORIO_ATA.anexo.arquivo_nome) + ' · gerado em ' + new Date().toLocaleString('pt-BR') + '</div>'
-    + '<div class="acao"><button onclick="window.print()">🖨️ Imprimir / PDF</button></div>'
+    + '<div class="acao"><button onclick="window.print()">Imprimir / PDF</button></div>'
     + '<table><thead><tr><th>Nº</th><th>Item</th><th>Nosso preço</th><th>Vencedor</th><th>Preço dele</th><th>Diferença</th><th>Situação</th></tr></thead><tbody>'
     + L.map(l => '<tr><td>' + esc(l.n) + '</td><td>' + esc(String(l.descricao||'').slice(0,80)) + '</td>'
         + '<td class="n">' + money(l._nosso) + '</td><td>' + esc(String(l.vencedor||'—').slice(0,34)) + '</td>'
@@ -3202,7 +3342,7 @@ function pintaCredenciamentos(id){
       <div class="passos">
         ${CRED_FASES.filter(f => f.k !== c.status)
           .map(f => `<button onclick="mudaCredenciamento(${c.id},'${f.k}',${id})">→ ${esc(f.n)}</button>`).join('')}
-        <button onclick="cartaCredenciamento(${c.id})" title="monta o pedido pronto pra enviar">📝 Gerar o pedido</button>
+        <button onclick="cartaCredenciamento(${c.id})" title="monta o pedido pronto pra enviar"><svg class="ic" aria-hidden="true"><use href="#ic-nota"/></svg> Gerar o pedido</button>
       </div>
       ${trilha.length > 1 ? `<div class="trilha"><b>Trilha</b> (escrita pelo banco, não se apaga)<br>
         ${trilha.map(h => esc(new Date(h.quando).toLocaleDateString('pt-BR')) + ' · '
@@ -3320,7 +3460,7 @@ function cartaCredenciamento(credId){
     + (falta.length ? '<div class="falta"><b>Falta no cadastro da empresa: ' + esc(falta.join(', ')) + '.</b><br>'
         + 'O texto abaixo está com o lugar marcado entre «». Complete no cadastro e gere de novo — '
         + 'carta com dado em branco é carta que se envia sem ver.</div>' : '')
-    + '<div class="acao"><button onclick="window.print()">🖨️ Imprimir / PDF</button></div>'
+    + '<div class="acao"><button onclick="window.print()">Imprimir / PDF</button></div>'
     + '<pre>' + esc(corpo) + '</pre></body></html>');
   janela.document.close();
 }
@@ -3372,7 +3512,7 @@ async function criarLembrete(id){
     msg.textContent = '';
     await carregarLembretes(id);
     pintaNotif();                       // o sino passa a contar este lembrete na hora
-  }catch(e){ msg.textContent = '⚠️ ' + e.message; }
+  }catch(e){ msg.textContent = '<svg class="ic" aria-hidden="true"><use href="#ic-alerta"/></svg> ' + e.message; }
   bt.disabled = false;
 }
 async function marcarLembrete(negId, id, feito){
@@ -3481,7 +3621,7 @@ async function salvarCampo(id, k){
     // data e continuaria vendo o negócio no dia velho — e concluiria que não salvou.
     pinta(); pintaNotif();
   }catch(e){
-    msg.textContent = '⚠️ não salvou: ' + e.message;
+    msg.textContent = '<svg class="ic" aria-hidden="true"><use href="#ic-alerta"/></svg> não salvou: ' + e.message;
     bt.disabled = false;
   }
 }
@@ -3564,7 +3704,7 @@ function pintaNotif(){
       <div class="q">${h ? h + ' · ' : ''}${esc(x.orgao || x.objeto || 'negócio')}</div>
       <div class="s">${esc([x.portal, x.numero, x.municipio].filter(Boolean).join(' · '))}
         ${zap ? `<span onclick="event.stopPropagation();avisarNoZap(${x.id})" title="abre o WhatsApp com a mensagem pronta"
-             style="margin-left:8px;cursor:pointer;color:var(--verde)">📱 avisar no zap</span>` : ''}</div></a>`;
+             style="margin-left:8px;cursor:pointer;color:var(--verde)"><svg class="ic" aria-hidden="true"><use href="#ic-telefone"/></svg> avisar no zap</span>` : ''}</div></a>`;
   };
   let h = '';
   if(n.hoje.length)   h += `<div class="nf-sec">abre hoje</div>` + n.hoje.map(x=>linha(x,'hoje',true)).join('');
@@ -3576,13 +3716,13 @@ function pintaNotif(){
   //    pessoa esta olhando pode estar INCOMPLETA — ela precisa saber disso antes de decidir o
   //    que disputar, e nao depois de rolar seis avisos.
   if(COLETA_SINO === 'erro'){
-    h = '<div class="nf-sec">coleta</div><div class="nf-vazio">⚠️ Não consegui ler o estado da coleta, então <b>não sei</b> se o índice está em dia.</div>' + h;
+    h = '<div class="nf-sec">coleta</div><div class="nf-vazio"><svg class="ic" aria-hidden="true"><use href="#ic-alerta"/></svg> Não consegui ler o estado da coleta, então <b>não sei</b> se o índice está em dia.</div>' + h;
   } else if(window.AlarmeColeta){
     const va = AlarmeColeta.avaliar(COLETA_SINO, new Date());
     if(va){
       h = '<div class="nf-sec">a busca de licitações</div>'
         + `<a class="nf ${va.nivel==='grave'?'hoje':''}" href="fpmed_licitacoes.html">
-             <div class="q">${va.nivel==='grave'?'⛔':'⚠️'} ${esc(va.titulo)}</div>
+             <div class="q">${va.nivel==='grave'?'<svg class="ic" aria-hidden="true"><use href="#ic-alerta"/></svg>':'<svg class="ic" aria-hidden="true"><use href="#ic-alerta"/></svg>'} ${esc(va.titulo)}</div>
              <div class="s">${esc(va.detalhe)}</div></a>`
         + h;
     }
@@ -3593,13 +3733,13 @@ function pintaNotif(){
   //        que abre hoje ainda dá pra correr atrás; habilitação vencida na hora da sessão, não.
   if(DOCS === 'erro'){
     // mesma regra do resto do sino: falha de leitura vira "não sei", nunca "está tudo certo"
-    h = '<div class="nf-sec">documentos</div><div class="nf-vazio">⚠️ Não consegui ler os documentos, então <b>não sei</b> se há certidão vencendo.</div>' + h;
+    h = '<div class="nf-sec">documentos</div><div class="nf-vazio"><svg class="ic" aria-hidden="true"><use href="#ic-alerta"/></svg> Não consegui ler os documentos, então <b>não sei</b> se há certidão vencendo.</div>' + h;
   } else if(Array.isArray(DOCS)){
     const ruins = DOCS.filter(d => d.situacao === 'vencido' || d.situacao === 'vencendo');
     if(ruins.length){
       h = '<div class="nf-sec">habilitação — resolver antes da próxima sessão</div>'
         + ruins.slice(0,6).map(d => `<a class="nf ${d.situacao==='vencido'?'hoje':''}" href="fpmed_documentos.html">
-             <div class="q">${d.situacao==='vencido' ? '⛔' : '⚠️'} ${esc(d.nome)}</div>
+             <div class="q">${d.situacao==='vencido' ? '<svg class="ic" aria-hidden="true"><use href="#ic-alerta"/></svg>' : '<svg class="ic" aria-hidden="true"><use href="#ic-alerta"/></svg>'} ${esc(d.nome)}</div>
              <div class="s">${d.situacao==='vencido'
                  ? 'venceu há ' + Math.abs(d.dias_para_vencer) + ' dia(s)'
                  : 'vence em ' + d.dias_para_vencer + ' dia(s)'}</div></a>`).join('')
@@ -3609,7 +3749,7 @@ function pintaNotif(){
   // ── LEMBRETES ── entram DEPOIS das sessões e antes do resto: sessão tem hora marcada pelo
   //    órgão e não se remarca; lembrete é compromisso interno, e esse a empresa controla.
   if(LEM_SINO === 'erro'){
-    h += '<div class="nf-sec">lembretes</div><div class="nf-vazio">⚠️ Não consegui ler os lembretes, então <b>não sei</b> o que está agendado.</div>';
+    h += '<div class="nf-sec">lembretes</div><div class="nf-vazio"><svg class="ic" aria-hidden="true"><use href="#ic-alerta"/></svg> Não consegui ler os lembretes, então <b>não sei</b> o que está agendado.</div>';
   } else if(Array.isArray(LEM_SINO) && LEM_SINO.length){
     const agora = new Date();
     h += '<div class="nf-sec">lembretes e tarefas agendados</div>'
@@ -3619,7 +3759,7 @@ function pintaNotif(){
           // coisas diferentes de quem lê, e um rótulo só faria as duas parecerem a mesma.
           const eTarefa = l.tipo === 'tarefa';
           return `<a class="nf ${atrasado?'hoje':''}" onclick="irPara(${l.negocio_id})">
-            <div class="q">${atrasado?'⏰':(eTarefa?'✔':'🔔')} ${esc(l.titulo)}</div>
+            <div class="q">${atrasado?'<svg class="ic" aria-hidden="true"><use href="#ic-relogio"/></svg>':(eTarefa?'✔':'<svg class="ic ic-g" aria-hidden="true"><use href="#ic-sino"/></svg>')} ${esc(l.titulo)}</div>
             <div class="s">${eTarefa?'tarefa · ':''}${q.toLocaleString('pt-BR')}${atrasado?' · atrasad'+(eTarefa?'a':'o'):''} · prioridade ${esc(l.prioridade)}</div></a>`;
         }).join('');
   }
@@ -3627,7 +3767,7 @@ function pintaNotif(){
         avisos. Sessão é hoje, certidão vence em dias, credenciamento arrasta semanas. Pôr no
         topo o que se resolve devagar empurraria pra baixo o que se resolve hoje. */
   if(CRED_SINO === 'erro'){
-    h += '<div class="nf-sec">credenciamentos</div><div class="nf-vazio">⚠️ Não consegui ler os credenciamentos, então <b>não sei</b> se há pedido parado.</div>';
+    h += '<div class="nf-sec">credenciamentos</div><div class="nf-vazio"><svg class="ic" aria-hidden="true"><use href="#ic-alerta"/></svg> Não consegui ler os credenciamentos, então <b>não sei</b> se há pedido parado.</div>';
   } else if(Array.isArray(CRED_SINO) && CRED_SINO.length){
     h += `<div class="nf-sec">credenciamento sem resposta há mais de ${CRED_DIAS_PARADO} dias</div>`
       + CRED_SINO.slice(0,8).map(c => {
@@ -3636,7 +3776,7 @@ function pintaNotif(){
           // e pode ter nascido antes de qualquer negócio. Aí o item informa e não navega.
           const vai = c.negocio_id ? `onclick="irPara(${c.negocio_id})"` : '';
           return `<a class="nf" ${vai}>
-            <div class="q">🏭 ${esc(c.industria)}</div>
+            <div class="q"><svg class="ic" aria-hidden="true"><use href="#ic-industria"/></svg> ${esc(c.industria)}</div>
             <div class="s">${esc(credNome(c.status))} há ${d} dia(s)${c.negocio_id?'':' · sem negócio de origem'}</div></a>`;
         }).join('');
   }
@@ -3667,7 +3807,7 @@ function setVis(v){
   ['lista','quadros','agenda'].forEach(x => {
     const b = document.getElementById('v-'+x); if(b) b.classList.toggle('on', x===v);
   });
-  document.querySelectorAll('header nav a').forEach((a,i) => a.classList.toggle('on', (i===0&&v==='lista')||(i===1&&v==='quadros')||(i===2&&v==='agenda')));
+  document.querySelectorAll('header nav a').forEach((a,i) => a.classList.toggle('on', (i===0&&v==='quadros')||(i===1&&v==='lista')||(i===2&&v==='agenda')));
   pinta();
 }
 /* ── "IR PRO FUNIL" — do cartão da lista para a coluna dele nos Quadros ──────────────────────
@@ -3760,7 +3900,12 @@ function formManualDaSessao(){
    ativo porque esse é o padrão; se a pessoa tinha escolhido Agenda, o header diria uma coisa e o
    corpo mostraria outra — e navegação que mente sobre onde você está é pior que navegação feia. */
 document.querySelectorAll('header nav a').forEach((a,i) =>
-  a.classList.toggle('on', (i===0&&VIS==='lista')||(i===1&&VIS==='quadros')||(i===2&&VIS==='agenda')));
+  a.classList.toggle('on', (i===0&&VIS==='quadros')||(i===1&&VIS==='lista')||(i===2&&VIS==='agenda')));
+/* >>> DÍVIDA DECLARADA: este mapa por ÍNDICE existe em DOIS lugares (aqui e no `setVis`), e ele
+   me mordeu agora — trocar a ordem dos três links no HTML acendia o link errado, e só um dos
+   dois mapas tinha sido corrigido. O certo é o link carregar a própria visão
+   (`data-vis="quadros"`) e os dois lerem dela. Não troco no fim da fatia: mexer no mecanismo de
+   navegação depois do laço visual é entregar sem medir de novo. */
 
 function _aoAutenticar(){ carregar().then(() => { pinta(); formManualDaSessao(); }); abreLeitorNaBarra(); }
 if(window.gmAuth) _aoAutenticar();

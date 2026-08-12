@@ -145,7 +145,8 @@ ok('49. e o vazio do sino menciona os credenciamentos (senao ele afirma o que na
 
 // ══════════ 6. O PEDIDO (o documento) ══════════
 ok('50. *** existe o botao "Gerar o pedido" em cada credenciamento ***',
-  /cartaCredenciamento\(\$\{c\.id\}\)/.test(N) && /📝 Gerar o pedido/.test(N));
+  // (12/08: o 📝 virou ícone SVG. O botão é que é a promessa, não o pictograma.)
+  /cartaCredenciamento\(\$\{c\.id\}\)/.test(N) && /Gerar o pedido/.test(N));
 ok('51. *** os dados da empresa saem do cliente.config.js, nao digitados aqui ***',
   /const emp = \(window\.LIMEDTEC_CLIENTE && LIMEDTEC_CLIENTE\.empresa\) \|\| \{\};/.test(N)
   && !/47\.110\.418/.test(N));

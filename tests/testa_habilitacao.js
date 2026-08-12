@@ -103,7 +103,10 @@ ok('23. *** existe o botao na fileira do rodape da ficha ***',
   // fileira ganhava um botão — duas vezes no mesmo dia, sem nada do que ele protege ter mudado.
   // Agora ele recorta a fileira e pergunta se o botão está DENTRO dela, que é o que ele sempre
   // quis dizer: ação da ficha mora na fileira do rodapé, e não solta no meio da tela.
-  /pecas:      \{ rot: '⚖️ Recurso \/ esclarecimento', fn: `irParaPecas\(\$\{n\.id\}\)`/.test(N));
+  // >>> E EM 12/08 ELE QUEBROU PELA 3a VEZ, agora porque o rotulo perdeu o emoji (os icones da
+  //     tela viraram SVG). Mesma licao das outras duas: ele cobrava o ACABAMENTO do rotulo, e a
+  //     promessa e a acao existir DENTRO da fileira do rodape.
+  /pecas:\s*\{ rot: '[^']*Recurso \/ esclarecimento', fn: `irParaPecas\(\$\{n\.id\}\)`/.test(N));
 ok('24. *** ele NAO duplica as Pecas: leva contexto e abre a tela que ja existe ***',
   /location\.href = 'fpmed_pecas\.html';/.test(N) && /atalho com contexto/i.test(N));
 ok('25. ...e o motivo (o que diverge, nelas, e prazo legal)',

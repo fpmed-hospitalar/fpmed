@@ -176,7 +176,9 @@ const FILEIRA = (() => {
   const j = N.indexOf('fecharDrawer()', i); return j < 0 ? '' : N.slice(i, j + 40);
 })();
 ok('55. *** o botao esta na FILEIRA DO RODAPE da ficha (junto de Documentos/Fechar) ***',
-  /edital:     \{ rot: '📄 Ler edital \(IA\)', fn: `lerEditalIA\(\$\{n\.id\}\)`, pode: podeLerEdital\(\)/.test(N) && /fecharDrawer\(\)/.test(N));
+  // >>> 12/08: o rotulo perdeu o emoji (os icones da tela viraram SVG). O que importa e a acao
+  //     estar na fileira, com o nome e a permissao — nao o pictograma antes do nome.
+  /edital:\s*\{ rot: '[^']*Ler edital \(IA\)', fn: `lerEditalIA\(\$\{n\.id\}\)`, pode: podeLerEdital\(\)/.test(N) && /fecharDrawer\(\)/.test(N));
 ok('56. *** e ele NEM APARECE pra quem nao tem a permissao do piloto ***',
   /pode: podeLerEdital\(\)/.test(N) && /visiveis = foco\.acoes\.filter\(k => A\[k\] && A\[k\]\.pode\)/.test(N));
 ok('57. *** mas a tela DIZ que esconder botao nao e a permissao ***',

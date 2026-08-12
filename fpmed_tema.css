@@ -410,6 +410,23 @@
 .fp-skeleton--titulo{ height: 20px; width: 40%; margin-bottom: var(--esp-3); }
 .fp-skeleton--cartao{ height: 96px; margin-bottom: var(--esp-3); border-radius: var(--raio-cartao); }
 
+/* SÓ PRA QUEM LÊ EM VOZ ALTA. O esqueleto é `aria-hidden` — cinco blocos cinzas
+   pulsando não têm o que dizer, e lidos em voz alta viram ruído. Mas então a
+   tela ficaria MUDA durante o carregamento, que é pior: quem não enxerga o
+   brilho não recebe nada. Esta classe carrega a frase que o esqueleto mostra
+   com desenho.
+   >>> `clip-path` e 1px em vez de `display:none`: o que está `none` não é lido
+       por leitor de tela nenhum — some pros dois lados, que é o defeito
+       clássico de quem tenta esconder e acaba apagando. */
+.fp-so-leitor{
+  position: absolute; width: 1px; height: 1px;
+  margin: 0; padding: 0; overflow: hidden;
+  /* a receita antiga levava `margin:-1px`, que existia por causa do `clip:rect()`.
+     Com `clip-path` ele não é preciso — e a suíte do tema estava certa em barrar:
+     -1px ali não era espaçamento, era resíduo de uma técnica aposentada. */
+  clip-path: inset(50%); white-space: nowrap; border: 0;
+}
+
 /* Vazio COM AÇÃO. Estado vazio que só diz "nenhum resultado" é um beco:
    o usuário fica sem saber se o sistema quebrou ou se ele buscou errado.
    Todo vazio nosso diz o que houve e oferece a próxima jogada. */

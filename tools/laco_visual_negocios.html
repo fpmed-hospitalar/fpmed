@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<!-- ══════════════════════════════════════════════════════════════════════════════════════════
+     LAÇO VISUAL DO NEGÓCIOS — as 3 larguras do adendo, medidas de verdade.
+
+     >>> POR QUE IFRAME E NÃO REDIMENSIONAR A JANELA: o Chrome tem largura MÍNIMA de janela, e
+         por causa dela o 390 (celular) nunca era alcançado — a medição de mobile passava sem
+         nunca ter acontecido. O iframe recebe a largura exata que eu mandar.
+     >>> POR QUE POR HTTP E NÃO file://: dois arquivos file:// são origens opacas diferentes, e
+         o pai não consegue ler o documento do filho. Sem isso não há medição nenhuma, só print.
+
+     COMO RODAR:
+       node <scratchpad>/servidor.js        (serve C:\fpmed em http://localhost:8099)
+       abrir http://localhost:8099/tools/laco_visual_negocios.html
+     ══════════════════════════════════════════════════════════════════════════════════════════ -->
+<html lang="pt-BR"><head><meta charset="UTF-8"><title>Laço visual · Negócios</title>
+<style>
+ body{margin:0;background:#0f1720;color:#e6edf5;font:13px/1.5 system-ui,sans-serif}
+ h1{font-size:15px;margin:14px 16px 4px}
+ .nota{margin:0 16px 12px;color:#8fa3b8;font-size:12px;max-width:900px}
+ .tiras{display:flex;gap:18px;align-items:flex-start;overflow-x:auto;padding:0 16px 24px}
+ .tira h2{font-size:12px;margin:0 0 6px;color:#8fa3b8;font-weight:600}
+ .tira{flex:0 0 auto}
+ iframe{border:1px solid #22374f;background:#fff;height:820px;display:block}
+ #placar{margin:0 16px 18px;font:12px/1.6 ui-monospace,monospace;white-space:pre;
+   background:#132234;border:1px solid #22374f;border-radius:8px;padding:12px 14px;max-width:1100px}
+</style></head><body>
+<h1>Laço visual — Negócios (item 5)</h1>
+<p class="nota">Cada quadro abaixo é a tela real, na largura real. O placar mede o que o olho não
+mede sozinho: rolagem horizontal (o defeito que a fatia anterior teve no 390), a cor de fundo
+efetiva, se o menu montou, se sobrou emoji-ícone e se o esqueleto apareceu antes do dado.</p>
+<div id="placar">medindo…</div>
+<div class="tiras" id="tiras"></div>
+
+<script>
+const LARGURAS = [390, 1366, 1920];
+
+/* ══ O DADO ══════════════════════════════════════════════════════════════════════════════════
+   A tela lê `negocios` com a RLS ligada, então sem sessão ela vem VAZIA — e medir o layout de
+   um funil vazio não mede o funil. Aqui os negócios são INJETADOS depois que a tela carrega,
+   com a forma e os tamanhos do dado real (nomes de órgão longos, objeto comprido, valores altos,
+   as 5 fases, situação, arquivado). Está DECLARADO no relatório que o dado é injetado: é layout
+   com conteúdo realista, e não uma sessão logada. */
+const ORGAOS = ['SECRETARIA DE ESTADO DA SAÚDE DE GOIÁS','PREFEITURA MUNICIPAL DE APARECIDA DE GOIÂNIA',
+  'HOSPITAL DAS CLÍNICAS DA UFG','FUNDO MUNICIPAL DE SAÚDE DE RIO VERDE','SECRETARIA MUNICIPAL DE SAÚDE DE ANÁPOLIS'];
+const OBJ = ['Registro de preços para aquisição futura de medicamentos da atenção básica e RENAME',
+  'Aquisição de soluções parenterais de grande volume e correlatos',
+  'Material médico-hospitalar diversos para a rede municipal',
+  'Aquisição de albumina humana 20% e imunoglobulina',
+  'Correlatos, insumos e материал cirúrgico para o hospital de urgências'];
+const FASES = ['oportunidade','qualificacao','disputa','classificacao','contrato'];
+function fabricar(){
+  const hoje = new Date(); const out = [];
+  for (let i = 0; i < 23; i++) {
+    const d = new Date(hoje.getTime() + (i % 9 - 3) * 864e5);
+    out.push({ id: 9000 + i, estagio: FASES[i % 5], arquivado: false,
+      orgao: ORGAOS[i % 5], objeto: OBJ[i % 5],
+      municipio: ['Goiânia','Aparecida de Goiânia','Rio Verde','Anápolis','Palmas'][i % 5],
+      uf: ['GO','GO','GO','GO','TO'][i % 5],
+      portal: ['Compras.gov.br','BLL','LICITANET','BNC','Portal de Compras Públicas'][i % 5],
+      modalidade: 'Pregão Eletrônico', numero: (10 + i) + '/2026',
+      abertura: d.toISOString().slice(0, 16).replace('T', ' '),
+      valor_ganho: i % 5 === 4 ? 1284500.5 + i * 1000 : null,
+      situacao: i === 7 ? 'suspenso' : 'normal',
+      anotacoes: i % 4 === 0 ? 'conferir embalagem com o fornecedor' : null,
+      empresa_id: null, tarefas: null });
+  }
+  return out;
+}
+
+function medir(w){
+  return new Promise((resolve) => {
+    const tira = document.createElement('div'); tira.className = 'tira';
+    tira.innerHTML = '<h2>' + w + 'px</h2>';
+    const f = document.createElement('iframe'); f.width = w; f.src = '/fpmed_negocios.html';
+    tira.appendChild(f); document.getElementById('tiras').appendChild(tira);
+
+    f.onload = () => {
+      const W = f.contentWindow, D = f.contentDocument;
+      // 1. ESQUELETO: ele tem que existir ANTES de qualquer dado (é isso que ele resolve)
+      const temEsqueleto = !!D.querySelector('.fp-skeleton');
+      setTimeout(() => {
+        try {
+          /* ══ A INJEÇÃO PRECISA SER POR `eval`, E ISSO ME CUSTOU UMA RODADA ═══════════════
+             `W.NEG = ...` NÃO funciona: a tela declara `let NEG` no topo de um <script>
+             clássico, e `let`/`const` de topo criam binding de SCRIPT, não propriedade do
+             `window`. Atribuir em `W.NEG` cria uma segunda variável, invisível pro código —
+             e o placar mostrou exatamente isso: 5 colunas e ZERO cartões, ou seja, a tela
+             pintou um funil vazio e eu quase li aquilo como "o layout está certo".
+             `W.eval` roda no escopo global, onde o binding existe. */
+          W.eval('NEG = ' + JSON.stringify(fabricar()) + '; ERRO = null; if (typeof EMPRESAS === "undefined") EMPRESAS = []; pinta();');
+        } catch (e) { /* registrado no placar pelo campo `pintou` */ }
+        setTimeout(() => {
+          const el = D.documentElement, corpo = D.getElementById('corpo');
+          const est = W.getComputedStyle(D.body);
+          // emoji-pictograma que tenha sobrado no que está DESENHADO agora
+          const txt = D.body.innerText || '';
+          const emoji = (txt.match(/[\u{1F300}-\u{1FAFF}]|[\u2600-\u27BF]\uFE0F/gu) || []);
+          resolve({
+            largura: w,
+            rolagemH: el.scrollWidth > w ? (el.scrollWidth - w) + 'px A MAIS' : 'nenhuma',
+            scrollWidth: el.scrollWidth,
+            fundo: est.backgroundColor,
+            fonte: est.fontFamily.split(',')[0],
+            menuMontou: !!D.querySelector('.lm-menu, [data-limedtec-menu] nav, [data-limedtec-menu] a'),
+            barraPortal: !!D.querySelector('nav.portal'),
+            esqueletoAntes: temEsqueleto,
+            colunas: D.querySelectorAll('.kb .col').length,
+            cartoes: D.querySelectorAll('.kb .card').length,
+            iconesSvg: D.querySelectorAll('svg.ic').length,
+            emojiSobrando: emoji.length ? emoji.join(' ') : 'nenhum',
+            pintou: !!corpo && corpo.innerHTML.indexOf('fp-skeleton') === -1,
+          });
+        }, 700);
+      }, 900);
+    };
+  });
+}
+
+(async () => {
+  const r = [];
+  for (const w of LARGURAS) r.push(await medir(w));
+  const linhas = ['LARGURA        390            1366           1920'];
+  const campos = ['rolagemH','scrollWidth','fundo','fonte','menuMontou','barraPortal',
+                  'esqueletoAntes','colunas','cartoes','iconesSvg','emojiSobrando','pintou'];
+  for (const c of campos) {
+    linhas.push(c.padEnd(15) + r.map(x => String(x[c]).padEnd(15)).join(''));
+  }
+  document.getElementById('placar').textContent = linhas.join('\n');
+  window.__LACO = r;
+})();
+</script>
+</body></html>

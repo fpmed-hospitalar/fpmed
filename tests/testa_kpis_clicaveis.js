@@ -121,7 +121,8 @@ ok('44. *** negocio antigo do calendario NAO fica com tabela vazia ***',
 ok('45. ...com o motivo (tabela vazia pareceria erro de carregamento)',
   /faria alguém procurar um defeito que não existe/.test(uc(N)));
 ok('46. *** quando os dois numeros divergem, a tela MOSTRA a diferenca ***',
-  /⚠️ Conferir:<\/b> valor da ficha /.test(N) && /soma dos itens /.test(N));
+  // (12/08: o ⚠️ virou ícone SVG. A promessa é o AVISO existir e nomear os dois números.)
+  /Conferir:<\/b> valor da ficha /.test(N) && /soma dos itens /.test(N));
 ok('47. ...com o motivo (escolher em qual acreditar e de quem confere, nao da tela)',
   /essa escolha é de quem confere, não da tela/.test(uc(N)));
 ok('48. *** e a lista das ganhas tambem mostra a divergencia ***', /— conferir<\/div>/.test(N));

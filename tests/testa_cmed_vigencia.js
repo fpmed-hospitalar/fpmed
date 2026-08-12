@@ -123,7 +123,9 @@ const FILEIRA = (() => {
   const j = N.indexOf('fecharDrawer()', i); return j < 0 ? '' : N.slice(i, j + 40);
 })();
 ok('44. *** existe "Conferir preços (CMED)" na fileira do rodape da ficha ***',
-  /cmed:       \{ rot: '⚖️ Conferir preços \(CMED\)', fn: `location\.href='fpmed_conferidor\.html'`/.test(N));
+  // >>> 12/08: o rotulo perdeu o emoji (D11 — os icones da tela viraram SVG). A promessa e que a
+  //     acao EXISTE na fileira do rodape com esse nome, nao qual pictograma vem antes dele.
+  /cmed:\s*\{ rot: '[^']*Conferir preços \(CMED\)', fn: `location\.href='fpmed_conferidor\.html'`/.test(N));
 ok('45. ...e ele e ATALHO, nao uma segunda tela de conferencia',
   /O Conferidor já existe; isto é atalho/.test(uc(N)));
 ok('46. ...com o motivo de estar aqui (a hora do preço é a hora do pregão)',

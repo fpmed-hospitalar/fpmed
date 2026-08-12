@@ -17,7 +17,7 @@
  */
 'use strict';
 
-const VERSAO = 'limedtec-fpmed-2026-08-11-24';
+const VERSAO = 'limedtec-fpmed-2026-08-12-25';
 const CACHE = 'limedtec-shell-' + VERSAO;
 
 // A CASCA DA FPMED. Lista MONTADA A MAO conferindo `git ls-files` (= o que o Pages serve),
@@ -48,6 +48,16 @@ const SHELL = [
   './limedtec-config.js',
   './limedtec-tema.js',                // faltava: o red test de 05/08 mostrou 21 itens sem ele,
                                        // e sem ele o tema do cliente nao pinta offline (404).
+  /* ══ OS DOIS QUE FALTAVAM, E JA ESTAVAM NO AR SEM CASCA (achado em 12/08) ══════════════════
+     A tela Encontrar foi publicada ONTEM (bd35ff1) dependendo dos dois, e nenhum entrou aqui.
+     Offline, ela abriria SEM O TEMA (todo `var(--token)` sem valor: texto invisivel, fundo
+     branco cru) e SEM O MENU — ou seja, sem navegacao nenhuma, porque a barra do portal foi
+     removida no mesmo commit. O sintoma nao apareceu porque com rede o 404 nao acontece.
+     >>> A LICAO E DA CASA E ESTA ESCRITA NO PROPRIO REPO: "a casca e lista branca, e tela que
+         depende de script fora dela quebra offline". Publiquei uma tela nova sem reler a lista.
+     Entram os dois agora, junto com o Negocios, que depende dos mesmos. */
+  './fpmed_tema.css',                  // o design system: sem ele, NENHUM token tem valor
+  './limedtec-menu.js',                // a navegacao do modulo — sem ele a tela vira beco
   './limedtec-licenca.js',
   './limedtec-papeis.js',              // a matriz de papeis que a tela de Usuarios imprime
   './limedtec-sessao.js',              // portao de perfil da tela de Usuarios (so ela o carrega)
