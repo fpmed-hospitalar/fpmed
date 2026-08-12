@@ -154,6 +154,16 @@ const PARES = [
   ['vermelho-800', 'vermelho-50', 'aviso de erro'],
   ['vermelho-700', 'branco',  'mensagem de erro do campo'],
   ['cinza-800', 'verde-500',  'texto sobre o verde da marca (pilula cheia)'],
+  // AS CINCO TENUES (12/08, item 6): fundo da pilula do calendario mensal. Elas
+  // nascem de uma medicao que REPROVOU o caminho obvio - pilula pintada com a
+  // cor cheia da etapa da 2,94:1 na 2 e 4,42:1 na 4. Sem estes cinco asserts,
+  // o dia em que alguem "escurecer um pouquinho" uma tenue pra ela aparecer
+  // mais volta a produzir o mesmo defeito, e de novo sem ninguem ver.
+  ['cinza-800', 'etapa-1-tenue', 'pilula do calendario · Oportunidade'],
+  ['cinza-800', 'etapa-2-tenue', 'pilula do calendario · Qualificacao'],
+  ['cinza-800', 'etapa-3-tenue', 'pilula do calendario · Disputa'],
+  ['cinza-800', 'etapa-4-tenue', 'pilula do calendario · Habilitacao'],
+  ['cinza-800', 'etapa-5-tenue', 'pilula do calendario · Ata'],
 ];
 let n = 32;
 for (const [fg, bg, ctx] of PARES) {
@@ -171,6 +181,45 @@ ok(n + '. o verde da marca reprova como texto sobre branco (por isso texto verde
 ok(n + '. e o azul da marca tambem reprova (por isso link usa o 700 e botao usa o 600)',
   contraste(token('azul-500'), token('branco')) < 4.5,
   Math.round(contraste(token('azul-500'), token('branco')) * 100) / 100); n++;
+
+// A PROVA PELO AVESSO DAS TENUES, e ela e a que da sentido as cinco de cima:
+// as tenues existem PORQUE a cor cheia reprova como fundo de texto. Se um dia
+// alguem trocar as cinco cores de etapa por versoes claras o suficiente pra
+// passar em AA, este assert cai - e cair aqui e o aviso de que a pilula do
+// calendario pode voltar a ser pintada com a cor cheia, sem a camada extra.
+// (Sem ele, os cinco asserts acima medem o resultado e escondem o motivo.)
+ok(n + '. a cor CHEIA da etapa continua reprovando como fundo de texto (e por isso a tenue existe)',
+  [1, 2, 3, 4, 5].some(i => contraste(token('cinza-800'), token('etapa-' + i)) < 4.5),
+  [1, 2, 3, 4, 5].map(i => 'etapa-' + i + ': ' + Math.round(contraste(token('cinza-800'), token('etapa-' + i)) * 100) / 100)); n++;
+/* ══ E ESTE ASSERT NASCEU VERMELHO, o que e o motivo de ele existir ═══════════
+   Eu ia cobrar 3:1 da barra lateral da pilula (WCAG 1.4.11, componente nao
+   textual) achando que era formalidade. A medicao:
+
+       etapa-1 sobre branco .. 2,67:1     etapa-4 .. 4,17:1
+       etapa-2 ............... 2,94:1     etapa-5 .. 3,02:1
+       etapa-3 ............... 3,62:1
+
+   DUAS das cinco reprovam. Ou seja: a cor da etapa, sozinha, NAO alcanca o
+   minimo pra identificar coisa nenhuma - nem no kanban, onde ela ja vive desde
+   12/08, nem na pilula do calendario.
+
+   >>> O QUE ISSO **NAO** AUTORIZA: escurecer as cinco. Elas sao identidade
+       visual vinda do prototipo, e o projeto ja tem uma regra escrita que
+       resolve o problema pela raiz - "a cor nunca anda sozinha: o NOME da etapa
+       aparece junto". Cor redundante nao precisa de 3:1; cor SOZINHA precisaria,
+       e nunca alcancaria sem deixar de ser a cor da marca.
+   >>> ENTAO O ASSERT MUDOU DE ALVO, e ficou com mais dente: enquanto qualquer
+       uma das cinco estiver abaixo de 3:1, a suite do calendario e OBRIGADA a
+       provar que a pilula carrega o nome da etapa. Se um dia alguem escurecer
+       as cinco de verdade, a exigencia cai sozinha - o assert melhora junto com
+       o tema em vez de virar detector de mudanca. */
+const fracas = [1, 2, 3, 4, 5]
+  .map(i => ({ i, r: Math.round(contraste(token('etapa-' + i), token('branco')) * 100) / 100 }))
+  .filter(x => x.r < 3);
+const calTexto = (() => { try { return R('tests', 'testa_calendario.js'); } catch (_) { return ''; } })();
+ok(n + '. cor de etapa abaixo de 3:1 obriga o nome junto, e a suite do calendario cobra isso',
+  fracas.length === 0 || /nome da etapa|nomeFase/.test(calTexto),
+  { abaixoDe3: fracas.map(x => 'etapa-' + x.i + ': ' + x.r), suiteDoCalendario: calTexto ? 'existe' : 'NAO EXISTE' }); n++;
 
 // ── 8. os estados que o adendo exige desenhados ──────────────────────────────
 // "Todo estado desenhado" nao e frase de efeito: estado que nao existe no tema

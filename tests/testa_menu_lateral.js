@@ -103,8 +103,39 @@ ok(n + '. o modulo da tela aberta esta marcado com aria-current',
   /aria-current="page"/.test(html) && (html.match(/aria-current/g) || []).length === 1); n++;
 ok(n + '. e a marcacao nao e so cor: tem a classe que aplica fundo, cor E barra',
   /class="lm-on"/.test(html)); n++;
-ok(n + '. o Calendario aparece DESLIGADO com "em breve" (nao some, e nao leva a 404)',
-  /lm-off/.test(html) && /em breve/.test(html) && !/href="[^"]*calendario/.test(html)); n++;
+/* ══ ESTE ASSERT MUDOU DE LADO EM 12/08, e o registro importa ═══════════════════════════════
+   Ele cobrava o Calendario DESLIGADO com "em breve" — que era a verdade ate o item 6 existir.
+   Agora ele cobra o contrario: link de verdade, sem "em breve", apontando pra visao do
+   Negocios. O que NAO mudou e a regra por tras dos dois: o item ocupa o MESMO lugar na lista
+   antes e depois, porque menu que muda de tamanho a cada entrega faz a pessoa reaprender onde
+   as coisas ficam.
+   >>> E O MECANISMO DO "em breve" CONTINUA COBRADO logo abaixo, com o Favoritas. Sem isso,
+       apagar o suporte a `emBreve` do menu passaria despercebido. */
+ok(n + '. o Calendario ACENDEU: link de verdade pra visao do Negocios, sem "em breve"',
+  /href="fpmed_negocios\.html#calendario"/.test(html)
+  && !/lm-off[^>]*>\s*(<svg[\s\S]*?<\/svg>)?\s*Calend/.test(html)); n++;
+/* O "EM BREVE" FICOU SEM NENHUM MORADOR quando o Calendario acendeu — era o ultimo. Entao ele
+   passa a ser provado pelo MECANISMO, e nao por um item que por acaso esteja desligado hoje:
+   a suite poe um modulo falso na lista, monta de novo e olha o que saiu.
+   >>> POR QUE NAO APAGUEI O MECANISMO (L7 diz pra apagar codigo morto): ele nao esta morto, esta
+       VAZIO. A regra de produto que ele serve continua valendo e vai ser usada no proximo modulo
+       da fila que nascer pela metade — e ela e uma decisao ja tomada, nao um "vai que precisa".
+       Sem este assert, porem, ele quebraria em silencio e so se descobriria no dia do uso. */
+(function () {
+  const c2 = carrega('/fpmed_negocios.html');
+  c2.api.MODULOS.push({ id: 'sistema', rotulo: 'Modulo de mentira', emBreve: true });
+  const alvo2 = { attrs: {}, filhos: [], setAttribute(k, v) { this.attrs[k] = v; }, getAttribute(k) { return this.attrs[k] === undefined ? null : this.attrs[k]; }, appendChild(x) { this.filhos.push(x); } };
+  const h2 = c2.api.montar(alvo2).innerHTML;
+  ok(n + '. o mecanismo do "em breve" continua vivo: item desligado, com aviso e SEM link',
+    /lm-off/.test(h2) && /em breve/.test(h2) && /Modulo de mentira/.test(h2)
+    && !/href="[^"]*Modulo de mentira/.test(h2)); n++;
+})();
+// O menu so acende o Calendario COM o hash. Sem ele, quem responde por fpmed_negocios e o
+// Negocios — os dois acesos ao mesmo tempo seria o menu dizendo que voce esta em dois lugares.
+ok(n + '. abrir fpmed_negocios COM #calendario acende o Calendario, e nao o Negocios',
+  carrega('/fpmed_negocios.html', '#calendario').api.moduloAtual(null) === 'calendario'); n++;
+ok(n + '. e um #calendario numa OUTRA tela nao acende o Calendario (modulo e tela + hash)',
+  carrega('/fpmed_licitacoes.html', '#calendario').api.moduloAtual(null) === 'buscar'); n++;
 ok(n + '. o tema e carregado se a tela ainda nao tiver',
   c.feitos.some(x => x.tag === 'link' && /fpmed_tema\.css/.test(x.href || ''))); n++;
 

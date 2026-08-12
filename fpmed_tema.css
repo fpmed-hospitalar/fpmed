@@ -149,6 +149,31 @@
   --etapa-4: #5B7FA6;   /* Habilitação  */
   --etapa-5: #6FA32C;   /* Ata          */
 
+  /* ══ AS CINCO TÊNUES — o fundo da pílula do calendário (12/08, item 6) ══════
+     A pílula do calendário mensal precisava de FUNDO por etapa, e o comentário
+     logo acima dizia por que as cinco de cima não servem pra isso. Eu medi
+     antes de escrever, e a medição deu razão ao comentário:
+
+         texto branco sobre --etapa-2 (#D08700) ....... 2,94:1   REPROVA
+         texto --cinza-800 sobre --etapa-4 (#5B7FA6) .. 4,42:1   REPROVA por pouco
+
+     4,42 é o número perigoso: ele passa no olho e reprova na régua. É a lição
+     S12 inteira (o azul de ação que ninguém tinha medido) tentando acontecer de
+     novo, agora com cinco cores em vez de uma.
+
+     >>> ENTÃO A PÍLULA GANHOU DUAS CAMADAS, e cada uma faz uma coisa só: a
+         TÊNUE é o fundo (texto --cinza-800 por cima, ≥13:1 nas cinco) e a cor
+         CHEIA é a barra lateral, que é marcador e não texto — ali a régua é a
+         de componente (3:1), e a mais fraca das cinco dá 4,17:1 sobre branco.
+     >>> Cada uma é a cor da etapa a 14% sobre branco. Escritas por extenso, e
+         não com `color-mix`, porque token que o teste não consegue LER é token
+         que a suíte de contraste não mede — e o que não se mede volta a errar. */
+  --etapa-1-tenue: #E2F3FB;
+  --etapa-2-tenue: #F8EEDB;
+  --etapa-3-tenue: #FAE9E4;
+  --etapa-4-tenue: #E8EDF3;
+  --etapa-5-tenue: #EBF2E2;
+
   --esp-1: 4px;
   --esp-2: 8px;
   --esp-3: 12px;

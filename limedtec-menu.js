@@ -95,10 +95,23 @@
 
     { g: 'Gestão' },
     { id: 'negocios', rotulo: 'Negócios', href: 'fpmed_negocios.html', tela: 'fpmed_negocios' },
-    /* Calendário ainda não existe — é o item 6 da fila. Ele aparece DESLIGADO, com
-       "em breve", em vez de sumir: menu que muda de tamanho a cada entrega faz a
-       pessoa reaprender onde as coisas ficam. E link que leva a 404 é pior ainda. */
-    { id: 'calendario', rotulo: 'Calendário', emBreve: true },
+    /* ══ O CALENDÁRIO ACENDEU (12/08, item 6) ═══════════════════════════════════════════════
+       Ele nasceu aqui DESLIGADO, com "em breve", pra que o menu não mudasse de tamanho no dia
+       da entrega — e agora só troca de estado, no mesmo lugar da lista onde já estava.
+       >>> ELE APONTA PRA UMA VISÃO DO NEGÓCIOS, e não pra uma tela nova, porque é o MESMO
+           dado (a abertura dos negócios) respondendo outra pergunta. Uma tela separada teria
+           que reescrever a leitura paginada, o cartão, a ficha e o sino — quatro cópias que
+           envelheceriam em ritmos diferentes. É o mesmo raciocínio que fez Radar, Desertas e
+           Jornais serem âncoras dentro do Encontrar em vez de telas.
+       >>> `#calendario` NÃO É ÂNCORA DE ROLAGEM, e é a primeira que não é: a tela lê o `#` no
+           boot e abre já na VISÃO certa. Sem isso, clicar em "Calendário" cairia nos Quadros,
+           porque a tela guarda a última visão escolhida — e item de menu que leva a outro lugar
+           estraga a confiança no menu inteiro. O campo continua se chamando `ancora` porque o
+           que ele guarda é o mesmo: o `#` que identifica este módulo. Quem decide o que fazer
+           com ele é a tela de destino.
+       >>> `tela` FICA DE FORA de propósito: com ela, abrir o Negócios SEM `#` acenderia os dois
+           itens. Quem responde por `fpmed_negocios` sem hash é o Negócios. */
+    { id: 'calendario', rotulo: 'Calendário', href: 'fpmed_negocios.html#calendario', ancora: 'calendario' },
     { id: 'documentos', rotulo: 'Documentos', href: 'fpmed_documentos.html', tela: 'fpmed_documentos' },
 
     { g: 'Ferramentas' },
@@ -134,8 +147,18 @@
     if (dito) return dito;
     var arq = (window.location.pathname.split('/').pop() || '').replace(/\.html?$/i, '');
     var h = (window.location.hash || '').replace('#', '');
-    if (arq === 'fpmed_licitacoes' && h) {
-      for (var i = 0; i < MODULOS.length; i++) if (MODULOS[i].ancora === h) return MODULOS[i].id;
+    /* ══ O `#` DECIDE, E AGORA EM QUALQUER TELA (12/08, item 6) ═══════════════════════════════
+       Esta busca era travada em `fpmed_licitacoes` — o único lugar que tinha módulos dentro de
+       uma tela. Com o Calendário virando uma VISÃO do Negócios, o travamento passou a produzir
+       o defeito que o comentário lá em cima descreve: clicar em "Calendário" acendia "Negócios".
+       >>> E ELA CONFERE A TELA JUNTO COM O `#`, e não só o `#`: sem isso, um `#calendario` numa
+           tela qualquer acenderia o Calendário de outra. Módulo é (tela + hash), não hash. */
+    if (h) {
+      for (var i = 0; i < MODULOS.length; i++) {
+        var mm = MODULOS[i];
+        if (mm.ancora === h && mm.href
+            && mm.href.split('#')[0].replace(/\.html?$/i, '') === arq) return mm.id;
+      }
     }
     for (var j = 0; j < MODULOS.length; j++) if (MODULOS[j].tela === arq) return MODULOS[j].id;
     return null;

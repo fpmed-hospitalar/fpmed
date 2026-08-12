@@ -248,7 +248,7 @@ header nav a.on{background:rgba(44,169,224,.16);color:var(--azul-claro);font-wei
 /* ── agenda: o substituto direto do Calendário 2025 ── */
 .ag-dia{display:flex;align-items:baseline;gap:10px;margin:20px 0 9px;padding-bottom:6px;border-bottom:1px solid var(--linha)}
 .ag-dia .d{font-family:Montserrat;font-weight:800;font-size:15px;color:var(--cinza-800)}
-.ag-dia .sem{font-size:12px;color:var(--muted);text-transform:capitalize}
+.ag-dia .sem{font-size:12px;color:var(--muted)}
 .ag-dia .q{margin-left:auto;font-size:11.5px;color:var(--muted)}
 .ag-dia.hoje .d{color:var(--ambar-700)}
 .ag-dia.hoje .sem::after{content:' · HOJE';color:var(--ambar-700);font-weight:700;letter-spacing:.6px}
@@ -257,6 +257,139 @@ header nav a.on{background:rgba(44,169,224,.16);color:var(--azul-claro);font-wei
 .ag-lin .card{flex:1;margin-bottom:0}
 .ag-secao{margin:34px 0 4px;font-family:Montserrat;font-weight:700;font-size:12px;letter-spacing:1.4px;
   text-transform:uppercase;color:var(--muted)}
+
+/* ══ CALENDÁRIO MENSAL — item 6 da fila da reforma ════════════════════════════════════════════
+   A Agenda responde "o que vem pela frente, em ordem". O calendário responde outra pergunta, e
+   é por isso que ele existe em vez de ser um modo da Agenda: "COMO ESTÁ O MÊS?" — onde tem
+   aperto, onde tem buraco, quantas sessões caem na mesma quarta-feira. Uma é fila; a outra é
+   mapa. Quem monta proposta precisa da fila; quem decide de quais pregões participar precisa
+   do mapa.
+
+   ── AS TRÊS REFERÊNCIAS, E O QUE SAIU DE CADA UMA (Regra Zero / L11) ─────────────────────────
+   · Google Calendar (mês) — SEIS LINHAS FIXAS, sempre, mesmo que o mês caiba em cinco. Foi a
+     decisão menos óbvia e a mais valiosa: com linhas variáveis a grade muda de altura ao passar
+     de mês, o conteúdo abaixo pula, e pulo de layout é defeito nomeado (D14). Dele veio também
+     o "+N mais" quando o dia não cabe.
+   · uxpatterns.dev (Calendar View) — o erro que ele nomeia é "shipping a desktop-only density
+     model": a estratégia de celular se decide ANTES de construir, não depois. Decidida antes, e
+     está no `calEstreito()` — abaixo de 700px a grade vira a lista dos dias com sessão.
+     Dele também: as células são CONTROLES de verdade (<button>), não divs com onclick.
+   · ServiceNow Horizon (now-calendar) — a página respondeu 403 e o que usei foi o resumo da
+     busca, o que registro por honestidade: dela veio só a confirmação do "X more" no RODAPÉ da
+     célula, com a contagem do que ficou escondido.
+
+   ── E A DECISÃO QUE NÃO VEIO DE REFERÊNCIA NENHUMA ───────────────────────────────────────────
+   O calendário mostra negócio COM data de abertura. Os SEM data existem e sumiriam calados —
+   e sumir calado é o defeito que este projeto mais pagou pra aprender. Então eles são CONTADOS
+   e ditos em cima da grade, com o caminho pra vê-los. Ausência de dado não é valor de dado. */
+.cal-topo{display:flex;align-items:center;gap:var(--esp-3);flex-wrap:wrap;
+  background:var(--painel);border:1px solid var(--linha);border-radius:var(--raio-cartao);
+  padding:var(--esp-3) var(--esp-4);margin-top:var(--esp-2)}
+/* SEM `text-transform:capitalize` aqui — ver o comentário do `calNomeMes`: ele produzia
+   "Agosto De 2026". O CSS não sabe o que é preposição. */
+.cal-mes{font-family:Montserrat;font-weight:700;font-size:var(--txt-4);color:var(--cinza-800);min-width:210px}
+.cal-nav{display:flex;gap:var(--esp-1)}
+.cal-nav button,.cal-hoje{background:var(--painel2);border:1px solid var(--linha);color:var(--cinza-700);
+  border-radius:var(--raio-botao);font-family:inherit;font-size:var(--txt-1);cursor:pointer;
+  padding:var(--esp-1) var(--esp-3);transition:border-color .16s,background .16s}
+.cal-nav button{width:34px;height:30px;display:grid;place-items:center;padding:0;font-size:var(--txt-3)}
+.cal-nav .ic-volta{transform:rotate(180deg)}
+.cal-nav button:hover,.cal-hoje:hover{border-color:var(--azul-500);background:var(--azul-50)}
+.cal-nav button:focus-visible,.cal-hoje:focus-visible{outline:none;box-shadow:var(--foco)}
+.cal-conta{margin-left:auto;font-size:var(--txt-1);color:var(--muted);text-align:right;line-height:1.5}
+.cal-conta b{color:var(--cinza-800);font-family:Montserrat}
+/* O AVISO DOS SEM DATA não é erro nem sucesso: é um limite do que a tela consegue mostrar.
+   Por isso ele é uma nota discreta, e não uma faixa âmbar — pintar de atenção o que é apenas
+   uma informação verdadeira ensina a ignorar as faixas que importam. */
+.cal-nota{font-size:var(--txt-1);color:var(--muted);padding:var(--esp-2) var(--esp-1) 0;line-height:1.5}
+.cal-nota a{color:var(--azul-700);cursor:pointer;text-decoration:underline}
+
+/* ══ AS SEIS LINHAS SÃO FIXAS EM ALTURA, E NÃO SÓ EM QUANTIDADE ═════════════════════════════
+   O laço visual mediu e me corrigiu: com 6 linhas garantidas mas altura automática, a grade
+   ainda PULAVA 19px ao trocar de mês — uma semana com um dia cheio (3 pílulas + "+N mais") é
+   mais alta que uma semana vazia, e o mês seguinte tem os cheios em outro lugar.
+   >>> ERA A PROMESSA PELA METADE. "Seis linhas sempre" existe pra tela não se mexer sozinha;
+       seis linhas de altura variável entregam a contagem e não entregam o efeito. O olho não vê
+       19px como "a grade mudou de altura", vê como "a página pulou" — e é o defeito D14.
+   >>> A ALTURA É O PIOR CASO **MAIS FOLGA**, e a folga não é capricho. A célula nunca passa de 3
+       pílulas mais o "+N mais" (a pílula não quebra linha — o órgão é cortado com reticências), e
+       medido no navegador esse pior caso dá 144px cravados. Fixar em 144 deixaria folga ZERO: um
+       pixel de diferença de fonte, de zoom ou de sistema e o "+N mais" começa a ser cortado —
+       justamente no dia mais cheio, que é quando ele importa. 152px dá 8px de folga (uma unidade
+       da grade) e continua sendo altura fixa. */
+.cal-grade{display:grid;grid-template-columns:repeat(7,1fr);grid-template-rows:auto repeat(6,152px);
+  gap:1px;margin-top:var(--esp-3);
+  background:var(--cinza-200);border:1px solid var(--cinza-200);border-radius:var(--raio-cartao);
+  overflow:hidden}
+.cal-cabdia{background:var(--cinza-100);padding:var(--esp-2) var(--esp-2);font-size:var(--txt-1);
+  font-weight:600;color:var(--cinza-600);text-transform:uppercase;letter-spacing:.6px;text-align:center}
+/* `overflow:hidden` é o cinto de segurança da altura fixa: se algum dia a pílula ganhar uma
+   segunda linha, ela é cortada em vez de esticar a grade e voltar com o pulo pela porta dos
+   fundos. Cortar é visível; esticar não é. */
+.cal-cel{background:var(--branco);padding:var(--esp-2);display:flex;flex-direction:column;
+  gap:var(--esp-1);overflow:hidden}
+/* FIM DE SEMANA COM FUNDO MAIS FRIO: pregão em sábado é raro, e o olho que procura "que dia da
+   semana isso cai" acha a coluna útil mais rápido quando as duas inúteis recuam. */
+.cal-cel.fds{background:var(--cinza-50)}
+/* DIA DE OUTRO MÊS NÃO SOME: sessão em 31/07 importa pra quem olha a 1ª semana de agosto. Ele
+   fica esmaecido — presente, e claramente de fora. */
+.cal-cel.fora{background:var(--cinza-50);opacity:.62}
+.cal-cel.hoje{box-shadow:inset 0 0 0 2px var(--ambar-500)}
+.cal-cel.sel{box-shadow:inset 0 0 0 2px var(--azul-600)}
+.cal-cel.hoje.sel{box-shadow:inset 0 0 0 2px var(--azul-600),inset 0 0 0 4px var(--ambar-100)}
+.cal-dia{background:none;border:0;font-family:Montserrat;font-weight:700;font-size:var(--txt-2);
+  color:var(--cinza-700);cursor:pointer;padding:0 var(--esp-1);border-radius:var(--raio-botao);
+  align-self:flex-start;line-height:1.6;min-width:26px;text-align:left}
+.cal-dia:hover{background:var(--azul-50);color:var(--azul-700)}
+.cal-dia:focus-visible{outline:none;box-shadow:var(--foco)}
+.cal-cel.hoje .cal-dia{color:var(--ambar-700)}
+.cal-cel.fora .cal-dia{color:var(--cinza-500);font-weight:400}
+
+/* ── A PÍLULA ────────────────────────────────────────────────────────────────────────────────
+   DUAS CAMADAS, e a medição é que mandou: fundo na TÊNUE da etapa (texto --cinza-800 por cima,
+   ≥13:1) e barra lateral na cor CHEIA. Pílula pintada com a cor cheia dava 2,94:1 na etapa 2 —
+   ver o bloco das tênues no fpmed_tema.css e os asserts do testa_tema.
+   >>> A HORA VEM PRIMEIRO e em negrito. A pergunta de quem olha o dia é "que horas?", nunca
+       "de quem?" — o órgão é o desempate, e por isso é o que se corta quando falta largura. */
+.cal-pil{display:flex;align-items:baseline;gap:var(--esp-1);width:100%;text-align:left;
+  border:0;border-left:3px solid var(--cinza-400);border-radius:var(--raio-botao);
+  padding:3px var(--esp-2);font-family:inherit;font-size:var(--txt-1);color:var(--cinza-800);
+  cursor:pointer;transition:filter .14s,box-shadow .14s}
+.cal-pil:hover{filter:brightness(.96);box-shadow:var(--sombra-1)}
+.cal-pil:focus-visible{outline:none;box-shadow:var(--foco)}
+.cal-pil .h{font-weight:700;font-variant-numeric:tabular-nums;flex:0 0 auto}
+.cal-pil .q{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* PARADO (cancelado/suspenso) no calendário segue a mesma regra do card: esmaecido e presente. */
+.cal-pil.parado{opacity:.55}
+.cal-mais{background:none;border:0;font-family:inherit;font-size:var(--txt-1);color:var(--azul-700);
+  cursor:pointer;padding:2px var(--esp-1);text-align:left;align-self:flex-start;border-radius:var(--raio-botao)}
+.cal-mais:hover{background:var(--azul-50);text-decoration:underline}
+.cal-mais:focus-visible{outline:none;box-shadow:var(--foco)}
+
+/* ── O DIA ABERTO ────────────────────────────────────────────────────────────────────────────
+   Ele abre ABAIXO da grade, e não num balão flutuante. Balão de calendário é o clássico que
+   fica meio fora da tela na última coluna e na última linha — e aqui embaixo cabe o CARTÃO DE
+   VERDADE, o mesmo da lista, com as mesmas ações. Uma peça a menos pra manter. */
+.cal-dia-painel{background:var(--painel);border:1px solid var(--linha);border-radius:var(--raio-cartao);
+  padding:var(--esp-4);margin-top:var(--esp-3)}
+.cal-dia-painel .cab{display:flex;align-items:baseline;gap:var(--esp-2);margin-bottom:var(--esp-3)}
+.cal-dia-painel .cab .d{font-family:Montserrat;font-weight:800;font-size:var(--txt-3);color:var(--cinza-800)}
+.cal-dia-painel .cab .sem{font-size:var(--txt-1);color:var(--muted)}
+.cal-dia-painel .cab .x{margin-left:auto;background:none;border:0;color:var(--muted);cursor:pointer;
+  font-size:var(--txt-2);padding:var(--esp-1) var(--esp-2);border-radius:var(--raio-botao)}
+.cal-dia-painel .cab .x:hover{background:var(--cinza-100);color:var(--cinza-800)}
+.cal-dia-painel .cab .x:focus-visible{outline:none;box-shadow:var(--foco)}
+
+/* ── CELULAR: a grade de 7 colunas não cabe, e espremer não é estratégia ─────────────────────
+   Em 390px cada coluna teria ~50px — nem a hora caberia. A referência nomeia isso como erro
+   ("desktop-only density model") e prescreve um resumo alternativo. O nosso resumo é a lista
+   dos dias COM sessão daquele mês: mesma pergunta ("como está o mês?"), respondida em coluna.
+   >>> A NAVEGAÇÃO DE MÊS CONTINUA IGUAL, porque é ela que define o recorte nos dois formatos. */
+.cal-lista{margin-top:var(--esp-3)}
+@media(max-width:700px){
+  .cal-mes{font-size:var(--txt-3);min-width:0}
+  .cal-conta{margin-left:0;width:100%;text-align:left}
+}
 
 .vazio{text-align:center;padding:46px 20px;color:var(--muted);font-size:13.5px;
   background:var(--branco);border:1px dashed var(--cinza-300);border-radius:var(--raio-cartao)}
@@ -546,10 +679,18 @@ textarea.anot:focus{border-color:var(--azul)}
              agora é o QUADRO, que é a visão de abertura. Rótulo que diz "funil" apontando pra
              lista faria a pessoa procurar o funil no lugar errado. Os três nomes passaram a
              dizer o FORMATO, que é o que muda entre eles. -->
+    <!-- ══ A DÍVIDA DO `data-vis` FOI PAGA AQUI (12/08, item 6) ═══════════════════════════════
+         O mapa visão→link era por ÍNDICE e vivia em DOIS lugares (o `setVis` e o boot). Ele já
+         tinha mordido uma vez: trocar a ordem dos links acendeu o link errado, porque só um dos
+         dois mapas foi corrigido. Acrescentar o QUARTO link seria a terceira cópia do mesmo
+         mapa — e a hora de pagar uma dívida dessas é quando ela ia crescer, não "depois".
+         >>> Agora o link CARREGA a própria visão, e os dois lugares leem dela. Acrescentar uma
+             quinta visão amanhã é uma linha de HTML e nada de JavaScript. -->
     <nav>
-      <a onclick="setVis('quadros')" class="on">Quadros</a>
-      <a onclick="setVis('lista')">Lista</a>
-      <a onclick="setVis('agenda')">Agenda</a>
+      <a data-vis="quadros" onclick="setVis('quadros')" class="on">Quadros</a>
+      <a data-vis="lista" onclick="setVis('lista')">Lista</a>
+      <a data-vis="calendario" onclick="setVis('calendario')">Calendário</a>
+      <a data-vis="agenda" onclick="setVis('agenda')">Agenda</a>
     </nav>
     <!-- SININHO: o que abre hoje e amanhã. Fica no header do módulo porque é aqui que o dia
          de trabalho acontece — a Agenda mostra o mês, o sino mostra o que não pode passar. -->
@@ -711,8 +852,20 @@ const novasTarefas = () => TAREFAS_MODELO.map(([secao,texto]) => ({secao, texto,
    >>> E A ESCOLHA DE QUEM USA VENCE A MINHA: `setVis` guarda a última visão, e quem trabalha na
        Agenda continua caindo na Agenda amanhã. Padrão é o que vale pra quem ainda não escolheu. */
 const VIS_PADRAO = 'quadros';
+const VISOES = ['lista','quadros','agenda','calendario'];
 let NEG = [], EMPRESAS = [], VIS = (function(){
-  try { const v = localStorage.getItem('fpmed_neg_vis'); return ['lista','quadros','agenda'].includes(v) ? v : VIS_PADRAO; }
+  /* ══ QUEM CHEGA PELO MENU LATERAL MANDA MAIS QUE A ÚLTIMA ESCOLHA ══════════════════════════
+     "Calendário" é um MÓDULO no menu (limedtec-menu.js), e não uma visão escondida: quem clica
+     nele está pedindo o calendário, ponto. Se a preferência guardada vencesse, clicar em
+     "Calendário" abriria os Quadros — e um item de menu que leva a outro lugar é o defeito que
+     faz a pessoa parar de confiar no menu inteiro.
+     >>> E O ENDEREÇO NÃO É CONSUMIDO: `#calendario` continua no URL, então recarregar a página
+         (ou guardá-la nos favoritos) devolve o calendário, que é o que o endereço promete. */
+  try {
+    const daUrl = (location.hash || '').replace('#','');
+    if(VISOES.includes(daUrl)) return daUrl;
+  } catch(_) {}
+  try { const v = localStorage.getItem('fpmed_neg_vis'); return VISOES.includes(v) ? v : VIS_PADRAO; }
   catch(_) { return VIS_PADRAO; }   // navegador com armazenamento bloqueado: cai no padrão
 })(), FASE_SEL = null, ERRO = null, ABERTO = null;
 // documentos da empresa, só para o sino. `null` = ainda não li · `'erro'` = não consegui ler ·
@@ -753,6 +906,24 @@ function fmtDtH(iso){
   const d = new Date(iso); if(isNaN(d)) return null;
   return d.toLocaleDateString('pt-BR') + ' às ' + d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
 }
+/* ── "N sessões", escrito num lugar só ───────────────────────────────────────────────────────
+   >>> ESTE HELPER NASCEU DE UM DEFEITO QUE ESTAVA NO AR (achado em 12/08 pela suíte do
+       calendário, no código da AGENDA que eu não tinha tocado hoje). Ele era escrito assim:
+           ${q} sessão${q>1?'ões':''}
+       e com 3 saía "3 sessãoões" — o "ão" ficou de fora do trecho que trocava. Vivia na Agenda
+       desde 06/08, num cabeçalho de dia que ninguém lê palavra por palavra.
+   >>> A CORREÇÃO NÃO É ARRUMAR O TEXTO NOS TRÊS LUGARES, é ter um lugar. Eu ia copiar a mesma
+       linha pro calendário — e copiada, ela repetiria o defeito em mais dois pontos, agora com
+       ele já corrigido em um. É a lição S8 pelo avesso: conhecimento repetido envelhece torto.
+   >>> E A MINHA PRIMEIRA CORREÇÃO TAMBÉM SAIU ERRADA: `'sessã' + (q===1?'o':'ões')` dá
+       "sessãões", porque em português o plural de "sessão" troca o "ã" por "õ" — não acrescenta.
+       O assert pegou as duas versões erradas seguidas. Palavra inteira, sem esperteza: */
+const nSessoes = q => q + ' ' + (q === 1 ? 'sessão' : 'sessões');
+/* Sobe SÓ a primeira letra. O `text-transform:capitalize` do CSS sobe TODAS as palavras, e foi
+   assim que o laço visual encontrou "Agosto De 2026" no topo do calendário e "Quarta-Feira" no
+   painel do dia — a segunda também estava na AGENDA, desde 06/08. O CSS não sabe o que é
+   preposição nem o que é palavra composta; quem sabe é quem escreve o texto. */
+const M1 = s => !s ? s : s.charAt(0).toUpperCase() + s.slice(1);
 const DIA_SEM = ['domingo','segunda-feira','terça-feira','quarta-feira','quinta-feira','sexta-feira','sábado'];
 function rotuloDia(ymd){
   const [a,m,d] = ymd.split('-').map(Number);
@@ -939,6 +1110,7 @@ function pinta(){
   const corpo = document.getElementById('corpo');
   if(VIS === 'quadros') { corpo.innerHTML = kanban(l); ligarArrasto(); aplicarDestaque(); return; }
   if(VIS === 'agenda')  { corpo.innerHTML = agenda(l); return; }
+  if(VIS === 'calendario'){ corpo.innerHTML = calendario(l); return; }
   corpo.innerHTML = l.length ? l.slice(0,200).map(n => card(n)).join('') : vazioComAcao();
 }
 
@@ -1072,8 +1244,8 @@ function agenda(l){
       // dentro do dia, SEMPRE por hora crescente: é a ordem em que as sessões acontecem
       const doDia = porDia[d].slice().sort((a,b) => String(a.abertura).localeCompare(String(b.abertura)));
       return `<div class="ag-dia${d===hoje?' hoje':''}">
-          <span class="d">${r.data}</span><span class="sem">${r.semana}</span>
-          <span class="q">${doDia.length} sessão${doDia.length>1?'ões':''}</span></div>`
+          <span class="d">${r.data}</span><span class="sem">${M1(r.semana)}</span>
+          <span class="q">${nSessoes(doDia.length)}</span></div>`
         + doDia.map(n => `<div class="ag-lin"><div class="ag-hora">${horaDe(n.abertura)||'--:--'}</div>${card(n)}</div>`).join('');
     }).join('');
   };
@@ -1085,6 +1257,243 @@ function agenda(l){
         + bloco(passado.slice(0,200), false);
   return html;
 }
+
+// ══ [ANCORA] daqui pra baixo e o CALENDARIO MENSAL — suite propria: tests/testa_calendario.js
+// Esta linha e lida por DUAS suites pra saber onde um bloco acaba e o outro comeca. Ela e uma
+// LINHA INTEIRA e sem acento de proposito: ancora que e pedaco de frase quebra quando alguem
+// reescreve a frase, e ancora com acento quebra quando o arquivo troca de codificacao.
+/* ══════════════════════════════════════════════════════════════════════════════════════════════
+   CALENDÁRIO MENSAL — item 6 da fila da reforma
+   As decisões de desenho, com as referências que as mandaram, estão no bloco de CSS `.cal-*`.
+   Aqui fica só o que é dado e comportamento.
+
+   ── OS DADOS ANTES DO CÓDIGO (L2 / Estação 2) ────────────────────────────────────────────────
+   NENHUMA TABELA NOVA, e isso é decisão e não preguiça: o evento do calendário é a ABERTURA do
+   negócio, que já está gravada em `negocios.abertura`. Uma tabela de eventos precisaria de um
+   processo pra criar, outro pra atualizar quando a ficha muda a data, e no dia em que um deles
+   falhasse o calendário mostraria sessão em dia que já mudou — que é pior do que não mostrar.
+   É a mesma decisão já tomada na Agenda e no sino, pela mesma razão.
+   >>> A EDIÇÃO DA FICHA JÁ CHEGA AQUI DE GRAÇA: mudou a abertura, mudou o calendário, porque
+       os dois leem o mesmo campo. É o que "derivado do fato" compra.
+
+   O estado é de TELA, não de negócio, e por isso não é gravado em lugar nenhum: o mês olhado e
+   o dia aberto. Recarregar volta pro mês de hoje, que é onde a pergunta começa.
+   ══════════════════════════════════════════════════════════════════════════════════════════════ */
+let CAL_A = new Date().getFullYear(), CAL_M = new Date().getMonth(), CAL_DIA = null;
+const MAX_PIL = 3;              // acima disso, o dia mostra "+N mais" (Google Calendar)
+const CAL_ESTREITO = 700;       // abaixo daqui a grade vira lista — a estratégia decidida ANTES
+
+const _p2 = n => String(n).padStart(2,'0');
+const calYMD = (a,m,d) => a + '-' + _p2(m+1) + '-' + _p2(d);
+// Construtor LOCAL (a,m,d), nunca `new Date('YYYY-MM-DD')`: a string vira meia-noite UTC = 21h
+// do dia anterior em GO. É o mesmo defeito que arquivou uma licitação na semeadura de 06/08.
+/* "agosto de 2026" -> "Agosto de 2026". A primeira versão fazia isso com `text-transform:
+   capitalize` no CSS, e o laço visual mostrou o resultado: **"Agosto De 2026"** — o CSS
+   capitaliza TODA palavra, inclusive a preposição. Só a primeira letra, e no JavaScript, que é
+   onde dá pra dizer "a primeira" em vez de "todas". */
+const calNomeMes = (a,m) => { const s = new Date(a,m,1).toLocaleDateString('pt-BR',{month:'long',year:'numeric'});
+  return s.charAt(0).toUpperCase() + s.slice(1); };
+const calEstreito = () => { try { return window.innerWidth > 0 && window.innerWidth <= CAL_ESTREITO; }
+                            catch(_) { return false; } };
+
+/* SEIS LINHAS FIXAS, sempre — decisão do Google Calendar e a mais valiosa das três referências.
+   Um mês ocupa 4, 5 ou 6 semanas; com linhas variáveis a grade muda de altura ao trocar de mês
+   e tudo que está embaixo pula. Altura constante custa uma linha vazia em alguns meses e paga
+   com uma tela que não se mexe sozinha (D14). */
+function gradeDoMes(a, m){
+  const primeiro = new Date(a, m, 1);
+  const inicio = new Date(a, m, 1 - primeiro.getDay());   // recua até o domingo da 1ª semana
+  const hoje = hojeYMD(), cels = [];
+  for(let i = 0; i < 42; i++){
+    const d = new Date(inicio.getFullYear(), inicio.getMonth(), inicio.getDate() + i);
+    const ymd = calYMD(d.getFullYear(), d.getMonth(), d.getDate());
+    cels.push({ ymd, dia: d.getDate(), doMes: d.getMonth() === m && d.getFullYear() === a,
+                fds: d.getDay() === 0 || d.getDay() === 6, hoje: ymd === hoje });
+  }
+  return cels;
+}
+
+// negócios agrupados por dia, cada dia já em ordem de horário — a ordem em que as sessões
+// acontecem, que é a única ordem que faz sentido dentro de um dia.
+function porDiaDeAbertura(l){
+  const mapa = {};
+  (l||[]).forEach(n => { if(!n.abertura) return; const d = diaDe(n.abertura); if(!d) return;
+    (mapa[d] = mapa[d]||[]).push(n); });
+  for(const d in mapa) mapa[d].sort((x,y) => String(x.abertura).localeCompare(String(y.abertura)));
+  return mapa;
+}
+
+/* O MÊS VAZIO NÃO É UM BECO. "Nenhuma sessão em setembro" deixa a pessoa clicando ‹ › às cegas
+   pra descobrir onde tem alguma coisa. Aqui a tela PROCURA e oferece o mês mais próximo que tem
+   sessão, dizendo qual é — a busca é sobre as chaves que já estão em memória, não no banco. */
+function mesVizinhoComSessao(mapa, a, m){
+  const chaves = Object.keys(mapa).filter(d => mapa[d].length);
+  if(!chaves.length) return null;
+  const alvo = a * 12 + m;
+  let melhor = null;
+  chaves.forEach(d => {
+    const [ka, km] = d.split('-').map(Number);
+    const idx = ka * 12 + (km - 1);
+    if(idx === alvo) return;
+    const dist = Math.abs(idx - alvo);
+    if(!melhor || dist < melhor.dist) melhor = { dist, a: ka, m: km - 1 };
+  });
+  return melhor;
+}
+
+function calendario(l){
+  const mapa = porDiaDeAbertura(l);
+  const cels = gradeDoMes(CAL_A, CAL_M);
+  const noMes = cels.filter(c => c.doMes).reduce((s,c) => s + (mapa[c.ymd]||[]).length, 0);
+
+  /* ── OS SEM DATA ─────────────────────────────────────────────────────────────────────────
+     Eles não cabem num calendário — não têm dia. Mas sumir calado é como um número errado vira
+     fato consumado: quem olha a grade conclui "é isto que existe". Então eles são contados e
+     ditos, com o caminho pra vê-los. "Não sei" nunca vira zero. */
+  const semData = (l||[]).filter(n => !n.abertura).length;
+  const nota = semData
+    ? `<div class="cal-nota">${semData.toLocaleString('pt-BR')} negócio${semData>1?'s':''} sem data de abertura
+         ${semData>1?'não aparecem':'não aparece'} no calendário — um calendário só mostra o que tem dia.
+         <a onclick="setVis('lista')">Ver na lista</a></div>`
+    : '';
+
+  const topo = `<div class="cal-topo">
+      <!-- As setas saem do MESMO sprite do resto da tela (#ic-seta), e não dos glifos ‹ ›. O
+           glifo é FONTE: ele muda de espessura e de altura em cada sistema, e ao lado de ícones
+           de traço 1.8 aparece como o único desenho que não é do conjunto. A da esquerda é a
+           mesma, virada — desenhar uma segunda seta seria duas fontes de verdade pra uma flecha. -->
+      <div class="cal-nav">
+        <button type="button" onclick="calNav(-1)" title="mês anterior" aria-label="Mês anterior"><svg class="ic ic-volta" aria-hidden="true"><use href="#ic-seta"/></svg></button>
+        <button type="button" onclick="calNav(1)" title="próximo mês" aria-label="Próximo mês"><svg class="ic" aria-hidden="true"><use href="#ic-seta"/></svg></button>
+      </div>
+      <div class="cal-mes">${esc(calNomeMes(CAL_A, CAL_M))}</div>
+      <button type="button" class="cal-hoje" onclick="calHoje()">Hoje</button>
+      <div class="cal-conta"><b>${noMes.toLocaleString('pt-BR')}</b> ${noMes===1?'sessão':'sessões'} neste mês<br>
+        <span>cores por etapa — as mesmas das etiquetas acima</span></div>
+    </div>${nota}`;
+
+  if(!noMes){
+    const viz = mesVizinhoComSessao(mapa, CAL_A, CAL_M);
+    return topo + `<div class="fp-vazio">
+      <div class="fp-vazio__titulo">Nenhuma sessão em ${esc(calNomeMes(CAL_A, CAL_M))}</div>
+      <div class="fp-vazio__texto">${viz
+        ? 'O mês com sessões mais próximo daqui é ' + esc(calNomeMes(viz.a, viz.m)) + '.'
+        : 'Nenhum negócio dos filtros atuais tem data de abertura.'}</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center">
+        ${viz ? `<button class="btn-ed" onclick="calIrPara(${viz.a},${viz.m})">Ir para ${esc(calNomeMes(viz.a, viz.m))}</button>` : ''}
+        <button class="btn-ed sec" onclick="abrirFormManual()">+ Incluir licitação</button>
+      </div></div>` + painelDoDia(mapa);
+  }
+
+  return topo + (calEstreito() ? calComoLista(mapa, cels) : calComoGrade(mapa, cels)) + painelDoDia(mapa);
+}
+
+const CAL_SEMANA = ['dom','seg','ter','qua','qui','sex','sáb'];
+function calComoGrade(mapa, cels){
+  let h = '<div class="cal-grade" role="grid" aria-label="Calendário do mês">'
+        + '<div role="row" style="display:contents">'
+        + CAL_SEMANA.map(d => `<div class="cal-cabdia" role="columnheader">${d}</div>`).join('')
+        + '</div>';
+  for(let s = 0; s < 6; s++){
+    h += '<div role="row" style="display:contents">';
+    for(let i = 0; i < 7; i++){
+      const c = cels[s*7 + i], doDia = mapa[c.ymd] || [];
+      const r = rotuloDia(c.ymd);
+      const cls = ['cal-cel', c.fds?'fds':'', c.doMes?'':'fora', c.hoje?'hoje':'', CAL_DIA===c.ymd?'sel':''].filter(Boolean).join(' ');
+      h += `<div class="${cls}" role="gridcell">
+        <button type="button" class="cal-dia" onclick="calAbrirDia('${c.ymd}')"
+          aria-label="${r.data}, ${r.semana}${doDia.length?', '+nSessoes(doDia.length):', sem sessão'}"
+          title="${c.hoje?'hoje · ':''}${doDia.length?'abrir o dia':'sem sessão neste dia'}">${c.dia}</button>`
+          + doDia.slice(0, MAX_PIL).map(n => pilula(n)).join('')
+          + (doDia.length > MAX_PIL
+              ? `<button type="button" class="cal-mais" onclick="calAbrirDia('${c.ymd}')">+${doDia.length - MAX_PIL} mais</button>` : '')
+        + '</div>';
+    }
+    h += '</div>';
+  }
+  return h + '</div>';
+}
+
+/* A PÍLULA. A cor diz a etapa e o NOME DA ETAPA VIAJA JUNTO no rótulo acessível e no título —
+   nunca só a cor (regra escrita do projeto, e a única saída medida: a cor cheia da etapa não
+   alcança 3:1 sobre o cartão, ver os asserts do testa_tema). */
+function pilula(n){
+  const i = FASES.findIndex(f => f.k === n.estagio) + 1;
+  const fundo = i ? `var(--etapa-${i}-tenue)` : 'var(--cinza-100)';
+  const barra = i ? `var(--etapa-${i})` : 'var(--cinza-400)';
+  /* ── O QUE VAI ESCRITO NA PÍLULA, DEPOIS DA HORA ─────────────────────────────────────────
+     Era o ÓRGÃO, e o laço visual mostrou por que não pode ser: na largura da célula ele sai
+     "SECRETARI…" — e "SECRETARI…" não distingue coisa nenhuma, porque metade dos certames do
+     estado começa assim. Truncar o começo comum de nomes longos entrega zero informação
+     ocupando a linha inteira.
+     >>> O MUNICÍPIO CABE INTEIRO e responde a segunda pergunta de quem olha o dia: "onde?".
+         O órgão continua no `title`, no rótulo acessível e no cartão do dia aberto — ele não
+         sumiu, mudou de lugar pra um onde há largura pra lê-lo. */
+  const quem = n.municipio || n.orgao || n.portal || 'sem município';
+  const sit = n.situacao && n.situacao !== 'normal' ? n.situacao : null;
+  // A LEGENDA CARREGA O QUE NÃO COUBE. É ela que o leitor de tela lê e que o mouse revela — e é
+  // por isso que o órgão pode sair da pílula sem sair da tela.
+  const legenda = [horaDe(n.abertura)||'--:--', nomeFase(n.estagio), n.municipio, n.orgao,
+                   sit ? rotuloSituacao(sit) : null].filter(Boolean).join(' · ');
+  return `<button type="button" class="cal-pil${sit&&paradoDeVez(sit)?' parado':''}"
+      style="background:${fundo};border-left-color:${barra}"
+      onclick="event.stopPropagation();abrirDrawer(${n.id})"
+      title="${esc(legenda)}" aria-label="${esc(legenda)}">
+      <span class="h">${esc(horaDe(n.abertura)||'--:--')}</span><span class="q">${esc(quem)}</span></button>`;
+}
+
+/* CELULAR — a estratégia decidida antes de construir, e não um encolhimento da grade.
+   Só os dias COM sessão: 42 células numa coluna seriam 30 linhas de nada pra rolar. */
+function calComoLista(mapa, cels){
+  const comSessao = cels.filter(c => c.doMes && (mapa[c.ymd]||[]).length);
+  return '<div class="cal-lista">' + comSessao.map(c => {
+    const r = rotuloDia(c.ymd), doDia = mapa[c.ymd];
+    return `<div class="ag-dia${c.hoje?' hoje':''}">
+        <span class="d">${r.data}</span><span class="sem">${M1(r.semana)}</span>
+        <span class="q">${nSessoes(doDia.length)}</span></div>`
+      + doDia.map(n => `<div class="ag-lin"><div class="ag-hora">${horaDe(n.abertura)||'--:--'}</div>${card(n)}</div>`).join('');
+  }).join('') + '</div>';
+}
+
+// O dia aberto mostra o CARTÃO DE VERDADE, o mesmo da lista — mesmas etiquetas, mesmas ações.
+// Um formato próprio aqui seria a segunda definição de "como um negócio se apresenta".
+function painelDoDia(mapa){
+  if(!CAL_DIA) return '';
+  const doDia = mapa[CAL_DIA] || [], r = rotuloDia(CAL_DIA);
+  return `<div class="cal-dia-painel">
+    <div class="cab"><span class="d">${r.data}</span><span class="sem">${M1(r.semana)}</span>
+      <button type="button" class="x" onclick="calFecharDia()" title="fechar o dia">✕ fechar</button></div>
+    ${doDia.length ? doDia.map(n => card(n)).join('')
+      : '<div class="fp-apoio">Nenhuma sessão neste dia. Os dias vizinhos continuam na grade acima.</div>'}
+  </div>`;
+}
+
+function calNav(d){
+  const t = new Date(CAL_A, CAL_M + d, 1);
+  CAL_A = t.getFullYear(); CAL_M = t.getMonth();
+  CAL_DIA = null;            // o dia aberto era do mês anterior: mantê-lo aberto seria mentira
+  pinta();
+}
+function calIrPara(a, m){ CAL_A = a; CAL_M = m; CAL_DIA = null; pinta(); }
+function calHoje(){ const d = new Date(); CAL_A = d.getFullYear(); CAL_M = d.getMonth(); CAL_DIA = hojeYMD(); pinta(); }
+// Clicar no dia já aberto FECHA. O mesmo gesto que abre é o que fecha — sem isso a pessoa
+// procura o botão de fechar para desfazer um clique que ela mesma acabou de dar.
+function calAbrirDia(ymd){ CAL_DIA = (CAL_DIA === ymd) ? null : ymd; pinta(); }
+function calFecharDia(){ CAL_DIA = null; pinta(); }
+
+/* ── A TRAVESSIA DOS 700px ───────────────────────────────────────────────────────────────────
+   Grade e lista são conteúdos DIFERENTES, não o mesmo HTML em outra largura — então quem muda
+   é o JavaScript, e ele precisa saber que a janela mudou de faixa. Repintar a cada pixel de
+   arrasto seria desperdício; repintar só na TRAVESSIA é uma vez por mudança de faixa.
+   >>> E só quando o calendário está na tela: repintar o kanban por causa de um resize é trabalho
+       que ninguém pediu, e pior, mataria um arraste em andamento. */
+let _calFaixa = calEstreito();
+window.addEventListener('resize', () => {
+  const agora = calEstreito();
+  if(agora === _calFaixa) return;
+  _calFaixa = agora;
+  if(VIS === 'calendario') pinta();
+});
 
 // ── drag-and-drop entre fases ──────────────────────────────────────────────────────────────
 // O arraste GRAVA. Por isso o card volta pro lugar se a gravação falhar: kanban que move na
@@ -3804,11 +4213,15 @@ function setVis(v){
   // ninguém reporta como defeito e todo mundo sente. Guardar a visão é preferência de tela, não
   // dado de negócio: mora no navegador, não no banco.
   try { localStorage.setItem('fpmed_neg_vis', v); } catch(_) { /* armazenamento bloqueado: só não lembra */ }
-  ['lista','quadros','agenda'].forEach(x => {
+  VISOES.forEach(x => {
     const b = document.getElementById('v-'+x); if(b) b.classList.toggle('on', x===v);
   });
-  document.querySelectorAll('header nav a').forEach((a,i) => a.classList.toggle('on', (i===0&&v==='quadros')||(i===1&&v==='lista')||(i===2&&v==='agenda')));
+  marcarVisaoNoMenu();
   pinta();
+}
+// UM lugar só decide qual link está aceso, e ele lê o `data-vis` do próprio link.
+function marcarVisaoNoMenu(){
+  document.querySelectorAll('header nav a[data-vis]').forEach(a => a.classList.toggle('on', a.dataset.vis === VIS));
 }
 /* ── "IR PRO FUNIL" — do cartão da lista para a coluna dele nos Quadros ──────────────────────
    A lista responde "o que eu tenho"; o funil responde "em que pé está". Quem vê um negócio na
@@ -3899,13 +4312,10 @@ function formManualDaSessao(){
 /* O SUBMENU DE VISÃO NASCE CASADO COM A VISÃO QUE VAI SER PINTADA. O HTML marca "Quadros" como
    ativo porque esse é o padrão; se a pessoa tinha escolhido Agenda, o header diria uma coisa e o
    corpo mostraria outra — e navegação que mente sobre onde você está é pior que navegação feia. */
-document.querySelectorAll('header nav a').forEach((a,i) =>
-  a.classList.toggle('on', (i===0&&VIS==='quadros')||(i===1&&VIS==='lista')||(i===2&&VIS==='agenda')));
-/* >>> DÍVIDA DECLARADA: este mapa por ÍNDICE existe em DOIS lugares (aqui e no `setVis`), e ele
-   me mordeu agora — trocar a ordem dos três links no HTML acendia o link errado, e só um dos
-   dois mapas tinha sido corrigido. O certo é o link carregar a própria visão
-   (`data-vis="quadros"`) e os dois lerem dela. Não troco no fim da fatia: mexer no mecanismo de
-   navegação depois do laço visual é entregar sem medir de novo. */
+marcarVisaoNoMenu();
+/* >>> A DÍVIDA DO MAPA POR ÍNDICE ESTÁ PAGA (12/08, item 6): quem sabe qual visão o link
+       representa é o próprio link (`data-vis`), e tanto o boot quanto o `setVis` chamam a MESMA
+       função. Antes eram dois mapas por índice, e corrigir um só foi como o link errado acendeu. */
 
 function _aoAutenticar(){ carregar().then(() => { pinta(); formManualDaSessao(); }); abreLeitorNaBarra(); }
 if(window.gmAuth) _aoAutenticar();

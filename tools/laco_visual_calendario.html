@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<!-- ══════════════════════════════════════════════════════════════════════════════════════════
+     LAÇO VISUAL DO CALENDÁRIO — item 6, nas 3 larguras do adendo, medidas de verdade.
+
+     Irmão do laco_visual_negocios.html, e pelas MESMAS duas razões técnicas, que continuam
+     valendo e por isso ficam repetidas aqui em vez de "ver o outro arquivo":
+       >>> IFRAME E NÃO REDIMENSIONAR A JANELA: o Chrome tem largura MÍNIMA de janela, e por
+           causa dela o 390 (celular) nunca é alcançado — a medição de mobile passaria sem nunca
+           ter acontecido. O iframe recebe a largura exata que eu mandar.
+       >>> POR HTTP E NÃO file://: dois arquivos file:// são origens opacas diferentes, e o pai
+           não consegue ler o documento do filho. Sem isso não há medição, só print.
+
+     O QUE ESTE LAÇO MEDE E A SUÍTE NÃO CONSEGUE: rolagem horizontal, altura da grade (o pulo de
+     layout ao trocar de mês), sobra de emoji-ícone, e se a lista de celular substituiu mesmo a
+     grade na largura de celular — coisas que só existem depois que o navegador desenha.
+
+     COMO RODAR:
+       node <scratchpad>/servidor.js      (serve C:\fpmed em http://localhost:8099)
+       abrir http://localhost:8099/tools/laco_visual_calendario.html
+     ══════════════════════════════════════════════════════════════════════════════════════════ -->
+<html lang="pt-BR"><head><meta charset="UTF-8"><title>Laço visual · Calendário</title>
+<style>
+ body{margin:0;background:#0f1720;color:#e6edf5;font:13px/1.5 system-ui,sans-serif}
+ h1{font-size:15px;margin:14px 16px 4px}
+ .nota{margin:0 16px 12px;color:#8fa3b8;font-size:12px;max-width:980px}
+ .tiras{display:flex;gap:18px;align-items:flex-start;overflow-x:auto;padding:0 16px 24px}
+ .tira h2{font-size:12px;margin:0 0 6px;color:#8fa3b8;font-weight:600}
+ .tira{flex:0 0 auto}
+ iframe{border:1px solid #22374f;background:#fff;height:900px;display:block}
+ #placar{margin:0 16px 18px;font:12px/1.6 ui-monospace,monospace;white-space:pre;
+   background:#132234;border:1px solid #22374f;border-radius:8px;padding:12px 14px;max-width:1150px}
+</style></head><body>
+<h1>Laço visual — Calendário mensal (item 6)</h1>
+<p class="nota">Cada quadro é a tela real, na largura real, já na visão Calendário e com dado
+injetado com a forma do dado real. O placar mede o que o olho não mede sozinho.</p>
+<div id="placar">medindo…</div>
+<div class="tiras" id="tiras"></div>
+
+<script>
+const LARGURAS = [390, 1366, 1920];
+
+/* ══ O DADO ══════════════════════════════════════════════════════════════════════════════════
+   A tela lê `negocios` com a RLS ligada, então sem sessão ela vem VAZIA — e medir o layout de um
+   calendário vazio não mede o calendário. Aqui os negócios são INJETADOS depois que a tela
+   carrega, com a forma e os tamanhos do dado real. Está DECLARADO no relatório que o dado é
+   injetado: é layout com conteúdo realista, e não uma sessão logada.
+
+   >>> E ELE É DE PROPÓSITO O PIOR DADO (D12): órgão de 90 caracteres, objeto de 400, um dia com
+       SETE sessões (pra provar o "+N mais"), sessões em dia de mês vizinho, negócio sem data,
+       suspenso, e valor de R$ 63 milhões. Layout que só funciona com dado bonito é layout
+       quebrado — e neste projeto o dado nunca é bonito. */
+const ORGAOS = ['SECRETARIA DE ESTADO DA SAÚDE DE GOIÁS — SUPERINTENDÊNCIA DE LOGÍSTICA EM SAÚDE',
+  'PREFEITURA MUNICIPAL DE APARECIDA DE GOIÂNIA',
+  'HOSPITAL DAS CLÍNICAS DA UNIVERSIDADE FEDERAL DE GOIÁS — EBSERH',
+  'FUNDO MUNICIPAL DE SAÚDE DE RIO VERDE', 'SECRETARIA MUNICIPAL DE SAÚDE DE ANÁPOLIS'];
+const OBJ = ['Registro de preços para eventual e futura aquisição de medicamentos da atenção básica, '
+  + 'componente especializado e RENAME, destinados ao atendimento da rede municipal de saúde, conforme '
+  + 'especificações, quantitativos e condições estabelecidas no Termo de Referência, anexo I do edital, '
+  + 'pelo prazo de doze meses, admitida a prorrogação na forma da Lei 14.133/2021.',
+  'Aquisição de soluções parenterais de grande volume e correlatos',
+  'Material médico-hospitalar diversos para a rede municipal'];
+const FASES = ['oportunidade','qualificacao','disputa','classificacao','contrato'];
+function fabricar(){
+  const h = new Date(), a = h.getFullYear(), m = h.getMonth(), out = [];
+  const dia = d => { const p = n => String(n).padStart(2,'0');
+    const x = new Date(a, m, d); return x.getFullYear()+'-'+p(x.getMonth()+1)+'-'+p(x.getDate()); };
+  let id = 9000;
+  const por = (d, hora, i) => ({ id: ++id, estagio: FASES[i % 5], arquivado: false,
+    orgao: ORGAOS[i % 5], objeto: OBJ[i % 3],
+    municipio: ['Goiânia','Aparecida de Goiânia','Rio Verde','Anápolis','Palmas'][i % 5],
+    uf: ['GO','GO','GO','GO','TO'][i % 5],
+    portal: ['Compras.gov.br','BLL','LICITANET','BNC','Portal de Compras Públicas'][i % 5],
+    modalidade: 'Pregão Eletrônico', numero: (10 + i) + '/2026',
+    abertura: dia(d) + 'T' + hora + ':00',
+    valor_ganho: i % 5 === 4 ? 63034332.63 : null,
+    situacao: i === 6 ? 'suspenso' : 'normal',
+    anotacoes: i % 4 === 0 ? 'conferir embalagem com o fornecedor' : null,
+    empresa_id: null, tarefas: null });
+  // um dia com SETE sessões — é ele que prova o "+N mais" e a altura da célula
+  for (let i = 0; i < 7; i++) out.push(por(12, '0' + (8 + i % 2) + ':' + (i % 2 ? '30' : '00'), i));
+  // espalhados pelo mês, inclusive fim de semana e virada
+  [2,3,5,9,16,17,19,23,25,28].forEach((d, i) => out.push(por(d, '09:00', i + 2)));
+  // mês vizinho (célula esmaecida) e um sem data nenhuma
+  out.push(por(0, '10:00', 3));        // dia 0 = último dia do mês anterior
+  out.push(por(-1, '11:00', 4));
+  /* >>> E O MÊS SEGUINTE PRECISA TER SESSÃO, senão a medição do PULO sai inválida: mês sem
+         sessão nenhuma cai no estado vazio, que não tem grade — e "alturaGradeMes2 = 0" pareceria
+         defeito quando é só ausência de dado. A primeira rodada deste laço mediu exatamente isso.
+         O pulo ao trocar de mês é a promessa das 6 linhas fixas; medi-lo exige grade dos dois lados. */
+  [3, 14, 27].forEach((d, i) => out.push(por(32 + d, '09:00', i)));   // dia > 31 rola pro mês seguinte
+  const semData = por(4, '09:00', 1); semData.abertura = null; out.push(semData);
+  return out;
+}
+
+function medir(w){
+  return new Promise((resolve) => {
+    const tira = document.createElement('div'); tira.className = 'tira';
+    tira.innerHTML = '<h2>' + w + 'px</h2>';
+    const f = document.createElement('iframe'); f.width = w; f.src = '/fpmed_negocios.html#calendario';
+    tira.appendChild(f); document.getElementById('tiras').appendChild(f.parentNode === tira ? tira : tira);
+    f.onload = () => {
+      const W = f.contentWindow, D = f.contentDocument;
+      const temEsqueleto = !!D.querySelector('.fp-skeleton');
+      setTimeout(() => {
+        try {
+          /* `W.NEG = ...` NÃO funciona: a tela declara `let NEG` no topo de um <script> clássico,
+             e `let`/`const` de topo criam binding de SCRIPT, não propriedade do `window`.
+             `W.eval` roda no escopo global, onde o binding existe. (Isto custou uma rodada no
+             laço do item 5, e por isso está escrito aqui também.) */
+          /* ══ O PORTÃO DE LOGIN SAI DA FRENTE, E ISSO PRECISA ESTAR DECLARADO ═════════════
+             A tela exige sessão (RLS), então sem login o gm-auth cobre tudo com o `#gm-auth-
+             overlay` — e a primeira rodada deste laço tirou três PRINTS DA TELA DE LOGIN
+             enquanto o placar media, por baixo, o calendário de verdade. Números certos,
+             imagens da tela errada.
+             >>> AQUI O OVERLAY É REMOVIDO DO DOM DO IFRAME, e só isso. Nenhuma senha é digitada,
+                 nenhum token é forjado, nenhuma consulta ao banco acontece: o dado já é
+                 injetado, e o que este laço mede é LAYOUT. O que ele NÃO prova, e está escrito
+                 no relatório, é a tela com dado do banco vindo por sessão real. */
+          const portao = D.getElementById('gm-auth-overlay');
+          if (portao && portao.parentNode) portao.parentNode.removeChild(portao);
+          W.eval('NEG = ' + JSON.stringify(fabricar()) + '; ERRO = null;'
+            + 'if (typeof EMPRESAS === "undefined") EMPRESAS = []; setVis("calendario");');
+        } catch (e) { /* aparece no placar pelo campo `pintou` */ }
+        setTimeout(() => {
+          const el = D.documentElement;
+          const est = W.getComputedStyle(D.body);
+          const txt = D.body.innerText || '';
+          const emoji = (txt.match(/[\u{1F300}-\u{1FAFF}]|[\u2600-\u27BF]\uFE0F/gu) || []);
+          const grade = D.querySelector('.cal-grade');
+          // ALTURA DA GRADE em dois meses seguidos: é a medição do "6 linhas fixas". Se ela mudar
+          // ao trocar de mês, o conteúdo abaixo pula — o defeito que as 6 linhas existem pra impedir.
+          let alturaMes1 = grade ? Math.round(grade.getBoundingClientRect().height) : 0;
+          let alturaMes2 = 0;
+          try { W.eval('calNav(1)'); const g2 = D.querySelector('.cal-grade');
+                alturaMes2 = g2 ? Math.round(g2.getBoundingClientRect().height) : 0; W.eval('calNav(-1)'); } catch(e){}
+          const celulas = D.querySelectorAll('.cal-cel');
+          let maisAlta = 0, maisBaixa = 1e9;
+          celulas.forEach(c => { const h = c.getBoundingClientRect().height;
+            if (h > maisAlta) maisAlta = h; if (h < maisBaixa) maisBaixa = h; });
+          /* ══ A FOLGA DA CÉLULA, e o instrumento que eu tive que consertar ═══════════════════
+             A primeira versão usava `scrollHeight > clientHeight` pra achar conteúdo cortado, e
+             deu FOLGA ZERO com a célula em 144 e de novo com ela em 152 — o mesmo número nas duas
+             alturas, que é o sinal clássico de instrumento torto (S9: duas medições iguais depois
+             de uma correção significam que eu medi outra coisa). Em container `display:flex` com
+             `overflow:hidden`, o `scrollHeight` clampa no `clientHeight` e nunca acusa nada.
+             O que mede de verdade é o FUNDO DO ÚLTIMO FILHO contra o topo da célula. */
+          let pior = 0;
+          celulas.forEach(c => {
+            const filhos = c.children; if (!filhos.length) return;
+            const rc = c.getBoundingClientRect();
+            const ult = filhos[filhos.length - 1].getBoundingClientRect();
+            const alt = ult.bottom - rc.top + parseFloat(W.getComputedStyle(c).paddingBottom);
+            if (alt > pior) pior = alt;
+          });
+          resolve({
+            largura: w,
+            rolagemH: el.scrollWidth > w ? (el.scrollWidth - w) + 'px A MAIS' : 'nenhuma',
+            scrollWidth: el.scrollWidth,
+            fundo: est.backgroundColor,
+            menuMontou: !!D.querySelector('#limedtec-menu a'),
+            menuAceso: (D.querySelector('#limedtec-menu [aria-current="page"]') || {}).textContent || '(nenhum)',
+            esqueletoAntes: temEsqueleto,
+            visaoAcesa: (D.querySelector('header nav a.on') || {}).textContent || '(nenhuma)',
+            celulas: celulas.length,
+            pilulas: D.querySelectorAll('.cal-pil').length,
+            maisNaCelula: D.querySelectorAll('.cal-mais').length,
+            listaCelular: !!D.querySelector('.cal-lista'),
+            alturaGradeMes1: alturaMes1,
+            alturaGradeMes2: alturaMes2,
+            pulaAoTrocarMes: alturaMes1 && alturaMes2 ? (alturaMes1 === alturaMes2 ? 'nao' : 'SIM ' + Math.abs(alturaMes1-alturaMes2) + 'px') : '(sem grade)',
+            celulaMaisAlta: Math.round(maisAlta), celulaMaisBaixa: celulas.length ? Math.round(maisBaixa) : 0,
+            piorConteudo: Math.round(pior),
+            folgaNaCelula: celulas.length ? Math.round(maisAlta - pior) + 'px' : '(sem grade)',
+            estourando: [...celulas].filter(c => { const fl = c.children; if (!fl.length) return false;
+              return fl[fl.length-1].getBoundingClientRect().bottom > c.getBoundingClientRect().bottom; }).length,
+            avisoSemData: /sem data de abertura/.test(txt) ? 'dito' : 'NAO DITO',
+            emojiSobrando: emoji.length ? emoji.join(' ') : 'nenhum',
+            pintou: !!D.querySelector('.cal-topo'),
+          });
+        }, 700);
+      }, 1100);
+    };
+  });
+}
+
+(async () => {
+  const r = [];
+  for (const w of LARGURAS) r.push(await medir(w));
+  const linhas = ['LARGURA            390            1366           1920'];
+  const campos = ['rolagemH','scrollWidth','fundo','menuMontou','menuAceso','visaoAcesa',
+                  'esqueletoAntes','celulas','pilulas','maisNaCelula','listaCelular',
+                  'alturaGradeMes1','alturaGradeMes2','pulaAoTrocarMes','celulaMaisAlta',
+                  'celulaMaisBaixa','piorConteudo','folgaNaCelula','estourando',
+                  'avisoSemData','emojiSobrando','pintou'];
+  for (const c of campos) linhas.push(c.padEnd(19) + r.map(x => String(x[c]).padEnd(15)).join(''));
+  document.getElementById('placar').textContent = linhas.join('\n');
+  window.__LACO = r;
+})();
+</script>
+</body></html>

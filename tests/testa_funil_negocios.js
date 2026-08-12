@@ -44,7 +44,13 @@ function bloco(ini, fim) {
 const ctx = (new Function(
   'const card = n => "[" + n.id + "]";' +
   bloco('const hojeYMD =', 'async function carregar') +
-  bloco('function agenda(', '// ── drag-and-drop') +
+  /* A ÂNCORA DE FIM ERA `// ── drag-and-drop`, e o calendário mensal (item 6) nasceu ENTRE os
+     dois — então esta extração passou a arrastar junto um bloco que não é dela, inclusive um
+     `window.addEventListener` que não existe aqui dentro. Ela agora para na porta do
+     calendário, que tem suíte própria (testa_calendario). Extração por âncora é assim: quem
+     escreve código no meio precisa saber que a âncora existe, e por isso ela é uma linha
+     inteira e não um pedaço de palavra. */
+  bloco('function agenda(', '// ══ [ANCORA] daqui pra baixo e o CALENDARIO MENSAL') +
   'return { agenda, hojeYMD, diaDe, horaDe, rotuloDia, fmtDtH };'))();
 const { agenda, hojeYMD, diaDe, horaDe, rotuloDia } = ctx;
 
@@ -172,7 +178,14 @@ ok('negócio sem data de abertura não entra na agenda', !ordem.includes(8), ord
 ok('a agenda tem cabeçalho de dia', /class="ag-dia/.test(html));
 ok('*** a HORA aparece em coluna própria, não escondida no texto ***', /class="ag-hora">\d\d:\d\d</.test(html));
 ok('o dia de hoje é destacado', /class="ag-dia hoje"/.test(html));
-ok('o cabeçalho do dia traz o dia da semana', /class="sem">(domingo|segunda-feira|terça-feira|quarta-feira|quinta-feira|sexta-feira|sábado)</.test(html));
+/* A INICIAL SUBIU EM 12/08, e o motivo importa: o dia da semana era capitalizado por
+   `text-transform:capitalize` no CSS, que sobe TODA palavra — a Agenda imprimia
+   "Quarta-Feira" desde 06/08. Quem capitaliza agora é o `M1`, que sobe só a primeira letra.
+   O assert continua cobrando a MESMA promessa (o cabeçalho diz que dia da semana é), com a
+   inicial maiúscula porque agora ela vem do JavaScript e não da folha de estilo. */
+ok('o cabeçalho do dia traz o dia da semana', /class="sem">(Domingo|Segunda-feira|Terça-feira|Quarta-feira|Quinta-feira|Sexta-feira|Sábado)</.test(html));
+ok('e ele não é mais capitalizado pelo CSS, que subia as duas palavras ("Quarta-Feira")',
+  !/class="sem">[^<]*-[A-Z]/.test(html), (html.match(/class="sem">[^<]*/) || [])[0]);
 ok('agenda vazia não quebra', /Nenhum negócio com data/.test(agenda([{ id: 9, abertura: null }])));
 ok('agenda só com passado ainda mostra o histórico', /Já passaram/.test(agenda([LOTE[5]])));
 

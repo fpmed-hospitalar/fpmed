@@ -890,6 +890,139 @@ Criado em 21/07/2026 copiando SO os arquivos do app do C:\globalmed.
           que torna o aviso util. Os dois mediam o MEIO, nao a promessa.
 
 ############################################################################
+>>> 12/08, 4a RODADA — ITEM 6 FECHADO E PUBLICADO (calendario mensal), E A FILA
+>>>   RECEBEU 3 PEDIDOS NOVOS DELE NO MEIO DA RODADA. LEIA ESTE BLOCO PRIMEIRO.
+############################################################################
+
+  >>> A FILA AGORA (os 3 pedidos chegaram enquanto o item 6 estava em construcao;
+      nenhum dizia URGENCIA, entao entraram no FIM e o item 6 nao foi largado):
+        6. [OK] calendario mensal — FECHADO E PUBLICADO nesta rodada
+        7. [  ] SPRINT DE ACABAMENTO ESTETICO — **E O PROXIMO**
+        8. [  ] CMED COMO CAMADA DE BASE (PMVG por baixo de todo preco)
+        9..16. os itens que ja estavam (puxador por ID, desconto em lote, Excel da
+               proposta, etc.)
+
+  >>> O ITEM 7 ABSORVEU DOIS PEDIDOS, e isso precisa estar dito pra ninguem
+      procurar um item 8 que virou parte do 7. Chegaram TRES mensagens em sequencia:
+        (a) "sprint de acabamento estetico — 7 alavancas" (fundo suave, cartoes
+            flutuando, respiro, arredondamento, contador nas facetas, grifo do termo
+            buscado, cabecalho com contexto);
+        (b) "separar LICITACAO das FERRAMENTAS no menu lateral" — chegou CORTADO
+            ("...sao ferramentas de") e ele reenviou completo minutos depois;
+        (c) a mensagem final, que MANDA MAIS QUE AS DUAS: o alvo deixou de ser
+            "referencia de mercado" e passou a ser UMA AMOSTRA NOSSA, APROVADA:
+              C:\Users\lemue\Downloads\fpmed_encontrar_amostra.html
+            Ela ja contem o menu em 3 grupos do pedido (b). Entao (a) e (b) sao
+            partes do 7, e o alvo do teste do bater o olho e a amostra, nao o Prime.
+      >>> ORDEM DENTRO DO 7 (dita por ele): publica ENCONTRAR, prova com print, SO
+          ENTAO Negocios. Sem apagao.
+      >>> UM CONFLITO PRA ELE SABER, e eu NAO resolvi sozinho a favor da amostra: a
+          amostra desenha "Calendario [EM BREVE]" no grupo GESTAO — ela foi feita
+          ANTES do item 6. O calendario EXISTE desde hoje e esta no ar. Como o proprio
+          pedido diz "nenhuma feature nova, nenhuma mudanca de logica/fluxo", eu
+          mantive o Calendario ACESO e vou copiar da amostra o acabamento, nao o
+          estado do item. Desligar uma tela publicada pra imitar um desenho seria
+          regredir o produto pra parecer com o rascunho dele.
+
+  >>> ACHADO QUE FICA PRO ITEM 7 (medido hoje, nao suposto): os 2 ultimos emoji-icone
+      do sistema e um WIDGET DE TEMA ESCURO vivem no **gm-auth.js**, linhas 284-286 —
+      a etiqueta do usuario logado, com 👤 e 🔑 e cores chumbadas (#111a2e, #a9bbdb,
+      #22314f, #7fd0ff, #1f2b45, #7f1d1d). Ela aparece em TODAS as telas, inclusive
+      nas duas ja claras: e uma pastilha escura boiando no tema claro.
+      >>> POR QUE NAO CONSERTEI HOJE: o gm-auth.js e carregado pelas 10 telas, e 8
+          delas AINDA SAO ESCURAS. Trocar as cores por tokens claros conserta duas
+          telas e quebra oito. O conserto certo e no item 7, junto com a decisao de
+          como a etiqueta se comporta enquanto houver telas dos dois tons.
+
+  ITEM 6 — O QUE ENTROU (commit desta rodada; sw.js -> limedtec-fpmed-2026-08-12-26):
+  O calendario mensal e a 3a visao do Negocios (Quadros · Lista · **Calendario** ·
+  Agenda), e o item "Calendario" do menu lateral ACENDEU — saiu do "em breve".
+    >>> POR QUE VISAO E NAO TELA NOVA: e o MESMO dado (`negocios.abertura`) respondendo
+        outra pergunta. Tela separada teria que reescrever a leitura paginada, o cartao,
+        a ficha e o sino — quatro copias envelhecendo em ritmos diferentes. Mesmo
+        raciocinio do Radar/Desertas/Jornais serem ancoras dentro do Encontrar.
+    >>> A AGENDA CONTINUA, e nao e redundancia: a Agenda e FILA ("o que vem pela
+        frente, em ordem"); o calendario e MAPA ("como esta o mes — onde tem aperto,
+        onde tem buraco"). Quem monta proposta usa a fila; quem decide de quais
+        pregoes participar usa o mapa.
+    >>> NENHUMA TABELA NOVA. Evento derivado do fato, igual a Agenda e ao sino. Editar
+        a data na ficha muda o calendario de graca, porque os dois leem o mesmo campo.
+
+  AS TRES REFERENCIAS (Regra Zero), com a decisao que saiu de cada uma:
+    · Google Calendar — SEIS LINHAS FIXAS, sempre. Foi a decisao menos obvia e a mais
+      valiosa: com linhas variaveis a grade muda de altura ao trocar de mes e o
+      conteudo abaixo pula. Dele tambem veio o "+N mais".
+    · uxpatterns.dev (Calendar View) — nomeia o erro "shipping a desktop-only density
+      model": a estrategia de celular se decide ANTES de construir. Decidida antes;
+      abaixo de 700px a grade vira a lista dos dias com sessao.
+    · ServiceNow Horizon — **a pagina respondeu 403 e eu usei o resumo da busca**, o que
+      registro por honestidade. Dela veio so o "X more" no rodape da celula.
+
+  >>> A MEDICAO QUE MUDOU O DESENHO (S12 tentando voltar, agora com 5 cores): eu ia
+      pintar a pilula com a cor cheia da etapa. Medi antes:
+        texto branco sobre --etapa-2 (#D08700) ....... 2,94:1  REPROVA
+        texto --cinza-800 sobre --etapa-4 (#5B7FA6) .. 4,42:1  REPROVA por pouco
+      4,42 e o numero perigoso: passa no olho e reprova na regua. Entraram 5 tokens
+      novos (--etapa-1-tenue .. -5-tenue, a cor a 14% sobre branco): fundo na tenue
+      (>=13:1) e barra lateral na cor cheia.
+  >>> E O ASSERT SEGUINTE NASCEU VERMELHO E ME CORRIGIU DE NOVO: eu ia cobrar 3:1 da
+      barra (WCAG 1.4.11). Medido, **duas das cinco reprovam** (etapa-1: 2,67 · etapa-2:
+      2,94). Isso NAO autoriza escurecer as cinco — sao identidade vinda do prototipo.
+      O assert mudou de alvo: enquanto qualquer uma estiver abaixo de 3:1, a suite do
+      calendario e OBRIGADA a provar que a pilula carrega o NOME da etapa. Se um dia
+      alguem escurecer as cinco, a exigencia cai sozinha.
+
+  DOIS DEFEITOS QUE JA ESTAVAM NO AR, achados pela suite nova e pelo laco:
+    1. *** "3 sessãoões" *** — o plural saia assim na AGENDA desde 06/08
+       (`sessão${q>1?'ões':''}`, com o "ão" fora do trecho que trocava), num cabecalho
+       de dia que ninguem le palavra por palavra. E EU IA COPIAR pro calendario.
+       Virou uma funcao so (`nSessoes`). >>> E a minha PRIMEIRA correcao tambem saiu
+       errada ("sessã"+"ões" = "sessãões"): em portugues o plural de "sessão" TROCA o
+       "ã" por "õ", nao acrescenta. O assert pegou as duas versoes erradas seguidas.
+    2. *** "Quarta-Feira" e "Agosto De 2026" *** — `text-transform:capitalize` sobe
+       TODA palavra, inclusive preposicao e o segundo termo do composto. O da Agenda
+       tambem vinha de 06/08. Quem capitaliza agora e o `M1`, que sobe so a primeira
+       letra. O CSS nao sabe o que e preposicao; quem sabe e quem escreve o texto.
+
+  O QUE O LACO VISUAL ACHOU E SUITE NENHUMA PEGARIA (tools/laco_visual_calendario.html):
+    a) A GRADE PULAVA 19px ao trocar de mes. Seis linhas garantidas, mas de altura
+       AUTOMATICA — uma semana com dia cheio e mais alta que uma vazia. Era a promessa
+       pela metade: "6 linhas" existe pra tela nao se mexer sozinha. Linhas fixas em
+       152px (pior conteudo medido: 137px, folga 15px, zero estourando).
+       >>> A ALTURA NAO E 144 (o pior caso cravado) DE PROPOSITO: folga zero significa
+           que um pixel de diferenca de fonte comeca a cortar o "+N mais", justamente
+           no dia mais cheio.
+    b) A PILULA ESCREVIA O ORGAO, e na largura da celula saia "SECRETARI…" — que nao
+       distingue nada, porque metade dos certames do estado comeca assim. Passou a
+       escrever o MUNICIPIO, que cabe inteiro. O orgao continua no title, no rotulo
+       acessivel e no cartao do dia aberto.
+    c) AS SETAS ‹ › eram glifo tipografico ao lado de icones de traco 1.8. Passaram a
+       sair do mesmo sprite (#ic-seta), a da esquerda virada.
+    d) *** E O LACO MEDIU CERTO E FOTOGRAFOU ERRADO *** na 1a rodada: sem sessao o
+       gm-auth cobre a tela, entao os 3 prints eram DA TELA DE LOGIN enquanto o placar
+       media, por baixo, o calendario de verdade. O laco agora remove o overlay do
+       iframe (so o overlay — nenhuma senha, nenhum token forjado).
+    e) DOIS INSTRUMENTOS MEUS SAIRAM TORTOS (S9/S10 outra vez): o medidor de folga
+       usava `scrollHeight > clientHeight`, que em container flex com overflow:hidden
+       CLAMPA — deu "folga 0" com a celula em 144 E em 152, o mesmo numero nas duas
+       alturas, que e a assinatura de instrumento torto. O que mede e o fundo do ultimo
+       filho. E a medicao do pulo saiu invalida na 1a vez porque o mes seguinte nao
+       tinha sessao (caiu no estado vazio, que nao tem grade).
+
+  DIVIDA DECLARADA EM 12/08 — **PAGA** nesta rodada: o mapa visao->link por INDICE
+  vivia em DOIS lugares e ja tinha acendido o link errado uma vez. Acrescentar o 4o
+  link seria a terceira copia. Agora o link carrega a propria visao (`data-vis`) e os
+  dois lugares leem dela.
+
+  PROVAS: suite nova testa_calendario (102 asserts), **mutacao 14 de 14 barradas**.
+  Laco visual 3/3 sem rolagem horizontal (390/1366/1920), grade nao pula, console
+  limpo (as unicas mensagens eram de extensao do Chrome).
+  TOTAL: 3.327 asserts / 0 falhas / 90 suites (eram 3.214 / 89).
+  >>> O QUE **NAO** FOI PROVADO, e esta escrito: a tela com dado do BANCO por sessao
+      real. O laco injeta dado e tira o portao de login — isso prova LAYOUT. Por isso a
+      jornada 3 continua AMARELA em vez de virar verde.
+
+############################################################################
 >>> PONTO EXATO DE RETOMADA — a fila numerada:
      1. [OK] spec da reforma (docs/spec_reforma_prime.md) — 4485c30
      2. [OK] fpmed_tema.css — O DESIGN SYSTEM, e ele vem primeiro (adendo de excelencia)
@@ -950,9 +1083,18 @@ Criado em 21/07/2026 copiando SO os arquivos do app do C:\globalmed.
              mediam o MEIO (a <nav class="portal">, a tinta rgba exata, o data-tema="dark", o
              hex da bolinha) e nao a promessa (ha caminho daqui pra la, parado muda a borda, a
              tela nao tem paleta propria, as bolinhas vencidas vem preenchidas).
-     6. [ ] calendario mensal
-     7. [ ] demais telas ganhando o tema claro, uma a uma
-     8. [ ] conferir o boletim (amanha de manha — bloqueado por tempo, nao por trabalho)
+     6. [OK] CALENDARIO MENSAL — FECHADO E PUBLICADO 12/08 (sw.js -> -2026-08-12-26).
+             Ver o bloco "12/08, 4a RODADA" acima: 3a visao do Negocios, menu aceso,
+             5 tokens tenues novos, suite testa_calendario (102, mutacao 14/14).
+     7. [ ] **ESTOU AQUI** — SPRINT DE ACABAMENTO ESTETICO, alvo = a amostra APROVADA
+            (C:\Users\lemue\Downloads\fpmed_encontrar_amostra.html). Absorveu o pedido
+            do menu em 3 grupos. Encontrar primeiro (publica e prova), depois Negocios.
+            Comeca conferindo o achado do gm-auth.js (pastilha escura + 2 emoji).
+     8. [ ] CMED COMO CAMADA DE BASE — PMVG por baixo de todo preco; tira "Conferir CMED"
+            do menu e deixa a busca crua num canto discreto. Fundacao de dados primeiro.
+     8b.[ ] demais telas ganhando o tema claro, uma a uma (8 ainda escuras — e o que
+            impede consertar o gm-auth.js hoje)
+     8c.[ ] conferir o boletim (amanha de manha — bloqueado por tempo, nao por trabalho)
      9..16. os itens que sairam do mapa do Prime (puxador por ID, desconto em lote, Excel da
             proposta, declaracoes, gestor de documentos + ZIP, etapas renomeaveis, tarefas
             com prioridade, radar por raio, link publico por CNPJ, chat do edital)
