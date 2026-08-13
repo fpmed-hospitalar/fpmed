@@ -28,16 +28,24 @@
    A constituição manda: o protótipo manda no visual, mas onde divergir em TOKEN,
    vence o fpmed_tema.css. Três divergências, todas declaradas:
 
-   1. TAMANHOS DE TEXTO. O protótipo usa 12,5px nos links e 9,5px nos grupos —
-      não existem na nossa escala. Aqui: --txt-2 (14px) nos links e --txt-0 (10px)
-      nos grupos. O menu fica um fio maior e ganha legibilidade; a hierarquia
-      (grupo menor e mais claro que o item) fica idêntica à do protótipo.
-      >>> ATUALIZADO EM 13/08 (item 7, fatia 2): o grupo estava em --txt-1 (12px) e
-          desceu pro --txt-0 (10px), que NASCEU pra ele. A amostra aprovada mostrou
-          que o rótulo de grupo precisa ser bem menor e bem mais espaçado que a
-          etiqueta comum — é essa combinação que faz ele recuar sem clarear. E foi
-          justamente por ele estar CLAREADO demais (--cinza-400, 2,44:1) que a
-          medição o pegou: ver o bloco do .lm-grupo no CSS.
+   1. TAMANHOS DE TEXTO. O molde usa 12,5px nos links e 9,5px nos grupos — nenhum
+      dos dois existe na nossa escala. Aqui: --txt-1 (12px) nos links e --txt-0
+      (10px) nos grupos, que são os degraus MAIS PRÓXIMOS de cada um. A hierarquia
+      (grupo bem menor e mais espaçado que o item) fica idêntica à do molde.
+      >>> ESTA DIVERGÊNCIA FOI REVISADA DUAS VEZES NO MESMO DIA, e as duas revisões
+          valem mais que o texto final:
+          · de manhã (fatia 2) o grupo desceu de --txt-1 pra --txt-0, que NASCEU pra
+            ele — a amostra mostrou que o rótulo precisa ser bem menor e bem mais
+            espaçado que a etiqueta comum, e é essa combinação que o faz recuar sem
+            clarear. Foi por ele estar CLAREADO demais (2,44:1) que a medição o pegou;
+          · à tarde (passo 2 do molde) o LINK desceu de --txt-2 (14px) pra --txt-1
+            (12px). O texto anterior dizia "fica --txt-2, o menu fica um fio maior e
+            ganha legibilidade" — aquilo valia pro menu branco e espaçado. Com a linha
+            de 30px do molde, 14px não é um fio maior: é texto fora da régua onde ele
+            foi desenhado. E o --txt-1 sempre foi o degrau mais perto dos 12,5px; a
+            escolha da manhã tinha ido pro lado errado.
+          >>> E A LEGIBILIDADE NÃO CAIU, foi MEDIDA: o item em repouso saiu de
+              --cinza-600 sobre branco (6,17:1) pra --navy-tinta sobre navy (10,78:1).
 
    2. O TELEFONE DO RODAPÉ. O protótipo escreve "(62) 3290-4241" precedido de um
       emoji de telefone. Emoji como ícone é PROIBIDO por D11 — e essa regra não é
@@ -184,91 +192,130 @@
   /* Todo o CSS mora sob #limedtec-menu. Nada aqui pode vazar pra tela que hospeda:
      o menu é convidado, e convidado não mexe na mobília da casa. */
   var CSS = [
-    /* 236px em vez de 224 (13/08, item 7 fatia 2): é a largura da amostra aprovada, e
-       os 12px a mais vão TODOS para o respiro lateral dos itens — não para caber mais
-       coisa. Menu mais largo com o mesmo aperto seria só menu maior. */
+    /* ══ A SIDEBAR NAVY — passo 2 do molde oficial (13/08) ═══════════════════════════
+       O menu era BRANCO com borda à direita; virou a superfície escura do molde.
+
+       >>> POR QUE ISSO NÃO É "TROCAR DE COR", e sim o desenho certo: com a sidebar
+           branca, ela e a área de conteúdo eram a MESMA superfície separada por uma
+           linha de 1px — e o olho tinha que procurar onde acabava a navegação e
+           começava o trabalho. O navy resolve isso sem gastar uma borda: a moldura é
+           escura, o palco é claro, e a fronteira é a diferença de matéria.
+       >>> E ELE NÃO ROUBA A ATENÇÃO. Um escuro chapado ao lado de conteúdo claro
+           poderia puxar o olho pra si o dia inteiro; o do molde não puxa porque a
+           tinta dos itens é discreta (--navy-tinta em repouso) e só o item ACESO
+           recebe fundo, peso e ícone azul. O escuro é fundo, não destaque.
+
+       228px em vez de 236, com a densidade nova: item de 30px de altura em vez de 40.
+       Menu mais estreito COM o mesmo aperto seria só menu menor — aqui o que encolheu
+       foi a ALTURA da linha, e o respiro lateral continua. */
     '#limedtec-menu{position:fixed;left:0;top:0;bottom:0;width:var(--menu-largura);z-index:40;',
     '  display:flex;flex-direction:column;overflow-y:auto;',
-    '  background:var(--branco);border-right:1px solid var(--cinza-200);',
-    '  font-family:var(--fonte);padding:var(--esp-5) 0 var(--esp-4)}',
+    '  background:var(--navy);',
+    '  font-family:var(--fonte);padding:0 0 var(--esp-3)}',
 
-    '#limedtec-menu .lm-marca{display:flex;align-items:center;gap:var(--esp-3);',
-    '  padding:var(--esp-2) var(--esp-4) var(--esp-4);',
-    '  border-bottom:1px solid var(--cinza-100);margin-bottom:var(--esp-2)}',
-    '#limedtec-menu .lm-cruz{width:32px;height:32px;flex:0 0 auto;border-radius:var(--raio-botao);',
+    /* A MARCA. O quadrado é o do molde (26×26, raio 7, azul da marca) e o símbolo
+       dentro dele é a CRUZ FPMED, não o escudo do molde: o próprio README dele diz
+       que o logo é placeholder e manda substituir pelo logotipo oficial. */
+    '#limedtec-menu .lm-marca{display:flex;align-items:center;gap:var(--esp-2);',
+    '  padding:var(--esp-3) var(--esp-3);min-height:52px;box-sizing:border-box;',
+    '  border-bottom:1px solid var(--navy-borda);margin-bottom:var(--esp-3)}',
+    '#limedtec-menu .lm-cruz{width:26px;height:26px;flex:0 0 auto;border-radius:var(--raio-botao);',
     '  background:var(--azul-500);color:var(--branco);display:grid;place-items:center;',
-    '  font-weight:var(--peso-forte);font-size:var(--txt-4);line-height:1}',
-    '#limedtec-menu .lm-marca b{display:block;font-size:var(--txt-2);font-weight:var(--peso-semi);',
-    '  color:var(--azul-800);line-height:1.15}',
+    '  font-weight:var(--peso-forte);font-size:var(--txt-3);line-height:1}',
+    '#limedtec-menu .lm-marca b{display:block;font-size:var(--txt-2);font-weight:var(--peso-forte);',
+    '  color:var(--branco);line-height:1.15}',
     '#limedtec-menu .lm-marca small{display:block;font-size:var(--txt-0);letter-spacing:.22em;',
-    '  color:var(--cinza-500);font-weight:var(--peso-semi);line-height:1.4}',
+    '  color:var(--navy-marca);font-weight:var(--peso-semi);line-height:1.4}',
 
-    /* ══ O RÓTULO DE GRUPO — a peça que o dono elogiou, e a que estava ilegível ═══════
+    /* ══ O RÓTULO DE GRUPO — a peça que o dono elogiou ═══════════════════════════════
        Ele é o que transforma 14 links numa lista organizada: sem ele o olho tem que ler
        tudo pra achar. É ele que separa LICITAÇÃO (Oportunidades + Gestão) das
        FERRAMENTAS de apoio, que foi o pedido de 13/08.
-
-       >>> DUAS COISAS MUDARAM AQUI, E A SEGUNDA É UM CONSERTO DE VERDADE:
-           1. o tamanho caiu pro --txt-0 e o espaçamento subiu pra .14em. É a receita da
-              amostra, e é ela que faz o rótulo RECUAR sem precisar clarear — o efeito
-              vem do tamanho + caixa alta + espaçamento, exatamente como foi medido;
-           2. a COR saiu do --cinza-400 e foi pro --cinza-500. O 400 sobre branco dá
-              **2,44:1** — metade do mínimo. Ou seja: o rótulo que organiza o menu
-              inteiro estava, desde que nasceu, na fronteira do ilegível pra quem
-              enxerga menos. Ninguém tinha medido, porque cor a gente olha e acha bonita.
-       >>> O MESMO CONSERTO FOI APLICADO NOS OUTROS DOIS pontos em que o 400 carregava
-           texto neste arquivo: o "HOSPITALAR" da marca e o "em breve" do item desligado.
-           O --cinza-400 continua no arquivo, no ofício dele: borda e ícone desligado. */
-    '#limedtec-menu .lm-grupo{padding:var(--esp-5) var(--esp-5) var(--esp-2);',
+       O tamanho (--txt-0) e o espaçamento (.14em) são os mesmos de antes — é essa
+       combinação que faz o rótulo RECUAR sem precisar clarear.
+       >>> A COR MUDOU DE PROBLEMA, e vale registrar: no menu branco ela era o
+           --cinza-500, escolhido de manhã porque o --cinza-400 dava 2,44:1. Sobre o
+           navy, o cinza claro seria ilegível pelo motivo OPOSTO; quem serve aqui é o
+           --navy-rotulo (#7C90AE), medido em 5,28:1 contra o navy. */
+    '#limedtec-menu .lm-grupo{padding:var(--esp-4) var(--esp-2) var(--esp-1);',
     '  font-size:var(--txt-0);letter-spacing:.14em;text-transform:uppercase;',
-    '  color:var(--cinza-500);font-weight:var(--peso-forte)}',
+    '  color:var(--navy-rotulo);font-weight:var(--peso-semi)}',
     /* O primeiro grupo não precisa do respiro de cima: ele já vem depois da divisória
        da marca, e dois espaços empilhados leem como buraco, não como separação. */
-    '#limedtec-menu .lm-grupo:first-of-type{padding-top:var(--esp-2)}',
+    '#limedtec-menu .lm-grupo:first-of-type{padding-top:0}',
 
-    /* RESPIRO ENTRE OS ITENS (13/08): o padding vertical subiu de 8 pra 10 e o lateral
-       de 16 pra 20. São 2px por item — e com 14 itens é o que separa "lista respirada"
-       de "lista empilhada". D2: espaço em branco é o que faz parecer caro. */
-    '#limedtec-menu a,#limedtec-menu .lm-off{display:flex;align-items:center;gap:var(--esp-3);',
-    '  padding:var(--esp-3) var(--esp-5);font-size:var(--txt-2);text-decoration:none;',
-    '  color:var(--cinza-600);border-left:3px solid transparent;',
+    /* O ITEM. 30px de altura, raio 6, ícone de 14 — a densidade do molde.
+       >>> O TEXTO DESCEU DE --txt-2 (14px) PRA --txt-1 (12px), e isso REVISA a
+           divergência nº 1 declarada no topo deste arquivo. Ela dizia "o protótipo usa
+           12,5px, que não existe na nossa escala; fica --txt-2, o menu fica um fio
+           maior e ganha legibilidade". Aquilo valia pro menu BRANCO e espaçado. Com a
+           linha de 30px do molde, 14px não é "um fio maior": é texto que não cabe na
+           régua onde ele foi desenhado. E o --txt-1 é o degrau MAIS PRÓXIMO dos 12,5px
+           do molde — ele sempre foi, e a escolha anterior tinha ido pro lado errado.
+       >>> E A LEGIBILIDADE NÃO CAIU, foi medida: o item em repouso passou de
+           --cinza-600 sobre branco (6,17:1) pra --navy-tinta sobre navy (10,78:1). */
+    '#limedtec-menu a,#limedtec-menu .lm-off{display:flex;align-items:center;gap:var(--esp-2);',
+    '  min-height:30px;box-sizing:border-box;margin:0 var(--esp-2);',
+    '  padding:0 var(--esp-2);font-size:var(--txt-1);text-decoration:none;',
+    '  color:var(--navy-tinta);border-radius:var(--raio-item);',
     '  transition:background-color var(--transicao),color var(--transicao)}',
     '#limedtec-menu a{cursor:pointer}',
-    '#limedtec-menu a:hover{background:var(--cinza-50);color:var(--cinza-800)}',
+    '#limedtec-menu a:hover{background:var(--navy-hover);color:var(--branco)}',
     '#limedtec-menu a:focus-visible{outline:none;box-shadow:var(--foco)}',
 
-    /* O item aceso usa TRÊS sinais: fundo, cor e a barra da esquerda. Não é
-       exagero — quem não distingue o azul do cinza ainda enxerga a barra e o peso.
-       Cor sozinha marcando estado é a falha de acessibilidade mais comum que existe. */
-    '#limedtec-menu a.lm-on{background:var(--azul-50);color:var(--azul-700);',
-    '  border-left-color:var(--azul-500);font-weight:var(--peso-semi)}',
+    /* O item aceso usa TRÊS sinais: fundo, cor do texto e cor do ícone. Não é
+       exagero — quem não distingue o azul do cinza ainda enxerga o fundo e o peso.
+       Cor sozinha marcando estado é a falha de acessibilidade mais comum que existe.
+       >>> A BARRA DA ESQUERDA SAIU, e é a única peça do desenho anterior que eu não
+           troquei por equivalente: com o item virando uma pílula arredondada de 30px
+           dentro da sidebar, uma barra colada na borda esquerda ficaria FORA da
+           pílula — marcando o menu, não o item. O fundo faz o mesmo trabalho e é o
+           que o molde usa. */
+    '#limedtec-menu a.lm-on{background:var(--navy-ativo);color:var(--branco);',
+    '  font-weight:var(--peso-medio)}',
+    '#limedtec-menu a.lm-on svg{color:var(--azul-500)}',
 
-    '#limedtec-menu .lm-off{color:var(--cinza-500);opacity:.7;cursor:default}',
-    /* "em breve" virou ETIQUETA contornada, como na amostra: um texto solto na ponta da
-       linha lê como parte do nome do módulo ("Calendário em breve"); dentro de uma
-       borda, lê como estado. E a cor saiu do 400 pelo mesmo motivo dos outros dois. */
+    '#limedtec-menu .lm-off{color:var(--navy-rotulo);cursor:default}',
+    /* "em breve" é ETIQUETA contornada: um texto solto na ponta da linha lê como parte
+       do nome do módulo ("Calendário em breve"); dentro de uma borda, lê como estado. */
     '#limedtec-menu .lm-breve{margin-left:auto;font-size:var(--txt-0);letter-spacing:.06em;',
-    '  text-transform:uppercase;color:var(--cinza-500);font-weight:var(--peso-semi);',
-    '  border:1px solid var(--cinza-300);border-radius:var(--raio-pilula);padding:var(--esp-1) var(--esp-2)}',
+    '  text-transform:uppercase;color:var(--navy-rotulo);font-weight:var(--peso-semi);',
+    '  border:1px solid var(--navy-borda);border-radius:var(--raio-pilula);padding:0 var(--esp-1)}',
 
-    '#limedtec-menu svg{width:20px;height:20px;flex:0 0 auto;stroke:currentColor;fill:none;',
+    /* ══ O CONTADOR — o slot existe, o número NÃO É INVENTADO ════════════════════════
+       O molde põe número em quatro itens (Buscar 9.050 · Radar 12 · Desertas 38 ·
+       Negócios 71). Esses quatro são DADO FICTÍCIO DE DEMONSTRAÇÃO — está escrito no
+       README dele — e a ordem do dono sobre os KPIs vale igual aqui: número na tela
+       tem que vir do banco.
+       >>> ENTÃO O QUE ENTROU FOI O SLOT, e ele nasce VAZIO. Quem tem o número é a
+           tela (ela é que lê o banco); ela chama `LimedtecMenu.contador(id, n)`.
+           Sem chamada, nada aparece — ausência é honesta, e um "0" chumbado seria a
+           lição S6 outra vez ("não sei" nunca vira zero), agora dentro do menu.
+       >>> `tabular-nums` porque o contador fica na borda direita: sem ele, "12" e "38"
+           terminam em posições diferentes e a coluna dança a cada troca de tela. */
+    '#limedtec-menu .lm-num{margin-left:auto;font-size:var(--txt-0);font-weight:var(--peso-semi);',
+    '  font-variant-numeric:tabular-nums;background:var(--navy-selo);color:var(--navy-selo-tinta);',
+    '  border-radius:var(--raio-selo);padding:0 var(--esp-1);line-height:1.6}',
+    '#limedtec-menu .lm-num[hidden]{display:none}',
+    '#limedtec-menu .lm-num.lm-num--destaque{background:var(--verde-500);color:var(--navy)}',
+
+    '#limedtec-menu svg{width:14px;height:14px;flex:0 0 auto;stroke:currentColor;fill:none;',
     '  stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}',
 
-    '#limedtec-menu .lm-rodape{margin-top:auto;padding:var(--esp-3) var(--esp-4) 0;',
-    '  border-top:1px solid var(--cinza-100);font-size:var(--txt-1);color:var(--cinza-500);',
-    '  line-height:1.6}',
+    '#limedtec-menu .lm-rodape{margin-top:auto;padding:var(--esp-3) var(--esp-3) 0;',
+    '  border-top:1px solid var(--navy-borda);font-size:var(--txt-0);color:var(--navy-apoio);',
+    '  line-height:1.7}',
     '#limedtec-menu .lm-rodape span{display:flex;align-items:center;gap:var(--esp-2)}',
-    '#limedtec-menu .lm-rodape svg{width:16px;height:16px}',
 
     /* Em tela estreita o menu vira uma faixa horizontal rolável no topo. Escondê-lo
        não é opção: sumiria a navegação inteira do sistema no celular. */
     '@media (max-width:900px){',
     '  #limedtec-menu{position:static;width:auto;flex-direction:row;overflow-x:auto;',
-    '    border-right:none;border-bottom:1px solid var(--cinza-200);padding:0}',
+    '    border-bottom:1px solid var(--navy-borda);padding:0}',
     '  #limedtec-menu .lm-marca,#limedtec-menu .lm-grupo,#limedtec-menu .lm-rodape{display:none}',
-    '  #limedtec-menu a,#limedtec-menu .lm-off{white-space:nowrap;border-left:none;',
-    '    border-bottom:3px solid transparent}',
-    '  #limedtec-menu a.lm-on{border-left-color:transparent;border-bottom-color:var(--azul-500)}}'
+    '  #limedtec-menu a,#limedtec-menu .lm-off{white-space:nowrap;border-radius:0;',
+    '    margin:0;border-bottom:3px solid transparent}',
+    '  #limedtec-menu a.lm-on{background:none;border-bottom-color:var(--azul-500)}}'
   ].join('\n');
 
   function svg(nome) {
@@ -309,9 +356,20 @@
       h.push('<a href="' + m.href + '" class="' + (on ? 'lm-on' : '') + '"' +
         (on ? ' aria-current="page"' : '') +
         (m.permissao ? ' hidden data-permissao="' + m.id + '"' : '') +
-        '>' + svg(m.id) + m.rotulo + '</a>');
+        '>' + svg(m.id) + m.rotulo +
+        '<span class="lm-num" hidden data-num="' + m.id + '"></span></a>');
     }
 
+    /* ══ O RODAPÉ É O NOSSO, E NÃO O DO MOLDE — decisão declarada ══════════════════
+       O molde põe aqui um BLOCO DE USUÁRIO (avatar, nome, "Plano Empresarial",
+       chevron). Ele não entrou, e o motivo não é preguiça: essa mesma informação já
+       é impressa pelo `gm-auth.js` na etiqueta fixa do canto superior direito, em
+       TODAS as dez telas. Ter a identidade em dois lugares é pior que tê-la num só
+       — no dia em que uma delas ficasse desatualizada, ninguém saberia qual acreditar.
+       >>> ELE ENTRA JUNTO COM O CONSERTO DO gm-auth.js, que está registrado como
+           dívida e bloqueado pelas 8 telas ainda escuras (trocar a etiqueta por
+           tokens claros conserta duas telas e quebra oito).
+       Até lá fica o que o menu já dizia: o telefone e o compromisso. */
     h.push('<div class="lm-rodape"><span>' + svg('telefone') + '(62) 3290-4241</span>' +
       'Compromisso com qualidade!</div>');
 
@@ -353,9 +411,35 @@
     return n;
   }
 
+  /* ── O CONTADOR ────────────────────────────────────────────────────────────────
+     Quem sabe o número é a TELA, porque é ela que lê o banco; o menu só tem o lugar
+     onde ele aparece. Mesma divisão de trabalho do `revelarPara`, e pelo mesmo
+     motivo: cada um faz a parte que só ele pode fazer.
+
+     >>> O SLOT NASCE VAZIO E VOLTA A FICAR VAZIO. Passar `null`, `undefined` ou algo
+         que não seja número esconde o contador — e esconder é o comportamento certo,
+         não um caso de borda: se a leitura do banco falhou, a tela NÃO SABE quantos
+         são, e "não sei" nunca vira zero (lição S6). Um "0" aceso ali diria
+         "não há nenhum", que é uma afirmação diferente e pode ser falsa.
+     >>> `destaque` pinta de verde (o do molde, no "Buscar" e no badge "IA"). É a
+         única cor que o contador tem além da neutra, e ela quer dizer NOVIDADE —
+         não "importante". Um contador verde permanente vira enfeite em três dias.
+     >>> DEVOLVE `true`/`false` (achou o slot?) pra suíte poder cobrar o
+         comportamento em vez de confiar que deve ter funcionado. */
+  function contador(id, n, destaque) {
+    var el = document.querySelector('#limedtec-menu [data-num="' + String(id).replace(/"/g, '') + '"]');
+    if (!el) return false;
+    var vale = (typeof n === 'number' && isFinite(n));
+    if (!vale) { el.hidden = true; el.textContent = ''; return true; }
+    el.textContent = n.toLocaleString('pt-BR');
+    el.className = 'lm-num' + (destaque ? ' lm-num--destaque' : '');
+    el.hidden = false;
+    return true;
+  }
+
   /* Exportado pra suíte e pra tela que precise montar depois (modal, troca de aba). */
   if (typeof window !== 'undefined') {
     window.LimedtecMenu = { montar: montar, moduloAtual: moduloAtual, MODULOS: MODULOS,
-      ICONE: ICONE, CSS: CSS, revelarPara: revelarPara };
+      ICONE: ICONE, CSS: CSS, revelarPara: revelarPara, contador: contador };
   }
 })();

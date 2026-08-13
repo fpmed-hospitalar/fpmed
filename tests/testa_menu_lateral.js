@@ -191,6 +191,80 @@ ok(n + '. a transicao usa o token de 150ms', /transition:[^;]*var\(--transicao\)
 ok(n + '. ha foco visivel no link (quem navega por teclado precisa saber onde esta)',
   /:focus-visible\{[^}]*var\(--foco\)/.test(CSS.replace(/\s+/g, ' ').replace(/ \{/g, '{'))); n++;
 
+/* ══ A SIDEBAR NAVY (13/08, passo 2 do molde) ══════════════════════════════════
+   O menu deixou de ser branco. Isso inverte QUAIS tokens de texto sao legitimos
+   aqui: os cinzas da rampa foram medidos contra BRANCO, e o mais escuro deles
+   (--cinza-800, a tinta principal) sobre o navy da 1,3:1 — some. O contrario do
+   defeito de manha, e pela mesma causa: cor escolhida sem olhar o fundo.
+   >>> ENTAO O ASSERT E POSITIVO, e nao uma lista de proibidos: toda cor de texto
+       do menu tem que sair da familia do navy (ou ser o branco puro, que e o item
+       aceso). Assim ele barra qualquer cinza claro que alguem traga depois, e nao
+       so os que eu me lembrei de proibir hoje. */
+const _tintasPermitidas = ['navy-tinta', 'navy-apoio', 'navy-rotulo', 'navy-marca',
+  'navy-selo-tinta', 'branco', 'azul-500', 'navy'];
+const _tintasUsadas = [...CSS.matchAll(/color\s*:\s*var\(--([a-z0-9-]+)\)/g)].map(m => m[1]);
+ok(n + '. sobre o navy, toda cor de texto sai da familia do navy (cinza de fundo claro some ali)',
+  _tintasUsadas.length > 0 && _tintasUsadas.every(t => _tintasPermitidas.indexOf(t) >= 0),
+  _tintasUsadas.filter(t => _tintasPermitidas.indexOf(t) < 0)); n++;
+ok(n + '. o fundo da sidebar e o navy da marca, e nao um escuro improvisado',
+  /background:var\(--navy\)/.test(_regraMenu), _regraMenu.slice(0, 160)); n++;
+
+/* ══ O CONTADOR — o slot existe e nasce VAZIO ══════════════════════════════════
+   O molde poe numero em quatro itens, e os quatro sao dado FICTICIO de
+   demonstracao (esta escrito no README dele). A ordem do dono sobre os KPIs vale
+   igual aqui: numero na tela vem do banco. Entao o menu ganhou o LUGAR do numero,
+   e quem o preenche e a tela.
+   >>> O ASSERT QUE IMPORTA E O DE ESCONDER. Se `contador` aceitasse `null` como 0,
+       uma leitura que FALHOU viraria "nao ha nenhum" na tela — afirmacao diferente
+       e possivelmente falsa. E a licao S6 dentro do menu. */
+ok(n + '. todo item nasce com o slot do contador VAZIO (numero nenhum e chumbado)',
+  (html.match(/class="lm-num" hidden/g) || []).length === hrefs.length
+  && !/lm-num[^>]*>\s*\d/.test(html),
+  { slots: (html.match(/class="lm-num" hidden/g) || []).length, links: hrefs.length }); n++;
+(function () {
+  /* Um DOM de mentira SO pro contador: ele precisa de querySelector que ache o slot.
+     O outro DOM falso nao acha nada de proposito (e o que faz o assert 2 morder). */
+  /* A pagina de mentira so tem slot pros modulos que EXISTEM. Isso e o que da dente
+     ao ultimo assert: um querySelector que fabrica elemento pra qualquer seletor
+     nunca conseguiria reproduzir o "id que nao existe" — e seria o mesmo furo do
+     DOM falso que a mutacao pegou em 11/08. */
+  const slots = {};
+  for (const m of c.api.MODULOS) if (m.id) slots[m.id] = { hidden: true, textContent: '', className: 'lm-num' };
+  const fake = { querySelector: sel => {
+    const m = /\[data-num="([^"]+)"\]/.exec(sel);
+    return (m && slots[m[1]]) ? slots[m[1]] : null;
+  } };
+  const c3 = carrega('/fpmed_negocios.html');
+  const api = new Function('window', 'document', M + '\nreturn window.LimedtecMenu;')(
+    { location: { pathname: '/fpmed_negocios.html', hash: '' } },
+    Object.assign({ readyState: 'complete', head: { appendChild() {} },
+      createElement: () => ({ setAttribute() {}, appendChild() {} }),
+      getElementById: () => ({}), querySelectorAll: () => [], addEventListener() {} }, fake));
+  ok(n + '. contador(id, n) acende o slot com o numero formatado em pt-BR',
+    api.contador('negocios', 2555) === true && slots.negocios.hidden === false
+    && slots.negocios.textContent === '2.555', slots.negocios); n++;
+  api.contador('negocios', null);
+  ok(n + '. e contador(id, null) ESCONDE - leitura que falhou nao vira "0" na tela (S6)',
+    slots.negocios.hidden === true && slots.negocios.textContent === '', slots.negocios); n++;
+  api.contador('buscar', 12, true);
+  ok(n + '. o destaque verde e opcional e sai da classe, nao de cor escrita na mao',
+    /lm-num--destaque/.test(slots.buscar.className), slots.buscar.className); n++;
+  ok(n + '. contador em id que nao existe devolve false em vez de estourar',
+    api.contador('modulo_que_nao_existe', 3) === false); n++;
+  void c3;
+})();
+/* ══ ESTE ASSERT NASCEU DE UMA MUTACAO QUE PASSOU VERDE (13/08) ════════════════
+   Tirei o `tabular-nums` do contador e a suite continuou verde. O comentario do
+   CSS explicava por que ele existe — o contador fica encostado na borda direita,
+   e sem digito de largura fixa "12" e "38" terminam em posicoes diferentes, com a
+   coluna dancando a cada troca de tela. Explicacao nao e guarda.
+   O mesmo vale pro encosto na direita: sem `margin-left:auto` o numero cola no
+   nome do modulo e deixa de ser uma coluna. */
+ok(n + '. o contador e uma COLUNA: encostado a direita e com digito de largura fixa',
+  /\.lm-num\{[^}]*margin-left:auto/.test(CSS.replace(/\s+/g, ' ').replace(/ \{/g, '{'))
+  && /\.lm-num\{[^}]*tabular-nums/.test(CSS.replace(/\s+/g, ' ').replace(/ \{/g, '{')),
+  (CSS.match(/\.lm-num\{[^}]*\}/) || [''])[0]); n++;
+
 // ── 6. os icones ─────────────────────────────────────────────────────────────
 const ICONE = c.api.ICONE;
 const MODULOS = c.api.MODULOS.filter(x => x.id);

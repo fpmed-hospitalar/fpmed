@@ -127,6 +127,19 @@
   --navy-rotulo: #7C90AE;   /* rótulo de grupo, caixa alta */
   --navy-marca:  #8FD3F2;   /* "HOSPITALAR" e o ícone de destaque */
 
+  /* Os quatro estados de superfície DENTRO do navy. O molde os escreve como
+     branco translúcido (`rgba(255,255,255,.05)`, `.06`, `.08`, `.09`); aqui eles
+     viram HEX PRÓPRIO, já resolvidos sobre o navy.
+     >>> É a regra que abre este arquivo, e ela vale ainda mais aqui: tom gerado
+         por rgba() em cima de fundo colorido não pode ser medido pela fórmula da
+         WCAG sem antes ser resolvido — e o que não se mede volta a errar. Com o
+         hex, o contador do menu (10,75:1) é um número, e não uma esperança. */
+  --navy-borda:  #1C293F;   /* divisória dentro do navy (branco a 6%) */
+  --navy-hover:  #1A263D;   /* item sob o mouse (branco a 5%) */
+  --navy-ativo:  #243045;   /* item aceso (branco a 9%) */
+  --navy-selo:   #212D43;   /* fundo do contador (branco a 8%) */
+  --navy-selo-tinta: #DCE4EE;   /* o número do contador, 10,75:1 sobre o selo */
+
   /* ── AZUL FPMED ───────────────────────────────────────────────────────────
      #2CA9E0 é a marca e mora no 500. Regra D5: azul SÓ em ação principal e link.
 
@@ -300,7 +313,11 @@
      faixa branca do lado — e o defeito só aparece na tela esquecida.
      >>> É a mesma classe de defeito da dívida do `data-vis`, paga ontem: número
          que precisa concordar em N lugares mora em UM. */
-  --menu-largura: 236px;
+  /* 236 -> 228 em 13/08, com o molde oficial: é a largura dele, e ela vem junto
+     com a densidade nova (item de 30px em vez de 40). Menu mais estreito COM o
+     mesmo aperto seria só menu menor; aqui o que encolheu foi a altura da linha,
+     e o respiro lateral continua. */
+  --menu-largura: 228px;
   --esp-8: 32px;
   --esp-12: 48px;
   --esp-16: 64px;

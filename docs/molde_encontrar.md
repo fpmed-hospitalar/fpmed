@@ -142,6 +142,7 @@ nunca, em hipótese alguma, marca da GlobalMed.
    **[FEITO — 13/08]** ver a seção 6 abaixo: o que entrou, o que divergiu e o que a medição
    corrigiu no plano.
 2. **Sidebar navy 228px** — grupos, contadores à direita, item ativo, badge "IA".
+   **[FEITO — 13/08]** ver a seção 7.
 3. **Header sticky** — breadcrumb, gatilho ⌘K (visual), selo "Base sincronizada", sino.
 4. **Fila de 4 KPIs**, com os números reais do banco.
 5. **Barra de busca** com chips, "+ Filtro" tracejado e o botão azul.
@@ -203,3 +204,80 @@ Os dois nasceram com a *amostra* e viraram lei sem ter sido regra:
 
 Os raios de **11px** (barra flutuante de seleção) e **12px** (paleta ⌘K): as duas peças são da
 Parte B, que o dono mandou anotar e não construir. Token sem dono envelhece antes de nascer.
+
+---
+
+## 7 · PASSO 2 FEITO — A SIDEBAR NAVY
+
+`limedtec-menu.js`, 13/08. Suíte `testa_menu_lateral`: **44 → 52 asserts, mutação 13 de 13
+barradas**. Total do projeto **3.382 / 0 falhas / 91 suítes**.
+
+O menu era **branco com borda à direita**; virou a superfície escura do molde: 228px, `#0E1B33`,
+item de 30px com raio 6, ícone de 14px, rótulo de grupo em `--navy-rotulo`.
+
+> **Por que isso não é "trocar de cor".** Com a sidebar branca, ela e a área de conteúdo eram a
+> **mesma superfície** separada por uma linha de 1px — o olho tinha que procurar onde acabava a
+> navegação e começava o trabalho. O navy resolve isso sem gastar uma borda: moldura escura,
+> palco claro, e a fronteira é a diferença de matéria. E ele **não rouba a atenção**, porque a
+> tinta dos itens em repouso é discreta e só o item aceso ganha fundo, peso e ícone azul.
+
+### O contador existe, e nasce vazio
+
+O molde põe número em quatro itens (Buscar 9.050 · Radar 12 · Desertas 38 · Negócios 71). **Os
+quatro são dado fictício de demonstração** — está escrito no README dele. Então entrou o **slot**,
+e quem o preenche é a tela, via `LimedtecMenu.contador(id, n, destaque)`. Sem chamada, nada
+aparece.
+
+> `contador(id, null)` **esconde** em vez de escrever "0". Se a leitura do banco falhou, a tela
+> não sabe quantos são — e um "0" aceso ali afirma "não há nenhum", que é outra coisa e pode ser
+> falsa. É a lição S6 dentro do menu, e tem assert.
+
+Os números reais entram no **passo 4**, junto com os KPIs, das mesmas leituras.
+
+### Duas revisões de decisão, as duas declaradas
+
+**1 · O texto do item desceu de `--txt-2` (14px) para `--txt-1` (12px)** — e isso corrige a
+divergência nº 1 que este projeto tinha declarado de manhã. O texto anterior dizia *"o protótipo
+usa 12,5px, que não existe na nossa escala; fica o `--txt-2`, o menu fica um fio maior e ganha
+legibilidade"*. Aquilo valia para o menu **branco e espaçado**. Na linha de 30px do molde, 14px
+não é um fio maior: é texto fora da régua onde foi desenhado. E o `--txt-1` **sempre foi** o
+degrau mais próximo dos 12,5px — a escolha da manhã tinha ido para o lado errado.
+
+> E a legibilidade **não caiu, foi medida**: o item em repouso saiu de `--cinza-600` sobre branco
+> (6,17:1) para `--navy-tinta` sobre navy (**10,78:1**).
+
+**2 · A barra da esquerda do item aceso saiu.** É a única peça do desenho anterior que não trocou
+por equivalente: com o item virando uma pílula arredondada de 30px *dentro* da sidebar, uma barra
+colada na borda esquerda ficaria **fora** da pílula — marcando o menu, não o item. O fundo faz o
+mesmo trabalho, e é o que o molde usa. Os três sinais do item aceso continuam três: fundo, peso e
+cor do ícone.
+
+### O rodapé é o nosso, e isso é decisão, não esquecimento
+
+O molde põe aqui um **bloco de usuário** (avatar, nome, "Plano Empresarial", chevron). Não entrou:
+essa informação já é impressa pelo `gm-auth.js` na etiqueta fixa do canto superior direito, em
+**todas as dez telas**. Identidade em dois lugares é pior que em um — no dia em que uma
+desatualizasse, ninguém saberia qual acreditar. Ele entra junto com o conserto do `gm-auth.js`,
+que está registrado como dívida e bloqueado pelas 8 telas ainda escuras.
+
+### A mutação, e o instrumento torto que ela pegou
+
+13 mutações, **13 barradas** — mas a primeira rodada foi 11 de 13, e as duas que passaram verdes
+ensinaram coisas diferentes:
+
+- **buraco de assert real:** tirei o `tabular-nums` do contador e a suíte continuou verde. O
+  comentário do CSS explicava por que ele existe; explicação não é guarda. Virou assert.
+- **instrumento torto (S9/S10 de novo):** a mutação *"o menu passa a se montar sozinho"* trocava
+  a primeira ocorrência de `[data-limedtec-menu]` — que está no **comentário de cabeçalho**, não
+  na chamada. Ela nunca chegou a mutar o código. Corrigida para mutar a chamada; a suíte barrou.
+
+### Medido no navegador (SW desregistrado, servidor local)
+
+| largura | rolagem horizontal | menu |
+|---|---|---|
+| 390 | 0 | faixa horizontal navy (`flex-direction: row`) |
+| 1366 | 0 | coluna de 228px |
+| 1920 | 0 | coluna de 228px |
+
+Nas **duas** telas que carregam o menu (Encontrar e Negócios). Item aceso confirmado em cada uma
+(Buscar e Negócios), com fundo `#243045` e ícone `#2CA9E0`.

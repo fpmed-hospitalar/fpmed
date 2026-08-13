@@ -1194,9 +1194,50 @@ Criado em 21/07/2026 copiando SO os arquivos do app do C:\globalmed.
              Negocios abrem com os tokens novos, zero rolagem horizontal, nada quebrado.
              As duas telas ainda estao no desenho ANTIGO — o molde so trocou a paleta por
              baixo. A roupa entra nos passos 2 a 6.
-     >>> PROXIMO PASSO: 2 · SIDEBAR NAVY 228px (grupos, contadores a direita, item ativo,
-         badge "IA"). Depois: 3 header sticky · 4 fila de 4 KPIs com numero REAL do banco ·
-         5 barra de busca com chips · 6 painel de resultados.
+     >>> PASSO 2 (A SIDEBAR NAVY) **FEITO** — sw.js -> -2026-08-13-31.
+         O menu era BRANCO com borda a direita; virou a superficie escura do molde: 228px,
+         #0E1B33, item de 30px com raio 6, icone de 14, rotulo de grupo em --navy-rotulo.
+         testa_menu_lateral: 44 -> 52 asserts, MUTACAO 13 de 13 barradas.
+         TOTAL: 3.382 / 0 falhas / 91 suites. Detalhe em docs/molde_encontrar.md, secao 7.
+         >>> O CONTADOR EXISTE E NASCE VAZIO. O molde poe numero em 4 itens (Buscar 9.050,
+             Radar 12, Desertas 38, Negocios 71) e os QUATRO sao dado ficticio — esta escrito
+             no README dele. Entrou o SLOT; quem preenche e a tela, por
+             LimedtecMenu.contador(id, n, destaque). contador(id, null) ESCONDE em vez de
+             escrever "0": leitura que falhou nao vira "nao ha nenhum" (S6). Tem assert.
+             Os numeros reais entram no PASSO 4, junto com os KPIs, das mesmas leituras.
+         >>> DUAS DECISOES MINHAS FORAM REVISADAS, e as duas estao declaradas:
+             1. o texto do item desceu de --txt-2 (14px) pro --txt-1 (12px). A divergencia
+                que eu tinha escrito de manha ("fica o --txt-2, o menu fica um fio maior")
+                valia pro menu BRANCO e espacado; na linha de 30px do molde, 14px e texto
+                fora da regua. E o --txt-1 SEMPRE foi o degrau mais perto dos 12,5px do
+                molde. A legibilidade nao caiu: 6,17:1 (cinza-600 no branco) -> 10,78:1
+                (navy-tinta no navy);
+             2. a barra da esquerda do item aceso SAIU. Com o item virando pilula de 30px
+                DENTRO da sidebar, a barra colada na borda ficaria FORA da pilula —
+                marcando o menu, nao o item. Os tres sinais continuam tres: fundo, peso e
+                cor do icone.
+         >>> O RODAPE E O NOSSO (telefone + compromisso), e isso e decisao: o molde poe um
+             BLOCO DE USUARIO ali, e essa informacao ja e impressa pelo gm-auth.js no canto
+             superior direito das 10 telas. Identidade em dois lugares e pior que em um.
+             Entra junto com o conserto do gm-auth, que segue bloqueado pelas 8 telas escuras.
+         >>> A MUTACAO PEGOU UM INSTRUMENTO TORTO MEU (S9/S10 de novo): a mutacao "o menu
+             passa a se montar sozinho" trocava a PRIMEIRA ocorrencia de
+             [data-limedtec-menu] — que esta no COMENTARIO de cabecalho, nao na chamada.
+             Ela nunca mutou o codigo e passou verde. Corrigida pra mutar a chamada.
+         >>> MEDIDO NO NAVEGADOR nas 3 larguras, nas DUAS telas: 390/1366/1920 com ZERO
+             rolagem horizontal; em 390 o menu vira faixa horizontal navy.
+     >>> PROXIMO PASSO: 3 · HEADER STICKY (trilha "Oportunidades > Encontrar", gatilho da
+         paleta ⌘K so no visual, selo "Base sincronizada", sino). Depois: 4 fila de 4 KPIs
+         com numero REAL do banco · 5 barra de busca com chips · 6 painel de resultados.
+         >>> ATENCAO NO PASSO 3: a "topfaixa" atual (← Sistema · telefone · slogan) e o que
+             o header do molde SUBSTITUI. Ela ainda esta nas duas telas.
+
+     >>> O SERVIDOR DO LACO — ARMADILHA NOVA, e me custou tres reinicios: subir o servidor
+         como tarefa de fundo funciona, mas ele MORRE a cada notificacao de tarefa. E subir
+         com Start-Process no sandbox faz um servidor que responde 404 em TUDO (o processo
+         destacado nao le C:\fpmed). O jeito que fica de pe:
+           Start-Process -FilePath node -ArgumentList '<scratchpad>\servidor.js' -WindowStyle Hidden
+         com dangerouslyDisableSandbox. E se der 404 em tudo, e ESSE o motivo — nao o caminho.
 
      >>> ARMADILHA QUE ME CUSTOU UMA RODADA HOJE, e vale pra qualquer medicao visual:
          o SERVICE WORKER serve a copia ANTIGA do arquivo. Eu media a tela velha achando
