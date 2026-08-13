@@ -585,5 +585,51 @@ ok(n + '. a ordem prioriza quem tem ESTOQUE (a frequencia foi medida e reprovada
   /estoque=gt\.0/.test(G)
   && /maior repetição = \*\*4\*\*/.test(G.replace(/\s+/g, ' '))); n++;
 
+// ══════════════════════════════════════════════════════════════════════════════
+// FATIA 4 — COR SÓ DO TOKEN, ATÉ O PONTO DA LINHA (ordem do dono, 13/08)
+// ══════════════════════════════════════════════════════════════════════════════
+/* "Toda cor sai do token, valor EXATO: fundo, texto, borda, divisoria, sombra, hover, selo,
+   barra lateral, icone. Nada de style= inline com hex escrito a mao. Isso inclui as MIUDAS."
+   >>> O `.print-doc` e os `#print-*` SAEM DA CONTA: sao PAPEL, congelados por ordem do dono.
+       Cobrar deles seria cobrar de mim uma correcao que ele proibiu. */
+const COR_CRUA = /#[0-9a-fA-F]{3,8}\b|\brgba?\((?!\s*var\()[^)]+\)/g;
+{
+  const ls = G.split('\n');
+  const papel = new Set();
+  let d = false;
+  ls.forEach((l, i) => {
+    if (/<div class="print-doc"/.test(l)) d = true;
+    else if (d && /^<script/.test(l.trim())) d = false;
+    if (d || /id="print-|print-obs|doc-itens|doc-footer|doc-empresa/.test(l)) papel.add(i);
+  });
+  const cruas = [];
+  ls.forEach((l, i) => {
+    if (papel.has(i) || /^\s*(\/\/|\*|<!--)/.test(l)) return;
+    for (const m of l.matchAll(/style\s*=\s*"([^"]*)"/g))
+      for (const c of (m[1].match(COR_CRUA) || [])) cruas.push((i + 1) + ':' + c);
+    for (const m of l.matchAll(/\.style\.[A-Za-z]+\s*=\s*'([^']*)'/g))
+      for (const c of (m[1].match(COR_CRUA) || [])) cruas.push((i + 1) + ':' + c);
+  });
+  ok(n + '. *** ZERO cor chumbada em style= inline ou escrita por JS ***',
+    cruas.length === 0, cruas.slice(0, 6)); n++;
+}
+ok(n + '. e ZERO no CSS de tela (o bloco do papel segue fora, por ordem do dono)',
+  (TELA_LIMPA.match(COR_CRUA) || []).length === 0,
+  [...new Set(TELA_LIMPA.match(COR_CRUA) || [])].slice(0, 5)); n++;
+
+/* *** A FUGA DE AA, MEDIDA E CONSERTADA COM O DEGRAU VIZINHO *** (a unica fuga que a ordem
+   permite). O rotulo do "Enviar para Compras" usava o `--verde-600` como TEXTO sobre branco:
+   3,02:1. Nao era regressao desta fatia - o valor ja era esse desde antes. O remedio e o que a
+   propria ordem prescreve: o degrau VIZINHO da MESMA rampa, nunca cor nova. O 700 da 5,46:1.
+   >>> O assert existe pra que "voltar ao tom da marca" nao signifique um dia baixar pro 600
+       de novo - que e a coisa mais natural do mundo pra quem compara dois prints e nao mediu. */
+ok(n + '. *** nenhum texto usa o --verde-600 (3,02:1 sobre branco); o oficio de texto e o 700 ***',
+  !/color:var\(--verde-600\)/.test(G)); n++;
+{
+  const v700 = tokenDoTema('verde-700'), br = tokenDoTema('branco');
+  ok(n + '. ...e o degrau que ficou passa em AA de verdade',
+    contraste(v700, br) >= 4.5, { medido: contraste(v700, br).toFixed(2) }); n++;
+}
+
 console.log('\nRESULTADO: ' + p + ' ok, ' + f + ' falha(s)');
 if (f) process.exit(1);
