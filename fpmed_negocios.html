@@ -330,6 +330,31 @@ body{
    chama de pior que desalinhado — então elas passam a usar a mesma grade da linha. */
 .painel-res .card .acoes{bottom:var(--esp-3);right:var(--esp-6)}
 
+/* ══ A AGENDA DENTRO DO PAINEL (13/08, item 7b · fatia 4) ════════════════════════════════════
+   A Agenda é a outra visão de LISTA desta tela — e é a mais longa das duas. Ela recebe a mesma
+   moldura, com uma diferença que é dela: aqui a linha não é o cartão, é o par HORA + CARTÃO. O
+   olho procura "que horas é a sessão" antes de procurar o nome do órgão, e essa foi a razão de a
+   hora ter uma coluna própria desde que a Agenda nasceu.
+
+   >>> ENTÃO QUEM DESENHA O FIO E O HOVER É A LINHA INTEIRA (`.ag-lin`), e não o cartão de
+       dentro. Se o fio fosse do cartão, ele começaria depois da hora — e uma lista com o
+       divisor recuado parece uma lista com duas colunas desalinhadas.
+   >>> E O CARTÃO FICA TRANSPARENTE: ele é branco por natureza, e branco por cima do fundo de
+       hover apagaria justamente o pedaço que o mouse está tocando. Quem pinta é a linha. */
+.painel-res.agenda .ag-lin{margin-bottom:0;padding-left:var(--esp-6);
+  border-bottom:1px solid var(--borda-divisor);transition:background-color var(--transicao)}
+.painel-res.agenda .linhas .ag-lin:last-child{border-bottom:0}
+.painel-res.agenda .ag-lin:hover{background:var(--linha-hover)}
+.painel-res.agenda .ag-lin .ag-hora{padding-top:var(--esp-4)}
+.painel-res.agenda .ag-lin .card{background:transparent;padding-left:0;border-bottom:0}
+/* O CABEÇALHO DE DIA vira um DEGRAU dentro do painel, na mesma superfície sutil do cabeçalho e
+   do rodapé — porque ele é do mesmo ofício que os dois: moldura que organiza, não conteúdo.
+   Ele era uma linha solta com uma borda embaixo; solto entre cartões flutuantes isso bastava,
+   dentro de um painel de fios iguais ele sumiria no meio deles. */
+.painel-res.agenda .ag-dia{margin:0;padding:var(--esp-2) var(--esp-6);
+  background:var(--superficie-sutil);border-top:1px solid var(--borda-divisor)}
+.painel-res.agenda .linhas > .ag-dia:first-child{border-top:0}
+
 /* ── kanban ── */
 .kb{display:flex;gap:14px;overflow-x:auto;padding:8px 2px 20px;align-items:flex-start}
 .col{flex:0 0 300px;background:var(--cinza-100);border:1px solid var(--cinza-200);border-radius:var(--raio-cartao);padding:12px}
@@ -353,6 +378,11 @@ body{
 .ag-lin{display:flex;gap:14px;align-items:flex-start;margin-bottom:10px}
 .ag-hora{flex:0 0 62px;text-align:right;font-family:Montserrat;font-weight:700;font-size:14px;color:var(--azul-claro);padding-top:15px}
 .ag-lin .card{flex:1;margin-bottom:0}
+/* >>> `.ag-secao` FICOU ÓRFÃ em 13/08 (fatia 4): o "Já passaram" que ela desenhava virou o
+       CABEÇALHO do segundo painel da Agenda. O grep está feito e é conclusivo — ela não é usada
+       em mais lugar nenhum. Fica pela mesma regra do `.fase-tag` logo acima: seletor órfão não
+       quebra nada, e apagar CSS no mesmo commit que muda a marcação é como se descobre, dias
+       depois, que ele era usado num terceiro lugar. Sai numa limpeza própria. */
 .ag-secao{margin:34px 0 4px;font-family:Montserrat;font-weight:700;font-size:12px;letter-spacing:1.4px;
   text-transform:uppercase;color:var(--muted)}
 
@@ -1467,6 +1497,16 @@ function agenda(l){
   const futuro = comData.filter(n => diaDe(n.abertura) >= hoje);
   const passado = comData.filter(n => diaDe(n.abertura) < hoje);
 
+  /* ══ OS DOIS TETOS DA AGENDA, QUE TAMBÉM ERAM CALADOS (13/08, item 7b · fatia 4) ═════════════
+     A visão Lista cortava em 200 sem dizer; esta corta em DOIS lugares — 300 no que vem pela
+     frente e 200 no que já passou — e também nunca disse. O da frente é o mais perigoso dos
+     três: quem abre a Agenda está procurando *a próxima sessão*, e uma agenda que engole o fim
+     da fila em silêncio não parece incompleta, parece vazia daquele dia em diante.
+     >>> Eles moram DENTRO da função de propósito: a suíte `testa_funil_negocios` extrai este
+         bloco do arquivo e o roda isolado. Constante lá fora vira `ReferenceError` no teste — e
+         a suíte que existe pra provar a ordem da agenda quebraria por causa de um número. */
+  const TETO_FUTURO = 300, TETO_PASSADO = 200;
+
   const bloco = (lista, cresc) => {
     const porDia = {};
     lista.forEach(n => { const d = diaDe(n.abertura); (porDia[d] = porDia[d]||[]).push(n); });
@@ -1483,11 +1523,48 @@ function agenda(l){
     }).join('');
   };
 
+  /* ══ DOIS PAINÉIS, E NÃO UM COM UMA DIVISÓRIA NO MEIO ════════════════════════════════════════
+     "O que vem pela frente" e "o que já passou" respondem perguntas diferentes, correm em ordens
+     OPOSTAS (uma cresce, a outra decresce) e têm TETOS diferentes. Um painel só com um rodapé só
+     teria de contar dois cortes numa frase — e a frase que serve pros dois não serve pra nenhum.
+     >>> A `.ag-secao` que separava os dois virou o CABEÇALHO do segundo painel: é o mesmo texto
+         no lugar onde a moldura já diz quantos são. Um rótulo a menos solto na página.
+     >>> O CABEÇALHO DE DIA NÃO É STICKY, e não é esquecimento: `.painel-res` tem
+         `overflow:hidden` (é ele que apara os cantos das linhas contra o raio do painel), e
+         sticky dentro de um ancestral que corta não gruda em lugar nenhum. Prometer no CSS o que
+         o navegador não faz é pior que não prometer. */
+  const painelDeSessoes = (titulo, lista, teto, cresc, quais) => {
+    const most = lista.slice(0, teto), fora = lista.length - most.length;
+    const nfmt = x => x.toLocaleString('pt-BR');
+    return '<div class="painel-res agenda">'
+      + '<div class="cabecalho"><span>' + titulo + '</span></div>'
+      + '<div class="linhas">' + bloco(most, cresc) + '</div>'
+      + '<div class="rodape-painel"><span>'
+      /* O rodapé diz QUAIS ficaram, e não só quantas: numa lista ordenada por tempo, "as 300
+         primeiras" não informa nada — "as 300 mais próximas" diz onde a tesoura passou. */
+      +   (fora
+          ? 'Mostrando as <b>' + nfmt(most.length) + '</b> ' + quais + ' — <b>' + nfmt(fora)
+            + '</b> ' + (fora === 1 ? 'ficou' : 'ficaram') + ' de fora desta tela. '
+            + 'Filtre por fase, empresa ou busca para chegar '
+            + (fora === 1 ? 'nela' : 'nelas') + '; esta lista não pagina.'
+          : 'Mostrando <b>' + nfmt(most.length) + '</b> '
+            + (most.length === 1 ? 'sessão' : 'sessões')
+            + ' — todas de uma vez, esta lista não pagina.')
+      + '</span></div>'
+      + '</div>';
+  };
+
+  const hj = futuro.filter(n => diaDe(n.abertura) === hoje).length;
   let html = '';
-  html += futuro.length ? bloco(futuro.slice(0,300), true)
+  html += futuro.length
+        ? painelDeSessoes('<b>' + futuro.length.toLocaleString('pt-BR') + '</b> de hoje em diante'
+            + (hj ? ' · <b>' + hj + '</b> ' + (hj === 1 ? 'é hoje' : 'são hoje') : ''),
+            futuro, TETO_FUTURO, true, 'mais próximas')
         : '<div class="vazio">Nada marcado de hoje em diante. Marque "ver arquivados" para rever o histórico.</div>';
-  if(passado.length) html += `<div class="ag-secao">Já passaram · ${passado.length.toLocaleString('pt-BR')} sessão(ões)</div>`
-        + bloco(passado.slice(0,200), false);
+  if(passado.length) html += painelDeSessoes(
+        'Já passaram · <b>' + passado.length.toLocaleString('pt-BR') + '</b> '
+          + (passado.length === 1 ? 'sessão' : 'sessões'),
+        passado, TETO_PASSADO, false, 'mais recentes');
   return html;
 }
 

@@ -1,4 +1,4 @@
-// SUITE testa_painel_negocios - o painel do molde em volta da visao LISTA (item 7b, fatia 3).
+// SUITE testa_painel_negocios - o painel do molde nas visoes de LISTA (item 7b, fatias 3 e 4).
 //
 // == O QUE ESTA SUITE GUARDA, E POR QUE ELA E SEPARADA DA testa_moldura_negocios ==========
 // A moldura (fatia 1) e os indicadores (fatia 2) sao o TOPO da tela. Isto aqui e a LISTA,
@@ -30,7 +30,7 @@ const CORPO = LIMPO.replace(/\s+/g, ' ');
 
 let p = 0, f = 0, n = 1;
 const ok = (t, c, e) => { if (c) p++; else { f++; console.log('  FALHA ' + t + (e !== undefined ? '  [' + JSON.stringify(e) + ']' : '')); } };
-console.log('SUITE testa_painel_negocios - o painel da lista (item 7b, fatia 3)\n');
+console.log('SUITE testa_painel_negocios - o painel nas visoes de lista (item 7b, fatias 3 e 4)\n');
 
 // ── 1. A LISTA NAO E MAIS UMA PILHA DE CARTOES SOLTOS ────────────────────────
 ok(n + '. a visao Lista passa pelo painel (o `map(card).join` solto acabou)',
@@ -162,6 +162,74 @@ ok(n + '. e a lista NAO finge paginar (a promessa de pagina 2 nao entrou)',
 ok(n + '. sem nenhuma linha, quem aparece e o vazio com acao - nao um painel oco',
   /function painelLista\(l, base\)\{\s*if\(!l\.length\) return vazioComAcao\(\);/.test(LIMPO)); n++;
 
+// ── 6b. A AGENDA — a outra visao de LISTA, e a que tinha DOIS cortes calados ──
+/* A Lista cortava em 200 sem dizer; a Agenda corta em DOIS lugares (300 no que vem pela frente,
+   200 no que ja passou) e tambem nunca disse. O da frente e o mais perigoso dos tres: quem abre
+   a Agenda esta procurando A PROXIMA SESSAO, e uma agenda que engole o fim da fila em silencio
+   nao parece incompleta - parece vazia daquele dia em diante. */
+const _AG = (LIMPO.match(/function agenda\(l\)\{[\s\S]*?\n\}/) || [''])[0];
+ok(n + '. *** os dois tetos da Agenda tem nome (nenhum numero solto num slice) ***',
+  /const TETO_FUTURO = 300, TETO_PASSADO = 200;/.test(_AG)
+  && /lista\.slice\(0, teto\)/.test(_AG)
+  && !/slice\(0,\s*300\)/.test(_AG) && !/slice\(0,\s*200\)/.test(_AG), { achouCorpo: !!_AG }); n++;
+/* Eles moram DENTRO da funcao de proposito: a `testa_funil_negocios` extrai este bloco do
+   arquivo e o roda isolado. Constante la fora vira ReferenceError no teste - e a suite que
+   existe pra provar a ORDEM da agenda quebraria por causa de um numero. */
+ok(n + '. ...e eles moram DENTRO da funcao, que e de onde a outra suite a extrai',
+  /function agenda\(l\)\{[\s\S]{0,1600}?const TETO_FUTURO/.test(LIMPO)); n++;
+ok(n + '. a Agenda passa pelo painel, com a marca de que ela e a variante de agenda',
+  /'<div class="painel-res agenda">'/.test(LIMPO)
+  && /const painelDeSessoes = \(titulo, lista, teto, cresc, quais\)/.test(LIMPO)); n++;
+/* SAO DOIS PAINEIS, e nao um com divisoria: os dois blocos correm em ordens OPOSTAS (um cresce,
+   o outro decresce) e tem TETOS diferentes. Um rodape so teria de contar dois cortes numa frase
+   - e a frase que serve pros dois nao serve pra nenhum. */
+ok(n + '. sao DOIS paineis (frente e passado), cada um com o seu teto',
+  /painelDeSessoes\([\s\S]{0,400}?futuro, TETO_FUTURO, true, 'mais próximas'\)/.test(LIMPO)
+  && /painelDeSessoes\([\s\S]{0,300}?passado, TETO_PASSADO, false, 'mais recentes'\)/.test(LIMPO)); n++;
+/* Numa lista ordenada por TEMPO, "as 300 primeiras" nao informa nada: "as 300 mais proximas"
+   diz ONDE a tesoura passou. E a mesma exigencia do rodape da Lista, um degrau mais fina. */
+ok(n + '. *** e o rodape diz QUAIS ficaram, nao so quantas ("mais proximas"/"mais recentes") ***',
+  /'Mostrando as <b>' \+ nfmt\(most\.length\) \+ '<\/b> ' \+ quais/.test(LIMPO)); n++;
+/* *** SEGUNDA MUTACAO QUE PASSOU VERDE, E PELO MESMO MOTIVO DA PRIMEIRA. *** Trocar o `(fora` do
+   rodape da Agenda por `(false` mata o aviso do corte e a suite nao piscava: o assert de cima
+   so provava que a FRASE existe no arquivo, e ela continuava la - num ramo morto. Frase escrita
+   nao e frase mostrada. O assert agora cobra que quem escolhe o ramo seja o NUMERO dos que
+   ficaram de fora, e cobra isso DENTRO do corpo da agenda. */
+ok(n + '. ...e quem escolhe o ramo do rodape e o numero dos que ficaram de fora',
+  /const most = lista\.slice\(0, teto\), fora = lista\.length - most\.length;/.test(_AG)
+  && /\(fora\s*\n?\s*\?/.test(_AG)); n++;
+ok(n + '. o "Ja passaram" virou CABECALHO do 2o painel (nao sobrou rotulo solto na pagina)',
+  /'Já passaram · <b>'/.test(LIMPO)
+  && !/class="ag-secao"/.test(LIMPO)); n++;
+/* Quem desenha o fio e o hover e a LINHA INTEIRA (`.ag-lin`), e nao o cartao de dentro: se o fio
+   fosse do cartao ele comecaria depois da hora, e uma lista com o divisor recuado parece uma
+   lista com duas colunas desalinhadas. E o cartao fica TRANSPARENTE - branco por cima do fundo
+   de hover apagaria justamente o pedaco que o mouse esta tocando. */
+ok(n + '. na Agenda quem desenha o fio e o hover e a LINHA, nao o cartao',
+  /\.painel-res\.agenda \.ag-lin\{[^}]*border-bottom:1px solid var\(--borda-divisor\)/.test(CSS1)
+  && /\.painel-res\.agenda \.ag-lin:hover\{[^}]*background:var\(--linha-hover\)/.test(CSS1)
+  && /\.painel-res\.agenda \.ag-lin \.card\{[^}]*background:transparent/.test(CSS1)
+  && /\.painel-res\.agenda \.ag-lin \.card\{[^}]*border-bottom:0/.test(CSS1)); n++;
+/* *** ESTE ASSERT NASCEU DE UMA MUTACAO QUE PASSOU VERDE. *** Eu tinha guardado o fio da ultima
+   linha da LISTA (foi ele que a medicao pegou desenhando 1,6px) e ESQUECI o mesmo fio na Agenda
+   - apagar a regra de la nao acendia nada. E o mesmo defeito, no mesmo painel, na visao ao lado:
+   guardar so a metade que ja doeu e como a segunda metade volta. */
+ok(n + '. *** e a ultima LINHA DA AGENDA tambem nao desenha o fio contra a borda ***',
+  /\.painel-res\.agenda \.linhas \.ag-lin:last-child\{[^}]*border-bottom:0/.test(CSS1)); n++;
+ok(n + '. e o cabecalho de dia vira degrau na MESMA superficie do cabecalho e do rodape',
+  /\.painel-res\.agenda \.ag-dia\{[^}]*background:var\(--superficie-sutil\)/.test(CSS1)
+  && /\.painel-res\.agenda \.linhas > \.ag-dia:first-child\{[^}]*border-top:0/.test(CSS1)); n++;
+/* `.painel-res` tem `overflow:hidden` (e ele que apara os cantos das linhas contra o raio do
+   painel), e sticky dentro de um ancestral que corta nao gruda em lugar nenhum. Prometer no CSS
+   o que o navegador nao faz e pior que nao prometer. */
+ok(n + '. e ninguem prometeu cabecalho de dia GRUDADO dentro de um painel que corta',
+  !/\.painel-res[^{]*\.ag-dia\{[^}]*position:sticky/.test(CSS1)); n++;
+/* A Agenda tem UM caso vazio que nao e o da Lista: ha sessao no passado e nenhuma na frente. Ali
+   o painel do passado aparece sozinho, e o lugar do futuro fala por escrito - sem ele a tela
+   diria "Ja passaram" e mais nada, e quem lesse concluiria que a agenda inteira e historico. */
+ok(n + '. sem nada de hoje em diante, o lugar do futuro FALA (nao fica so o historico)',
+  /Nada marcado de hoje em diante/.test(CORPO)); n++;
+
 // ── 7. A MEMORIA DO PORQUE (L6) ──────────────────────────────────────────────
 const _corrido = N.replace(/\s+/g, ' ');
 ok(n + '. o arquivo registra por que o cartao vira linha SO dentro do painel',
@@ -170,6 +238,10 @@ ok(n + '. e registra que o corte em 200 existia e era MUDO',
   /SEMPRE CORTOU EM 200, E NUNCA DISSE/.test(_corrido)); n++;
 ok(n + '. e por que o seletor de ordenacao do molde nao entrou nesta tela',
   /já existe um seletor de ordenação na barra/.test(_corrido)); n++;
+ok(n + '. registra por que a Agenda tem DOIS paineis, e nao um com divisoria',
+  /respondem perguntas diferentes, correm em ordens OPOSTAS/.test(_corrido)); n++;
+ok(n + '. e por que o cabecalho de dia NAO e sticky (o painel corta)',
+  /sticky dentro de um ancestral que corta não gruda em lugar nenhum/.test(_corrido)); n++;
 
 console.log('\nRESULTADO: ' + p + ' ok, ' + f + ' falha(s)');
 if (f) process.exit(1);

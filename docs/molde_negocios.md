@@ -20,7 +20,7 @@
 | 1 | **A moldura** — header sticky, trilha, `.pagina-topo`, as 4 visões como alternador, o sino | **feita** (`f66aa8d`) |
 | 2 | **Os indicadores** — 5 cartões com a anatomia da fila da Encontrar, destaque navy | **feita** (`7b68042`) |
 | 3 | **O painel em volta da lista** | **feita** — esta seção |
-| 4 | O painel na **Agenda** (e os dois cortes calados dela) | a fazer |
+| 4 | O painel na **Agenda** (e os dois cortes calados dela) | **feita** — seção 4 |
 | 5 | **Quadros/Kanban e Calendário** — caso à parte, decisão declarada | a fazer |
 
 ---
@@ -173,7 +173,128 @@ Rodapé lido na tela: **"Mostrando os 200 primeiros — 50 ficaram de fora desta
 
 ---
 
-## O QUE ESTA FATIA **NÃO** TOCOU, E POR QUÊ
+---
+
+## 4 · O PAINEL NA AGENDA — a outra visão de lista, e a que tinha **dois** cortes calados
+
+`fpmed_negocios.html`. `testa_painel_negocios`: **30 → 44 asserts**, **mutação 16 de 16 barradas**
+(cada mutação rodada contra **duas** suítes: esta e a `testa_funil_negocios`, que é a que prova a
+**ordem** da agenda).
+
+### Os dois cortes, e por que o da frente é o pior dos três
+
+A Lista cortava em 200 sem dizer. A Agenda corta em **dois lugares** — 300 no que vem pela frente,
+200 no que já passou — e também nunca disse.
+
+> **O da frente é o mais perigoso dos três.** Quem abre a Agenda está procurando **a próxima
+> sessão**. Uma agenda que engole o fim da fila em silêncio não parece incompleta: parece **vazia
+> daquele dia em diante**.
+
+E o rodapé daqui pede um degrau a mais que o da Lista: numa lista ordenada por **tempo**, *"as 300
+primeiras"* não informa nada. O rodapé diz **quais** ficaram —
+
+> Mostrando as **300** mais próximas — **40** ficaram de fora desta tela. Filtre por fase, empresa
+> ou busca para chegar nelas; esta lista não pagina.
+
+…e no painel do passado, *"as 200 **mais recentes**"*, porque lá a lista corre ao contrário.
+
+> **Os tetos moram dentro da função**, e isso é decisão e não estilo: a `testa_funil_negocios`
+> **extrai** o bloco `agenda(...)` do arquivo e o roda isolado para provar a ordem. Constante lá
+> fora vira `ReferenceError` no teste — a suíte que existe para guardar a ordem da agenda
+> quebraria por causa de um número. Há mutação que prova exatamente isso: subir os tetos para o
+> escopo do arquivo deixa **as duas** suítes vermelhas.
+
+### São dois painéis, e não um com uma divisória no meio
+
+*"O que vem pela frente"* e *"o que já passou"* respondem perguntas diferentes, correm em ordens
+**opostas** (uma cresce, a outra decresce) e têm **tetos diferentes**. Um painel só teria de contar
+dois cortes numa frase — e a frase que serve para os dois não serve para nenhum.
+
+A `.ag-secao` que separava os dois virou o **cabeçalho do segundo painel**: mesmo texto, no lugar
+onde a moldura já diz quantos são. Um rótulo a menos solto na página. *(A regra de CSS dela ficou
+órfã e está marcada como tal — o grep está feito e é conclusivo; ela sai numa limpeza própria,
+pela mesma regra que o `.fase-tag` já segue neste arquivo.)*
+
+### Aqui a linha não é o cartão — é o par HORA + CARTÃO
+
+O olho procura *"que horas é a sessão"* antes do nome do órgão, e foi por isso que a hora ganhou
+coluna própria quando a Agenda nasceu. Então **quem desenha o fio e o hover é a linha inteira**
+(`.ag-lin`), não o cartão de dentro: fio do cartão começaria **depois** da hora, e uma lista com o
+divisor recuado parece uma lista com duas colunas desalinhadas.
+
+E o **cartão fica transparente**: ele é branco por natureza, e branco por cima do fundo de hover
+apagaria justamente o pedaço que o mouse está tocando.
+
+O **cabeçalho de dia** virou um degrau na mesma superfície sutil do cabeçalho e do rodapé — porque
+é do mesmo ofício que os dois: moldura que organiza, não conteúdo. Solto entre cartões flutuantes,
+uma borda embaixo bastava; dentro de um painel de fios iguais ele sumiria no meio deles.
+
+> **Ele não é sticky, e isso não é esquecimento.** `.painel-res` tem `overflow:hidden` (é ele que
+> apara os cantos das linhas contra o raio do painel), e `sticky` dentro de um ancestral que corta
+> não gruda em lugar nenhum. Prometer no CSS o que o navegador não faz é pior que não prometer.
+> Há assert barrando quem tentar.
+
+### Duas mutações passaram verdes, e as duas ensinaram a mesma coisa
+
+| a mutação | por que passou | o que o assert cobra agora |
+|---|---|---|
+| apagar `.ag-lin:last-child{border-bottom:0}` | eu guardei o fio da última linha **da Lista** (foi ele que a medição pegou desenhando 1,6px) e **esqueci o mesmo fio na Agenda** | o fio da última linha nas **duas** visões |
+| trocar o `(fora` do rodapé por `(false` | o assert só provava que a **frase existe no arquivo** — e ela continuava lá, num **ramo morto** | que quem escolhe o ramo seja o **número** dos que ficaram de fora, e dentro do corpo da agenda |
+
+> **Frase escrita não é frase mostrada**, e guardar só a metade que já doeu é como a segunda
+> metade volta. É a lição S8 outra vez, agora achada pela mutação em vez de pelo cliente.
+
+### Medido no navegador
+
+Mesmo servidor, mesmo dado com forma de real, SW desregistrado.
+
+**Com 340 sessões à frente** (teto 300), largura de 1536px:
+
+| | valor |
+|---|---|
+| painéis | 1 *(só o do futuro — o dado é todo à frente)* |
+| cabeçalho | "340 de hoje em diante · 9 são hoje" |
+| rodapé | "Mostrando as **300** mais próximas — **40** ficaram de fora…" |
+| linhas na tela | 300 |
+| cabeçalho / rodapé | 42px / 44px |
+| fio da linha / **da última** | 0,8px / **0px** |
+| fio e fundo do cartão de dentro | **0px** / **transparente** |
+| 1º dia sem fio de topo / 2º com | **0px** / 0,8px · fundo `#FCFDFE` |
+| linha estourando · rolagem H | **0** · **0** |
+
+**Régua útil, mesma limitação declarada na fatia 3** (as media queries não foram exercitadas):
+
+| régua útil | painel | cabeçalho | rodapé | cabeçalho de dia | linha (mín–máx) | estouro | rolagem H |
+|---|---|---|---|---|---|---|---|
+| 342px | 342 | 42 | 53 | 39 | **277–460** | 0 | 0 |
+| 1094px | 1094 | 42 | 44 | 39 | 153–172 | 0 | 0 |
+| 1245px | 1245 | 42 | 44 | 39 | 152–172 | 0 | 0 |
+
+> **UM NÚMERO QUE EU NÃO VOU MAQUIAR:** a linha da Agenda a 342px vai a **460px de altura**, contra
+> 323 da Lista na mesma régua. A causa é a **calha da hora**: 62px fixos + 14 de gap + 24 de
+> padding comem 100 dos 342. Isso **não nasceu nesta fatia** — a calha existe desde que a Agenda
+> existe, e a fatia acrescentou 24px de padding a ela. O conserto natural é a hora subir para
+> **cima** do cartão abaixo de 700px, e isso é uma **media query** — exatamente o que este
+> ambiente não consegue provar hoje. Fica anotado para a passagem em que o redimensionamento
+> voltar a funcionar. Registrar torto é melhor que consertar às cegas.
+
+### Regressão das quatro visões, medida com o mesmo dado na memória
+
+| visão | painéis | cartão: borda · raio · sombra · fundo | rótulo solto `.ag-secao` |
+|---|---|---|---|
+| Quadros | 0 | 0,8px · 13px · sim · branco | 0 |
+| **Agenda** | **1–2** | 0 · 0 · não · **transparente** | **0** |
+| Calendário | 0 | *(sem cartão)* | 0 |
+| **Lista** | **1** | 0 · 0 · não · branco | 0 |
+
+E o caso que só a Agenda tem — **sessão no passado e nenhuma à frente**: aparece 1 painel
+("Já passaram · 12 sessões") **e o lugar do futuro fala** ("Nada marcado de hoje em diante"). Sem
+essa frase a tela diria "Já passaram" e mais nada, e quem lesse concluiria que a agenda inteira é
+histórico.
+
+---
+
+## O QUE ESTAS FATIAS **NÃO** TOCARAM, E POR QUÊ
 
 - **`sw.js`** — o Trabalhador A está com ele em voo (bump para `-39` mais a entrada do
   `fpmed_icones.js`, que ainda é arquivo não versionado). Commitar o `sw.js` daqui levaria junto
