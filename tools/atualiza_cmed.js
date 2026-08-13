@@ -100,6 +100,34 @@ function confereLayout(arq, rotulo, prefixoEsperado) {
   return { publicada, head, hi, linhas: rows.length - hi - 1 };
 }
 
+/* ══ A CONFERENCIA DO ACERVO — UMA SO, CHAMADA NOS DOIS MOMENTOS ═══════════════════════════
+   O que merece alarme depois do item 10 nao e QUANTAS edicoes existem (guardar a anterior e o
+   desenho: e ela que mantem auditavel o teto de uma proposta antiga), e sim se alguma esta
+   INCOMPLETA — carga que morreu no meio deixa edicao com um punhado de linhas.
+   >>> ANTES E DEPOIS PEDEM ACOES DIFERENTES DE QUEM LE, e por isso o momento entra no texto:
+       ANTES, edicao vigente incompleta e motivo pra PARAR — carregar por cima de uma base que
+       ja esta mentindo so empilha problema. DEPOIS, ela e o diagnostico do que acabou de
+       acontecer, e parar nao desfaz nada; o que serve e dizer com todas as letras que a regua
+       de hoje saiu de uma carga pela metade.
+   >>> E E UMA FUNCAO SO PORQUE EU TINHA ESCRITO DUAS. A mutacao de 13/08 passou verde
+       justamente por causa disso: mutei uma copia e o assert continuou casando com a outra.
+       Duas conferencias do mesmo defeito sao duas respostas que um dia discordam. */
+async function conferirAcervo(momento) {
+  try {
+    const re = await fetch(`${SB}/rest/v1/cmed_edicoes?select=edicao,apresentacoes,vigente`, { headers: H });
+    const lista = re.ok ? await re.json() : [];
+    const magras = lista.filter(e => Number(e.apresentacoes) < 1000);
+    if (!magras.length) return;
+    console.log(`  ⚠️ ${magras.length} edicao(oes) com menos de 1.000 linhas — carga que morreu no meio:`);
+    magras.forEach(e => console.log(`     ${String(e.edicao).slice(0, 10)}: ${e.apresentacoes} linhas`
+      + (e.vigente ? '  <-- E A VIGENTE, isto E grave' : '  (nao e a vigente; nao afeta a tela)')));
+    if (magras.some(e => e.vigente)) {
+      if (momento === 'antes') parar('a edicao VIGENTE esta incompleta — o teto de hoje sai de uma carga pela metade');
+      else console.log('  ⛔ A EDICAO VIGENTE FICOU INCOMPLETA. A regua esta cega: NAO use esta base pra conferir teto ate recarregar.');
+    }
+  } catch (e) { console.log('  ⚠️ nao consegui conferir o acervo de edicoes (' + e.message + ')'); }
+}
+
 (async () => {
   console.log('=== ROTINA MENSAL DA CMED ===');
 
@@ -127,16 +155,7 @@ function confereLayout(arq, rotulo, prefixoEsperado) {
            a base desatualizada por causa de uma sujeira que nao afeta o teto de hoje. */
     const edicoes = Number(atual.edicoes) || 1;
     if (edicoes > 1) console.log(`  ${edicoes} edicoes guardadas (versionamento ligado — a anterior nao e apagada).`);
-    try {
-      const re = await fetch(`${SB}/rest/v1/cmed_edicoes?select=edicao,apresentacoes,vigente`, { headers: H });
-      const lista = re.ok ? await re.json() : [];
-      const magras = lista.filter(e => Number(e.apresentacoes) < 1000);
-      if (magras.length) {
-        console.log(`  ⚠️ ${magras.length} edicao(oes) guardada(s) com menos de 1.000 linhas — carga que morreu no meio:`);
-        magras.forEach(e => console.log(`     ${e.edicao}: ${e.apresentacoes} linhas${e.vigente ? '  <-- E A VIGENTE, isto E grave' : ''}`));
-        if (magras.some(e => e.vigente)) parar('a edicao VIGENTE esta incompleta — o teto de hoje sai de uma carga pela metade');
-      }
-    } catch (e) { console.log('  ⚠️ nao consegui conferir o acervo de edicoes (' + e.message + ')'); }
+    await conferirAcervo('antes');
     // A CMED publica todo mes. Uma base de mais de ~45 dias ja passou de uma edicao — e uma
     // proposta conferida contra regua velha pode estar acima do teto vigente sem ninguem ver.
     if (atual.dias_desde > 45) console.log(`  ⚠️ a regua tem ${atual.dias_desde} dias. A CMED publica todo mes: provavelmente ha edicao mais nova.`);
@@ -191,8 +210,28 @@ function confereLayout(arq, rotulo, prefixoEsperado) {
     return;
   }
 
-  // ── 5. A CARGA — DELEGADA ───────────────────────────────────────────────────────────────
-  console.log('\n── carregando (via tools/carrega_cmed_precos.js, o de sempre) ──');
+  /* ── 5. A CARGA — DELEGADA, E SAO DUAS TABELAS ─────────────────────────────────────────────
+     *** DEFEITO ACHADO NA CARGA DE 13/08, RODANDO ESTE PROPRIO COMANDO. ***
+     Esta rotina chamava SO o `carrega_cmed_precos.js`. A `cmed_pf` — que guarda substancia,
+     produto, apresentacao e o `dose_key` — ficava na EDICAO ANTERIOR, e ninguem via.
+     >>> O ESTRAGO NAO ERA "METADE FALTANDO", ERA PIOR: a `cmed_edicao_vigente` responde
+         separado por metade (pf_vigente e gov_vigente), entao a regua continuava respondendo —
+         juntando NOME E DOSE de uma edicao com PRECO da outra. Medido no ar naquele dia:
+         pf_vigente 2026-07-21 · gov_vigente 2026-08-11, regua com 25.702 das 26.001 linhas e a
+         `cmed_teto` caindo de 4.875 para 4.857 chaves. Nada estourou. Nada ficou vermelho.
+         Um teto legal servido de duas edicoes ao mesmo tempo e exatamente o que este item
+         inteiro existe pra impedir.
+     >>> A ORDEM IMPORTA: a `cmed_pf` primeiro. Se a segunda carga falhar no meio, o estado que
+         sobra e "pf nova, precos velho" — e a `cmed_regua` junta por GGREM exigindo AS DUAS na
+         sua vigente, entao ela encolhe de forma VISIVEL em vez de servir mistura silenciosa.
+         Das duas metades imcompletas possiveis, esta e a que denuncia a si mesma.
+     >>> E QUEM COBRA ISSO AGORA E O `tools/prova_cmed_edicao.js`, com o assert
+         "as DUAS metades da regua estao na MESMA edicao". Ele teria pego o buraco na hora. */
+  console.log('\n── carregando 1/2: cmed_pf (substancia, apresentacao, dose_key) ──');
+  execFileSync(process.execPath, [path.join(__dirname, 'carrega_cmed_pf.js'),
+    arqSite, '--apply'], { stdio: 'inherit' });
+
+  console.log('\n── carregando 2/2: cmed_precos (PF, PMC, PMVG por aliquota, CAP) ──');
   execFileSync(process.execPath, [path.join(__dirname, 'carrega_cmed_precos.js'),
     '--site', arqSite, '--gov', arqGov, '--apply', '--merge'], { stdio: 'inherit' });
 
@@ -203,7 +242,21 @@ function confereLayout(arq, rotulo, prefixoEsperado) {
   try {
     const r = await fetch(`${SB}/rest/v1/v_cmed_vigencia?select=*`, { headers: H });
     const d = (await r.json())[0];
-    console.log(`  publicada em ${String(d.vigente_desde).slice(0, 10)} · ${Number(d.apresentacoes).toLocaleString('pt-BR')} apresentacoes · ${d.edicoes} edicao(oes)`);
+    /* ══ AS DUAS METADES SAO IMPRESSAS SEPARADAS, E ISSO E O CONSERTO DE UM NUMERO MENTIROSO ══
+       Esta linha imprimia `vigente_desde`, que e o MENOR das duas datas, ao lado de
+       `apresentacoes`, que conta so a metade do GOVERNO. Na carga de 13/08 ela escreveu
+       "publicada em 2026-07-21 · 26.001 apresentacoes" — a data de uma metade com a contagem da
+       outra. Um numero que nao descreve nenhum estado real do banco e pior que nenhum numero:
+       ele me fez ler "carregou" quando metade nao tinha carregado. */
+    const pf = String(d.publicada_site).slice(0, 10), gov = String(d.publicada_gov).slice(0, 10);
+    console.log(`  cmed_pf     publicada em ${pf}`);
+    console.log(`  cmed_precos publicada em ${gov} · ${Number(d.apresentacoes).toLocaleString('pt-BR')} apresentacoes`);
+    console.log(`  edicoes guardadas na base: ${d.edicoes}`);
+    if (pf !== gov) {
+      console.log('  ⛔ AS DUAS METADES ESTAO EM EDICOES DIFERENTES. A regua esta juntando nome e');
+      console.log('     dose de uma edicao com preco da outra — teto legal misturado, e sem sintoma');
+      console.log('     na tela. Rode a carga de novo; se persistir, PARE de usar a regua ate conferir.');
+    }
     // O DESCONTO MEDIO DO CAP e a prova barata de que a carga leu a coluna certa: o CAP e um
     // desconto legal de ~21,5% e esse numero nao se move de uma edicao pra outra. Se ele vier
     // 0% ou 60%, a coluna lida NAO era a que se pensava — e o teto sairia errado em 2.722
@@ -215,7 +268,21 @@ function confereLayout(arq, rotulo, prefixoEsperado) {
       console.log(`  desconto medio do CAP: ${m.toFixed(2)}%  (esperado ~21,5% — fora disso, a coluna lida nao foi a certa)`);
       if (m < 15 || m > 30) console.log('  ⛔ O DESCONTO DO CAP SAIU FORA DA FAIXA. Confira a carga antes de usar esta regua.');
     }
-    if (Number(d.edicoes) > 1) console.log('  ⛔ ficaram DUAS edicoes na base — a carga entrou pela metade.');
+    /* ══ O ALARME DE "DUAS EDICOES" MORREU AQUI, E ISSO E DECISAO, NAO ESQUECIMENTO ══════════
+       Ele dizia "⛔ ficaram DUAS edicoes na base — a carga entrou pela metade" e disparou na
+       carga de 13/08, quando a carga tinha dado certo. Depois do item 10, GUARDAR A EDICAO
+       ANTERIOR E O DESENHO: e ela que mantem auditavel o teto de uma proposta antiga. Alarme
+       que acusa o comportamento correto ensina a ignorar alarme — e o proximo, o de verdade,
+       passa junto.
+       >>> O QUE MERECE ALARME MUDOU DE ALVO: nao e QUANTAS edicoes existem, e se alguma esta
+           INCOMPLETA — e essa conferencia JA EXISTIA aqui, na checagem de ANTES da carga.
+           Eu tinha escrito uma segunda copia dela; a mutacao pegou (o assert continuava verde
+           porque o padrao aparecia duas vezes no arquivo, e eu mutei a copia errada).
+           Duas conferencias do mesmo defeito e o comeco de duas respostas diferentes pra
+           mesma pergunta, num numero que vira teto legal. Agora e UMA, chamada nos dois
+           momentos — e o momento entra no texto, porque "antes" e "depois" pedem acoes
+           diferentes de quem le. */
+    await conferirAcervo('depois');
   } catch (e) { console.log('  ⚠️ nao consegui reler a vigencia: ' + e.message); }
 
   console.log('\n>>> O DOWNLOAD AUTOMATICO: investigado em 11/08 e NAO implementado. A pagina da');

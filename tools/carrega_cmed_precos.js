@@ -117,7 +117,19 @@ function mapaAliquotas(head, prefixo) {
 (async () => {
   const arqSite = achar(/^xls_conformidade_site.*\.xlsx$/i, arg('--site'));
   const arqGov = achar(/^xls_conformidade_gov.*\.xlsx$/i, arg('--gov'));
-  console.log(APPLY ? (MERGE ? '[APPLY + MERGE — atualiza linhas existentes]' : '[APPLY]') : '[PREVIEW — nada e gravado]');
+  /* ══ O ROTULO DIZIA "ATUALIZA LINHAS EXISTENTES", E DESDE O ITEM 10 ISSO E FALSO ═══════════
+     `--merge` manda `resolution=merge-duplicates`, que E um upsert — mas quem decide se ele
+     ATUALIZA alguma coisa e a CHAVE PRIMARIA, e ela deixou de ser `ggrem` e virou
+     (ggrem, publicada_gov) quando a tabela passou a guardar todas as edicoes.
+     >>> ENTAO CARREGAR UMA EDICAO NOVA NAO ATUALIZA NADA: nenhuma linha nova colide com uma
+         linha velha, e as duas edicoes convivem. Quem le "atualiza linhas existentes" antes de
+         uma carga mensal fica com medo de um estrago que nao pode acontecer — e medo de rotina
+         segura e o que faz alguem parar de rodar a rotina.
+     >>> ONDE ELE AINDA ATUALIZA DE VERDADE: recarregando a MESMA edicao (mesma data). Ai a
+         chave colide e as linhas sao reescritas com o que a planilha diz agora. Essa distincao
+         — "refazer a atual" x "apagar a anterior" — e o item 10 inteiro, e por isso o rotulo
+         agora diz QUAL DOS DOIS vai acontecer, em vez de avisar sempre do pior. */
+  console.log(APPLY ? (MERGE ? '[APPLY + MERGE — edicao nova convive; recarga da MESMA edicao reescreve as linhas dela]' : '[APPLY]') : '[PREVIEW — nada e gravado]');
 
   const site = leLista(arqSite, 'site');
   const gov = leLista(arqGov, 'gov ');
@@ -234,8 +246,16 @@ function mapaAliquotas(head, prefixo) {
   console.log(`\nlinhas ja na cmed_precos: ${nExist}`);
 
   if (!APPLY) { console.log('\nPreview OK. Gravar com --apply.'); return; }
+  /* A TRAVA CONTINUA, MAS AGORA ELA SABE O QUE ESTA TRAVANDO. Antes ela dizia "regravar por
+     cima e UPDATE de dado" pra QUALQUER tabela nao-vazia, o que hoje e verdade so quando a
+     edicao ja existe. Trava que descreve errado o risco e trava que alguem contorna sem ler. */
   if (nExist > 0 && !MERGE) {
-    console.error('\nRECUSADO: a tabela ja tem linha. Regravar por cima e UPDATE de dado — exige OK do Lemuel.');
+    const jaTemEsta = await fetch(`${SB}/rest/v1/cmed_precos?select=ggrem&publicada_gov=eq.${publicada}`,
+      { headers: { ...H, Prefer: 'count=exact', Range: '0-0' } });
+    const nEsta = parseInt((jaTemEsta.headers.get('content-range') || '/0').split('/')[1]) || 0;
+    console.error(nEsta > 0
+      ? `\nRECUSADO: a edicao ${publicada} JA TEM ${nEsta} linhas. Rodar de novo REESCREVE essas linhas — isso e UPDATE de dado e exige OK do Lemuel.`
+      : `\nRECUSADO: a tabela ja tem ${nExist} linhas de outras edicoes. A edicao ${publicada} e NOVA e vai apenas ser inserida (a anterior fica guardada), mas o insert em tabela viva pede a confirmacao explicita.`);
     console.error('Se ele autorizar: node tools/carrega_cmed_precos.js --apply --merge');
     process.exit(1);
   }

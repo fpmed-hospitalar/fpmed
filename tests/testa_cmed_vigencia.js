@@ -56,7 +56,24 @@ ok('14. ...e diz ha quantos dias', /há \$\{dias\} dias/.test(C));
 ok('15. *** regua velha (>45 dias) vira AVISO na tela ***',
   /const velha = isFinite\(dias\) && dias > 45;/.test(C) && /provavelmente há edição mais nova/.test(C));
 ok('16. ...com o motivo (a CMED publica todo mes)', /A CMED publica todo mês; a tela avisa/.test(uc(C)));
-ok('17. *** duas edicoes convivendo aparecem na tela ***', /edições convivendo/.test(C));
+/* ══ 17 REAPONTADO EM 13/08 (item 10), E POR DECISAO ═══════════════════════════════════════
+   Ele cobrava a frase "edições convivendo" — a redacao do ALARME. Depois que a base passou a
+   guardar todas as edicoes de proposito, esse alarme acusava o comportamento CERTO, e a cada
+   carga mensal a tela passaria a gritar pra sempre. Assert que exige o alarme errado IMPEDE o
+   conserto: pra apagar o grito eu teria que deixar a suite vermelha.
+   >>> O QUE ELE GUARDAVA DE VALIOSO CONTINUA GUARDADO, e e a INFORMACAO: quem confere preco
+       legal tem direito de saber contra qual regua conferiu e que ha outra guardada. Entao o
+       assert cobra o NUMERO na tela, e nao a palavra escolhida.
+   >>> E ENTROU O 17b, QUE E O QUE FALTAVA: cobrar que essa frase NAO seja alarme. Sem ele,
+       alguem "melhora" a tela devolvendo o ⚠️ e a suite nao reclama — que e exatamente como o
+       alarme errado sobreviveu ate hoje. */
+ok('17. *** a tela diz quantas edicoes estao guardadas (quem confere preco tem que saber) ***',
+  /\$\{v\.edicoes\} edições guardadas/.test(C));
+ok('17b. *** ...e NAO como alarme: guardar a edicao anterior e o desenho, nao defeito ***',
+  (function () {
+    const m = C.match(/Number\(v\.edicoes\) > 1 \? `[^`]*`/);
+    return !!m && !/⚠️/.test(m[0]) && !/--vermelho|--ambar/.test(m[0]);
+  })(), (C.match(/Number\(v\.edicoes\) > 1 \? `[^`]*`/) || [])[0]);
 ok('18. *** falhar em ler a vigencia NAO derruba a conferencia ***',
   /\.catch\(\(\) => null\)/.test(C) && /ela é a legenda do resultado, não o\s*resultado/.test(uc(C)));
 ok('19. ...e a tela DIZ que nao sabe a data, em vez de inventar uma',
@@ -160,6 +177,71 @@ ok('49. *** e o 3o caso exige que a rotina SIGA quando o cabecalho so muda de li
 ok('50. ...com o motivo (parar nisso seria falso positivo TODO MES)',
   /seria um falso positivo TODO MES/.test(uc(PT)));
 ok('51. e ela nao grava nada (roda sem --apply)', /nao grava nada no banco \(roda sem --apply\)/.test(uc(PT)));
+
+/* ══════════ 8. A ROTINA MENSAL CARREGA AS DUAS METADES ══════════════════════════════════════
+   ACHADO RODANDO A CARGA DE VERDADE EM 13/08, e nao lendo codigo: `atualiza_cmed.js --apply`
+   chamava SO o carregador da `cmed_precos`. A `cmed_pf` — substancia, apresentacao, dose_key —
+   ficava na edicao anterior.
+   >>> E O ESTADO RESULTANTE NAO QUEBRAVA NADA, que e o que o torna grave: a
+       `cmed_edicao_vigente` responde separado por metade, entao a regua continuava servindo —
+       com NOME E DOSE de uma edicao e PRECO da outra. Medido: pf 2026-07-21 x gov 2026-08-11,
+       regua com 25.702 das 26.001 linhas, `cmed_teto` caindo de 4.875 pra 4.857 chaves.
+   >>> POR QUE O ASSERT E DE ORDEM E NAO SO DE PRESENCA: se a segunda carga morrer no meio, o
+       estado que sobra tem que ser o que DENUNCIA A SI MESMO. Com a `cmed_pf` primeiro, a
+       regua encolhe de forma visivel; ao contrario, ela serviria mistura em silencio. */
+const AT = R('tools', 'atualiza_cmed.js');
+/* ══ O ARQUIVO PRECISA COMPILAR, E ISSO NAO ERA COBRADO ═════════════════════════════════════
+   Enquanto eu consertava a rotina em 13/08 eu apaguei um `catch` junto com um bloco. O arquivo
+   ficou com SyntaxError — `node tools/atualiza_cmed.js` morria antes da primeira linha — e
+   ESTA SUITE FICOU VERDE, porque todos os asserts dela leem o arquivo como TEXTO.
+   >>> Assert que procura frase no fonte prova que a frase esta escrita. Nao prova que o
+       programa existe. Uma suite inteira de regex pode passar sobre um arquivo que nao roda,
+       e foi o que aconteceu — eu descobri por acaso, rodando `node -c` por outro motivo.
+   >>> `vm.Script` compila sem executar: e a mesma checagem do `node --check`, sem rodar carga
+       nenhuma contra o banco. */
+(function () {
+  const vm = require('vm');
+  let erro = null;
+  try { new vm.Script(AT, { filename: 'atualiza_cmed.js' }); } catch (e) { erro = e.message; }
+  ok('51b. *** o tools/atualiza_cmed.js COMPILA (a suite lia texto e nao via arquivo quebrado) ***',
+    erro === null, erro);
+})();
+(function () {
+  const iPf = AT.indexOf("'carrega_cmed_pf.js'");
+  const iPrecos = AT.indexOf("'carrega_cmed_precos.js'");
+  ok('52. *** a rotina mensal carrega a cmed_pf, e nao so a cmed_precos ***', iPf > -1, { iPf });
+  ok('53. *** ...e a cmed_pf vem PRIMEIRO (a metade incompleta que se denuncia sozinha) ***',
+    iPf > -1 && iPrecos > -1 && iPf < iPrecos, { iPf, iPrecos });
+  ok('54. ...com o motivo escrito, pra ninguem "simplificar" isso de volta',
+    /juntando NOME E DOSE de uma edicao com PRECO da outra/.test(AT));
+})();
+/* O ALARME MUDOU DE ALVO: nao e QUANTAS edicoes existem (guardar e o desenho), e se a VIGENTE
+   esta incompleta. O assert cobra o alvo novo E proibe a volta do velho. */
+/* ESTE ASSERT PASSOU VERDE NUMA MUTACAO QUE DEVIA TE-LO MATADO, e o motivo era ele mesmo:
+   a conferencia de "edicao incompleta" existia DUAS VEZES no arquivo (antes e depois da
+   carga), e o assert so procurava o padrao em qualquer lugar. Mutei uma copia, a outra
+   segurou o verde. Agora ha UMA funcao e o assert cobra a funcao, alem de exigir que ela seja
+   chamada nos DOIS momentos — que e o que a duplicacao mascarava. */
+ok('55. *** o alarme vigia edicao INCOMPLETA, nao a quantidade de edicoes ***',
+  /async function conferirAcervo\(momento\)/.test(AT)
+  && /apresentacoes\) < 1000/.test(AT) && /carga que morreu no meio/.test(AT));
+ok('55b. *** e a conferencia e UMA SO, chamada antes E depois da carga ***',
+  (AT.match(/apresentacoes\) < 1000/g) || []).length === 1
+  && /conferirAcervo\('antes'\)/.test(AT) && /conferirAcervo\('depois'\)/.test(AT),
+  { copias: (AT.match(/apresentacoes\) < 1000/g) || []).length });
+ok('55c. ...e ANTES ela PARA, DEPOIS ela so diagnostica (parar depois nao desfaz a carga)',
+  /momento === 'antes'\) parar\(/.test(AT) && /A EDICAO VIGENTE FICOU INCOMPLETA/.test(AT));
+/* ESTE ASSERT NASCEU VERMELHO MORDENDO O PROPRIO COMENTARIO que explica por que o alarme saiu
+   — a lapide cita a frase antiga, como toda lapide honesta deve citar. Assert de AUSENCIA tem
+   que ler CODIGO, nunca prosa: senao explicar bem uma remocao passa a quebrar a suite, e a
+   saida mais facil vira apagar a explicacao. (S9/S10 de novo, agora em cima de mim.) */
+const semComentario = s => s.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+ok('56. *** e o alarme velho ("ficaram DUAS edicoes") nao voltou ao codigo ***',
+  !/ficaram DUAS edicoes na base/.test(semComentario(AT)));
+ok('57. *** as duas metades sao impressas SEPARADAS (a linha antiga misturava data e contagem) ***',
+  /cmed_pf     publicada em \$\{pf\}/.test(AT) && /cmed_precos publicada em \$\{gov\}/.test(AT));
+ok('58. *** e metade em edicao diferente da outra e ALARME ***',
+  /if \(pf !== gov\)/.test(AT) && /EDICOES DIFERENTES/.test(AT));
 
 console.log('\nRESULTADO: ' + p + ' ok, ' + f + ' falha(s)');
 if (f) process.exit(1);

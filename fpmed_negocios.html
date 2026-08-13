@@ -724,11 +724,42 @@ textarea.anot:focus{border-color:var(--azul)}
   font-size:12.5px;cursor:pointer;font-family:inherit}
 .btn-ed:disabled{opacity:.5;cursor:not-allowed}
 /* ── ABAS DA FICHA (08/08) ── cada aba é uma PERGUNTA diferente sobre o mesmo negócio ── */
-.dw-abas{display:flex;gap:4px;padding:0 0 10px;border-bottom:1px solid var(--linha);margin-bottom:12px;flex-wrap:wrap}
-.dw-abas button{background:transparent;border:0;color:var(--muted);font-size:12.5px;font-family:inherit;
-  padding:7px 12px;border-radius:8px;cursor:pointer;transition:background .15s,color .15s}
-.dw-abas button:hover{background:var(--painel2);color:var(--texto)}
-.dw-abas button.on{background:rgba(var(--azul-500-rgb),.16);color:var(--azul-claro);font-weight:600}
+/* ══ AS ABAS VIRARAM PÍLULAS COM CARA DE BOTÃO (13/08, fatia B1) ═════════════════════════════
+   A dor nº 1 do dono era "tá tudo igual, chato" — e a ficha era o pior caso: sete abas com o
+   MESMO peso, a ativa separada das outras por um fundo azul a 16% de opacidade. Dezesseis por
+   cento é o degrau que o olho quase não vê: a pessoa tinha de LER as sete para saber onde
+   estava, em vez de enxergar.
+   >>> A ATIVA É UM BOTÃO CHEIO: fundo `--azul-600` (a cor da AÇÃO no molde) e texto branco.
+       5,04:1 — o par que o próprio tema declara para fundo azul com letra branca. O contraste
+       entre ativa e inativa deixa de ser um véu e passa a ser preenchimento contra vazio.
+   >>> AS INATIVAS GANHARAM BORDA. Sem ela, "botão inativo" e "texto solto" são a mesma coisa —
+       e era exatamente isso que fazia a fileira parecer uma frase. A borda diz "isto aqui é
+       clicável" antes de qualquer hover.
+   >>> A VIVEZA VEM DE CONTRASTE E PESO, e nenhum hex novo nasceu: azul-600, branco, cinza-200,
+       cinza-100 e cinza-700 já existiam todos no molde. */
+.dw-abas{display:flex;gap:var(--esp-2);padding:0 0 var(--esp-3);
+  border-bottom:1px solid var(--borda-divisor);margin-bottom:var(--esp-3);flex-wrap:wrap}
+.dw-abas button{background:var(--branco);border:1px solid var(--borda-controle);
+  color:var(--cinza-700);font-size:var(--txt-1);font-family:inherit;font-weight:var(--peso-medio);
+  padding:var(--esp-2) var(--esp-3);border-radius:var(--raio-botao);cursor:pointer;
+  display:inline-flex;align-items:center;gap:var(--esp-2);
+  /* o dono pediu reação visível em ≤100ms: 120ms de transição começa a pintar no primeiro
+     quadro e termina antes de o olho procurar a resposta */
+  transition:background-color 120ms ease,border-color 120ms ease,color 120ms ease}
+.dw-abas button:hover{background:var(--cinza-100);border-color:var(--cinza-300);color:var(--cinza-800)}
+.dw-abas button:focus-visible{outline:none;box-shadow:var(--foco)}
+.dw-abas button.on{background:var(--azul-600);border-color:var(--azul-600);
+  color:var(--branco);font-weight:var(--peso-semi)}
+.dw-abas button.on:hover{background:var(--azul-700);border-color:var(--azul-700)}
+/* ══ O CONTADOR DA ABA ════════════════════════════════════════════════════════════════════════
+   Ele só existe quando HÁ conteúdo. Contador zerado em sete abas é ruído em sete lugares, e
+   ruído constante é como se ensina alguém a não olhar a fileira inteira.
+   >>> `tabular-nums` porque "3/15" e "10/15" têm larguras diferentes, e número que dança faz a
+       aba inteira pular quando uma tarefa é concluída. */
+.dw-abas .cnt{font-size:var(--txt-0);font-weight:var(--peso-forte);font-variant-numeric:tabular-nums;
+  background:var(--cinza-100);color:var(--cinza-700);border-radius:var(--raio-pilula);
+  padding:1px var(--esp-2);line-height:1.6}
+.dw-abas button.on .cnt{background:rgba(var(--azul-500-rgb),.28);color:var(--branco)}
 .dw-painel{display:none}
 .dw-painel.on{display:block}
 /* ── LEMBRETES ── */

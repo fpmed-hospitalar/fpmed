@@ -267,7 +267,7 @@ function frasePelaRegua(){
   const n = BASE.teto.toLocaleString('pt-BR');
   const v = BASE.vig;
   if(!v || !v.vigente_desde){
-    return `conferido contra ${n} chaves da CMED · <b style="color:#e6a817">não consegui ler qual edição</b> `
+    return `conferido contra ${n} chaves da CMED · <b style="color:var(--ambar)">não consegui ler qual edição</b> `
          + `— confira a vigência antes de usar isto como conferência oficial`;
   }
   const d = new Date(String(v.vigente_desde).slice(0,10) + 'T12:00:00');
@@ -275,10 +275,26 @@ function frasePelaRegua(){
   // MAIS DE 45 DIAS JÁ PASSOU DE UMA EDIÇÃO. A CMED publica todo mês; a tela avisa em vez de
   // deixar a data lá quietinha, que é como se confere contra régua velha sem perceber.
   const velha = isFinite(dias) && dias > 45;
+  /* ══ "N EDIÇÕES CONVIVENDO" DEIXOU DE SER ALARME (13/08, item 10) ══════════════════════════
+     Esta frase saía em vermelho com ⚠️, e ela nasceu num tempo em que a base guardava UMA
+     edição só — então duas significava carga pela metade. Depois do item 10, guardar a edição
+     anterior É O DESENHO: é ela que mantém auditável o teto de uma proposta antiga.
+     >>> DEIXAR O ALARME SERIA PIOR QUE TIRÁ-LO. Na primeira carga mensal a tela passaria a
+         gritar para SEMPRE, sobre o comportamento correto — e alarme que sempre grita é alarme
+         que ninguém lê, inclusive no dia em que ele estiver certo.
+     >>> MAS A INFORMAÇÃO FICA, porque ela responde uma pergunta legítima de quem confere preço:
+         "contra qual régua isto foi conferido, e existe outra guardada?". Vira NOTA, no tom de
+         apoio (--muted) e sem ⚠️ — a data vigente, que é o que decide, continua em destaque.
+     >>> O QUE MERECE ALARME AGORA é outra coisa, e ela é medida no carregador
+         (`tools/atualiza_cmed.js`): edição INCOMPLETA sendo a vigente. Isso a tela não tem como
+         saber sozinha sem uma segunda consulta, e inventar aqui um alarme que não mede nada
+         seria repetir o erro que este comentário desfaz.
+     >>> COR VEIO PARA OS TOKENS DA TELA no mesmo passo: eram `#ff9d92` e `#e6a817` escritos à
+         mão, vizinhos de `--vermelho` e `--ambar` mas não iguais a eles. */
   return `conferido contra ${n} chaves da <b>CMED publicada em ${d.toLocaleDateString('pt-BR')}</b>`
     + (isFinite(dias) ? ` (há ${dias} dias)` : '')
-    + (Number(v.edicoes) > 1 ? ` · <b style="color:#ff9d92">⚠️ a base tem ${v.edicoes} edições convivendo</b>` : '')
-    + (velha ? ' · <b style="color:#e6a817">⚠️ a CMED publica todo mês — provavelmente há edição mais nova</b>' : '');
+    + (Number(v.edicoes) > 1 ? ` · <span style="color:var(--muted)">${v.edicoes} edições guardadas; conferido contra a vigente</span>` : '')
+    + (velha ? ' · <b style="color:var(--ambar)">⚠️ a CMED publica todo mês — provavelmente há edição mais nova</b>' : '');
 }
 
 async function conferir(){
