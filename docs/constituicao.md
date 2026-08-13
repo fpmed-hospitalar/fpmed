@@ -19,6 +19,29 @@ minha discordarem, **vence esta.**
 curso (Encontrar + menu lateral), pra fila numerada inteira, e pra todo pedido
 futuro — inclusive o pedido que parecer pequeno demais pra merecer ritual.
 
+## 1b. O MOLDE É A LINGUAGEM VISUAL DE TODO O SISTEMA — 13/08/2026
+
+> *"A Encontrar não é exceção — ela é o PADRÃO."*
+
+O [`docs/molde_encontrar.md`](molde_encontrar.md) deixou de ser o molde de **uma
+tela** e passou a ser **o molde do sistema**. Quatro consequências, e nenhuma
+delas depende de eu concordar:
+
+1. **"O molde manda" vale em toda tela** — lateral navy, tokens do
+   `fpmed_tema.css`, painel com linhas, cartões, selos, a anatomia de linha.
+2. **Regra do escoteiro:** toda tela que eu **tocar** sai molde-ficada. Nada
+   volta pro estilo antigo, e **nada novo nasce fora do molde**.
+3. **Tela por tela, sem apagão:** uma de cada vez — publica, prova com print
+   lado a lado com o molde, só então a próxima.
+4. **Dado ou função que o molde não previu:** adota a **roupa** do molde,
+   **mantém a função**, e onde não há dado fica **em branco honesto**. Nunca
+   chuta — é a lição S6 promovida a regra de desenho.
+
+>>> E as decisões já tomadas na Encontrar — as fugas de contraste medidas, e o
+    que do molde **não** entrou e por quê — passam a ser **jurisprudência** pras
+    próximas telas, e não caso isolado. Redecidir cada uma em cada tela é como
+    nascem duas respostas pra mesma pergunta.
+
 ## 2. QUALIDADE MANDA NO PRAZO
 
 > *"Não quero nada rápido, quero excelência."*

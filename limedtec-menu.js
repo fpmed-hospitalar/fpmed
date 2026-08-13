@@ -143,8 +143,16 @@
        >>> E O MENU CONTINUA BURRO, de propósito: ele não lê sessão, não chama banco,
        não sabe quem está logado. Ele guarda a LISTA (que é dado sobre módulo) e
        expõe `revelarPara(email)`. Quem tem a sessão é a tela, e é ela que pergunta. */
+    /* ══ O SELO "IA" (13/08, item 7c) ═══════════════════════════════════════════════
+       O molde põe um selo verde "IA" neste item. Ele não é enfeite nem contador: é
+       AVISO DE NATUREZA — este é o único módulo do menu que gasta dinheiro por uso
+       (cada leitura de edital consome crédito da Anthropic e entra no `usos_ia`).
+       >>> POR QUE ELE NÃO É O `contador`, que já existe ao lado: o contador é NÚMERO e
+           muda; o selo é RÓTULO e não muda. Se eu tivesse reaproveitado o slot do
+           número, o dia em que este item ganhasse contagem apagaria o aviso — e o
+           aviso é o que impede alguém de clicar sem saber que aquilo custa. */
     { id: 'leitor', rotulo: 'Leitor de edital', href: 'fpmed_edital_ia.html', tela: 'fpmed_edital_ia',
-      permissao: ['licitacao@fpmed.com.br'] },
+      selo: 'IA', permissao: ['licitacao@fpmed.com.br'] },
     { id: 'conferir', rotulo: 'Conferir CMED', href: 'fpmed_conferidor.html', tela: 'fpmed_conferidor' },
     { id: 'pecas', rotulo: 'Peças', href: 'fpmed_pecas.html', tela: 'fpmed_pecas' },
     { id: 'declaracoes', rotulo: 'Declarações', href: 'fpmed_declaracoes.html', tela: 'fpmed_declaracoes' },
@@ -293,6 +301,15 @@
            lição S6 outra vez ("não sei" nunca vira zero), agora dentro do menu.
        >>> `tabular-nums` porque o contador fica na borda direita: sem ele, "12" e "38"
            terminam em posições diferentes e a coluna dança a cada troca de tela. */
+    /* O SELO é o mesmo formato do contador — mesma altura, mesmo raio, mesmo degrau de
+       texto — porque os dois ocupam a mesma ponta da linha. Cor: o verde da marca, com o
+       navy por cima (9,04:1). O que muda entre eles é o ofício: número x rótulo. */
+    '#limedtec-menu .lm-selo{margin-left:auto;font-size:var(--txt-0);font-weight:var(--peso-forte);',
+    '  letter-spacing:.06em;background:var(--verde-500);color:var(--navy);',
+    '  border-radius:var(--raio-selo);padding:0 var(--esp-1);line-height:1.6}',
+    /* Com selo E contador na mesma linha, o `margin-left:auto` do contador o empurraria pra
+       longe do selo. Aqui só o PRIMEIRO da dupla empurra; o segundo cola no primeiro. */
+    '#limedtec-menu .lm-selo + .lm-num{margin-left:var(--esp-1)}',
     '#limedtec-menu .lm-num{margin-left:auto;font-size:var(--txt-0);font-weight:var(--peso-semi);',
     '  font-variant-numeric:tabular-nums;background:var(--navy-selo);color:var(--navy-selo-tinta);',
     '  border-radius:var(--raio-selo);padding:0 var(--esp-1);line-height:1.6}',
@@ -357,6 +374,8 @@
         (on ? ' aria-current="page"' : '') +
         (m.permissao ? ' hidden data-permissao="' + m.id + '"' : '') +
         '>' + svg(m.id) + m.rotulo +
+        (m.selo ? '<span class="lm-selo" title="este módulo usa inteligência artificial e '
+                + 'consome crédito por uso">' + m.selo + '</span>' : '') +
         '<span class="lm-num" hidden data-num="' + m.id + '"></span></a>');
     }
 

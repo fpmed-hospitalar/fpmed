@@ -284,10 +284,43 @@ body{
 /* O período era `justify-content:flex-end` porque flutuava solto e precisava se ancorar numa
    borda da tela. Dentro do cartão ele tem uma casa, e a ponta direita virou canto de caixa —
    grudar nela é o "quase alinhado" que D3 nomeia como pior que desalinhado. */
-.periodo{display:flex;justify-content:flex-start;gap:var(--esp-6);padding:0 0 var(--esp-4);flex-wrap:wrap}
+/* ══ O PERÍODO E AS DATAS (13/08, item 7c) ═══════════════════════════════════════════════════
+   Os três controles eram os seletores CRUS do navegador: alturas diferentes entre si (o
+   `<select>` e o `<input type=date>` não medem igual), o ícone de calendário do sistema
+   operacional colado na borda, e o rótulo em caixa alta forte competindo com o campo.
+
+   >>> O QUE MUDOU É SÓ A ROUPA: continuam sendo os mesmos `<select>` e `<input type="date">`
+       nativos. Isso é decisão, não preguiça — um calendário próprio significaria reimplementar
+       teclado, leitor de tela, fuso e o calendário do celular, e o nativo já faz os quatro. O
+       molde não pede calendário próprio; pede acabamento.
+   >>> AS TRÊS ALTURAS VIRARAM UMA (`min-height:34px`), que é o que fazia a fileira parecer
+       montada às pressas. E o rótulo desceu pro peso do rótulo do molde: ele é ETIQUETA do
+       campo, não título de seção — em caixa alta e semibold ele gritava mais que o valor.
+   >>> O INTERVALO GANHOU MOLDURA ÚNICA: as duas datas e o travessão viram UMA peça, porque é
+       uma coisa só ("de … até …"). Dois campos soltos com um traço no meio leem como dois
+       filtros independentes, e a pessoa preenche um e esquece o outro. */
+.periodo{display:flex;justify-content:flex-start;gap:var(--esp-5);padding:0 0 var(--esp-4);flex-wrap:wrap}
 .periodo .campo{min-width:190px}
-.periodo label{display:block;font-size:var(--txt-1);font-weight:var(--peso-semi);
-  letter-spacing:.04em;text-transform:uppercase;color:var(--cinza-600);margin-bottom:var(--esp-1)}
+.periodo label{display:block;font-size:var(--txt-0);font-weight:var(--peso-semi);
+  letter-spacing:.12em;text-transform:uppercase;color:var(--cinza-500);margin-bottom:var(--esp-1)}
+.periodo select,.periodo input[type=date]{min-height:34px;box-sizing:border-box;
+  border:1px solid var(--borda-controle);border-radius:var(--raio-botao);
+  font-size:var(--txt-1);color:var(--cinza-800);background:var(--branco);
+  padding:0 var(--esp-2)}
+.periodo select{padding-right:var(--esp-5)}
+.periodo select:hover,.periodo input[type=date]:hover{border-color:var(--cinza-300)}
+/* O INTERVALO é UMA peça: as duas datas dentro da mesma moldura, com o travessão no meio.
+   Os campos de dentro perdem a borda própria — dois contornos aninhados leem como dois
+   controles, que é justamente o que esta caixa existe pra desfazer. */
+.intervalo{display:flex;align-items:center;gap:var(--esp-1);min-height:34px;box-sizing:border-box;
+  padding:0 var(--esp-2);border:1px solid var(--borda-controle);border-radius:var(--raio-botao);
+  background:var(--branco);transition:border-color var(--transicao),box-shadow var(--transicao)}
+.intervalo:hover{border-color:var(--cinza-300)}
+.intervalo:focus-within{border-color:var(--azul-500);box-shadow:var(--foco)}
+.intervalo input[type=date]{border:0;min-height:auto;padding:0;background:none;flex:1;min-width:0}
+.intervalo input[type=date]:hover{border:0}
+.intervalo input[type=date]:focus{outline:none;box-shadow:none;border:0}
+.intervalo span{color:var(--cinza-400);flex:0 0 auto}
 
 select,input[type=date],input[type=text],input[type=number]{
   width:100%;padding:var(--esp-2) var(--esp-3);
@@ -390,11 +423,37 @@ select[disabled],input[disabled],textarea[disabled]{
 .chip-f button:hover{background:var(--azul-100)}
 .chip-f button:focus-visible{outline:none;box-shadow:var(--foco)}
 
-.links{margin-top:var(--esp-4);display:flex;gap:var(--esp-6);flex-wrap:wrap}
-.links a{color:var(--azul-700);font-size:var(--txt-2);text-decoration:none;cursor:pointer;
-  font-weight:var(--peso-medio);border-radius:var(--raio-botao)}
-.links a:hover{text-decoration:underline}
+/* ══ A FILA DE ATALHOS (13/08, item 7c) ══════════════════════════════════════════════════════
+   Eram seis links azuis soltos, um do lado do outro, com cara de rodapé de site antigo. Viraram
+   controles discretos, no acabamento do molde: contorno leve, fundo recuado no hover.
+
+   >>> E OS SEIS FICARAM, contra a primeira leitura do pedido — que mandava tirar os que só
+       repetem destino do menu (Radar, Desertas, Meus Jornais). Fui conferir antes: **nenhum
+       deles é link**. Os seis chamam função NESTA tela — `abrirOrgaos`, `soDesertas`,
+       `abrirRadar`, `abrirJornais`, `porNumero` — e o que o menu lateral tem são ÂNCORAS que
+       voltam pra cá e disparam exatamente estas mesmas funções. Removê-los não tiraria
+       navegação duplicada: tiraria a AÇÃO, e o item do menu passaria a levar a um lugar onde
+       não há mais o que ele promete. O próprio pedido previa isso ("se dispara uma AÇÃO nesta
+       tela, NÃO remova — só arrume o estilo").
+   >>> O "+ Incluir licitação" É O ÚNICO QUE SAI DA TELA (ele leva ao Negócios com o formulário
+       aberto). Por isso ele é o único que virou BOTÃO, separado do resto por uma divisória:
+       ação que muda de tela não pode ter o mesmo peso de ação que abre um painel aqui. */
+.links{margin-top:var(--esp-4);padding-top:var(--esp-4);border-top:1px solid var(--cinza-100);
+  display:flex;align-items:center;gap:var(--esp-2);flex-wrap:wrap}
+.links a{display:inline-flex;align-items:center;min-height:30px;padding:0 var(--esp-3);
+  border:1px solid var(--borda-controle);border-radius:var(--raio-botao);
+  background:var(--branco);color:var(--cinza-700);font-size:var(--txt-1);
+  font-weight:var(--peso-medio);text-decoration:none;cursor:pointer;white-space:nowrap;
+  transition:background-color var(--transicao),border-color var(--transicao),color var(--transicao)}
+.links a:hover{background:var(--cinza-50);border-color:var(--cinza-300);color:var(--cinza-800)}
 .links a:focus-visible{outline:none;box-shadow:var(--foco)}
+/* A divisória e o botão: o que SAI da tela fica do outro lado da linha. */
+.links .sai{margin-left:auto;display:flex;align-items:center;gap:var(--esp-3)}
+.links .sai::before{content:"";width:1px;height:20px;background:var(--cinza-200)}
+.links .sai a{background:var(--cinza-50);border-color:var(--cinza-300);color:var(--cinza-800);
+  font-weight:var(--peso-semi)}
+.links .sai a:hover{background:var(--cinza-100)}
+@media(max-width:700px){.links .sai{margin-left:0}.links .sai::before{display:none}}
 
 /* ── GRADE: filtros à esquerda, resultados à direita ─────────────────────────── */
 #painel-busca{display:grid;grid-template-columns:262px 1fr;gap:var(--esp-4);
@@ -920,8 +979,11 @@ select[disabled],input[disabled],textarea[disabled]{
       <a onclick="porNumero()">Encontrar por Nº</a>
       <!-- O LUGAR CERTO PRO "NÃO ACHEI" é aqui, junto da busca — é o momento em que a pessoa
            descobre que a licitação não está no PNCP. O formulário mora no Negócios (é lá que o
-           negócio vive); este link leva pra lá com ele já aberto, em vez de duplicar a tela. -->
-      <a onclick="incluirLicitacaoManual()" title="a licitação existe mas não está no PNCP (BLL, convite, e-mail do órgão)">+ Incluir licitação</a>
+           negócio vive); este link leva pra lá com ele já aberto, em vez de duplicar a tela.
+           >>> E É O ÚNICO DOS SEIS QUE SAI DESTA TELA — os outros cinco abrem painel aqui. Por
+               isso ele fica do outro lado de uma divisória: ação que troca de tela não pode ter
+               o mesmo peso de ação que abre um painel. -->
+      <span class="sai"><a onclick="incluirLicitacaoManual()" title="a licitação existe mas não está no PNCP (BLL, convite, e-mail do órgão) — abre o formulário no Negócios">+ Incluir licitação</a></span>
     </div>
   </div><!-- /cartao-busca -->
 

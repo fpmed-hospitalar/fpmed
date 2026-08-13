@@ -265,6 +265,29 @@ ok(n + '. o contador e uma COLUNA: encostado a direita e com digito de largura f
   && /\.lm-num\{[^}]*tabular-nums/.test(CSS.replace(/\s+/g, ' ').replace(/ \{/g, '{')),
   (CSS.match(/\.lm-num\{[^}]*\}/) || [''])[0]); n++;
 
+/* ══ O SELO "IA" (13/08, item 7c) ══════════════════════════════════════════════
+   O molde poe um selo verde "IA" no Leitor de edital. Ele nao e enfeite nem
+   contador: e AVISO DE NATUREZA — este e o unico modulo do menu que gasta dinheiro
+   por uso (cada leitura consome credito e entra no `usos_ia`).
+   >>> POR QUE ELE NAO E O SLOT DO CONTADOR, que esta ali do lado: o contador e
+       NUMERO e muda; o selo e ROTULO e nao muda. Reaproveitar o slot faria o dia em
+       que este item ganhasse contagem APAGAR o aviso — e o aviso e o que impede
+       alguem de clicar sem saber que aquilo custa. Por isso os dois convivem, e ha
+       assert pra que continuem dois. */
+ok(n + '. o Leitor de edital carrega o selo "IA" (aviso de que o modulo custa por uso)',
+  (c.api.MODULOS.find(m => m.id === 'leitor') || {}).selo === 'IA'
+  && /class="lm-selo"/.test(html)); n++;
+ok(n + '. e o selo e outra peca que o contador (rotulo x numero, os dois podem coexistir)',
+  /\.lm-selo\{/.test(CSS) && /\.lm-selo \+ \.lm-num\{/.test(CSS)); n++;
+ok(n + '. o selo usa o verde da marca com o navy por cima (9,04:1), e nao cor escrita a mao',
+  /\.lm-selo\{[^}]*background:var\(--verde-500\)/.test(CSS.replace(/\s*\n\s*/g, ''))
+  && /\.lm-selo\{[^}]*color:var\(--navy\)/.test(CSS.replace(/\s*\n\s*/g, ''))); n++;
+/* E o selo NAO pode virar decoracao solta: quem o recebe e o modulo, pela lista. Um `<span>`
+   chumbado no HTML do menu passaria neste teste se ele olhasse so a marcacao. */
+ok(n + '. so quem declara `selo` na lista recebe um (nao ha selo chumbado na marcacao)',
+  (html.match(/class="lm-selo"/g) || []).length
+    === c.api.MODULOS.filter(m => m.selo).length); n++;
+
 // ── 6. os icones ─────────────────────────────────────────────────────────────
 const ICONE = c.api.ICONE;
 const MODULOS = c.api.MODULOS.filter(x => x.id);

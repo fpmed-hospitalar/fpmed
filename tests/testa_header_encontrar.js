@@ -205,6 +205,51 @@ ok(n + '. e so os dois que tem numero de verdade acendem (Radar e Desertas ficam
 ok(n + '. os indicadores so sao lidos DEPOIS da sessao (antes dela, 401 em tudo)',
   /pintaIndicadores\(\);/.test((L.match(/function _aoAutenticar\(\)\{[^}]*\}/) || [''])[0])); n++;
 
+// ── 4c. O POLIMENTO FINAL (item 7c) ──────────────────────────────────────────
+/* ══ OS SEIS ATALHOS FICARAM, E ISSO CONTRARIA A PRIMEIRA LEITURA DO PEDIDO ═══
+   O pedido mandava tirar os que so REPETEM destino do menu (Radar, Desertas, Meus
+   Jornais). Fui conferir antes de apagar: **nenhum dos seis e link**. Os seis
+   chamam funcao NESTA tela, e o que o menu lateral tem sao ANCORAS que voltam pra
+   ca e disparam exatamente estas mesmas funcoes. Removê-los nao tiraria navegacao
+   duplicada: tiraria a ACAO, e o item do menu passaria a levar a um lugar onde nao
+   ha mais o que ele promete.
+   >>> O proprio pedido previa isto ("se dispara uma ACAO nesta tela, NAO remova —
+       so arrume o estilo"), e este assert e o que impede a leitura apressada de
+       voltar numa proxima passagem. */
+for (const fn of ['abrirOrgaos', 'soDesertas', 'abrirRadar', 'abrirJornais', 'porNumero']) {
+  ok(n + '. o atalho "' + fn + '" continua na tela — ele dispara ACAO aqui, nao e link repetido',
+    new RegExp('<a onclick="' + fn + '\\(\\)').test(LIMPO)
+    && new RegExp('function ' + fn + '\\(').test(LIMPO)); n++;
+}
+ok(n + '. e eles deixaram de ser link azul solto (viraram controle com contorno)',
+  /\.links a\{[^}]*border:1px solid var\(--borda-controle\)/.test(L.replace(/\s*\n\s*/g, ''))
+  && !/\.links a\{[^}]*color:var\(--azul-700\)/.test(L.replace(/\s*\n\s*/g, ''))); n++;
+/* O "+ Incluir licitacao" e o UNICO dos seis que sai da tela (leva ao Negocios com o formulario
+   aberto). Por isso e o unico separado por divisoria: acao que troca de tela nao pode ter o
+   mesmo peso de acao que abre um painel aqui. */
+ok(n + '. o "+ Incluir licitacao" — o unico que SAI da tela — fica do outro lado da divisoria',
+  /<span class="sai"><a onclick="incluirLicitacaoManual\(\)"/.test(LIMPO)
+  && /\.links \.sai::before\{content:""/.test(L.replace(/\s*\n\s*/g, ''))); n++;
+
+/* O PERIODO E AS DATAS: continuam os `<select>` e `<input type=date>` NATIVOS — um calendario
+   proprio significaria reimplementar teclado, leitor de tela, fuso e o calendario do celular, e
+   o nativo faz os quatro. O molde pede acabamento, nao calendario proprio.
+   >>> O QUE O ASSERT GUARDA e o que estava torto: as tres alturas eram diferentes entre si
+       (select e input date nao medem igual), e era isso que fazia a fileira parecer montada as
+       pressas. Uma altura so, declarada. */
+ok(n + '. as datas continuam nativas (o molde pede acabamento, nao calendario proprio)',
+  /<input type="date" id="f-de">/.test(LIMPO) && /<input type="date" id="f-ate">/.test(LIMPO)); n++;
+ok(n + '. e os tres controles do periodo tem UMA altura so',
+  /\.periodo select,\.periodo input\[type=date\]\{min-height:34px/.test(L.replace(/\s*\n\s*/g, ''))
+  && /\.intervalo\{[^}]*min-height:34px/.test(L.replace(/\s*\n\s*/g, ''))); n++;
+/* O INTERVALO e UMA peca: as duas datas dentro da mesma moldura. Dois campos soltos com um traco
+   no meio leem como dois filtros independentes, e a pessoa preenche um e esquece o outro. */
+ok(n + '. o intervalo e UMA moldura com as duas datas dentro (nao dois campos soltos)',
+  /\.intervalo\{[^}]*border:1px solid var\(--borda-controle\)/.test(L.replace(/\s*\n\s*/g, ''))
+  && /\.intervalo input\[type=date\]\{border:0/.test(L.replace(/\s*\n\s*/g, ''))); n++;
+ok(n + '. e o foco vive na MOLDURA, nao no campo escondido dentro dela',
+  /\.intervalo:focus-within\{[^}]*var\(--foco\)/.test(L.replace(/\s*\n\s*/g, ''))); n++;
+
 // ── 5. a reserva da etiqueta do gm-auth ──────────────────────────────────────
 /* A etiqueta fixa do gm-auth (e-mail + trocar senha + sair) tem z-index maximo e cobria o gatilho
    e o selo. Achado no PRINT, nao na suite - e por isso ele virou assert.

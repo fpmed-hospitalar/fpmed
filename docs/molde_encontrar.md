@@ -1,4 +1,26 @@
-# O MOLDE OFICIAL DA ENCONTRAR — medido antes de aplicar
+# O MOLDE DO SISTEMA — medido antes de aplicar
+
+> ## ⚖ ORDEM PERMANENTE DO DONO — 13/08/2026
+> **A Encontrar não é exceção: ela é o PADRÃO.** Este documento deixou de ser "o molde de uma
+> tela" e passou a ser **a linguagem visual de TODAS as telas** do sistema.
+>
+> 1. **O molde manda em toda tela**, não só na Encontrar: lateral navy, tokens do
+>    `fpmed_tema.css`, painel com linhas, cartões, selos, a anatomia de linha do molde.
+> 2. **Regra do escoteiro:** toda tela que for **tocada** daqui pra frente sai molde-ficada.
+>    Nada volta pro estilo antigo, e **nada novo nasce fora do molde**.
+> 3. **Tela por tela, sem apagão:** uma de cada vez — publica, prova com print lado a lado com o
+>    molde, só então a próxima. O sistema nunca sai do ar.
+> 4. **Onde a tela tiver dado ou função que o molde não previu**, vale o mesmo princípio que a
+>    Encontrar já seguiu: adota a **roupa** do molde, **mantém a função**, e onde não há dado
+>    fica **em branco honesto** — nunca chuta.
+>
+> As seções abaixo continuam valendo palavra por palavra; o que mudou é o **alcance**. E as
+> decisões já tomadas na Encontrar (as fugas medidas, o que do molde **não** entrou e por quê)
+> passam a ser jurisprudência para as próximas telas, e não caso isolado.
+
+---
+
+## A MEDIÇÃO ORIGINAL — o molde da Encontrar
 
 **Fonte da verdade visual:** `Tela Encontrar FPMED.zip` (Downloads do dono), exportado do
 Claude Design em 13/08/2026. Dentro:

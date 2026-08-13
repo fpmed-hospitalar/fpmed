@@ -1410,8 +1410,72 @@ Criado em 21/07/2026 copiando SO os arquivos do app do C:\globalmed.
      >>> FALTA DO 7b: o PAINEL em volta das visoes. Os quadros do kanban sao um caso a parte —
          eles NAO sao lista, e o painel do molde e desenhado pra lista.
 
-     >>> ############ FILA — 2 PEDIDOS NOVOS DELE EM 13/08 ############
-     >>> 7c. POLIMENTO FINAL DA ENCONTRAR — 5 pontos que ainda destoam do molde:
+     >>> ############ ORDEM PERMANENTE 13/08 — O MOLDE E A LINGUAGEM DE TODO O SISTEMA ########
+     >>> "A Encontrar nao e excecao — ela e o PADRAO." Registrado em docs/constituicao.md
+         (secao 1b, nova) e no topo de docs/molde_encontrar.md, que deixou de ser "o molde de
+         uma tela" e virou O MOLDE DO SISTEMA.
+           1. o molde manda em TODA tela (lateral navy, tokens, painel com linhas, selos);
+           2. REGRA DO ESCOTEIRO: toda tela que eu TOCAR sai molde-ficada. Nada volta pro
+              estilo antigo, e NADA NOVO nasce fora do molde;
+           3. tela por tela, SEM APAGAO: publica, prova com print lado a lado, so entao a
+              proxima;
+           4. dado/funcao que o molde nao previu: adota a ROUPA, mantem a FUNCAO, e onde nao
+              ha dado fica em BRANCO HONESTO — nunca chuta (S6 promovida a regra de desenho).
+         >>> E as decisoes ja tomadas na Encontrar (as fugas medidas, o que do molde NAO entrou
+             e por que) viram JURISPRUDENCIA pras proximas telas. Redecidir cada uma em cada
+             tela e como nascem duas respostas pra mesma pergunta.
+
+     >>> ############ A ORDEM DAS TELAS (dele, 13/08) ############
+         [OK] Encontrar 6/6 no ar  (falta o polimento 7c + a busca nacional 7d)
+          ->  Negocios      (logo depois da Encontrar — fatias 1 e 2 feitas, falta o painel)
+              Proposta · Leitor de edital · Conferir CMED · Pecas · Declaracoes ·
+              Documentos · Sistema comercial
+         >>> Radar · Desertas · Meus Jornais sao VISTAS dentro da Encontrar — conferir se
+             precisam de passe proprio (elas herdam a moldura da tela que as hospeda).
+
+     >>> ############ FILA — PEDIDOS NOVOS DELE EM 13/08 ############
+     >>> 7c. POLIMENTO FINAL DA ENCONTRAR — **FEITO** — sw.js -> -2026-08-13-38.
+             testa_header_encontrar 46 -> 58 · testa_menu_lateral 52 -> 56.
+             TOTAL: 3.502 / 0 falhas / 94 suites.
+             1. OS ATALHOS: viraram controles com contorno (nada de link azul solto), e o
+                "+ Incluir licitacao" ficou do outro lado de uma divisoria, porque e o UNICO
+                que SAI da tela.
+                >>> *** OS SEIS FICARAM, CONTRA A PRIMEIRA LEITURA DO PEDIDO. *** Ele mandava
+                    tirar os que so REPETEM destino do menu (Radar, Desertas, Meus Jornais).
+                    Conferi ANTES de apagar: nenhum dos seis e link. Os seis chamam funcao
+                    NESTA tela, e o que o menu tem sao ANCORAS que voltam pra ca e disparam
+                    essas mesmas funcoes. Apagar nao tiraria navegacao duplicada: tiraria a
+                    ACAO, e o item do menu passaria a levar a um lugar onde nao ha mais o que
+                    ele promete. O proprio pedido previa isso, e ha assert por atalho pra que a
+                    leitura apressada nao volte numa proxima passagem.
+             2. PERIODO + DATAS: as tres alturas eram DIFERENTES entre si (select e input date
+                nao medem igual) — era isso que fazia a fileira parecer montada as pressas.
+                Uma altura so (34px), e o INTERVALO virou UMA moldura com as duas datas
+                dentro: dois campos soltos com um traco no meio leem como dois filtros
+                independentes, e a pessoa preenche um e esquece o outro.
+                >>> AS DATAS CONTINUAM NATIVAS, e isso e decisao: calendario proprio
+                    significaria reimplementar teclado, leitor de tela, fuso e o calendario do
+                    celular. O molde pede ACABAMENTO, nao calendario proprio.
+             3. SELO "IA" no Leitor de edital: recolocado, com o verde da marca e o navy por
+                cima (9,04:1).
+                >>> ELE NAO E O SLOT DO CONTADOR, que esta ali do lado: contador e NUMERO e
+                    muda; selo e ROTULO e nao muda. Reaproveitar o slot faria o dia em que este
+                    item ganhasse contagem APAGAR o aviso — e o aviso e o que impede alguem de
+                    clicar sem saber que aquilo custa por uso.
+             4. CONTADORES DE RADAR E DESERTAS: **ficaram VAZIOS, e ele autorizou isso.**
+                RADAR nao tem contagem global: ele depende da cidade de referencia e do raio
+                que a pessoa escolhe. DESERTAS tem uma contagem possivel pelo `situacao`, mas
+                ela DISCORDARIA do link: medido no indice, 1.000 linhas dao 997 "Divulgada no
+                PNCP", 2 "Suspensa" e 1 "Revogada" — enquanto a marca de "deserta POR ITEM" so
+                existe depois de ler os itens daquela licitacao. Numero que discorda do que o
+                link mostra e pior que numero nenhum. Os 12/38 do molde sao ficticios e nunca
+                entraram.
+             5. SELO "BASE SINCRONIZADA": conferido — ele aparece AO LADO da etiqueta do
+                gm-auth, nao atras. A reserva medida (do passo 3) e o que garante isso.
+             >>> MEDIDO: 390/1366/1920 com zero rolagem horizontal, altura unica de 34px no
+                 periodo nas tres, nenhum atalho estourando, selo IA presente nas tres.
+
+     >>> 7c-hist. O PEDIDO ORIGINAL, mantido pelo que ele mostra do raciocinio:
              1. a FILA DE ATALHOS embaixo da busca (links azuis soltos). Tirar os que so
                 REPETEM destino do menu (Radar, Desertas, Meus Jornais) — MAS so se nao
                 dispararem acao NESTA tela; se disparam, arruma o estilo e mantem a funcao.
