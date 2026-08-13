@@ -320,24 +320,75 @@ select[disabled],input[disabled],textarea[disabled]{
 .hero h2{font-size:var(--txt-5);font-weight:var(--peso-semi);line-height:var(--altura-titulo);
   color:var(--cinza-800);margin:0 0 var(--esp-1)}
 .hero p{margin:0 0 var(--esp-4);color:var(--cinza-600);font-size:var(--txt-2)}
-.buscabox{position:relative;max-width:var(--largura-leitura)}
-.buscabox input{width:100%;padding:var(--esp-3) 52px var(--esp-3) 44px;
-  font-size:var(--txt-3);border-radius:var(--raio-botao);
-  border:1px solid var(--cinza-300);background:var(--branco);color:var(--cinza-800)}
-.buscabox input:focus{outline:none;border-color:var(--azul-500);box-shadow:var(--foco)}
+/* ══ A BARRA DE BUSCA UNIFICADA (molde §4, passo 5 · 13/08) ══════════════════════════════════
+   Ela era um campo com uma lupa colada por dentro à esquerda e um quadradinho azul à direita.
+   Agora é UMA caixa que contém tudo o que a busca é: a lupa, os CRITÉRIOS ATIVOS em chip, o que
+   se digita e o botão. É a diferença entre "um campo de texto com botão" e "a barra da busca".
+
+   >>> POR QUE OS CHIPS ENTRARAM AQUI DENTRO, e essa é a mudança que vale: os critérios ativos
+       (portal, situação, órgão, faixa de valor, SRP, desertas) já apareciam — mas numa fila de
+       pílulas de SÓ LEITURA acima da lista, longe de onde a busca se faz. Quem quisesse desligar
+       um tinha que achar o campo dele na coluna da esquerda. Dentro da barra, o critério fica
+       onde a busca está e cada um pode ser tirado com um clique.
+   >>> ELES NÃO SÃO UM SEGUNDO FILTRO. O rótulo de cada chip sai do MESMO `refinoDe()` que a
+       lista usa pra filtrar; se um dia o refino ganhar um critério, o chip nasce junto. Uma
+       lista de chips escrita à mão seria a primeira a envelhecer.
+
+   >>> E O "+ FILTRO" DO MOLDE NÃO ENTROU, com motivo. No molde ele abre um popover com os
+       campos disponíveis, porque LÁ NÃO HÁ COLUNA DE FILTROS — a tela dele é só a lista. Aqui a
+       coluna existe e está SEMPRE ABERTA à esquerda. Um botão pra abrir o que já está aberto é
+       exatamente o "link que não faz nada" que este arquivo já removeu uma vez (a "Pesquisa
+       avançada", quando os filtros viraram coluna fixa). */
+.buscabox{display:flex;align-items:center;flex-wrap:wrap;gap:var(--esp-2);
+  min-height:42px;box-sizing:border-box;
+  padding:var(--esp-1) var(--esp-1) var(--esp-1) var(--esp-3);
+  border:1px solid var(--borda-busca);border-radius:var(--raio-campo);
+  background:var(--branco);box-shadow:var(--sombra-1);
+  transition:border-color var(--transicao),box-shadow var(--transicao)}
+/* O foco vive na CAIXA, e não no campo de dentro: quem enxerga a fronteira é ela, e um anel em
+   volta de um input invisível pareceria um anel em volta de nada. */
+.buscabox:focus-within{border-color:var(--azul-500);box-shadow:var(--foco)}
+.buscabox input{flex:1 1 180px;min-width:180px;width:auto;border:0;background:none;padding:0;
+  font-size:var(--txt-2);font-weight:var(--peso-medio);color:var(--cinza-800)}
+.buscabox input:focus{outline:none;border:0;box-shadow:none}
+.buscabox input:hover{border:0}
 /* o ícone é SVG do conjunto da casa, herdando currentColor — não é mais um emoji */
-.buscabox .lupa{position:absolute;left:var(--esp-3);top:50%;transform:translateY(-50%);
-  color:var(--cinza-400);display:flex;pointer-events:none}
-.buscabox .lupa svg{width:20px;height:20px;stroke:currentColor;fill:none;
+.buscabox .lupa{color:var(--azul-500);display:flex;flex:0 0 auto;pointer-events:none}
+.buscabox .lupa svg{width:15px;height:15px;stroke:currentColor;fill:none;
   stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
-.buscabox .go{position:absolute;right:var(--esp-1);top:50%;transform:translateY(-50%);
-  background:var(--azul-600);color:var(--branco);border:0;
-  width:38px;height:38px;border-radius:var(--raio-botao);cursor:pointer;
-  display:grid;place-items:center;transition:background-color var(--transicao)}
+/* ══ O BOTÃO "BUSCAR" — E A FUGA MEDIDA ══════════════════════════════════════════════════════
+   O molde pinta este botão com o #2CA9E0 da marca e texto branco por cima: **2,67:1**, pouco
+   mais da metade do mínimo de AA. É a lição S12 inteira, de novo — e o tema já tem a saída
+   pronta, com ofícios separados na rampa de azul: o 600 (#1576A5) é "a cor da ação" e dá
+   5,04:1. O #2CA9E0 segue sendo a marca em tudo que não carrega texto — inclusive na lupa aqui
+   ao lado, que é dele. Só o fundo COM letra branca em cima troca de degrau.
+   >>> E ELE VOLTOU A TER TEXTO. Era um quadrado com uma lupa dentro, dentro de um campo que já
+       tinha outra lupa: dois ícones iguais na mesma peça, um decorativo e outro clicável. */
+.buscabox .go{flex:0 0 auto;background:var(--azul-600);color:var(--branco);border:0;
+  min-height:30px;padding:0 var(--esp-5);border-radius:var(--raio-botao);cursor:pointer;
+  font-family:var(--fonte);font-size:var(--txt-1);font-weight:var(--peso-semi);
+  display:inline-flex;align-items:center;gap:var(--esp-2);
+  transition:background-color var(--transicao)}
 .buscabox .go:hover{background:var(--azul-700)}
 .buscabox .go:focus-visible{outline:none;box-shadow:var(--foco)}
-.buscabox .go svg{width:20px;height:20px;stroke:currentColor;fill:none;
+.buscabox .go svg{width:14px;height:14px;stroke:currentColor;fill:none;
   stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+
+/* ── OS CHIPS DE CRITÉRIO, dentro da barra ─────────────────────────────────────────────────
+   Cores do molde: tinta e fundo do par "info", que é o mesmo do selo de modalidade. O nome do
+   campo recua (`opacity`) e o VALOR fica forte — é o D9 dentro de uma peça de 26px. */
+.chip-f{display:inline-flex;align-items:center;gap:var(--esp-1);flex:0 0 auto;
+  min-height:26px;padding:0 var(--esp-1) 0 var(--esp-2);
+  background:var(--sinal-info-fundo);border:1px solid var(--azul-100);
+  border-radius:var(--raio-item);color:var(--sinal-info-tinta);font-size:var(--txt-1);
+  max-width:100%}
+.chip-f .campo{opacity:.72}
+.chip-f .valor{font-weight:var(--peso-semi);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.chip-f button{width:15px;height:15px;flex:0 0 auto;border:0;background:none;cursor:pointer;
+  color:inherit;border-radius:var(--raio-mini);display:grid;place-items:center;padding:0;
+  font-size:var(--txt-1);line-height:1;transition:background-color var(--transicao)}
+.chip-f button:hover{background:var(--azul-100)}
+.chip-f button:focus-visible{outline:none;box-shadow:var(--foco)}
 
 .links{margin-top:var(--esp-4);display:flex;gap:var(--esp-6);flex-wrap:wrap}
 .links a{color:var(--azul-700);font-size:var(--txt-2);text-decoration:none;cursor:pointer;
@@ -795,10 +846,14 @@ select[disabled],input[disabled],textarea[disabled]{
                que mudou é que ele deixou de morar num campo de texto editável.
            >>> E A TELA DIZ ISSO, na linha de hint abaixo — senão o operador acha que a lista
                filtra por mágica, e não entende por que "cadeira de escritório" não aparece. -->
+      <!-- OS CHIPS DE CRITÉRIO ATIVO entram AQUI, entre a lupa e o campo, como no molde. Eles são
+           pintados pelo `pintaChips()` a partir do MESMO `refinoDe()` que filtra a lista — não há
+           uma segunda lista de critérios escrita à mão. Sem refino ligado, nenhum chip. -->
+      <span id="chips-refino" style="display:contents"></span>
       <input id="f-kw" value=""
              placeholder="busque por item — ex.: albumina, dipirona…"
              onkeydown="if(event.key==='Enter')buscaNova()">
-      <button class="go" onclick="buscaNova()" title="Buscar" aria-label="Buscar"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></button>
+      <button class="go" onclick="buscaNova()" title="Buscar"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>Buscar</button>
     </div>
     <!-- A LINHA QUE EXPLICA O VAZIO. Ela troca de texto conforme o campo, porque o que o vazio
          faz e o que um termo faz são coisas diferentes — e quem está lendo precisa da que vale
@@ -1406,7 +1461,7 @@ async function iniciarSeloBase(){
   const semMotor = typeof window.AlarmeColeta === 'undefined';
   pintaSeloBase(semMotor ? null : await carimboColeta(), semMotor);
 }
-function _aoAutenticar(){ iniciarEstoque(); iniciarJornais(); abreLeitorNaBarra(); iniciarSeloBase(); pintaIndicadores(); reservaAuth(); }
+function _aoAutenticar(){ iniciarEstoque(); iniciarJornais(); abreLeitorNaBarra(); iniciarSeloBase(); pintaIndicadores(); reservaAuth(); pintaChips(); }
 if(window.gmAuth) _aoAutenticar();
 else document.addEventListener('gm-auth-ready', _aoAutenticar, { once:true });
 
@@ -1868,22 +1923,65 @@ function casaRefino(l, r){
   if(r.desertas && !desertaDe(l)) return false;
   return true;
 }
-function pillsRefino(r){
-  const p = [];
-  if(r.portal) p.push('portal: '+r.portal);
-  if(r.modo)   p.push('disputa: '+r.modo);
-  if(r.sit)    p.push('situação: '+r.sit);
-  if(r.orgao.length) p.push('órgão: '+r.orgao.join(' ou '));
-  if(r.srp==='so')  p.push('só registro de preços');
-  if(r.srp==='nao') p.push('sem registro de preços');
-  if(r.vmin!=null) p.push('≥ '+brl(r.vmin));
-  if(r.vmax!=null) p.push('≤ '+brl(r.vmax));
-  if(r.desertas) p.push('só desertas/republicáveis');
-  return p;
+/* ══ OS CRITÉRIOS ATIVOS, EM UMA LISTA SÓ (passo 5 do molde · 13/08) ═════════════════════════
+   Antes havia `pillsRefino`, que devolvia FRASES pra pintar pílulas de leitura acima da lista.
+   Os chips do molde precisam de mais: cada um tem um "×" que desliga AQUELE critério, e pra
+   isso o chip precisa saber de que CAMPO ele veio.
+   >>> ENTÃO A LISTA PASSOU A SER DE OBJETOS, e a `pillsRefino` virou uma VISTA dela. As duas
+       formas continuam existindo (o resumo do jornal usa as frases), mas a lista é uma só: no
+       dia em que o refino ganhar um critério, o chip e a frase nascem juntos. Duas listas seriam
+       a garantia de que uma delas ia esquecer o critério novo — e ela seria a de leitura, que é
+       justamente a que o operador usa pra entender por que a busca devolveu pouco. */
+function criteriosRefino(r){
+  const c = [];
+  const p = (campo, id, rotulo, valor, frase) => c.push({ campo, id, rotulo, valor,
+    frase: frase || (rotulo + ': ' + valor) });
+  if(r.portal) p('portal', 'f-portal', 'portal', r.portal);
+  if(r.modo)   p('modo',   'f-modo',   'disputa', r.modo);
+  if(r.sit)    p('sit',    'f-sit',    'situação', r.sit);
+  if(r.orgao.length) p('orgao','f-orgao','órgão', r.orgao.join(' ou '));
+  /* ══ O CHIP E A FRASE SÃO DUAS LEITURAS DO MESMO CRITÉRIO, e por isso o objeto carrega as
+     duas. O chip é uma peça de 26px com rótulo fraco e valor forte ("registro de preços" +
+     "sem SRP"); a frase é texto corrido dentro do resumo do jornal, onde a mesma coisa se
+     escreve "sem registro de preços". Forçar uma forma nas duas deixaria o chip comprido
+     demais ou a frase em telegrama. */
+  if(r.srp==='so')  p('srp','f-srp','registro de preços','só SRP',  'só registro de preços');
+  if(r.srp==='nao') p('srp','f-srp','registro de preços','sem SRP', 'sem registro de preços');
+  if(r.vmin!=null) p('vmin','f-vmin','a partir de', brl(r.vmin), '≥ ' + brl(r.vmin));
+  if(r.vmax!=null) p('vmax','f-vmax','até',         brl(r.vmax), '≤ ' + brl(r.vmax));
+  if(r.desertas)   p('desertas','_desertas','só','desertas/republicáveis','só desertas/republicáveis');
+  return c;
+}
+/* A vista em FRASE. Ela existe porque o resumo do jornal escreve os critérios num texto corrido,
+   onde "portal: BNC" lê bem e um objeto não lê nada. */
+function pillsRefino(r){ return criteriosRefino(r).map(c => c.frase); }
+/* Desliga UM critério. O `desertas` não é campo de formulário — ele é um estado da tela, e por
+   isso tem o caminho próprio que já existia (`marcaDesertas`). Tratá-lo como campo faria o chip
+   sumir e o filtro continuar ligado, que é o pior dos dois mundos. */
+function tiraCriterio(id){
+  if(id === '_desertas'){ window._soDesertas = false; marcaDesertas(); }
+  else { const e = document.getElementById(id); if(e) e.value = ''; }
+  pintaChips();
+  rerender();
+}
+/* Pinta os chips DENTRO da barra de busca. Chamado depois de todo render e depois de mexer num
+   critério — os dois momentos em que o que está ligado pode ter mudado. */
+function pintaChips(){
+  const alvo = document.getElementById('chips-refino');
+  if(!alvo) return 0;
+  const cs = criteriosRefino(refino());
+  alvo.innerHTML = cs.map(c =>
+    '<span class="chip-f" title="' + esc(c.rotulo + ': ' + c.valor) + '">'
+    + '<span class="campo">' + esc(c.rotulo) + '</span>'
+    + '<span class="valor">' + esc(c.valor) + '</span>'
+    + '<button type="button" aria-label="tirar o filtro ' + esc(c.rotulo) + '" '
+    + 'onclick="tiraCriterio(\'' + c.id + '\')">×</button></span>').join('');
+  return cs.length;
 }
 function limparRefino(){
   _CAMPOS_REFINO.forEach(id => { const e = document.getElementById(id); if(e) e.value=''; });
   window._soDesertas = false; marcaDesertas();
+  pintaChips();
   rerender();
 }
 // O portal (`usuarioNome`) é o sistema em que a licitação foi publicada — BNC, BLL, Licitanet,
@@ -2803,13 +2901,15 @@ function render(todos, kws, excl, aviso, procedencia){
        + '<button class="btn sec mini" style="margin-left:auto" onclick="atualizarAgora()">↻ Atualizar agora</button>'
        + '</div>';
   }
-  // CRITÉRIOS DE REFINO ATIVOS, em pill, ANTES da lista — inclusive quando o resultado é zero.
+  /* ══ OS CRITÉRIOS ATIVOS MUDARAM DE LUGAR (13/08, passo 5 do molde) ═══════════════════════
+     Eles eram pintados AQUI, numa fila de pílulas de só leitura acima da lista. Agora são CHIPS
+     dentro da barra de busca, cada um com um "×" — ou seja, no lugar onde a busca se faz, e
+     desligáveis sem procurar o campo na coluna da esquerda.
+     >>> A CONTAGEM CONTINUA SENDO USADA AQUI EMBAIXO, e é por isso que ela não sumiu: o texto do
+         estado vazio precisa saber se há refino ligado pra dizer "talvez seja ele, e não a
+         busca" — que é a frase que evita a conclusão errada de "não tem nada publicado hoje". */
   const pills = pillsRefino(r);
-  if(pills.length){
-    h += '<div class="refino"><span class="hint">refino ativo:</span>'
-       + pills.map(x=>'<span class="pill">'+esc(x)+'</span>').join('')
-       + '<a class="hint" style="cursor:pointer;text-decoration:underline;color:var(--azul-claro)" onclick="limparRefino()">limpar</a></div>';
-  }
+  pintaChips();
   /* >>> A BUSCA NACIONAL DISPARA AQUI, ANTES do `return` do caso vazio — e esta linha é o
          conserto de um defeito que eu mesmo criei em 11/08. Ela estava logo abaixo, depois deste
          `if`, e por isso **nunca rodava justamente quando mais fazia falta**: índice com ZERO

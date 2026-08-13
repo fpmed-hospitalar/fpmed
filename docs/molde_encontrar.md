@@ -147,6 +147,7 @@ nunca, em hipótese alguma, marca da GlobalMed.
    **[FEITO — 13/08]** ver a seção 8.
 4. **Fila de 4 KPIs**, com os números reais do banco. **[FEITO — 13/08]** ver a seção 9.
 5. **Barra de busca** com chips, "+ Filtro" tracejado e o botão azul.
+   **[FEITO — 13/08]** ver a seção 10.
 6. **Painel de resultados** — linha rica, barra de urgência, selos, `<mark>`, alternador
    Confortável/Compacta.
 
@@ -467,3 +468,86 @@ número chutado, não.
 | 900 | 2 | 0 | não |
 | 1366 | 4 | 0 | não |
 | 1920 | 4 | 0 | não |
+
+---
+
+## 10 · PASSO 5 FEITO — A BARRA DE BUSCA, E OS CRITÉRIOS QUE MUDARAM DE LUGAR
+
+`fpmed_licitacoes.html`, 13/08. `testa_pesquisa_avancada`: **71 → 82 asserts, mutação 11 de 11
+barradas**. Total do projeto **3.439 / 0 falhas / 92 suítes**.
+
+A busca era **um campo com uma lupa colada por dentro e um quadradinho azul à direita**. Agora é
+**uma caixa** que contém tudo o que a busca é: a lupa, os critérios ativos em chip, o que se
+digita e o botão.
+
+### A mudança que vale: os critérios entraram na barra
+
+Os critérios ativos (portal, disputa, situação, órgão, faixa de valor, SRP, desertas) **já
+apareciam** — mas numa fila de pílulas de **só leitura** acima da lista, longe de onde a busca se
+faz. Quem quisesse desligar um tinha de achar o campo dele na coluna da esquerda.
+
+Agora são **chips dentro da barra**, cada um com um `×`. O critério fica onde a busca está, e sai
+com um clique.
+
+> **E eles não são um segundo filtro.** O rótulo de cada chip sai do **mesmo `refinoDe()`** que a
+> lista usa para filtrar. Se o refino ganhar um critério, o chip nasce junto.
+
+Para isso a lista de critérios passou a ser de **objetos** (`criteriosRefino`), e a `pillsRefino`
+virou uma **vista** dela — porque o chip precisa saber de que **campo** veio, e a frase corrida do
+resumo do jornal continua precisando ser frase:
+
+| critério | chip (rótulo fraco + valor forte) | frase (resumo do jornal) |
+|---|---|---|
+| SRP excluído | `registro de preços` **sem SRP** | "sem registro de preços" |
+| valor mínimo | `a partir de` **R$ 1.000** | "≥ R$ 1.000" |
+| só desertas | `só` **desertas/republicáveis** | "só desertas/republicáveis" |
+
+> Duas listas — uma para os chips, outra para as frases — seriam a garantia de que uma esqueceria
+> o critério novo. E seria a de leitura, que é justamente a que o operador usa para entender por
+> que a busca devolveu pouco.
+
+O `só desertas` tem **caminho próprio**: ele não é campo de formulário, é estado da tela. Se o `×`
+tentasse limpar um campo inexistente, o chip sumiria e o filtro continuaria ligado — a tela
+passaria a filtrar sem dizer que filtra. Há assert.
+
+### A fuga medida entrou no botão
+
+O molde pinta o **"Buscar"** com o `#2CA9E0` da marca e texto branco por cima: **2,67:1**, pouco
+mais da metade do mínimo. É a lição S12 inteira, de novo — e o tema já tinha a saída pronta, com
+ofícios separados na rampa: **`--azul-600` (#1576A5), "a cor da ação", 5,04:1**. O `#2CA9E0` segue
+sendo a marca em tudo que não carrega texto — inclusive na lupa ali ao lado, que é dele.
+
+> O assert existe para que *"aproximar mais do molde"* não signifique um dia trocar o 600 pelo 500
+> aqui — que é a coisa mais natural do mundo para quem está comparando dois prints e não mediu.
+
+E o botão **voltou a ter texto**: era um quadrado com uma lupa dentro, **dentro de um campo que já
+tinha outra lupa** — dois ícones iguais na mesma peça, um decorativo e outro clicável.
+
+### O "+ Filtro" do molde não entrou, e o motivo é do próprio arquivo
+
+No molde ele abre um popover com os campos disponíveis — **porque lá não há coluna de filtros**; a
+tela dele é só a lista. Aqui a coluna existe e está **sempre aberta** à esquerda. Um botão para
+abrir o que já está aberto é exatamente o *"link que não faz nada"* que este arquivo **já removeu
+uma vez** (a "Pesquisa avançada", quando os filtros viraram coluna fixa).
+
+### Um assert alheio reapontado, e ele merecia
+
+`testa_tema_tela_propria` 15 — *"não sobrou uma única cor chumbada na tela"* — varria o **arquivo
+inteiro, comentário incluído**. Ficou vermelho quando o comentário do botão registrou a medição
+que **justifica a fuga** (*"o molde usa #2CA9E0 e dá 2,67:1; o token da ação é #1576A5, 5,04:1"*).
+
+> Ou seja: o assert reprovava justamente a **anotação de por que não há cor chumbada ali**. Um
+> assert que só fica verde se eu apagar a explicação está contra a lei L6, não a favor dela.
+> Passou a ler o arquivo sem comentário; cor chumbada em CSS continua reprovando igual.
+
+### Medido no navegador (com 3 critérios ligados)
+
+| largura | altura da barra | chips | barra estourando | rolagem horizontal |
+|---|---|---|---|---|
+| 390 | 234px *(um chip por linha)* | 3 | não | 0 |
+| 900 | 74px | 3 | não | 0 |
+| 1366 | 42px | 3 | não | 0 |
+| 1920 | 42px | 3 | não | 0 |
+
+O `×` foi exercitado na tela: tirar o chip de situação **limpou o campo** `f-sit`; tirar o de
+desertas **desligou o estado** `_soDesertas`. Nos dois casos a lista repintou.

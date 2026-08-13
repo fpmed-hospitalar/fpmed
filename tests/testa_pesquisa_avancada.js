@@ -1,4 +1,4 @@
-// SUITE testa_pesquisa_avancada — O REFINO NAO PODE MENTIR SOBRE O QUE SUMIU DA TELA.
+﻿// SUITE testa_pesquisa_avancada — O REFINO NAO PODE MENTIR SOBRE O QUE SUMIU DA TELA.
 //
 // Item 9, 4o pedaco: pesquisa avancada completa + Orgaos + Desertas. Extrai as funcoes REAIS do
 // fpmed_licitacoes.html (nao recopia).
@@ -44,8 +44,8 @@ const ctx = (new Function('document', 'window',
   bloco('const brl =', FIM_JANELA) +
   bloco('const CRUZ = new Map()', 'function aderencia') +
   bloco('const _CAMPOS_REFINO', '// ══ ÓRGÃOS') +
-  'return { refino, casaRefino, pillsRefino, populaPortais, desertaDe, _ehSrp, CRUZ, chaveLic, semAcento };'))(doc, win);
-const { refino, casaRefino, pillsRefino, populaPortais, desertaDe, _ehSrp, CRUZ, chaveLic } = ctx;
+  'return { refino, casaRefino, pillsRefino, criteriosRefino, populaPortais, desertaDe, _ehSrp, CRUZ, chaveLic, semAcento };'))(doc, win);
+const { refino, casaRefino, pillsRefino, criteriosRefino, populaPortais, desertaDe, _ehSrp, CRUZ, chaveLic } = ctx;
 
 let p = 0, f = 0;
 const ok = (n, c, e) => { if (c) p++; else { f++; console.log('  FALHA ' + n + (e !== undefined ? '  [' + JSON.stringify(e) + ']' : '')); } };
@@ -162,6 +162,75 @@ ok('38. sem refino, nenhuma pill', pillsRefino(campos({})).length === 0);
   ok('41. a pill diz "sem registro de precos" em portugues, nao "nao"', /sem registro de preços/.test(ps), ps);
   ok('42. a pill mostra a faixa de valor formatada', /≥/.test(ps) && /≤/.test(ps), ps);
   ok('43. a pill avisa que so desertas estao sendo mostradas', /só desertas/.test(ps), ps);
+}
+
+/* ══════════ 7b. OS CHIPS DA BARRA DE BUSCA (passo 5 do molde · 13/08) ══════════════════════
+   Os criterios ativos sairam da fila de pilulas de SO LEITURA acima da lista e viraram CHIPS
+   dentro da barra de busca, cada um com um "×". Duas coisas mudaram, e as duas tem assert:
+     1. a lista de criterios passou a ser de OBJETOS (`criteriosRefino`), e a `pillsRefino`
+        virou uma VISTA dela — porque o chip precisa saber de QUE CAMPO ele veio pra poder
+        desliga-lo, e a frase corrida do resumo do jornal continua precisando ser frase;
+     2. o criterio agora se desliga de dentro da barra, sem procurar o campo na coluna.
+   >>> O ASSERT QUE MAIS IMPORTA E O DA LISTA UNICA. Duas listas — uma pros chips, outra pras
+       frases — seriam a garantia de que uma delas ia esquecer o criterio novo. E seria a de
+       leitura, que e justamente a que o operador usa pra entender por que a busca deu pouco. */
+{
+  const cheio = { portal: 'BLL Compras', modo: 'Aberto', sit: 'Revogada', orgao: 'uruacu',
+                  srp: 'nao', vmin: '1000', vmax: '5000', _desertas: 1 };
+  const r = campos(cheio);
+  const cs = criteriosRefino(r);
+  ok('43b. *** chip e frase saem da MESMA lista (uma so, e a frase e vista dela) ***',
+    cs.length === pillsRefino(r).length
+    && JSON.stringify(cs.map(c => c.frase)) === JSON.stringify(pillsRefino(r)),
+    { chips: cs.length, frases: pillsRefino(r).length });
+  ok('43c. todo chip sabe de que CAMPO veio (senao o "×" nao teria o que desligar)',
+    cs.every(c => typeof c.id === 'string' && c.id.length > 0),
+    cs.filter(c => !c.id));
+  ok('43d. e todo chip tem rotulo fraco + valor forte (D9 dentro de uma peca de 26px)',
+    cs.every(c => c.rotulo && c.valor), cs.filter(c => !c.rotulo || !c.valor));
+  /* O `desertas` NAO e campo de formulario, e sim um estado da tela. Se o "×" dele tentasse
+     limpar um `getElementById('_desertas')`, o chip sumiria e o filtro continuaria ligado — o
+     pior dos dois mundos, porque a tela passaria a filtrar sem dizer que filtra. */
+  const des = cs.find(c => c.campo === 'desertas');
+  ok('43e. o "so desertas" tem caminho PROPRIO (ele e estado da tela, nao campo)',
+    !!des && des.id === '_desertas', des);
+  ok('43f. os demais apontam pro id do campo de verdade',
+    cs.filter(c => c.campo !== 'desertas').every(c => /^f-/.test(c.id)),
+    cs.filter(c => c.campo !== 'desertas' && !/^f-/.test(c.id)));
+  ok('43g. sem refino ligado, nenhum chip', criteriosRefino(campos({})).length === 0);
+}
+
+/* ══════════ 7c. A BARRA DE BUSCA, no arquivo ══════════════════════════════════════════════
+   O que nao da pra provar executando funcao: a cor do botao e a ausencia do "+ Filtro". */
+{
+  const bruto = src.replace(/<!--[\s\S]*?-->/g, '').replace(/\/\*[\s\S]*?\*\//g, '');
+  /* ══ A FUGA MEDIDA, E ELA E O ASSERT MAIS IMPORTANTE DESTE BLOCO ═══════════════════════
+     O molde pinta o botao "Buscar" com o #2CA9E0 da marca e texto branco por cima: 2,67:1,
+     pouco mais da metade do minimo de AA. E a licao S12 inteira, de novo. O tema ja tem a
+     saida: o --azul-600 (#1576A5) e "a cor da acao" e da 5,04:1.
+     >>> Este assert existe pra que "aproximar mais do molde" nao signifique um dia trocar o
+         600 pelo 500 aqui — que e a coisa mais natural do mundo pra quem esta comparando os
+         dois prints lado a lado e nao mediu. */
+  const regraGo = (bruto.match(/\.buscabox \.go\{[^}]*\}/) || [''])[0].replace(/\s*\n\s*/g, '');
+  ok('43h. *** o botao Buscar usa a COR DA ACAO (azul-600), e nao o azul da marca ***',
+    /background:var\(--azul-600\)/.test(regraGo) && !/var\(--azul-500\)/.test(regraGo),
+    regraGo.slice(0, 160));
+  ok('43i. e ele voltou a ter TEXTO (era um quadrado com lupa, dentro de um campo com outra lupa)',
+    /<button class="go"[^>]*>[\s\S]{0,300}?Buscar<\/button>/.test(bruto));
+  ok('43j. a barra usa a borda propria dela do molde, e nao a de cartao',
+    /\.buscabox\{[^}]*border:1px solid var\(--borda-busca\)/.test(bruto.replace(/\s*\n\s*/g, '')),
+    (bruto.match(/\.buscabox\{[^}]*\}/) || [''])[0].slice(0, 200));
+  /* O "+ Filtro" do molde abre um popover com os campos disponiveis — porque LA nao ha coluna
+     de filtros. Aqui ela existe e esta SEMPRE ABERTA. Um botao pra abrir o que ja esta aberto
+     e o "link que nao faz nada" que este arquivo ja removeu uma vez (a "Pesquisa avancada",
+     quando os filtros viraram coluna fixa). */
+  ok('43k. o "+ Filtro" do molde NAO entrou (a coluna de filtros ja esta sempre aberta)',
+    !/\+ Filtro/.test(bruto) && /id="avancada"/.test(bruto));
+  /* E a fila de pilulas acima da lista SUMIU. Se ela tivesse ficado, o mesmo criterio estaria
+     escrito em dois lugares da mesma tela — e o de baixo sem o "×", ou seja, duas versoes com
+     poderes diferentes. */
+  ok('43l. a fila de pilulas de leitura acima da lista saiu (o criterio mora num lugar so)',
+    !/<div class="refino"><span class="hint">refino ativo:/.test(bruto));
 }
 
 // ══════════ 8. A LISTA DE PORTAIS SAI DO RESULTADO, nao de uma lista fixa ══════════

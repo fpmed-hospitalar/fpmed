@@ -1289,14 +1289,38 @@ Criado em 21/07/2026 copiando SO os arquivos do app do C:\globalmed.
          >>> OS CONTADORES DO MENU ACENDERAM da MESMA leitura: Buscar 4 (verde = novidade) e
              Negocios 9 (neutro). Radar e Desertas continuam VAZIOS — o molde numera os dois
              (12 e 38) e os dois sao ficticios; slot vazio e honesto, numero chutado nao.
-     >>> PROXIMO PASSO: 5 · A BARRA DE BUSCA do molde (chips de filtro DENTRO do campo,
-         "+ Filtro" tracejado com popover, botao azul).
-         >>> ATENCAO NO PASSO 5: o botao "Buscar" do molde e branco sobre #2CA9E0 = 2,67:1,
-             e REPROVA. A fuga ja esta decidida e medida: --azul-600 (#1576A5, 5,04:1), que
-             e "a cor da acao" do tema. O #2CA9E0 segue sendo a marca em tudo que nao
-             carrega texto. Ver docs/molde_encontrar.md secao 1.
-         Depois: 6 painel de resultados (linha rica, barra de urgencia, selos, <mark>,
-         alternador Confortavel/Compacta).
+     >>> PASSO 5 (A BARRA DE BUSCA) **FEITO** — sw.js -> -2026-08-13-34.
+         testa_pesquisa_avancada: 71 -> 82 asserts, MUTACAO 11 de 11.
+         TOTAL: 3.439 / 0 falhas / 92 suites. Detalhe em docs/molde_encontrar.md, secao 10.
+         >>> A MUDANCA QUE VALE: os CRITERIOS ATIVOS entraram DENTRO da barra, em chip com "×".
+             Eles ja apareciam — mas numa fila de pilulas de SO LEITURA acima da lista, longe de
+             onde a busca se faz; quem quisesse desligar um tinha que achar o campo na coluna.
+             >>> E ELES NAO SAO UM SEGUNDO FILTRO: o rotulo sai do MESMO refinoDe() que filtra a
+                 lista. Pra isso a lista de criterios virou de OBJETOS (criteriosRefino) e a
+                 pillsRefino virou uma VISTA dela — o chip precisa saber de que CAMPO veio, e a
+                 frase corrida do resumo do jornal continua precisando ser frase. Duas listas
+                 seriam a garantia de que uma esqueceria o criterio novo.
+             >>> O "so desertas" tem CAMINHO PROPRIO: e estado da tela, nao campo. Se o × tentasse
+                 limpar um campo inexistente, o chip sumiria e o filtro continuaria ligado.
+         >>> A FUGA MEDIDA ENTROU NO BOTAO: o molde pinta "Buscar" com #2CA9E0 + branco =
+             2,67:1. Ficou --azul-600 (#1576A5, 5,04:1), "a cor da acao". O #2CA9E0 segue sendo
+             a marca em tudo que nao carrega texto — inclusive na lupa ao lado. E o botao voltou
+             a ter TEXTO: era um quadrado com lupa DENTRO de um campo que ja tinha outra lupa.
+         >>> O "+ FILTRO" DO MOLDE NAO ENTROU, e o motivo e do proprio arquivo: la ele abre um
+             popover porque a tela do molde NAO TEM coluna de filtros. Aqui ela existe e esta
+             sempre aberta. Botao pra abrir o que ja esta aberto e o "link que nao faz nada" que
+             este arquivo JA removeu uma vez (a "Pesquisa avancada").
+         >>> 1 ASSERT ALHEIO REAPONTADO: o testa_tema_tela_propria 15 ("nao sobrou cor chumbada")
+             varria o arquivo INTEIRO, comentario incluido — e ficou vermelho por causa do
+             comentario que registra a MEDICAO que justifica a fuga. Assert que so fica verde se
+             eu apagar a explicacao esta contra a L6. Passou a ler sem comentario.
+     >>> PROXIMO PASSO: 6 · O PAINEL DE RESULTADOS (cabecalho com contagem e alternador
+         Confortavel/Compacta, linha rica com barra de urgencia, selos, <mark> no termo,
+         coluna direita com valor e pastilha de prazo, rodape com paginacao).
+         >>> ATENCAO: a aderencia ("92% aderente" + barra) e PARTE B (precisa de backend). O que
+             existe hoje e o cruzamento com o estoque, que e outra coisa.
+         Com o 6 fechado, a Encontrar esta pronta — e ai vem o NEGOCIOS (ordem do dono:
+         "publica ENCONTRAR, prova com print, SO ENTAO Negocios").
 
      >>> O SERVIDOR DO LACO — ARMADILHA NOVA, e me custou tres reinicios: subir o servidor
          como tarefa de fundo funciona, mas ele MORRE a cada notificacao de tarefa. E subir

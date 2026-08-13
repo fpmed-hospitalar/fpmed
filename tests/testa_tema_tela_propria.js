@@ -111,10 +111,20 @@ function carrega(doc) {
     !/#0B1622/i.test(lic) && !/#132234/i.test(lic));
   ok('14. ...e ela passou a carregar o design system, que e de onde a cor sai agora',
     /<link[^>]+fpmed_tema\.css/.test(lic));
-  // NENHUMA cor chumbada sobrou: o adendo proibe cor fora dos tokens
+  /* NENHUMA cor chumbada sobrou: o adendo proibe cor fora dos tokens.
+     ══ E ELE PASSOU A OLHAR SO O QUE PINTA (13/08, passo 5 do molde) ═══════════════════════
+     Ele varria o ARQUIVO INTEIRO, comentario incluido. Ficou vermelho quando o comentario do
+     botao "Buscar" registrou a medicao que justifica a fuga — "o molde usa #2CA9E0 e da
+     2,67:1; o token da acao e o #1576A5, 5,04:1". Ou seja: o assert reprovava justamente a
+     ANOTACAO de por que nao ha cor chumbada ali.
+     >>> Um assert que so pode ficar verde se eu apagar a explicacao esta contra a lei L6
+         ("o porque fica escrito"), nao a favor dela. O que ele guarda e cor que PINTA; entao
+         ele passa a ler o arquivo sem comentario. Cor chumbada em CSS ou em atributo continua
+         reprovando exatamente como antes. */
+  const licLimpo = lic.replace(/<!--[\s\S]*?-->/g, '').replace(/\/\*[\s\S]*?\*\//g, '');
   ok('15. *** e nao sobrou uma unica cor chumbada na tela ***',
-    (lic.match(/#[0-9a-fA-F]{3,6}\b/g) || []).length === 0,
-    (lic.match(/#[0-9a-fA-F]{3,6}\b/g) || []).slice(0, 6));
+    (licLimpo.match(/#[0-9a-fA-F]{3,6}\b/g) || []).length === 0,
+    (licLimpo.match(/#[0-9a-fA-F]{3,6}\b/g) || []).slice(0, 6));
 }
 
 // ══════════ 5. AS TELAS CLARAS NAO GANHARAM data-tema por engano ══════════
