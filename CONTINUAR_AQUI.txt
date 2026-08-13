@@ -229,11 +229,60 @@ ancoras do MODULOS, entao ancora nova ja nasce cobrada. 3.778 asserts / 0 falhas
     anterior. Nao e link quebrado (todas tem volta pro Encontrar); e DOIS SISTEMAS DE
     NAVEGACAO VIVOS AO MESMO TEMPO. Decisao de escopo do dono: unificar ou nao.
 
+>>> *** DEFEITO MEU QUE FOI AO AR E VOLTOU (commit 520efa9, sw -> -48). LEIA ANTES DE REPETIR ***
+    Minutos depois de publicar o conserto acima eu conferi no SITE e o painel nao abria:
+        ReferenceError: Cannot access 'ROTAS_HASH' before initialization
+    Eu tinha posto o roteador DEPOIS do `_aoAutenticar()`, que o chama. A FUNCAO sobe por
+    hoisting — por isso parecia certo — mas o `const` NAO sobe. E, por ser excecao nao
+    capturada, ela ABORTAVA O RESTO DO BLOCO <script>, inclusive o addEventListener logo
+    abaixo. O conserto do botao morto tinha virado outro jeito de o botao ficar morto.
+    >>> A SUITE NAO PEGOU PORQUE ELA EXTRAI O ROTEADOR E RODA ISOLADO. Isolado ele esta
+        certo; o errado era a ORDEM NO ARQUIVO. Assert que recorta um pedaco e cego pra
+        vizinhanca do pedaco. Entraram 2 asserts de POSICAO + mutacao que troca os blocos.
+    >>> E PASSOU NO TESTE LOCAL PORQUE LA O `window.gmAuth` ainda nao existia naquela linha:
+        o boot foi pelo caminho do EVENTO, que dispara tarde. O caminho que quebra e o do
+        usuario COM SESSAO VIVA — o do dono. **TESTAR DESLOGADO ESCONDE ESTA CLASSE DE
+        DEFEITO.** Provado no ar depois, ja logado (gmAuth pronto no boot): os 3 abrem.
+    MUTACAO: 13 de 13. Suites: 3.780 asserts / 0 falhas / 102 suites.
+
+>>> ACHADO NOVO, NAO CONSERTADO (visto so agora, com a tela aberta LOGADA): no painel
+    MEUS JORNAIS o SVG dos icones sai como TEXTO CRU na tela — aparece
+    `<svg class="ic" ...><use href="#ic-calendario"/></svg> hoje (move sozinho)`.
+    CAUSA: linha ~2857, `resumoFiltros(...).map(esc)` — o `resumoFiltros` JA devolve HTML
+    (ele chama `ic()`) e ja escapa as partes de dado (`esc(f.kw)`, `esc(f.excluir)`).
+    O `.map(esc)` de fora escapa de novo e transforma a tag em texto.
+    >>> ARMADILHA: **NAO basta apagar o `.map(esc)`**. Nem tudo la dentro esta escapado —
+        `f.uf` entra cru e o `br()` fatia string de data sem escapar. Tirar o escape de fora
+        sem escapar essas duas ABRE BURACO onde hoje so ha feiura. O conserto certo e
+        escapar as partes de DADO dentro do `resumoFiltros` e so entao tirar o de fora.
+    Nao consertei nesta rodada de proposito: e caminho de escape, merece commit e assert
+    proprios, e a fila esta definida. ENTRA NA FILA.
+
 >>> ARMADILHA DE INSTRUMENTO REGISTRADA (custou tempo nesta rodada, e vai custar de novo):
     o CLIQUE DO AUTOMATIZADOR NAO NAVEGA neste ambiente. Um clique real em "Proposta" (link
     comum, que funciona) tambem nao trocou de pagina. Medir "nao aconteceu nada" com ele leva
     a acusar a tela de um defeito que e do instrumento. Pra provar clique, usar `a.click()`
     no proprio elemento, que dispara navegacao de verdade.
+
+========================================
+>>> FILA VIGENTE (redivisao do dono, 13/08) — A MINHA PARTE
+========================================
+  [OK] 1. URGENCIA do Radar (botao morto) + varredura de clique no menu.  FECHADO.
+       2. ITEM 10 — CMED versionada por edicao + carga da 11/08 (ja decidido: versionar,
+          zero DELETE).                                        ** E O PROXIMO. **
+       3. A BUSCA PROFISSIONAL (medir volume nacional -> ampliar coleta -> tsvector ->
+          seletor de portais).
+       4. As 5 fatias do Radar (diagnostico abaixo) — F1/F2 sao DADO e vem antes de tela.
+       5. JORNADA DO GESTOR (M1..M5) — pedido de 13/08, andar pela loja com o dia real do
+          gestor e relatar por momento com nota verde/amarelo/vermelho. Ver o pedido no
+          historico da sessao; territorios de sempre; friccao de negocio vai pro checkpoint.
+       6. Meus Jornais: o SVG saindo como texto (achado acima, com a armadilha do escape).
+  >>> O ITEM 9 (EAN) MUDOU DE MAO em 13/08: o formulario mora no fpmed_giovana.html, que e
+      do TRABALHADOR B — ele faz a migracao aditiva (ean/registro_anvisa), o campo e o
+      auto-preenchimento lendo as cmed_* (SO LEITURA). COMIGO fica APENAS o MOTOR
+      (fpmed_teto_cmed.js): casamento em 3 degraus EAN -> registro -> substancia+dose,
+      quando as colunas existirem. E escrever em docs/ a spec do que o motor espera, pro B
+      casar certinho. (O B ja aplicou a migracao — commit fd4cf8b.)
 
 ========================================
 >>> DIAGNOSTICO DO RADAR — 13/08, PEDIDO PELO DONO. O CONSERTO NAO COMECOU.

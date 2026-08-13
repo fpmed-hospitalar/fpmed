@@ -2713,10 +2713,10 @@ function pintaConferencia(id){
           <th style="text-align:left;padding:6px;border-bottom:1px solid var(--linha);color:var(--muted);font-size:10.5px">SITUAÇÃO</th>
         </tr></thead><tbody>`
     + linhas.map(r => `<tr>
-        <td style="padding:6px;border-bottom:1px solid rgba(34,55,79,.4)">${esc(String(r.descricao).slice(0,90))}</td>
-        <td style="padding:6px;text-align:right;border-bottom:1px solid rgba(34,55,79,.4)">${brl(r.precoUnit)}</td>
-        <td style="padding:6px;text-align:right;border-bottom:1px solid rgba(34,55,79,.4)">${brl(r.teto)}</td>
-        <td style="padding:6px;border-bottom:1px solid rgba(34,55,79,.4);color:${r.situacao==='acima'?'var(--vermelho-700)':r.situacao==='abaixo'?'var(--verde)':'var(--muted)'}">
+        <td style="padding:6px;border-bottom:1px solid var(--borda-divisor)">${esc(String(r.descricao).slice(0,90))}</td>
+        <td style="padding:6px;text-align:right;border-bottom:1px solid var(--borda-divisor)">${brl(r.precoUnit)}</td>
+        <td style="padding:6px;text-align:right;border-bottom:1px solid var(--borda-divisor)">${brl(r.teto)}</td>
+        <td style="padding:6px;border-bottom:1px solid var(--borda-divisor);color:${r.situacao==='acima'?'var(--vermelho-700)':r.situacao==='abaixo'?'var(--verde)':'var(--muted)'}">
           ${esc(rot[r.situacao]||r.situacao)}${r.situacao==='acima'?` <b>+${r.pctAcima}%</b>`:''}</td>
       </tr>`).join('')
     + `</tbody></table></div>
@@ -2762,12 +2762,12 @@ function imprimirConferencia(id){
     + '.acima{color:#b02a20;font-weight:700} .ok{color:#2f7d32}'
     + '.placar{display:flex;gap:18px;margin:12px 0;flex-wrap:wrap} .placar div{border:1px solid #ddd;border-radius:8px;padding:8px 14px}'
     + '.placar b{display:block;font-size:18px}'
-    + '.rodape{margin-top:26px;padding-top:12px;border-top:1px solid #ddd;font-size:11px;color:#555}'
+    + '.rodape{margin-top:26px;padding-top:12px;border-top:1px solid #ddd;font-size:11px;color:var(--cinza-600)}'
     + '.acao{margin:16px 0} button{font:inherit;padding:7px 14px;border-radius:7px;border:1px solid #ccc;background:#f5f5f5;cursor:pointer}'
     + '@media print{.acao{display:none}}</style></head><body>'
     + '<h1>Conferência de proposta contra o teto legal (CMED)</h1>'
     + '<div>' + esc(emp.razaoSocial || emp.nome || '') + (emp.cnpj ? ' · CNPJ ' + esc(emp.cnpj) : '') + '</div>'
-    + '<div style="color:#555;margin-top:6px">'
+    + '<div style="color:var(--cinza-600);margin-top:6px">'
     +   (n.orgao ? esc(n.orgao) + ' · ' : '') + (n.numero ? 'nº ' + esc(n.numero) : '')
     +   '<br>proposta: ' + esc(anexo.arquivo_nome) + ' (versão ' + anexo.versao + ')'
     +   '<br>conferida em ' + esc(quando.toLocaleString('pt-BR')) + '</div>'
@@ -2780,7 +2780,7 @@ function imprimirConferencia(id){
     + (res.acima
         ? '<p class="acima">Há ' + res.acima + ' item(ns) acima do teto legal. Em venda ao governo, preço acima do PMVG desclassifica.</p>'
         : '<p class="ok">Nenhum item acima do teto legal nesta leitura.</p>')
-    + '<p style="color:#555"><b>Não encontrado na CMED não quer dizer dentro do teto.</b> Pode ser material '
+    + '<p style="color:var(--cinza-600)"><b>Não encontrado na CMED não quer dizer dentro do teto.</b> Pode ser material '
     + '(que não tem teto legal) ou um medicamento que a leitura não casou.</p>'
     + '<h2>Item a item</h2><table><thead><tr><th>Item da proposta</th><th>Meu preço</th><th>Teto</th><th>Diferença</th><th>Situação</th></tr></thead><tbody>'
     + resultado.map(r => '<tr><td>' + esc(String(r.descricao).slice(0,110)) + '</td>'
@@ -3231,7 +3231,7 @@ function imprimirGanhas(){
     + '@media print{.acao{display:none}}</style></head><body>'
     + '<h1>Negócios ganhos</h1>'
     + '<div>' + esc(emp.razaoSocial || emp.nome || '') + (emp.cnpj ? ' · CNPJ ' + esc(emp.cnpj) : '') + '</div>'
-    + '<div style="color:#555;margin-top:6px">' + linhas.length + ' negócio(s) · taxa de vitória '
+    + '<div style="color:var(--cinza-600);margin-top:6px">' + linhas.length + ' negócio(s) · taxa de vitória '
     +   esc(k.taxaTxt) + ' (' + k.ganhos.length + ' ganhas de ' + k.decididas + ' decididas)'
     +   '<br>gerado em ' + new Date().toLocaleString('pt-BR') + '</div>'
     + '<div class="acao"><button onclick="window.print()">Imprimir / PDF</button></div>'
@@ -3244,7 +3244,7 @@ function imprimirGanhas(){
         + '<td class="n">' + brl(n.valor_ganho).replace('R$ ','R$ ') + '</td></tr>'; }).join('')
     + '</tbody><tfoot><tr><td colspan="5" class="n">total</td><td class="n">'
     +   brl(linhas.reduce((s,n)=>s+Number(n.valor_ganho||0),0)) + '</td></tr></tfoot></table>'
-    + '<div style="margin-top:20px;font-size:11px;color:#555">A coluna <b>Itens</b> vazia quer dizer que o '
+    + '<div style="margin-top:20px;font-size:11px;color:var(--cinza-600)">A coluna <b>Itens</b> vazia quer dizer que o '
     + 'resultado veio do histórico do calendário, que guarda o valor total sem detalhe por item — não é erro.</div>'
     + '</body></html>');
   j.document.close();
@@ -3634,7 +3634,7 @@ function pintaItensGanhos(id){
 
   if(!ITENS_GANHOS.length){
     box.innerHTML = '<h4>Resultado</h4>'
-      + '<div class="pk-conta" style="border-color:rgba(124,197,118,.45)">'
+      + '<div class="pk-conta" style="border-color:var(--verde-300)">'
       +   '<b style="color:var(--verde)">Ganho · ' + brl(n.valor_ganho) + '</b>'
       +   '<div class="salvo" style="margin-top:6px">Resultado <b>importado do histórico</b> — '
       +   'sem detalhe por item. Os negócios do Calendário guardam o valor total, e não a relação '
@@ -3649,7 +3649,7 @@ function pintaItensGanhos(id){
   if(cnt) cnt.textContent = ITENS_GANHOS.length;
 
   box.innerHTML = '<h4>Resultado</h4>'
-    + '<div class="pk-conta" style="border-color:rgba(124,197,118,.45)">'
+    + '<div class="pk-conta" style="border-color:var(--verde-300)">'
     +   '<b style="color:var(--verde)">Ganhou ' + ITENS_GANHOS.length + ' item(ns) · ' + brl(soma) + '</b>'
     +   '<div class="salvo" style="margin-top:6px">'
     +     'confirmado' + (quando ? ' em ' + esc(quando.toLocaleDateString('pt-BR')) : '')
@@ -3813,18 +3813,18 @@ function pintaGanhos(id){
         + '<th style="text-align:right;padding:5px;color:var(--muted);font-size:10.5px;border-bottom:1px solid var(--linha)">UNIT.</th>'
         + '<th style="text-align:right;padding:5px;color:var(--muted);font-size:10.5px;border-bottom:1px solid var(--linha)">TOTAL</th></tr></thead><tbody>'
         + g.map(x => `<tr>
-            <td style="padding:5px;border-bottom:1px solid rgba(34,55,79,.4)">${esc(x.n)}</td>
-            <td style="padding:5px;border-bottom:1px solid rgba(34,55,79,.4)">${esc(String(x.descricao||'').slice(0,70))}</td>
-            <td style="padding:5px;text-align:right;border-bottom:1px solid rgba(34,55,79,.4)">${num(x.quantidade)!=null?Number(x.quantidade).toLocaleString('pt-BR'):'—'}</td>
-            <td style="padding:5px;text-align:right;border-bottom:1px solid rgba(34,55,79,.4)">${brl(num(x.valor_unitario))}</td>
-            <td style="padding:5px;text-align:right;border-bottom:1px solid rgba(34,55,79,.4)">${brl(num(x.total)!=null?num(x.total):(num(x.quantidade)!=null&&num(x.valor_unitario)!=null?num(x.quantidade)*num(x.valor_unitario):null))}</td>
+            <td style="padding:5px;border-bottom:1px solid var(--borda-divisor)">${esc(x.n)}</td>
+            <td style="padding:5px;border-bottom:1px solid var(--borda-divisor)">${esc(String(x.descricao||'').slice(0,70))}</td>
+            <td style="padding:5px;text-align:right;border-bottom:1px solid var(--borda-divisor)">${num(x.quantidade)!=null?Number(x.quantidade).toLocaleString('pt-BR'):'—'}</td>
+            <td style="padding:5px;text-align:right;border-bottom:1px solid var(--borda-divisor)">${brl(num(x.valor_unitario))}</td>
+            <td style="padding:5px;text-align:right;border-bottom:1px solid var(--borda-divisor)">${brl(num(x.total)!=null?num(x.total):(num(x.quantidade)!=null&&num(x.valor_unitario)!=null?num(x.quantidade)*num(x.valor_unitario):null))}</td>
           </tr>`).join('') + '</tbody></table></div>' : '')
     + ((d.nao_consegui_ler||[]).length
         ? '<div class="salvo" style="margin-top:8px;color:var(--ambar-700)"><b>O que a leitura NÃO conseguiu ler ('+d.nao_consegui_ler.length+'):</b><br>'
           + d.nao_consegui_ler.map(esc).join('<br>') + '</div>' : '')
     // ── A SUGESTÃO, COM CONFIRMAÇÃO DE GENTE ──────────────────────────────────────────────
     + (comTotal.length && ehGestor()
-        ? `<div class="aviso-err salvo" style="margin-top:12px;padding:10px 12px;border:1px solid rgba(124,197,118,.5);border-radius:9px">
+        ? `<div class="aviso-err salvo" style="margin-top:12px;padding:10px 12px;border:1px solid var(--verde-300);border-radius:9px">
             <b>Sugestão para o valor ganho: ${brl(total)}</b>
             <div style="margin:6px 0;color:var(--muted);font-size:11.5px">
               Este número <b>não foi gravado</b>. Ele alimenta a taxa de vitória, e a IA não escreve
@@ -3945,12 +3945,12 @@ function pintaMapa(id){
           '<th style="text-align:left;padding:5px;color:var(--muted);font-size:10.5px;border-bottom:1px solid var(--linha)">'+h+'</th>').join('')
     + '</tr></thead><tbody>'
     + linhas.map(l => `<tr>
-        <td style="padding:5px;border-bottom:1px solid rgba(34,55,79,.4)">${esc(l.n)}</td>
-        <td style="padding:5px;border-bottom:1px solid rgba(34,55,79,.4)">${esc(String(l.descricao||'').slice(0,52))}</td>
-        <td style="padding:5px;text-align:right;border-bottom:1px solid rgba(34,55,79,.4)">${brl(l._nosso)}</td>
-        <td style="padding:5px;border-bottom:1px solid rgba(34,55,79,.4)">${esc(String(l.vencedor||'—').slice(0,26))}</td>
-        <td style="padding:5px;text-align:right;border-bottom:1px solid rgba(34,55,79,.4)">${brl(l._venc)}</td>
-        <td style="padding:5px;text-align:right;border-bottom:1px solid rgba(34,55,79,.4);color:${l.difRS>0?'var(--vermelho-700)':l.difRS<0?'var(--verde)':'var(--muted)'}">
+        <td style="padding:5px;border-bottom:1px solid var(--borda-divisor)">${esc(l.n)}</td>
+        <td style="padding:5px;border-bottom:1px solid var(--borda-divisor)">${esc(String(l.descricao||'').slice(0,52))}</td>
+        <td style="padding:5px;text-align:right;border-bottom:1px solid var(--borda-divisor)">${brl(l._nosso)}</td>
+        <td style="padding:5px;border-bottom:1px solid var(--borda-divisor)">${esc(String(l.vencedor||'—').slice(0,26))}</td>
+        <td style="padding:5px;text-align:right;border-bottom:1px solid var(--borda-divisor)">${brl(l._venc)}</td>
+        <td style="padding:5px;text-align:right;border-bottom:1px solid var(--borda-divisor);color:${l.difRS>0?'var(--vermelho-700)':l.difRS<0?'var(--verde)':'var(--muted)'}">
           ${l.difRS==null?'—':(l.difRS>0?'+':'') + brl(l.difRS) + (l.difPct!=null?' ('+(l.difPct>0?'+':'')+l.difPct+'%)':'')}</td>
       </tr>`).join('')
     + '</tbody></table></div>'
@@ -3979,12 +3979,12 @@ function imprimirMapa(id){
     + 'h1{font-size:17px;margin:0 0 4px} table{width:100%;border-collapse:collapse;margin-top:10px}'
     + 'th,td{padding:5px 6px;border-bottom:1px solid #ddd;text-align:left} th{font-size:10px;text-transform:uppercase;color:#666}'
     + 'td.n{text-align:right;white-space:nowrap} .perdeu{color:#b02a20} .ganhou{color:#2f7d32}'
-    + '.rodape{margin-top:24px;padding-top:12px;border-top:1px solid #ddd;font-size:11px;color:#555}'
+    + '.rodape{margin-top:24px;padding-top:12px;border-top:1px solid #ddd;font-size:11px;color:var(--cinza-600)}'
     + '.acao{margin:16px 0} button{font:inherit;padding:7px 14px;border-radius:7px;border:1px solid #ccc;background:#f5f5f5;cursor:pointer}'
     + '@media print{.acao{display:none}}</style></head><body>'
     + '<h1>Mapa de preços da disputa</h1>'
     + '<div>' + esc(emp.razaoSocial || emp.nome || '') + '</div>'
-    + '<div style="color:#555;margin-top:6px">' + (n.orgao ? esc(n.orgao) + ' · ' : '') + (n.numero ? 'nº ' + esc(n.numero) : '')
+    + '<div style="color:var(--cinza-600);margin-top:6px">' + (n.orgao ? esc(n.orgao) + ' · ' : '') + (n.numero ? 'nº ' + esc(n.numero) : '')
     +   '<br>documento: ' + esc(RELATORIO_ATA.anexo.arquivo_nome) + ' · gerado em ' + new Date().toLocaleString('pt-BR') + '</div>'
     + '<div class="acao"><button onclick="window.print()">Imprimir / PDF</button></div>'
     + '<table><thead><tr><th>Nº</th><th>Item</th><th>Nosso preço</th><th>Vencedor</th><th>Preço dele</th><th>Diferença</th><th>Situação</th></tr></thead><tbody>'
