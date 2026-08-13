@@ -317,6 +317,65 @@ ok(n + '. e os que navegam continuam prometendo o clique (cursor + hover)',
 ok(n + '. e ele diz por que nao navega ("sem negocio de origem")',
   /sem negócio de origem/.test(LIMPO)); n++;
 
+// ── 6e. *** COR SÓ DO TOKEN — a prova que o dono pediu em TODA fatia *** ────
+/* ORDEM DO DONO (13/08): "seguir o molde nas cores ATE O PONTO DA LINHA. Toda cor sai do token,
+   valor EXATO: fundo, texto, borda, divisoria, sombra, hover, selo, barra lateral, icone. Nada
+   de cor aproximada no olho, nada inventada, nada de style= inline com hex escrito a mao.
+   Isso inclui as MIUDAS, que e onde o olho do dono pega."
+   >>> ESTE ASSERT NASCEU DE UMA FALHA MINHA. Eu reportei esta tela como molde-ficada ao fechar
+       o item 7b; ela estava molde-ficada NAS PARTES QUE AS FATIAS TOCARAM. A varredura no
+       arquivo INTEIRO, que a ordem me obrigou a fazer, achou 14 cores chumbadas no CSS e 23 em
+       `style=` inline. O que faltava nao era zelo: era o instrumento.
+   >>> `rgba(var(--token), .55)` NAO conta como chumbada: a TINTA vem do token e so o alfa e
+       local - e alfa nao e cor. E o unico jeito de compor transparencia a partir de um hex
+       guardado em `var()`. */
+const COR_CHUMBADA = /#[0-9a-fA-F]{3,8}\b|\brgba?\((?!\s*var\()[^)]+\)/g;
+const _cssTela = (N.match(/<style>([\s\S]*?)<\/style>/) || [, ''])[1].replace(/\/\*[\s\S]*?\*\//g, '');
+const chumbadasCss = [...new Set(_cssTela.match(COR_CHUMBADA) || [])];
+ok(n + '. *** ZERO cor chumbada no CSS desta tela (ate as miudas) ***',
+  chumbadasCss.length === 0, chumbadasCss.slice(0, 6)); n++;
+/* O `style=` inline e o `.style.x = '...'` sao o outro lado, e sao onde a cor volta a entrar
+   sem ninguem ver: ela nao aparece em varredura de folha de estilo. */
+const _semComHtml = N.replace(/<!--[\s\S]*?-->/g, '').split('\n')
+  .filter(l => !/^\s*(\/\/|\*)/.test(l)).join('\n');
+const chumbadasInline = [];
+for (const m of _semComHtml.matchAll(/style\s*=\s*"([^"]*)"/g))
+  for (const c of (m[1].match(COR_CHUMBADA) || [])) chumbadasInline.push(c);
+for (const m of _semComHtml.matchAll(/\.style\.[A-Za-z]+\s*=\s*'([^']*)'/g))
+  for (const c of (m[1].match(COR_CHUMBADA) || [])) chumbadasInline.push(c);
+ok(n + '. *** e ZERO em style= inline ou escrito por JS ***',
+  chumbadasInline.length === 0, [...new Set(chumbadasInline)].slice(0, 6)); n++;
+/* AS MIUDAS COM O TOKEN DO SEU OFICIO, e nunca trocadas entre si — foi essa a parte que o dono
+   nomeou. O fio entre linhas de tabela e DIVISOR, nao borda de cartao: sao dois tokens
+   diferentes de propósito, e usar um pelo outro e o "quase igual" que o olho sente. */
+/* *** ESTE ASSERT NASCEU DE UMA MUTACAO QUE PASSOU VERDE, e ela e justamente a que o dono
+   nomeou: "cada uma com o token certo do seu OFICIO, NUNCA TROCADAS ENTRE SI". A primeira
+   versao so cobrava que o divisor existisse em ALGUM lugar - entao trocar UMA celula pelo
+   token de borda de CARTAO passava batido. E e assim que acontece na vida real: ninguem troca
+   as quinze, alguem escreve uma nova e pega o token errado. Agora o assert olha CELULA A
+   CELULA. */
+{
+  const celulas = [...N.matchAll(/<td[^>]*border-bottom:1px solid ([^;">]+)/g)].map(m => m[1].trim());
+  const erradas = celulas.filter(c => c !== 'var(--borda-divisor)');
+  ok(n + '. *** TODO fio entre linhas de tabela usa o token de DIVISOR (nunca o de cartao) ***',
+    celulas.length > 0 && erradas.length === 0,
+    { celulas: celulas.length, erradas: [...new Set(erradas)].slice(0, 4) }); n++;
+}
+ok(n + '. e a familia ROXA da etiqueta de empresa vive no TEMA, nao na tela',
+  /--roxo:\s*var\(--roxo-500\)/.test(CSS1)
+  && /--roxo-700:/.test(fs.readFileSync(path.join(__dirname, '..', 'fpmed_tema.css'), 'utf8'))); n++;
+/* O trio do azul TEM de andar junto com o `--azul-500`: trio que envelhece sozinho e a copia
+   de novo, so que mais dificil de ver (o olho nao compara "44,169,224" com "#2ca9e0"). */
+{
+  const _tema = fs.readFileSync(path.join(__dirname, '..', 'fpmed_tema.css'), 'utf8');
+  const hex = (_tema.match(/--azul-500:\s*#([0-9a-fA-F]{6})/) || [])[1];
+  const trio = (_tema.match(/--azul-500-rgb:\s*([\d,\s]+);/) || [])[1];
+  const doHex = hex ? [0, 2, 4].map(i => parseInt(hex.substr(i, 2), 16)).join(',') : null;
+  ok(n + '. *** o trio --azul-500-rgb diz o MESMO que o --azul-500 ***',
+    !!doHex && !!trio && trio.replace(/\s/g, '') === doHex,
+    { doHex, trio: trio && trio.replace(/\s/g, '') }); n++;
+}
+
 // ── 7. A MEMORIA DO PORQUE (L6) ──────────────────────────────────────────────
 const _corrido = N.replace(/\s+/g, ' ');
 ok(n + '. o arquivo registra por que o cartao vira linha SO dentro do painel',
