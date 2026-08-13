@@ -1161,6 +1161,43 @@ Criado em 21/07/2026 copiando SO os arquivos do app do C:\globalmed.
          >>> PARTE B (nao construir agora, ja anotada): itens 9 a 13 = aderencia (precisa
              backend), paleta ⌘K funcional, drawer de detalhe, navegacao por teclado e
              barra de selecao em massa. Todos especificados no README do molde.
+     >>> ############ 13/08, RODADA SEGUINTE — O MOLDE COMECOU A ENTRAR ############
+     >>> PASSO 1 DA ORDEM DE ATAQUE (OS TOKENS) **FEITO** — sw.js -> -2026-08-13-30.
+         A paleta do molde inteira entrou no fpmed_tema.css: os 10 cinzas, as TRES bordas
+         com oficio (divisor/cartao/controle), superficie sutil, os dois estados de linha
+         (hover != ativa), o NAVY da marca com as 4 tintas dele, os 7 pares fechados de
+         sinal (info/bom/atencao/perigo/neutro/normal/grifo) e a escala de 6 raios.
+         testa_tema: 84 -> 102 asserts. TOTAL: 3.374 / 0 falhas / 91 suites.
+         Detalhe completo em **docs/molde_encontrar.md, secao 6** (nova).
+         >>> A TIPOGRAFIA NAO BAIXOU PRA 13px, e o aviso que eu mesmo tinha escrito aqui
+             ("mexer no --txt-2 muda TODA tela") estava exagerado. Medido elemento a
+             elemento: titulo de linha 14 = --txt-2 · meta 12 = --txt-1 · KPI 24 = --txt-5.
+             A nossa escala JA casa com o molde no que a tela desenha; o 13px dele e o
+             tamanho HERDADO pelo <html>, que quase nada usa. Baixar o --txt-2 teria
+             AFASTADO o titulo da linha do valor do molde. Nada mudou na tipografia.
+         >>> DOIS ASSERTS MEUS, ESCRITOS HOJE DE MANHA, MEDIAM O MEIO (licao S8, 7a vez):
+             o 25b cobrava desfoque >= 12px ("sombra macia") e o 29b cobrava degrau de
+             luminancia entre pagina e cartao. Os dois eram a RECEITA da amostra virada
+             lei; o molde resolve as duas coisas pelo caminho oposto (sombra de 2px +
+             borda de 1px, e pagina a 3,7 pontos do branco). Reapontados pra escada de
+             elevacao e pra "o cartao tem fronteira, do fundo OU da borda".
+             >>> O PADRAO QUE ISSO REVELA, e vale mais que os dois asserts: assert que eu
+                 escrevo logo depois de GOSTAR de uma solucao tende a guardar a solucao,
+                 nao a promessa.
+         >>> UMA DIVERGENCIA DECLARADA com o molde: a tinta da sombra do cartao de
+             destaque. Ele usa rgba(14,27,51) — o proprio navy —, que da 37 pontos entre
+             canais e reprova no assert de sombra neutra (teto 35). Fica a tinta de
+             sobreposicao do proprio molde, rgba(10,21,38). A 50% de opacidade atras de um
+             cartao navy a diferenca esta abaixo do que o olho separa; duas tintas de
+             sombra no sistema, nao.
+         >>> CONFERIDO NO NAVEGADOR (SW desregistrado, servidor local): Encontrar e
+             Negocios abrem com os tokens novos, zero rolagem horizontal, nada quebrado.
+             As duas telas ainda estao no desenho ANTIGO — o molde so trocou a paleta por
+             baixo. A roupa entra nos passos 2 a 6.
+     >>> PROXIMO PASSO: 2 · SIDEBAR NAVY 228px (grupos, contadores a direita, item ativo,
+         badge "IA"). Depois: 3 header sticky · 4 fila de 4 KPIs com numero REAL do banco ·
+         5 barra de busca com chips · 6 painel de resultados.
+
      >>> ARMADILHA QUE ME CUSTOU UMA RODADA HOJE, e vale pra qualquer medicao visual:
          o SERVICE WORKER serve a copia ANTIGA do arquivo. Eu media a tela velha achando
          que media a nova (a regra aplicada ainda dizia o valor antigo). TODA medicao no

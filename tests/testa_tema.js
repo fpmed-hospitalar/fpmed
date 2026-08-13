@@ -116,17 +116,40 @@ ok('24. nenhum gradiente colorido de enfeite - o unico gradiente e o cinza do sk
        e quase NEUTRO (canais proximos entre si). */
 const _coresDeSombra = t => [...String(token(t)).matchAll(/rgba?\((\d+)\s*,\s*(\d+)\s*,\s*(\d+)/g)]
   .map(m => [+m[1], +m[2], +m[3]]);
+/* O "length >= 2" saiu em 13/08 junto com a familia do molde: ele exigia DUAS
+   CAMADAS por sombra, e duas camadas nao e a regra - e uma das receitas de
+   sombra macia. A sombra de repouso do molde tem UMA camada de 1px a 4%, e nao
+   ha nada de errado com ela. O que o assert guarda e "nenhuma sombra colorida",
+   e isso se mede em CADA cor declarada, tendo ela uma camada ou tres. */
 ok('25. nenhuma sombra colorida (D13) - toda sombra e um escuro neutro e translucido',
-  ['sombra-1','sombra-2','sombra-3'].every(t => _coresDeSombra(t).length >= 2
+  ['sombra-1','sombra-2','sombra-3'].every(t => _coresDeSombra(t).length >= 1
     && _coresDeSombra(t).every(([r, g, b]) =>
          Math.max(r, g, b) < 80                                  // escura
       && Math.max(r, g, b) - Math.min(r, g, b) <= 35)),           // quase neutra
   ['sombra-1','sombra-2','sombra-3'].map(t => t + ': ' + JSON.stringify(_coresDeSombra(t))));
-/* E A SOMBRA PRECISA SER MACIA, nao um contorno: e o desfoque LONGO que faz o
-   cartao flutuar. A antiga tinha 3px no segundo desfoque e lia como borda. */
-ok('25b. a sombra de repouso e MACIA (desfoque longo), e nao um contorno colado na borda',
-  (String(token('sombra-1')).match(/\d+px/g) || []).some(v => parseInt(v, 10) >= 12),
-  token('sombra-1'));
+/* ══ ESTE ASSERT MEDIA O MEIO, E ELE ERA MEU, DE HOJE DE MANHA (13/08) ═════════
+   Escrito assim: "a sombra de repouso e MACIA (desfoque longo)" - cobrando um
+   desfoque >= 12px no repouso. Isso nao e regra nenhuma: e a RECEITA da amostra
+   da manha, promovida a lei por quem tinha acabado de gostar dela. O molde
+   oficial resolve a mesma coisa pelo caminho oposto (sombra de 2px quase
+   invisivel + borda de 1px desenhando a fronteira), e o assert ficou vermelho
+   sem que nada tivesse piorado.
+   >>> O QUE D6 PEDE DE VERDADE sao duas coisas, e sao estas que ficam:
+       (a) uma ESCADA de elevacao - repouso < elevado < o que paira sobre a tela;
+       (b) sombra DISCRETA em repouso, porque "sombra pesada + borda" e o que a
+           lista negra chama de cara de template.
+   Assim o assert acompanha o tema em vez de virar detector de mudanca: qualquer
+   familia de sombra passa, contanto que a escada exista e o repouso seja leve. */
+const _maiorDesfoque = t => Math.max(...(String(token(t)).match(/(-?\d+)px/g) || ['0px'])
+  .map(v => Math.abs(parseInt(v, 10))));
+ok('25b. ha ESCADA de elevacao: o desfoque cresce do repouso ate o que paira sobre a tela (D6)',
+  _maiorDesfoque('sombra-1') < _maiorDesfoque('sombra-2')
+  && _maiorDesfoque('sombra-2') < _maiorDesfoque('sombra-3'),
+  ['sombra-1','sombra-2','sombra-3'].map(t => t + ': ' + _maiorDesfoque(t) + 'px'));
+const _maiorAlfa = t => Math.max(...([...String(token(t)).matchAll(/rgba\([^)]*,\s*([\d.]+)\s*\)/g)]
+  .map(m => parseFloat(m[1])).concat([0])));
+ok('25c. a sombra de REPOUSO e discreta - sombra pesada colada na borda e cara de template (D13)',
+  _maiorAlfa('sombra-1') <= 0.12, _maiorAlfa('sombra-1'));
 ok('26. nenhum backdrop-filter - glassmorphism esta na lista negra', !/backdrop-filter/.test(semComentario));
 /* ══ E ESTE ERA O MAIS FRACO DOS TRES (13/08) ══════════════════════════════════
    Ele cobrava "raio do cartao <= 12px". Esse teto era MEU, nao da regra: D13 poe
@@ -177,12 +200,25 @@ ok('28. texto principal e escuro SEM ser preto puro (D4)',
 ok('29. fundo da pagina e claro SEM ser branco puro — o branco fica pro cartao (D4)',
   !['#ffffff', '#fff'].includes(token('cinza-50').toLowerCase()) && _lumFundo > 0.8 && _lumFundo < 1,
   { cor: token('cinza-50'), luminancia: Math.round(_lumFundo * 1e4) / 1e4 });
-/* E o degrau entre o fundo da pagina e o branco do cartao precisa EXISTIR: e ele
-   que faz o cartao "flutuar" antes mesmo da sombra. Um fundo #FDFDFE passaria nos
-   dois asserts acima e deixaria a tela chapada de novo. */
-ok('29b. ha degrau visivel entre o fundo da pagina e o branco do cartao',
-  lum(token('branco')) - _lumFundo >= 0.05,
-  Math.round((lum(token('branco')) - _lumFundo) * 1e4) / 1e4);
+/* ══ E ESTE TAMBEM ERA MEU E TAMBEM MEDIA O MEIO (13/08, tarde) ════════════════
+   Escrito de manha assim: "ha degrau visivel entre o fundo da pagina e o branco
+   do cartao", exigindo 0,05 de luminancia. A promessa e boa - o cartao tem que
+   se separar da pagina. O ERRO foi eu decidir POR QUAL MEIO isso acontece.
+
+   O molde oficial poe o fundo da pagina em #FAFBFC, a 3,7 pontos do branco: o
+   degrau sozinho quase nao existe. E o cartao continua perfeitamente separado,
+   porque a separacao ali e feita pela BORDA de 1px (#E9EDF3, 15,6 pontos abaixo
+   do branco) mais a sombra. Sao dois caminhos legitimos pro mesmo fim; o assert
+   antigo so conhecia um, e teria reprovado o molde inteiro por isso.
+   >>> AGORA ELE COBRA A PROMESSA: o cartao tem fronteira. Ou o fundo da pagina
+       faz o degrau, ou existe uma borda que faca. Se um dia alguem clarear a
+       borda ATE o branco com um fundo tambem quase branco, a tela fica chapada
+       e este assert e que avisa - que era o ponto desde o comeco. */
+const _degrauFundo = lum(token('branco')) - _lumFundo;
+const _degrauBorda = lum(token('branco')) - lum(token('cinza-200'));
+ok('29b. o cartao se separa da pagina - pelo degrau do fundo, ou por uma borda que o desenhe',
+  _degrauFundo >= 0.05 || _degrauBorda >= 0.05,
+  { degrauDoFundo: Math.round(_degrauFundo * 1e4) / 1e4, degrauDaBorda: Math.round(_degrauBorda * 1e4) / 1e4 });
 ok('30. #000000 nao existe no arquivo', !/#000000|#000\b/i.test(semComentario));
 ok('31. a pagina usa o cinza-50 como fundo (o branco fica pro cartao)',
   /\.fp-pagina\{[^}]*background:\s*var\(--cinza-50\)/.test(semComentario.replace(/\s+/g, ' ').replace(/ \{/g, '{')));
@@ -227,6 +263,29 @@ const PARES = [
   ['cinza-800', 'etapa-3-tenue', 'pilula do calendario · Disputa'],
   ['cinza-800', 'etapa-4-tenue', 'pilula do calendario · Habilitacao'],
   ['cinza-800', 'etapa-5-tenue', 'pilula do calendario · Ata'],
+  /* ══ OS PARES FECHADOS DO MOLDE (13/08) ═════════════════════════════════════
+     Cada um destes e um selo do molde oficial, com tinta e fundo escolhidos
+     JUNTOS. Eles entram aqui pelo mesmo motivo das tenues: o dia em que alguem
+     clarear um fundo "pra ficar mais leve" e o dia em que o selo para de ser
+     legivel, e ninguem ve isso olhando. Os numeros que o molde publica sao
+     info 5,92 · bom 6,27 · aviso 5,51 · perigo 5,92 · neutro 11,45 - e a conta
+     daqui bate com a deles, o que tambem confere o instrumento. */
+  ['sinal-info-tinta',    'sinal-info-fundo',    'selo de informacao (modalidade)'],
+  ['sinal-bom-tinta',     'sinal-bom-fundo',     'selo de sucesso ("No funil")'],
+  ['sinal-atencao-tinta', 'sinal-atencao-fundo', 'pastilha de prazo · abre amanha'],
+  ['sinal-perigo-tinta',  'sinal-perigo-fundo',  'pastilha de prazo · abre HOJE'],
+  ['sinal-neutro-tinta',  'sinal-neutro-fundo',  'selo neutro'],
+  ['sinal-normal-tinta',  'sinal-normal-fundo',  'pastilha de prazo · sem urgencia'],
+  ['cinza-800',           'grifo',               'o termo buscado em <mark>'],
+  /* ══ E A SUPERFICIE ESCURA (a sidebar navy do molde) ═════════════════════════
+     Ela tem tinta propria, e tinta propria sem medicao e como nasce um menu
+     bonito e ilegivel. Nenhuma das quatro precisou de fuga - a sidebar do molde
+     sai bem na regua, e isso vale registrar em vez de supor. */
+  ['branco',      'navy', 'numero do cartao de destaque, sobre o navy'],
+  ['navy-tinta',  'navy', 'item de menu em repouso, sobre o navy'],
+  ['navy-apoio',  'navy', 'legenda do cartao de destaque, sobre o navy'],
+  ['navy-rotulo', 'navy', 'rotulo de grupo do menu, sobre o navy'],
+  ['navy-marca',  'navy', '"HOSPITALAR" da marca, sobre o navy'],
 ];
 let n = 32;
 for (const [fg, bg, ctx] of PARES) {
@@ -283,6 +342,53 @@ const calTexto = (() => { try { return R('tests', 'testa_calendario.js'); } catc
 ok(n + '. cor de etapa abaixo de 3:1 obriga o nome junto, e a suite do calendario cobra isso',
   fracas.length === 0 || /nome da etapa|nomeFase/.test(calTexto),
   { abaixoDe3: fracas.map(x => 'etapa-' + x.i + ': ' + x.r), suiteDoCalendario: calTexto ? 'existe' : 'NAO EXISTE' }); n++;
+
+/* ══ A PROVA PELO AVESSO DO --cinza-400 (13/08) ════════════════════════════════
+   Ele e o unico tom da rampa PROIBIDO de carregar texto, e o comentario dele diz
+   isso. Comentario nao segura ninguem: este projeto ja consertou tres vezes a
+   mesma coisa (o #1b8dc4 da licao S12, o #9AA7B8 do menu de manha, o #8C99A9 do
+   molde a tarde). O assert existe pra que a proibicao tenha dente - e ele mede,
+   nao le: se um dia o 400 escurecer o bastante pra passar em AA, ele mesmo deixa
+   de reprovar, e a proibicao cai sozinha porque deixou de fazer sentido.
+   >>> E o testa_menu_lateral guarda o outro lado (o 400 nao aparece em `color:`). */
+ok(n + '. o --cinza-400 REPROVA como texto sobre branco - e e por isso que ele e so borda e icone',
+  contraste(token('cinza-400'), token('branco')) < 4.5,
+  Math.round(contraste(token('cinza-400'), token('branco')) * 100) / 100); n++;
+
+/* ── AS TRES BORDAS DO MOLDE, e a ordem entre elas ──────────────────────────
+   O molde declara tres fronteiras que diferem em poucos pontos de cinza, e a
+   ORDEM entre elas e a informacao (divisor mais leve que cartao, cartao mais
+   leve que controle). Trocada a ordem, o divisor entre linhas de uma lista longa
+   passa a pesar mais que o contorno do painel - e a lista vira grade. Cobrar os
+   valores nao guardaria isso; cobrar a ordem, sim. */
+const _lumB = t => lum(token(t));
+ok(n + '. as tres bordas do molde existem, e a mais leve e a que divide a lista',
+  ['borda-divisor','borda-controle'].every(t => token(t))
+  && _lumB('borda-divisor') > _lumB('cinza-200')
+  && _lumB('cinza-200') > _lumB('borda-controle'),
+  { divisor: token('borda-divisor'), cartao: token('cinza-200'), controle: token('borda-controle') }); n++;
+
+/* ── A ESCALA DE RAIOS ──────────────────────────────────────────────────────
+   Seis degraus com oficio. O que a suite guarda e a MONOTONIA (peca menor tem
+   canto menor), porque e ela que sustenta a hierarquia que D13 pede - e nao os
+   valores, que ja mudaram duas vezes num dia so. */
+const _raios = ['raio-mini','raio-selo','raio-item','raio-botao','raio-campo','raio-cartao'];
+ok(n + '. a escala de raios sobe junto com o tamanho da peca (mini < selo < item < botao < campo < cartao)',
+  _raios.every(t => token(t))
+  && _raios.map(t => parseInt(token(t), 10)).every((v, i, a) => i === 0 || v > a[i - 1]),
+  _raios.map(t => t + ': ' + token(t))); n++;
+
+/* ── SUPERFICIE E ESTADOS DE LINHA ──────────────────────────────────────────
+   Hover e "o mouse esta aqui"; ativa e "o teclado esta aqui". Um valor so pros
+   dois faz a navegacao por teclado sumir no instante em que alguem encosta o
+   mouse - e quem navega por teclado e justamente quem menos usa o mouse. */
+ok(n + '. hover de linha e linha ativa sao cores DIFERENTES (senao o teclado some sob o mouse)',
+  !!token('linha-hover') && !!token('linha-ativa')
+  && token('linha-hover').toLowerCase() !== token('linha-ativa').toLowerCase(),
+  { hover: token('linha-hover'), ativa: token('linha-ativa') }); n++;
+ok(n + '. a superficie sutil e mais clara que a pagina e mais escura que o branco (ela e o degrau do meio)',
+  lum(token('superficie-sutil')) > _lumFundo && lum(token('superficie-sutil')) < lum(token('branco')),
+  { pagina: token('cinza-50'), sutil: token('superficie-sutil'), branco: token('branco') }); n++;
 
 // ── 8. os estados que o adendo exige desenhados ──────────────────────────────
 // "Todo estado desenhado" nao e frase de efeito: estado que nao existe no tema

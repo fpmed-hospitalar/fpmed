@@ -139,6 +139,8 @@ nunca, em hipótese alguma, marca da GlobalMed.
 
 1. **Tokens** (`fpmed_tema.css`) com os valores exatos + as duas fugas medidas. O `testa_tema`
    remede os pares sozinho; é ele que prova que a troca não afundou nada.
+   **[FEITO — 13/08]** ver a seção 6 abaixo: o que entrou, o que divergiu e o que a medição
+   corrigiu no plano.
 2. **Sidebar navy 228px** — grupos, contadores à direita, item ativo, badge "IA".
 3. **Header sticky** — breadcrumb, gatilho ⌘K (visual), selo "Base sincronizada", sino.
 4. **Fila de 4 KPIs**, com os números reais do banco.
@@ -147,3 +149,57 @@ nunca, em hipótese alguma, marca da GlobalMed.
    Confortável/Compacta.
 
 Publica, prova com print, e só então o Negócios.
+
+---
+
+## 6 · PASSO 1 FEITO — O QUE ENTROU, E AS TRÊS COISAS QUE A MEDIÇÃO MUDOU NO PLANO
+
+`fpmed_tema.css`, 13/08. A suíte `testa_tema` saiu de **84 para 102 asserts**, e o total do
+projeto de 3.356 para 3.374 — **0 falhas em 91 suítes**.
+
+**Entrou tudo que a seção 3 listou**, mais o que a tela vai precisar e o tema não tinha:
+
+- os **dez cinzas** trocados pelos do molde (fundo `#FAFBFC`, texto `#0A1526`);
+- as **três bordas** com ofício declarado (divisor `#EEF1F6` · cartão `#E9EDF3` · controle
+  `#E4E9F0`), e um assert que guarda a **ordem** entre elas, não os valores;
+- **superfície sutil** e os **dois estados de linha** (hover ≠ ativa, com assert — um valor só
+  para os dois faz a navegação por teclado sumir no instante em que alguém encosta o mouse);
+- o **navy da marca** com as suas quatro tintas, todas medidas contra ele (10,78 · 6,77 · 5,28 ·
+  10,45 — a sidebar do molde não precisou de fuga nenhuma);
+- os **sete pares fechados de sinal** (info, bom, atenção, perigo, neutro, normal, grifo), cada
+  um com tinta **e** fundo, todos no bloco de contraste da suíte;
+- a **escala de raios** de seis degraus, com assert de monotonia.
+
+### As três coisas que a medição mudou
+
+**1 · A tipografia NÃO baixou para 13px, e o aviso da seção 3 estava exagerado.**
+Medindo elemento a elemento em vez de olhar só a linha "base 13px" do molde: título de linha
+14px = nosso `--txt-2` (14) · meta 12px = `--txt-1` (12) · número de KPI 24px = `--txt-5` (24).
+Ou seja, **a nossa escala já casa com o molde nos elementos que a tela desenha**; o 13px do molde
+é o tamanho *herdado* pelo `<html>`, que quase nada usa diretamente. Baixar o `--txt-2` para 13
+teria afastado o título da linha do valor do molde, não aproximado — e de quebra encolheria o
+Negócios sem motivo. **Nada mudou na tipografia.** A `line-height` segue 1.5 e não 1.45, por D4,
+pelo mesmo precedente da fatia 2 ("token vence, por ordem da constituição").
+
+**2 · A tinta da sombra do cartão de destaque diverge do molde, de propósito.**
+O molde usa `rgba(16,26,43)` no cartão e `rgba(14,27,51)` — o próprio navy — no destaque. A
+segunda tem 37 pontos de distância entre canais e reprova no assert de *sombra neutra* (teto 35),
+que existe para barrar brilho colorido de marca. A 50% de opacidade, atrás de um cartão navy, a
+diferença entre as duas está abaixo do que o olho separa; **duas tintas de sombra no sistema,
+não**. Ficou a tinta de sobreposição do próprio molde, `rgba(10,21,38)`.
+
+**3 · Dois asserts meus, escritos hoje de manhã, mediam o meio — e o molde os expôs.**
+Os dois nasceram com a *amostra* e viraram lei sem ter sido regra:
+
+| assert | o que cobrava | por que caiu | o que cobra agora |
+|---|---|---|---|
+| 25b | desfoque de repouso ≥ 12px ("sombra macia") | era a **receita** da amostra, não a regra; o molde resolve pelo caminho oposto (sombra de 2px + borda de 1px) | a **escada** de elevação: repouso < elevado < o que paira, e repouso discreto (alfa ≤ .12) |
+| 29b | degrau de luminância ≥ 0,05 entre página e cartão | o molde põe a página a **3,7 pontos** do branco e separa o cartão pela **borda** | o cartão tem fronteira: **ou** o degrau do fundo, **ou** uma borda que o desenhe |
+
+> É a lição S8 duas vezes, no mesmo arquivo, no mesmo dia. E o padrão dela ficou claro: assert
+> que nasce logo depois de eu **gostar** de uma solução tende a guardar a solução, não a promessa.
+
+### O que ficou fora, e por quê
+
+Os raios de **11px** (barra flutuante de seleção) e **12px** (paleta ⌘K): as duas peças são da
+Parte B, que o dono mandou anotar e não construir. Token sem dono envelhece antes de nascer.

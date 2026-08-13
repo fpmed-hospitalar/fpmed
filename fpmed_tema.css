@@ -37,50 +37,95 @@
 
 :root{
 
-  /* ══ CINZAS — A PALETA DA AMOSTRA APROVADA (13/08, item 7) ══════════════════
+  /* ══ CINZAS — A PALETA DO MOLDE OFICIAL DA ENCONTRAR (13/08, item 7) ════════
      Dez tons, frios (tingidos de azul pra conversar com o #2CA9E0).
      Os dois extremos de uso são lei do manual_design.md D4: texto no --cinza-800,
      fundo de página no --cinza-50. Preto puro e branco puro NÃO existem como cor
      de texto/fundo aqui.
 
-     ── DE ONDE ESTES NOVE VALORES VIERAM, E POR QUE OS ANTIGOS SAÍRAM ─────────
-     O dono aprovou uma amostra estética (feita pelo arquiteto, identidade FPMED)
-     e mandou a tela ficar igual a ela. A amostra usa uma família de cinza
-     DIFERENTE da que estava aqui — mais azulada e um degrau mais escura. Os nove
-     mudaram; nenhum coincidia.
+     ── DE ONDE ESTES VALORES VIERAM (e é a SEGUNDA troca em 13/08) ────────────
+     De manhã entrou a paleta da AMOSTRA aprovada. À tarde chegou o MOLDE OFICIAL
+     (`Tela Encontrar FPMED2.zip`, exportado do Claude Design), que é a versão
+     final e mais detalhada da MESMA direção — e ele substituiu a amostra como
+     alvo, por ordem do dono: *"O MOLDE MANDA. Copiar os valores exatos, não
+     reconstruir de memória nem aproximar no olho."*
+     A medição inteira do molde — 41 pares pela fórmula da WCAG, 38 passando —
+     está em **docs/molde_encontrar.md**. Aqui ficam só os valores e o ofício.
 
-     >>> POR QUE OS TOKENS É QUE MUDAM, e não a tela: o pedido dizia as duas
-         coisas juntas — "igual à amostra" E "tudo por token, proibido cor
-         chumbada". Copiar os valores dela para dentro do `fpmed_encontrar` seria
-         criar a segunda paleta do sistema, que é exatamente o que este arquivo
-         existe pra impedir. Trocando aqui, as duas telas herdam de uma vez e a
-         terceira já nasce certa.
+     >>> POR QUE OS TOKENS É QUE MUDAM, e não a tela: o pedido diz as duas coisas
+         juntas — "igual ao molde" E "tudo por token, proibido cor chumbada".
+         Copiar os valores dele para dentro do `fpmed_licitacoes` seria criar a
+         segunda paleta do sistema, que é exatamente o que este arquivo existe
+         pra impedir. Trocando aqui, as telas herdam de uma vez.
 
-     >>> UM VALOR NÃO VEIO DA AMOSTRA, E O DONO DECIDIU ASSIM (13/08):
-         a amostra usava #9AA7B8 para os RÓTULOS PEQUENOS — os "VALOR ESTIMADO /
-         ITENS / MUNICÍPIO" do cartão e os "OPORTUNIDADES / GESTÃO / FERRAMENTAS"
-         do menu, que foram justamente o que ele elogiou ("letras afastadas").
-         Medido contra branco: **2,44:1**. Não é "quase": é metade do mínimo.
-         O efeito de rótulo fraco vem do TAMANHO, da CAIXA ALTA e do
-         ESPAÇAMENTO ENTRE LETRAS — não da cor. Então a cor sobe pro --cinza-500
-         (4,76:1) e o desenho fica idêntico.
-         Palavras dele: *"SIM, escureça... Legibilidade AA manda."*
-     >>> E O #9AA7B8 CONTINUA AQUI, no 400, no ofício em que ele é legítimo:
-         borda, ícone desligado, divisória. Ele não some — para de carregar texto.
-         (É a lição S12 pela segunda vez: lá foi um azul de ação; aqui teria sido
-         o sistema inteiro.) */
-  --cinza-50:  #F1F5F9;   /* fundo da página — o "fundo suave" no lugar do branco duro */
-  --cinza-100: #EEF2F7;   /* fundo de bloco discreto, linha zebrada */
-  --cinza-200: #E4EAF1;   /* borda padrão, divisória */
-  --cinza-300: #CFD8E3;   /* borda de campo, borda em hover */
-  --cinza-400: #9AA7B8;   /* borda, ícone desligado, divisória — NUNCA texto (2,44:1) */
-  --cinza-500: #64748B;   /* o cinza MAIS CLARO que ainda passa em AA (4,76:1):
+     >>> A FUGA MEDIDA, e ela é a única que o cinza precisou: o molde usa
+         **#8C99A9 como TEXTO** em dois lugares (o sufixo "· visto" de 11px e a
+         dica de atalhos do rodapé). Medido: **2,85–2,90:1** — pouco mais da
+         metade do mínimo. A fuga não inventa cor: sobe pro **#6B7787 (4,55:1)**,
+         que é o tom imediatamente ao lado, DO PRÓPRIO MOLDE (ele já o usa na
+         referência "nº 214/2026 · Compras.gov.br"). Lado a lado a diferença é
+         quase invisível; a legibilidade não é.
+     >>> E O #8C99A9 CONTINUA AQUI, no 400, no ofício em que ele é legítimo:
+         borda, ícone desligado, ponto separador, trilho de barra. Ele não some —
+         **para de carregar texto**. É a mesma correção que o #9AA7B8 sofreu de
+         manhã, e é a lição S12 pela terceira vez nesta obra.
+
+     >>> O 900 É O ÚNICO QUE NÃO SAI DO MOLDE, e vale dizer por quê: o molde não
+         tem neutro mais escuro que o #0A1526 do texto principal — o escuro dele
+         é o NAVY DA MARCA (#0E1B33), que é outra família e ganhou token próprio
+         logo abaixo. O 900 é o degrau seguinte da MESMA rampa, construído aqui,
+         do mesmo jeito que os degraus 600–900 do azul foram. */
+  --cinza-50:  #FAFBFC;   /* fundo da página */
+  --cinza-100: #F1F4F8;   /* fundo de bloco discreto, selo neutro, alternador */
+  --cinza-200: #E9EDF3;   /* BORDA DE CARTÃO — a borda padrão */
+  --cinza-300: #D6DEE9;   /* borda em hover, ponto separador */
+  --cinza-400: #8C99A9;   /* borda, ícone desligado, trilho — NUNCA texto (2,89:1) */
+  --cinza-500: #6B7787;   /* o cinza MAIS CLARO que ainda passa em AA (4,55:1):
                              rótulo pequeno, placeholder, contador de faceta */
-  --cinza-600: #475569;   /* RÓTULO — o cinza de texto secundário (D9) */
-  --cinza-700: #334155;   /* texto forte alternativo */
-  --cinza-800: #1E293B;   /* TEXTO PRINCIPAL */
-  --cinza-900: #121721;   /* fundo escuro, quando houver */
+  --cinza-600: #566373;   /* RÓTULO / meta — o cinza de texto secundário (D9), 6,17:1 */
+  --cinza-700: #3C4B61;   /* texto secundário forte */
+  --cinza-800: #0A1526;   /* TEXTO PRINCIPAL (18,29:1 sobre branco) */
+  --cinza-900: #060E1A;   /* fundo escuro / tinta sobre marcador cheio */
   --branco:    #ffffff;   /* fundo de cartão — só como superfície, nunca da página */
+
+  /* ── AS TRÊS BORDAS DO MOLDE ───────────────────────────────────────────────
+     O molde não tem "uma borda": tem TRÊS, e a diferença entre elas é de dois a
+     cinco pontos de cinza. Isso não é preciosismo — é o que faz a lista longa não
+     virar grade: o divisor entre linhas some quase por completo, o contorno do
+     cartão segura a superfície, e o do controle é o mais firme porque ele é a
+     única fronteira de um botão que não tem sombra.
+     A do cartão mora na rampa (--cinza-200), porque ela É a borda padrão do
+     sistema; as outras duas são ofícios que a rampa não tem onde guardar sem
+     inventar meio-degrau ("--cinza-250" seria a morte da regra "número por passo"). */
+  --borda-divisor:  #EEF1F6;   /* linha entre itens de lista — a mais leve */
+  --borda-controle: #E4E9F0;   /* botão, campo, seletor — a mais firme */
+  --borda-busca:    #D8E4EE;   /* só a barra de busca, que é a peça de mais destaque */
+
+  /* ── SUPERFÍCIES E ESTADOS DE LINHA (molde) ────────────────────────────────
+     A "superfície sutil" é o cinza quase-branco do cabeçalho e do rodapé de um
+     painel: ele separa moldura de conteúdo sem precisar de mais uma borda.
+     Os dois estados de linha existem separados de propósito — HOVER é "o mouse
+     está aqui" e ATIVA é "o teclado está aqui". Uma cor só para os dois faria a
+     navegação por teclado desaparecer no instante em que alguém encosta o mouse. */
+  --superficie-sutil: #FCFDFE;   /* cabeçalho e rodapé de painel */
+  --linha-hover:      #F7FAFD;   /* o mouse está sobre a linha */
+  --linha-ativa:      #F2F8FD;   /* o teclado está nesta linha */
+  --anel-ativo:       #9FD4EE;   /* o anel de 1,5px que acompanha a linha ativa */
+
+  /* ── NAVY DA MARCA (molde: "marca escura") ─────────────────────────────────
+     A sidebar, o cartão de destaque dos indicadores e a barra flutuante de
+     seleção são a MESMA superfície escura. Ela precisa da própria tinta: cinza
+     de texto feito pra fundo claro fica ilegível aqui, e improvisar um branco a
+     60% em cada lugar é como nascem cinco tons diferentes do mesmo cinza.
+     Os quatro valores são do molde e estão medidos contra o navy:
+       --navy-tinta  10,78:1   ·   --navy-apoio 6,77:1
+       --navy-rotulo  5,28:1   ·   --navy-marca 10,45:1
+     Nenhum deles reprova — a sidebar do molde é confortável e não precisou fuga. */
+  --navy:        #0E1B33;   /* sidebar, cartão de destaque, barra flutuante */
+  --navy-tinta:  #C2CEDE;   /* item de menu em repouso */
+  --navy-apoio:  #93A4BC;   /* legenda, texto secundário sobre o navy */
+  --navy-rotulo: #7C90AE;   /* rótulo de grupo, caixa alta */
+  --navy-marca:  #8FD3F2;   /* "HOSPITALAR" e o ícone de destaque */
 
   /* ── AZUL FPMED ───────────────────────────────────────────────────────────
      #2CA9E0 é a marca e mora no 500. Regra D5: azul SÓ em ação principal e link.
@@ -150,6 +195,42 @@
   --ambar-600: #a8701f;
   --ambar-700: #825616;   /* texto de aviso sobre claro */
   --ambar-800: #5f3f10;
+
+  /* ══ OS SINAIS DO MOLDE — PAR FECHADO DE TINTA E FUNDO ══════════════════════
+     As rampas acima continuam sendo a paleta do sistema (elas servem as classes
+     .fp-* e as telas que já estão no ar). Estes são outra coisa: os SELOS do
+     molde, onde tinta e fundo foram escolhidos JUNTOS e medidos JUNTOS.
+
+     >>> POR QUE PAR FECHADO E NÃO "tom 700 sobre tom 100" ────────────────────
+         A receita da rampa (texto no 700, fundo no 100) é uma boa regra geral e
+         foi ela que construiu as pílulas de hoje. Mas ela é uma REGRA, e o molde
+         traz MEDIÇÃO: cada par abaixo foi desenhado pelo tom exato que passa —
+         e um deles (o "normal" da urgência) nem sequer existe como par na rampa,
+         porque é cinza sobre cinza. Guardar o par inteiro é o que impede alguém
+         de trocar só o fundo um dia e afundar o contraste sem perceber.
+     >>> TODOS MEDIDOS (docs/molde_encontrar.md, e a suíte remede a cada rodada):
+         info 5,96 · bom 6,27 · atenção 5,51 · perigo 5,92 · neutro 11,45 ·
+         normal 5,70 · grifo 16,43.
+
+     A URGÊNCIA DA ABERTURA usa três destes pares, e ela é o único lugar do
+     sistema onde a cor carrega URGÊNCIA e não categoria: hoje (perigo), amanhã
+     (atenção), depois (normal). A "barra" de cada um é o traço de 3px na lateral
+     da linha — marcador, não texto, então a régua dele é a de componente. */
+  --sinal-info-tinta:      #12648B;   --sinal-info-fundo:      #EAF6FC;
+  --sinal-bom-tinta:       #3F6608;   --sinal-bom-fundo:       #F3F9E8;
+  --sinal-bom-icone:       #4E9A06;
+  --sinal-atencao-tinta:   #8A5A00;   --sinal-atencao-fundo:   #FEF6E4;
+  --sinal-atencao-barra:   #F0A202;
+  --sinal-perigo-tinta:    #B42318;   --sinal-perigo-fundo:    #FEF0EF;
+  --sinal-perigo-barra:    #E4572E;
+  --sinal-neutro-tinta:    #243449;   --sinal-neutro-fundo:    #F1F4F8;
+  --sinal-normal-tinta:    #566373;   --sinal-normal-fundo:    #F4F6F9;
+  --sinal-normal-barra:    #E6EBF1;
+
+  /* O GRIFO DO TERMO BUSCADO. Ele já existia chumbado na fatia 3b; virou token
+     agora porque o molde o confirma com o mesmo valor — e porque amarelo de
+     grifo escrito à mão em duas telas é o começo de dois amarelos. */
+  --grifo: #FEF3C7;
 
   /* ── ESPAÇAMENTO — grade de 8px (D3) ──────────────────────────────────────
      Nome por PASSO, não por tamanho: "médio" envelhece assim que aparece um
@@ -224,20 +305,30 @@
   --esp-12: 48px;
   --esp-16: 64px;
 
-  /* ══ RAIOS — da amostra aprovada (13/08, item 7) ═══════════════════════════
-     8px de cartão era o que fazia a tela ter "canto de tabela de sistema". A
-     amostra usa 16 no cartão e 12 no campo/botão, e a diferença no bater o olho
-     é grande porque o cartão é a peça que mais ocupa a tela.
+  /* ══ RAIOS — do molde oficial (13/08, item 7) ══════════════════════════════
+     De manhã a amostra trouxe 16/12; à tarde o molde trouxe uma escala INTEIRA,
+     de 4 a 12, com um ofício declarado em cada degrau. Ela é mais apertada, e
+     isso é coerente com o resto do molde: uma tela densa de lista longa fica
+     inquieta com canto grande — o canto de 16px pede respiro de 24 em volta, e
+     aqui o respiro é de 12.
 
      >>> O QUE FAZ CARA DE IA NÃO É O RAIO GRANDE, É O RAIO ÚNICO. D13 põe
          "border-radius gigante EM TUDO" na lista negra, e a palavra que carrega a
          regra é *em tudo*: quando o botão, o campo, o cartão e a etiqueta têm o
          mesmo canto, some a hierarquia de tamanho e a tela vira um monte de
-         retângulos macios do mesmo tipo. Aqui há TRÊS degraus e cada um tem um
-         ofício — e é isso que a suíte passou a cobrar, no lugar do teto de 12px
-         que ela cobrava antes (esse teto era meu, não da regra). */
-  --raio-cartao: 16px;   /* cartão, painel, o que é SUPERFÍCIE */
-  --raio-botao: 12px;    /* botão e campo — sempre MENOR que o do cartão */
+         retângulos macios do mesmo tipo. Aqui há SEIS degraus e cada um tem um
+         ofício — a suíte cobra a hierarquia (botão < cartão), não os valores.
+
+     >>> DOIS RAIOS DO MOLDE NÃO ENTRARAM: 11px (barra flutuante de seleção) e
+         12px (paleta ⌘K). Os dois pertencem a peças da PARTE B, que o dono mandou
+         anotar e não construir agora. Token sem dono é token que envelhece antes
+         de nascer — eles entram no dia da peça. */
+  --raio-mini:   4px;    /* caixa de seleção, tecla de atalho */
+  --raio-selo:   5px;    /* selo, contador, pastilha de prazo */
+  --raio-item:   6px;    /* item de menu, botão pequeno, seletor */
+  --raio-botao:  7px;    /* botão, chip de filtro, quadrado de ícone */
+  --raio-campo:  9px;    /* barra de busca, bloco interno de um cartão */
+  --raio-cartao: 10px;   /* cartão, painel — o que é SUPERFÍCIE */
   --raio-pilula: 999px;  /* só a pílula, e é o único que pode ser total */
 
   /* ── SOMBRAS ──────────────────────────────────────────────────────────────
@@ -246,21 +337,37 @@
      (modal, menu suspenso). Dentro da página, usar 1 e 2 e mais nada.
      Todas pretas e translúcidas: sombra colorida é lista negra (D13).
 
-     ══ A FAMÍLIA DA AMOSTRA APROVADA (13/08, item 7) ══════════════════════════
-     A sombra antiga era CURTA e DURA: dois desfoques de 2 e 3px, quase colados
-     na borda. Ela lia como contorno, não como profundidade — e junto com a borda
-     cinza dava o "cara de template" que D6 nomeia (sombra pesada + borda grossa).
-     A da amostra é MACIA E LONGA: o segundo desfoque salta de 3px para 16px, com
-     opacidade menor. É o que faz o cartão branco parecer flutuar sobre o fundo
-     em vez de estar recortado nele.
+     ══ A FAMÍLIA DO MOLDE OFICIAL (13/08, item 7) ═════════════════════════════
+     E aqui o molde DESFEZ uma decisão que eu tinha tomado de manhã, com razão.
+     A sombra da amostra era macia e longa (desfoque de 16px em repouso), e eu
+     escrevi que era ela que fazia o cartão "flutuar". O molde vai pro extremo
+     oposto: **0 1px 2px a 4% em repouso**, quase invisível — e a fronteira do
+     cartão é desenhada pela BORDA de 1px, não pela sombra.
 
-     >>> E É POR ISSO QUE A BORDA SAI DE ONDE A SOMBRA ENTRA. Os dois juntos
-         desenham a mesma fronteira duas vezes; a sombra sozinha basta e é a que
-         dá o "agradável de ver". A borda continua onde não há sombra (campo,
-         divisória, contorno de faceta), que é o ofício dela. */
-  --sombra-1: 0 1px 2px rgba(30,41,59,.04), 0 4px 16px rgba(30,41,59,.06);
-  --sombra-2: 0 2px 6px rgba(30,41,59,.06), 0 12px 28px rgba(30,41,59,.10);
-  --sombra-3: 0 8px 16px rgba(30,41,59,.10), 0 24px 56px rgba(30,41,59,.16);
+     >>> E ISSO NÃO É "MENOS ACABAMENTO", é o outro jeito de fazer, e é o certo
+         pra esta tela: com fundo de página a 96% de luminância, uma sombra longa
+         em cada cartão de uma lista de 30 linhas vira sujeira acumulada. O molde
+         gasta a profundidade onde ela informa — no cartão de destaque e no que
+         abre por cima — e não onde ela só decora.
+     >>> O QUE ISSO CUSTOU EM ASSERT: os dois asserts que eu tinha escrito de
+         manhã (sombra com duas camadas, desfoque de repouso >= 12px) ficaram
+         vermelhos sem NADA ter piorado. Eles guardavam a decoração de uma
+         decisão, não a regra. Foram reapontados pra escada de elevação, que é o
+         que D6 realmente pede. É a lição S8 outra vez, no mesmo arquivo, no
+         mesmo dia — o que diz muito sobre a facilidade de escrever assert que
+         mede o meio.
+
+     >>> A TINTA É UMA SÓ, e essa é a divergência declarada com o molde: ele usa
+         rgba(16,26,43) no cartão e rgba(14,27,51) — o próprio navy — no cartão de
+         destaque. A segunda dá 37 pontos de distância entre os canais e reprova
+         no assert de "sombra neutra" (teto 35), que existe pra barrar brilho
+         colorido de marca. A 50% de opacidade, atrás de um cartão navy, a
+         diferença entre as duas está abaixo do que o olho separa; duas tintas de
+         sombra no sistema, não. Fica a do molde para o repouso e a tinta de
+         sobreposição dele (10,21,38) para os dois níveis de cima. */
+  --sombra-1: 0 1px 2px rgba(16,26,43,.04);                                        /* repouso: cartão, painel */
+  --sombra-2: 0 8px 20px -12px rgba(10,21,38,.5);                                  /* elevado: cartão de destaque, cartão em hover */
+  --sombra-3: 0 12px 32px -10px rgba(10,21,38,.28), 0 2px 6px rgba(10,21,38,.06);  /* o que paira sobre a tela: menu suspenso, modal */
 
   /* ── TIPOGRAFIA ───────────────────────────────────────────────────────────
      UMA família. Montserrat já era a fonte da marca; o que mudou é que ela
