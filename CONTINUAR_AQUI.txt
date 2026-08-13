@@ -1314,8 +1314,59 @@ Criado em 21/07/2026 copiando SO os arquivos do app do C:\globalmed.
              varria o arquivo INTEIRO, comentario incluido — e ficou vermelho por causa do
              comentario que registra a MEDICAO que justifica a fuga. Assert que so fica verde se
              eu apagar a explicacao esta contra a L6. Passou a ler sem comentario.
-     >>> PROXIMO PASSO: 6 · O PAINEL DE RESULTADOS. **INVENTARIEI ANTES DE PARAR, pra ninguem
-         refazer o que ja existe** (conferido no arquivo, nao suposto):
+     >>> PASSO 6 (O PAINEL DE RESULTADOS) **FEITO** — sw.js -> -2026-08-13-35.
+         *** COM ELE, A ENCONTRAR ESTA COMPLETA: 6 de 6 passos do molde. ***
+         Suite nova testa_painel_resultados (20 asserts, MUTACAO 15 de 15).
+         TOTAL: 3.459 / 0 falhas / 93 suites. Detalhe em docs/molde_encontrar.md, secao 11.
+         >>> A PILHA DE CARTOES VIROU UM PAINEL COM LINHAS. Trinta cartoes flutuando sao trinta
+             fronteiras, trinta sombras e vinte e nove buracos — o olho reprocessa "onde comeca o
+             proximo" a cada rolagem. Num painel a fronteira e desenhada UMA vez.
+             >>> A ANATOMIA DE DENTRO DA LINHA NAO MUDOU: selo, titulo, objeto com grifo,
+                 etiquetas, os 4 dados e os botoes vieram da fatia 3b com razoes medidas, e o
+                 molde nao desmente nenhuma. Mudou a MOLDURA, nao o conteudo.
+         >>> O ALTERNADOR DE DENSIDADE e o unico controle novo, e e do molde. Confortavel /
+             Compacta, guardado no navegador. Linha de 320px -> 238px.
+             >>> A compacta RECOLHE O OBJETO (3 linhas -> 1), e nao so o padding: num modo de
+                 varredura o que ocupa altura e o texto. So o padding renderia 6px por linha.
+             >>> O localStorage ESTOURA em navegacao privada em alguns navegadores, e a
+                 densidade() e chamada montando o cabecalho — sem try/catch a render inteira
+                 morre no meio. Uma preferencia de LAYOUT nao pode levar junto o resultado da
+                 busca. Tem assert que exercita esse caso.
+         >>> O CABECALHO NAO PODE MENTIR E O RODAPE NAO PODE FINGIR:
+             · "N DE M publicadas no periodo" — o "de M" e o que evita a conclusao errada de
+               "nao tem nada publicado hoje" ("12" sozinho nao diz se o filtro cortou 3 ou 300);
+             · "N abrem hoje" so aparece QUANDO EXISTE (0 todo dia ensina a ignorar o cabecalho),
+               e a contagem e do DIA LOCAL, como o indicador do topo;
+             · o rodape diz "todas de uma vez, esta lista NAO pagina" em vez de copiar o
+               "Mostrando 1-20 de 2.312" do molde. Aqui nao ha paginacao — copiar aquilo seria
+               prometer uma pagina 2 que nao existe.
+         >>> O SELETOR DE ORDENACAO DO MOLDE NAO ENTROU: la sao 3 opcoes, aqui a ordem e UMA (a
+             aderencia e Parte B, a de valor seria funcao nova). Seletor com uma opcao so ensina
+             a clicar a toa. A ordem continua ESCRITA, no rodape.
+         >>> DOIS AJUSTES QUE SO A MEDICAO PEDIU:
+             1. o cabecalho QUEBRAVA EM DUAS LINHAS ate em 1920px — e nao era falta de tela: o
+                painel tem 852px uteis (divide a linha com a coluna de filtros) e a frase da
+                ordenacao ocupa 250 deles. Encurtar o botao nao bastou; a frase desceu pro
+                rodape. Medido: 80px -> 44px;
+             2. o hover da linha NAO LEVANTA: linha que sobe dentro de um painel arrasta a de
+                baixo e a lista inteira treme.
+         >>> 1 ASSERT DO PASSO 3 MUDOU DE ALVO JUNTO: ele cobrava `border:1px` no .lic, que na
+             epoca era CARTAO. A promessa e a mesma (a superficie tem fronteira); mudou QUEM a
+             desenha. Agora cobra o par: painel com borda, linha com divisor, ultima linha sem fio.
+
+     >>> ############ ITEM 7 FECHADO. O QUE VEM DEPOIS ############
+     >>> 7b. APLICAR O MOLDE NO NEGOCIOS — ordem do dono: "publica ENCONTRAR, prova com print,
+             SO ENTAO Negocios". O Negocios ja herdou de graca os tokens, a sidebar navy e as
+             bordas; falta a moldura (header sticky com trilha, indicadores, painel).
+     >>> ITEM NOVO QUE ESTA RODADA MEDIU E NAO FEZ — **A VARREDURA DE EMOJI DA ENCONTRAR**:
+         51 ocorrencias de emoji-icone no fpmed_licitacoes.html (13x ⚠ · 6x 🎯 · 5x 🌎 · 2x 🌐 ·
+         2x 📅 · 2x 📧 · 2x ✅ · 2x ⚡ · 🔍 ⛔ 📦 📰 📄 ✓ ✕). D11 proibe emoji como icone, e o
+         Negocios ja fez a dele (59 viraram sprite SVG em 12/08). Nao entrou nesta rodada porque
+         e trabalho de SUBSTITUICAO em 51 pontos, nao de decisao — e misturar isso com a troca de
+         moldura teria feito uma fatia que ninguem consegue revisar. Fica como item proprio.
+
+     >>> [historico] O INVENTARIO QUE EU TINHA ESCRITO ANTES DE COMECAR O PASSO 6, mantido
+         porque ele mostra o que ja existia e o que era pra fazer:
            JA EXISTE, da fatia 3b de 13/08:
              · o cartao de resultado rico (.lic) com titulo forte e acoes no rodape;
              · a BARRA DE URGENCIA lateral (.lic::before + .prazo-urg / .prazo-fim);

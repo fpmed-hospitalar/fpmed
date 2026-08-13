@@ -149,7 +149,7 @@ nunca, em hipótese alguma, marca da GlobalMed.
 5. **Barra de busca** com chips, "+ Filtro" tracejado e o botão azul.
    **[FEITO — 13/08]** ver a seção 10.
 6. **Painel de resultados** — linha rica, barra de urgência, selos, `<mark>`, alternador
-   Confortável/Compacta.
+   Confortável/Compacta. **[FEITO — 13/08]** ver a seção 11.
 
 Publica, prova com print, e só então o Negócios.
 
@@ -551,3 +551,82 @@ que **justifica a fuga** (*"o molde usa #2CA9E0 e dá 2,67:1; o token da ação 
 
 O `×` foi exercitado na tela: tirar o chip de situação **limpou o campo** `f-sit`; tirar o de
 desertas **desligou o estado** `_soDesertas`. Nos dois casos a lista repintou.
+
+---
+
+## 11 · PASSO 6 FEITO — O PAINEL DE RESULTADOS. **A ENCONTRAR ESTÁ COMPLETA.**
+
+`fpmed_licitacoes.html`, 13/08. Suíte nova **`testa_painel_resultados`** (20 asserts, **mutação
+15 de 15 barradas**). Total do projeto **3.459 / 0 falhas / 93 suítes**.
+
+Os resultados eram uma **pilha de cartões soltos** — cada um com borda, sombra e 16px de respiro
+entre eles. Agora são **linhas dentro de um painel**, com cabeçalho e rodapé.
+
+> **Por que isso não é gosto.** Trinta cartões flutuando são trinta fronteiras desenhadas, trinta
+> sombras e vinte e nove buracos — e o olho reprocessa "onde começa o próximo" a cada rolagem. Num
+> painel a fronteira é desenhada **uma** vez, e o que separa as linhas é o fio mais leve do
+> sistema. A lista fica mais densa sem ficar apertada.
+
+**A anatomia de dentro da linha não mudou.** O selo do órgão, o título, o objeto com o grifo, as
+etiquetas, os quatro dados no padrão rótulo-fraco/valor-forte e os botões continuam iguais — eles
+vieram da fatia 3b com razões medidas, e o molde não desmente nenhuma. Mudou a **moldura**, não o
+conteúdo.
+
+### O alternador de densidade — o único controle novo, e ele é do molde
+
+Confortável e Compacta, com a escolha guardada no navegador. Ele muda **só o respiro**: nenhum
+dado aparece ou some. Medido: a linha vai de **320px para 238px**.
+
+> **A compacta recolhe o objeto, e não só o padding.** Num modo de varredura o que ocupa altura é
+> o texto do objeto (3 linhas → 1). Recolher só o padding renderia 6px por linha — o que não é
+> modo nenhum.
+>
+> E `localStorage` **estoura em navegação privada** em alguns navegadores. Uma preferência de
+> layout não pode levar junto o resultado da busca — a `densidade()` é chamada montando o
+> cabeçalho, então sem `try/catch` a `render` inteira morre no meio. Há assert que exercita
+> exatamente esse caso.
+
+### O cabeçalho não pode mentir, e o rodapé não pode fingir
+
+- **"N de M publicadas no período"** — o *"de M"* importa: "12" sozinho não diz se o filtro cortou
+  3 ou 300, e é essa a informação que evita a conclusão errada de *"não tem nada publicado hoje"*.
+- **"N abrem hoje"** só aparece **quando existe**. "0 abrem hoje" é ruído todo dia sem abertura, e
+  ruído diário é como se ensina alguém a não ler o cabeçalho. A contagem é do **dia local**, pelo
+  mesmo motivo do indicador do topo.
+- **O rodapé diz "todas de uma vez, esta lista não pagina"**, em vez de copiar o *"Mostrando 1–20
+  de 2.312"* do molde. Aqui **não há paginação**. Copiar aquela frase seria prometer uma página 2
+  que não existe, e quem a procurasse concluiria que o sistema perdeu resultado.
+
+**O seletor de ordenação do molde não entrou.** Lá são três opções (abertura, aderência, valor);
+aqui a ordem é **uma** — e das outras duas, a aderência é Parte B e a de valor seria função nova.
+Seletor com uma opção só é um controle que ensina a pessoa a clicar à toa. A ordem continua
+**escrita**, que é o que ela sempre foi: informação, não controle.
+
+### Dois ajustes que só a medição pediu
+
+1. **O cabeçalho quebrava em duas linhas — até em 1920px.** Não era falta de tela: o painel tem
+   **852px** de largura útil (divide a linha com a coluna de filtros), e *"ordenadas por quem
+   encerra primeiro"* sozinha ocupa 250 deles. Encurtar o botão não bastou. A frase **desceu para
+   o rodapé** — que é onde se diz *como* a lista está sendo mostrada, a mesma família de "quantas
+   estão na tela". Resultado medido: **80px → 44px**.
+2. **O hover da linha não levanta.** Linha que sobe dentro de um painel arrasta a de baixo e a
+   lista inteira treme. Quem diz "dá para interagir" é o fundo, como no molde.
+
+### Um assert do passo 3 mudou de alvo junto
+
+`testa_header_encontrar` cobrava `border:1px solid` no `.lic` — que na época era um **cartão**. A
+promessa (*a superfície tem fronteira desenhada*) é a mesma; o que mudou é **quem** a desenha.
+Passou a cobrar o par certo: o painel tem a borda, a linha tem o divisor, e a última linha não
+desenha o fio (senão ele encosta na borda do painel).
+
+### Medido no navegador
+
+| largura | cabeçalho | rodapé | linha confortável | linha compacta | rolagem horizontal |
+|---|---|---|---|---|---|
+| 390 | 110px *(controles empilham)* | 71px | 689px | 606px | 0 |
+| 900 | **44px** | 44px | 320px | 238px | 0 |
+| 1366 | **44px** | 44px | 320px | 238px | 0 |
+| 1920 | **44px** | 44px | 320px | 238px | 0 |
+
+Com dado da forma do real: órgão de 76 caracteres, objeto de 340, **R$ 63.034.332,63**, e os três
+estados de prazo (encerrada · encerra em 1d · aberta) exercitando a barra de urgência.

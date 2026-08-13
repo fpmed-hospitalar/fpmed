@@ -233,10 +233,29 @@ ok(n + '. *** a reserva so vale no desktop: em 390px ela comia a trilha inteira 
 /* Consequencia do passo 1: a sombra saiu de 16px macios pra 2px a 4%. As duas superficies que
    confiavam nela pra desenhar a propria fronteira (`.cartao-busca` e `.lic`) ficaram sem borda
    NENHUMA sobre um fundo a 3,7 pontos do branco. Medido no navegador: border-top-width 0px. */
-for (const cls of ['cartao-busca', 'lic']) {
-  const regra = (L.match(new RegExp('\\.' + cls + '\\{[^}]*\\}')) || [''])[0].replace(/\s*\n\s*/g, '');
-  ok(n + '. .' + cls + ' tem borda: com a sombra do molde (2px a 4%) ela e a unica fronteira',
+{
+  const regra = (L.match(/\.cartao-busca\{[^}]*\}/) || [''])[0].replace(/\s*\n\s*/g, '');
+  ok(n + '. .cartao-busca tem borda: com a sombra do molde (2px a 4%) ela e a unica fronteira',
     /border:1px solid var\(--cinza-200\)/.test(regra), regra.slice(0, 140)); n++;
+}
+/* ══ O .lic MUDOU DE NATUREZA NO PASSO 6, e este assert mudou com ele ═══════════════════════
+   Ele cobrava `border:1px solid` no `.lic`, que na epoca era um CARTAO solto. No passo 6 os
+   resultados viraram LINHAS dentro de um painel: a fronteira deixou de ser de cada um e passou
+   a ser do painel, com um fio entre as linhas.
+   >>> A PROMESSA E A MESMA — a superficie tem fronteira desenhada — e por isso o assert nao foi
+       apagado: ele passou a cobrar o par certo (o painel tem borda, e a linha tem o divisor).
+       Apagar seria perder o guarda; manter o texto antigo seria cobrar um cartao que nao existe
+       mais. */
+{
+  const painel = (L.match(/\.painel-res\{[^}]*\}/) || [''])[0].replace(/\s*\n\s*/g, '');
+  const linha  = (L.match(/\n\.lic\{[^}]*\}/) || [''])[0].replace(/\s*\n\s*/g, '');
+  ok(n + '. o painel de resultados tem a fronteira, e a linha tem o divisor (nao os dois, nem nenhum)',
+    /border:1px solid var\(--cinza-200\)/.test(painel)
+    && /border-bottom:1px solid var\(--borda-divisor\)/.test(linha)
+    && !/\bborder:1px/.test(linha),
+    { painel: painel.slice(0, 120), linha: linha.slice(0, 120) }); n++;
+  ok(n + '. e a ultima linha nao desenha o fio (senao ele encosta na borda do painel)',
+    /\.lic:last-child\{border-bottom:0\}/.test(L.replace(/\s*\n\s*/g, ''))); n++;
 }
 
 // ── 7. a memoria do porque (L6) ──────────────────────────────────────────────

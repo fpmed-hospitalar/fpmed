@@ -530,14 +530,65 @@ select[disabled],input[disabled],textarea[disabled]{
    visível da peça pra repetir o que já está escrito duas linhas acima.
    >>> ENTÃO ELA DIZ O QUE MUDA A DECISÃO: encerrada · encerra em ≤2 dias · aberta. E ela
        NUNCA anda sozinha — o crachá de prazo, com os dias escritos, continua no rodapé. */
-.lic{position:relative;overflow:hidden;background:var(--branco);border:1px solid var(--cinza-200);
-  border-radius:var(--raio-cartao);
-  padding:var(--esp-6);margin-bottom:var(--esp-4);box-shadow:var(--sombra-1);
-  transition:box-shadow var(--transicao),transform var(--transicao)}
-/* A BORDA VOLTOU pelo mesmo motivo do .cartao-busca: com a sombra do molde (2px a 4%) não sobra
-   fronteira nenhuma, e o cartão de resultado some no fundo. Ver o comentário longo lá em cima.
-   O hover levanta 2px — movimento pequeno diz "isto é clicável" melhor que uma cor a mais. */
-.lic:hover{box-shadow:var(--sombra-2);transform:translateY(-2px)}
+/* ══ O PAINEL DE RESULTADOS (molde §5, passo 6 · 13/08) ══════════════════════════════════════
+   Os resultados eram uma PILHA DE CARTÕES soltos — cada um com borda, sombra e 16px de respiro
+   entre eles. O molde faz o contrário: UM painel, e os resultados são LINHAS dentro dele,
+   separadas por um fio.
+
+   >>> POR QUE ISSO NÃO É SÓ GOSTO, e foi a decisão do passo: trinta cartões flutuando são trinta
+       fronteiras desenhadas, trinta sombras e vinte e nove buracos — e o olho tem que reprocessar
+       "onde começa o próximo" a cada rolagem. Num painel, a fronteira é desenhada UMA vez, e o
+       que separa as linhas é o fio mais leve do sistema (--borda-divisor). A lista fica mais
+       densa sem ficar apertada, que é exatamente o que uma lista longa precisa.
+   >>> O QUE **NÃO** MUDOU: a anatomia de dentro da linha. O selo do órgão, o título, o objeto
+       com o grifo, as etiquetas, os quatro dados no padrão rótulo-fraco/valor-forte e os botões
+       continuam iguais — eles vieram da fatia 3b com razões medidas, e o molde não desmente
+       nenhuma. O que mudou foi a MOLDURA, não o conteúdo. */
+.painel-res{background:var(--branco);border:1px solid var(--cinza-200);
+  border-radius:var(--raio-cartao);box-shadow:var(--sombra-1);overflow:hidden;
+  margin-top:var(--esp-3)}
+/* O cabeçalho e o rodapé usam a superfície sutil: eles são MOLDURA, não conteúdo, e o degrau
+   quase invisível é o que diz isso sem gastar mais uma borda. */
+.painel-res .cabecalho{display:flex;align-items:center;gap:var(--esp-3);flex-wrap:wrap;
+  min-height:42px;padding:var(--esp-2) var(--esp-4);
+  background:var(--superficie-sutil);border-bottom:1px solid var(--borda-divisor);
+  font-size:var(--txt-1);color:var(--cinza-700)}
+.painel-res .rodape-painel{display:flex;align-items:center;gap:var(--esp-3);flex-wrap:wrap;
+  min-height:44px;padding:var(--esp-2) var(--esp-4);
+  background:var(--superficie-sutil);border-top:1px solid var(--borda-divisor);
+  font-size:var(--txt-1);color:var(--cinza-600)}
+
+/* ══ O ALTERNADOR DE DENSIDADE — o único controle novo, e ele é do molde ═════════════════════
+   Confortável e Compacta, com a escolha guardada no navegador (mesmo desenho da visão do
+   Negócios). Ele muda SÓ o respiro da linha: nenhum dado aparece ou some.
+   >>> POR QUE ELE VALE NUMA LISTA LONGA: quem está varrendo 40 resultados atrás de um item quer
+       ver mais linhas de uma vez; quem parou pra ler um edital quer o texto respirando. São dois
+       usos da MESMA tela, e nenhum dos dois é "o certo". */
+.dens{display:flex;gap:2px;padding:2px;background:var(--cinza-100);border-radius:var(--raio-botao)}
+.dens button{border:0;background:none;cursor:pointer;font-family:var(--fonte);
+  font-size:var(--txt-1);color:var(--cinza-600);padding:var(--esp-1) var(--esp-3);
+  border-radius:var(--raio-item);transition:background-color var(--transicao),color var(--transicao)}
+.dens button[aria-pressed="true"]{background:var(--branco);color:var(--cinza-800);
+  font-weight:var(--peso-semi);box-shadow:var(--sombra-1)}
+.dens button:focus-visible{outline:none;box-shadow:var(--foco)}
+
+.lic{position:relative;overflow:hidden;background:var(--branco);
+  border-bottom:1px solid var(--borda-divisor);
+  padding:var(--esp-4) var(--esp-6);
+  transition:background-color var(--transicao)}
+.lic:last-child{border-bottom:0}
+/* ══ A LINHA COMPACTA ═══════════════════════════════════════════════════════════════════════
+   O molde troca o padding de 13px pra 8px. Aqui a compacta corta o respiro vertical e RECOLHE o
+   objeto de 3 linhas pra 1 — porque num modo de varredura o que ocupa altura é o texto do
+   objeto, não o padding. Recolher só o padding faria "compacta" render 6px por linha, o que não
+   é modo nenhum. */
+.painel-res.compacta .lic{padding:var(--esp-2) var(--esp-6)}
+.painel-res.compacta .lic .obj{-webkit-line-clamp:1;margin-top:var(--esp-2)}
+.painel-res.compacta .lic .dados{margin-top:var(--esp-2);padding-top:var(--esp-2);gap:var(--esp-6)}
+.painel-res.compacta .lic .etiquetas{margin-bottom:var(--esp-2)}
+/* O hover de LINHA não levanta: linha que sobe dentro de um painel arrasta a de baixo junto e a
+   lista inteira treme. Quem diz "dá pra interagir" é o fundo, como no molde. */
+.lic:hover{background:var(--linha-hover)}
 .lic::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--azul-500)}
 .lic.prazo-urg::before{background:var(--ambar-500)}
 .lic.prazo-fim::before{background:var(--vermelho-500)}
@@ -2945,11 +2996,39 @@ function render(todos, kws, excl, aviso, procedencia){
                 : '<span class="hint">nada novo desde a sua última leitura</span>')
        + '</div>';
   }
-  h += '<div class="contagem" style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">'
-     + '<span><b>'+hits.length+'</b> '+(hits.length===1?'licitação encontrada':'licitações encontradas')
-     + ' · ordenadas por quem <b>encerra primeiro</b></span>'
-     + '<button class="btn sec mini" id="bt-todos" onclick="cruzarTodos()" '
-     +   'title="lê os itens de cada edital em lotes de 3 e marca os que temos">🎯 Cruzar todas com o estoque</button>'
+  /* ══ O CABEÇALHO DO PAINEL (molde §5, passo 6) ═══════════════════════════════════════════════
+     Ele diz três coisas, e as três são fato apurado do que está na tela — nenhuma é decorativa:
+       · quantas bateram DE quantas foram publicadas no período (o "de" importa: "12" sozinho não
+         diz se o filtro cortou 3 ou 300);
+       · quantas ABREM HOJE, que é a única urgência que muda o dia de quem lê — e ela só aparece
+         quando existe, porque "0 abrem hoje" é ruído todo dia em que não há;
+       · por que a lista está nessa ordem.
+     >>> O SELETOR DE ORDENAÇÃO DO MOLDE NÃO ENTROU. Lá são três opções (abertura, aderência,
+         valor); aqui a ordem é UMA — quem encerra primeiro — e das outras duas, a aderência é
+         Parte B (precisa de backend) e a de valor seria função nova. Um seletor com uma opção
+         só é um controle que ensina a pessoa a clicar à toa. Então a ordem continua ESCRITA, que
+         é o que ela sempre foi: informação, não controle. */
+  const _hoje0 = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate());
+  const _hoje1 = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate(), 23, 59, 59);
+  const abremHoje = hits.filter(l => { const d = dt(l.dataAberturaProposta); return d && d >= _hoje0 && d <= _hoje1; }).length;
+  h += '<div class="painel-res' + (densidade()==='compacta' ? ' compacta' : '') + '" id="painel-res">'
+     + '<div class="cabecalho">'
+     +   '<span><b>'+hits.length+'</b> de <b>'+todos.length+'</b> '
+     +     (todos.length===1?'publicada no período':'publicadas no período')
+     +     (abremHoje ? ' · <b>'+abremHoje+'</b> '+(abremHoje===1?'abre hoje':'abrem hoje') : '')
+     +   '</span>'
+     +   '<span style="flex:1"></span>'
+     +   '<div class="dens" role="group" aria-label="Densidade da lista">'
+     +     '<button type="button" onclick="poeDensidade(\'confortavel\')" aria-pressed="'+(densidade()!=='compacta')+'">Confortável</button>'
+     +     '<button type="button" onclick="poeDensidade(\'compacta\')" aria-pressed="'+(densidade()==='compacta')+'">Compacta</button>'
+     +   '</div>'
+     /* O rótulo encolheu de "Cruzar todas com o estoque" para "Cruzar todas" (13/08, passo 6), e
+        não foi economia de espaço por gosto: MEDIDO em 1536px, o cabeçalho quebrava em DUAS
+        linhas e ficava com 80px em vez de 42 — a moldura do painel ficava mais alta que a
+        primeira linha de resultado. O que o rótulo perdeu está no `title`, que é onde o detalhe
+        de uma ação de lista pertence. */
+     +   '<button class="btn sec mini" id="bt-todos" onclick="cruzarTodos()" '
+     +     'title="lê os itens de cada edital em lotes de 3 e marca os que temos no estoque">🎯 Cruzar todas</button>'
      + '</div>';
 
   window._hits = hits;                       // os cards chamam verItens(i) por índice
@@ -3023,7 +3102,45 @@ function render(todos, kws, excl, aviso, procedencia){
       + '<div class="itens" id="itens-'+i+'" style="display:none"></div>'
       + '</div>';
   });
+  /* ══ O RODAPÉ DO PAINEL — e ele diz uma verdade incômoda de propósito ════════════════════════
+     No molde ele traz "Mostrando 1–20 de 2.312" e a paginação. Aqui NÃO HÁ paginação: a tela
+     renderiza a lista inteira, e isso é decisão antiga (o resultado já vem inteiro pra memória,
+     e o refino filtra em cima dele).
+     >>> ENTÃO O RODAPÉ NÃO COPIA "1–20 de 2.312", que seria uma promessa de paginação que não
+         existe. Ele diz o que é: estão todas na tela. Um rodapé que finge paginar é pior que
+         rodapé nenhum — a pessoa procura a página 2 e conclui que o sistema perdeu resultado.
+     >>> E ELE FECHA O PAINEL, que é a outra metade do ofício dele: sem rodapé, a última linha
+         encosta na borda e a lista parece cortada. */
+  /* A ORDEM DESCEU PRO RODAPÉ, e não foi arrumação: MEDIDO, o cabeçalho quebrava em duas linhas
+     mesmo em 1920px — o painel tem 852px de largura útil (ele divide a linha com a coluna de
+     filtros), e "ordenadas por quem encerra primeiro" sozinha ocupa 250 deles. Aqui embaixo ela
+     está no lugar mais certo, e não só no que sobrou: o rodapé é onde se diz COMO a lista está
+     sendo mostrada, que é a mesma família de "quantas estão na tela". */
+  h += '<div class="rodape-painel"><span>Mostrando <b>'+hits.length+'</b> '
+     + (hits.length===1?'licitação':'licitações')+', ordenadas por quem <b>encerra primeiro</b>'
+     + ' — todas de uma vez, esta lista não pagina</span></div>'
+     + '</div>';
   lista.innerHTML = h;
+}
+
+/* ══ A DENSIDADE DA LISTA (passo 6 do molde) ══════════════════════════════════════════════════
+   A escolha mora no navegador de quem usa, como a visão do Negócios: ela é preferência de
+   TRABALHO, não de dado, e reabrir a tela no modo que a pessoa não escolheu é o tipo de atrito
+   que ninguém reclama e todo mundo sente.
+   >>> `try/catch` no localStorage porque ele estoura em navegação privada em alguns navegadores —
+       e uma preferência de layout NÃO PODE derrubar a lista de resultados. Sem ele, o padrão. */
+function densidade(){
+  try { return localStorage.getItem('fpmed_densidade') === 'compacta' ? 'compacta' : 'confortavel'; }
+  catch(e){ return 'confortavel'; }
+}
+function poeDensidade(d){
+  try { localStorage.setItem('fpmed_densidade', d === 'compacta' ? 'compacta' : 'confortavel'); } catch(e){}
+  /* Troca a classe NA HORA, sem repintar a lista: repintar perderia os itens já cruzados (o
+     bloco `#itens-N` que a pessoa abriu) e faria a tela piscar por causa de um respiro. */
+  const p = document.getElementById('painel-res');
+  if(p) p.classList.toggle('compacta', d === 'compacta');
+  document.querySelectorAll('.dens button').forEach(b =>
+    b.setAttribute('aria-pressed', String(/Compacta/.test(b.textContent) === (d === 'compacta'))));
 }
 
 // ══ UI DO CRUZAMENTO ══════════════════════════════════════════════════════════════════════
