@@ -1863,6 +1863,28 @@ Criado em 21/07/2026 copiando SO os arquivos do app do C:\globalmed.
                 dispara. Nao e defeito visivel — cai no motor de sempre —, mas o caminho que
                 alguem escreveu achando que funcionava nao funciona.
 
+                >>> RECONFERIDO EM 13/08, DE PROPOSITO, porque o achado ia fazer OUTRA PESSOA
+                    APAGAR CODIGO. Se eu estivesse errado, ele removeria um caminho que funciona.
+                    Agora esta PROVADO e nao inferido:
+                      GET /rest/v1/cotacoes?select=ean  ->  **HTTP 400**
+                      {"code":"42703","message":"column cotacoes.ean does not exist"}
+                    Isso e o banco dizendo, nao eu deduzindo de uma lista de colunas.
+                >>> E ISSO DESCARTA UMA DAS DUAS SAIDAS. "Ligar o filtro na coluna certa" NAO E
+                    POSSIVEL: varri as 28 colunas numa amostra de 1.000 linhas e **nenhuma** tem
+                    campo com 13 digitos. Nao ha equivalente pra apontar.
+                    Sobra: remover o ramo morto com o porque escrito — ou a decisao de negocio.
+                >>> DADO NOVO QUE APARECEU NA RECONFERENCIA, e que interessa a quem for mexer: o
+                    campo `codigo` esta **VAZIO em 586 de 1.000** linhas, e o resto tem de 2 a 7
+                    digitos. Ou seja, ele tambem nao serve de chave — nem de longe.
+                >>> A DECISAO DE NEGOCIO, PRO CHECKPOINT (e ela vale dinheiro, nao e formalidade):
+                    **"deveria existir EAN no nosso cadastro?"** O lado da CMED tem registro em
+                    100% e EAN em 99,996% — ou seja, o casamento EXATO esta disponivel e nos e que
+                    nao temos a chave. Capturar EAN/registro no cadastro do estoque transformaria
+                    o casamento de "substancia+dose com grau de confianca" em EXATO, e o teto
+                    legal deixaria de depender de palpite sobre a primeira palavra do nome.
+                    Custo: coluna nova (aditiva) + mudanca no fluxo de cadastro. Ja estava anotado
+                    como pendencia desde 05/08. **Nao e decisao minha nem do B.**
+
      8b.[ ] demais telas ganhando o tema claro, uma a uma (8 ainda escuras — e o que
      8b.[ ] demais telas ganhando o tema claro, uma a uma (8 ainda escuras — e o que
             impede consertar o gm-auth.js hoje)

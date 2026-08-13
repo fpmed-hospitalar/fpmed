@@ -164,7 +164,35 @@ voltar, a costura é curta, porque o motor já entrega tudo pronto:
 ### Um achado no território da outra frente, que eu não toquei
 
 O `fpmed_giovana.html` filtra `cotacoes` por `c.ean` (por volta da linha 2175). **A coluna `ean`
-não existe na `cotacoes`** — medido nas 28 colunas da tabela. O filtro devolve sempre vazio, então
-esse caminho é um **ramo morto** que nunca dispara. Não é defeito visível: ele apenas cai no
-motor de sempre, que é o comportamento antigo. Fica registrado para a frente que é dona do
-arquivo.
+não existe na `cotacoes`.** O filtro devolve sempre vazio, então esse caminho é um **ramo morto**
+que nunca dispara. Não é defeito visível: ele apenas cai no motor de sempre, que é o
+comportamento antigo. Fica registrado para a frente que é dona do arquivo.
+
+> **Reconferido de propósito**, porque o achado ia fazer outra pessoa **apagar código** — e se eu
+> estivesse errado, ela removeria um caminho que funciona. Agora está provado, não inferido:
+>
+> ```
+> GET /rest/v1/cotacoes?select=ean  ->  HTTP 400
+> {"code":"42703","message":"column cotacoes.ean does not exist"}
+> ```
+>
+> É o banco dizendo, não eu deduzindo de uma lista de colunas.
+
+**Isso descarta uma das saídas possíveis.** "Ligar o filtro na coluna certa" **não é possível**:
+varri as 28 colunas numa amostra de 1.000 linhas e **nenhuma** tem campo com 13 dígitos. Não há
+equivalente para apontar. E o candidato óbvio, `codigo`, está **vazio em 586 de 1.000** linhas
+(o resto tem de 2 a 7 dígitos) — ele também não serve de chave.
+
+Sobra: **remover o ramo morto com o porquê escrito**, ou a decisão de negócio abaixo.
+
+### A decisão de negócio que isso levanta — e ela vale dinheiro
+
+**"Deveria existir EAN no nosso cadastro?"**
+
+O lado da CMED tem `registro` em **100%** e `ean1` em **99,996%**. O casamento exato está
+disponível; **nós é que não temos a chave.** Capturar EAN/registro no cadastro do estoque
+transformaria o casamento de *"substância+dose com grau de confiança"* em **exato** — e o teto
+legal deixaria de depender de um palpite sobre a primeira palavra do nome do produto.
+
+Custo: coluna nova (aditiva) e mudança no fluxo de cadastro. Já estava anotado como pendência
+desde 05/08. **Não é decisão minha nem da outra frente.**
