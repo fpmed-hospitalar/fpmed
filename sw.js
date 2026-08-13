@@ -22,7 +22,7 @@
    >>> POR QUE NÃO DÁ PRA REAPROVEITAR O -41: quem já instalou a casca no deploy dele não
        refetcharia os meus arquivos — o service worker só troca quando a VERSÃO muda. O usuário
        ficaria com a Encontrar de ontem e sem sintoma nenhum, que é a lição S13. */
-const VERSAO = 'limedtec-fpmed-2026-08-13-42';
+const VERSAO = 'limedtec-fpmed-2026-08-13-43';
 const CACHE = 'limedtec-shell-' + VERSAO;
 
 // A CASCA DA FPMED. Lista MONTADA A MAO conferindo `git ls-files` (= o que o Pages serve),

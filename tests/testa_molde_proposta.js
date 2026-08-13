@@ -1,5 +1,5 @@
 // SUITE testa_molde_proposta - a Proposta (fpmed_giovana.html) entrando no design system.
-// Item 8b, fatia 1: a paleta.
+// Item 8b, fatias 1 (a paleta) e 2 (a moldura).
 //
 // == POR QUE O CORACAO DESTA SUITE E UMA MEDICAO, E NAO UMA COMPARACAO DE TEXTO ==========
 // Esta e a tela em que o PRECO E DECIDIDO e a proposta sai para o hospital. Antes desta
@@ -36,7 +36,7 @@ const CSS1 = G.replace(/\s*\n\s*/g, '');
 
 let p = 0, f = 0, n = 1;
 const ok = (t, c, e) => { if (c) p++; else { f++; console.log('  FALHA ' + t + (e !== undefined ? '  [' + JSON.stringify(e) + ']' : '')); } };
-console.log('SUITE testa_molde_proposta - a Proposta no design system (item 8b, fatia 1)\n');
+console.log('SUITE testa_molde_proposta - a Proposta no design system (item 8b, fatias 1 e 2)\n');
 
 // ── 0. a regua: token -> valor, e a formula da WCAG ──────────────────────────
 const tokenDoTema = nome => {
@@ -228,6 +228,122 @@ ok(n + '. o selo do teto continua sumindo na impressao',
   /@media print\{ \.teto-badge\{display:none !important\} \}/.test(G)); n++;
 ok(n + '. e o selo "acima" usa o par fechado do tema (tinta 700 sobre fundo 50)',
   /\.teto-badge\.acima\{background:var\(--vermelho-50\);color:var\(--vermelho-700\)/.test(CSS1)); n++;
+
+// ══════════════════════════════════════════════════════════════════════════════
+// FATIA 2 — A MOLDURA
+// ══════════════════════════════════════════════════════════════════════════════
+const LIMPO = G.replace(/<!--[\s\S]*?-->/g, '').replace(/\/\*[\s\S]*?\*\//g, '');
+const NEG = R('fpmed_negocios.html').replace(/\s*\n\s*/g, '');
+const ENC = R('fpmed_licitacoes.html').replace(/\s*\n\s*/g, '');
+const MENU = R('limedtec-menu.js');
+
+// ── 8. as duas faixas velhas morreram, e o que elas carregavam sobreviveu ────
+ok(n + '. a topfaixa e a top-bar nao existem mais (nem no CSS, nem na marcacao)',
+  !/class="topfaixa"|class="top-bar"/.test(LIMPO)
+  && !/^\.topfaixa\{/m.test(CSS) && !/^\.top-bar\{/m.test(CSS)); n++;
+ok(n + '. *** A PORTA DE SAIDA CONTINUA: a trilha leva ao sistema comercial ***',
+  /<nav class="trilha"[\s\S]{0,400}?href="fpmed_sistema_final\.html"/.test(LIMPO)); n++;
+ok(n + '. ...e a trilha diz FERRAMENTAS, que e o grupo do modulo no menu lateral',
+  /<nav class="trilha"[\s\S]{0,600}?>Ferramentas</.test(LIMPO)
+  && /<nav class="trilha"[\s\S]{0,900}?aria-current="page">Proposta</.test(LIMPO)); n++;
+/* Se alguem renomear o grupo la e esquecer aqui, a trilha passa a apontar pra uma gaveta que
+   nao existe - e trilha errada e pior que trilha nenhuma, porque ela ENSINA o mapa. */
+ok(n + '. ...e esse grupo existe mesmo no menu (a trilha nao inventa taxonomia)',
+  /\{ g: 'Ferramentas' \}/.test(MENU)
+  && /id: 'proposta'[\s\S]{0,120}?fpmed_giovana\.html/.test(MENU)); n++;
+ok(n + '. o menu lateral e carregado (sem ele a tela vira beco)',
+  /<script src="limedtec-menu\.js"><\/script>/.test(LIMPO)
+  && /<div data-limedtec-menu><\/div>/.test(LIMPO)); n++;
+ok(n + '. o gancho do PWA vive na FAIXA INTERNA, na regua do conteudo',
+  /<div class="faixa-int" data-limedtec-instalar>/.test(LIMPO)); n++;
+
+// ── 9. a moldura e A MESMA das outras duas, e nao uma parecida ───────────────
+/* Tres telas do mesmo sistema com tres vocabularios produzem o desalinhamento que o olho
+   percebe e ninguem consegue nomear. O assert cobra as TRES pontas de cada classe: a regra
+   existe AQUI, existe LA (nas duas), e a marcacao usa o nome. */
+for (const cls of ['topo', 'trilha', 'pagina-topo', 'faixa-int']) {
+  const aqui = new RegExp('\\.' + cls + '\\{').test(CSS1);
+  const laNeg = new RegExp('\\.' + cls + '\\{').test(NEG);
+  const laEnc = new RegExp('\\.' + cls + '\\{').test(ENC);
+  const usada = new RegExp('class="' + cls + '"').test(LIMPO);
+  ok(n + '. a classe .' + cls + ' e a MESMA das tres telas (vocabulario unico)',
+    aqui && laNeg && laEnc && usada, { aqui, negocios: laNeg, encontrar: laEnc, usada }); n++;
+}
+ok(n + '. e a altura do header e a mesma das tres (52px de min-height)',
+  /\.topo \.faixa-int\{[^}]*min-height:52px/.test(CSS1)
+  && /\.topo \.faixa-int\{[^}]*min-height:52px/.test(NEG)); n++;
+ok(n + '. o header e sticky',
+  /\.topo\{[^}]*position:sticky/.test(CSS1)); n++;
+
+// ── 10. *** A TRILHA NAO PODE SER ESPREMIDA A ZERO *** ──────────────────────
+/* MEDIDO NO NAVEGADOR NESTA FATIA: com `flex-wrap:nowrap` (que e o que as outras duas telas
+   usam acima de 900px) a trilha chega a LARGURA ZERO aqui. La sobra espaco - a regua e de
+   1420px e a faixa carrega so a trilha e o sino. AQUI a regua e de 800px (e a coluna do
+   formulario) e a faixa carrega tambem o n do orcamento, dois botoes e o selo do banco; com
+   `nowrap`, quem e espremido primeiro e a trilha, porque e a unica peca com `min-width:0`.
+   >>> A PORTA DE SAIDA DESAPARECENDO E O "BECO" QUE A ORDEM DO DONO PROIBE. Entao a faixa
+       quebra em duas linhas quando falta espaco, e a trilha nao encolhe nunca. */
+ok(n + '. *** a trilha nao encolhe: a porta de saida nao pode ser espremida a zero ***',
+  /\.trilha\{flex:0 0 auto\}/.test(CSS1)); n++;
+ok(n + '. ...e o header desta tela NAO forca nowrap (foi por ele que a trilha zerou)',
+  !/@media\(min-width:901px\)\{\.topo \.faixa-int\{[^}]*flex-wrap:nowrap/.test(CSS1)); n++;
+ok(n + '. o arquivo registra por que esta moldura diverge das outras duas aqui',
+  /AQUI NÃO SOBRA/.test(G.replace(/\s+/g, ' '))); n++;
+
+// ── 11. a reserva do gm-auth veio COM a funcao que a preenche ────────────────
+/* OUTRO DEFEITO QUE SO A MEDICAO NO NAVEGADOR PEGOU: eu portei o CSS da reserva e esqueci a
+   funcao que a calcula. O `var(--reserva-auth, 0px)` caia sempre no valor de emergencia, e a
+   regra PARECIA de pe enquanto nao reservava nada. */
+ok(n + '. *** a reserva do gm-auth tem quem a preencha (CSS sem a funcao nao reserva nada) ***',
+  /padding-right:calc\(var\(--esp-4\) \+ var\(--reserva-auth, 0px\)\)/.test(CSS1)
+  && /function reservaAuth\(\)\{/.test(LIMPO)
+  && /setProperty\('--reserva-auth'/.test(LIMPO)); n++;
+ok(n + '. e a largura dela e MEDIDA da etiqueta, nao chutada em px',
+  /getElementById\('gm-auth-bar'\)[\s\S]{0,200}?getBoundingClientRect\(\)\.width/.test(LIMPO)); n++;
+ok(n + '. ...e ela e recalculada quando a janela muda de tamanho',
+  /addEventListener\('resize', reservaAuth\)/.test(LIMPO)); n++;
+
+// ── 12. *** A REGRA MAIS PERIGOSA: A IMPRESSAO *** ──────────────────────────
+/* E por esta impressao que sai o PDF da proposta que vai pro hospital. A lista do @media print
+   e uma lista branca as avessas: ela NOMEIA o que some. Toda peca de moldura que entra na tela
+   tem de entrar ali junto, no MESMO commit - senao aparece no documento. */
+/* *** MAIS UM INSTRUMENTO TORTO, PEGO NA PRIMEIRA RODADA. *** A primeira versao era
+   `@media print\{([\s\S]*?)\n\}` - e ela casava com o PRIMEIRO `@media print` do arquivo (o
+   de uma linha so, do selo do teto) e corria ate a proxima quebra com chave, engolindo umas
+   duzentas linhas de CSS. Os asserts passavam POR ACIDENTE, porque o texto engolido continha o
+   bloco certo mais adiante.
+   >>> Le-se com CHAVES BALANCEADAS, e escolhe-se o bloco pelo que ele CONTEM (o `.print-doc`),
+       e nao pela ordem em que aparece. Assert que passa por acidente e pior que assert que
+       falta: ele compra confianca sem entregar nada. */
+const blocoBalanceado = (txt, marcador) => {
+  let i = -1;
+  while ((i = txt.indexOf(marcador, i + 1)) !== -1) {
+    let j = txt.indexOf('{', i), nivel = 0, k = j;
+    for (; k < txt.length; k++) {
+      if (txt[k] === '{') nivel++;
+      else if (txt[k] === '}') { nivel--; if (!nivel) break; }
+    }
+    const corpo = txt.slice(j + 1, k);
+    if (corpo.includes('.print-doc')) return corpo;
+  }
+  return '';
+};
+const PRINT = blocoBalanceado(CSS, '@media print');
+ok(n + '. *** a impressao esconde o header novo ***', /\.topo/.test(PRINT)); n++;
+/* O menu e `position:fixed` e NAO TEM @media print proprio (conferido no arquivo, nao suposto):
+   sem esta linha a barra lateral inteira sairia impressa em cima da proposta. */
+ok(n + '. *** e esconde o MENU, que nao se esconde sozinho ***',
+  /#limedtec-menu/.test(PRINT) && /\[data-limedtec-menu\]/.test(PRINT)); n++;
+ok(n + '. ...e a premissa e verdadeira: o limedtec-menu.js nao tem @media print nenhum',
+  !/@media\s+print/.test(MENU)); n++;
+/* A margem que abre espaco pro menu na tela empurraria o documento inteiro pra direita no papel. */
+ok(n + '. e a margem do menu e zerada no papel',
+  /margin-left:0\s*!important/.test(PRINT)); n++;
+ok(n + '. o documento continua sendo o unico a aparecer na impressao',
+  /\.print-doc\{display:block!important;?\}/.test(PRINT.replace(/\s/g, ''))
+  && /\.main-wrap\{display:none!important;?\}/.test(PRINT.replace(/\s/g, ''))); n++;
+ok(n + '. e o arquivo registra por que o menu precisou entrar na lista',
+  /O MENU NÃO SE ESCONDE SOZINHO/.test(G.replace(/\s+/g, ' '))); n++;
 
 console.log('\nRESULTADO: ' + p + ' ok, ' + f + ' falha(s)');
 if (f) process.exit(1);

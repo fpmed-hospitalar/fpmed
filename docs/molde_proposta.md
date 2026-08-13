@@ -173,11 +173,128 @@ publicação — anotado para não se perder.
 
 ---
 
+---
+
+## FATIA 2 — A MOLDURA
+
+`fpmed_giovana.html`. `testa_molde_proposta`: **22 → 46 asserts**, **mutação 27 de 27 barradas**.
+
+Duas faixas de altura cheia morreram — a `.topfaixa` azul (← Sistema · telefone · slogan) e a
+`.top-bar` branca (logo · nº do orçamento · status do banco) — e no lugar entrou **uma linha de
+52px, sticky**, com as **mesmas classes** da Encontrar e do Negócios (`.topo`, `.trilha`,
+`.pagina-topo`, `.faixa-int`). Três telas do mesmo sistema com três vocabulários é como se produz
+o "quase igual" que o olho percebe e ninguém consegue nomear. Há assert cobrando as **quatro**
+pontas de cada classe: a regra existe aqui, existe nas outras **duas**, e a marcação usa o nome.
+
+### Onde cada peça foi parar
+
+| a peça | virou |
+|---|---|
+| "← Sistema" | a **raiz da trilha** — ordem expressa: tela sem porta de saída é beco |
+| telefone e slogan | **saíram** — vivem no rodapé do menu, em toda tela |
+| o logo | **saiu** — o menu lateral já o carrega; dois logotipos na mesma dobra é desalinhamento |
+| nº do orçamento + Abrir/Salvar | **ficou no header** — é o que responde *"em qual proposta eu estou"* |
+| status do banco | virou **selo**, ao lado deles |
+| "Proposta Comercial · vendedora" | virou o **H1 + subtítulo**, no começo do conteúdo |
+
+A trilha diz **`Sistema › Ferramentas › Proposta`** — "Ferramentas" é o grupo em que este módulo
+vive no menu lateral. Há assert conferindo o grupo **no `limedtec-menu.js`**: trilha que discorda
+do menu vira uma segunda taxonomia, e é ela que ensina onde as coisas ficam.
+
+> **A função que o molde não previu ficou, vestindo a roupa.** A Encontrar não abre documento
+> nenhum, então o molde não tem lugar para "qual orçamento está aberto". A peça continua no
+> header — que é onde ela pertence — só que agora com os controles do sistema.
+
+### A régua é a do conteúdo (800px), e não a de 1420 das outras duas
+
+Aqui o conteúdo é um **formulário**, e a coluna estreita é decisão antiga e certa. Header mais
+largo que o conteúdo deixaria a trilha fora do prumo do H1 — o "quase alinhado" que D3 chama de
+pior que o desalinhado. **Medido: trilha e H1 na mesma régua (490 = 490) em todas as larguras.**
+
+---
+
+### *** O DEFEITO QUE A MEDIÇÃO PEGOU: a trilha era espremida a zero ***
+
+As outras duas telas usam `flex-wrap:nowrap` no header acima de 900px. Copiei junto — e **medi**:
+
+```
+com nowrap, régua de 800px  ->  trilha = 0px de largura
+```
+
+Lá sobra espaço: a régua é de 1420px e a faixa carrega só a trilha e o sino. **Aqui não sobra** —
+a faixa carrega também o nº do orçamento, dois botões e o selo do banco, e com `nowrap` quem é
+espremido primeiro é a trilha, porque é a única peça com `min-width:0`.
+
+> **A porta de saída desaparecendo é o "beco" que a ordem do dono proíbe** — o mesmo defeito que a
+> Encontrar teve em 390px, por outro caminho. Então esta moldura **diverge de propósito**: a faixa
+> quebra em duas linhas quando falta espaço, e a trilha ganha `flex:0 0 auto`. Há assert para as
+> duas coisas, e um terceiro barrando o retorno do `nowrap`.
+
+Medido depois, em quatro réguas (342 · 640 · 768 · 800): **trilha viva (232px) em todas**, sempre
+no prumo do H1, zero estouro, zero rolagem horizontal.
+
+### *** E O OUTRO: eu portei metade da reserva do gm-auth ***
+
+O CSS da reserva veio; **a função que a preenche, não**. O `var(--reserva-auth, 0px)` caía sempre
+no valor de emergência, e a regra **parecia de pé enquanto não reservava nada**.
+
+Só apareceu no navegador. Com a função no lugar, medido:
+
+| | valor |
+|---|---|
+| `--reserva-auth` com a etiqueta presente | **321px** (309 medidos + 12 de folga) |
+| `padding-right` da faixa | 337px → volta a 16px quando a etiqueta some |
+| a etiqueta ainda cobre o Salvar? | **não** |
+| **a borda esquerda se mexeu?** | **não — trilha 490 = H1 490** |
+
+> A reserva entra como **padding de dentro** da faixa justamente para a borda **esquerda** não se
+> mexer: é ela que tem de continuar no prumo do H1. Padding no `.topo` (que é largura total)
+> deslocaria a coluna centrada e quebraria o alinhamento que a fatia inteira existe para garantir.
+
+### A altura do header, medida
+
+| | altura |
+|---|---|
+| sem o botão "Instalar aplicativo" | **53px** — a altura do molde |
+| com ele (soma das peças = 861 > 800) | **65px**, quebrando em duas linhas |
+
+Isso é degradação graciosa e não defeito: o botão só existe em navegador onde o app é instalável,
+e quando ele entra o header cresce 12px em vez de comer alguma peça.
+
+---
+
+### *** A REGRA MAIS PERIGOSA DESTA FATIA É POR OMISSÃO: a impressão ***
+
+**É por esta impressão que sai o PDF da proposta que vai para o hospital.** O `@media print` é uma
+lista branca às avessas: ela **nomeia o que some**. Toda peça de moldura que entra na tela tem de
+entrar ali junto, no mesmo commit.
+
+> **E o menu não se esconde sozinho.** Conferi no arquivo antes de escrever, não supus: o
+> `limedtec-menu.js` não tem `@media print` nenhum — só o de 900px. Ele é `position:fixed`, então
+> **sem essa linha a barra lateral inteira sairia impressa em cima da proposta**. Há assert para a
+> linha **e** para a premissa (que o menu de fato não tem regra própria) — se um dia ele ganhar
+> uma, o assert avisa que a responsabilidade mudou de lugar.
+
+E `body{margin-left:0!important}` pelo mesmo motivo: a margem que abre espaço para o menu na tela
+empurraria o documento inteiro para a direita no papel.
+
+### Duas coisas que a minha própria suíte errou, e as duas eram instrumento torto
+
+| o assert | por que passava/reprovava errado |
+|---|---|
+| "o tema vem antes do `<style>`" | media a posição do primeiro `<style>` do arquivo — e o primeiro estava **dentro do comentário que explica essa mesma regra** |
+| o bloco `@media print` | a regex casava com o **primeiro** `@media print` (o de uma linha, do selo do teto) e corria até a chave errada, **engolindo ~200 linhas**. Os asserts passavam **por acidente**, porque o texto engolido continha o bloco certo mais adiante |
+
+> Assert que passa por acidente é pior que assert que falta: ele compra confiança sem entregar
+> nada. O segundo passou a ler com **chaves balanceadas**, escolhendo o bloco pelo que ele
+> **contém** (`.print-doc`) e não pela ordem em que aparece.
+
+---
+
 ## O QUE VEM NAS PRÓXIMAS FATIAS
 
 | fatia | o que | por que nesta ordem |
 |---|---|---|
-| 2 | **A moldura** — header sticky com trilha, matar a `.topfaixa`, entrar o menu lateral | é o que faz a tela deixar de parecer outro sistema |
 | 3 | **O sprite único** (`fpmed_icones.js`) — 155 emoji, 32 distintos | D11: emoji é fonte, não desenho |
 | 4 | **Cartões e listas** com a anatomia do molde + as 11 cores dos `style=` inline | depende da moldura estar de pé |
 

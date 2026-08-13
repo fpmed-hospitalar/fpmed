@@ -14,6 +14,9 @@
 <script src="limedtec-tema.js"></script>
 <script src="limedtec-licenca.js"></script>
 <script src="gm-auth.js?v=sessao-06ago"></script>
+<!-- A NAVEGAÇÃO DO MÓDULO. Sem ele esta tela vira beco: a `.topfaixa` que tinha o "← Sistema"
+     morreu nesta fatia, e quem carrega o caminho de volta agora é a trilha + o menu lateral. -->
+<script src="limedtec-menu.js"></script>
 <!-- O MESMO motor do Conferidor: "meu preço x teto legal da CMED". Aqui ele entra no momento em
      que o preço é DECIDIDO — conferir depois de mandar a proposta é conferir tarde. -->
 <script src="fpmed_teto_cmed.js"></script>
@@ -49,7 +52,7 @@
 
    ── E O MAPA É POR **OFÍCIO**, NÃO POR NOME. É a decisão desta fatia. ─────────────────────────
    `--verde` (que apesar do nome é o AZUL da marca) é usado nos TRÊS ofícios que a rampa do tema
-   separa: fundo que carrega texto branco (`.btn-primary`, `.topfaixa`, `.toast.success`), borda e
+   separa: fundo que carrega texto branco (`.btn-primary`, `.toast.success`, o Salvar), borda e
    acento (foco do campo, spinner, tracejado) e TEXTO azul (aba ativa, link, status). Um apelido
    só não pode virar três tokens — então ele vira o degrau que passa em AA nos três:
    **`--azul-600`** (branco por cima 5,04:1 · ele sobre branco 5,04:1 · e continua azul de marca
@@ -94,20 +97,88 @@
   --sombra:       var(--sombra-1);
 }
 *{box-sizing:border-box;margin:0;padding:0;}
-body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--texto);min-height:100vh;}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--texto);min-height:100vh;
+  /* o menu lateral é `position:fixed` e a largura dele mora no token; sem esta margem o conteúdo
+     nasce por baixo dele. Em ≤900px o menu vira faixa no topo e a margem sai. Igual às outras. */
+  margin-left:var(--menu-largura);}
+@media(max-width:900px){ body{ margin-left:0 } }
 
-/* HEADER */
-.topfaixa{background:var(--verde);color:var(--branco);font-size:12px;padding:6px 24px;display:flex;align-items:center;justify-content:space-between;}
-.topfaixa b{font-weight:700;}
-.top-bar{background:var(--branco);color:var(--texto);padding:12px 24px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--borda);box-shadow:var(--sombra-1);}
-.top-bar-logo{display:flex;align-items:center;}
-.top-bar-info{font-size:11px;color:var(--muted);}
-.db-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--cinza-300);margin-right:5px;vertical-align:middle;}
+/* ══ A MOLDURA DO MOLDE CHEGOU NA PROPOSTA (13/08, item 8b · fatia 2) ════════════════════════
+   As classes têm os MESMOS nomes da Encontrar e do Negócios (`.topo`, `.trilha`, `.pagina-topo`,
+   `.faixa-int`) de propósito: três telas do mesmo sistema com três vocabulários é como se produz
+   o "quase igual" que o olho percebe e ninguém consegue nomear.
+
+   ── O QUE MORREU, E ONDE CADA COISA FOI PARAR ─────────────────────────────────────────────────
+   Duas faixas de altura cheia sumiram — a `.topfaixa` azul (← Sistema · telefone · slogan) e a
+   `.top-bar` branca (logo · nº do orçamento · status do banco). No lugar, UMA linha de 52px:
+     · o "← Sistema" virou a RAIZ DA TRILHA (ordem expressa: tela sem porta de saída é beco);
+     · o telefone e o slogan SAÍRAM — eles vivem no rodapé do menu, em toda tela;
+     · o LOGO saiu: o menu lateral já o carrega, e dois logotipos na mesma dobra não é reforço de
+       marca, é desalinhamento;
+     · o nº do orçamento com Abrir/Salvar FICOU no header — é a identidade do que está aberto, e
+       é a única coisa da tela que responde "em qual proposta eu estou";
+     · o status do banco virou SELO, ao lado deles.
+   >>> A TRILHA DIZ `Sistema › Ferramentas › Proposta` — "Ferramentas" é o grupo em que este
+       módulo vive no MENU LATERAL. Trilha que discorda do menu vira uma segunda taxonomia, e é
+       ela que ensina onde as coisas ficam. Há assert conferindo o grupo NO limedtec-menu.js.
+   >>> A RÉGUA DO HEADER É A DO CONTEÚDO (800px), e não a de 1420 das outras duas telas: aqui o
+       conteúdo é um FORMULÁRIO, e a coluna estreita é decisão antiga e certa. Header mais largo
+       que o conteúdo deixaria a trilha fora do prumo do H1 — o "quase alinhado" que D3 chama de
+       pior que o desalinhado. */
+.faixa-int{max-width:800px;margin:0 auto;padding:0 var(--esp-4);display:flex;
+  align-items:center;gap:var(--esp-3);width:100%}
+.topo{position:sticky;top:0;z-index:30;background:var(--branco);
+  border-bottom:1px solid var(--cinza-200)}
+.topo .faixa-int{min-height:52px;gap:var(--esp-3);flex-wrap:wrap}
+/* A reserva da etiqueta do gm-auth, medida — mesmo defeito das outras telas: a etiqueta é fixa,
+   tem z-index máximo e cobre o canto superior direito. Ela entra como padding DE DENTRO da faixa
+   justamente para a BORDA ESQUERDA não se mexer: é ela que tem de continuar no prumo do H1.
+   Só no desktop: em 390px a reserva comeria a faixa e a trilha encolheria para zero. */
+@media(min-width:901px){
+  .topo .faixa-int{padding-right:calc(var(--esp-4) + var(--reserva-auth, 0px))}
+}
+/* ══ E AQUI ESTA MOLDURA DIVERGE DAS OUTRAS DUAS, POR MEDIÇÃO ════════════════════════════════
+   No Negócios e na Encontrar o header acima de 900px é `flex-wrap:nowrap` — lá ele tem 1420px de
+   régua e carrega só a trilha e o sino, então sobra espaço e o `nowrap` evita uma quebra à toa.
+   >>> AQUI NÃO SOBRA. A régua é de 800px (é a coluna do formulário) e a faixa carrega a trilha,
+       o nº do orçamento com dois botões e o selo do banco. Com `nowrap`, quem é espremido
+       primeiro é a trilha, porque ela é a única peça com `min-width:0` — MEDIDO: ela chega a
+       **largura zero**, e a porta de saída desaparece.
+   >>> Isso é o "beco" que a ordem do dono proíbe, e foi o MESMO defeito que a Encontrar teve em
+       390px por outro caminho. Então aqui a faixa quebra em duas linhas quando falta espaço: o
+       header cresce um pouco, e o caminho de volta não some nunca. Há assert. */
+.trilha{flex:0 0 auto}
+.trilha{display:flex;align-items:center;gap:var(--esp-2);font-size:var(--txt-1);
+  color:var(--cinza-600);min-width:0}
+.trilha a{color:var(--cinza-600);text-decoration:none;border-radius:var(--raio-item);
+  padding:var(--esp-1);transition:background-color var(--transicao),color var(--transicao)}
+.trilha a:hover{background:var(--cinza-100);color:var(--cinza-800)}
+.trilha a:focus-visible{outline:none;box-shadow:var(--foco)}
+.trilha b{color:var(--cinza-800);font-weight:var(--peso-semi)}
+.trilha svg{width:12px;height:12px;flex:0 0 auto;stroke:var(--cinza-400);fill:none;
+  stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+
+/* O CABEÇALHO DA PÁGINA. O H1 saiu da faixa branca e virou o começo do conteúdo, com subtítulo —
+   e é aqui que "Proposta Comercial · <vendedora>" foi parar: ele era uma legenda espremida ao
+   lado do status do banco, e é o NOME DA TELA mais quem está montando a proposta. */
+.pagina-topo{padding:var(--esp-6) 0 0}
+.pagina-topo h1{font-size:var(--txt-4);font-weight:var(--peso-semi);line-height:var(--altura-titulo);
+  letter-spacing:-.02em;color:var(--cinza-800);margin:0}
+.pagina-topo .sub{font-size:var(--txt-1);color:var(--cinza-600);margin:var(--esp-1) 0 0;
+  max-width:var(--largura-leitura)}
+
+/* O SELO DO BANCO — ele já existia como bolinha + frase, e continua sendo o MESMO estado. O que
+   mudou é que ele deixou de disputar espaço com a legenda da tela e virou uma peça só. */
+.selo-banco{display:flex;align-items:center;gap:var(--esp-2);font-size:var(--txt-1);
+  color:var(--cinza-600);white-space:nowrap}
+.db-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--cinza-300);
+  flex:0 0 auto}
 .db-dot.online{background:var(--fverde);animation:pulse 2s infinite;}
+@media (prefers-reduced-motion: reduce){ .db-dot.online{animation:none} }
 @keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.5;}}
 
 /* MAIN LAYOUT */
-.main-wrap{max-width:800px;margin:0 auto;padding:28px 16px;}
+.main-wrap{max-width:800px;margin:0 auto;padding:var(--esp-6) var(--esp-4) var(--esp-16);}
 .card{background:var(--card);border-radius:16px;padding:24px;border:1px solid var(--borda);margin-bottom:20px;box-shadow:var(--sombra);}
 .card h3{font-family:'Montserrat',sans-serif;font-size:15px;font-weight:700;margin-bottom:16px;color:var(--navy);}
 
@@ -202,12 +273,21 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--texto);min-
 .divider{height:1px;background:var(--borda);margin:14px 0;}
 
 /* PRINT */
+/* ══ A REGRA MAIS PERIGOSA DESTA FATIA, E ELA É POR OMISSÃO ══════════════════════════════════
+   É por esta impressão que sai o PDF da proposta que vai para o hospital. A lista de baixo era
+   uma LISTA BRANCA às avessas: ela nomeia o que some. Toda peça de moldura que entra na tela tem
+   de entrar aqui junto, no MESMO commit — senão ela aparece no documento.
+   >>> E O MENU NÃO SE ESCONDE SOZINHO: o `limedtec-menu.js` não tem `@media print` nenhum (só o
+       de 900px). Ele é `position:fixed`, então sem esta linha a barra lateral inteira sairia
+       impressa em cima da proposta. Conferi no arquivo antes de escrever, não supus.
+   >>> `body{margin-left:0}` pelo mesmo motivo: a margem que abre espaço para o menu na tela
+       empurraria o documento inteiro para a direita no papel. */
 .print-only{display:none;}
 @media print{
   *{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
-  .topfaixa,.top-bar,.no-print{display:none!important;}
+  .topo,#limedtec-menu,[data-limedtec-menu],.no-print{display:none!important;}
   .main-wrap{display:none!important;}
-  body{background:white;margin:0;padding:0;}
+  body{background:white;margin:0;padding:0;margin-left:0!important;}
   .print-only{display:block!important;}
   .print-doc{display:block!important;}
 }
@@ -239,30 +319,54 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--texto);min-
 </head>
 <body>
 
-<div class="topfaixa">
-  <div style="display:flex;align-items:center;gap:14px"><a href="fpmed_sistema_final.html" style="color:var(--branco);text-decoration:none;font-weight:700;background:rgba(255,255,255,.18);border-radius:14px;padding:2px 10px">← Sistema</a><span>📞 <b>(62) 3290-4241</b> &nbsp;·&nbsp; Compromisso com qualidade!</span></div>
-  <div>FPMED HOSPITALAR</div>
-</div>
+<div data-limedtec-menu></div>
 
-<div class="top-bar">
-  <div class="top-bar-logo"><img src="logo_fpmed.png" alt="FPMED Hospitalar" style="height:34px;width:auto;display:block"></div>
-  <div style="display:flex;align-items:center;gap:10px;">
-    <div style="display:flex;gap:6px;">
-      <input type="text" id="busca-orc-num" placeholder="Nº orçamento..." 
-        style="padding:6px 10px;border:1px solid var(--borda);border-radius:8px;font-size:13px;background:#fff;color:var(--texto);width:140px;outline:none;"
+<!-- ══ O HEADER STICKY (13/08, item 8b · fatia 2) — a MESMA moldura das outras duas ═══════════
+     As duas faixas de altura cheia morreram. O que cada peça delas virou está escrito no bloco
+     de CSS `.topo`/`.faixa-int`; aqui fica só a marcação.
+     >>> O `data-limedtec-instalar` vai na FAIXA INTERNA, e não no `.topo`: o limedtec-pwa.js
+         pendura o botão como último filho do elemento marcado, e no `.topo` (largura total) ele
+         cairia fora da régua do conteúdo. Foi um defeito medido na Encontrar e no Negócios. -->
+<div class="topo">
+  <div class="faixa-int" data-limedtec-instalar>
+    <nav class="trilha" aria-label="Você está em">
+      <a href="fpmed_sistema_final.html">Sistema</a>
+      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m9 5 7 7-7 7"/></svg>
+      <span>Ferramentas</span>
+      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m9 5 7 7-7 7"/></svg>
+      <b aria-current="page">Proposta</b>
+    </nav>
+    <span style="flex:1"></span>
+    <!-- O Nº DO ORÇAMENTO FICOU NO HEADER, e é a decisão de manter a FUNÇÃO vestindo a roupa:
+         ele responde "em qual proposta eu estou", que é o que um header de tela precisa dizer.
+         O molde não previu esta peça porque a Encontrar não abre documento nenhum. -->
+    <div style="display:flex;gap:var(--esp-2)">
+      <input type="text" id="busca-orc-num" placeholder="Nº orçamento…"
+        style="padding:var(--esp-1) var(--esp-3);border:1px solid var(--borda);border-radius:var(--raio-item);font-size:var(--txt-1);background:var(--branco);color:var(--texto);width:120px;outline:none"
         onkeydown="if(event.key==='Enter') abrirOrcamento()">
-      <button onclick="abrirOrcamento()" style="padding:6px 12px;background:#EAF6FC;color:var(--verde);border:1px solid var(--verde);border-radius:8px;font-size:12px;cursor:pointer;font-weight:600;">📂 Abrir</button>
-      <button onclick="salvarOrcamento()" id="btn-salvar-orc" style="padding:6px 12px;background:var(--verde);color:var(--branco);border:none;border-radius:8px;font-size:12px;cursor:pointer;font-weight:700;">💾 Salvar</button>
+      <button class="btn btn-outline btn-sm" onclick="abrirOrcamento()">Abrir</button>
+      <button class="btn btn-primary btn-sm" id="btn-salvar-orc" onclick="salvarOrcamento()"
+        style="width:auto;padding:var(--esp-1) var(--esp-3);font-size:var(--txt-1)">Salvar</button>
     </div>
-    <div class="top-bar-info">
+    <!-- O SELO DO BANCO. Ele já dizia a verdade (a bolinha só acende quando conecta); o que
+         mudou é que deixou de disputar a linha com a legenda da tela. Mesmo `db-status`. -->
+    <div class="selo-banco">
       <span class="db-dot" id="db-dot"></span>
-      <span id="db-status">Conectando ao banco...</span>
-      &nbsp;·&nbsp; Proposta Comercial · <span id="top-vendedora"></span>
+      <span id="db-status">Conectando ao banco…</span>
     </div>
   </div>
 </div>
 
 <div class="main-wrap">
+
+  <!-- O H1 desceu para o conteúdo, com subtítulo — e é aqui que "Proposta Comercial · vendedora"
+       foi parar: era uma legenda espremida ao lado do status do banco, e é o NOME DA TELA mais
+       quem está montando a proposta. -->
+  <div class="pagina-topo">
+    <h1>Proposta Comercial</h1>
+    <p class="sub">Monte a proposta item a item — o preço é conferido contra o teto da CMED no
+      instante em que você o decide. <span id="top-vendedora"></span></p>
+  </div>
 
   <!-- ITENS QUE CHEGARAM DO EDITAL (ponte Licitações → Propostas, 10/08) ────────────────────
        Não importa sozinho: quem abriu esta tela pode estar no meio de OUTRA proposta, e trocar
@@ -658,6 +762,23 @@ function gmAplicaRestrito(){ window.GM_RESTRITO = ehRestrito();
 }
 document.addEventListener('gm-auth-ready', gmAplicaRestrito);
 document.addEventListener('DOMContentLoaded', gmAplicaRestrito);
+
+/* ══ A RESERVA DA ETIQUETA DO gm-auth (13/08, item 8b · fatia 2) ═════════════════════════════
+   A etiqueta do `gm-auth` é `position:fixed` no canto superior direito, com z-index máximo — ela
+   cobre a ponta direita do header sticky, que é justamente onde ficam o Salvar e o selo do banco.
+   >>> A LARGURA É MEDIDA, NÃO CHUTADA: ela muda com o tamanho do e-mail de quem está logado. Um
+       valor fixo em px estaria certo hoje e errado no próximo endereço — e erraria em silêncio.
+   >>> PORTAR O CSS SEM ESTA FUNÇÃO SERIA PIOR QUE NÃO PORTAR: o `var(--reserva-auth, 0px)` cairia
+       sempre no valor de emergência, e a regra pareceria de pé enquanto não reservava nada. Foi
+       o que a medição no navegador pegou nesta fatia — o CSS estava lá, o preenchimento não. */
+function reservaAuth(){
+  const b = document.getElementById('gm-auth-bar');
+  const l = b && !b.hidden ? Math.ceil(b.getBoundingClientRect().width) : 0;
+  document.documentElement.style.setProperty('--reserva-auth', l ? (l + 12) + 'px' : '0px');
+}
+window.addEventListener('resize', reservaAuth);
+document.addEventListener('gm-auth-ready', reservaAuth);
+document.addEventListener('DOMContentLoaded', reservaAuth);
 
 // ─── ESTADO ──────────────────────────────────────────────────────────────────
 let cotacoes = [], _cotTs = 0;  // _cotTs = timestamp da última carga (cache 60s p/ estoque/preço fresco na busca)
