@@ -96,6 +96,18 @@
   --card:         var(--branco);
   --sombra:       var(--sombra-1);
 }
+/* ══ OS ÍCONES (13/08, item 8b · fatia 3) ═══════════════════════════════════════════════════
+   A regra é a MESMA das outras telas, palavra por palavra — 24×24 de grade, traço 1.8, pontas
+   arredondadas, e `currentColor` para o ícone herdar a cor de quem o contém (assim ele acompanha
+   o estado — aviso fica âmbar, erro fica vermelho — sem uma linha de CSS a mais).
+   >>> E O TAMANHO É EM `em`, NÃO EM px: o ícone cresce com o texto ao lado dele. Ícone que não
+       acompanha a fonte é o que fica pequeno demais no título e grande demais na etiqueta. */
+.ic{width:1em;height:1em;stroke:currentColor;fill:none;stroke-width:1.8;
+  stroke-linecap:round;stroke-linejoin:round;vertical-align:-.14em;flex:0 0 auto}
+.ic-g{width:1.25em;height:1.25em}
+/* O sprite não ocupa espaço nem é lido em voz alta: ele é só o dicionário de desenhos. */
+#ic-sprite{position:absolute;width:0;height:0;overflow:hidden}
+
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--texto);min-height:100vh;
   /* o menu lateral é `position:fixed` e a largura dele mora no token; sem esta margem o conteúdo
@@ -319,6 +331,16 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--texto);min-
 </head>
 <body>
 
+<!-- ══ O SPRITE DE ÍCONES, DA FONTE ÚNICA (13/08, item 8b · fatia 3) ══════════════════════════
+     D11 proíbe EMOJI COMO ÍCONE, e o motivo não é gosto: emoji é FONTE, não desenho. Ele muda de
+     forma em cada sistema, não herda a cor do texto ao lado, não se alinha à grade dos outros e
+     não tem traço em comum com desenho nenhum. Um punhado deles é o que faz a interface parecer
+     montada, e não desenhada — e esta tela tinha 124.
+     >>> O SPRITE NÃO É COPIADO PARA CÁ: é o `fpmed_icones.js`, a fonte única do sistema desde o
+         item 7d. Copiar os símbolos seria criar a terceira cópia do mesmo desenho, que é
+         exatamente a doença que aquele arquivo existe para curar. -->
+<script src="fpmed_icones.js"></script>
+
 <div data-limedtec-menu></div>
 
 <!-- ══ O HEADER STICKY (13/08, item 8b · fatia 2) — a MESMA moldura das outras duas ═══════════
@@ -376,7 +398,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--texto);min-
 
   <!-- CABEÇALHO DA PROPOSTA -->
   <div class="card">
-    <h3>📄 Dados da Proposta</h3>
+    <h3><svg class="ic" aria-hidden="true"><use href="#ic-documento"/></svg> Dados da Proposta</h3>
     <div class="form-row-3">
       <div class="form-group"><label>Nº Orçamento</label><input type="text" id="num-orc" placeholder="Auto (gerado ao salvar)"></div>
       <div class="form-group"><label>Data</label><input type="date" id="data-orc"></div>
@@ -388,7 +410,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--texto);min-
     </div>
     <!-- BUSCA DE CLIENTE CADASTRADO (Fase 1) -->
     <div class="form-group" style="position:relative">
-      <label>🔎 Buscar cliente (nome, CNPJ ou cód. ERP)</label>
+      <label><svg class="ic" aria-hidden="true"><use href="#ic-lupa"/></svg> Buscar cliente (nome, CNPJ ou cód. ERP)</label>
       <input type="text" id="busca-cliente" placeholder="Digite nome, CNPJ ou código ERP do cliente cadastrado..." autocomplete="off"
         oninput="buscarCliente(this.value)" onkeydown="if(event.key==='Enter'){event.preventDefault();buscarCliente(this.value,true);}">
       <div id="resultado-cliente" style="position:absolute;z-index:60;left:0;right:0;background:#fff;border:1px solid var(--borda);border-radius:8px;margin-top:2px;max-height:280px;overflow:auto;display:none"></div>
@@ -417,7 +439,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--texto);min-
     </div>
     <!-- OBSERVAÇÕES DO PDF (porte da Global, 05/08) -->
     <div class="form-group no-print" style="margin-top:2px">
-      <label>📝 Observações do documento</label>
+      <label><svg class="ic" aria-hidden="true"><use href="#ic-lapis"/></svg> Observações do documento</label>
       <div style="font-size:11.5px;color:#8A6D00;background:#FFF8E1;border:1px solid #E6C86A;border-radius:8px;padding:8px 10px;line-height:1.45">
         <span style="font-weight:700">Sai em toda proposta, não dá pra remover:</span>
         <span id="obs-padrao-texto"></span>
@@ -430,21 +452,21 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--texto);min-
 
   <!-- BUSCA DE PRODUTO -->
   <div class="card">
-    <h3>🔍 Buscar e Adicionar Produtos</h3>
+    <h3><svg class="ic" aria-hidden="true"><use href="#ic-lupa"/></svg> Buscar e Adicionar Produtos</h3>
 
     <!-- TABS -->
     <div style="display:flex;gap:0;margin-bottom:14px;border-bottom:1px solid var(--borda)">
-      <button id="tab-busca-btn" onclick="gTab('busca')" style="padding:7px 18px;border:none;background:none;font-family:'Inter',sans-serif;font-size:13px;font-weight:600;color:var(--verde);border-bottom:2px solid var(--verde);margin-bottom:-1px;cursor:pointer">🔍 Busca individual</button>
+      <button id="tab-busca-btn" onclick="gTab('busca')" style="padding:7px 18px;border:none;background:none;font-family:'Inter',sans-serif;font-size:13px;font-weight:600;color:var(--verde);border-bottom:2px solid var(--verde);margin-bottom:-1px;cursor:pointer"><svg class="ic" aria-hidden="true"><use href="#ic-lupa"/></svg> Busca individual</button>
       <button id="tab-lista-btn" onclick="gTab('lista')" style="padding:7px 18px;border:none;background:none;font-family:'Inter',sans-serif;font-size:13px;font-weight:500;color:var(--muted);cursor:pointer">📋 Importar lista</button>
       <button id="tab-ia-btn" onclick="gTab('ia')" style="padding:7px 18px;border:none;background:none;font-family:'Inter',sans-serif;font-size:13px;font-weight:500;color:var(--muted);cursor:pointer">🤖 IA — Ler Pedido</button>
-      <button id="tab-impcot-btn" onclick="gTab('impcot')" style="display:none;padding:7px 18px;border:none;background:none;font-family:'Inter',sans-serif;font-size:13px;font-weight:500;color:var(--muted);cursor:pointer">📥 Importar Cotação</button>
+      <button id="tab-impcot-btn" onclick="gTab('impcot')" style="display:none;padding:7px 18px;border:none;background:none;font-family:'Inter',sans-serif;font-size:13px;font-weight:500;color:var(--muted);cursor:pointer"><svg class="ic" aria-hidden="true"><use href="#ic-baixar"/></svg> Importar Cotação</button>
     </div>
 
     <!-- ABA BUSCA -->
     <div id="tab-busca">
       <div class="busca-wrap">
         <input type="text" id="busca-prod" placeholder="Digite o produto, princípio ativo ou marca..." oninput="buscarProduto(this.value)" onkeydown="if(event.key==='Enter'){event.preventDefault();buscarForcado();}">
-        <button id="btn-buscar" class="btn" style="background:var(--verde);color:var(--branco);font-weight:700;white-space:nowrap" onclick="buscarForcado()">🔍 Buscar</button>
+        <button id="btn-buscar" class="btn" style="background:var(--verde);color:var(--branco);font-weight:700;white-space:nowrap" onclick="buscarForcado()"><svg class="ic" aria-hidden="true"><use href="#ic-lupa"/></svg> Buscar</button>
       </div>
       <div id="resultado-busca"></div>
       <div class="divider"></div>
@@ -480,7 +502,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--texto);min-
         ondragover="event.preventDefault();this.style.background='#EAF6FC'"
         ondragleave="this.style.background=''"
         ondrop="event.preventDefault();this.style.background='';handleIAFile(event.dataTransfer.files[0])">
-        <div style="font-size:28px;margin-bottom:8px">📎</div>
+        <div style="font-size:28px;margin-bottom:8px;color:var(--muted)"><svg class="ic" aria-hidden="true"><use href="#ic-clipe"/></svg></div>
         <div style="font-size:13px;color:var(--verde);font-weight:600">Clique ou arraste o arquivo aqui</div>
         <div style="font-size:11px;color:var(--muted);margin-top:4px">JPG, PNG, PDF — foto do pedido, lista escaneada, etc.</div>
         <input type="file" id="ia-file-input" accept="image/*,application/pdf" style="display:none" onchange="handleIAFile(this.files[0])">
@@ -493,7 +515,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--texto);min-
             <div style="font-size:13px;color:var(--texto);font-weight:500" id="ia-preview-nome">arquivo.pdf</div>
             <div style="font-size:11px;color:var(--muted)" id="ia-preview-tipo">PDF</div>
           </div>
-          <button onclick="limparIAArquivo()" style="background:none;border:none;color:#e03e3e;cursor:pointer;font-size:18px">✕</button>
+          <button onclick="limparIAArquivo()" style="background:none;border:none;color:#e03e3e;cursor:pointer;font-size:18px" title="remover o arquivo" aria-label="remover o arquivo"><svg class="ic" aria-hidden="true"><use href="#ic-x"/></svg></button>
         </div>
       </div>
 
@@ -525,7 +547,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--texto);min-
         <p style="font-size:12px;color:var(--muted);margin-bottom:14px">Selecione a <strong>foto</strong> ou o <strong>PDF</strong> do orçamento do fornecedor. A IA lê e preenche a tabela abaixo — você só confere e clica em Importar.</p>
         <div id="imp-ia-drop" onclick="document.getElementById('imp-ia-file').click()"
           style="border:2px dashed var(--borda);border-radius:10px;padding:22px;text-align:center;cursor:pointer;color:var(--muted);font-size:13px;transition:.2s">
-          📥 Clique aqui para selecionar foto ou PDF do orçamento
+          <svg class="ic" aria-hidden="true"><use href="#ic-baixar"/></svg> Clique aqui para selecionar foto ou PDF do orçamento
           <input type="file" id="imp-ia-file" accept="image/*,application/pdf" style="display:none" onchange="impHandleIAFile(this.files[0])">
         </div>
         <div id="imp-ia-preview" style="display:none;align-items:center;gap:10px;margin-top:12px;padding:10px 14px;background:var(--bg);border:1px solid var(--borda);border-radius:8px">
@@ -534,7 +556,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--texto);min-
             <div id="imp-ia-nome" style="font-size:13px;font-weight:600;color:var(--texto)">arquivo</div>
             <div id="imp-ia-tipo" style="font-size:11px;color:var(--muted)">—</div>
           </div>
-          <button onclick="impLimparIA()" style="background:none;border:none;color:var(--vermelho);cursor:pointer;font-size:18px">✕</button>
+          <button onclick="impLimparIA()" style="background:none;border:none;color:var(--vermelho);cursor:pointer;font-size:18px" title="remover o arquivo" aria-label="remover o arquivo"><svg class="ic" aria-hidden="true"><use href="#ic-x"/></svg></button>
         </div>
         <div style="display:flex;gap:12px;align-items:center;margin-top:14px">
           <button class="btn btn-primary" id="imp-ia-btn" onclick="impLerOrcamentoIA()" disabled style="width:auto;opacity:.5">🤖 Ler com IA e preencher tabela</button>
@@ -601,12 +623,12 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--texto);min-
 
   <!-- ITENS ADICIONADOS -->
   <div class="card" id="card-itens" style="display:none">
-    <h3>📦 Itens do Orçamento</h3>
+    <h3><svg class="ic" aria-hidden="true"><use href="#ic-caixa"/></svg> Itens do Orçamento</h3>
     <div id="lista-itens"></div>
 
     <!-- ITENS NÃO ENCONTRADOS -->
     <div id="nao-encontrados-section" style="display:none;margin-top:14px;">
-      <div style="font-size:11.5px;font-weight:600;color:var(--vermelho);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px;">❌ Itens Não Encontrados</div>
+      <div style="font-size:11.5px;font-weight:600;color:var(--vermelho);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px;"><svg class="ic" aria-hidden="true"><use href="#ic-x"/></svg> Itens Não Encontrados</div>
       <div id="lista-nao-encontrados"></div>
     </div>
   </div>
@@ -632,7 +654,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--texto);min-
   <!-- AÇÕES -->
   <div class="card no-print" id="card-acoes" style="display:none">
     <div style="display:flex;gap:10px;flex-wrap:wrap;">
-      <button class="btn btn-primary" style="flex:1;min-width:200px" onclick="gerarPDF()">🖨 Gerar PDF / Imprimir</button>
+      <button class="btn btn-primary" style="flex:1;min-width:200px" onclick="gerarPDF()"><svg class="ic" aria-hidden="true"><use href="#ic-impressora"/></svg> Gerar PDF / Imprimir</button>
       <button class="btn btn-outline" style="flex:1;min-width:200px;border-color:var(--fverde);color:#6FA32C" onclick="enviarParaCompras()" id="btn-enviar-compras">📤 Enviar para Compras</button>
       <button class="btn btn-outline" style="flex:1;min-width:200px;border-color:#e0245e;color:#c81e4f;opacity:0.5" onclick="pedidoFechado()" id="btn-pedido-fechado" title="Selecione o cliente para fechar o pedido">🔴 Pedido Fechado</button>
       <button class="btn btn-outline btn-sm" onclick="limparTudo()">🗑 Limpar Tudo</button>
@@ -2176,19 +2198,21 @@ function buscarMelhorProduto(linha, _rx) {
   _rx = _rx || {};
   linha = (linha == null ? '' : String(linha));   // blindagem: aceita qualquer tipo sem quebrar
   if (!linha.trim()) return null;
-  // ── CAMADA 1: EAN (29/07) ─────────────────────────────────────────────────────────────────
-  // Quando os DOIS lados têm EAN-13 VÁLIDO e ele bate, é identificação perfeita (produto +
-  // apresentação + laboratório) e pula todas as barreiras de texto. A estreia mediu 63,1% de
-  // batida contra a CMED. Qualquer outra situação — um lado sem EAN, EAN diferente, dígito
-  // verificador errado — cai no motor de sempre, sem mudança nenhuma.
-  const _eanReq = _bmEanDoTexto(linha);
-  if (_eanReq) {
-    const _porEan = cotacoes.filter(c => c.ean && String(c.ean).trim() === _eanReq && pv(c));
-    if (_porEan.length) {
-      _porEan.sort((a,b) => (ehGlobalComEstoque(b) - ehGlobalComEstoque(a)) || (pv(a) - pv(b)));
-      return _porEan[0];
-    }
-  }
+  /* ══ A "CAMADA 1: EAN" FOI REMOVIDA — ELA NUNCA RODOU (13/08) ═══════════════════════════════
+     O ramo filtrava `cotacoes` por `c.ean`, e está PROVADO que a coluna não existe: o banco
+     responde HTTP 400 — "column cotacoes.ean does not exist" (medido no item 8; detalhes em
+     docs/cmed_camada_base.md, commit 5ff3ff2). Ou seja, `c.ean` era `undefined` em toda linha,
+     o filtro devolvia sempre lista vazia e o motor caía no caminho de texto — que é o que
+     sempre aconteceu de verdade.
+     >>> O COMENTÁRIO ANTIGO ERA A PARTE PERIGOSA, não o código. Ele afirmava "a estreia mediu
+         63,1% de batida contra a CMED", e quem lesse concluiria que existe um casamento por
+         código funcionando aqui. Código morto engana pouco; código morto COM MEDIÇÃO ESCRITA
+         ao lado engana muito — foi por isso que ele sobreviveu tanto tempo.
+     >>> NÃO HÁ COLUNA EQUIVALENTE PARA RELIGAR, e "deveria existir EAN no cadastro?" é decisão
+         do dono, já registrada no checkpoint. Eu não a tomo aqui.
+     >>> O VALIDADOR `_bmEanDoTexto` FICA, e isso é decisão: ele é puro (texto → EAN-13 válido),
+         não custa nada parado, e é exatamente a peça que se reconecta no dia em que a decisão
+         do cadastro vier. Apagá-lo seria jogar fora a metade que a pergunta pendente precisa. */
   // ── MATERIAL ──
   if (_bmMaterial(linha)) {
     // de-para de PALAVRA aplicado nos DOIS lados: "DRENO SUCTOR 4.8" e "DRENO SUCCAO ... 4,8" são
@@ -2463,10 +2487,11 @@ function _confPeerMediana(c){
 }
 function _bmConfianca(pedido, c){
   if(!c || !pedido) return {nivel:'alta', motivos:[]};
-  // CAMADA 1 (29/07): casou por EAN = identificação perfeita. Nível ALTA com o motivo 'EAN'
-  // explícito, pra dar pra distinguir na tela o que veio de código do que veio de texto.
-  const _e = _bmEanDoTexto(pedido);
-  if (_e && c.ean && String(c.ean).trim() === _e) return { nivel:'alta', motivos:['casou por EAN '+_e] };
+  /* A segunda metade do mesmo ramo morto saiu junto (13/08): ela dava confiança ALTA "por EAN",
+     e dependia do mesmo `c.ean` que não existe na tabela. Este era o pior dos dois: um selo de
+     confiança que a tela mostraria como se tivesse casado por código — e que nunca casou.
+     Deixar um dos dois lados de pé seria pior que deixar os dois: o motor pararia de usar o EAN
+     para escolher e continuaria a usá-lo para se dizer confiante. */
   const cp=c.produto||'', pa=c.principio_ativo||''; const motivos=[]; let forte=false, medio=false;
   // (a) família/subtipo divergente
   const FAMS=[_BM_FAM_SUBTIPO,_BM_FAM_MATERIAL,_BM_FAM_IDADE,_BM_FAM_TESTE,_BM_FAM_ANALITO];
@@ -2819,7 +2844,7 @@ function pintaPedidoEdital(){
   const daIA = l.origem === 'ia';
   el.style.display='block';
   el.innerHTML = `<div class="card" style="border-left:4px solid ${daIA?'#e6a817':'var(--verde)'};background:${daIA?'#FDF8EC':'#F2FAF4'}">
-    <h3 style="margin-bottom:6px">📄 Chegaram ${p.itens.length} itens de um edital</h3>
+    <h3 style="margin-bottom:6px"><svg class="ic" aria-hidden="true"><use href="#ic-documento"/></svg> Chegaram ${p.itens.length} itens de um edital</h3>
     <div style="font-size:13px;color:var(--muted);line-height:1.6">
       <strong>${_escEd(l.titulo||'Licitação')}</strong>${l.orgao?' · '+_escEd(l.orgao):''}
       ${l.municipio?' · '+_escEd(l.municipio)+(l.uf?'/'+_escEd(l.uf):''):''}
@@ -2884,7 +2909,7 @@ function importarPedidoEdital(){
 
   const el = document.getElementById('pedido-edital');
   el.innerHTML = `<div class="card" style="border-left:4px solid var(--verde)">
-    <h3 style="margin-bottom:6px">📄 ${add} item(ns) do edital entraram na proposta</h3>
+    <h3 style="margin-bottom:6px"><svg class="ic" aria-hidden="true"><use href="#ic-documento"/></svg> ${add} item(ns) do edital entraram na proposta</h3>
     <div style="font-size:13px;color:var(--muted);line-height:1.6">
       ${_escEd((p.lic||{}).titulo||'Licitação')}${somados?` · ${somados} item(ns) repetido(s) tiveram a quantidade somada`:''}
       ${naoAchados.length?` · <strong style="color:#c06060">${naoAchados.length} sem equivalente no estoque</strong> — foram pra lista de não encontrados, e de lá pra fila de cotação`:''}

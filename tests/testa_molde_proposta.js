@@ -345,5 +345,119 @@ ok(n + '. o documento continua sendo o unico a aparecer na impressao',
 ok(n + '. e o arquivo registra por que o menu precisou entrar na lista',
   /O MENU NÃO SE ESCONDE SOZINHO/.test(G.replace(/\s+/g, ' '))); n++;
 
+// ══════════════════════════════════════════════════════════════════════════════
+// FATIA 3a — O SPRITE ÚNICO
+// ══════════════════════════════════════════════════════════════════════════════
+const ICONES = R('fpmed_icones.js');
+
+ok(n + '. a tela carrega o sprite da FONTE UNICA', /<script src="fpmed_icones\.js"><\/script>/.test(LIMPO)); n++;
+/* Copiar os simbolos pra ca criaria a TERCEIRA copia do mesmo desenho - que e exatamente a
+   doenca que o fpmed_icones.js existe pra curar (o selo do orgao ja tinha divergido meio pixel
+   entre duas telas antes de ele nascer). */
+ok(n + '. ...e NAO copiou o sprite pra dentro (nada de <symbol> inline)',
+  !/<symbol\s/.test(LIMPO)); n++;
+ok(n + '. a regra .ic e a MESMA das outras telas (24x24, traco 1.8, currentColor, tamanho em em)',
+  /\.ic\{[^}]*stroke:currentColor/.test(CSS1)
+  && /\.ic\{[^}]*stroke-width:1\.8/.test(CSS1)
+  && /\.ic\{width:1em;height:1em/.test(CSS1)
+  && /\.ic\{width:1em;height:1em/.test(NEG)); n++;
+
+/* *** O ASSERT QUE PEGA ICONE INVISIVEL. *** `<use href="#ic-xis">` apontando pra um simbolo
+   que nao existe nao da erro nenhum: o navegador desenha NADA, em silencio. E o defeito mais
+   caro de perseguir, porque a tela nao reclama - ela so fica sem o desenho. */
+const usados = [...new Set((LIMPO.match(/<use href="#(ic-[a-z0-9-]+)"/g) || [])
+  .map(x => x.replace(/<use href="#/, '').replace(/"/, '')))];
+const noSprite = new Set((ICONES.match(/'(ic-[a-z0-9-]+)':/g) || []).map(x => x.slice(1, -2)));
+const orfaos = usados.filter(i => !noSprite.has(i));
+ok(n + '. *** todo <use> aponta pra um simbolo que EXISTE (icone orfao nao da erro, so some) ***',
+  usados.length > 0 && orfaos.length === 0, { usados: usados.length, orfaos }); n++;
+
+/* ══ O QUE **NAO** VIRA ICONE, E OS TRES MOTIVOS SAO DIFERENTES ═══════════════════════════════
+   1. SETAS TIPOGRAFICAS (U+2190..U+21FF) ficam. Fronteira declarada do projeto desde o sprite
+      do Negocios e reafirmada no item 7f: seta dentro de texto corrido nao e icone. Um assert
+      que proibisse TUDO obrigaria a trocar as 28 por SVG e deixaria a tela pior. */
+/* O assert nasceu como "existe pelo menos UMA seta" - e uma mutacao que trocou TODAS as `→` por
+   SVG passou verde, porque sobravam `←`, `↑` e `↓`. A fronteira nao e "uma seta": e o conjunto
+   delas. Entao cobra-se o PAR: as setas continuam existindo em quantidade, E ninguem comecou a
+   desenhar seta com o sprite nesta tela (que e como o zelo entraria). */
+const SETAS = (G.match(/[\u{2190}-\u{21FF}]/gu) || []).length;
+ok(n + '. *** as setas tipograficas FICAM (fronteira declarada, nao esquecimento) ***',
+  SETAS >= 20 && !/<use href="#ic-seta"/.test(G), { setas: SETAS }); n++;
+/* 2. O TEXTO QUE VAI PRO PAPEL. O `OBS_PADRAO` e escrito no `#print-obs-padrao`, ou seja, ele
+      entra no DOCUMENTO IMPRESSO - e o documento esta CONGELADO por ordem do dono (13/08):
+      "ele e peca formal que vai pro orgao publico, e mudanca nele exige aval do cliente".
+      O assert e pelo avesso: ele guarda que o glifo continua la. */
+ok(n + '. *** o aviso que vai pro PAPEL continua intocado (documento congelado, ordem do dono) ***',
+  /var OBS_PADRAO = '⚠ OBSERVAÇÕES:/.test(G)); n++;
+/* 3. E A ARMADILHA QUE QUASE ME PEGOU: `toast()` e varios botoes usam `textContent`. Enfiar um
+      `<svg>` numa dessas strings faria a MARCACAO SER IMPRESSA COMO TEXTO na cara do usuario.
+      Onde o destino e textContent, o glifo ou fica ou sai - virar icone, nunca. */
+const textContentComSvg = (LIMPO.match(/textContent\s*=\s*[^;\n]*<svg/g) || []);
+ok(n + '. *** ninguem enfiou <svg> numa string de textContent (viraria texto na tela) ***',
+  textContentComSvg.length === 0, textContentComSvg.slice(0, 3)); n++;
+ok(n + '. e o arquivo registra por que o sprite nao foi copiado pra ca',
+  /é o `fpmed_icones\.js`, a fonte única do sistema/.test(G.replace(/\s+/g, ' '))); n++;
+
+/* ══ A PROMESSA DA FATIA, E ELA NAO E UM NUMERO ══════════════════════════════════════════════
+   Assert de contagem ("sobraram 17 emoji") viraria vermelho na proxima fatia sem nada ter
+   piorado - e a fatia 3 esta DECLARADAMENTE pela metade: 🤖, 💰, 🗑, 🚀 e 🔴 nao tem desenho no
+   sprite ainda, e inventar um icone as pressas e pior que manter o emoji mais um dia.
+   >>> ENTAO A PROMESSA E OUTRA, e ela e verificavel hoje e continua valendo depois: ONDE JA HA
+       DESENHO, NAO SE USA EMOJI. Quando a 3b acrescentar os cinco simbolos ao sprite, este
+       mesmo assert passa a cobrar os cinco sozinho, sem eu reescrever nada. */
+/* ══ ATENCAO AO INSTRUMENTO: `LIMPO` NAO SERVE PRA ASSERT DE MARCACAO ════════════════════════
+   *** ACHADO POR UMA MUTACAO QUE PASSOU VERDE. *** O `LIMPO` tira comentario de bloco com uma
+   expressao nao-gulosa - e este arquivo tem abre-comentario e fecha-comentario DENTRO de
+   strings e expressoes regulares do JavaScript. O stripper casa de um abre qualquer ate o
+   proximo fecha e ENGOLE MARCACAO DE VERDADE no meio. Provado: um h3 com emoji reintroduzido
+   por mutacao simplesmente sumia do `LIMPO`, e o assert ficava verde sem ter olhado nada.
+   (E este proprio comentario ja quebrou a suite uma vez por conter o fecha-comentario literal:
+    o mesmo defeito, na ferramenta que o descreve.)
+   >>> Para MARCACAO usa-se `MARCACAO`, que tira so o comentario de HTML - que e o unico que
+       pode conter `<h3>`. Um `<h3>` escrito dentro de comentario de JS passa a ser contado; e
+       raro, e errar para o lado de reportar demais e o lado certo de errar. */
+const MARCACAO = G.replace(/<!--[\s\S]*?-->/g, '');
+const EQUIV = { '📄': 'ic-documento', '🔍': 'ic-lupa', '🔎': 'ic-lupa', '📝': 'ic-lapis',
+                '📥': 'ic-baixar', '📦': 'ic-caixa', '❌': 'ic-x', '✕': 'ic-x',
+                '🖨': 'ic-impressora', '📎': 'ic-clipe', '📤': 'ic-sai' };
+const comDesenhoDisponivel = Object.keys(EQUIV).filter(e => noSprite.has(EQUIV[e]));
+const h3Ruins = (MARCACAO.match(/<h3[^>]*>[^<]{0,40}/g) || [])
+  .filter(h => comDesenhoDisponivel.some(e => h.includes(e)));
+ok(n + '. *** nenhum <h3> usa emoji para o qual o sprite JA tem desenho ***',
+  h3Ruins.length === 0, h3Ruins.slice(0, 3)); n++;
+/* O `<label>` do formulario e o outro lugar de alta visibilidade: e o rotulo de cada campo. */
+const labelRuins = (MARCACAO.match(/<label[^>]*>[^<]{0,40}/g) || [])
+  .filter(h => comDesenhoDisponivel.some(e => h.includes(e)));
+ok(n + '. ...nem os rotulos de campo (<label>)', labelRuins.length === 0, labelRuins.slice(0, 3)); n++;
+
+// ══════════════════════════════════════════════════════════════════════════════
+// O RAMO MORTO DO `c.ean` (pedido do dono, 13/08)
+// ══════════════════════════════════════════════════════════════════════════════
+/* Esta tela filtrava `cotacoes` por `c.ean`, e esta PROVADO que a coluna nao existe: o banco
+   responde HTTP 400 - "column cotacoes.ean does not exist". O filtro devolvia sempre vazio e o
+   motor caia no caminho de texto, que e o que sempre aconteceu de verdade.
+   >>> O PERIGOSO ERA O COMENTARIO, nao o codigo: ele afirmava "a estreia mediu 63,1% de batida
+       contra a CMED", e quem lesse concluiria que existe casamento por codigo funcionando aqui.
+       Codigo morto engana pouco; codigo morto COM MEDICAO ESCRITA ao lado engana muito. */
+ok(n + '. *** o ramo morto do EAN saiu dos DOIS lugares (escolha e confianca) ***',
+  !/cotacoes\.filter\(c => c\.ean/.test(LIMPO)
+  && !/c\.ean && String\(c\.ean\)/.test(LIMPO)
+  && !/casou por EAN/.test(LIMPO)); n++;
+/* Deixar UM dos dois lados de pe seria pior que deixar os dois: o motor pararia de usar o EAN
+   pra ESCOLHER e continuaria a usa-lo pra se dizer CONFIANTE. */
+ok(n + '. ...e nenhum `.ean` sobrou no codigo (so no comentario que explica a remocao)',
+  !/\.ean\b/.test(LIMPO)); n++;
+/* O VALIDADOR FICA, e e decisao declarada: ele e puro (texto -> EAN-13 valido), nao custa nada
+   parado, e e a peca que se reconecta no dia em que a decisao do cadastro vier. Apaga-lo seria
+   jogar fora a metade que a pergunta pendente precisa. */
+/* Nao basta o NOME aparecer: a primeira versao deste assert procurava a string `_bmEanDoTexto`,
+   e uma mutacao que renomeou a funcao pra `_bmEanDoTextoRemovido` passou verde - porque o nome
+   novo CONTEM o antigo. Cobra-se a DECLARACAO. */
+ok(n + '. o validador de EAN-13 continua no arquivo (a decisao do cadastro e do dono)',
+  /function _bmEanDoTexto\s*\(/.test(G)); n++;
+ok(n + '. e a remocao esta explicada, com a prova do banco junto',
+  /column cotacoes\.ean does not exist/.test(G)
+  && /decisão do dono, já registrada no checkpoint/.test(G.replace(/\s+/g, ' '))); n++;
+
 console.log('\nRESULTADO: ' + p + ' ok, ' + f + ' falha(s)');
 if (f) process.exit(1);

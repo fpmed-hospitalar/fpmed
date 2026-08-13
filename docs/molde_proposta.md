@@ -156,8 +156,12 @@ que o hospital recebe assinado.
 > bloco continua intocado — sem ele, a próxima passagem "terminaria o trabalho" tokenizando o
 > papel junto, sem ninguém decidir.
 >
-> **PARA O CHECKPOINT:** o dono decide se o documento impresso deve seguir os tokens do tema (e
-> então mudar de cor no papel) ou permanecer congelado na identidade atual da proposta.
+> **DECIDIDO PELO DONO (13/08): o documento impresso fica CONGELADO na identidade atual.** Razão
+> dele: *"ele é peça formal que vai pro órgão público, e mudança nele exige aval do cliente. O
+> molde é para a TELA."* O assert que guardava a pendência passa a guardar uma **ordem**.
+>
+> E a regra que veio junto: se eu notar no impresso algo que seja **defeito objetivo** (ilegível,
+> quebrado), **anoto para o checkpoint em vez de mexer**. Nada anotado até aqui.
 
 ### Os `#fff` que sobraram no corpo
 
@@ -291,11 +295,111 @@ empurraria o documento inteiro para a direita no papel.
 
 ---
 
+---
+
+## FATIA 3a — O SPRITE ÚNICO (a fatia 3 está declaradamente pela metade)
+
+`testa_molde_proposta`: **46 → 60 asserts**, **mutação 39 de 39 barradas**.
+
+### O inventário, antes de trocar nada
+
+| | |
+|---|---|
+| glifos no arquivo | **152** |
+| **setas tipográficas** (`→ ← ↑ ↓`) | **28 — ficam** |
+| emoji de verdade | **124**, em **25** distintos |
+
+As setas ficam por **fronteira já declarada** do projeto (sprite do Negócios, reafirmada no item
+7f do outro trabalhador): *seta dentro de texto corrido não é ícone*. Um assert que proibisse
+tudo obrigaria a trocar 28 setas por SVG e deixaria a tela pior.
+
+### Os três destinos que decidem o que fazer com cada glifo
+
+| destino | o que se faz | por quê |
+|---|---|---|
+| **HTML** (marcação e template literal) | vira `<use href="#ic-…">` | D11 |
+| **`textContent`** | **não pode virar SVG** | `toast()` e vários botões usam `textContent`; um `<svg>` ali seria **impresso como texto na cara do usuário** |
+| **papel** (`OBS_PADRAO`) | **fica intocado** | vai para o `#print-obs-padrao`, ou seja, para o documento — **congelado por ordem do dono** |
+
+> A armadilha do `textContent` é real e foi conferida no código antes de qualquer troca. Há
+> assert barrando `textContent = …<svg`.
+
+### O que entrou nesta fatia
+
+O sprite é o **`fpmed_icones.js`**, a fonte única — **não copiado para cá**. Copiar os símbolos
+criaria a terceira cópia do mesmo desenho, que é exatamente a doença que aquele arquivo existe
+para curar. A regra `.ic` é a mesma das outras telas (24×24, traço 1.8, `currentColor`, tamanho em
+`em`). **14 emoji** viraram ícone, nos lugares de maior visibilidade: títulos de cartão, rótulos
+de campo, abas e botões.
+
+Medido no navegador: sprite injetado com **29 símbolos**, **14 usos**, **zero referência órfã**, e
+a cor herdando o contexto (o mesmo ícone sai navy no título, cinza no rótulo, branco no botão). Os
+8 ícones que mediram 0px estão todos dentro de blocos `display:none` (abas inativas, cartões que
+só aparecem com itens) — nenhum defeito.
+
+### O que **ficou** para a 3b, e o motivo é declarado
+
+`🤖` `💰` `🗑` `🚀` `🔴` **não têm desenho no sprite ainda**, e inventar um ícone às pressas é
+pior que manter o emoji mais um dia. Por isso a promessa desta fatia **não é um número**:
+
+> **Onde já há desenho, não se usa emoji.** É verificável hoje e continua valendo depois — quando
+> a 3b acrescentar os cinco símbolos, o mesmo assert passa a cobrá-los sozinho.
+
+---
+
+## O RAMO MORTO DO `c.ean` (pedido do dono)
+
+A tela filtrava `cotacoes` por `c.ean`, e está **provado que a coluna não existe** — o banco
+responde HTTP 400, *"column cotacoes.ean does not exist"*. O filtro devolvia sempre vazio e o
+motor caía no caminho de texto, que é o que sempre aconteceu.
+
+> **O perigoso era o comentário, não o código.** Ele afirmava *"a estreia mediu 63,1% de batida
+> contra a CMED"* — quem lesse concluiria que existe um casamento por código funcionando aqui.
+> Código morto engana pouco; **código morto com medição escrita ao lado engana muito**, e foi por
+> isso que ele sobreviveu tanto tempo.
+
+Saíram **os dois lados**: o que escolhia o produto e o que dava confiança **ALTA "por EAN"**.
+Deixar um só seria pior que deixar os dois — o motor pararia de usar o EAN para **escolher** e
+continuaria a usá-lo para **se dizer confiante**.
+
+**O validador `_bmEanDoTexto` fica**, e é decisão: ele é puro (texto → EAN-13 válido), não custa
+nada parado, e é a peça que se reconecta no dia em que a decisão do cadastro vier. Apagá-lo seria
+jogar fora a metade que a pergunta pendente precisa. **A pergunta "deveria existir EAN no
+cadastro?" é do dono e está no checkpoint — não decidi.**
+
+---
+
+## TRÊS ASSERTS MEUS QUE A MUTAÇÃO DERRUBOU, E O TERCEIRO É O MAIS SÉRIO
+
+| o assert | por que passava verde |
+|---|---|
+| "as setas ficam" | exigia **uma** seta; trocar todas as `→` por SVG deixava `← ↑ ↓` de pé. Agora cobra o **conjunto** (≥20) **e** que ninguém desenhe seta com o sprite |
+| "o validador continua" | procurava a **string** `_bmEanDoTexto`; renomear para `_bmEanDoTextoRemovido` passava, porque o nome novo **contém** o antigo. Agora cobra a **declaração** |
+| **"nenhum `<h3>` usa emoji"** | **o `LIMPO` engolia a marcação** |
+
+O terceiro merece o detalhe. O `LIMPO` tira comentário de bloco com uma expressão não-gulosa — e
+este arquivo tem abre-comentário e fecha-comentário **dentro de strings e expressões regulares do
+JavaScript**. O stripper casa de um abre qualquer até o próximo fecha e **engole marcação de
+verdade** no meio: um `<h3>` com emoji reintroduzido por mutação simplesmente **sumia** do
+`LIMPO`, e o assert ficava verde sem ter olhado nada.
+
+> Os asserts de marcação passaram a usar um `MARCACAO` que tira **só** comentário de HTML — o
+> único que pode conter um `<h3>`.
+>
+> **E o comentário que explica isso quebrou a suíte na primeira tentativa**, por conter o
+> fecha-comentário literal: o mesmo defeito, dentro da ferramenta que o descreve.
+
+E uma nota de honestidade sobre a força do conjunto: a falha do `LIMPO` significa que **outros
+asserts que o usam podem estar mais fracos do que parecem**. Quem prova a força de verdade é a
+mutação — e ela está em 39/39 —, não a contagem de asserts verdes.
+
+---
+
 ## O QUE VEM NAS PRÓXIMAS FATIAS
 
 | fatia | o que | por que nesta ordem |
 |---|---|---|
-| 3 | **O sprite único** (`fpmed_icones.js`) — 155 emoji, 32 distintos | D11: emoji é fonte, não desenho |
+| 3b | os **5 símbolos que faltam** no sprite + os emoji em HTML gerado e em `textContent` | inventar ícone às pressas é pior que esperar um dia |
 | 4 | **Cartões e listas** com a anatomia do molde + as 11 cores dos `style=` inline | depende da moldura estar de pé |
 
 ### Medições que ficaram pendentes, e o motivo é o mesmo do Negócios
