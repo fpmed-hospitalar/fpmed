@@ -690,6 +690,66 @@ select[disabled],input[disabled],textarea[disabled]{
 .lic .dado span{font-size:var(--txt-2);font-weight:var(--peso-semi);color:var(--cinza-800);
   font-variant-numeric:tabular-nums}
 
+/* ══ A BUSCA NACIONAL COM A CARA DO MOLDE (13/08, item 7d) ═══════════════════════════════════
+   Ela era uma TABELA CRUA de seis colunas (UF/ITEM/ÓRGÃO/MODALIDADE/PUBLICADO/PORTAL) logo
+   abaixo do painel novo — duas listas da mesma coisa, com dois desenhos, na mesma tela.
+   Agora é o MESMO painel e as MESMAS linhas do passo 6: mesma classe, mesma anatomia.
+
+   ── A BARRA DA ESQUERDA MUDA DE OFÍCIO AQUI, E ISSO FOI MEDIDO ───────────────────────────────
+   No índice ela acelera a urgência: azul aberta · âmbar ≤2 dias · vermelho encerrada. Eu ia
+   copiar isso e MEDI antes (30 resultados, dois termos):
+       "albumina" .... 26 de 30 trazem data_fim_vigencia · **0 delas no futuro**
+       "dipirona" .... 22 de 30 trazem data_fim_vigencia · **0 delas no futuro**
+   Ou seja: a busca nacional é ordenada por SEMELHANÇA, não por data, e o que ela devolve é
+   quase todo edital vencido. Com a régua do índice, as trinta linhas sairiam vermelhas.
+   >>> TRINTA BARRAS VERMELHAS NÃO SÃO TRINTA AVISOS, SÃO UM FUNDO VERMELHO. A cor tem que
+       marcar a EXCEÇÃO, não a regra — senão ela para de significar qualquer coisa (D5).
+       Então aqui o padrão é o CINZA (vencida ou sem data), e a cor fica reservada pra linha
+       que ainda está de pé. No dia em que houver uma, ela salta sozinha no meio das cinzas.
+   >>> E A BARRA NUNCA ANDA SOZINHA, como no índice: o crachá ao lado escreve em palavras, e é
+       ele que separa "vigência encerrada em 14/02/2025" de "vigência não informada" — duas
+       coisas diferentes que a mesma barra cinza não distingue. */
+.lic.prazo-nd::before{background:var(--cinza-300)}
+
+/* A NOTA DA FONTE fica ENTRE o cabeçalho e a primeira linha, e não num rodapé: ela explica o
+   que a pessoa está prestes a ler, e explicação depois da leitura chega tarde. */
+.painel-res .nota-fonte{padding:var(--esp-3) var(--esp-4);
+  border-bottom:1px solid var(--borda-divisor);background:var(--branco);
+  font-size:var(--txt-1);line-height:var(--altura-texto);color:var(--cinza-600)}
+.painel-res .nota-fonte b{color:var(--cinza-700);font-weight:var(--peso-semi)}
+
+/* ── OS ESTADOS QUE NÃO SÃO RESULTADO ────────────────────────────────────────────────────────
+   Sem termo · procurando · não deu. Os três são FAIXA e não painel, e isso é a decisão: painel
+   é moldura de lista, e aqui não há lista nenhuma pra emoldurar. Uma faixa de uma linha diz
+   "isto é um recado", que é o que eles são.
+   >>> E NENHUM DELES SOME EM SILÊNCIO — a regra dura escrita depois do defeito de 11/08, quando
+       a busca nacional falhou calada e o operador concluiu que ela não existia. */
+.faixa-nacional{display:flex;align-items:flex-start;gap:var(--esp-3);
+  padding:var(--esp-3) var(--esp-4);background:var(--branco);
+  border:1px solid var(--cinza-200);border-radius:var(--raio-cartao);box-shadow:var(--sombra-1);
+  font-size:var(--txt-1);line-height:var(--altura-texto);color:var(--cinza-600)}
+.faixa-nacional svg{width:16px;height:16px;flex:0 0 auto;margin-top:1px;
+  stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;
+  color:var(--cinza-400)}
+.faixa-nacional b{color:var(--cinza-800);font-weight:var(--peso-semi)}
+/* O estado de ERRO não grita (adendo de excelência): ele é âmbar de atenção, não vermelho de
+   falha grave — o índice continua na tela e continua valendo, então nada foi perdido. */
+.faixa-nacional.atencao{border-color:var(--ambar-100);background:var(--ambar-50)}
+.faixa-nacional.atencao svg{color:var(--ambar-700)}
+
+/* O selo da FONTE, no cabeçalho do painel — não na linha. A procedência é da LISTA inteira, e
+   repeti-la em cada uma das trinta linhas seria gastar trinta vezes o mesmo recado. */
+.selo-fonte{display:inline-flex;align-items:center;gap:var(--esp-1);
+  padding:2px var(--esp-2);border-radius:var(--raio-pilula);
+  background:var(--azul-50);color:var(--azul-700);
+  font-size:var(--txt-0);font-weight:var(--peso-forte);letter-spacing:.06em;text-transform:uppercase}
+.selo-fonte svg{width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:1.9;
+  stroke-linecap:round;stroke-linejoin:round}
+/* O ícone da ação que SAI do sistema. Ele é o único da linha que leva pra fora, e por isso é o
+   único que ganha a seta — marcar todos com ela faria a marca não marcar nada. */
+.lic .acoes svg.ic-sai{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:1.8;
+  stroke-linecap:round;stroke-linejoin:round;margin-left:var(--esp-1);vertical-align:-2px}
+
 /* etiquetas: fundo no tom 100 e texto no 700 — é assim que a cor informa sem
    gritar, e é assim que o texto passa em AA. O verde-500 CHEIO do tema escuro
    não sobrevive ao fundo branco: ele dá 1,9:1 como texto. */
@@ -786,6 +846,13 @@ select[disabled],input[disabled],textarea[disabled]{
   border-radius:var(--raio-botao);padding:var(--esp-2) var(--esp-4);
   font-weight:var(--peso-semi);font-size:var(--txt-2);line-height:1.2;cursor:pointer;
   font-family:var(--fonte);white-space:nowrap;
+  /* `text-decoration:none` e `inline-flex` entraram em 13/08 (item 7d), e a razao e que a .btn
+     nasceu so pra <button>. A primeira <a class="btn"> da tela — o "abrir no PNCP" da busca
+     nacional — saiu SUBLINHADA e desalinhada, porque ancora traz sublinhado de fabrica e
+     <button> nao. Medido no navegador: underline contra none no botao ao lado.
+     >>> O CONSERTO E NA REGRA, E NAO NO CASO: a proxima <a class="btn"> que alguem escrever ja
+         nasce certa. Corrigir so o meu botao deixaria a armadilha armada pro proximo. */
+  text-decoration:none;display:inline-flex;align-items:center;justify-content:center;
   transition:background-color var(--transicao),border-color var(--transicao),color var(--transicao)}
 .btn:hover:not([disabled]){background:var(--azul-700)}
 .btn:focus-visible{outline:none;box-shadow:var(--foco)}
@@ -823,6 +890,15 @@ select[disabled],input[disabled],textarea[disabled]{
 </style>
 </head>
 <body>
+<!-- ══ O DICIONÁRIO DE ÍCONES (13/08, item 7d) ═══════════════════════════════════════════════
+     Fonte única em fpmed_icones.js, referenciada por <use href="#ic-..."> daqui pra baixo.
+     >>> ELE VEM AQUI, COLADO NO <body>, e não no <head>: a injeção usa `document.currentScript`
+         e acontece DURANTE a análise do documento, então os símbolos já existem quando o
+         navegador encontra o primeiro <use>. No <head> ainda não há onde inserir; depois do
+         conteúdo, o <use> já teria sido analisado apontando pro vazio.
+     >>> E A TELA NÃO MORRE SEM ELE: sem o arquivo, os ícones não desenham e todo o resto
+         continua — nenhum deles é a única portadora de sentido, cada um acompanha uma palavra. -->
+<script src="fpmed_icones.js"></script>
 <!-- ══ O MENU LATERAL ENTRA, A BARRA DO PORTAL SAI ══════════════════════════════════════════
      A barra horizontal tinha as sete entradas do portal (Encontrar, Negócios, Documentos,
      Declarações, Peças, Conferir, Ler edital). O menu lateral do item 3 tem TODAS elas, e mais
@@ -1135,7 +1211,10 @@ select[disabled],input[disabled],textarea[disabled]{
        das nossas praças e está sempre disponível; o nacional é do Brasil todo e depende do PNCP
        estar no ar. São duas procedências, e misturar as duas numa lista só faria o operador
        tratar como igual o que não é. -->
-  <div id="nacional" style="display:none;margin-top:26px;padding-top:18px;border-top:1px dashed var(--linha)"></div>
+  <!-- O TRACEJADO SAIU (13/08, item 7d): ele separava a tabela crua do que vinha acima. Agora o
+       que vem aqui é um PAINEL, e painel já tem fronteira própria — um tracejado por cima de uma
+       borda são duas linhas dizendo a mesma coisa. O que separa passou a ser o respiro. -->
+  <div id="nacional" style="display:none;margin-top:var(--esp-6)"></div>
     </div>
   </div>
 </div>
@@ -2879,9 +2958,9 @@ async function dispararBuscaNacional(){
   const termo = termoNacional();
   if(!termo){
     box.style.display = 'block';
-    box.innerHTML = '<div class="contagem" style="opacity:.8"><span>🌎 <b>Busca nacional no PNCP</b> — '
-      + 'digite <b>um único termo</b> no campo de busca (ex.: <i>albumina</i>) e procure de novo: '
-      + 'aí eu consulto o Brasil inteiro, além do nosso índice.</span></div>';
+    box.innerHTML = '<div class="faixa-nacional"><svg aria-hidden="true"><use href="#ic-globo"/></svg>'
+      + '<span><b>Busca nacional no PNCP</b> — digite <b>um único termo</b> no campo de busca '
+      + '(ex.: <i>albumina</i>) e procure de novo: aí eu consulto o Brasil inteiro, além do nosso índice.</span></div>';
     return;
   }
   const uf = (document.getElementById('f-uf') || {}).value || '';
@@ -2889,7 +2968,8 @@ async function dispararBuscaNacional(){
   // do resultado de "dipirona" que a pessoa pediu depois.
   const meu = ++_nacToken;
   box.style.display = 'block';
-  box.innerHTML = '<div class="contagem"><span>🌎 procurando "<b>' + esc(termo) + '</b>" no PNCP nacional…</span></div>';
+  box.innerHTML = '<div class="faixa-nacional"><svg aria-hidden="true"><use href="#ic-globo"/></svg>'
+    + '<span>procurando "<b>' + esc(termo) + '</b>" no PNCP nacional…</span></div>';
   try{
     const r = await buscarNacional(termo, uf);
     if(meu !== _nacToken) return;
@@ -2908,8 +2988,9 @@ function nacionalProtegido(){
   catch(e){
     const box = document.getElementById('nacional');
     if(box){ box.style.display = 'block';
-      box.innerHTML = '<div class="contagem" style="opacity:.85"><span>🌎 <b>a busca nacional falhou aqui na tela</b> ('
-        + esc(e.message) + '). O que está acima é o nosso índice, e continua valendo.</span></div>'; }
+      box.innerHTML = '<div class="faixa-nacional atencao"><svg aria-hidden="true"><use href="#ic-alerta"/></svg>'
+        + '<span><b>A busca nacional falhou aqui na tela</b> (' + esc(e.message) + '). '
+        + 'O que está acima é o nosso índice, e continua valendo.</span></div>'; }
   }
 }
 
@@ -2919,8 +3000,9 @@ function pintaNacional(termo, uf, r, erro){
   //     faixa discreta dizendo o que NÃO foi possível — e nunca "nenhum resultado nacional",
   //     que seria afirmar que o Brasil não tem o que a pessoa procura.
   if(erro){
-    box.innerHTML = '<div class="contagem" style="opacity:.85"><span>🌎 <b>não consegui consultar o PNCP nacional agora</b> ('
-      + esc(erro) + '). Isto <b>não</b> quer dizer que não haja nada — o que está acima é só o nosso índice.</span></div>';
+    box.innerHTML = '<div class="faixa-nacional atencao"><svg aria-hidden="true"><use href="#ic-alerta"/></svg>'
+      + '<span><b>Não consegui consultar o PNCP nacional agora</b> (' + esc(erro) + '). '
+      + 'Isto <b>não</b> quer dizer que não haja nada — o que está acima é só o nosso índice.</span></div>';
     return;
   }
   const itens = r.itens || [];
@@ -2929,39 +3011,114 @@ function pintaNacional(termo, uf, r, erro){
   const nossos = new Set((window._ultimoRender ? (window._ultimoRender.todos || []) : [])
     .map(l => String(l.numeroControlePNCP || '')));
   const fmt = d => { const x = String(d || '').slice(0,10); return x ? x.split('-').reverse().join('/') : '—'; };
+  const agora = new Date();
 
-  box.innerHTML = '<div class="contagem" style="display:block">'
-    + '<span>🌎 <b>Busca nacional no PNCP</b> (ao vivo) · <b>' + Number(r.total).toLocaleString('pt-BR') + '</b> resultado(s) para "'
-    +   esc(termo) + '"' + (uf ? ' em ' + esc(uf) : ' no Brasil inteiro') + ' · mostrando os ' + itens.length + ' mais parecidos</span>'
-    // AS DUAS LIMITAÇÕES, ditas onde a pessoa está olhando — e não num rodapé.
-    + '<div class="hint" style="margin-top:6px">Isto vem do PNCP <b>na hora</b>, e é o Brasil todo: '
-    +   'todos os portais (BLL, BNC, Licitanet, Compras.gov) publicam lá por obrigação. Duas coisas a saber: '
-    +   'a ordem é por <b>semelhança, não por data</b> (pode vir edital antigo), e o PNCP <b>não informa o portal</b> '
-    +   'de origem nesta busca — por isso a coluna fica em branco em vez de chutar.</div>'
+  /* ══ QUANTAS AINDA ESTÃO DE PÉ — a conta que decide a cor da lista inteira ══════════════════
+     Ela é feita ANTES de desenhar porque o cabeçalho precisa dela, e porque é ela que justifica
+     a barra cinza ser o padrão aqui (a medição está no comentário do CSS, em `.lic.prazo-nd`). */
+  const vigencia = i => {
+    const d = dt(i.data_fim_vigencia);
+    if(!d) return { classe:' prazo-nd', bdg:'<span class="bdg cinza" title="o PNCP não informou a vigência deste edital nesta busca">vigência não informada</span>' };
+    if(d <= agora) return { classe:' prazo-nd', vencida:true,
+      bdg:'<span class="bdg cinza">vigência encerrada em '+fmt(i.data_fim_vigencia)+'</span>' };
+    const dias = Math.ceil((d - agora)/86400000);
+    return { classe: dias<=2 ? ' prazo-urg' : '', viva:true,
+      bdg:'<span class="bdg '+(dias<=2?'a':'v')+'">vigente até '+fmt(i.data_fim_vigencia)+'</span>' };
+  };
+  const vigs = itens.map(vigencia);
+  const vivas = vigs.filter(v => v.viva).length;
+
+  box.innerHTML =
+    /* ══ O PAINEL, e ele é o MESMO do passo 6 ═══════════════════════════════════════════════════
+       Mesma classe `.painel-res`, mesmas linhas `.lic`, mesma anatomia por dentro. Duas listas
+       de licitação na mesma tela com dois desenhos é o "quase igual" que cansa sem explicar —
+       e era literalmente o que havia aqui: painel em cima, tabela crua embaixo.
+       >>> A DENSIDADE NÃO ENTRA NESTE PAINEL, de propósito: o alternador guarda a escolha no
+           navegador e vale pra lista principal. Dois alternadores na mesma tela, um por painel,
+           seriam dois controles pra uma preferência só. Este painel herda a decisão? Não — ele
+           é curto (30 linhas no máximo, por construção do endpoint) e a varredura longa que
+           justifica a compacta acontece no índice, não aqui. */
+    '<div class="painel-res">'
+    + '<div class="cabecalho">'
+    +   '<span class="selo-fonte"><svg aria-hidden="true"><use href="#ic-globo"/></svg>ao vivo · PNCP</span>'
+    +   '<span><b>' + Number(r.total).toLocaleString('pt-BR') + '</b> no PNCP para "' + esc(termo) + '"'
+    +     (uf ? ' em ' + esc(uf) : ' no Brasil inteiro')
+    +     ' · mostrando <b>' + itens.length + '</b> mais parecidos'
+    /* "N ainda vigentes" só aparece quando existe, pela mesma regra do "abrem hoje" do índice:
+       "0 ainda vigentes" em toda busca é ruído diário, e ruído diário ensina a não ler. E quando
+       NENHUMA está de pé, quem diz isso é a nota abaixo, que explica a CAUSA (a ordem por
+       semelhança) em vez de só cravar o zero. */
+    +     (vivas ? ' · <b>' + vivas + '</b> ainda ' + (vivas===1?'vigente':'vigentes') : '')
+    +   '</span>'
     + '</div>'
+    /* AS LIMITAÇÕES CONTINUAM ONDE A PESSOA ESTÁ OLHANDO, e ganharam a terceira, que é a que a
+       medição desta rodada revelou: quase tudo que volta aqui já venceu. Dizer isso no texto é
+       o que impede a leitura errada de "o PNCP só tem edital velho de albumina". */
+    /* AS FRASES NÃO SE QUEBRAM NO MEIO, e isso não é preciosismo de formatação: três suítes
+       procuram estes trechos LITERAIS no arquivo, e uma quebra de string no lugar errado deixa
+       o assert vermelho sem nada ter piorado na tela. Custou quatro vermelhos nesta rodada. */
+    + '<div class="nota-fonte">Isto vem do PNCP <b>na hora</b>, e é o Brasil todo: '
+    +   'todos os portais (BLL, BNC, Licitanet, Compras.gov) publicam lá por obrigação. '
+    +   'Três coisas a saber: a ordem é por <b>semelhança, não por data</b>'
+    +   ' — por isso a maioria dos resultados já está com a vigência encerrada; '
+    +   'o PNCP <b>não informa o portal</b> de origem nesta busca; '
+    +   'e ele <b>não traz o valor estimado</b> aqui. '
+    +   'Os dois campos ficam de fora da linha em vez de aparecerem chutados.</div>'
     + (itens.length
-        ? '<div class="tabelinha" style="overflow:auto"><table style="width:100%;border-collapse:collapse;font-size:12.5px">'
-          + '<thead><tr>' + ['UF','ITEM / OBJETO','ÓRGÃO','MODALIDADE','PUBLICADO','PORTAL',''].map(h =>
-              '<th style="text-align:left;padding:7px;border-bottom:1px solid var(--linha);color:var(--muted);font-size:10.5px">'+h+'</th>').join('')
-          + '</tr></thead><tbody>'
-          + itens.map(i => {
-              const ja = nossos.has(String(i.numero_controle_pncp||''));
-              return '<tr>'
-                + '<td style="padding:7px;border-bottom:1px solid var(--linha)"><b>' + esc(i.uf||'—') + '</b></td>'
-                + '<td style="padding:7px;border-bottom:1px solid var(--linha)">' + esc(String(i.description||'').slice(0,70))
-                +   (ja ? ' <span class="bdg cinza">já no nosso índice</span>' : '') + '</td>'
-                + '<td style="padding:7px;border-bottom:1px solid var(--linha)">' + esc(String(i.orgao_nome||'—').slice(0,34))
-                +   '<div class="hint">' + esc(String(i.municipio_nome||'')) + '</div></td>'
-                + '<td style="padding:7px;border-bottom:1px solid var(--linha)">' + esc(i.modalidade_licitacao_nome||'—') + '</td>'
-                + '<td style="padding:7px;border-bottom:1px solid var(--linha);white-space:nowrap">' + fmt(i.data_publicacao_pncp) + '</td>'
-                + '<td style="padding:7px;border-bottom:1px solid var(--linha);color:var(--muted)">—</td>'
-                + '<td style="padding:7px;border-bottom:1px solid var(--linha);white-space:nowrap">'
-                +   (i.item_url ? '<a href="https://pncp.gov.br/app/editais' + esc(i.item_url) + '" target="_blank" rel="noopener" class="btn sec mini">abrir no PNCP</a>' : '')
-                + '</td></tr>';
-            }).join('')
-          + '</tbody></table></div>'
-        : '<div class="hint" style="padding:8px 0">O PNCP respondeu, e não achou nada para "' + esc(termo) + '"'
-          + (uf ? ' em ' + esc(uf) : '') + '. Aqui <b>zero quer dizer zero</b> — a consulta foi feita e voltou vazia.</div>');
+        ? itens.map((i, k) => {
+            const ja  = nossos.has(String(i.numero_controle_pncp||''));
+            const v   = vigs[k];
+            const org = String(i.orgao_nome||'—');
+            /* O TÍTULO SEGUE A FÓRMULA DO ÍNDICE (modalidade · nº · órgão / UF), e não o campo
+               `title` do PNCP — que vem como "Ato que autoriza a Contratação Direta nº 41089/2024"
+               e repete a modalidade que já está ao lado. O `title` original fica no tooltip, pra
+               quem for conferir no portal. */
+            const num = esc(i.numero_sequencial||'—') + '/' + esc(i.ano||'—');
+            const tit = esc(i.modalidade_licitacao_nome||'Contratação') + ' Nº ' + num
+                      + ' — ' + esc(org) + (i.uf ? ' / ' + esc(i.uf) : '');
+            const alvo = i.item_url ? 'https://pncp.gov.br/app/editais' + esc(i.item_url) : null;
+            return '<div class="lic'+v.classe+'">'
+              + '<div class="topo">'
+              +   '<div class="selo" aria-hidden="true"><svg><use href="#ic-orgao"/></svg></div>'
+              +   '<div class="cab">'
+              +     (alvo ? '<a class="titulo" href="'+alvo+'" target="_blank" rel="noopener" title="'+esc(i.title||'')+'">'+tit+'</a>'
+                          : '<span class="titulo" title="'+esc(i.title||'')+'">'+tit+'</span>')
+              +     '<div class="sub">'
+              +       '<span class="quando">Publicado em '+fmt(i.data_publicacao_pncp)+'</span>'
+              +       (i.modalidade_licitacao_nome ? '<span>· '+esc(i.modalidade_licitacao_nome)+'</span>' : '')
+              +       v.bdg
+              // "já no nosso índice" continua marcado e não escondido: escondido, ninguém entende
+              // por que o total do PNCP não bate com a lista de cima.
+              +       (ja ? '<span class="bdg cinza" title="este edital já está no índice que nós coletamos">já no nosso índice</span>' : '')
+              +     '</div>'
+              +   '</div>'
+              + '</div>'
+              // O grifo entra no objeto, como no índice: é ele que responde "por que ESTE apareceu?".
+              + '<div class="obj">'+grifa(i.description||'')+'</div>'
+              /* ── OS DADOS: só o que o PNCP realmente mandou ────────────────────────────────
+                 O índice mostra quatro (valor · município · portal · encerra em). Aqui são três,
+                 e a diferença NÃO é esquecimento: `valor_global` veio vazio em 30 de 30 e não
+                 existe campo de portal na resposta (medido, `tools/prova_busca_nacional.js`
+                 assert 7). Rótulo com travessão no lugar do número é pior que rótulo nenhum —
+                 ele ocupa o mesmo espaço e ainda faz a pessoa procurar o dado que não existe. */
+              + '<div class="dados">'
+              +   '<div class="dado"><small>Município</small><span>'+esc(i.municipio_nome||'—')
+              +     (i.uf ? ' · '+esc(i.uf) : '')+'</span></div>'
+              +   '<div class="dado" title="nº de controle PNCP '+esc(i.numero_controle_pncp||'—')+'">'
+              +     '<small>Órgão</small><span>'+esc(org.length>38 ? org.slice(0,38)+'…' : org)+'</span></div>'
+              +   '<div class="dado"><small>Situação no PNCP</small><span>'+esc(i.situacao_nome||'—')+'</span></div>'
+              + '</div>'
+              + (alvo ? '<div class="acoes"><a class="btn sec mini" href="'+alvo+'" target="_blank" rel="noopener">'
+                      + 'abrir no PNCP<svg class="ic-sai" aria-hidden="true"><use href="#ic-sai"/></svg></a></div>' : '')
+              + '</div>';
+          }).join('')
+        : '<div class="lic" style="border-bottom:0"><div class="obj" style="margin-left:0">O PNCP respondeu, e não achou nada para <b>"'
+          + esc(termo) + '"</b>' + (uf ? ' em ' + esc(uf) : '')
+          + '. Aqui <b>zero quer dizer zero</b> — a consulta foi feita e voltou vazia.</div></div>')
+    + '<div class="rodape-painel"><span>Ordenados por <b>semelhança com o termo</b>, que é a ordem '
+    +   'padrão do PNCP — a por data devolve edital que não contém a palavra procurada '
+    +   '(medido: 0 de 20). Esta lista não pagina.</span></div>'
+    + '</div>';
 }
 
 function render(todos, kws, excl, aviso, procedencia){
@@ -3113,9 +3270,11 @@ function render(todos, kws, excl, aviso, procedencia){
     const classePrazo = dias == null ? '' : (dias < 0 ? ' prazo-fim' : (dias <= 2 ? ' prazo-urg' : ''));
     h += '<div class="lic'+classePrazo+'">'
       + '<div class="topo">'
-      +   '<div class="selo" aria-hidden="true"><svg viewBox="0 0 24 24">'
-      +     '<path d="M3 21h18"/><path d="M5 21V10M9.5 21V10M14.5 21V10M19 21V10"/><path d="m12 3 8 5H4z"/>'
-      +   '</svg></div>'
+      /* O selo saiu do <path> escrito à mão e passou a apontar pro sprite compartilhado
+         (fpmed_icones.js, 13/08). O desenho daqui já divergia meio pixel do #ic-orgao do
+         Negócios — colunas em 5/9.5/14.5/19 contra 5.5/10/14/18.5 — que é exatamente como
+         a cópia envelhece: sem ninguém ver e sem ninguém reclamar. */
+      +   '<div class="selo" aria-hidden="true"><svg><use href="#ic-orgao"/></svg></div>'
       +   '<div class="cab">'
       +     (l.linkSistemaOrigem
             ? '<a class="titulo" href="'+esc(l.linkSistemaOrigem)+'" target="_blank" rel="noopener">'+titulo+' ↗</a>'

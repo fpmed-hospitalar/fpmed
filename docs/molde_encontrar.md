@@ -652,3 +652,123 @@ desenha o fio (senão ele encosta na borda do painel).
 
 Com dado da forma do real: órgão de 76 caracteres, objeto de 340, **R$ 63.034.332,63**, e os três
 estados de prazo (encerrada · encerra em 1d · aberta) exercitando a barra de urgência.
+
+---
+
+## 12 · ITEM 7d FEITO — A BUSCA NACIONAL GANHA O PAINEL, E A MEDIÇÃO QUE MUDOU O DESENHO
+
+A Encontrar tinha **duas listas de licitação na mesma tela, com dois desenhos**: o painel do
+passo 6 em cima, e a busca nacional embaixo como **tabela crua** de seis colunas
+(UF / ITEM / ÓRGÃO / MODALIDADE / PUBLICADO / PORTAL). O 7d fechou essa distância: mesmo painel,
+mesmas linhas, mesma anatomia por dentro.
+
+### O que a medição mudou no plano
+
+O pedido dizia "barra de urgência pela DATA". Antes de copiar a régua do índice, medi
+`data_fim_vigencia` em dois termos, 30 resultados cada:
+
+| termo | traz vigência | **vigência no futuro** |
+|---|---|---|
+| albumina | 26 de 30 | **0** |
+| dipirona | 22 de 30 | **0** |
+
+A busca nacional é ordenada por **semelhança, não por data** — então o que ela devolve é quase
+todo edital já vencido. Com a régua do índice (vermelho = encerrada), **as trinta linhas sairiam
+vermelhas**.
+
+> **Trinta barras vermelhas não são trinta avisos, são um fundo vermelho.** A cor tem que marcar
+> a EXCEÇÃO, não a regra — senão ela para de significar qualquer coisa (D5).
+
+Então aqui o padrão é o **cinza** (vencida ou sem data), e a cor fica reservada pra linha que
+ainda está de pé. Confirmado no navegador com dado real: **30 linhas, 30 cinzas, 0 âmbar.**
+No dia em que houver uma vigente, ela salta sozinha no meio das cinzas.
+
+### O vocabulário é "vigência", e isso é honestidade, não preciosismo
+
+O índice diz "encerra em Nd", porque lê `dataEncerramentoProposta`. Aqui o campo é
+`data_fim_vigencia`, e **eu não consegui provar que são o mesmo campo**: o endpoint de compra do
+PNCP (`/api/pncp/v1/orgaos/{cnpj}/compras/{ano}/{seq}`) responde **301 sem cabeçalho `Location`**,
+e a comparação 1:1 morreu ali. Cruzar pelo nosso índice também não deu — 0 pares, porque ele
+cobre 7 UFs e a busca por relevância traz o Brasil todo, antigo.
+
+> Então a tela usa **o nome que o próprio PNCP dá ao campo**: "vigente até" / "vigência encerrada
+> em" / "vigência não informada". Reusar "encerra em" afirmaria uma equivalência que não foi
+> medida — e afirmar sem medir é exatamente o que a página de ouro proíbe na linha 1.
+
+### O que NÃO entrou na linha, e por quê
+
+| campo | medido | decisão |
+|---|---|---|
+| valor estimado | `valor_global` vazio em **30 de 30** | fica **fora da linha** |
+| portal de origem | campo **não existe** na resposta | fica **fora da linha** |
+
+Rótulo com travessão no lugar do número é pior que rótulo nenhum: ocupa o mesmo espaço e ainda
+faz a pessoa procurar o dado que não existe. E o passo seguinte, que é o perigoso, é alguém
+"completar" aquilo com **R$ 0** — a lição S6. As duas ausências são **ditas na nota do painel**,
+e há assert proibindo `brl(` dentro da `pintaNacional`.
+
+### O alternador de densidade não entrou neste painel
+
+Ele guarda a escolha no navegador e vale pra lista principal. Dois alternadores na mesma tela
+seriam dois controles pra uma preferência só. E a varredura longa que justifica a compacta
+acontece no índice — este painel tem no máximo 30 linhas, por construção do endpoint.
+
+### O sprite virou fonte única (`fpmed_icones.js`)
+
+Ordem do dono: *"use o MESMO sprite SVG que o Negócios já usa — nada de conjunto novo à parte."*
+Copiar os 19 símbolos pro segundo arquivo cumpriria a ordem hoje e a quebraria na primeira
+correção feita num lado só. **E a divergência já tinha começado**, que é o que prova que o
+problema não é teórico:
+
+```
+Negócios (#ic-orgao) .... M5.5 21V10  M10 21V10  M14 21V10  M18.5 21V10 · m12 3 9 5H3z
+Encontrar (inline) ...... M5 21V10    M9.5 21V10 M14.5 21V10 M19 21V10  · m12 3 8 5H4z
+```
+
+Meio pixel nas colunas e no frontão. Ninguém enxerga isso lado a lado — e é por isso que D3 chama
+o "quase alinhado" de pior que o desalinhado: não gera reclamação, só cansaço.
+
+**Adoção pela metade, declarada:** o `fpmed_negocios.html` continua com o sprite inline porque
+está sendo trabalhado em outra frente (item 7b). A cópia ainda existe, mas **não pode mais
+divergir em silêncio** — a suíte compara símbolo a símbolo e fica vermelha se um desenho mudar
+num lado só, e é escrita pra continuar verde no dia em que o Negócios adotar o módulo.
+
+### Dois ícones novos, e eles são acréscimo ao conjunto, não conjunto novo
+
+`ic-globo` (substitui o 🌎 que marcava a procedência — D11) e `ic-sai` (a ação que leva pra fora
+do sistema). Mesmo traço, mesma grade 24x24, Lucide/MIT como o resto.
+
+### O defeito que só o navegador mostrou
+
+A `.btn` nasceu para `<button>`. A primeira `<a class="btn">` da tela — o "abrir no PNCP" —
+saiu **sublinhada**, porque âncora traz sublinhado de fábrica e `<button>` não. Medido:
+`underline` contra `none` no botão ao lado. **O conserto foi na regra, não no caso**, senão a
+armadilha ficaria armada pra próxima âncora que alguém escrevesse.
+
+### Medido no navegador (dado real do PNCP, termo "albumina", 3.657 resultados)
+
+| largura CSS | cabeçalho | linha | rolagem horizontal | elementos estourando |
+|---|---|---|---|---|
+| 387 | 84px *(empilha)* | 462px | **0** | **0** |
+| 1363 | 44px | 230px | **0** | **0** |
+| 1917 | 44px | 230px | **0** | **0** |
+
+30 linhas · 30 grifos `<mark>` · 0 `<table>` · **nenhum `R$` na tela** · console limpo.
+
+> As larguras são as **CSS reais medidas dentro de um iframe cravado**, e não o tamanho da
+> janela: o `resize` do Chrome não desce abaixo do mínimo dele, e a tela deste computador roda a
+> 125%, então "janela 1920" mede 1536 CSS. Reportar 390/1366/1920 medindo outra coisa seria o
+> instrumento torto de sempre.
+
+### Suíte
+
+`tests/testa_busca_nacional_molde.js` — **35 asserts, mutação 22 de 22 barradas.**
+Cinco mutações passaram verde na primeira rodada e **as cinco eram o meu instrumento**: o
+`replace` pegava a primeira ocorrência, que estava no *comentário* que explica a regra, e a suíte
+tira comentário antes de medir. Mutação que não muta nada se lê como "assert fraco" — e teria me
+feito enfraquecer asserts que estavam certos (S9/S10 pela terceira vez na rodada).
+
+Reapontados 6 asserts alheios em `testa_busca_nacional.js` (S8, 9ª vez nesta obra): três mediam
+peças que deixaram de existir (o tracejado, o emoji do título, a "coluna" da tabela), dois
+cobravam a CAIXA da primeira letra de uma frase, e um exigia a frase vaga ("pode vir edital
+antigo") no lugar da medida ("a maioria já está com a vigência encerrada").

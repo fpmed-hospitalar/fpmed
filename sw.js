@@ -17,7 +17,7 @@
  */
 'use strict';
 
-const VERSAO = 'limedtec-fpmed-2026-08-13-38';
+const VERSAO = 'limedtec-fpmed-2026-08-13-39';
 const CACHE = 'limedtec-shell-' + VERSAO;
 
 // A CASCA DA FPMED. Lista MONTADA A MAO conferindo `git ls-files` (= o que o Pages serve),
@@ -58,6 +58,10 @@ const SHELL = [
      Entram os dois agora, junto com o Negocios, que depende dos mesmos. */
   './fpmed_tema.css',                  // o design system: sem ele, NENHUM token tem valor
   './limedtec-menu.js',                // a navegacao do modulo — sem ele a tela vira beco
+  /* O sprite de icones, fonte unica desde 13/08 (item 7d). Ele entra na casca NO MESMO commit
+     em que a Encontrar passou a depender dele — que e exatamente a licao dos dois de cima, que
+     ficaram no ar sem casca por um dia. Offline, sem ele a tela abre sem os icones das linhas. */
+  './fpmed_icones.js',
   './limedtec-licenca.js',
   './limedtec-papeis.js',              // a matriz de papeis que a tela de Usuarios imprime
   './limedtec-sessao.js',              // portao de perfil da tela de Usuarios (so ela o carrega)

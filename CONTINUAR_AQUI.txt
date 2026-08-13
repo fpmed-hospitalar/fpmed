@@ -1488,7 +1488,92 @@ Criado em 21/07/2026 copiando SO os arquivos do app do C:\globalmed.
                 AO LADO, e nao atras. (Nao e o conserto do gm-auth.)
              NAO MEXER: coluna de filtros aberta · numeros reais · rodape com telefone ·
              "Sistema" na frente da trilha. Ritual: bater o olho contra screenshots/01.
-     >>> 7d. A BUSCA NACIONAL DO PNCP GANHA A CARA DO MOLDE — hoje ela sai como TABELA CRUA
+     >>> ############ 13/08 — ITEM 7d FEITO. LEIA ESTE BLOCO ANTES DE SEGUIR ############
+     >>> 7d. A BUSCA NACIONAL COM A CARA DO MOLDE — **FEITO** — sw.js -> -2026-08-13-39.
+             Suite nova testa_busca_nacional_molde (35 asserts, MUTACAO 22 de 22).
+             TOTAL DA MINHA PARTE: 3.537 asserts / 0 falhas / 95 suites.
+             >>> O TOTAL QUE O run_all IMPRIME E 3.567 / 96, E A DIFERENCA NAO E MINHA: sao os 30
+                 asserts da testa_painel_negocios.js, do TRABALHADOR B (item 7b). Somar o
+                 trabalho dele no meu placar seria numero de relatorio que nao bate com o dono.
+             Detalhe completo em docs/molde_encontrar.md, secao 12 (nova).
+
+             >>> A MEDICAO QUE MUDOU O DESENHO, e ela vale mais que o desenho: o pedido dizia
+                 "barra de urgencia pela DATA". Medi ANTES de copiar a regua do indice:
+                   "albumina" .... 26 de 30 trazem data_fim_vigencia · **0 no futuro**
+                   "dipirona" .... 22 de 30 trazem data_fim_vigencia · **0 no futuro**
+                 A busca nacional e ordenada por SEMELHANCA, nao por data — o que ela devolve e
+                 quase todo edital vencido. Com a regua do indice as TRINTA linhas sairiam
+                 vermelhas. Trinta barras vermelhas nao sao trinta avisos, sao um fundo vermelho.
+                 Entao o padrao virou CINZA e a cor ficou reservada pra linha que ainda esta de
+                 pe. Confirmado no navegador com dado real: 30 linhas, 30 cinzas, 0 ambar.
+
+             >>> O VOCABULARIO E "VIGENCIA", E ISSO E HONESTIDADE. O indice diz "encerra em Nd"
+                 porque le dataEncerramentoProposta. Aqui o campo e data_fim_vigencia e **eu NAO
+                 consegui provar que sao o mesmo campo**: o endpoint de compra do PNCP responde
+                 301 SEM cabecalho Location, e o cruzamento pelo nosso indice deu 0 pares (ele
+                 cobre 7 UFs; a busca por relevancia traz o Brasil todo, antigo). Entao a tela usa
+                 o nome que o PROPRIO PNCP da ao campo. Reusar "encerra em" afirmaria equivalencia
+                 nao medida.
+
+             >>> O QUE NAO ENTROU NA LINHA, medido: `valor_global` vazio em 30 de 30 e campo de
+                 portal INEXISTENTE na resposta. Os dois ficam FORA, e as ausencias sao ditas na
+                 nota do painel. Ha assert proibindo `brl(` dentro da pintaNacional — que e o
+                 caminho pelo qual ausencia vira "R$ 0" (S6).
+
+             >>> O SPRITE VIROU FONTE UNICA: **fpmed_icones.js** (novo, 21 simbolos).
+                 Ordem do dono: "use o MESMO sprite do Negocios, nada de conjunto novo a parte".
+                 E A COPIA JA TINHA DIVERGIDO — o selo do orgao existia nos dois arquivos com
+                 desenhos QUASE iguais (colunas 5/9.5/14.5/19 contra 5.5/10/14/18.5). Meio pixel:
+                 ninguem enxerga, e e por isso que e o pior tipo de divergencia.
+                 >>> ADOCAO PELA METADE, DECLARADA: o fpmed_negocios.html CONTINUA com o sprite
+                     inline, porque e arquivo do TRABALHADOR B e eu nao encosto nele. A copia
+                     ainda existe — mas nao pode mais divergir em silencio: a suite compara
+                     simbolo a simbolo (19 batem letra por letra hoje) e fica VERMELHA se um
+                     desenho mudar num lado so. E ela e escrita pra continuar VERDE no dia em que
+                     o Negocios adotar o modulo e apagar o inline.
+                     >>> O PASSO QUE FECHA ISTO (pra quem pegar o Negocios): trocar o
+                         <svg id="ic-sprite"> por <script src="fpmed_icones.js"></script>.
+                 Dois icones novos: ic-globo (substitui o emoji da procedencia) e ic-sai.
+
+             >>> O DEFEITO QUE SO O NAVEGADOR MOSTROU: a `.btn` nasceu pra <button>, e a primeira
+                 <a class="btn"> da tela ("abrir no PNCP") saiu SUBLINHADA — ancora traz
+                 sublinhado de fabrica, <button> nao. Medido: underline contra none no botao ao
+                 lado. Consertei NA REGRA e nao no caso, senao a armadilha ficava armada pra
+                 proxima ancora.
+
+             >>> CINCO MUTACOES PASSARAM VERDE NA 1a RODADA E AS CINCO ERAM O MEU INSTRUMENTO
+                 (S9/S10, 3a vez na rodada): o `replace` pegava a PRIMEIRA ocorrencia, que estava
+                 no COMENTARIO que explica a regra — e a suite tira comentario antes de medir.
+                 Mutacao que nao muta nada se le como "assert fraco", e eu teria enfraquecido
+                 assert que estava certo. Corrigido o instrumento: 22 de 22.
+
+             >>> 6 ASSERTS ALHEIOS REAPONTADOS no testa_busca_nacional (S8, 9a vez nesta obra):
+                 tres mediam pecas que deixaram de existir (o tracejado separador, o emoji do
+                 titulo, a "coluna" da tabela), dois cobravam a CAIXA da primeira letra de uma
+                 frase, e um exigia a frase vaga ("pode vir edital antigo") no lugar da MEDIDA
+                 ("a maioria ja esta com a vigencia encerrada").
+
+             >>> MEDIDO NO NAVEGADOR, com dado real (3.657 resultados de "albumina"):
+                 387 / 1363 / 1917 CSS — ZERO rolagem horizontal e ZERO elemento estourando nas
+                 tres. 30 grifos <mark>, 0 <table>, nenhum "R$" na tela, console limpo.
+                 >>> AS LARGURAS SAO CSS REAIS, medidas dentro de um IFRAME CRAVADO. O resize do
+                     Chrome nao desce abaixo do minimo dele (pedi 390 e a janela ficou em 1536) e
+                     esta tela roda a 125%. Eu ia reportar "390 ok" medindo 1536.
+
+     >>> 7e. A BUSCA TAMBEM TEM QUE ACHAR O CALENDARIO 2025 — **PEDIDO NOVO DELE, 13/08.**
+             **E O PROXIMO DA FILA.** Os pregoes que a FPMED importou (o Calendario 2025 que o
+             Natanael usa) vivem no funil e a busca NAO os encontra hoje.
+             Marcar a ORIGEM de cada resultado: "do seu Calendario 2025" x "indice PNCP" x
+             "busca nacional ao vivo". SEM operacao destrutiva no banco (ordem dele).
+             >>> O QUE JA ESTA MEDIDO E SERVE: `licitacoes_acompanhadas` tem 2.555 linhas
+                 (origem='calendario_2025'), e ela e tabela de GESTOR — vendedor toma 403 ali,
+                 igual a `negocios`. A leitura tem que ser INDEPENDENTE das outras, senao o 403
+                 de uma derruba as tres (foi a licao dos 4 indicadores, passo 4).
+             >>> E O SELO DE PROCEDENCIA JA EXISTE COMO PECA: `.selo-fonte` (nasceu no 7d, com o
+                 "ao vivo · PNCP"). Sao tres fontes, entao ele vira um selo POR FONTE — nao
+                 inventar um segundo desenho pra dizer a mesma coisa.
+
+     >>> 7d-hist. [ref] o pedido original: hoje ela sai como TABELA CRUA
              (UF/ITEM/ORGAO/MODALIDADE/PUBLICADO/PORTAL). Vira o MESMO painel + linhas do
              passo 6, com selo de modalidade, barra de urgencia pela DATA, <mark> no objeto,
              orgao·municipio na meta e "abrir no PNCP" como acao da linha.
@@ -1544,6 +1629,28 @@ Criado em 21/07/2026 copiando SO os arquivos do app do C:\globalmed.
            navigator.serviceWorker.getRegistrations().then(r=>r.forEach(x=>x.unregister()))
          E o servidor do laco: se der 404, e processo velho segurando a porta 8099 —
          matar TODOS os node e subir de novo com -WorkingDirectory C:\fpmed.
+
+     >>> ############ 13/08 — DECISOES DO DONO NO CHECKPOINT, TODAS ENCERRADAS ############
+         1. REPOSITORIO: fica **PUBLICO**. Encerrado — nao reabrir o assunto do trancamento.
+         2. ICONES: usar o MESMO sprite do Negocios, nada de conjunto novo a parte. FEITO no 7d
+            (fpmed_icones.js). A pergunta "Lucide ou o conjunto do prototipo?" morreu com isso.
+         3. PROVA AO VIVO DO ALARME DE COLETA: **PULAR**. Palavras dele: nao quer UPDATE no
+            coleta_status, e o alarme ja foi provado entregando antes. Sai da lista de pendencias.
+
+     >>> ############ 13/08 — TRABALHADOR B EM PARALELO. LEIA ANTES DE COMMITAR ############
+         Existe uma SEGUNDA sessao cuidando SO do item 7b (Negocios, fpmed_negocios.html).
+         Ela NAO toca nos meus arquivos nem neste CONTINUAR_AQUI; eu nao toco nos dela.
+         >>> OS DOIS TRABALHAM NO MESMO DIRETORIO DE TRABALHO. Isso significa que `git status`
+             mostra o trabalho INACABADO dele junto com o meu, e um `git commit -a` levaria a
+             metade dele junto. **Commitar por CAMINHO, sempre, nunca -a.**
+         >>> `git pull --rebase` antes de cada fatia (ordem dele).
+         >>> ARMADILHA QUE EU QUASE PISEI: o meu script de mutacao escreve o arquivo mutado e
+             restaura a partir do que leu no comeco. Uma das mutacoes mirava o fpmed_negocios.html
+             — se ele salvasse durante a minha rodada, eu apagaria o trabalho dele SEM AVISO.
+             Tirei essa mutacao do arsenal. O assert continua na suite (ela so LE o arquivo).
+         >>> ARQUIVO COMPARTILHADO, e e o unico: **sw.js**. Nos dois precisamos subir a VERSAO.
+             Eu deixei em -2026-08-13-39. Quem commitar depois resolve o conflito subindo o
+             numero, nunca voltando.
 
      8. [ ] CMED COMO CAMADA DE BASE — PMVG por baixo de todo preco; tira "Conferir CMED"
             do menu e deixa a busca crua num canto discreto. Fundacao de dados primeiro.
