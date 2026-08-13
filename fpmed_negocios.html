@@ -100,33 +100,73 @@ body{
   margin-left:var(--menu-largura);
 }
 @media(max-width:900px){ body{ margin-left:0 } }
-.faixa-int{max-width:1420px;margin:0 auto;padding:0 22px;display:flex;align-items:center;gap:13px;width:100%}
-.topfaixa{background:var(--cinza-100);color:var(--cinza-600);padding:7px 0;font-size:12.5px;border-bottom:1px solid var(--cinza-200)}
-.topfaixa a{color:var(--azul-700);text-decoration:none;background:var(--azul-50);padding:3px 11px;
-  border-radius:20px;font-size:12px;transition:background .16s,transform .16s}
-.topfaixa a:hover{background:var(--azul-100);transform:translateY(-1px)}
-header{background:var(--painel);border-bottom:1px solid var(--linha);padding:14px 0;
-  box-shadow:var(--sombra-1)}
-header .marca{display:flex;align-items:center;gap:9px}
-header .cruz{width:30px;height:30px;border-radius:7px;background:var(--azul);display:grid;place-items:center;
-  color:#fff;font-size:19px;font-weight:700;line-height:1;box-shadow:0 2px 10px rgba(44,169,224,.35)}
-header .nome{font-family:Montserrat;font-weight:800;font-size:17px;color:var(--cinza-800);letter-spacing:.6px}
-header .nome small{display:block;font-size:8px;letter-spacing:2.6px;color:var(--muted);font-weight:600;margin-top:-2px}
-header .sep{width:1px;height:22px;background:var(--linha);margin:0 4px}
-header h1{font-family:Montserrat;font-size:18px;margin:0;color:var(--cinza-600);font-weight:600}
-/* submenu NEGOCIOS, como no SIGA */
-/* a barra do PORTAL empurra tudo pra direita; o submenu vem colado nela, sem novo margin-left
-   (dois `margin-left:auto` no mesmo flex separariam as duas barras nas pontas da tela) */
-header nav.portal{margin-left:auto;display:flex;gap:4px}
-header nav{display:flex;gap:4px}
-header nav a{color:var(--muted);text-decoration:none;font-size:12.5px;padding:6px 13px;border-radius:8px;cursor:pointer;transition:background .16s,color .16s}
-header nav a:hover{background:var(--painel2);color:var(--texto)}
-header nav a.on{background:rgba(44,169,224,.16);color:var(--azul-claro);font-weight:600}
-/* ── sininho de avisos ── ancorado no header, painel flutuante ── */
-.sino-cx{position:relative;margin-left:10px}
-.sino{background:var(--painel2);border:1px solid var(--linha);color:var(--texto);border-radius:10px;
-  width:38px;height:34px;font-size:15px;cursor:pointer;position:relative;transition:border-color .16s,transform .16s}
-.sino:hover{border-color:var(--azul);transform:translateY(-1px)}
+.faixa-int{max-width:1420px;margin:0 auto;padding:0 var(--esp-6);display:flex;
+  align-items:center;gap:var(--esp-3);width:100%}
+
+/* ══ A MOLDURA DO MOLDE CHEGOU NO NEGÓCIOS (13/08, item 7b) ═════════════════════════════════
+   A Encontrar fechou os 6 passos e esta tela recebe a MESMA moldura — não uma parecida. As
+   classes têm os mesmos nomes de lá (`.topo`, `.trilha`, `.pagina-topo`) de propósito: duas
+   telas do mesmo sistema com dois vocabulários é como se produz o "quase igual" que o olho
+   percebe e ninguém consegue nomear.
+   >>> AQUI A TRILHA É `Sistema › Gestão › Negócios`, e não `Oportunidades`: é o grupo em que o
+       módulo vive no menu lateral. A trilha tem que concordar com o menu, senão ela vira uma
+       segunda taxonomia — e é ela que ensina onde as coisas ficam.
+   >>> O "← Sistema" continua sendo a raiz, pela mesma ordem expressa: tela sem porta de saída é
+       beco. O telefone e o slogan saíram porque vivem no rodapé do menu, em toda tela.
+   >>> E O SINO SUBIU PRO HEADER STICKY. No molde ele é a última peça da faixa, e aqui isso é
+       ainda mais certo do que lá: o sino é o que "não pode passar hoje", e numa tela de lista
+       longa ele não pode rolar pra fora junto com o cabeçalho. */
+.topo{position:sticky;top:0;z-index:30;background:var(--branco);
+  border-bottom:1px solid var(--cinza-200)}
+.topo .faixa-int{min-height:52px;gap:var(--esp-3);flex-wrap:wrap}
+/* A reserva da etiqueta do gm-auth, medida — o mesmo defeito que a Encontrar teve: a etiqueta é
+   fixa, tem z-index máximo e cobre o canto direito do header. Só no desktop: em 390px ela comeria
+   a faixa inteira e a trilha (a porta de saída) encolheria pra zero. */
+@media(min-width:901px){
+  .topo .faixa-int{flex-wrap:nowrap;padding-right:calc(var(--esp-6) + var(--reserva-auth, 0px))}
+}
+.trilha{display:flex;align-items:center;gap:var(--esp-2);font-size:var(--txt-1);
+  color:var(--cinza-600);min-width:0}
+.trilha a{color:var(--cinza-600);text-decoration:none;border-radius:var(--raio-item);
+  padding:var(--esp-1);transition:background-color var(--transicao),color var(--transicao)}
+.trilha a:hover{background:var(--cinza-100);color:var(--cinza-800)}
+.trilha a:focus-visible{outline:none;box-shadow:var(--foco)}
+.trilha b{color:var(--cinza-800);font-weight:var(--peso-semi)}
+.trilha svg{width:12px;height:12px;flex:0 0 auto;stroke:var(--cinza-400);fill:none;
+  stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+
+/* ══ O CABEÇALHO DA PÁGINA, e as VISÕES como controle segmentado ═════════════════════════════
+   O H1 saiu da faixa branca e virou o começo do conteúdo, com subtítulo. As quatro visões
+   (Quadros · Lista · Calendário · Agenda) viraram um alternador do MESMO desenho da densidade
+   da Encontrar — porque elas são a mesma classe de coisa: "de que jeito eu olho esta lista".
+   >>> ISSO NÃO MUDA O COMPORTAMENTO: continuam os mesmos quatro `setVis`, o mesmo `data-vis`, e
+       a escolha continua guardada. O que mudou é que elas deixaram de parecer NAVEGAÇÃO (links
+       num header, ao lado do menu do sistema) e passaram a parecer o que são: um seletor de
+       formato da tela que está aberta. Link e seletor não são a mesma promessa. */
+.pagina-topo{display:flex;align-items:flex-end;gap:var(--esp-4);
+  padding:var(--esp-6) 0 0;flex-wrap:wrap}
+.pagina-topo h1{font-size:var(--txt-4);font-weight:var(--peso-semi);line-height:var(--altura-titulo);
+  letter-spacing:-.02em;color:var(--cinza-800);margin:0}
+.pagina-topo .sub{font-size:var(--txt-1);color:var(--cinza-600);margin:var(--esp-1) 0 0;
+  max-width:var(--largura-leitura)}
+.pagina-topo nav{margin-left:auto;display:flex;gap:2px;padding:2px;
+  background:var(--cinza-100);border-radius:var(--raio-botao)}
+.pagina-topo nav a{color:var(--cinza-600);text-decoration:none;font-size:var(--txt-1);
+  padding:var(--esp-1) var(--esp-3);border-radius:var(--raio-item);cursor:pointer;
+  transition:background-color var(--transicao),color var(--transicao)}
+.pagina-topo nav a:hover{color:var(--cinza-800)}
+.pagina-topo nav a.on{background:var(--branco);color:var(--cinza-800);
+  font-weight:var(--peso-semi);box-shadow:var(--sombra-1)}
+.pagina-topo nav a:focus-visible{outline:none;box-shadow:var(--foco)}
+
+/* ── sininho de avisos ── ancorado no header sticky, painel flutuante ── */
+.sino-cx{position:relative}
+.sino{background:var(--branco);border:1px solid var(--borda-controle);color:var(--cinza-700);
+  border-radius:var(--raio-botao);width:30px;height:30px;cursor:pointer;position:relative;
+  display:grid;place-items:center;
+  transition:background-color var(--transicao),border-color var(--transicao)}
+.sino:hover{background:var(--cinza-100);border-color:var(--cinza-300)}
+.sino:focus-visible{outline:none;box-shadow:var(--foco)}
 .sino .cnt{position:absolute;top:-6px;right:-6px;background:var(--ambar-600);color:var(--branco);border-radius:11px;
   min-width:19px;height:19px;font-size:11px;font-weight:800;font-family:Montserrat;line-height:19px;padding:0 5px}
 #notif{display:none;position:absolute;right:0;top:42px;width:380px;max-height:70vh;overflow:auto;z-index:40;
@@ -140,7 +180,10 @@ header nav a.on{background:rgba(44,169,224,.16);color:var(--azul-claro);font-wei
 .nf.hoje .q{color:var(--ambar-700)}
 .nf-vazio{padding:16px 12px;font-size:12.5px;color:var(--muted);line-height:1.5}
 .nf-nota{padding:10px 12px;margin-top:6px;border-top:1px solid var(--linha);font-size:11px;color:var(--muted);line-height:1.5}
-.wrap{max-width:1420px;margin:0 auto;padding:0 22px 70px}
+/* 22px era off-grid e, pior, DESALINHAVA: a faixa do header usa --esp-6 (24), e a trilha ficava
+   2px à direita do H1. Dois pixels ninguém enxerga isoladamente — mas é exatamente o "quase
+   alinhado" que D3 chama de pior que desalinhado, porque o olho sente sem saber o quê. */
+.wrap{max-width:1420px;margin:0 auto;padding:0 var(--esp-6) var(--esp-16)}
 
 /* ── barra de topo: empresa · ordenar · filtrar ── */
 /* ══ ARRUMAÇÃO VISUAL (11/08) ═════════════════════════════════════════════════════════════════
@@ -617,14 +660,16 @@ textarea.anot:focus{border-color:var(--azul)}
        urgência, e mandá-lo pra segunda linha o esconderia abaixo da dobra em telas curtas.
    >>> 900px e não 760: é o MESMO ponto em que o menu lateral vira faixa horizontal. Dois pontos
        de quebra diferentes fariam a tela se reorganizar duas vezes durante o mesmo arrasto. */
+/* ══ ESTE BLOCO APONTAVA PRO `<header>`, QUE NÃO EXISTE MAIS (13/08, item 7b) ═══════════════
+   Ele foi reapontado junto com a moldura, e não apagado: a regra que ele carrega continua
+   valendo palavra por palavra — em tela estreita a fileira de visões desce inteira e rola
+   DENTRO do controle. Rolagem dentro do controle é o certo; rolagem da PÁGINA é o defeito que
+   isto conserta. E 900px continua sendo o mesmo ponto em que o menu lateral vira faixa: dois
+   pontos de quebra diferentes fariam a tela se reorganizar duas vezes no mesmo arrasto. */
 @media(max-width:900px){
-  header .faixa-int{flex-wrap:wrap;row-gap:10px}
-  header h1{font-size:16px}
-  header .sino-cx{margin-left:auto}
-  /* a fileira de visões desce inteira e rola sozinha se ainda não couber — rolagem DENTRO do
-     controle, que é o certo; rolagem da PÁGINA inteira é o defeito que isto conserta. */
-  header nav{order:3;width:100%;overflow-x:auto;padding-bottom:2px;scrollbar-width:thin}
-  header nav a{white-space:nowrap}
+  .pagina-topo{flex-wrap:wrap;row-gap:var(--esp-3)}
+  .pagina-topo nav{order:3;width:100%;margin-left:0;overflow-x:auto;scrollbar-width:thin}
+  .pagina-topo nav a{white-space:nowrap}
 }
 </style>
 </head>
@@ -654,16 +699,39 @@ textarea.anot:focus{border-color:var(--azul)}
   <symbol id="ic-entrada" viewBox="0 0 24 24"><path d="M3 12h5l2 3h4l2-3h5"/><path d="M4.5 6h15L21 12v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-6z"/></symbol>
   <symbol id="ic-seta" viewBox="0 0 24 24"><path d="M4 12h14"/><path d="m13 6 6 6-6 6"/></symbol>
 </defs></svg>
-<div class="topfaixa" data-limedtec-instalar>
-  <div class="faixa-int">
-    <a href="fpmed_sistema_final.html">← Sistema</a>
-    <span><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" width="14" height="14" style="stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;vertical-align:-2px"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2.2 2A16 16 0 0 1 3 6.2 2 2 0 0 1 5 4z"/></svg> (62) 3290-4241</span><span>·</span><span>Compromisso com qualidade!</span>
+<div data-limedtec-menu></div>
+
+<!-- ══ O HEADER STICKY (13/08, item 7b) — a MESMA moldura da Encontrar ═════════════════════════
+     A `topfaixa` cinza morreu aqui também: o caminho de volta virou a raiz da trilha, e o
+     telefone e o slogan já vivem no rodapé do menu, em toda tela.
+     >>> O `data-limedtec-instalar` vai na FAIXA INTERNA, e não no `.topo`: o limedtec-pwa.js
+         pendura o botão como último filho do elemento marcado, e no `.topo` (largura total) ele
+         cairia fora da régua do conteúdo. Foi o mesmo defeito medido na Encontrar. -->
+<div class="topo">
+  <div class="faixa-int" data-limedtec-instalar>
+    <nav class="trilha" aria-label="Você está em">
+      <a href="fpmed_sistema_final.html">Sistema</a>
+      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m9 5 7 7-7 7"/></svg>
+      <span>Gestão</span>
+      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m9 5 7 7-7 7"/></svg>
+      <b aria-current="page">Negócios</b>
+    </nav>
+    <span style="flex:1"></span>
+    <!-- SININHO: o que abre hoje e amanhã. Ele subiu pro header STICKY porque é o "não pode
+         passar hoje" — numa tela de lista longa ele não pode rolar pra fora com o cabeçalho. -->
+    <div class="sino-cx">
+      <button class="sino" id="sino" onclick="toggleNotif(event)" title="Avisos de sessão"><svg class="ic ic-g" aria-hidden="true"><use href="#ic-sino"/></svg><span class="cnt" id="sino-n" style="display:none">0</span></button>
+      <div id="notif"><div class="nf-vazio">carregando…</div></div>
+    </div>
   </div>
 </div>
-<div data-limedtec-menu></div>
-<header>
-  <div class="faixa-int">
-    <h1>Negócios</h1>
+
+<div class="wrap">
+  <div class="pagina-topo">
+    <div>
+      <h1>Negócios</h1>
+      <p class="sub">O funil das licitações que a FPMED acompanha — da oportunidade à ata.</p>
+    </div>
     <!-- ══ A BARRA DO PORTAL MORREU AQUI (12/08 — NAVEGAÇÃO ÚNICA) ═══════════════════════════
          Ela oferecia sete entradas, e o menu lateral tem as sete — paridade conferida entrada
          por entrada contra o limedtec-menu.js ANTES de apagar, do mesmo jeito que na Encontrar
@@ -686,22 +754,18 @@ textarea.anot:focus{border-color:var(--azul)}
          mapa — e a hora de pagar uma dívida dessas é quando ela ia crescer, não "depois".
          >>> Agora o link CARREGA a própria visão, e os dois lugares leem dela. Acrescentar uma
              quinta visão amanhã é uma linha de HTML e nada de JavaScript. -->
-    <nav>
+    <!-- AS QUATRO VISÕES viraram um alternador segmentado, o MESMO desenho da densidade da
+         Encontrar — porque são a mesma classe de coisa: "de que jeito eu olho esta lista".
+         O comportamento não mudou: mesmos `setVis`, mesmo `data-vis`, mesma escolha guardada.
+         O que mudou é que elas deixaram de parecer NAVEGAÇÃO (links num header, ao lado do menu
+         do sistema) e passaram a parecer o que são. -->
+    <nav aria-label="Visão da lista">
       <a data-vis="quadros" onclick="setVis('quadros')" class="on">Quadros</a>
       <a data-vis="lista" onclick="setVis('lista')">Lista</a>
       <a data-vis="calendario" onclick="setVis('calendario')">Calendário</a>
       <a data-vis="agenda" onclick="setVis('agenda')">Agenda</a>
     </nav>
-    <!-- SININHO: o que abre hoje e amanhã. Fica no header do módulo porque é aqui que o dia
-         de trabalho acontece — a Agenda mostra o mês, o sino mostra o que não pode passar. -->
-    <div class="sino-cx">
-      <button class="sino" id="sino" onclick="toggleNotif(event)" title="Avisos de sessão"><svg class="ic ic-g" aria-hidden="true"><use href="#ic-sino"/></svg><span class="cnt" id="sino-n" style="display:none">0</span></button>
-      <div id="notif"><div class="nf-vazio">carregando…</div></div>
-    </div>
   </div>
-</header>
-
-<div class="wrap">
   <div class="barra">
     <select id="f-empresa" onchange="pinta()"><option value="">Todas as empresas</option></select>
     <select id="f-ordem" onchange="pinta()">
@@ -4219,9 +4283,16 @@ function setVis(v){
   marcarVisaoNoMenu();
   pinta();
 }
-// UM lugar só decide qual link está aceso, e ele lê o `data-vis` do próprio link.
+/* UM lugar só decide qual link está aceso, e ele lê o `data-vis` do próprio link.
+   >>> O SELETOR PERDEU O `header` EM 13/08 (item 7b), e isso era um defeito de verdade: o
+       `<header>` deixou de existir quando as visões desceram pro cabeçalho da página, e
+       `header nav a[data-vis]` passou a não encontrar NADA — nenhum link acenderia, em silêncio.
+       Quem pegou foi a suíte nova; a tela não reclama, ela só para de marcar.
+   >>> AGORA ELE PROCURA PELO `data-vis`, que é a identidade da coisa, e não pelo lugar onde ela
+       está montada hoje. É a mesma lição da dívida paga em 12/08: quem manda é o dado do
+       elemento, não a posição dele na árvore. */
 function marcarVisaoNoMenu(){
-  document.querySelectorAll('header nav a[data-vis]').forEach(a => a.classList.toggle('on', a.dataset.vis === VIS));
+  document.querySelectorAll('a[data-vis]').forEach(a => a.classList.toggle('on', a.dataset.vis === VIS));
 }
 /* ── "IR PRO FUNIL" — do cartão da lista para a coluna dele nos Quadros ──────────────────────
    A lista responde "o que eu tenho"; o funil responde "em que pé está". Quem vê um negócio na
@@ -4317,7 +4388,19 @@ marcarVisaoNoMenu();
        representa é o próprio link (`data-vis`), e tanto o boot quanto o `setVis` chamam a MESMA
        função. Antes eram dois mapas por índice, e corrigir um só foi como o link errado acendeu. */
 
-function _aoAutenticar(){ carregar().then(() => { pinta(); formManualDaSessao(); }); abreLeitorNaBarra(); }
+/* ══ A RESERVA DA ETIQUETA DO gm-auth (13/08, item 7b) ═══════════════════════════════════════
+   A etiqueta fixa do gm-auth (e-mail + trocar senha + sair) fica no canto superior direito com
+   z-index máximo, e cobre o canto direito do header novo — o mesmo defeito medido na Encontrar.
+   A largura é MEDIDA da etiqueta, não chutada: ela muda com o tamanho do e-mail de quem entrou,
+   e um número fixo em px estaria certo hoje e errado no próximo endereço, em silêncio.
+   >>> Recalcula no resize porque a etiqueta é fixa e o header é fluido. */
+function reservaAuth(){
+  const b = document.getElementById('gm-auth-bar');
+  const l = b && !b.hidden ? Math.ceil(b.getBoundingClientRect().width) : 0;
+  document.documentElement.style.setProperty('--reserva-auth', l ? (l + 12) + 'px' : '0px');
+}
+window.addEventListener('resize', reservaAuth);
+function _aoAutenticar(){ carregar().then(() => { pinta(); formManualDaSessao(); }); abreLeitorNaBarra(); reservaAuth(); }
 if(window.gmAuth) _aoAutenticar();
 else document.addEventListener('gm-auth-ready', _aoAutenticar, { once:true });
 </script>

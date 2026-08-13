@@ -1355,9 +1355,36 @@ Criado em 21/07/2026 copiando SO os arquivos do app do C:\globalmed.
              desenha. Agora cobra o par: painel com borda, linha com divisor, ultima linha sem fio.
 
      >>> ############ ITEM 7 FECHADO. O QUE VEM DEPOIS ############
-     >>> 7b. APLICAR O MOLDE NO NEGOCIOS — ordem do dono: "publica ENCONTRAR, prova com print,
-             SO ENTAO Negocios". O Negocios ja herdou de graca os tokens, a sidebar navy e as
-             bordas; falta a moldura (header sticky com trilha, indicadores, painel).
+     >>> 7b. O MOLDE NO NEGOCIOS — **FATIA 1 (A MOLDURA) FEITA** — sw.js -> -2026-08-13-36.
+             Suite nova testa_moldura_negocios (24 asserts, MUTACAO 16 de 16).
+             TOTAL: 3.483 / 0 falhas / 94 suites.
+             >>> A MOLDURA E A MESMA DA ENCONTRAR, e nao uma parecida: as classes tem os MESMOS
+                 nomes (.topo / .trilha / .pagina-topo). Duas telas do mesmo sistema com dois
+                 vocabularios produzem o "quase igual" que o olho percebe e ninguem nomeia. Ha
+                 assert cobrando as TRES pontas de cada classe: a regra existe aqui, existe la,
+                 e a marcacao usa o nome.
+             >>> A TRILHA DIZ `Sistema > Gestao > Negocios` — "Gestao" e o grupo em que o modulo
+                 vive no MENU. Trilha que discorda do menu vira uma segunda taxonomia, e e ela
+                 que ensina onde as coisas ficam. Tem assert que confere o grupo NO limedtec-menu.js.
+             >>> O SINO SUBIU PRO HEADER STICKY: ele e o "nao pode passar hoje" e nao pode rolar
+                 pra fora junto com o cabecalho numa lista longa.
+             >>> AS 4 VISOES viraram ALTERNADOR SEGMENTADO, o mesmo desenho da densidade da
+                 Encontrar — porque sao a mesma classe de coisa ("de que jeito eu olho esta
+                 lista"). Mesmos setVis, mesmo data-vis, mesma escolha guardada: elas so
+                 deixaram de PARECER navegacao do sistema, ao lado do menu.
+             >>> *** UM DEFEITO DE VERDADE, achado pela suite nova: o `marcarVisaoNoMenu`
+                 procurava `header nav a[data-vis]`, e o <header> deixou de existir. Ele passou a
+                 nao encontrar NADA — nenhum link acenderia, EM SILENCIO (a tela nao reclama, ela
+                 so para de marcar). Agora procura pelo `data-vis`, que e a IDENTIDADE da coisa,
+                 e nao pelo lugar onde ela esta montada. Mesma licao da divida paga em 12/08.
+             >>> E O `.wrap` estava com 22px de padding contra os 24 do header: a trilha ficava
+                 2px a direita do H1. Ninguem enxerga 2px isolados — e e por isso que D3 chama o
+                 "quase alinhado" de pior que o desalinhado.
+             >>> MEDIDO: 390/1366/1920 com ZERO rolagem horizontal, header de 53px, trilha e H1
+                 na mesma regua nas tres.
+     >>> FALTA DO 7b (proxima fatia): os INDICADORES do topo e o PAINEL em volta das visoes —
+         as duas pecas do molde que a Encontrar ja tem e esta ainda nao. Os quadros do kanban
+         sao um caso a parte: eles NAO sao lista, e o painel do molde e desenhado pra lista.
      >>> ITEM NOVO QUE ESTA RODADA MEDIU E NAO FEZ — **A VARREDURA DE EMOJI DA ENCONTRAR**:
          51 ocorrencias de emoji-icone no fpmed_licitacoes.html (13x ⚠ · 6x 🎯 · 5x 🌎 · 2x 🌐 ·
          2x 📅 · 2x 📧 · 2x ✅ · 2x ⚡ · 🔍 ⛔ 📦 📰 📄 ✓ ✕). D11 proibe emoji como icone, e o
