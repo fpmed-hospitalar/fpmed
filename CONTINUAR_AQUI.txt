@@ -1097,7 +1097,30 @@ Criado em 21/07/2026 copiando SO os arquivos do app do C:\globalmed.
                 visual (o efeito de "rotulo fraco" vem do tamanho + caixa alta +
                 espacamento, nao da cor — entao escurece so a cor pro #64748B, 4,76:1),
                 a ordem de ataque em 4 fatias e o conflito do "Calendario em breve".
-            >>> COMECA PELA FATIA 1 (os tokens), que e a que o testa_tema remede sozinho.
+            >>> FATIA 1 (OS TOKENS) **FEITA E PUBLICADA em 13/08** — sw.js -> -2026-08-13-27.
+                A paleta da amostra entrou inteira (os 9 cinzas, raio 16/12/999, a familia de
+                sombra macia). O testa_tema remediu os 27 pares: TODOS passam.
+                >>> O DONO DECIDIU o unico valor que nao veio da amostra: o #9AA7B8 dos rotulos
+                    pequenos dava 2,44:1 e subiu pro --cinza-500 (#64748B, 4,76:1). O #9AA7B8
+                    ficou no --cinza-400, no oficio de borda/icone/divisoria. Palavras dele:
+                    "Legibilidade AA manda."
+                >>> QUATRO ASSERTS DO testa_tema MEDIAM O MEIO e foram reapontados (licao S8, a
+                    sexta vez nesta obra): o 8 e o 27 cobravam o VALOR do raio, o 25 cobrava a
+                    STRING da sombra, e o 28/29 cobravam o hex do texto e do fundo. Os cinco
+                    ficaram vermelhos com a paleta nova sem que NADA tivesse piorado — eles so
+                    sabiam dizer "mudou", nunca "piorou". Agora cobram a promessa: hierarquia de
+                    raio (botao < cartao), sombra escura-neutra-e-MACIA, texto escuro sem ser
+                    preto, fundo claro sem ser branco, e o DEGRAU entre o fundo e o cartao.
+            >>> PROXIMA FATIA E A 2 (o menu): grupos com respiro e barra no item aceso. Ele JA
+                nasce em 3 grupos (OPORTUNIDADES/GESTAO/FERRAMENTAS) — conferido na tela — entao
+                o pedido de "separar licitacao das ferramentas" ja esta 80% atendido; falta o
+                acabamento.
+            >>> E O GAP REAL DA ENCONTRAR, VISTO NA TELA (13/08): a AREA DE CONTEUDO E BRANCA.
+                E por isso que nada flutua — cartao branco sobre fundo branco. Na amostra o
+                `main` e o fundo suave e SO os cartoes sao brancos. Esse e o primeiro conserto
+                da fatia 3, e provavelmente o que sozinho muda mais o "agradavel de ver".
+                Faltam tambem: cartao de busca, filtros em cartao com contador na faceta,
+                cabecalho com trilha ("Inicio / Encontrar") e o cartao de resultado rico.
      8. [ ] CMED COMO CAMADA DE BASE — PMVG por baixo de todo preco; tira "Conferir CMED"
             do menu e deixa a busca crua num canto discreto. Fundacao de dados primeiro.
      8b.[ ] demais telas ganhando o tema claro, uma a uma (8 ainda escuras — e o que
@@ -2294,10 +2317,21 @@ ITEM 10 FECHADO (06/08). A coleta do PNCP roda SOZINHA 3x/dia. Detalhes na secao
   - Suite nova testa_coleta_agendada (63) + 10 asserts no testa_coleta_pncp.
     TOTAL: 1.138 asserts verdes / 0 falhas / 36 suites.
 
->>> 1 PASSO E DELE (o unico que sobrou do item 10 — nao da pra fazer daqui, nao ha `gh` logado):
-    GitHub -> repo fpmed-hospitalar/fpmed -> Settings -> Secrets and variables -> Actions ->
-    New repository secret -> nome COLETA_TOKEN, valor = a linha COLETA_TOKEN do
-    segredos.local.txt. Sem isso o job para na 1a linha com mensagem clara (nao falha em silencio).
+>>> [RESOLVIDO — MEDIDO EM 13/08] O COLETA_TOKEN **JA ESTA CONFIGURADO**. Este bloco ficou meses
+    escrito como pendencia aberta, em caixa alta, e virou fato consumado sem nunca ser remedido —
+    e a licao S17 e exatamente sobre isso. Medido agora pela API PUBLICA do GitHub (o repo e
+    publico, entao /actions/runs responde sem token):
+        Coleta PNCP ......... ultimas 6 rodadas: success, success, success, success, success,
+                              success  (a mais nova 13/08 09:58 UTC, por schedule)
+        Boletim diario ...... ultimas 3: success, success, success
+        pages-build-deploy .. ultimas 3: success, success, success
+    NENHUMA automacao quebra por falta do token. Se um dia a coleta voltar a falhar, o proprio
+    workflow ja diz o que conferir (linha 143 do coleta-pncp.yml) e o alarme por e-mail dispara.
+    >>> O TEXTO ORIGINAL FICA ABAIXO, riscado, porque ele explica COMO se configura o segredo —
+        util no dia da rotacao. O que nao vale mais e o "falta fazer".
+    [texto de 06/08, so como receita de rotacao] GitHub -> repo fpmed-hospitalar/fpmed ->
+    Settings -> Secrets and variables -> Actions -> New repository secret -> nome COLETA_TOKEN,
+    valor = a linha COLETA_TOKEN do segredos.local.txt.
 
 >>> ACHADO DA RODADA — 429 NAO E QUEDA. Na PRIMEIRA coleta que de fato falou com o PNCP, a
     funcao gravou 70 licitacoes e levou HTTP 429. A fonte estava SAUDAVEL, so pediu pra

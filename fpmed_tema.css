@@ -37,20 +37,48 @@
 
 :root{
 
-  /* ── CINZAS ────────────────────────────────────────────────────────────────
+  /* ══ CINZAS — A PALETA DA AMOSTRA APROVADA (13/08, item 7) ══════════════════
      Dez tons, frios (tingidos de azul pra conversar com o #2CA9E0).
-     Os dois extremos de uso são lei do manual_design.md D4:
-     texto em --cinza-800 (#1a202c), fundo de página em --cinza-50 (#f7fafc).
-     Preto puro e branco puro NÃO existem como cor de texto/fundo aqui. */
-  --cinza-50:  #f7fafc;   /* fundo da página */
-  --cinza-100: #edf2f7;   /* fundo de bloco discreto, linha zebrada */
-  --cinza-200: #e2e8f0;   /* borda padrão, divisória */
-  --cinza-300: #cbd5e0;   /* borda de campo, borda em hover */
-  --cinza-400: #a0aec0;   /* placeholder, ícone desligado */
-  --cinza-500: #667286;   /* o cinza MAIS CLARO que ainda passa em AA — placeholder */
-  --cinza-600: #4a5568;   /* RÓTULO — o cinza de texto secundário (D9) */
-  --cinza-700: #2d3748;   /* texto forte alternativo */
-  --cinza-800: #1a202c;   /* TEXTO PRINCIPAL */
+     Os dois extremos de uso são lei do manual_design.md D4: texto no --cinza-800,
+     fundo de página no --cinza-50. Preto puro e branco puro NÃO existem como cor
+     de texto/fundo aqui.
+
+     ── DE ONDE ESTES NOVE VALORES VIERAM, E POR QUE OS ANTIGOS SAÍRAM ─────────
+     O dono aprovou uma amostra estética (feita pelo arquiteto, identidade FPMED)
+     e mandou a tela ficar igual a ela. A amostra usa uma família de cinza
+     DIFERENTE da que estava aqui — mais azulada e um degrau mais escura. Os nove
+     mudaram; nenhum coincidia.
+
+     >>> POR QUE OS TOKENS É QUE MUDAM, e não a tela: o pedido dizia as duas
+         coisas juntas — "igual à amostra" E "tudo por token, proibido cor
+         chumbada". Copiar os valores dela para dentro do `fpmed_encontrar` seria
+         criar a segunda paleta do sistema, que é exatamente o que este arquivo
+         existe pra impedir. Trocando aqui, as duas telas herdam de uma vez e a
+         terceira já nasce certa.
+
+     >>> UM VALOR NÃO VEIO DA AMOSTRA, E O DONO DECIDIU ASSIM (13/08):
+         a amostra usava #9AA7B8 para os RÓTULOS PEQUENOS — os "VALOR ESTIMADO /
+         ITENS / MUNICÍPIO" do cartão e os "OPORTUNIDADES / GESTÃO / FERRAMENTAS"
+         do menu, que foram justamente o que ele elogiou ("letras afastadas").
+         Medido contra branco: **2,44:1**. Não é "quase": é metade do mínimo.
+         O efeito de rótulo fraco vem do TAMANHO, da CAIXA ALTA e do
+         ESPAÇAMENTO ENTRE LETRAS — não da cor. Então a cor sobe pro --cinza-500
+         (4,76:1) e o desenho fica idêntico.
+         Palavras dele: *"SIM, escureça... Legibilidade AA manda."*
+     >>> E O #9AA7B8 CONTINUA AQUI, no 400, no ofício em que ele é legítimo:
+         borda, ícone desligado, divisória. Ele não some — para de carregar texto.
+         (É a lição S12 pela segunda vez: lá foi um azul de ação; aqui teria sido
+         o sistema inteiro.) */
+  --cinza-50:  #F1F5F9;   /* fundo da página — o "fundo suave" no lugar do branco duro */
+  --cinza-100: #EEF2F7;   /* fundo de bloco discreto, linha zebrada */
+  --cinza-200: #E4EAF1;   /* borda padrão, divisória */
+  --cinza-300: #CFD8E3;   /* borda de campo, borda em hover */
+  --cinza-400: #9AA7B8;   /* borda, ícone desligado, divisória — NUNCA texto (2,44:1) */
+  --cinza-500: #64748B;   /* o cinza MAIS CLARO que ainda passa em AA (4,76:1):
+                             rótulo pequeno, placeholder, contador de faceta */
+  --cinza-600: #475569;   /* RÓTULO — o cinza de texto secundário (D9) */
+  --cinza-700: #334155;   /* texto forte alternativo */
+  --cinza-800: #1E293B;   /* TEXTO PRINCIPAL */
   --cinza-900: #121721;   /* fundo escuro, quando houver */
   --branco:    #ffffff;   /* fundo de cartão — só como superfície, nunca da página */
 
@@ -183,19 +211,43 @@
   --esp-12: 48px;
   --esp-16: 64px;
 
-  /* ── RAIOS ──────────────────────────────────────────────────────────────── */
-  --raio-cartao: 8px;
-  --raio-botao: 6px;
-  --raio-pilula: 999px;
+  /* ══ RAIOS — da amostra aprovada (13/08, item 7) ═══════════════════════════
+     8px de cartão era o que fazia a tela ter "canto de tabela de sistema". A
+     amostra usa 16 no cartão e 12 no campo/botão, e a diferença no bater o olho
+     é grande porque o cartão é a peça que mais ocupa a tela.
+
+     >>> O QUE FAZ CARA DE IA NÃO É O RAIO GRANDE, É O RAIO ÚNICO. D13 põe
+         "border-radius gigante EM TUDO" na lista negra, e a palavra que carrega a
+         regra é *em tudo*: quando o botão, o campo, o cartão e a etiqueta têm o
+         mesmo canto, some a hierarquia de tamanho e a tela vira um monte de
+         retângulos macios do mesmo tipo. Aqui há TRÊS degraus e cada um tem um
+         ofício — e é isso que a suíte passou a cobrar, no lugar do teto de 12px
+         que ela cobrava antes (esse teto era meu, não da regra). */
+  --raio-cartao: 16px;   /* cartão, painel, o que é SUPERFÍCIE */
+  --raio-botao: 12px;    /* botão e campo — sempre MENOR que o do cartão */
+  --raio-pilula: 999px;  /* só a pílula, e é o único que pode ser total */
 
   /* ── SOMBRAS ──────────────────────────────────────────────────────────────
      D6 manda 2 níveis dentro da página: repouso e flutuando. O terceiro nível
      NÃO é um "meio-termo" — ele existe só pro que paira sobre a tela inteira
      (modal, menu suspenso). Dentro da página, usar 1 e 2 e mais nada.
-     Todas pretas e translúcidas: sombra colorida é lista negra (D13). */
-  --sombra-1: 0 1px 2px rgba(18,23,33,.06), 0 1px 3px rgba(18,23,33,.08);
-  --sombra-2: 0 2px 4px rgba(18,23,33,.06), 0 4px 12px rgba(18,23,33,.10);
-  --sombra-3: 0 8px 16px rgba(18,23,33,.10), 0 16px 40px rgba(18,23,33,.16);
+     Todas pretas e translúcidas: sombra colorida é lista negra (D13).
+
+     ══ A FAMÍLIA DA AMOSTRA APROVADA (13/08, item 7) ══════════════════════════
+     A sombra antiga era CURTA e DURA: dois desfoques de 2 e 3px, quase colados
+     na borda. Ela lia como contorno, não como profundidade — e junto com a borda
+     cinza dava o "cara de template" que D6 nomeia (sombra pesada + borda grossa).
+     A da amostra é MACIA E LONGA: o segundo desfoque salta de 3px para 16px, com
+     opacidade menor. É o que faz o cartão branco parecer flutuar sobre o fundo
+     em vez de estar recortado nele.
+
+     >>> E É POR ISSO QUE A BORDA SAI DE ONDE A SOMBRA ENTRA. Os dois juntos
+         desenham a mesma fronteira duas vezes; a sombra sozinha basta e é a que
+         dá o "agradável de ver". A borda continua onde não há sombra (campo,
+         divisória, contorno de faceta), que é o ofício dela. */
+  --sombra-1: 0 1px 2px rgba(30,41,59,.04), 0 4px 16px rgba(30,41,59,.06);
+  --sombra-2: 0 2px 6px rgba(30,41,59,.06), 0 12px 28px rgba(30,41,59,.10);
+  --sombra-3: 0 8px 16px rgba(30,41,59,.10), 0 24px 56px rgba(30,41,59,.16);
 
   /* ── TIPOGRAFIA ───────────────────────────────────────────────────────────
      UMA família. Montserrat já era a fonte da marca; o que mudou é que ela

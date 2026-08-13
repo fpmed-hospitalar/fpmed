@@ -49,8 +49,11 @@ ok('4. vermelho e ambar com os tons que o sistema usa', [50,100,300,500,600,700,
 ok('5. o azul da marca e o #2CA9E0 tirado do codigo, nao um azul inventado', token('azul-500').toLowerCase() === '#2ca9e0', token('azul-500'));
 ok('6. o verde da marca e o #8DC63F', token('verde-500').toLowerCase() === '#8dc63f', token('verde-500'));
 ok('7. escala de espacamento completa', [1,2,3,4,6,8,12,16].every(n => token('esp-' + n)));
-ok('8. os tres raios do adendo: cartao 8, botao 6, pilula 999',
-  token('raio-cartao') === '8px' && token('raio-botao') === '6px' && token('raio-pilula') === '999px');
+// Os TRES raios existem (a hierarquia entre eles e cobrada no 27). Os valores
+// literais sairam daqui em 13/08 pelo mesmo motivo dos asserts 25, 28 e 29: eles
+// diziam "mudou", nunca "piorou" — e a paleta aprovada mudou os tres de uma vez.
+ok('8. os tres raios do adendo existem: cartao, botao e pilula',
+  ['raio-cartao','raio-botao','raio-pilula'].every(t => token(t)));
 ok('9. tres niveis de sombra', ['sombra-1','sombra-2','sombra-3'].every(t => token(t)));
 ok('10. escala tipografica de seis degraus', [1,2,3,4,5,6].every(n => token('txt-' + n)));
 ok('11. quatro pesos declarados', ['peso-normal','peso-medio','peso-semi','peso-forte'].every(t => token(t)));
@@ -101,24 +104,49 @@ ok('23. nenhum emoji no arquivo (emoji como icone e proibido)',
   !/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/u.test(CSS));
 ok('24. nenhum gradiente colorido de enfeite - o unico gradiente e o cinza do skeleton',
   (semComentario.match(/gradient\(/g) || []).length === 1);
-ok('25. nenhuma sombra colorida (D13) - toda sombra e preta translucida',
-  ['sombra-1','sombra-2','sombra-3'].every(t => !/rgba\((?!18,\s*23,\s*33)/.test(token(t))));
+/* ══ ESTE ASSERT TAMBEM MEDIA O MEIO (13/08) ═══════════════════════════════════
+   Ele cobrava a string literal "rgba(18,23,33" — ou seja, cobrava UMA sombra
+   especifica, nao a REGRA. Quando a familia de sombra da amostra entrou
+   (rgba(30,41,59), mais macia e mais longa), ele ficou vermelho sem que nada
+   tivesse piorado: continua sendo um escuro neutro e translucido.
+   >>> AGORA ELE COBRA O QUE D13 PROIBE DE VERDADE: sombra COLORIDA. Um brilho
+       azul da marca — rgba(44,169,224,.35), que ja existiu neste projeto — passa
+       no assert antigo se alguem trocar o literal junto, e reprova neste aqui.
+       Dois testes: o tom tem que ser ESCURO (o olho le sombra clara como sujeira)
+       e quase NEUTRO (canais proximos entre si). */
+const _coresDeSombra = t => [...String(token(t)).matchAll(/rgba?\((\d+)\s*,\s*(\d+)\s*,\s*(\d+)/g)]
+  .map(m => [+m[1], +m[2], +m[3]]);
+ok('25. nenhuma sombra colorida (D13) - toda sombra e um escuro neutro e translucido',
+  ['sombra-1','sombra-2','sombra-3'].every(t => _coresDeSombra(t).length >= 2
+    && _coresDeSombra(t).every(([r, g, b]) =>
+         Math.max(r, g, b) < 80                                  // escura
+      && Math.max(r, g, b) - Math.min(r, g, b) <= 35)),           // quase neutra
+  ['sombra-1','sombra-2','sombra-3'].map(t => t + ': ' + JSON.stringify(_coresDeSombra(t))));
+/* E A SOMBRA PRECISA SER MACIA, nao um contorno: e o desfoque LONGO que faz o
+   cartao flutuar. A antiga tinha 3px no segundo desfoque e lia como borda. */
+ok('25b. a sombra de repouso e MACIA (desfoque longo), e nao um contorno colado na borda',
+  (String(token('sombra-1')).match(/\d+px/g) || []).some(v => parseInt(v, 10) >= 12),
+  token('sombra-1'));
 ok('26. nenhum backdrop-filter - glassmorphism esta na lista negra', !/backdrop-filter/.test(semComentario));
-ok('27. nenhum raio gigante em cartao (border-radius enorme em tudo e cara de IA)',
-  parseInt(token('raio-cartao'), 10) <= 12);
+/* ══ E ESTE ERA O MAIS FRACO DOS TRES (13/08) ══════════════════════════════════
+   Ele cobrava "raio do cartao <= 12px". Esse teto era MEU, nao da regra: D13 poe
+   na lista negra "border-radius gigante EM TUDO", e a palavra que carrega a
+   proibicao e *em tudo*. O que faz cara de IA nao e o canto grande, e o canto
+   UNICO — botao, campo, cartao e etiqueta com o mesmo raio apagam a hierarquia de
+   tamanho e a tela vira um monte de retangulos macios iguais.
+   A amostra aprovada usa 16 no cartao, e com o teto antigo ela reprovaria. */
+const _raioCartao = parseInt(token('raio-cartao'), 10), _raioBotao = parseInt(token('raio-botao'), 10);
+ok('27. ha HIERARQUIA de raio: o botao/campo e sempre menor que o cartao (D13)',
+  _raioBotao < _raioCartao, { cartao: _raioCartao, botao: _raioBotao });
+ok('27b. e o raio do cartao continua proporcional, nao gigante',
+  _raioCartao <= 20, _raioCartao);
+ok('27c. so a pilula pode ser totalmente arredondada',
+  parseInt(token('raio-pilula'), 10) > 100 && _raioCartao <= 20 && _raioBotao <= 20);
 
-// ── 6. o preto puro e o branco puro ──────────────────────────────────────────
-// D4 nomeia os dois extremos, e nomeia por um motivo: preto sobre branco vibra e
-// cansa. O branco existe como SUPERFICIE de cartao, nunca como fundo de pagina.
-ok('28. texto principal e #1a202c, nao preto puro', token('cinza-800').toLowerCase() === '#1a202c');
-ok('29. fundo da pagina e #f7fafc, nao branco puro', token('cinza-50').toLowerCase() === '#f7fafc');
-ok('30. #000000 nao existe no arquivo', !/#000000|#000\b/i.test(semComentario));
-ok('31. a pagina usa o cinza-50 como fundo (o branco fica pro cartao)',
-  /\.fp-pagina\{[^}]*background:\s*var\(--cinza-50\)/.test(semComentario.replace(/\s+/g, ' ').replace(/ \{/g, '{')));
-
-// ── 7. CONTRASTE MEDIDO (WCAG 2.1) ───────────────────────────────────────────
-// L1: medir, nunca achar. Cada par abaixo e um par que o tema USA de verdade -
-// nao uma amostra bonita. Se um dia alguem clarear um token, o par cai aqui.
+/* A LUMINANCIA RELATIVA DA WCAG. Ela morava la embaixo, junto do bloco de
+   contraste; subiu porque a secao 6 passou a medir em vez de comparar literal.
+   Uma definicao so — duas copias da mesma formula e o jeito classico de uma
+   envelhecer calada, e esta aqui e a que sustenta os 27 pares. */
 const lum = hex => {
   const h = hex.replace('#', '');
   const c = [0, 2, 4].map(i => {
@@ -127,6 +155,41 @@ const lum = hex => {
   });
   return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
 };
+
+// ── 6. o preto puro e o branco puro ──────────────────────────────────────────
+// D4 nomeia os dois extremos, e nomeia por um motivo: preto sobre branco vibra e
+// cansa. O branco existe como SUPERFICIE de cartao, nunca como fundo de pagina.
+/* ══ ESTES DOIS ASSERTS MEDIAM O MEIO, E A TROCA DE PALETA MOSTROU ISSO (13/08) ══
+   Eles cobravam o VALOR LITERAL ("e #1a202c", "e #f7fafc"). Quando a paleta da
+   amostra aprovada entrou, os dois ficaram vermelhos — e nada tinha piorado: o
+   texto continuava escuro-sem-ser-preto e o fundo continuava claro-sem-ser-branco.
+   Assert preso a um literal nao guarda a regra, guarda a decoracao dela; ele so
+   sabe dizer "mudou", nunca "piorou". E a licao S8, que ja apareceu cinco vezes
+   nesta obra com roupas diferentes.
+   >>> AGORA ELES COBRAM A PROMESSA DO D4, que e o que a regra sempre quis dizer:
+       o texto principal NAO e preto puro e e escuro o bastante; o fundo da pagina
+       NAO e branco puro e e claro o bastante. Trocar de paleta passa; afundar o
+       contraste ou cair no preto/branco puro, nao. */
+const _lumTexto = lum(token('cinza-800')), _lumFundo = lum(token('cinza-50'));
+ok('28. texto principal e escuro SEM ser preto puro (D4)',
+  token('cinza-800').toLowerCase() !== '#000000' && _lumTexto > 0 && _lumTexto < 0.05,
+  { cor: token('cinza-800'), luminancia: Math.round(_lumTexto * 1e4) / 1e4 });
+ok('29. fundo da pagina e claro SEM ser branco puro — o branco fica pro cartao (D4)',
+  !['#ffffff', '#fff'].includes(token('cinza-50').toLowerCase()) && _lumFundo > 0.8 && _lumFundo < 1,
+  { cor: token('cinza-50'), luminancia: Math.round(_lumFundo * 1e4) / 1e4 });
+/* E o degrau entre o fundo da pagina e o branco do cartao precisa EXISTIR: e ele
+   que faz o cartao "flutuar" antes mesmo da sombra. Um fundo #FDFDFE passaria nos
+   dois asserts acima e deixaria a tela chapada de novo. */
+ok('29b. ha degrau visivel entre o fundo da pagina e o branco do cartao',
+  lum(token('branco')) - _lumFundo >= 0.05,
+  Math.round((lum(token('branco')) - _lumFundo) * 1e4) / 1e4);
+ok('30. #000000 nao existe no arquivo', !/#000000|#000\b/i.test(semComentario));
+ok('31. a pagina usa o cinza-50 como fundo (o branco fica pro cartao)',
+  /\.fp-pagina\{[^}]*background:\s*var\(--cinza-50\)/.test(semComentario.replace(/\s+/g, ' ').replace(/ \{/g, '{')));
+
+// ── 7. CONTRASTE MEDIDO (WCAG 2.1) ───────────────────────────────────────────
+// L1: medir, nunca achar. Cada par abaixo e um par que o tema USA de verdade -
+// nao uma amostra bonita. Se um dia alguem clarear um token, o par cai aqui.
 const contraste = (a, b) => {
   const [x, y] = [lum(a), lum(b)].sort((m, n) => n - m);
   return (x + 0.05) / (y + 0.05);

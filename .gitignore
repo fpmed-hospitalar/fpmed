@@ -69,3 +69,11 @@ scan_*.txt
 # mensagens operacionais pro Lemuel mandar (nao sao produto, e citam pessoas)
 _MENSAGEM_*.txt
 _PASSO_A_PASSO_*.txt
+
+# AMOSTRAS ESTETICAS que o dono manda como ALVO (13/08, decisao dele).
+# Sao REFERENCIA, nao produto: eu leio do Downloads dele pra saber o acabamento que ele
+# aprovou, e o resultado entra no repo como token e como tela — a amostra em si, nao.
+# >>> E ELA SO PRECISOU DE REGRA PORQUE JA FOI PEGA UMA VEZ: uma copia caiu na raiz do
+#     repo e o `git add -A` a incluiu no commit do item 6. Saiu antes do push. O repo e
+#     PUBLICO, e arquivo que nao e meu nao vai pra la sem o dono mandar.
+fpmed_*_amostra.html
