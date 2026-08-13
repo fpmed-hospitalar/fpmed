@@ -176,8 +176,11 @@ ok('29. duas rodadas do boletim nao se sobrepoem (mandaria o mesmo e-mail 2x)',
 // ══════════ 8. A TELA ══════════
 ok('39. *** a assinatura e POR JORNAL, com um clique, e reversivel ***',
   /function alternarEnvio\(id\)/.test(TELA) && /enviar_email: novo/.test(TELA));
+/* REAPONTADO em 13/08 (item 7f): ele cravava o EMOJI dentro do rotulo. O 📧 virou <use> do
+   sprite (D11 proibe emoji como icone) e o assert ficou vermelho sem o botao ter perdido nada.
+   A promessa e "o botao mostra o estado", e quem a cumpre sao os DOIS rotulos diferentes. */
 ok('40. ...e o botao mostra o estado (ligado x desligado)',
-  /'📧 e-mail ligado':'📧 e-mail'/.test(TELA));
+  /j\.enviar_email\?' e-mail ligado':' e-mail'/.test(TELA));
 ok('41. a tela explica que o boletim e do dia FECHADO',
   /dia\s*\n?\s*anterior <b>fechado<\/b>/.test(TELA.replace(/\s+/g, ' ')) || /anterior <b>fechado<\/b>/.test(TELA));
 ok('42. *** o texto velho ("exige provedor contratado: esta fora") saiu ***',

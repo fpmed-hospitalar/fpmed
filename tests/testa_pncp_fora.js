@@ -67,7 +67,9 @@ ok('20. a razao de separar esta escrita: a acao e diferente',
 // ══════════ 4. NADA REGREDIU ══════════
 ok('21. o carimbo de procedencia continua dizendo de quando e o dado',
   /coletados em \$\{quando\.toLocaleDateString/.test(src));
-ok('22. e continua avisando quando a ultima coleta falhou', /⚠️ a última coleta falhou/.test(src));
+/* REAPONTADO em 13/08 (item 7f): o ⚠️ virou <use> do sprite. O aviso continua inteiro — o que
+   saiu foi o emoji, e o assert cobrava justamente ele. */
+ok('22. e continua avisando quando a ultima coleta falhou', /a última coleta falhou/.test(src));
 ok('23. a busca ampla respeita UF e modalidade escolhidas',
   /if \(uf\)  q \+= `&uf=eq\.\$\{encodeURIComponent\(uf\)\}`/.test(src)
   && /if \(mod\) q \+= `&modalidade_cod=eq\./.test(src));

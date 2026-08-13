@@ -74,7 +74,21 @@
        na mesma grade 24x24. O globo substitui o 🌎 que marcava a busca nacional (D11 proíbe
        emoji como ícone) e a seta-pra-fora marca a ação que SAI do sistema. */
     'ic-globo':      '<circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a14 14 0 0 1 3.6 9A14 14 0 0 1 12 21a14 14 0 0 1-3.6-9A14 14 0 0 1 12 3z"/>',
-    'ic-sai':        '<path d="M14 3h7v7"/><path d="M10 14 20.5 3.5"/><path d="M18 13.5V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h5.5"/>'
+    'ic-sai':        '<path d="M14 3h7v7"/><path d="M10 14 20.5 3.5"/><path d="M18 13.5V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h5.5"/>',
+    /* ── OS OITO QUE ENTRARAM COM O ITEM 7f (a varredura de emoji da Encontrar) ──────────────
+       Mesma regra dos dois de cima: acréscimo AO conjunto único, no mesmo traço e na mesma
+       grade 24x24 — nunca um conjunto novo à parte (ordem do dono, 13/08).
+       >>> `ic-certo` e `ic-x` substituem ✓/✅ e ✕. Eles são os únicos aqui que às vezes são a
+           ÚNICA coisa dentro de um botão, então quem os usa assim é obrigado a pôr um
+           `aria-label` — ícone sozinho sem nome é um botão mudo pra quem usa leitor de tela. */
+    'ic-alvo':       '<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3.4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>',
+    'ic-certo':      '<path d="m4 12.5 5 5L20 6.5"/>',
+    'ic-x':          '<path d="M6 6l12 12M18 6 6 18"/>',
+    'ic-lupa':       '<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>',
+    'ic-envelope':   '<rect x="2.5" y="5" width="19" height="14" rx="2"/><path d="m3 7 9 6 9-6"/>',
+    'ic-caixa':      '<path d="M3 8.5 12 4l9 4.5v7L12 20l-9-4.5z"/><path d="m3 8.5 9 4.5 9-4.5"/><path d="M12 13v7"/>',
+    'ic-raio':       '<path d="M13 2 4 14h7l-1 8 9-12h-7z"/>',
+    'ic-jornal':     '<path d="M4 5h13v14H4z"/><path d="M17 8h3v11H5"/><path d="M7 9h7M7 12.5h7M7 16h4"/>'
   };
 
   /* `aria-hidden` no sprite inteiro: quem lê em voz alta pula isto e vai direto ao texto — o

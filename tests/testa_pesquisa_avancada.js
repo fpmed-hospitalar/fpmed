@@ -266,7 +266,13 @@ ok('51. *** "Encontrar por No" IGNORA o refino (quem digitou o numero quer AQUEL
   /if\(num\) return String\(l\.numeroControlePNCP\|\|''\)\.includes\(num\);/.test(src)
   && /ignora o refino de propósito/.test(src));
 ok('52. o render guarda o ultimo resultado, pro refino nao ir a rede',
-  /window\._ultimoRender = \{todos, kws, excl, aviso, procedencia\}/.test(src) && /function rerender\(\)/.test(src));
+  /* REAPONTADO em 13/08 (item 7f): o render ganhou um 6o parametro (`procIcone`), porque o
+     icone da procedencia teve que sair de DENTRO da string escapada. O assert listava os cinco
+     campos na ordem, entao qualquer campo novo o quebrava — e o que ele guarda e que o ultimo
+     resultado FIQUE guardado pro refino nao ir a rede. */
+  /window\._ultimoRender = \{todos, kws, excl, aviso, procedencia/.test(src)
+  && /function rerender\(\)/.test(src)
+  && /render\(u\.todos, u\.kws, u\.excl, u\.aviso, u\.procedencia/.test(src));
 ok('53. ...e o motivo esta dito (a fonte caiu 6x em 3 dias; trocar filtro nao pode custar consulta)',
   /não custa nova consulta ao PNCP|não pode\s*\n?\/\/ custar/.test(src));
 /* O PORTAL VALE PORQUE A TAXA DE VITORIA E MEDIDA POR ELE (item 8: BNC 23,0% ·

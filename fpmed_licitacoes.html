@@ -635,7 +635,18 @@ select[disabled],input[disabled],textarea[disabled]{
   border-bottom:1px solid var(--borda-divisor);
   padding:var(--esp-4) var(--esp-6);
   transition:background-color var(--transicao)}
-.lic:last-child{border-bottom:0}
+/* ══ O FIO DOBRADO — ACHADO PELO TRABALHADOR B NO NEGÓCIOS, E ELE ESTAVA AQUI TAMBÉM ═════════
+   A regra era `.lic:last-child{border-bottom:0}`. **Ela nunca casava**: o último filho do
+   `.painel-res` é o RODAPÉ, não a última linha. Então o fio da última linha somava com a borda
+   de cima do rodapé — 0,8px + 0,8px onde o sistema desenha 0,8.
+   >>> O CONSERTO É O DELE, ESTRUTURAL E COM O MESMO NOME DE CLASSE: as linhas passaram a morar
+       num `<div class="linhas">`, e aí "última linha" volta a querer dizer última linha. Um
+       seletor posicional (`:nth-last-child(2)`) devolveria o pixel e deixaria a armadilha de pé
+       pro próximo que acrescentasse qualquer coisa depois do rodapé.
+   >>> E O NOME É O MESMO DE PROPÓSITO (`.linhas`), pela ordem permanente de 13/08: duas telas do
+       mesmo sistema com dois vocabulários produzem o "quase igual" que o olho percebe e ninguém
+       nomeia. Mesma estrutura, mesmo defeito, mesmo conserto, mesma palavra. */
+.painel-res .linhas .lic:last-child{border-bottom:0}
 /* ══ A LINHA COMPACTA ═══════════════════════════════════════════════════════════════════════
    O molde troca o padding de 13px pra 8px. Aqui a compacta corta o respiro vertical e RECOLHE o
    objeto de 3 linhas pra 1 — porque num modo de varredura o que ocupa altura é o texto do
@@ -758,10 +769,26 @@ select[disabled],input[disabled],textarea[disabled]{
            "medida" no olho e escrita com duas casas decimais. Duas casas decimais são uma
            afirmação de que houve conta. */
 .selo-fonte.hist{background:var(--ambar-50);color:var(--ambar-700)}
+
+/* ══ O ÍCONE INLINE (item 7f) ═══════════════════════════════════════════════════════════════
+   O seletor é `svg.ic` e NÃO `.ic` puro, e isso não é preciosismo: esta tela já tem `.ind .ic`,
+   que é a CAIXA do ícone do indicador (um <span>). Uma regra `.ic{width:1em}` solta pegaria os
+   dois e um dia mudaria o cartão do indicador por acidente — o tipo de colisão que ninguém
+   associa à causa. Amarrar no elemento resolve de vez.
+   >>> `vertical-align:-.14em` porque a linha de base do texto não é a base do desenho: sem isso
+       o ícone "boia" acima da palavra, e é isso que faz parecer emoji colado em vez de ícone. */
+svg.ic{width:1em;height:1em;flex:0 0 auto;stroke:currentColor;fill:none;stroke-width:1.8;
+  stroke-linecap:round;stroke-linejoin:round;vertical-align:-.14em}
+/* Os dois que carregam SINAL, e por isso ganham cor própria: o alerta e o alvo. O resto herda a
+   cor do texto ao lado, que é o comportamento certo pra ícone que só acompanha uma palavra. */
+svg.ic.aviso{color:var(--ambar-600)}
+svg.ic.alvo{color:var(--azul-600)}
+svg.ic.bom{color:var(--verde-700)}
 /* O ícone da ação que SAI do sistema. Ele é o único da linha que leva pra fora, e por isso é o
-   único que ganha a seta — marcar todos com ela faria a marca não marcar nada. */
-.lic .acoes svg.ic-sai{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:1.8;
-  stroke-linecap:round;stroke-linejoin:round;margin-left:var(--esp-1);vertical-align:-2px}
+   único que ganha a seta — marcar todos com ela faria a marca não marcar nada.
+   >>> O tamanho E O RESPIRO saíram daqui em 13/08 (item 7f): quem dimensiona é o `svg.ic`, em
+       `em`, e quem separa do texto é o `gap` do próprio botão. A `margin-left` que vivia aqui
+       passou a SOMAR com o gap (12px onde o sistema pede 8) — dois donos do mesmo espaço. */
 
 /* etiquetas: fundo no tom 100 e texto no 700 — é assim que a cor informa sem
    gritar, e é assim que o texto passa em AA. O verde-500 CHEIO do tema escuro
@@ -865,7 +892,16 @@ select[disabled],input[disabled],textarea[disabled]{
      <button> nao. Medido no navegador: underline contra none no botao ao lado.
      >>> O CONSERTO E NA REGRA, E NAO NO CASO: a proxima <a class="btn"> que alguem escrever ja
          nasce certa. Corrigir so o meu botao deixaria a armadilha armada pro proximo. */
+  /* ══ O `gap` ENTROU EM 13/08 (item 7f), E ELE CONSERTA UM EFEITO DO 7d ═════════════════════
+     O `inline-flex` acima entrou no 7d pra alinhar a primeira <a class="btn"> da tela. Quando o
+     7f trocou os emoji por <svg>, os botões saíram com o ícone COLADO no texto — medido, folga
+     de 0px. A causa é do flex, não do markup: o espaço estava lá (`' Cruzar com nosso estoque'`),
+     mas num container flex o texto vira item anônimo e o espaço da borda é DESCARTADO.
+     >>> POR ISSO O CONSERTO É `gap` E NÃO UM `&nbsp;` no meio da string: o gap vale pra todo
+         botão com ícone, inclusive os que ainda vão nascer, e não some se alguém reescrever o
+         rótulo. Botão só com texto tem um item só, e gap sobre um item é zero. */
   text-decoration:none;display:inline-flex;align-items:center;justify-content:center;
+  gap:var(--esp-2);
   transition:background-color var(--transicao),border-color var(--transicao),color var(--transicao)}
 .btn:hover:not([disabled]){background:var(--azul-700)}
 .btn:focus-visible{outline:none;box-shadow:var(--foco)}
@@ -1291,6 +1327,20 @@ const dt  = s => { if(!s) return null; const d=new Date(s); return isNaN(d)?null
 const fmtDt = s => { const d=dt(s); return d ? d.toLocaleDateString('pt-BR')+' às '+d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}) : '—'; };
 const esc = s => String(s==null?'':s).replace(/[<>&"]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c]));
 
+/* ══ O ÍCONE, EM UMA CHAMADA SÓ (13/08, item 7f) ═════════════════════════════════════════════
+   A tela tinha 36 emoji fazendo trabalho de ícone, e D11 proíbe. Eles viraram <use> do sprite
+   compartilhado — e a troca passa por AQUI em vez de 36 trechos de markup escritos à mão, que é
+   como nasceriam 36 variações de tamanho e alinhamento.
+   >>> ELE DIMENSIONA EM `em`, e isso é a decisão: o mesmo ícone aparece ao lado de texto de
+       12px e de 15px nesta tela. Em pixel fixo ele fica grande no rótulo pequeno e pequeno no
+       título — o defeito clássico de sprite mal ligado, e o que faz uma tela "parecer feita por
+       partes". Em `em` ele acompanha a tipografia de onde estiver.
+   >>> `aria-hidden` SEMPRE: nesta tela o ícone nunca é a única portadora do sentido — ele
+       acompanha uma palavra. Onde ele fica sozinho (o ✕ de fechar), quem chama é obrigado a pôr
+       um `aria-label` no BOTÃO, e não a descrever o desenho. */
+const ic = (nome, cls) => '<svg class="ic' + (cls ? ' ' + cls : '') + '" aria-hidden="true"><use href="#ic-'
+  + nome + '"/></svg>';
+
 /* ══ O GRIFO DO TERMO BUSCADO (13/08, item 7 fatia 3b) ═══════════════════════════════════════
    Marca no objeto o que a pessoa digitou. Não é enfeite: numa lista de objetos de 400
    caracteres, o grifo é o que responde "por que ESTE resultado apareceu?" sem ela ter que ler
@@ -1451,7 +1501,7 @@ function _qtdDoNome(produto){
 // _qtdDoNome lista `FR` entre as unidades contáveis (por causa de "50FR" = 50 frascos) e dividia
 // o preço por 22. MEDIDO no cruzamento de 03/08: virava R$ 0,03 por sonda e um Δ de −99,9% contra
 // o edital. Em produto de calibre (sonda/cateter/dreno/cânula) o token NNFR é apagado antes da
-// detecção: fica sem pack conhecido → "⚠ conferir emb.", que é a verdade. O soro "500ML S/F 16FR"
+// detecção: fica sem pack conhecido → "conferir emb.", que é a verdade. O soro "500ML S/F 16FR"
 // não é dessa classe e segue lendo 16 frascos normalmente.
 const _CALIBRE = /\b(sonda|cateter|dreno|canula|tubo endo|traqueo|gastrostomia|uretral|nasogastrica|nasoenteral|foley|aspiracao traqueal)\b/;
 function _semCalibre(produto){
@@ -1462,7 +1512,7 @@ function qtdEmbalagem(und, produto){ const u=_undNum(und); return u>=1 ? u : _qt
 
 // UND do NOSSO estoque: quem classifica é o `packNosso` do motor (10/08) — a mesma pergunta é
 // feita aqui, no gerador de proposta e no conferidor, e três respostas seriam três chances de
-// divergir. `null` = "caixa sem contagem": a célula vira "⚠ conferir emb.", que é a verdade.
+// divergir. `null` = "caixa sem contagem": a célula vira "conferir emb.", que é a verdade.
 // O leitor de pack (qtdEmbalagem, com as manhas de calibre/NxM/frasco-ampola) continua sendo
 // daqui — o motor só decide o que fazer quando ele não leu nada.
 function unitarioNosso(c){
@@ -1633,11 +1683,11 @@ async function iniciarEstoque(){
     const linhas = await carregarEstoque();
     indexaEstoque(linhas);
     const comPreco = linhas.filter(c => c._un.status === 'ok').length;
-    el.innerHTML = '🎯 estoque FPMED pronto: <b>'+linhas.length.toLocaleString('pt-BR')+'</b> itens ('
+    el.innerHTML = ic('alvo','alvo') + ' estoque FPMED pronto: <b>'+linhas.length.toLocaleString('pt-BR')+'</b> itens ('
                  + comPreco.toLocaleString('pt-BR')+' com preço unitário calculável)';
   }catch(e){
     ESTOQUE_ERRO = e.message;
-    el.innerHTML = '<span class="conferir">⚠️ não consegui ler o estoque FPMED ('+esc(e.message)
+    el.innerHTML = '<span class="conferir">' + ic('alerta','aviso') + ' não consegui ler o estoque FPMED ('+esc(e.message)
                  + '). A busca funciona; o cruzamento fica indisponível.</span>';
   }
 }
@@ -1899,7 +1949,7 @@ function avisoBrandoPNCP(quando, emDiaAte){
   const faixa = document.createElement('div');
   faixa.className = 'aviso-brando';
   const dm2 = s => s ? s.slice(8,10)+'/'+s.slice(5,7)+'/'+s.slice(0,4) : '';
-  faixa.innerHTML = '🌐 <b>O portal do governo (PNCP) não respondeu agora.</b> '
+  faixa.innerHTML = ic('globo') + ' <b>O portal do governo (PNCP) não respondeu agora.</b> '
     + 'Mostrando o nosso índice'
     + (emDiaAte ? ', completo até ' + dm2(emDiaAte)
        : quando ? ', atualizado em ' + quando.toLocaleDateString('pt-BR') + ' às '
@@ -2462,7 +2512,7 @@ async function rodarRadar(){
     msg.textContent = '';
   }catch(e){
     msg.textContent = '';
-    box.innerHTML = '<div class="aviso err" style="text-align:left;padding:14px">⚠️ '+esc(e.message)+'</div>';
+    box.innerHTML = '<div class="aviso err" style="text-align:left;padding:14px">' + ic('alerta','aviso') + ' '+esc(e.message)+'</div>';
   }
   bt.disabled = false;
 }
@@ -2548,7 +2598,7 @@ async function mandarProFunil(i){
     }
     // diz A QUAL EMPRESA foi, mesmo quando não perguntou: sem isso, no dia em que a segunda
     // empresa entrar, ninguém sabe onde os negócios de antes foram parar.
-    if(bt){ bt.textContent = '✓ no funil' + (emp.nome ? ' · ' + emp.nome.split(' ').slice(0,2).join(' ') : '') + ' — abrir ↗';
+    if(bt){ bt.innerHTML = ic('certo','bom') + ' no funil' + (emp.nome ? ' · ' + esc(emp.nome.split(' ').slice(0,2).join(' ')) : '') + ' — abrir ↗';
             bt.disabled = false;
             bt.onclick = () => location.href='fpmed_negocios.html'; }
   }catch(e){
@@ -2646,11 +2696,11 @@ function resumoFiltros(f){
   // O RÓTULO DA JANELA MÓVEL DIZ O QUE ELA É HOJE, e não o nome da regra. "último dia útil" era
   // um rótulo que descrevia o cálculo; o operador quer saber a DATA que vai abrir.
   p.push(f.janela && f.janela.tipo === 'fixa'
-    ? '📅 janela FIXA ' + br(j.de) + (j.ate!==j.de ? '–'+br(j.ate) : '')
-    : '📅 ' + (j.de === j.ate ? 'hoje' : br(j.de)+'–'+br(j.ate)) + ' (move sozinho)');
+    ? ic('calendario') + ' janela FIXA ' + br(j.de) + (j.ate!==j.de ? '–'+br(j.ate) : '')
+    : ic('calendario') + ' ' + (j.de === j.ate ? 'hoje' : br(j.de)+'–'+br(j.ate)) + ' (move sozinho)');
   p.push((f.uf||'todas as UF') + ' · ' + (_MOD_NOME[f.mod] || 'modalidade '+(f.mod||'?')));
-  if(f.kw) p.push('🔍 ' + f.kw);
-  if(f.excluir) p.push('⛔ ' + f.excluir);
+  if(f.kw) p.push(ic('lupa') + ' ' + esc(f.kw));
+  if(f.excluir) p.push(ic('bloqueado') + ' ' + esc(f.excluir));
   // reaproveita as MESMAS pills da tela: o resumo do jornal não pode descrever o filtro de um
   // jeito e a lista aplicá-lo de outro.
   const pil = pillsRefino(refinoDe(f));
@@ -2739,9 +2789,9 @@ function pintaJornais(){
       + '<div class="acao">'+marca
       +   '<button class="btn '+(j.enviar_email?'':'sec ')+'mini" onclick="alternarEnvio('+j.id+')" '
       +     'title="'+(j.enviar_email?'você recebe o boletim deste jornal de madrugada':'marcar para receber por e-mail')+'">'
-      +     (j.enviar_email?'📧 e-mail ligado':'📧 e-mail')+'</button>'
+      +     ic('envelope') + (j.enviar_email?' e-mail ligado':' e-mail')+'</button>'
       +   '<button class="btn mini" onclick="abrirJornal('+j.id+')">Abrir</button>'
-      +   '<button class="btn sec mini" onclick="excluirJornal('+j.id+')" title="apaga só este jornal, e só pra você">✕</button>'
+      +   '<button class="btn sec mini" onclick="excluirJornal('+j.id+')" title="apaga só este jornal, e só pra você" aria-label="apagar este jornal">'+ic('x')+'</button>'
       + '</div></div>';
   }).join('');
 }
@@ -2764,7 +2814,7 @@ async function alternarEnvio(id){
     pintaJornais();
     const est = document.getElementById('jor-envio-estado');
     if(est) est.innerHTML = novo
-      ? '<br>✅ <b>'+esc(j.nome)+'</b> vai no boletim das 5h. O primeiro sai na próxima madrugada.'
+      ? '<br>'+ic('certo','bom')+' <b>'+esc(j.nome)+'</b> vai no boletim das 5h. O primeiro sai na próxima madrugada.'
       : '<br>o jornal <b>'+esc(j.nome)+'</b> saiu do boletim.';
   }catch(e){ alert('Não consegui mudar a assinatura: '+e.message); }
 }
@@ -2844,7 +2894,7 @@ async function conferirJornais(){
 // custar uma consulta ao PNCP — ainda mais numa fonte que caiu 6 vezes em 3 dias.
 function rerender(){
   const u = window._ultimoRender;
-  if(u) render(u.todos, u.kws, u.excl, u.aviso, u.procedencia);
+  if(u) render(u.todos, u.kws, u.excl, u.aviso, u.procedencia, u.procIcone);
   else buscar();
 }
 
@@ -2902,7 +2952,7 @@ async function buscar(aoVivo){
   // Aviso que fica sempre aceso é aviso que ninguém lê no dia em que a coleta falhar de verdade.
   const emDiaAte = carimbo && carimbo.ultimo_dia_ok ? String(carimbo.ultimo_dia_ok).slice(0,10) : null;
   const dm = s => s ? s.slice(8,10)+'/'+s.slice(5,7) : '';
-  const procedenciaBanco = `📦 ${(doBanco||[]).length} do nosso índice`
+  const procedenciaBanco = `${(doBanco||[]).length} do nosso índice`
     + (janelaAmpliada ? ' · <b>fora da janela de datas</b> (nada publicado no período escolhido)' : '')
     + (emDiaAte ? ` · completo até ${dm(emDiaAte)}` : '')
     + (quando ? ` · coletados em ${quando.toLocaleDateString('pt-BR')} às ${quando.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}` : '');
@@ -2912,7 +2962,7 @@ async function buscar(aoVivo){
     // A rodada parcial NÃO vira "a última coleta falhou": rodada que cobriu o dia mais novo e
     // parou no dia velho fez exatamente o que devia. O alerta fica pro caso em que nenhum dia
     // fechou — aí sim ninguém sabe o que está faltando.
-    const alerta = (carimbo && carimbo.ultimo_erro && !emDiaAte) ? ' · ⚠️ a última coleta falhou' : '';
+    const alerta = (carimbo && carimbo.ultimo_erro && !emDiaAte) ? ' · a última coleta falhou' : '';
     render(doBanco, kws, excl, null, procedenciaBanco + alerta);
     return;
   }
@@ -2945,13 +2995,13 @@ async function buscar(aoVivo){
       return;
     }
     if(emCache){
-      render(emCache.dados, kws, excl, null, '⚡ do cache desta sessão · ' + new Date(emCache.quando).toLocaleTimeString('pt-BR'));
+      render(emCache.dados, kws, excl, null, 'do cache desta sessão · ' + new Date(emCache.quando).toLocaleTimeString('pt-BR'), 'raio');
       avisoBrandoPNCP(quando, emDiaAte);
       return;
     }
     // Aqui sim: nem banco, nem cache, nem PNCP. E a mensagem separa as duas causas, porque a
     // ação é diferente — "espera o portal voltar" não é "procura outro termo".
-    lista.innerHTML = '<div class="aviso err" style="text-align:left;padding:18px"><b>⚠️ Sem resultado por dois motivos ao mesmo tempo</b>'
+    lista.innerHTML = '<div class="aviso err" style="text-align:left;padding:18px"><b>' + ic('alerta','aviso') + ' Sem resultado por dois motivos ao mesmo tempo</b>'
       + '<div class="hint" style="margin-top:10px;line-height:1.7">'
       + '<b>1.</b> O portal do governo (PNCP) não respondeu: ' + esc(e.message) + '.<br>'
       + '<b>2.</b> E o nosso índice não tem nada' + (kws.length ? ' para <b>' + esc(kws.join(' / ')) + '</b>' : ' no período escolhido')
@@ -2969,7 +3019,7 @@ async function buscar(aoVivo){
   st.textContent='';
   render(todos, kws, excl,
     truncado ? ('Li '+truncado.lidas+' de '+truncado.total+' páginas (teto por busca). Refine os filtros para não perder licitação.') : null,
-    fresco ? '⚡ do cache desta sessão' : '🌐 ao vivo do PNCP · agora');
+    fresco ? 'do cache desta sessão' : 'ao vivo do PNCP · agora', fresco ? 'raio' : 'globo');
 }
 
 /* ── QUANDO A BUSCA NACIONAL ENTRA ───────────────────────────────────────────────────────────
@@ -3119,6 +3169,7 @@ function pintaCalendario(achados, total){
     + '<div class="nota-fonte">Isto é <b>histórico da casa</b>, não licitação aberta: são os pregões '
     +   'do Calendário 2025 que a FPMED já acompanhou. Serve para saber <b>se já disputamos isto antes, '
     +   'e como foi</b> — antes de decidir entrar de novo.</div>'
+    + '<div class="linhas">'
     + mostra.map(l => {
         const tit = esc(l.modalidade || 'Certame') + (l.numero ? ' Nº ' + esc(l.numero) : '')
                   + ' — ' + esc(l.orgao || '—') + (l.uf ? ' / ' + esc(l.uf) : '');
@@ -3157,6 +3208,7 @@ function pintaCalendario(achados, total){
           + '</div>'
           + '</div>';
       }).join('')
+    + '</div>'
     + '<div class="rodape-painel"><span>'
     +   (achados.length > CAL_TETO
         ? 'Mostrando as <b>' + CAL_TETO + '</b> mais recentes de <b>' + achados.length + '</b> — refine o termo para ver as outras'
@@ -3279,6 +3331,7 @@ function pintaNacional(termo, uf, r, erro){
     +   'o PNCP <b>não informa o portal</b> de origem nesta busca; '
     +   'e ele <b>não traz o valor estimado</b> aqui. '
     +   'Os dois campos ficam de fora da linha em vez de aparecerem chutados.</div>'
+    + '<div class="linhas">'
     + (itens.length
         ? itens.map((i, k) => {
             const ja  = nossos.has(String(i.numero_controle_pncp||''));
@@ -3323,21 +3376,25 @@ function pintaNacional(termo, uf, r, erro){
               +     '<small>Órgão</small><span>'+esc(org.length>38 ? org.slice(0,38)+'…' : org)+'</span></div>'
               +   '<div class="dado"><small>Situação no PNCP</small><span>'+esc(i.situacao_nome||'—')+'</span></div>'
               + '</div>'
+              /* O icone deste botao era markup escrito a mao (item 7d, antes de o helper existir).
+                 Passou pelo `ic()` no 7f: um lugar so monta icone, senao nascem variacoes de
+                 tamanho e alinhamento que ninguem consegue rastrear depois. */
               + (alvo ? '<div class="acoes"><a class="btn sec mini" href="'+alvo+'" target="_blank" rel="noopener">'
-                      + 'abrir no PNCP<svg class="ic-sai" aria-hidden="true"><use href="#ic-sai"/></svg></a></div>' : '')
+                      + 'abrir no PNCP' + ic('sai','sai') + '</a></div>' : '')
               + '</div>';
           }).join('')
         : '<div class="lic" style="border-bottom:0"><div class="obj" style="margin-left:0">O PNCP respondeu, e não achou nada para <b>"'
           + esc(termo) + '"</b>' + (uf ? ' em ' + esc(uf) : '')
           + '. Aqui <b>zero quer dizer zero</b> — a consulta foi feita e voltou vazia.</div></div>')
+    + '</div>'
     + '<div class="rodape-painel"><span>Ordenados por <b>semelhança com o termo</b>, que é a ordem '
     +   'padrão do PNCP — a por data devolve edital que não contém a palavra procurada '
     +   '(medido: 0 de 20). Esta lista não pagina.</span></div>'
     + '</div>';
 }
 
-function render(todos, kws, excl, aviso, procedencia){
-  window._ultimoRender = {todos, kws, excl, aviso, procedencia};   // pro refino re-renderizar sem rede
+function render(todos, kws, excl, aviso, procedencia, procIcone){
+  window._ultimoRender = {todos, kws, excl, aviso, procedencia, procIcone};   // pro refino re-renderizar sem rede
   const num = window._filtroNumero; window._filtroNumero = null;
   populaPortais(todos);                 // antes do refino(): o select pode zerar um portal ausente
   const r = refino();
@@ -3375,14 +3432,22 @@ function render(todos, kws, excl, aviso, procedencia){
   document.getElementById('k-aderencia').textContent = comAlvo || '—';
 
   const lista = document.getElementById('lista');
-  let h = aviso ? '<div class="aviso err" style="margin-bottom:14px;text-align:left;padding:14px 18px">⚠️ '+esc(aviso)+'</div>' : '';
+  let h = aviso ? '<div class="aviso err" style="margin-bottom:14px;text-align:left;padding:14px 18px">' + ic('alerta','aviso') + ' '+esc(aviso)+'</div>' : '';
   // PROCEDÊNCIA: de onde veio o que está na tela, e de quando. Sem isso o operador não tem
   // como saber se está olhando dado de agora ou de ontem — e é justamente essa dúvida que o
   // índice próprio cria ao deixar de consultar o PNCP a cada busca.
   if(procedencia){
+    /* ══ O ÍCONE DA PROCEDÊNCIA VEM POR FORA DO esc(), E ISSO É A PARTE IMPORTANTE (item 7f) ══
+       Os emoji daqui (📦 ⚡ 🌐) estavam DENTRO da string `procedencia`, que passa por `esc()`
+       logo abaixo. Trocar o emoji por `<svg>` dentro dela teria impresso `&lt;svg&gt;` na tela —
+       markup literal, em produção, no lugar do ícone.
+       >>> A SAÍDA NÃO FOI TIRAR O `esc()`. Ele existe porque o texto da procedência carrega
+           números e datas montados em vários lugares, e um dia carregaria algo vindo do banco;
+           afrouxar a escapada pra caber um ícone é trocar uma proteção por um desenho. O ícone
+           virou PARÂMETRO, e o texto continua sendo tratado como texto. */
     h += '<div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:14px;padding:10px 14px;'
        + 'background:var(--painel);border:1px solid var(--linha);border-radius:10px;font-size:12.5px;color:var(--muted)">'
-       + '<span>'+esc(procedencia)+'</span>'
+       + '<span>' + (procIcone ? ic(procIcone) + ' ' : '') + esc(procedencia)+'</span>'
        + '<button class="btn sec mini" style="margin-left:auto" onclick="atualizarAgora()">↻ Atualizar agora</button>'
        + '</div>';
   }
@@ -3428,7 +3493,7 @@ function render(todos, kws, excl, aviso, procedencia){
   const ehNova = l => !!(jor && !jor.primeira && !jor.vistos.has(_numCtrl(l)));
   if(jor){
     const qtd = hits.filter(ehNova).length;
-    h += '<div class="refino" style="margin-top:2px"><span class="pill">📰 '+esc(jor.nome)+'</span>'
+    h += '<div class="refino" style="margin-top:2px"><span class="pill">'+ic('jornal')+' '+esc(jor.nome)+'</span>'
        + (jor.primeira
           ? '<span class="hint">primeira leitura deste jornal — a partir da próxima eu marco só o que chegou depois</span>'
           : qtd ? '<span class="novas">'+qtd+(qtd===1?' nova desde a sua última leitura':' novas desde a sua última leitura')+'</span>'
@@ -3475,8 +3540,10 @@ function render(todos, kws, excl, aviso, procedencia){
         primeira linha de resultado. O que o rótulo perdeu está no `title`, que é onde o detalhe
         de uma ação de lista pertence. */
      +   '<button class="btn sec mini" id="bt-todos" onclick="cruzarTodos()" '
-     +     'title="lê os itens de cada edital em lotes de 3 e marca os que temos no estoque">🎯 Cruzar todas</button>'
-     + '</div>';
+     +     'title="lê os itens de cada edital em lotes de 3 e marca os que temos no estoque">'
+     +     ic('alvo') + ' Cruzar todas</button>'
+     + '</div>'
+     + '<div class="linhas">';          // <- fecha depois do laço; ver o comentário do fio dobrado
 
   window._hits = hits;                       // os cards chamam verItens(i) por índice
   hits.forEach((l, i) => {
@@ -3520,9 +3587,9 @@ function render(todos, kws, excl, aviso, procedencia){
       + '<div class="obj">'+grifa(l.objetoCompra||'')+'</div>'
       + '<div class="etiquetas" id="etq-'+i+'">'
         + cats.map(c=>'<span class="etq">'+esc(c)+'</span>').join('')
-        + (alvo ? '<span class="etq alvo">🎯 '+alvo+' itens no nosso estoque</span>' : '')
+        + (alvo ? '<span class="etq alvo">'+ic('alvo')+' '+alvo+' itens no nosso estoque</span>' : '')
         // o selo NUNCA vem sem o motivo no title: "DESERTA" sem porquê vira boato dentro da tela
-        + (des ? '<span class="etq deserta" title="'+esc(des.motivo)+'">⚠️ '+esc(des.rotulo)+'</span>' : '')
+        + (des ? '<span class="etq deserta" title="'+esc(des.motivo)+'">'+ic('alerta')+' '+esc(des.rotulo)+'</span>' : '')
       + '</div>'
       /* ── OS TRÊS NÚMEROS QUE DECIDEM PARTICIPAÇÃO ────────────────────────────────────────
          O rodapé tinha SETE crachás do mesmo peso e o valor pendurado na ponta direita. Sete
@@ -3543,7 +3610,7 @@ function render(todos, kws, excl, aviso, procedencia){
       +   (fim ? '<div class="dado"><small>Encerra em</small><span>'+fmtDt(l.dataEncerramentoProposta)+'</span></div>' : '')
       + '</div>'
       + '<div class="acoes"><button class="btn sec mini" id="bt-'+i+'" onclick="verItens('+i+')">'
-      +   '🎯 Cruzar com nosso estoque</button>'
+      +   ic('alvo') + ' Cruzar com nosso estoque</button>'
       // A PONTE ENCONTRAR -> NEGÓCIOS. Achar a oportunidade e decidir disputar são o mesmo
       // gesto; antes disso, quem achasse algo aqui tinha que ir pro funil e digitar de novo.
       +   ' <button class="btn sec mini" id="bf-'+i+'" onclick="mandarProFunil('+i+')" '
@@ -3565,7 +3632,8 @@ function render(todos, kws, excl, aviso, procedencia){
      filtros), e "ordenadas por quem encerra primeiro" sozinha ocupa 250 deles. Aqui embaixo ela
      está no lugar mais certo, e não só no que sobrou: o rodapé é onde se diz COMO a lista está
      sendo mostrada, que é a mesma família de "quantas estão na tela". */
-  h += '<div class="rodape-painel"><span>Mostrando <b>'+hits.length+'</b> '
+  h += '</div>'                              // fecha o .linhas
+     + '<div class="rodape-painel"><span>Mostrando <b>'+hits.length+'</b> '
      + (hits.length===1?'licitação':'licitações')+', ordenadas por quem <b>encerra primeiro</b>'
      + ' — todas de uma vez, esta lista não pagina</span></div>'
      + '</div>';
@@ -3600,7 +3668,7 @@ function celPreco(u){
   if(u.status==='sem-preco') return '<span class="hint">sem preço</span>';
   // REGRA DO PROJETO: valor com cara de caixa e sem pack identificável NÃO vira número unitário —
   // vira aviso. Preço que não se sabe não entra em comparação nenhuma.
-  if(u.status==='conferir')  return '<span class="conferir nowrap" title="a unidade não declara quantas unidades vêm na embalagem">⚠ conferir emb.</span>'
+  if(u.status==='conferir')  return '<span class="conferir nowrap" title="a unidade não declara quantas unidades vêm na embalagem">'+ic('alerta','aviso')+' conferir emb.</span>'
                                   + '<div class="hint nowrap">'+brlU(u.bruto)+' / emb.</div>';
   return '<b class="nowrap">'+brlU(u.valor)+'</b>'
        + (u.pack>1 ? '<span class="packbdg nowrap">un · cx'+u.pack+'</span>' : '');
@@ -3631,15 +3699,15 @@ function celMatch(par, uEdital){
 function tabelaItens(r, i){
   if(!r.itens.length) return '<div class="aviso mini">O PNCP não devolveu itens para esta licitação.</div>';
   let h = '';
-  if(r.truncado) h += '<div class="aviso err mini">⚠️ Li '+r.itens.length+' itens (teto por licitação). Pode haver mais no edital.</div>';
+  if(r.truncado) h += '<div class="aviso err mini">'+ic('alerta','aviso')+' Li '+r.itens.length+' itens (teto por licitação). Pode haver mais no edital.</div>';
   if(!ESTOQUE.length) h += '<div class="aviso mini">'+(ESTOQUE_ERRO
-      ? '⚠️ estoque FPMED indisponível ('+esc(ESTOQUE_ERRO)+') — os itens abaixo são do edital, sem cruzamento.'
+      ? ic('alerta','aviso')+' estoque FPMED indisponível ('+esc(ESTOQUE_ERRO)+') — os itens abaixo são do edital, sem cruzamento.'
       : 'estoque FPMED ainda carregando — os itens abaixo são do edital, sem cruzamento.')+'</div>';
   h += '<div class="progresso" style="margin-bottom:8px"><b>'+r.casados+'</b> de <b>'+r.itens.length
      + '</b> itens do edital têm produto equivalente no nosso estoque · comparação sempre <b>unitária</b>'
      + (i != null ? '<button class="btn mini" style="margin-left:12px" onclick="mandarProPropostas('+i+')"'
         + ' title="leva os '+r.itens.length+' itens pro gerador de proposta, que casa cada um contra o estoque">'
-        + '📄 Montar proposta com estes itens</button>' : '')
+        + ic('documento') + ' Montar proposta com estes itens</button>' : '')
      + '</div>';
   h += '<table><thead><tr><th>Nº</th><th class="desc">Item do edital</th><th>Quantidade</th><th>Unitário do edital</th></tr></thead><tbody>';
   for(const x of r.itens){
@@ -3664,7 +3732,7 @@ function atualizaBadge(i){
     let el = cx.querySelector('.etq.alvo');
     if(n){
       if(!el){ el = document.createElement('span'); el.className='etq alvo'; cx.appendChild(el); }
-      el.textContent = '🎯 '+n+' '+(n===1?'item':'itens')+' no nosso estoque';
+      el.innerHTML = ic('alvo','alvo') + ' '+n+' '+(n===1?'item':'itens')+' no nosso estoque';
     }else{
       if(el) el.remove();
       if(!cx.querySelector('.etq.zero')){
@@ -3680,7 +3748,7 @@ function atualizaBadge(i){
     let d = cx.querySelector('.etq.deserta');
     if(des){
       if(!d){ d = document.createElement('span'); d.className='etq deserta'; cx.appendChild(d); }
-      d.textContent = '⚠️ '+des.rotulo; d.title = des.motivo;
+      d.innerHTML = ic('alerta','aviso') + ' '+esc(des.rotulo); d.title = des.motivo;
     }else if(d) d.remove();
   }
   const cruzadas = (window._hits||[]).filter(x => aderencia(x));
@@ -3692,7 +3760,7 @@ async function verItens(i, forcar){
   const box = document.getElementById('itens-'+i), bt = document.getElementById('bt-'+i);
   if(!forcar && box.dataset.aberto==='1'){                       // 2º clique fecha (não refaz a chamada)
     box.style.display='none'; box.dataset.aberto='0';
-    bt.innerHTML='🎯 Cruzar com nosso estoque'; return;
+    bt.innerHTML=ic('alvo')+' Cruzar com nosso estoque'; return;
   }
   box.style.display='block'; box.dataset.aberto='1';
   bt.innerHTML='ocultar itens';
@@ -3701,7 +3769,7 @@ async function verItens(i, forcar){
     box.innerHTML = tabelaItens(await puxarItens(l), i);
     atualizaBadge(i);
   }catch(e){
-    box.innerHTML = '<div class="aviso err mini">⚠️ '+esc(e.message)
+    box.innerHTML = '<div class="aviso err mini">'+ic('alerta','aviso')+' '+esc(e.message)
       + ' <button class="btn mini" style="margin-left:10px" onclick="verItens('+i+',1)">Tentar de novo</button></div>';
   }
 }
@@ -3724,7 +3792,7 @@ async function cruzarTodos(){
     await Promise.all(hits.slice(i, i+LOTE).map((l, j) =>
       puxarItens(l).then(()=>{ ok++; atualizaBadge(i+j); }).catch(()=>{ erros++; })));
   }
-  st.innerHTML = '✅ cruzamento concluído: <b>'+ok+'</b> licitações lidas'
+  st.innerHTML = ic('certo','bom')+' cruzamento concluído: <b>'+ok+'</b> licitações lidas'
                + (erros ? ' · <span class="conferir">'+erros+' não responderam</span>' : '')
                + ' · abra um card para ver os itens.';
   bt.disabled = false;

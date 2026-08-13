@@ -1664,7 +1664,65 @@ Criado em 21/07/2026 copiando SO os arquivos do app do C:\globalmed.
                  CONTINUA, so ganhando o acabamento do cabecalho do painel.
              >>> E TEM QUE FICAR CLARO QUE E OUTRA FONTE: um selo discreto "ao vivo · PNCP"
                  marca a diferenca entre o que NOS coletamos e o Brasil inteiro ao vivo.
-     >>> 7f. **A VARREDURA DE EMOJI DA ENCONTRAR** — E O PROXIMO DA FILA.
+     >>> 7f. A VARREDURA DE EMOJI + O FIO DOBRADO — **FEITO** — sw.js -> -2026-08-13-42.
+             Suite nova testa_icones_encontrar (20 asserts, MUTACAO 17 de 17).
+             TOTAL: 3.657 asserts / 0 falhas / 99 suites (inclui as suites do TRABALHADOR B).
+             Detalhe completo em docs/molde_encontrar.md, secao 14 (nova).
+             Os 36 emoji-icone sairam; entraram 8 icones no conjunto UNICO (alvo, certo, x, lupa,
+             envelope, caixa, raio, jornal). As 17 SETAS FICARAM — fronteira declarada, com
+             assert pra isso nao virar zelo de alguem "terminando" a varredura.
+
+             >>> A TROCA PASSOU POR UMA TABELA EXPLICITA de 33 pares, com o script ABORTANDO se
+                 qualquer um nao casasse EXATAMENTE uma vez. Varredura cega em 36 pontos e como
+                 se quebra uma tela sem ninguem saber onde.
+
+             >>> *** A ARMADILHA QUE QUASE IMPRIMIU MARKUP EM PRODUCAO ***: os emoji da
+                 PROCEDENCIA (📦 ⚡ 🌐) viviam dentro de uma string que passa por `esc()`. Trocar
+                 por <svg> ali teria impresso &lt;svg&gt; na tela. A saida NAO foi tirar o esc() —
+                 afrouxar uma escapada pra caber um desenho e trocar protecao por enfeite. O
+                 icone virou PARAMETRO (procIcone) e o texto continua sendo texto.
+             >>> E DUAS TROCAS VIRARAM textContent -> innerHTML pra caber o <svg>. As duas
+                 carregam DADO (o rotulo da deserta e o nome da empresa) e ganharam esc() no mesmo
+                 movimento. Ha assert por caso, e a mutacao que tira qualquer esc() e barrada.
+
+             >>> O FIO DOBRADO (achado do TRABALHADOR B, reportado pra ca) — CONFERIDO E
+                 CONSERTADO NOS TRES PAINEIS. A regra `.lic:last-child` nunca casava: o ultimo
+                 filho do painel e o RODAPE. MEDIDO depois do conserto:
+                   fio da ultima linha ... 0px   (era 0,8)
+                   borda do rodape ....... 0,8px
+                   total na juncao ....... 0,8px (era 1,6)
+                 Conserto ESTRUTURAL e com o MESMO nome de classe dele (`.linhas`), pela ordem
+                 permanente de 13/08. Posicional (:nth-last-child(2)) devolveria o pixel e
+                 deixaria a armadilha armada pro proximo.
+
+             >>> O DEFEITO QUE O LACO ACHOU, E A CAUSA ERA MINHA, DO 7d: os botoes sairam com o
+                 icone COLADO no texto (folga medida 0px), e o espaco ESTAVA na string. Causa: o
+                 `display:inline-flex` que eu pus na .btn no 7d — em container flex o texto vira
+                 item anonimo e o espaco da borda e DESCARTADO. Conserto: `gap` na .btn. E a
+                 margin-left do icone da acao externa saiu junto: ela SOMAVA com o gap (12px onde
+                 o sistema pede 8), dois donos do mesmo espaco.
+                 >>> O ENCADEAMENTO VALE O REGISTRO: um acabamento do 7d criou a condicao pra um
+                     defeito que so apareceu quando o 7f pos icone dentro de botao. Nenhuma das
+                     duas mudancas estava errada isolada.
+
+             >>> UMA MEDICAO MINHA SAIU INVALIDA E EU PEGUEI A TEMPO: tentei medir as 3 larguras
+                 mexendo em documentElement.style.width. O clientWidth ficou 1521 NAS TRES — eu
+                 mudava a largura do elemento, nao a do viewport — e o "33 estourando" era
+                 artefato do proprio instrumento. A medicao valida e a do IFRAME CRAVADO.
+
+             >>> 1 ASSERT MEU PASSOU VERDE NA MUTACAO, E ERA FROUXO (nao instrumento): procurava
+                 um '</div>' QUALQUER antes do rodape e achava um de outro trecho. Passou a olhar
+                 o que vem IMEDIATAMENTE antes de cada rodape.
+             >>> 6 ASSERTS ALHEIOS REAPONTADOS (S8, 10a vez nesta obra): os seis cravavam o EMOJI
+                 dentro do rotulo. O que prometiam — o estado do botao, a condicao do aviso, a
+                 data no rotulo do jornal — nao mudou.
+
+             >>> CONFLITO NO ARQUIVO COMPARTILHADO, RESOLVIDO COMO COMBINADO: o B ja tinha subido
+                 o sw.js pra -41. Subi pra -42 em vez de reaproveitar: quem ja instalou a casca no
+                 deploy dele NAO refetcharia os meus arquivos, e ficaria com a Encontrar de ontem
+                 sem sintoma nenhum (S13).
+
+     >>> 7f-hist. [ref] o levantamento que originou o item:
          >>> REMEDIDO EM 13/08, DEPOIS DO 7d E DO 7e (S17: estado se remede na hora de afirmar):
                EMOJI-ICONE, o que D11 proibe .......... **36** (eram 51)
                  ⚠ x13 · 🎯 x6 · 🌐 x2 · 📅 x2 · 📧 x2 · ✅ x2 · ⚡ x2 · ✓ 🔍 ⛔ ✕ 📦 📰 📄

@@ -97,8 +97,11 @@ ok('31. *** com DUAS ou mais, pergunta — o sistema nao adivinha ***',
   /A qual empresa vincular este negócio\?/.test(lic));
 ok('32. cancelar a escolha NAO grava nada', /if\(emp === null\) return;/.test(lic));
 ok('33. opcao invalida tambem nao grava', /Opção inválida — nada foi gravado/.test(lic));
+/* REAPONTADO em 13/08 (item 7f): o ✓ virou <use> do sprite, e o rotulo passou de textContent
+   pra innerHTML por causa disso — com `esc()` no nome da empresa, que e o cuidado que a troca
+   exigia. A promessa e "o botao DIZ a qual empresa foi", e ela esta inteira. */
 ok('34. e o botao DIZ a qual empresa foi, mesmo sem perguntar',
-  /'✓ no funil' \+ \(emp\.nome/.test(lic));
+  /' no funil' \+ \(emp\.nome/.test(lic) && /esc\(emp\.nome\.split/.test(lic));
 
 console.log('\nRESULTADO: ' + p + ' ok, ' + f + ' falha(s)');
 if (f) process.exit(1);

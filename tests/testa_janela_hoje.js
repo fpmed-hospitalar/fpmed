@@ -97,7 +97,9 @@ ok('14. *** jornal com janela FIXA continua fixo ***',
 ok('15. *** a deteccao de "movel" compara as DUAS pontas (o padrao virou intervalo) ***',
   /const movel = \(de === pad\.de && ate === pad\.ate\);/.test(L));
 ok('16. *** e o rotulo do jornal diz a DATA, e nao o nome da regra ***',
-  /'📅 ' \+ \(j\.de === j\.ate \? 'hoje' : br\(j\.de\)\+'–'\+br\(j\.ate\)\) \+ ' \(move sozinho\)'/.test(L));
+  /* REAPONTADO em 13/08 (item 7f): o 📅 virou <use> do sprite. A promessa e que o rotulo diga a
+     DATA (ou "hoje") e nao o nome da regra — e e isso que continua cobrado. */
+  /\(j\.de === j\.ate \? 'hoje' : br\(j\.de\)\+'–'\+br\(j\.ate\)\) \+ ' \(move sozinho\)'/.test(L));
 ok('17. ...com o motivo (o operador quer saber a data que vai abrir)',
   /o operador quer saber a DATA que vai abrir/.test(uc(L)));
 

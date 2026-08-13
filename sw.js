@@ -17,7 +17,12 @@
  */
 'use strict';
 
-const VERSAO = 'limedtec-fpmed-2026-08-13-41';
+/* -41 foi do TRABALHADOR B (item 7b) e -42 é do 7f. Duas frentes publicando no mesmo dia usam
+   ESTE arquivo em comum, e a regra combinada é: quem commitar depois SOBE o número, nunca volta.
+   >>> POR QUE NÃO DÁ PRA REAPROVEITAR O -41: quem já instalou a casca no deploy dele não
+       refetcharia os meus arquivos — o service worker só troca quando a VERSÃO muda. O usuário
+       ficaria com a Encontrar de ontem e sem sintoma nenhum, que é a lição S13. */
+const VERSAO = 'limedtec-fpmed-2026-08-13-42';
 const CACHE = 'limedtec-shell-' + VERSAO;
 
 // A CASCA DA FPMED. Lista MONTADA A MAO conferindo `git ls-files` (= o que o Pages serve),

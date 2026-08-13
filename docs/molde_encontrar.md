@@ -880,3 +880,96 @@ Dois asserts de VERSÃO do service worker foram reapontados (um deles escrito po
 eles cravavam a string exata, então **ficavam vermelhos na publicação seguinte, pedindo para não
 publicar**. Um teste estático não consegue provar que a VERSÃO subiu *no mesmo commit* — isso é
 promessa de ritual, e quem a guarda é a Definição de Pronto. O que ele prova é a **forma**.
+
+---
+
+## 14 · ITEM 7f FEITO — OS 36 EMOJI SAÍRAM, E O FIO DOBRADO DO TRABALHADOR B TAMBÉM
+
+Duas coisas na mesma fatia, e elas vieram juntas porque tocam a mesma peça: a linha do painel.
+
+### A varredura (D11)
+
+36 emoji faziam trabalho de ícone. O sprite já estava carregado desde o 7d, então foi
+**substituição, não decisão** — mas passou por uma tabela explícita de 33 pares, com o script
+abortando se qualquer um não casasse **exatamente uma vez**. Varredura cega em 36 pontos é como
+se quebra uma tela sem ninguém saber onde.
+
+Entraram 8 ícones **no conjunto único** (`ic-alvo`, `ic-certo`, `ic-x`, `ic-lupa`, `ic-envelope`,
+`ic-caixa`, `ic-raio`, `ic-jornal`) — nunca um conjunto novo à parte.
+
+**As 17 setas tipográficas ficaram**, e há assert para isso não virar zelo: `→ ← ↗ ↑ ↻` dentro de
+texto corrido não são ícones. É fronteira declarada desde o sprite do Negócios. Contar os dois
+juntos daria "63" e faria a tarefa parecer maior do que era.
+
+### A armadilha que quase imprimiu markup na tela
+
+Os emoji da **procedência** (📦 ⚡ 🌐) viviam dentro de uma string que passa por `esc()`. Trocar
+por `<svg>` ali teria impresso `&lt;svg&gt;` **em produção**.
+
+> A saída não foi tirar o `esc()`. Ele existe porque o texto da procedência é montado em vários
+> lugares e um dia carregaria algo vindo do banco. **Afrouxar uma escapada para caber um desenho
+> é trocar uma proteção por um enfeite.** O ícone virou parâmetro (`procIcone`), e o texto
+> continua sendo tratado como texto.
+
+Duas trocas viraram `textContent → innerHTML` para caber o `<svg>`, e **as duas carregam dado** —
+o rótulo da deserta e o nome da empresa. Ganharam `esc()` no mesmo movimento. Há assert para
+cada uma, e a mutação que remove qualquer um dos `esc()` é barrada.
+
+### O fio dobrado — achado do Trabalhador B
+
+A regra era `.lic:last-child{border-bottom:0}` e **nunca casava**: o último filho do
+`.painel-res` é o **rodapé**, não a última linha. O fio da última linha somava com a borda de
+cima do rodapé.
+
+Medido depois do conserto, nos três painéis:
+
+| | antes (previsto) | agora (medido) |
+|---|---|---|
+| fio da última linha | 0,8px | **0px** |
+| borda de topo do rodapé | 0,8px | 0,8px |
+| **total na junção** | **1,6px** | **0,8px** |
+
+O conserto é o **dele**, estrutural e com o **mesmo nome de classe** (`.linhas`) — pela ordem
+permanente de 13/08: duas telas do mesmo sistema com dois vocabulários produzem o "quase igual"
+que o olho percebe e ninguém nomeia. Um `:nth-last-child(2)` devolveria o pixel e deixaria a
+armadilha armada para o próximo que acrescentasse qualquer coisa depois do rodapé.
+
+### O defeito que o laço achou — e a causa era minha, do 7d
+
+Os botões saíram com o ícone **colado** no texto. Medido: folga de **0px**. E o espaço estava lá
+na string (`' Cruzar com nosso estoque'`).
+
+A causa é o `display:inline-flex` que **eu** pus na `.btn` no item 7d: num container flex o texto
+vira item anônimo e **o espaço da borda é descartado**. Conserto: `gap` na `.btn` — vale para
+todo botão com ícone, inclusive os que ainda vão nascer, e não some se alguém reescrever o
+rótulo. A `margin-left` que vivia no ícone da ação externa saiu junto: ela **somava** com o gap,
+dando 12px onde o sistema pede 8. Dois donos do mesmo espaço.
+
+> Vale registrar o encadeamento: uma correção de acabamento do 7d (alinhar uma âncora) criou a
+> condição para um defeito que só apareceu quando o 7f pôs ícones dentro de botões. Nenhuma das
+> duas mudanças estava errada isolada.
+
+### Medido no navegador
+
+| largura CSS | rolagem horizontal | elementos estourando | fio da última linha | ícones |
+|---|---|---|---|---|
+| 387 | **0** | **0** | **0px** | 35 |
+| 1363 | **0** | **0** | **0px** | 35 |
+| 1917 | **0** | **0** | **0px** | 35 |
+
+Zero `<use>` apontando para símbolo inexistente. Console limpo.
+
+> **Uma medição minha saiu inválida no caminho e vale o registro:** tentei medir as três larguras
+> mexendo em `documentElement.style.width`. O `clientWidth` ficou **1521 nas três** — eu estava
+> mudando a largura do elemento, não a do viewport, e o "33 elementos estourando" que apareceu
+> era artefato do meu próprio instrumento. A medição válida é a do iframe cravado.
+
+### Suíte
+
+`tests/testa_icones_encontrar.js` — **20 asserts, mutação 17 de 17 barradas.**
+Uma passou verde na primeira rodada e **era assert meu frouxo, não instrumento**: ele procurava
+um `'</div>'` *qualquer* antes do rodapé, e achava um de outro trecho do arquivo. Passou a olhar
+o que vem **imediatamente antes** de cada rodapé, que é onde a promessa mora.
+
+Seis asserts alheios reapontados (S8): todos cravavam o emoji dentro do rótulo, e o que
+prometiam — o estado do botão, a condição do aviso, a data no rótulo do jornal — não mudou.

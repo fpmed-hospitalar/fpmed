@@ -135,7 +135,10 @@ ok('18. a tela LE o carimbo do dia', /select=ultima_ok,ultimo_dia_ok,ultimo_erro
 ok('19. *** e mostra "completo ate DD/MM" na procedencia ***',
   /completo até \$\{dm\(emDiaAte\)\}/.test(TELA));
 ok('20. *** rodada parcial NAO vira mais "a ultima coleta falhou" ***',
-  /const alerta = \(carimbo && carimbo\.ultimo_erro && !emDiaAte\) \? ' · ⚠️ a última coleta falhou' : '';/.test(TELA));
+  /* REAPONTADO em 13/08 (item 7f): o ⚠️ do rotulo virou <use> do sprite. O que este assert
+     guarda e a CONDICAO — o aviso so acende com erro carimbado E sem dia fechado —, e ela nao
+     mudou. Cobrar a frase inteira letra por letra fazia o assert quebrar por tipografia. */
+  /const alerta = \(carimbo && carimbo\.ultimo_erro && !emDiaAte\) \? ' · a última coleta falhou' : '';/.test(TELA));
 ok('21. ...e o motivo (aviso sempre aceso e aviso que ninguem le no dia da falha de verdade)',
   /Aviso que fica sempre aceso é aviso que ninguém lê/.test(TELA));
 ok('22. *** "a coleta nunca rodou" so aparece quando NENHUM dia fechou ***',
