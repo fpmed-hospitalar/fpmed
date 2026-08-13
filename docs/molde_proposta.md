@@ -399,8 +399,7 @@ mutação — e ela está em 39/39 —, não a contagem de asserts verdes.
 
 | fatia | o que | por que nesta ordem |
 |---|---|---|
-| 3c | os **5 símbolos que faltam** no sprite (`🤖 💰 🗑 🚀 🔴`) + os emoji restantes em HTML gerado | inventar ícone às pressas é pior que esperar um dia |
-| 4 | **Cartões e listas** com a anatomia do molde + as 11 cores dos `style=` inline | depende da moldura estar de pé |
+| 4 | **Cartões e listas** com a anatomia do molde + as cores dos `style=` inline | depende da moldura estar de pé |
 
 ---
 
@@ -447,6 +446,62 @@ saiu na varredura e o assert ficou vermelho — **sem nada ter piorado**.
 
 Sintaxe: **23 blocos inline compilados, 0 erros**. Navegador: sprite ok, 14 usos, **zero órfão**,
 e — o que esta fatia mais arriscava — **nenhuma marcação vazou como texto** na tela.
+
+---
+
+## FATIA 3c — OS CINCO DESENHOS QUE FALTAVAM. **A FATIA 3 FECHOU.**
+
+`testa_molde_proposta`: **61 → 68 asserts**, **mutação 40 de 40 barradas**. Emoji na tela:
+**66 → 10**, e **os 10 são todos declarados**.
+
+### Os cinco entraram no dicionário, não na tela
+
+`🤖 💰 🗑 🚀 🔴` viraram `ic-robo` · `ic-dinheiro` · `ic-lixeira` · `ic-foguete` · `ic-marcador`,
+no **`fpmed_icones.js`** — a fonte única. O desenho mora no dicionário, nunca na tela que precisou
+dele. Mesmo conjunto (Lucide, MIT), mesma grade 24×24, traço 1.8 e pontas arredondadas; quem
+aplica traço e tamanho é o `.ic` de cada tela, aqui só mora a **forma**.
+
+> **`ic-marcador` merece o porquê**, porque alguém vai perguntar por que o "alerta vermelho" não é
+> vermelho: **nenhum símbolo do sprite tem cor**. Todos herdam `currentColor` de quem os contém —
+> é isso que faz o mesmo desenho sair navy no título, cinza no rótulo e branco no botão. O
+> vermelho daquele botão já é dele; o ícone o acompanha sozinho.
+>
+> Cor chumbada dentro do sprite seria o **primeiro símbolo que não obedece ao tema do cliente**, e
+> o white-label morre por aí. Há assert varrendo o dicionário **inteiro**, não só os cinco novos.
+
+### O `➕` não virou ícone — virou `+`
+
+Sinal de mais dentro de um rótulo de botão é **caractere tipográfico**, não desenho. É a mesma
+fronteira das setas (`→ ← ↑ ↓`) que o projeto já declarou, e desenhar um SVG para ele seria zelo
+que deixa a tela pior. O assert guarda os **dois lados**: o emoji sumiu **e** ninguém inventou um
+`ic-mais`.
+
+### Os 10 que ficaram, e cada um tem dono
+
+| onde | quantos | por quê |
+|---|---|---|
+| **comentários** do código | 8 | prosa, não interface — eles descrevem a tela, não a desenham |
+| **`OBS_PADRAO`** (o `⚠`) | 1 | vai para o `#print-obs-padrao`: é o **papel**, congelado por ordem do dono |
+| a citação `✓ Confirmar match` num comentário | 1 | idem — comentário |
+
+> **O único emoji ainda VISÍVEL na tela é o `⚠` do `OBS_PADRAO`** — e ele é visível porque a mesma
+> string é escrita nos dois lugares (`obs-padrao-texto` na tela e `print-obs-padrao` no
+> documento). **Tirá-lo da tela mudaria o papel.** Fica, e fica dito.
+
+### Medido no navegador
+
+| | |
+|---|---|
+| símbolos no sprite | **34** (29 + 5) |
+| os cinco novos existem, com suas formas | robô 4 · dinheiro 3 · lixeira 4 · foguete 4 · marcador 2 |
+| usos na tela · tipos distintos | **28** · 15 |
+| **referências órfãs** | **0** |
+| marcação vazada como texto | **não** |
+| emoji visível na tela | **1** — o `⚠` do papel, acima |
+
+Sintaxe: 23 blocos inline compilados, 0 erros. As suítes do outro trabalhador que leem o sprite
+(`testa_icones_encontrar`, `testa_busca_nacional_molde`) continuam verdes — a adição é aditiva, e
+a comparação dele só olha as chaves que a cópia inline do Negócios tem.
 
 ### Medições que ficaram pendentes, e o motivo é o mesmo do Negócios
 

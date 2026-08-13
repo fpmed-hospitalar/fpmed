@@ -457,8 +457,8 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--texto);min-
     <!-- TABS -->
     <div style="display:flex;gap:0;margin-bottom:14px;border-bottom:1px solid var(--borda)">
       <button id="tab-busca-btn" onclick="gTab('busca')" style="padding:7px 18px;border:none;background:none;font-family:'Inter',sans-serif;font-size:13px;font-weight:600;color:var(--verde);border-bottom:2px solid var(--verde);margin-bottom:-1px;cursor:pointer"><svg class="ic" aria-hidden="true"><use href="#ic-lupa"/></svg> Busca individual</button>
-      <button id="tab-lista-btn" onclick="gTab('lista')" style="padding:7px 18px;border:none;background:none;font-family:'Inter',sans-serif;font-size:13px;font-weight:500;color:var(--muted);cursor:pointer">📋 Importar lista</button>
-      <button id="tab-ia-btn" onclick="gTab('ia')" style="padding:7px 18px;border:none;background:none;font-family:'Inter',sans-serif;font-size:13px;font-weight:500;color:var(--muted);cursor:pointer">🤖 IA — Ler Pedido</button>
+      <button id="tab-lista-btn" onclick="gTab('lista')" style="padding:7px 18px;border:none;background:none;font-family:'Inter',sans-serif;font-size:13px;font-weight:500;color:var(--muted);cursor:pointer"><svg class="ic" aria-hidden="true"><use href="#ic-nota"/></svg> Importar lista</button>
+      <button id="tab-ia-btn" onclick="gTab('ia')" style="padding:7px 18px;border:none;background:none;font-family:'Inter',sans-serif;font-size:13px;font-weight:500;color:var(--muted);cursor:pointer"><svg class="ic" aria-hidden="true"><use href="#ic-robo"/></svg> IA — Ler Pedido</button>
       <button id="tab-impcot-btn" onclick="gTab('impcot')" style="display:none;padding:7px 18px;border:none;background:none;font-family:'Inter',sans-serif;font-size:13px;font-weight:500;color:var(--muted);cursor:pointer"><svg class="ic" aria-hidden="true"><use href="#ic-baixar"/></svg> Importar Cotação</button>
     </div>
 
@@ -482,7 +482,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--texto);min-
       <textarea id="lista-rapida" rows="8" placeholder="CIPROFLOXACINO 200MG&#10;HIDROCORTISONA 500MG&#10;DEXAMETASONA 4MG&#10;MEROPENEM 1G&#10;..."
         style="width:100%;padding:10px 12px;border:1px solid var(--borda);border-radius:8px;font-size:13px;font-family:'Inter',sans-serif;outline:none;resize:vertical;line-height:1.8;background:#fff;color:var(--texto)"></textarea>
       <div style="display:flex;gap:10px;margin-top:10px;align-items:center">
-        <button class="btn btn-primary" onclick="importarLista()">🚀 Buscar e Adicionar Tudo</button>
+        <button class="btn btn-primary" onclick="importarLista()"><svg class="ic" aria-hidden="true"><use href="#ic-foguete"/></svg> Buscar e Adicionar Tudo</button>
         <span id="lista-status" style="font-size:12px;color:var(--muted)"></span>
       </div>
       <!-- NÃO recriar um id="lista-nao-encontrados" aqui: esse id é da seção "Itens Não Encontrados" do orçamento
@@ -525,7 +525,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--texto);min-
 
       <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
         <button class="btn btn-primary" onclick="processarComIA()" id="ia-btn-processar" disabled style="opacity:0.5">
-          🤖 Ler com IA e Montar Lista
+          <svg class="ic" aria-hidden="true"><use href="#ic-robo"/></svg> Ler com IA e Montar Lista
         </button>
         <span id="ia-status" style="font-size:12px;color:var(--muted)"></span>
       </div>
@@ -535,8 +535,8 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--texto);min-
         <textarea id="ia-lista-extraida" rows="8"
           style="width:100%;padding:10px 12px;border:1px solid var(--borda);border-radius:8px;font-size:13px;font-family:Inter,sans-serif;outline:none;resize:vertical;line-height:1.8;background:#fff;color:var(--texto)"></textarea>
         <div style="display:flex;gap:10px;margin-top:10px">
-          <button class="btn btn-primary" onclick="importarListaIA()">🚀 Buscar e Adicionar Tudo</button>
-          <button class="btn btn-outline" onclick="copiarParaLista()">📋 Editar na aba Lista</button>
+          <button class="btn btn-primary" onclick="importarListaIA()"><svg class="ic" aria-hidden="true"><use href="#ic-foguete"/></svg> Buscar e Adicionar Tudo</button>
+          <button class="btn btn-outline" onclick="copiarParaLista()"><svg class="ic" aria-hidden="true"><use href="#ic-nota"/></svg> Editar na aba Lista</button>
         </div>
         <div id="ia-lista-nao-encontrados" style="margin-top:12px"></div>
       </div>
@@ -547,7 +547,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--texto);min-
 
       <!-- LEITOR POR IA (FOTO/PDF) -->
       <div class="table-wrap" style="padding:20px;margin-bottom:16px;background:#fff;border:1px solid var(--borda);border-radius:12px">
-        <h3 style="font-family:'Montserrat',sans-serif;font-size:15px;font-weight:700;margin-bottom:6px;color:var(--texto)">🤖 Ler orçamento automaticamente</h3>
+        <h3 style="font-family:'Montserrat',sans-serif;font-size:15px;font-weight:700;margin-bottom:6px;color:var(--texto)"><svg class="ic" aria-hidden="true"><use href="#ic-robo"/></svg> Ler orçamento automaticamente</h3>
         <p style="font-size:12px;color:var(--muted);margin-bottom:14px">Selecione a <strong>foto</strong> ou o <strong>PDF</strong> do orçamento do fornecedor. A IA lê e preenche a tabela abaixo — você só confere e clica em Importar.</p>
         <div id="imp-ia-drop" onclick="document.getElementById('imp-ia-file').click()"
           style="border:2px dashed var(--borda);border-radius:10px;padding:22px;text-align:center;cursor:pointer;color:var(--muted);font-size:13px;transition:.2s">
@@ -563,7 +563,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--texto);min-
           <button onclick="impLimparIA()" style="background:none;border:none;color:var(--vermelho);cursor:pointer;font-size:18px" title="remover o arquivo" aria-label="remover o arquivo"><svg class="ic" aria-hidden="true"><use href="#ic-x"/></svg></button>
         </div>
         <div style="display:flex;gap:12px;align-items:center;margin-top:14px">
-          <button class="btn btn-primary" id="imp-ia-btn" onclick="impLerOrcamentoIA()" disabled style="width:auto;opacity:.5">🤖 Ler com IA e preencher tabela</button>
+          <button class="btn btn-primary" id="imp-ia-btn" onclick="impLerOrcamentoIA()" disabled style="width:auto;opacity:.5"><svg class="ic" aria-hidden="true"><use href="#ic-robo"/></svg> Ler com IA e preencher tabela</button>
           <span id="imp-ia-status" style="font-size:13px"></span>
         </div>
       </div>
@@ -618,9 +618,9 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--texto);min-
       <!-- BOTÃO IMPORTAR -->
       <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
         <button class="btn btn-primary" style="width:auto;min-width:200px;padding:12px 24px;font-size:14px" id="btn-importar" onclick="executarImport()">
-          📥 Importar para o Banco
+          <svg class="ic" aria-hidden="true"><use href="#ic-baixar"/></svg> Importar para o Banco
         </button>
-        <button class="btn btn-outline" onclick="limparImport()">🗑 Limpar</button>
+        <button class="btn btn-outline" onclick="limparImport()"><svg class="ic" aria-hidden="true"><use href="#ic-lixeira"/></svg> Limpar</button>
         <span id="imp-status" style="font-size:13px"></span>
       </div>
     </div>
@@ -639,7 +639,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--texto);min-
 
   <!-- TOTAL -->
   <div class="card" id="card-total" style="display:none">
-    <h3>💰 Resumo Financeiro</h3>
+    <h3><svg class="ic" aria-hidden="true"><use href="#ic-dinheiro"/></svg> Resumo Financeiro</h3>
     <div class="total-box" id="total-box">
       <div class="total-row"><span>Subtotal</span><span id="val-subtotal">R$ 0,00</span></div>
       <div class="total-row"><span>Desconto Geral (%)</span>
@@ -659,9 +659,9 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--texto);min-
   <div class="card no-print" id="card-acoes" style="display:none">
     <div style="display:flex;gap:10px;flex-wrap:wrap;">
       <button class="btn btn-primary" style="flex:1;min-width:200px" onclick="gerarPDF()"><svg class="ic" aria-hidden="true"><use href="#ic-impressora"/></svg> Gerar PDF / Imprimir</button>
-      <button class="btn btn-outline" style="flex:1;min-width:200px;border-color:var(--fverde);color:#6FA32C" onclick="enviarParaCompras()" id="btn-enviar-compras">📤 Enviar para Compras</button>
-      <button class="btn btn-outline" style="flex:1;min-width:200px;border-color:#e0245e;color:#c81e4f;opacity:0.5" onclick="pedidoFechado()" id="btn-pedido-fechado" title="Selecione o cliente para fechar o pedido">🔴 Pedido Fechado</button>
-      <button class="btn btn-outline btn-sm" onclick="limparTudo()">🗑 Limpar Tudo</button>
+      <button class="btn btn-outline" style="flex:1;min-width:200px;border-color:var(--fverde);color:#6FA32C" onclick="enviarParaCompras()" id="btn-enviar-compras"><svg class="ic" aria-hidden="true"><use href="#ic-sai"/></svg> Enviar para Compras</button>
+      <button class="btn btn-outline" style="flex:1;min-width:200px;border-color:#e0245e;color:#c81e4f;opacity:0.5" onclick="pedidoFechado()" id="btn-pedido-fechado" title="Selecione o cliente para fechar o pedido"><svg class="ic" aria-hidden="true"><use href="#ic-marcador"/></svg> Pedido Fechado</button>
+      <button class="btn btn-outline btn-sm" onclick="limparTudo()"><svg class="ic" aria-hidden="true"><use href="#ic-lixeira"/></svg> Limpar Tudo</button>
     </div>
     <p style="font-size:11px;color:var(--muted);margin-top:10px;text-align:center">O PDF seguirá o padrão oficial FPMED com logo, CNPJ e formatação de tabela</p>
   </div>
@@ -2792,15 +2792,15 @@ function importarLista() {
     }
   });
 
-  stEl.innerHTML = `✅ ${adicionados} adicionado(s)${naoEncontradosList.length ? ` · ❌ ${naoEncontradosList.length} não encontrado(s)` : ''}`;
+  stEl.innerHTML = `<svg class="ic" aria-hidden="true"><use href="#ic-certo"/></svg> ${adicionados} adicionado(s)${naoEncontradosList.length ? ` · <svg class="ic" aria-hidden="true"><use href="#ic-x"/></svg> ${naoEncontradosList.length} não encontrado(s)` : ''}`;
   if (naoEncontradosList.length) {
     // os não-encontrados daqui viravam só texto vermelho e se perdiam — agora viram fila de cotação
     stEl.innerHTML += `<div style="margin-top:8px;padding:8px;background:#fff0f0;border-radius:8px;font-size:12px">
-      <strong>❌ Não encontrados:</strong>
-      <button class="btn btn-outline btn-sm no-print" style="margin-left:8px" onclick="iacAddTodos(${JSON.stringify(naoEncontradosList).replace(/"/g,'&quot;')}, this)">➕ Adicionar os ${naoEncontradosList.length} à fila de cotação</button>
+      <strong><svg class="ic" aria-hidden="true"><use href="#ic-x"/></svg> Não encontrados:</strong>
+      <button class="btn btn-outline btn-sm no-print" style="margin-left:8px" onclick="iacAddTodos(${JSON.stringify(naoEncontradosList).replace(/"/g,'&quot;')}, this)">+ Adicionar os ${naoEncontradosList.length} à fila de cotação</button>
       ${naoEncontradosList.map(p=>`<div style="color:#c06060;padding:3px 0;display:flex;align-items:center;gap:8px">
         <span style="flex:1">${p}</span>
-        <button class="btn btn-outline btn-sm no-print" onclick="iacAddUm(${JSON.stringify(p).replace(/"/g,'&quot;')}, this)">➕ Add à fila</button>
+        <button class="btn btn-outline btn-sm no-print" onclick="iacAddUm(${JSON.stringify(p).replace(/"/g,'&quot;')}, this)">+ Add à fila</button>
       </div>`).join('')}
     </div>`;
   }
@@ -2861,7 +2861,7 @@ function pintaPedidoEdital(){
            cruzamento do Licitações`}${l.truncado?' · <strong style="color:#c06060">a leitura do edital foi truncada: pode haver mais itens</strong>':''}
     </div>
     <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
-      <button class="btn btn-primary btn-sm" onclick="importarPedidoEdital()">➕ Importar os ${p.itens.length} itens</button>
+      <button class="btn btn-primary btn-sm" onclick="importarPedidoEdital()">+ Importar os ${p.itens.length} itens</button>
       <button class="btn btn-outline btn-sm" onclick="descartarPedidoEdital()">Descartar</button>
     </div>
     <div style="margin-top:8px;font-size:11.5px;color:var(--muted)">
@@ -2919,7 +2919,7 @@ function importarPedidoEdital(){
       ${naoAchados.length?` · <strong style="color:#c06060">${naoAchados.length} sem equivalente no estoque</strong> — foram pra lista de não encontrados, e de lá pra fila de cotação`:''}
     </div>
     ${conferirQtd.length ? `<div style="margin-top:10px;padding:9px 11px;background:rgba(230,168,23,.10);border:1px solid rgba(230,168,23,.4);border-radius:8px;font-size:12px">
-      <strong>⚠️ ${conferirQtd.length} item(ns) entraram com quantidade 1 — confira antes de mandar:</strong>
+      <strong><svg class="ic" aria-hidden="true"><use href="#ic-alerta"/></svg> ${conferirQtd.length} item(ns) entraram com quantidade 1 — confira antes de mandar:</strong>
       ${conferirQtd.map(c=>`<div style="padding:3px 0">Item ${_escEd(c.n)} · ${_escEd(c.produto)} — ${_escEd(c.motivo)}</div>`).join('')}
     </div>` : ''}
     <div style="margin-top:8px;font-size:11.5px;color:var(--muted)">Confira o preço de cada linha: a proposta nasce com o preço de tabela, não com o preço do edital.</div>
@@ -3047,7 +3047,7 @@ function buscarProduto(q, imediato=false) {
     if (!cotacoes.length) {   // ÚNICO caso que espera: banco nunca carregou (sem dados não dá pra buscar)
       el.innerHTML='<div class="loading"><div class="spinner"></div> Carregando banco...</div>';
       await recarregarCotacoes(true);
-      if (!cotacoes.length) { el.innerHTML='<div class="loading">Sem conexão com o banco. Tente o botão 🔍 Buscar.</div>'; return; }
+      if (!cotacoes.length) { el.innerHTML='<div class="loading">Sem conexão com o banco. Tente o botão <svg class="ic" aria-hidden="true"><use href="#ic-lupa"/></svg> Buscar.</div>'; return; }
     } else {
       _refreshBg(q);   // dados JÁ carregados: busca é instantânea; o reload (se velho) roda em segundo plano
     }
@@ -3061,7 +3061,7 @@ function buscarProduto(q, imediato=false) {
     });
     if (!r.length) {
       el.innerHTML = `<div style="padding:12px;background:#fff8f8;border:1px dashed #f0c0c0;border-radius:8px;font-size:13px">
-        <span style="color:var(--vermelho)">❌ "${q}" não encontrado no banco.</span>
+        <span style="color:var(--vermelho)"><svg class="ic" aria-hidden="true"><use href="#ic-x"/></svg> "${q}" não encontrado no banco.</span>
         <br><small style="color:var(--muted)">Adicione manualmente ou verifique a digitação.</small>
         <br><button class="btn btn-outline btn-sm no-print" style="margin-top:8px" onclick="adicionarNaoEncontrado('${q.replace(/'/g,'&apos;')}')">+ Adicionar como não encontrado</button>
       </div>`;
@@ -3095,10 +3095,10 @@ function buscarProduto(q, imediato=false) {
           <div class="info">
             <div class="nome">${melhor.produto}</div>
             <div class="detalhe">
-              ${ehGlobalComEstoque(melhor)?`<span class="badge" style="background:#16c060;color:var(--branco);font-weight:700">🏠 ESTOQUE PRÓPRIO · ${melhor.estoque} un</span> `:''}${ehRestrito()?'':`<span class="badge badge-blue">${nomeForn(melhor.fornecedor)}</span>`}
+              ${ehGlobalComEstoque(melhor)?`<span class="badge" style="background:#16c060;color:var(--branco);font-weight:700"><svg class="ic" aria-hidden="true"><use href="#ic-caixa"/></svg> ESTOQUE PRÓPRIO · ${melhor.estoque} un</span> `:''}${ehRestrito()?'':`<span class="badge badge-blue">${nomeForn(melhor.fornecedor)}</span>`}
               ${melhor.marca?`<span class="badge" style="background:#f0f4f0;color:var(--muted);margin-left:4px">${melhor.marca}</span>`:''}
-              &nbsp;· CX/${qtdEmbalagem(melhor.und,melhor.produto)} · <strong style="color:var(--verde-escuro)">${fmtBRL(melhor._pvv)}/un</strong> · ${fmtBRL(melhor._pvv*qtdEmbalagem(melhor.und,melhor.produto))}/cx${qtdEmbDiv(melhor.und,melhor.produto)?` <span title="${qtdEmbDiv(melhor.und,melhor.produto)}" style="cursor:help">⚠️</span>`:''}${seloVariacao(melhor)}
-              ${melhor.estoque>0?` · <span style="color:var(--verde-escuro)">✅ ${melhor.estoque} em estoque</span>`:''}
+              &nbsp;· CX/${qtdEmbalagem(melhor.und,melhor.produto)} · <strong style="color:var(--verde-escuro)">${fmtBRL(melhor._pvv)}/un</strong> · ${fmtBRL(melhor._pvv*qtdEmbalagem(melhor.und,melhor.produto))}/cx${qtdEmbDiv(melhor.und,melhor.produto)?` <span title="${qtdEmbDiv(melhor.und,melhor.produto)}" style="cursor:help"><svg class="ic" aria-hidden="true"><use href="#ic-alerta"/></svg> </span>`:''}${seloVariacao(melhor)}
+              ${melhor.estoque>0?` · <span style="color:var(--verde-escuro)"><svg class="ic" aria-hidden="true"><use href="#ic-certo"/></svg> ${melhor.estoque} em estoque</span>`:''}
               ${melhor.validade?` · Venc: ${fmtDate(melhor.validade)}`:''}
               ${alt.length?`<br><span style="font-size:10px;color:var(--muted)">+${alt.length} opção(ões) alternativa(s): ${alt.map(a=>`${ehRestrito()?'':nomeForn(a.fornecedor)+' · '}${a.marca||''} ${fmtBRL(a._pvv)}/un`).join(' | ')}</span>`:''}
             </div>
@@ -3112,8 +3112,8 @@ function buscarProduto(q, imediato=false) {
               <div class="detalhe">
                 ${ehRestrito()?'':`<span class="badge badge-blue">${nomeForn(a.fornecedor)}</span>`}
                 ${a.marca?`<span class="badge" style="background:#f0f4f0;color:var(--muted);margin-left:4px">${a.marca}</span>`:''}
-                &nbsp;· CX/${qtdEmbalagem(a.und,a.produto)} · <strong style="color:var(--verde-escuro)">${fmtBRL(a._pvv)}/un</strong> · ${fmtBRL(a._pvv*qtdEmbalagem(a.und,a.produto))}/cx${qtdEmbDiv(a.und,a.produto)?` <span title="${qtdEmbDiv(a.und,a.produto)}" style="cursor:help">⚠️</span>`:''}
-                ${a.estoque>0?` · <span style="color:var(--verde-escuro)">✅ ${a.estoque} em estoque</span>`:''}
+                &nbsp;· CX/${qtdEmbalagem(a.und,a.produto)} · <strong style="color:var(--verde-escuro)">${fmtBRL(a._pvv)}/un</strong> · ${fmtBRL(a._pvv*qtdEmbalagem(a.und,a.produto))}/cx${qtdEmbDiv(a.und,a.produto)?` <span title="${qtdEmbDiv(a.und,a.produto)}" style="cursor:help"><svg class="ic" aria-hidden="true"><use href="#ic-alerta"/></svg> </span>`:''}
+                ${a.estoque>0?` · <span style="color:var(--verde-escuro)"><svg class="ic" aria-hidden="true"><use href="#ic-certo"/></svg> ${a.estoque} em estoque</span>`:''}
                 ${(a.vencimento||a.validade)?` · Venc: ${fmtDate(a.vencimento||a.validade)}`:''}
               </div>
             </div>
@@ -3145,7 +3145,7 @@ function atualizarVisibilidade() {
 
 function renderItens() {
   const el = document.getElementById('lista-itens');
-  if (!itens.length) { el.innerHTML='<div class="empty-state" style="padding:20px"><div class="icon">📦</div><p>Nenhum item adicionado</p></div>'; calcTotal(); return; }
+  if (!itens.length) { el.innerHTML='<div class="empty-state" style="padding:20px"><div class="icon"><svg class="ic" aria-hidden="true"><use href="#ic-caixa"/></svg> </div><p>Nenhum item adicionado</p></div>'; calcTotal(); return; }
   el.innerHTML = itens.map((c,i)=>{
     const precoUnit = c._pvv_editado !== undefined ? c._pvv_editado : c._pvv * (1 - (c.desc_item||0)/100);
     const qtd_caixa = c._qtd_caixa || qtdEmbalagem(c.und, c.produto) || 1;
@@ -3172,13 +3172,13 @@ function renderItens() {
           ${c.estoque>0?` · <span style="color:var(--verde-escuro)">Estoque: ${c.estoque}</span>`:''}
           ${c.validade?` · Venc: ${fmtDate(c.validade)}`:''}
         </div>
-        ${(c._bpAlerta && !ehRestrito())?`<div class="no-print" style="margin-top:4px;font-size:11px;color:#e6a817;background:rgba(230,168,23,.08);border:1px solid rgba(230,168,23,.35);border-radius:6px;padding:4px 8px">⚠️ conferir preço: ${c._bpAlerta.msg}</div>`:''}
-        ${c._qtdAlerta?`<div class="no-print" style="margin-top:4px;font-size:11px;color:#e6a817;background:rgba(230,168,23,.08);border:1px solid rgba(230,168,23,.35);border-radius:6px;padding:4px 8px">⚠️ <strong>quantidade não convertida</strong> (entrou 1): ${c._qtdAlerta}</div>`:''}
+        ${(c._bpAlerta && !ehRestrito())?`<div class="no-print" style="margin-top:4px;font-size:11px;color:#e6a817;background:rgba(230,168,23,.08);border:1px solid rgba(230,168,23,.35);border-radius:6px;padding:4px 8px"><svg class="ic" aria-hidden="true"><use href="#ic-alerta"/></svg> conferir preço: ${c._bpAlerta.msg}</div>`:''}
+        ${c._qtdAlerta?`<div class="no-print" style="margin-top:4px;font-size:11px;color:#e6a817;background:rgba(230,168,23,.08);border:1px solid rgba(230,168,23,.35);border-radius:6px;padding:4px 8px"><svg class="ic" aria-hidden="true"><use href="#ic-alerta"/></svg> <strong>quantidade não convertida</strong> (entrou 1): ${c._qtdAlerta}</div>`:''}
         ${(c._conf && c._conf.nivel!=='alta' && !c._confOK)?`<div class="no-print" style="margin-top:4px;font-size:11px;color:${c._conf.nivel==='baixa'?'#ef4444':'#e6a817'};background:${c._conf.nivel==='baixa'?'rgba(239,68,68,.08)':'rgba(230,168,23,.08)'};border:1px solid ${c._conf.nivel==='baixa'?'rgba(239,68,68,.4)':'rgba(230,168,23,.35)'};border-radius:6px;padding:5px 8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-          <span style="flex:1">⚠️ <strong>CONFERIR</strong> (confiança ${c._conf.nivel}): ${c._conf.motivos.join(' · ')||'match automático'} — confira se é o produto certo</span>
+          <span style="flex:1"><svg class="ic" aria-hidden="true"><use href="#ic-alerta"/></svg> <strong>CONFERIR</strong> (confiança ${c._conf.nivel}): ${c._conf.motivos.join(' · ')||'match automático'} — confira se é o produto certo</span>
           <button class="btn btn-outline btn-sm" style="padding:2px 10px" onclick="confirmarMatch('${c.id}')"><svg class="ic" aria-hidden="true"><use href="#ic-certo"/></svg> Confirmar match</button>
         </div>`:''}
-        ${(c._conf && c._conf.nivel!=='alta' && c._confOK)?`<div class="no-print" style="margin-top:4px;font-size:10px;color:#16c060">✓ match conferido</div>`:''}
+        ${(c._conf && c._conf.nivel!=='alta' && c._confOK)?`<div class="no-print" style="margin-top:4px;font-size:10px;color:#16c060"><svg class="ic" aria-hidden="true"><use href="#ic-certo"/></svg> match conferido</div>`:''}
         <div class="item-det no-print" style="margin-top:6px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
           ${ehRestrito()?'':`<span style="font-size:11px;color:var(--muted)">Custo: <strong style="${custoRef?'color:var(--muted);font-style:italic':'color:var(--texto)'}">${custo>0?fmtBRL(custo):'—'}</strong>${custoRef?' <span style="font-size:9px;color:var(--muted)">(ref. venda÷1,25)</span>':''}</span>`}
           <span style="font-size:11px;color:var(--muted)">Preço UN:
@@ -3201,12 +3201,12 @@ function renderItens() {
       </div>
       <div>
         <div class="item-preco" id="preco-${c.id}">${fmtBRL(totalItem)}</div>
-        <div class="item-preco-info">CX/${qtd_caixa} · ${fmtBRL(precoUnit)}/un · ${fmtBRL(precoCx)}/cx${qtdEmbDiv(c.und,c.produto)?` <span title="${qtdEmbDiv(c.und,c.produto)} — corrija o cadastro" style="cursor:help">⚠️</span>`:''}</div>
+        <div class="item-preco-info">CX/${qtd_caixa} · ${fmtBRL(precoUnit)}/un · ${fmtBRL(precoCx)}/cx${qtdEmbDiv(c.und,c.produto)?` <span title="${qtdEmbDiv(c.und,c.produto)} — corrija o cadastro" style="cursor:help"><svg class="ic" aria-hidden="true"><use href="#ic-alerta"/></svg> </span>`:''}</div>
       </div>
       <div class="no-print" style="display:flex;flex-direction:column;gap:4px;align-items:stretch">
-        <button class="btn btn-danger btn-sm" onclick="remItem('${c.id}')">✕</button>
-        ${(!isGlobal && !ehRestrito() && !c._esgotado)?`<button class="btn btn-outline btn-sm" style="font-size:10px;padding:3px 6px;white-space:nowrap" title="Fornecedor confirmou que acabou: grava estoque=0 nessa cotação (preço intacto), some das buscas e já busca o plano B" onclick="marcarEsgotado('${c.id}')">🚫 Esgotou</button>`:''}
-        ${c._esgotado?`<span style="font-size:10px;color:#ef4444;text-align:center" title="Marcado esgotado no fornecedor — fora das buscas">🚫 esgotado</span>`:''}
+        <button class="btn btn-danger btn-sm" onclick="remItem('${c.id}')"><svg class="ic" aria-hidden="true"><use href="#ic-x"/></svg> </button>
+        ${(!isGlobal && !ehRestrito() && !c._esgotado)?`<button class="btn btn-outline btn-sm" style="font-size:10px;padding:3px 6px;white-space:nowrap" title="Fornecedor confirmou que acabou: grava estoque=0 nessa cotação (preço intacto), some das buscas e já busca o plano B" onclick="marcarEsgotado('${c.id}')"><svg class="ic" aria-hidden="true"><use href="#ic-bloqueado"/></svg> Esgotou</button>`:''}
+        ${c._esgotado?`<span style="font-size:10px;color:#ef4444;text-align:center" title="Marcado esgotado no fornecedor — fora das buscas"><svg class="ic" aria-hidden="true"><use href="#ic-bloqueado"/></svg> esgotado</span>`:''}
       </div>
     </div>`;
   }).join('');
@@ -3319,7 +3319,7 @@ function avaliarTeto(c, precoUnit){
 function tetoBadgeHTML(r){
   if(!r) return '';
   return r.situacao === 'acima'
-    ? `<span class="teto-badge acima" title="Teto legal ${fmtBRL(r.teto)} (${r.tipoTeto}) — casou com ${r.evidencia}. Acima do teto, a proposta pode ser desclassificada.">⚠️ ACIMA DO TETO +${r.pctAcima}%</span>`
+    ? `<span class="teto-badge acima" title="Teto legal ${fmtBRL(r.teto)} (${r.tipoTeto}) — casou com ${r.evidencia}. Acima do teto, a proposta pode ser desclassificada."><svg class="ic" aria-hidden="true"><use href="#ic-alerta"/></svg> ACIMA DO TETO +${r.pctAcima}%</span>`
     : `<span class="teto-badge ok" title="Teto legal ${fmtBRL(r.teto)} (${r.tipoTeto}) — casou com ${r.evidencia}">teto ${fmtBRL(r.teto)} · folga ${r.folgaPct}%</span>`;
 }
 function repintarTetos(){
@@ -3408,14 +3408,14 @@ function renderNaoEncontrados() {
   if(!naoEncontrados.length) { sec.style.display='none'; return; }
   sec.style.display='block';
   el.innerHTML = (naoEncontrados.length>1 ? `<div class="no-print" style="margin-bottom:8px">
-      <button class="btn btn-outline btn-sm" onclick="iacAddTodos(${JSON.stringify(naoEncontrados).replace(/"/g,'&quot;')}, this)">➕ Adicionar todos os ${naoEncontrados.length} à fila de cotação</button>
+      <button class="btn btn-outline btn-sm" onclick="iacAddTodos(${JSON.stringify(naoEncontrados).replace(/"/g,'&quot;')}, this)">+ Adicionar todos os ${naoEncontrados.length} à fila de cotação</button>
     </div>` : '') + naoEncontrados.map((n,i)=>`
     <div class="nao-encontrado-row">
-      <span style="color:var(--vermelho);font-size:13px">❌</span>
+      <span style="color:var(--vermelho);font-size:13px"><svg class="ic" aria-hidden="true"><use href="#ic-x"/></svg> </span>
       <span style="flex:1;font-size:13px">${n}</span>
       <span style="font-size:11px;color:var(--muted)">Não disponível no estoque</span>
-      <button class="btn btn-outline btn-sm no-print" onclick="iacAddUm(${JSON.stringify(n).replace(/"/g,'&quot;')}, this)" style="margin-left:8px" title="Manda pra fila de Itens a Cotar">➕ Add à fila</button>
-      <button class="btn btn-danger btn-sm no-print" onclick="remNaoEncontrado(${i})" style="margin-left:4px">✕</button>
+      <button class="btn btn-outline btn-sm no-print" onclick="iacAddUm(${JSON.stringify(n).replace(/"/g,'&quot;')}, this)" style="margin-left:8px" title="Manda pra fila de Itens a Cotar">+ Add à fila</button>
+      <button class="btn btn-danger btn-sm no-print" onclick="remNaoEncontrado(${i})" style="margin-left:4px"><svg class="ic" aria-hidden="true"><use href="#ic-x"/></svg> </button>
     </div>`).join('');
 }
 
@@ -3471,7 +3471,7 @@ function gerarPDF() {
   // vendedor confirmar (botão ✓ Confirmar match na linha). Evita mandar produto errado pro cliente.
   const semConferir = itens.filter(c => c._conf && c._conf.nivel!=='alta' && !c._confOK);
   if(semConferir.length) {
-    /* o `⚠️` da frente saiu (D11, e aqui não cabe SVG: `toast` entrega por textContent) e o `✓`
+    /* o `<svg class="ic" aria-hidden="true"><use href="#ic-alerta"/></svg> ` da frente saiu (D11, e aqui não cabe SVG: `toast` entrega por textContent) e o `<svg class="ic" aria-hidden="true"><use href="#ic-certo"/></svg> `
        de dentro das aspas saiu junto — ele citava o RÓTULO de um botão, e o botão deixou de ter
        o glifo nesta mesma fatia. Citação que não bate com o que está na tela manda a pessoa
        procurar uma coisa que não existe. */
@@ -4106,7 +4106,7 @@ Regras:
     if (data.stop_reason === 'max_tokens') {
       const _n = texto.trim().split('\n').filter(function(l){ return l.trim(); }).length;
       statusEl.style.color = '#e03e3e';
-      statusEl.innerHTML = '❌ <b>LEITURA CORTADA</b> — a resposta da IA bateu no limite de tamanho e '
+      statusEl.innerHTML = '<svg class="ic" aria-hidden="true"><use href="#ic-x"/></svg> <b>LEITURA CORTADA</b> — a resposta da IA bateu no limite de tamanho e '
         + 'parou no meio. Chegaram ' + _n + ' linha(s), mas o pedido tem <b>MAIS</b>. '
         + '<b>Não use este resultado.</b> Divida o pedido em partes e leia uma de cada vez.';
       document.getElementById('ia-resultado').style.display = 'none';
@@ -4167,12 +4167,12 @@ function importarListaIA() {
     // idem: o que a IA não achou também alimenta a fila em vez de se perder
     naoEl.innerHTML = `<div style="background:#FBE9E9;border:1px solid #F0BFBF;border-radius:8px;padding:10px 14px">
       <div style="font-size:11px;font-weight:600;color:#e03e3e;margin-bottom:6px;display:flex;align-items:center;gap:8px">
-        <span style="flex:1">❌ Não encontrados:</span>
-        <button class="btn btn-outline btn-sm no-print" onclick="iacAddTodos(${JSON.stringify(naoEncontrados).replace(/"/g,'&quot;')}, this)">➕ Adicionar os ${naoEncontrados.length} à fila</button>
+        <span style="flex:1"><svg class="ic" aria-hidden="true"><use href="#ic-x"/></svg> Não encontrados:</span>
+        <button class="btn btn-outline btn-sm no-print" onclick="iacAddTodos(${JSON.stringify(naoEncontrados).replace(/"/g,'&quot;')}, this)">+ Adicionar os ${naoEncontrados.length} à fila</button>
       </div>
       ${naoEncontrados.map(p=>`<div style="font-size:12px;color:#c0a0a0;padding:3px 0;display:flex;align-items:center;gap:8px">
         <span style="flex:1">${p}</span>
-        <button class="btn btn-outline btn-sm no-print" onclick="iacAddUm(${JSON.stringify(p).replace(/"/g,'&quot;')}, this)">➕ Add à fila</button>
+        <button class="btn btn-outline btn-sm no-print" onclick="iacAddUm(${JSON.stringify(p).replace(/"/g,'&quot;')}, this)">+ Add à fila</button>
       </div>`).join('')}</div>`;
   } else { naoEl.innerHTML = ''; }
   if (adicionados > 0) toast(`${adicionados} produto(s) adicionado(s)!`);
@@ -4443,7 +4443,7 @@ function addLinhaImport() {
     <td style="padding:6px 8px"><input type="number" id="${id}_valor" placeholder="0.00" step="0.01" min="0" style="${inp};max-width:90px"></td>
     <td style="padding:6px 8px"><input type="date" id="${id}_venc" style="${inp};max-width:130px"></td>
     <td style="padding:6px 8px"><input type="number" id="${id}_emb" placeholder="1" min="1" title="Unidades por caixa" style="${inp};max-width:65px;text-align:center"></td>
-    <td style="padding:6px 8px"><button onclick="remLinhaImport('${id}')" style="background:none;border:none;cursor:pointer;color:var(--vermelho);font-size:16px;padding:2px 6px">✕</button></td>
+    <td style="padding:6px 8px"><button onclick="remLinhaImport('${id}')" style="background:none;border:none;cursor:pointer;color:var(--vermelho);font-size:16px;padding:2px 6px"><svg class="ic" aria-hidden="true"><use href="#ic-x"/></svg> </button></td>
   `;
   tbody.appendChild(tr);
 }
@@ -4554,7 +4554,7 @@ Regras:
     // sai com menos itens do que o pedido tem, sem sinal nenhum na tela.
     if (data.stop_reason === 'max_tokens') {
       st.style.color = 'var(--vermelho)';
-      st.innerHTML = '❌ <b>LEITURA CORTADA</b> — a resposta da IA bateu no limite de tamanho e parou '
+      st.innerHTML = '<svg class="ic" aria-hidden="true"><use href="#ic-x"/></svg> <b>LEITURA CORTADA</b> — a resposta da IA bateu no limite de tamanho e parou '
         + 'no meio. <b>Não use este resultado</b>: faltam itens e não dá pra saber quais. '
         + 'Divida o pedido em partes e leia uma de cada vez.';
       btn.disabled = false; btn.style.opacity = '1';

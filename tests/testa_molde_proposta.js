@@ -1,5 +1,5 @@
 // SUITE testa_molde_proposta - a Proposta (fpmed_giovana.html) entrando no design system.
-// Item 8b, fatias 1 (a paleta) e 2 (a moldura).
+// Item 8b: fatias 1 (paleta), 2 (moldura) e 3 (sprite unico).
 //
 // == POR QUE O CORACAO DESTA SUITE E UMA MEDICAO, E NAO UMA COMPARACAO DE TEXTO ==========
 // Esta e a tela em que o PRECO E DECIDIDO e a proposta sai para o hospital. Antes desta
@@ -36,7 +36,7 @@ const CSS1 = G.replace(/\s*\n\s*/g, '');
 
 let p = 0, f = 0, n = 1;
 const ok = (t, c, e) => { if (c) p++; else { f++; console.log('  FALHA ' + t + (e !== undefined ? '  [' + JSON.stringify(e) + ']' : '')); } };
-console.log('SUITE testa_molde_proposta - a Proposta no design system (item 8b, fatias 1 e 2)\n');
+console.log('SUITE testa_molde_proposta - a Proposta no design system (item 8b, fatias 1 a 3)\n');
 
 // ── 0. a regua: token -> valor, e a formula da WCAG ──────────────────────────
 const tokenDoTema = nome => {
@@ -411,6 +411,25 @@ ok(n + '. *** nenhuma mensagem de texto puro carrega emoji (D11 onde svg nao ent
 ok(n + '. e o arquivo registra por que o sprite nao foi copiado pra ca',
   /é o `fpmed_icones\.js`, a fonte única do sistema/.test(G.replace(/\s+/g, ' '))); n++;
 
+/* ══ FATIA 3c — OS CINCO DESENHOS NOVOS, E A REGRA QUE ELES NAO PODEM QUEBRAR ════════════════
+   Eles nasceram no fpmed_icones.js (a fonte unica), e nao aqui: o desenho mora no dicionario, e
+   nao na tela que precisou dele. */
+for (const id of ['ic-robo', 'ic-dinheiro', 'ic-lixeira', 'ic-foguete', 'ic-marcador']) {
+  ok(n + '. o simbolo ' + id + ' existe no sprite da fonte unica', noSprite.has(id)); n++;
+}
+/* *** NENHUM SIMBOLO DO SPRITE PODE TER COR. *** Todos herdam `currentColor` de quem os contem,
+   e e isso que faz o mesmo desenho sair navy no titulo, cinza no rotulo e branco no botao. Uma
+   cor chumbada la dentro seria o primeiro simbolo que NAO obedece ao tema do cliente - e o
+   white-label morre por ai. O assert vale pro dicionario inteiro, nao so pros cinco novos. */
+const simbolosComCor = (ICONES.match(/'(ic-[a-z0-9-]+)':\s*'[^']*(?:fill="(?!none)|stroke="#|#[0-9a-fA-F]{3,6})[^']*'/g) || []);
+ok(n + '. *** nenhum simbolo do sprite tem cor propria (todos herdam currentColor) ***',
+  simbolosComCor.length === 0, simbolosComCor.slice(0, 2)); n++;
+/* O `➕` NAO virou icone: virou `+`, que e CARACTERE TIPOGRAFICO. Mesma fronteira das setas -
+   sinal de mais dentro de um rotulo de botao e texto, e desenhar um SVG pra ele seria zelo que
+   deixa a tela pior. O assert guarda os dois lados: o emoji sumiu E ninguem inventou um icone. */
+ok(n + '. o sinal de mais e tipografico, nao icone (mesma fronteira das setas)',
+  !/➕/.test(G) && !/<use href="#ic-mais"/.test(G)); n++;
+
 /* ══ A PROMESSA DA FATIA, E ELA NAO E UM NUMERO ══════════════════════════════════════════════
    Assert de contagem ("sobraram 17 emoji") viraria vermelho na proxima fatia sem nada ter
    piorado - e a fatia 3 esta DECLARADAMENTE pela metade: 🤖, 💰, 🗑, 🚀 e 🔴 nao tem desenho no
@@ -432,7 +451,10 @@ ok(n + '. e o arquivo registra por que o sprite nao foi copiado pra ca',
 const MARCACAO = G.replace(/<!--[\s\S]*?-->/g, '');
 const EQUIV = { '📄': 'ic-documento', '🔍': 'ic-lupa', '🔎': 'ic-lupa', '📝': 'ic-lapis',
                 '📥': 'ic-baixar', '📦': 'ic-caixa', '❌': 'ic-x', '✕': 'ic-x',
-                '🖨': 'ic-impressora', '📎': 'ic-clipe', '📤': 'ic-sai' };
+                '🖨': 'ic-impressora', '📎': 'ic-clipe', '📤': 'ic-sai',
+                // os cinco que a fatia 3c desenhou no sprite
+                '🤖': 'ic-robo', '💰': 'ic-dinheiro', '🗑': 'ic-lixeira',
+                '🚀': 'ic-foguete', '🔴': 'ic-marcador' };
 const comDesenhoDisponivel = Object.keys(EQUIV).filter(e => noSprite.has(EQUIV[e]));
 const h3Ruins = (MARCACAO.match(/<h3[^>]*>[^<]{0,40}/g) || [])
   .filter(h => comDesenhoDisponivel.some(e => h.includes(e)));

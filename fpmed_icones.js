@@ -88,7 +88,24 @@
     'ic-envelope':   '<rect x="2.5" y="5" width="19" height="14" rx="2"/><path d="m3 7 9 6 9-6"/>',
     'ic-caixa':      '<path d="M3 8.5 12 4l9 4.5v7L12 20l-9-4.5z"/><path d="m3 8.5 9 4.5 9-4.5"/><path d="M12 13v7"/>',
     'ic-raio':       '<path d="M13 2 4 14h7l-1 8 9-12h-7z"/>',
-    'ic-jornal':     '<path d="M4 5h13v14H4z"/><path d="M17 8h3v11H5"/><path d="M7 9h7M7 12.5h7M7 16h4"/>'
+    'ic-jornal':     '<path d="M4 5h13v14H4z"/><path d="M17 8h3v11H5"/><path d="M7 9h7M7 12.5h7M7 16h4"/>',
+
+    /* ══ OS CINCO QUE A PROPOSTA PEDIU (13/08, item 8b · fatia 3c) ═══════════════════════════
+       Eles nasceram porque a tela de Proposta tinha 🤖 💰 🗑 🚀 🔴 como ícone, e a regra do
+       projeto é uma só: o desenho mora AQUI, e não na tela que precisou dele. Vieram do mesmo
+       conjunto (Lucide, MIT) e na mesma grade 24×24, traço 1.8 e pontas arredondadas — quem
+       aplica traço e tamanho é o `.ic` de cada tela, aqui só mora a FORMA.
+       >>> `ic-marcador` MERECE O PORQUÊ. Ele substitui o 🔴 do botão "Pedido Fechado", e alguém
+           vai perguntar por que ele não é vermelho: porque NENHUM símbolo daqui tem cor. Todos
+           herdam `currentColor` de quem os contém, e é isso que faz o mesmo desenho sair navy no
+           título, cinza no rótulo e branco no botão. O vermelho daquele botão já é dele — o
+           ícone o acompanha sozinho. Cor chumbada dentro do sprite seria o primeiro símbolo que
+           não obedece ao tema do cliente, e o white-label morre por aí. */
+    'ic-robo':       '<path d="M12 8V4H8"/><rect x="4" y="8" width="16" height="12" rx="2"/><path d="M2 14h2M20 14h2"/><path d="M9 13v2M15 13v2"/>',
+    'ic-dinheiro':   '<rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/><path d="M6 12h.01M18 12h.01"/>',
+    'ic-lixeira':    '<path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M10 11v6M14 11v6"/>',
+    'ic-foguete':    '<path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91 0z"/><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/>',
+    'ic-marcador':   '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3.2"/>'
   };
 
   /* `aria-hidden` no sprite inteiro: quem lê em voz alta pula isto e vai direto ao texto — o
