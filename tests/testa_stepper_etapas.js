@@ -120,10 +120,25 @@ ok('28. ...com o motivo (tres niveis diferentes com o mesmo peso visual)',
   /nenhuma delas parecendo dona de nada/.test(uc(N)));
 ok('29. *** e o comentario deixa claro que NADA muda de comportamento ***',
   /NADA MUDA DE COMPORTAMENTO/.test(N));
-ok('30. *** a hierarquia do KPI: valor grande, rotulo pequeno em cima ***',
-  /\.kpi span\{font-size:10\.5px;color:var\(--muted\);text-transform:uppercase/.test(N));
-ok('31. ...com o motivo ("quanto?" antes de "quanto do que?")',
-  /que é a ordem em que a pergunta é feita/.test(uc(N)));
+/* ══ ESTE ASSERT GUARDAVA UMA DECISAO QUE FOI REVERTIDA COM MOTIVO (13/08) ═══════════════════
+   Ele cobrava a ORDEM de leitura do KPI — numero em cima, rotulo pequeno embaixo — e o motivo
+   escrito era "o olho encontra o numero primeiro". Em 13/08 as caixinhas ganharam a anatomia do
+   molde (rotulo + icone em cima, numero grande, legenda embaixo), pela mesma razao que vale
+   pra fila da Encontrar: consistencia entre as duas telas.
+   >>> E O ARGUMENTO ANTIGO NAO FOI JOGADO FORA — ele so mudou de dono: quem faz o olho pegar o
+       numero primeiro e o TAMANHO, nao a posicao. E isso que o assert passa a medir, e ele fica
+       com mais dente do que tinha: cobrar a ordem deixava passar um KPI com numero de 12px.
+   >>> O 31 (o comentario do motivo) saiu junto, porque o motivo que ele citava foi substituido
+       por outro, escrito no lugar. Assert que exige uma frase revogada trava a casa no passado. */
+const _regraNum = (N.replace(/\s*\n\s*/g, '').match(/\.kpi b\{[^}]*\}/) || [''])[0];
+const _regraRot = (N.replace(/\s*\n\s*/g, '').match(/\.kpi \.rot\{[^}]*\}/) || [''])[0];
+const _px = (r, alvo) => { const m = r.match(new RegExp(alvo + ':var\\(--txt-(\\d)\\)')); return m ? +m[1] : -1; };
+ok('30. *** a hierarquia do KPI: o NUMERO e o maior da caixinha, com folga ***',
+  _px(_regraNum, 'font-size') > _px(_regraRot, 'font-size') + 1
+  && /font-weight:var\(--peso-forte\)/.test(_regraNum),
+  { numero: _regraNum.slice(0, 110), rotulo: _regraRot.slice(0, 110) });
+ok('31. ...e a caixinha diz DE ONDE o numero vem (a legenda, que a fita antiga nao tinha)',
+  /\.kpi \.leg\{/.test(N.replace(/\s*\n\s*/g, '')) && /<span class="leg">/.test(N));
 ok('32. *** o CSS orfao foi MARCADO, e nao apagado no mesmo commit ***',
   /`\.fase-tag` FICOU SEM USO em 11\/08/.test(N));
 ok('33. ...com o motivo (apagar seletor junto com o HTML e como se descobre depois que era usado)',

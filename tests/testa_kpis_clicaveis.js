@@ -28,12 +28,29 @@ const ok = (n, c, e) => { if (c) p++; else { f++; console.log('  FALHA ' + n + (
 console.log('SUITE testa_kpis_clicaveis — as caixinhas viram botoes, e o resultado fica gravado\n');
 
 // ══════════ 1. AS CINCO CAIXINHAS SAO BOTOES ══════════
+/* ══ ESTES SEIS COBRAVAM O LITERAL, E A ANATOMIA DO MOLDE OS DERRUBOU (13/08) ═════════════
+   Os cinco primeiros procuravam a string `onclick="abrirPainel('funil')"` escrita a mao no
+   HTML. Em 13/08 as cinco caixinhas passaram a ser montadas por uma funcao (`_ind`), porque
+   ganharam rotulo, icone e legenda — cinco copias daquela marcacao seriam cinco lugares pra
+   esquecer um pedaco. As caixinhas continuam abrindo os mesmos cinco paineis; o que sumiu foi
+   a FORMA de escrever isso.
+   >>> AGORA ELES COBRAM A PROMESSA: os cinco ids sao passados, e quem monta liga o clique.
+       Assim a marcacao pode virar funcao, componente ou template — e o assert so reprova se
+       uma caixinha de verdade parar de abrir o painel dela. */
+const _montador = (N.match(/const _ind = \([\s\S]{0,600}?`;/) || [''])[0];
 ['funil', 'historico', 'ganhas', 'taxa', 'total'].forEach((k, i) => {
   ok((i + 1) + '. *** a caixinha "' + k + '" abre painel ***',
-    new RegExp("onclick=\"abrirPainel\\('" + k + "'\\)\"").test(N));
+    new RegExp("_ind\\('" + k + "'").test(N) && /onclick="abrirPainel\('\$\{id\}'\)"/.test(_montador),
+    { passada: new RegExp("_ind\\('" + k + "'").test(N), montadorLiga: /abrirPainel/.test(_montador) });
 });
-ok('6. *** e elas PARECEM botao (cursor de mao + hover) ***',
-  /\.kpi\.bt\{cursor:pointer/.test(N) && /\.kpi\.bt:hover\{border-color:var\(--azul\)/.test(N));
+/* O 6 cobrava o hover no `var(--azul)`. O hover mudou de recurso — a borda agora acende no
+   --cinza-300 e a SOMBRA cresce, que e a dupla do `.fp-cartao--clicavel` do tema; e o "levantar"
+   saiu porque, com os cinco virando cartoes separados, um que sobe empurra a percepcao da fila
+   inteira. A promessa e a mesma: cartao que e botao precisa PARECER botao. */
+ok('6. *** e elas PARECEM botao (cursor de mao + hover que muda alguma coisa) ***',
+  /\.kpi\.bt\{cursor:pointer/.test(N)
+  && /\.kpi\.bt:hover\{[^}]+\}/.test(N.replace(/\s*\n\s*/g, '')),
+  (N.replace(/\s*\n\s*/g, '').match(/\.kpi\.bt:hover\{[^}]*\}/) || [''])[0]);
 ok('7. ...com o motivo (senao a funcao existe so pra quem leu o commit)',
   /a função existe\s*só pra quem leu o commit/.test(uc(N)));
 ok('8. *** o painel e DENTRO do Negocios, e nao uma tela nova ***',
@@ -161,8 +178,14 @@ ok('66. ...com a medicao registrada (1.000 de 2.558, e os 4 numeros errados)',
   && /taxa vitória \.\. 10,6%    \(real 15,1%\)/.test(N));
 ok('67. ...e a ligacao com o mesmo defeito da busca',
   /É exatamente o defeito que mordeu a busca do Natanael/.test(N));
+/* O "leitura truncada" literal saiu quando a caixinha ganhou LEGENDA (13/08): o aviso deixou de
+   ser um parentese espremido ao lado do rotulo e virou a frase da legenda — "a leitura truncou —
+   ha PELO MENOS este tanto", que e o que ele sempre quis dizer. A promessa nao mudou: bater no
+   teto de paginas AVISA na tela, em vez de entregar um numero por baixo do real em silencio. */
 ok('68. *** o teto de paginas existe, e bater nele AVISA na tela ***',
-  /window\._negTruncou = true;/.test(N) && /leitura truncada/.test(N));
+  /window\._negTruncou = true;/.test(N)
+  && /_negTruncou \? '\+' : ''/.test(N)
+  && /_negTruncou[\s\S]{0,120}?a leitura truncou/.test(N));
 ok('69. ...com o motivo (20.000 truncados em silencio seriam este bug de novo)',
   /seriam este mesmo bug de novo/.test(uc(N)));
 

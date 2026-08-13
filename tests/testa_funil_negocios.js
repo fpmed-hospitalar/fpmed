@@ -229,8 +229,11 @@ ok('*** a ficha só mostra o valor ganho pra gestor ***',
   /\$\{gestor \? campo\('valor_ganho'/.test(src));
 // 11/08: as caixinhas viraram BOTÕES (`class="kpi bt"` + onclick). O que este assert protege é o
 // mesmo — o total ganho é valor comercial e só aparece pra gestor.
+/* A FORMA mudou de novo em 13/08 (as caixinhas ganharam a anatomia do molde e passaram a ser
+   montadas por uma função), o GATE não: total ganho é valor comercial e continua só pra gestor.
+   O assert cobrava a marcação inteira escrita à mão; agora cobra o gate em volta da chamada. */
 ok('o KPI de total ganho também é de gestor',
-  /\$\{gestor \? `<div class="kpi bt" onclick="abrirPainel\('total'\)"[^`]*brl\(k\.total\)/.test(src));
+  /\(gestor \? _ind\('total'[\s\S]{0,200}?brl\(k\.total\)/.test(src));
 ok('ehGestor() assume o mais restrito quando o gm-auth ainda não subiu',
   /const ehGestor = \(\) => !!\(window\.gmAuth && window\.gmAuth\.isGestor/.test(src));
 

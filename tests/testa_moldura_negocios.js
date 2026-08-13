@@ -106,6 +106,30 @@ ok(n + '. e ele nao virou emoji: continua o icone do sprite da tela (D11)',
 ok(n + '. o sino tem foco visivel (quem navega por teclado precisa saber onde esta)',
   /\.sino:focus-visible\{[^}]*var\(--foco\)/.test(CSS1)); n++;
 
+// ── 4b. OS INDICADORES ganharam a anatomia do molde (fatia 2) ────────────────
+/* Eles eram uma FITA de celulas grudadas por um fio — cinco caixas dentro de uma caixa. Viraram
+   cinco CARTOES separados, com a mesma anatomia da fila da Encontrar. O assert cobra o par:
+   a fita virou grade COM ESPACO entre os cartoes, e cada cartao tem borda propria. */
+ok(n + '. os indicadores viraram cartoes separados (a fita de celulas acabou)',
+  /\.kpis\{[^}]*gap:var\(--esp-3\)/.test(CSS1)
+  && /\.kpi\{[^}]*border:1px solid var\(--cinza-200\)/.test(CSS1)
+  && !/\.kpi\{[^}]*border-right:1px solid/.test(CSS1)); n++;
+/* A legenda e a novidade que a fita nao tinha espaco pra ter, e e ela que responde a pergunta
+   seguinte a "quanto?": de onde veio este numero. Os quatro fixos tem uma; o quinto (total
+   ganho) so existe pra gestor. */
+ok(n + '. e cada um diz DE ONDE o numero vem (a legenda)',
+  (LIMPO.match(/<span class="leg">/g) || []).length >= 1
+  && /\.kpi \.leg\{/.test(CSS1)); n++;
+ok(n + '. o "no funil agora" e o cartao de destaque navy (o unico que fala do que esta VIVO)',
+  /_ind\('funil'[\s\S]{0,200}?' destaque'\)/.test(LIMPO)
+  && /\.kpi\.destaque\{[^}]*background:var\(--navy\)/.test(CSS1)); n++;
+/* O hover deixou de LEVANTAR: com os cinco virando cartoes separados, um que sobe empurra a
+   percepcao da fila inteira. Quem diz "da pra clicar" e a borda e a sombra — a dupla do
+   `.fp-cartao--clicavel` do tema. Mesma correcao que a linha do painel da Encontrar levou. */
+ok(n + '. o hover do cartao nao levanta mais (ele acende a borda e cresce a sombra)',
+  /\.kpi\.bt:hover\{[^}]*box-shadow:var\(--sombra-2\)/.test(CSS1)
+  && !/\.kpi\.bt:hover\{[^}]*transform/.test(CSS1)); n++;
+
 // ── 5. a memoria do porque (L6) ──────────────────────────────────────────────
 const _corrido = N.replace(/\s+/g, ' ');
 ok(n + '. o arquivo registra por que a trilha diz Gestao e nao Oportunidades',

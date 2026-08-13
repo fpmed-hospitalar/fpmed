@@ -1382,9 +1382,58 @@ Criado em 21/07/2026 copiando SO os arquivos do app do C:\globalmed.
                  "quase alinhado" de pior que o desalinhado.
              >>> MEDIDO: 390/1366/1920 com ZERO rolagem horizontal, header de 53px, trilha e H1
                  na mesma regua nas tres.
-     >>> FALTA DO 7b (proxima fatia): os INDICADORES do topo e o PAINEL em volta das visoes —
-         as duas pecas do molde que a Encontrar ja tem e esta ainda nao. Os quadros do kanban
-         sao um caso a parte: eles NAO sao lista, e o painel do molde e desenhado pra lista.
+     >>> 7b FATIA 2 (OS INDICADORES) **FEITA** — sw.js -> -2026-08-13-37.
+             As 5 caixinhas eram uma FITA de celulas grudadas por um fio (cinco caixas dentro de
+             uma caixa). Viraram cinco CARTOES separados, com a MESMA anatomia da fila da
+             Encontrar: rotulo + icone em cima, numero grande, e uma LEGENDA dizendo de onde ele
+             vem. O "no funil agora" e o cartao de destaque navy.
+             testa_moldura_negocios: 24 -> 28 asserts. TOTAL: 3.487 / 0 falhas / 94 suites.
+             >>> ISSO INVERTEU UMA DECISAO QUE ESTAVA ESCRITA NO ARQUIVO, e a inversao tem motivo:
+                 o comentario antigo defendia o NUMERO EM CIMA ("o olho encontra o numero
+                 primeiro"). O argumento continua valendo — mas quem o cumpre e o TAMANHO, nao a
+                 posicao (24px contra 12 do rotulo). O que a ordem do molde acrescenta e a
+                 LEGENDA, que a fita nao tinha espaco pra ter. E o que decide e a CONSISTENCIA:
+                 duas filas de indicador com duas ordens de leitura no mesmo sistema e o "quase
+                 igual" que cansa sem explicar.
+             >>> 4 ASSERTS ALHEIOS REAPONTADOS (S8, e um deles guardava a decisao revertida):
+                 · testa_kpis_clicaveis 1-5 procuravam a string `onclick="abrirPainel('funil')"`
+                   escrita a mao; as cinco passaram a ser montadas por uma funcao. Agora cobram
+                   a promessa (os 5 ids sao passados, e quem monta liga o clique);
+                 · o 6 cobrava o hover no --azul; o hover mudou de recurso (borda + sombra, sem
+                   levantar). Cobra "cursor + hover que muda alguma coisa";
+                 · o 68 cobrava a string "leitura truncada", que virou a frase da legenda;
+                 · o testa_stepper_etapas 30 cobrava a ORDEM (numero em cima) — a decisao
+                   revertida. Passou a cobrar que o NUMERO seja o maior da caixinha COM FOLGA, e
+                   ficou com mais dente: cobrar a ordem deixava passar um numero de 12px.
+             >>> MEDIDO: 390/1366/1920 sem rolagem horizontal, nenhum cartao estourando, o
+                 destaque navy presente nas tres.
+     >>> FALTA DO 7b: o PAINEL em volta das visoes. Os quadros do kanban sao um caso a parte —
+         eles NAO sao lista, e o painel do molde e desenhado pra lista.
+
+     >>> ############ FILA — 2 PEDIDOS NOVOS DELE EM 13/08 ############
+     >>> 7c. POLIMENTO FINAL DA ENCONTRAR — 5 pontos que ainda destoam do molde:
+             1. a FILA DE ATALHOS embaixo da busca (links azuis soltos). Tirar os que so
+                REPETEM destino do menu (Radar, Desertas, Meus Jornais) — MAS so se nao
+                dispararem acao NESTA tela; se disparam, arruma o estilo e mantem a funcao.
+                "+ Incluir licitacao" vira botao discreto.
+             2. o PERIODO + DATAS cru (seletores nativos sem acabamento do tema);
+             3. o SELO "IA" do Leitor de edital sumiu do menu — recolocar com o token verde;
+             4. os CONTADORES de Radar e Desertas vazios — acender os DE VERDADE se houver
+                consulta barata; se nao houver, DEIXA VAZIO (nunca os 12/38 do molde, S6);
+             5. o selo "Base sincronizada" x a etiqueta do gm-auth — garantir que ele aparece
+                AO LADO, e nao atras. (Nao e o conserto do gm-auth.)
+             NAO MEXER: coluna de filtros aberta · numeros reais · rodape com telefone ·
+             "Sistema" na frente da trilha. Ritual: bater o olho contra screenshots/01.
+     >>> 7d. A BUSCA NACIONAL DO PNCP GANHA A CARA DO MOLDE — hoje ela sai como TABELA CRUA
+             (UF/ITEM/ORGAO/MODALIDADE/PUBLICADO/PORTAL). Vira o MESMO painel + linhas do
+             passo 6, com selo de modalidade, barra de urgencia pela DATA, <mark> no objeto,
+             orgao·municipio na meta e "abrir no PNCP" como acao da linha.
+             >>> HONESTIDADE DO DADO: o PNCP nacional NAO manda valor estimado nem portal —
+                 esses campos ficam AUSENTES, nunca "R$ 0" nem portal chutado. E a nota que ja
+                 existe ("ao vivo · ordenado por semelhanca, nao por data · o portal nao vem")
+                 CONTINUA, so ganhando o acabamento do cabecalho do painel.
+             >>> E TEM QUE FICAR CLARO QUE E OUTRA FONTE: um selo discreto "ao vivo · PNCP"
+                 marca a diferenca entre o que NOS coletamos e o Brasil inteiro ao vivo.
      >>> ITEM NOVO QUE ESTA RODADA MEDIU E NAO FEZ — **A VARREDURA DE EMOJI DA ENCONTRAR**:
          51 ocorrencias de emoji-icone no fpmed_licitacoes.html (13x ⚠ · 6x 🎯 · 5x 🌎 · 2x 🌐 ·
          2x 📅 · 2x 📧 · 2x ✅ · 2x ⚡ · 🔍 ⛔ 📦 📰 📄 ✓ ✕). D11 proibe emoji como icone, e o

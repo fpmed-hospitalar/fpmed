@@ -436,15 +436,44 @@ body{
 
 .vazio{text-align:center;padding:46px 20px;color:var(--muted);font-size:13.5px;
   background:var(--branco);border:1px dashed var(--cinza-300);border-radius:var(--raio-cartao)}
-.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));background:var(--painel);border-radius:14px;
-  box-shadow:var(--sombra);overflow:hidden;margin:14px 0 4px;border:1px solid var(--linha)}
-.kpi{padding:14px 17px;border-right:1px solid var(--linha)}
-.kpi:last-child{border-right:0}
-/* A HIERARQUIA DO NÚMERO — o padrão que o Prime usa em todo dado: rótulo pequeno e cinza EM
-   CIMA, valor grande e branco EMBAIXO. O olho encontra o número primeiro e o nome dele depois,
-   que é a ordem em que a pergunta é feita ("quanto?" antes de "quanto do quê?"). */
-.kpi b{font-family:Montserrat;font-size:22px;font-weight:700;display:block;line-height:1.1;color:var(--cinza-800);margin-bottom:3px}
-.kpi span{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+/* ══ OS INDICADORES GANHARAM A ANATOMIA DO MOLDE (13/08, item 7b fatia 2) ════════════════════
+   Eles eram uma FITA de células grudadas, divididas por um fio — cinco caixas dentro de uma
+   caixa. Agora são cinco CARTÕES separados, com a mesma anatomia da fila da Encontrar: rótulo e
+   ícone em cima, número grande, e uma legenda dizendo de onde ele vem.
+
+   >>> ISSO INVERTE UMA DECISÃO QUE ESTAVA ESCRITA AQUI, e a inversão precisa do motivo. O
+       comentário antigo defendia o NÚMERO EM CIMA: "o olho encontra o número primeiro e o nome
+       dele depois, que é a ordem em que a pergunta é feita". O argumento é bom — e continua
+       valendo, só que quem o cumpre é o TAMANHO, não a posição: o número tem 24px contra 12 do
+       rótulo, e é ele que o olho pega primeiro em qualquer ordem.
+       O que a ordem do molde acrescenta é a LEGENDA, que a fita não tinha espaço pra ter — e é
+       ela que diz "de onde veio este número", que nesta tela é a pergunta seguinte a "quanto?".
+   >>> E O QUE DECIDE É A CONSISTÊNCIA: a Encontrar já usa esta anatomia. Duas filas de indicador
+       com duas ordens de leitura, no mesmo sistema, é o "quase igual" que cansa sem explicar.
+
+   >>> AS CAIXINHAS CONTINUAM BOTÕES. Cada uma abre o detalhe de onde o número veio (11/08), e
+       cartão que é botão precisa PARECER botão — daí o cursor, o hover e o realce da borda. */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));
+  gap:var(--esp-3);margin:var(--esp-4) 0 var(--esp-1)}
+.kpi{background:var(--branco);border:1px solid var(--cinza-200);border-radius:var(--raio-cartao);
+  box-shadow:var(--sombra-1);padding:var(--esp-4);
+  display:flex;flex-direction:column;gap:var(--esp-2)}
+.kpi .cab{display:flex;align-items:center;gap:var(--esp-2)}
+.kpi .rot{font-size:var(--txt-1);font-weight:var(--peso-medio);color:var(--cinza-700)}
+.kpi .ic-cx{width:26px;height:26px;margin-left:auto;border-radius:var(--raio-botao);flex:0 0 auto;
+  display:grid;place-items:center;background:var(--cinza-100);color:var(--cinza-600)}
+.kpi .ic-cx svg{width:14px;height:14px}
+.kpi b{font-family:Montserrat;font-size:var(--txt-5);font-weight:var(--peso-forte);display:block;
+  line-height:var(--altura-titulo);letter-spacing:-.025em;color:var(--cinza-800);
+  font-variant-numeric:tabular-nums}
+.kpi .leg{font-size:var(--txt-1);color:var(--cinza-600);line-height:1.4}
+/* O cartão de destaque, como no molde: o "no funil agora" é o único dos cinco que fala do que
+   está VIVO — os outros quatro falam de histórico e de conta. */
+.kpi.destaque{background:var(--navy);border-color:var(--navy);box-shadow:var(--sombra-2)}
+.kpi.destaque .rot{color:var(--navy-tinta)}
+.kpi.destaque b{color:var(--branco)}
+.kpi.destaque .leg{color:var(--navy-apoio)}
+.kpi.destaque .ic-cx{background:var(--navy-selo);color:var(--navy-marca)}
 
 /* ── drawer de detalhe ── */
 #velcro{position:fixed;inset:0;background:rgba(18,23,33,.45);opacity:0;pointer-events:none;transition:opacity .2s;z-index:40}
@@ -591,10 +620,17 @@ textarea.anot:focus{border-color:var(--azul)}
 .fm-c input:focus,.fm-c select:focus,.fm-c textarea:focus{outline:none;border-color:var(--azul)}
 /* ── AS CAIXINHAS COMO BOTÃO ── cartão que é botão precisa PARECER botão, senão a função existe
    só pra quem leu o commit. Cursor de mão, borda que acende e um empurrãozinho pra cima. ── */
-.kpi.bt{cursor:pointer;transition:border-color .16s,transform .12s,background .16s}
-.kpi.bt:hover{border-color:var(--azul);background:var(--painel2);transform:translateY(-2px)}
-.kpi.bt:active{transform:translateY(0)}
-.kpi.bt::after{content:'›';position:absolute;top:8px;right:11px;color:var(--muted);font-size:15px;opacity:.55}
+.kpi.bt{cursor:pointer;transition:border-color var(--transicao),box-shadow var(--transicao)}
+/* O hover deixou de LEVANTAR: com os cinco virando cartões separados, um que sobe empurra a
+   percepção da fila inteira. Quem diz "dá pra clicar" é a borda que acende e a sombra que
+   cresce — a mesma dupla do `.fp-cartao--clicavel` do tema. */
+.kpi.bt:hover{border-color:var(--cinza-300);box-shadow:var(--sombra-2)}
+.kpi.bt.destaque:hover{border-color:var(--navy-selo)}
+.kpi.bt:focus-visible{outline:none;box-shadow:var(--foco)}
+/* A seta continua dizendo "isto abre alguma coisa" — e ela é glifo tipográfico, não emoji:
+   fronteira já declarada neste projeto (o sprite carrega os ÍCONES; ‹ › são tipografia). */
+.kpi.bt::after{content:'›';position:absolute;top:var(--esp-2);right:var(--esp-3);
+  color:var(--cinza-400);font-size:var(--txt-3);line-height:1}
 .kpi{position:relative}
 /* ── O PAINEL DAS CAIXINHAS ── */
 #painel-kpi{background:var(--painel);border:1px solid var(--linha);border-radius:12px;padding:16px 18px;margin:14px 0}
@@ -1162,12 +1198,32 @@ function pinta(){
      Cada uma abre o detalhe de onde o número veio. Cartão que é botão precisa PARECER botão:
      daí o cursor de mão e o hover — sem isso ninguém descobre que dá pra clicar, e a função
      existe só pra quem leu o commit. */
-  document.getElementById('kpis').innerHTML = `
-    <div class="kpi bt" onclick="abrirPainel('funil')" title="mostra os negócios ativos"><b>${k.noFunil}</b><span>no funil agora</span></div>
-    <div class="kpi bt" onclick="abrirPainel('historico')" title="todos os negócios, inclusive arquivados"><b>${k.historico.toLocaleString('pt-BR')}${window._negTruncou?'+':''}</b><span>no histórico${window._negTruncou?' (leitura truncada)':''}</span></div>
-    <div class="kpi bt" onclick="abrirPainel('ganhas')" title="a lista das ganhas, com valor de cada uma"><b>${k.ganhos.length}</b><span>ganhas</span></div>
-    <div class="kpi bt" onclick="abrirPainel('taxa')" title="de onde sai a conta"><b>${k.taxaTxt}</b><span>taxa de vitória</span></div>
-    ${gestor ? `<div class="kpi bt" onclick="abrirPainel('total')" title="a soma das ganhas"><b style="font-size:16px">${brl(k.total)}</b><span>total ganho</span></div>` : ''}`;
+  /* A anatomia é a mesma da fila da Encontrar: rótulo + ícone em cima, número grande, e uma
+     LEGENDA dizendo de onde ele vem. A legenda é a novidade — a fita antiga não tinha espaço
+     pra ter, e é ela que responde a pergunta seguinte a "quanto?".
+     >>> A LEITURA TRUNCADA CONTINUA APARECENDO, e agora com mais lugar pra dizer o que é: um
+         "2.555+" sem explicação parece enfeite; na legenda ele vira aviso de que a conta está
+         por baixo do real. É a mesma regra do "não sei nunca vira zero" (S6), aplicada ao
+         "não sei se é tudo". */
+  const _ind = (id, rot, icone, valor, leg, extra) => `
+    <div class="kpi bt${extra || ''}" onclick="abrirPainel('${id}')" title="${rot}">
+      <div class="cab"><span class="rot">${rot}</span>
+        <span class="ic-cx"><svg class="ic" aria-hidden="true"><use href="#${icone}"/></svg></span></div>
+      <b>${valor}</b><span class="leg">${leg}</span></div>`;
+  document.getElementById('kpis').innerHTML =
+      _ind('funil', 'No funil agora', 'ic-entrada', k.noFunil,
+           'negócios ativos, fora do arquivo', ' destaque')
+    + _ind('historico', 'No histórico', 'ic-documento',
+           k.historico.toLocaleString('pt-BR') + (window._negTruncou ? '+' : ''),
+           window._negTruncou
+             ? 'a leitura truncou — há <b>pelo menos</b> este tanto'
+             : 'tudo que já passou pelo funil, inclusive arquivado')
+    + _ind('ganhas', 'Ganhas', 'ic-trofeu', k.ganhos.length,
+           'certames com resultado a nosso favor')
+    + _ind('taxa', 'Taxa de vitória', 'ic-balanca', k.taxaTxt,
+           'ganhas sobre as que foram até o fim')
+    + (gestor ? _ind('total', 'Total ganho', 'ic-nota', brl(k.total),
+           'a soma do valor das ganhas') : '');
 
   pintaNotif();          // o sino conta o funil inteiro, não o que os filtros deixaram na tela
   const l = visiveis();
