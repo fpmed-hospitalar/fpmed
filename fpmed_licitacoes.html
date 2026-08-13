@@ -1726,10 +1726,6 @@ async function iniciarSeloBase(){
   const semMotor = typeof window.AlarmeColeta === 'undefined';
   pintaSeloBase(semMotor ? null : await carimboColeta(), semMotor);
 }
-function _aoAutenticar(){ iniciarEstoque(); iniciarJornais(); abreLeitorNaBarra(); iniciarSeloBase(); pintaIndicadores(); reservaAuth(); pintaChips(); aplicaHash(); }
-if(window.gmAuth) _aoAutenticar();
-else document.addEventListener('gm-auth-ready', _aoAutenticar, { once:true });
-
 /* ══ O `#` DA URL É A OUTRA METADE DO CONTRATO COM O MENU ══════════════════════════════════
    URGÊNCIA DO DONO (13/08): "clicar em RADAR no menu lateral NÃO FAZ NADA — botão morto."
    Reproduzido com clique real e confirmado: era verdade, e estava assim desde que o menu
@@ -1783,6 +1779,30 @@ function aplicaHash(){
    navegador não dispara `hashchange` quando a página ABRE já com `#` na URL. Os dois caminhos
    são dois eventos diferentes, e cobrir só um deixaria metade do defeito de pé. */
 window.addEventListener('hashchange', aplicaHash);
+
+/* ══ E O ROTEADOR VEM ANTES DO BOOT — ISTO É ORDEM, NÃO ARRUMAÇÃO ═══════════════════════════
+   DEFEITO MEU, ACHADO NO AR minutos depois de publicar o conserto acima (13/08). Eu tinha
+   posto este bloco DEPOIS do `_aoAutenticar()`, e o `_aoAutenticar` chama `aplicaHash()`.
+   A declaração da FUNÇÃO sobe (hoisting) e por isso parecia certo — mas o `const ROTAS_HASH`
+   NÃO sobe: ele fica na zona morta temporal até a linha dele executar. Resultado medido no
+   site publicado:
+       ReferenceError: Cannot access 'ROTAS_HASH' before initialization
+   e, por ser exceção não capturada, ela ABORTAVA O RESTO DO BLOCO <script> — inclusive o
+   `addEventListener('hashchange')` logo abaixo. O conserto do botão morto tinha virado um
+   jeito novo de o botão continuar morto, e de quebra levava junto o que viesse depois.
+
+   >>> POR QUE A SUÍTE NÃO PEGOU, e isto vale mais que o conserto: ela EXTRAI o roteador e o
+       roda isolado. Isolado ele está certo — o que estava errado era a ORDEM DELE NO ARQUIVO.
+       Assert que recorta um pedaço não enxerga a vizinhança do pedaço. Entrou assert de ORDEM
+       na testa_menu_clique, cobrando que a tabela seja declarada ANTES de quem a chama.
+
+   >>> E POR QUE PASSOU NO MEU TESTE LOCAL: ali o `window.gmAuth` ainda não existia na hora
+       daquela linha, então o boot foi pelo caminho do evento `gm-auth-ready` — que dispara
+       tarde, com o `const` já inicializado. O caminho que quebra é o do usuário com sessão
+       viva, que é justamente o do dono. Testar deslogado escondeu o defeito. */
+function _aoAutenticar(){ iniciarEstoque(); iniciarJornais(); abreLeitorNaBarra(); iniciarSeloBase(); pintaIndicadores(); reservaAuth(); pintaChips(); aplicaHash(); }
+if(window.gmAuth) _aoAutenticar();
+else document.addEventListener('gm-auth-ready', _aoAutenticar, { once:true });
 
 // ══ ITENS DO EDITAL ═══════════════════════════════════════════════════════════════════════
 // Endpoint confirmado pelo Lemuel. MEDIDO em 04/08: aceita tamanhoPagina até 500 e responde em

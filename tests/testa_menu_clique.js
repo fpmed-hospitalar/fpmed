@@ -89,6 +89,26 @@ ok(n + '. e o item aceso no menu SEGUE o `#` (menu apontando pro lugar errado e 
 ok(n + '. ...repintando as classes, e nao remontando o menu (remontar apaga contador e Leitor)',
   /function acender\(\)/.test(M) && !/function acender\(\)[\s\S]{0,600}montar\(/.test(M)); n++;
 
+// ══════════ 2b. A ORDEM NO ARQUIVO — O DEFEITO QUE A EXTRAÇÃO NÃO VÊ ══════════
+/* ESTE ASSERT NASCEU DE UM DEFEITO MEU QUE FOI AO AR (13/08). O roteador estava
+   DEPOIS do `_aoAutenticar()`, que o chama. A funcao sobe por hoisting, o
+   `const ROTAS_HASH` NAO sobe — e o site publicado respondia
+       ReferenceError: Cannot access 'ROTAS_HASH' before initialization
+   abortando o resto do bloco <script>, inclusive o `addEventListener('hashchange')`.
+   O conserto do botao morto tinha virado outro jeito de o botao ficar morto.
+   >>> A LICAO E SOBRE O INSTRUMENTO: os asserts da secao 3 EXTRAEM o roteador e o
+       rodam isolado. Isolado ele esta certo — o errado era a VIZINHANCA. Assert que
+       recorta um pedaco e cego pra onde o pedaco mora. Por isso este mede POSICAO. */
+(function () {
+  const decl = L.indexOf('const ROTAS_HASH = {');
+  const usoNoBoot = L.indexOf('function _aoAutenticar()');
+  ok(n + '. *** a tabela de rotas e declarada ANTES de quem a chama no boot (zona morta temporal) ***',
+    decl > -1 && usoNoBoot > -1 && decl < usoNoBoot, { decl, usoNoBoot }); n++;
+  const escuta = L.indexOf("window.addEventListener('hashchange', aplicaHash);");
+  ok(n + '. ...e o `hashchange` tambem, senao uma excecao no boot leva a escuta junto',
+    escuta > -1 && escuta < usoNoBoot, { escuta, usoNoBoot }); n++;
+})();
+
 // ══════════ 3. O CLIQUE, SIMULADO DE VERDADE ══════════
 /* Aqui a suite EXECUTA o roteador extraido do .html, em vez de procurar texto
    nele. Assert que le codigo prova que o codigo esta escrito; assert que RODA o
