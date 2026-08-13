@@ -1,4 +1,4 @@
-// SUITE testa_painel_negocios - o painel do molde nas visoes de LISTA (item 7b, fatias 3 e 4).
+// SUITE testa_painel_negocios - o painel do molde nas visoes de LISTA (item 7b, fatias 3, 4 e 5).
 //
 // == O QUE ESTA SUITE GUARDA, E POR QUE ELA E SEPARADA DA testa_moldura_negocios ==========
 // A moldura (fatia 1) e os indicadores (fatia 2) sao o TOPO da tela. Isto aqui e a LISTA,
@@ -30,7 +30,7 @@ const CORPO = LIMPO.replace(/\s+/g, ' ');
 
 let p = 0, f = 0, n = 1;
 const ok = (t, c, e) => { if (c) p++; else { f++; console.log('  FALHA ' + t + (e !== undefined ? '  [' + JSON.stringify(e) + ']' : '')); } };
-console.log('SUITE testa_painel_negocios - o painel nas visoes de lista (item 7b, fatias 3 e 4)\n');
+console.log('SUITE testa_painel_negocios - o painel nas visoes de lista (item 7b, fatias 3, 4 e 5)\n');
 
 // ── 1. A LISTA NAO E MAIS UMA PILHA DE CARTOES SOLTOS ────────────────────────
 ok(n + '. a visao Lista passa pelo painel (o `map(card).join` solto acabou)',
@@ -230,6 +230,69 @@ ok(n + '. e ninguem prometeu cabecalho de dia GRUDADO dentro de um painel que co
 ok(n + '. sem nada de hoje em diante, o lugar do futuro FALA (nao fica so o historico)',
   /Nada marcado de hoje em diante/.test(CORPO)); n++;
 
+// ── 6c. O KANBAN — o caso a parte, e a decisao de ele NAO virar painel ───────
+/* As duas visoes de LISTA viraram painel (fatias 3 e 4). O Quadros nao vira, e o motivo nao e
+   "nao deu tempo": a coluna cinza e uma ZONA DE SOLTAR, nao uma moldura. Ela e recuada e os
+   cartoes flutuam brancos por cima - e e esse degrau que diz "isto aqui recebe o que voce esta
+   arrastando". Coluna branca faria cartao e coluna virarem a MESMA materia, e o alvo do arrasto
+   sumiria no instante em que a tela ficasse mais bonita. */
+ok(n + '. *** o kanban NAO virou painel: a coluna continua zona de soltar (recuada) ***',
+  /\.col\{[^}]*background:var\(--cinza-100\)/.test(CSS1)
+  && /function kanban\(l\)\{\s*return '<div class="kb">'/.test(LIMPO)
+  && !/kanban[\s\S]{0,200}?painel-res/.test(LIMPO)); n++;
+ok(n + '. ...e o cartao dentro dele continua branco (o degrau que sustenta o arrasto)',
+  /\.card\{[^}]*background:var\(--painel\)/.test(CSS1)
+  && !/\.kb \.card\{[^}]*background/.test(CSS1)); n++;
+ok(n + '. e a coluna acesa durante o arrasto continua se distinguindo da apagada',
+  /\.col\.alvo\{[^}]*border-color:var\(--azul-500\)/.test(CSS1)
+  && /\.col\.alvo\{[^}]*background:var\(--azul-50\)/.test(CSS1)); n++;
+/* *** "NAO VIRA PAINEL" NAO E PASSE LIVRE PRA FICAR FORA DO SISTEMA. *** Este bloco era o mais
+   fora da regua da tela inteira: gap 14, margem 10, 12,5px, 11,5px, raio 11, padding 26/14 -
+   sete linhas com valor que nao existe em token nenhum. E o Quadros e a visao de ABERTURA desta
+   tela: e a primeira coisa que se ve.
+   >>> O assert varre o bloco e reprova QUALQUER px que nao esteja na lista curta de excecoes
+       com motivo. Ele nao cobra "usa var()" - cobra que nao sobrou numero solto, que e o que
+       de fato se quebra quando alguem acrescenta uma regra no meio. */
+const _KB = (N.split('</style>')[0].match(/\/\* ══ O KANBAN[\s\S]*?\.kb \.card\.arrastando\{[^}]*\}/) || [''])[0]
+  .replace(/\/\*[\s\S]*?\*\//g, '');
+const PX_OK = { '0': 'zero', '1': 'borda de 1px', '9': 'a bola, que casa com a do chip de fase',
+                '300': 'a largura da coluna' };
+const pxSoltos = [...new Set((_KB.match(/(\d+(?:\.\d+)?)px/g) || []).map(v => v.replace('px', '')))]
+  .filter(v => !(v in PX_OK));
+ok(n + '. *** nao sobrou valor fora da grade nem da escala no bloco do kanban ***',
+  !!_KB && pxSoltos.length === 0, { achouBloco: !!_KB, soltos: pxSoltos }); n++;
+ok(n + '. e nao sobrou nome de fonte chumbado (o --fonte do tema JA e Montserrat)',
+  !!_KB && !/font-family:\s*Montserrat/.test(_KB)); n++;
+/* *** MUTACAO QUE PASSOU VERDE: zerar o respiro lateral do `.kb`. *** O assert de "nada fora da
+   grade" deixa passar, porque `0` E da grade - mas aqui zero nao e um valor neutro: `.kb` tem
+   `overflow-x:auto`, e sem folga lateral ele CORTA a sombra e o ANEL DE FOCO do primeiro e do
+   ultimo cartao. Foco cortado e foco que nao se ve, e quem navega por teclado perde o lugar. */
+ok(n + '. *** o `.kb` guarda folga lateral: `overflow-x` sem ela corta o anel de foco ***',
+  (() => { const m = _KB.match(/\.kb\{[^}]*padding:\s*([^;}]+)/);
+           if (!m) return false;
+           const partes = m[1].trim().split(/\s+/);
+           const lateral = partes.length >= 2 ? partes[1] : partes[0];
+           return lateral !== '0' && lateral !== '0px'; })(),
+  (_KB.match(/\.kb\{[^}]*padding:\s*([^;}]+)/) || [])[1]); n++;
+/* A bola da coluna e a MESMA coisa que a bola do chip de fase: mesma cor, mesma funcao, mesmo
+   significado. Dois tamanhos pra mesma bolinha na mesma tela e o "quase igual" que o olho sente
+   e ninguem nomeia (D3). O assert compara as DUAS, e nao guarda o numero 9. */
+ok(n + '. a bola da coluna tem o MESMO tamanho da bola do chip de fase',
+  (CSS1.match(/\.chip \.bola\{width:(\d+)px/) || [])[1]
+  === (CSS1.match(/\.col h3 \.bola\{width:(\d+)px/) || [])[1],
+  { chip: (CSS1.match(/\.chip \.bola\{width:(\d+)px/) || [])[1],
+    coluna: (CSS1.match(/\.col h3 \.bola\{width:(\d+)px/) || [])[1] }); n++;
+/* Sem `tabular-nums` a contagem dança de largura ao passar de 9 pra 10 - e o que dança durante
+   um arrasto parece que MUDOU DE VALOR. Mesma razao do contador do menu lateral. */
+ok(n + '. a contagem da coluna nao dança de largura durante o arrasto',
+  /\.col h3 \.n\{[^}]*font-variant-numeric:tabular-nums/.test(CSS1)); n++;
+/* O kanban NAO tem teto, e isso e o certo: ele mostra tudo, e a contagem do cabecalho da coluna
+   e exata. O assert existe pra que ninguem "resolva" um dia a lentidao de 2.555 cartoes
+   acrescentando um slice calado - que e exatamente o defeito que as fatias 3 e 4 desenterraram. */
+ok(n + '. *** e ninguem enfiou um teto calado no kanban (a contagem da coluna e exata) ***',
+  /function kanban\(l\)\{[\s\S]{0,600}?const da = l\.filter\(n => n\.estagio === f\.k\);/.test(LIMPO)
+  && !/function kanban\(l\)\{[\s\S]{0,600}?\.slice\(0/.test(LIMPO)); n++;
+
 // ── 7. A MEMORIA DO PORQUE (L6) ──────────────────────────────────────────────
 const _corrido = N.replace(/\s+/g, ' ');
 ok(n + '. o arquivo registra por que o cartao vira linha SO dentro do painel',
@@ -242,6 +305,10 @@ ok(n + '. registra por que a Agenda tem DOIS paineis, e nao um com divisoria',
   /respondem perguntas diferentes, correm em ordens OPOSTAS/.test(_corrido)); n++;
 ok(n + '. e por que o cabecalho de dia NAO e sticky (o painel corta)',
   /sticky dentro de um ancestral que corta não gruda em lugar nenhum/.test(_corrido)); n++;
+ok(n + '. registra por que o kanban NAO vira painel (a coluna e zona de soltar)',
+  /A COLUNA CINZA É UMA ZONA DE SOLTAR, NÃO UMA MOLDURA/.test(_corrido)); n++;
+ok(n + '. e que "nao vira painel" nao dispensa a grade e a escala',
+  /não é passe livre para ficar fora do sistema/.test(_corrido)); n++;
 
 console.log('\nRESULTADO: ' + p + ' ok, ' + f + ' falha(s)');
 if (f) process.exit(1);

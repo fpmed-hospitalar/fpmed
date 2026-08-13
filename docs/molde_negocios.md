@@ -21,7 +21,7 @@
 | 2 | **Os indicadores** — 5 cartões com a anatomia da fila da Encontrar, destaque navy | **feita** (`7b68042`) |
 | 3 | **O painel em volta da lista** | **feita** — esta seção |
 | 4 | O painel na **Agenda** (e os dois cortes calados dela) | **feita** — seção 4 |
-| 5 | **Quadros/Kanban e Calendário** — caso à parte, decisão declarada | a fazer |
+| 5 | **Quadros/Kanban** — caso à parte, decisão declarada | **feita** — seção 5 |
 
 ---
 
@@ -294,7 +294,97 @@ histórico.
 
 ---
 
-## O QUE ESTAS FATIAS **NÃO** TOCARAM, E POR QUÊ
+## 5 · O KANBAN — o caso à parte, e a decisão de ele **não** virar painel
+
+`fpmed_negocios.html`. `testa_painel_negocios`: **44 → 55 asserts**, **mutação 14 de 14 barradas**
+(cada uma contra **três** suítes: painel, funil e moldura).
+
+### A decisão, e ela não é "não deu tempo"
+
+**A coluna cinza é uma zona de soltar, não uma moldura.** Ela é recuada (`--cinza-100`) e os
+cartões flutuam brancos por cima — e é exatamente esse degrau que diz *"isto aqui recebe o que
+você está arrastando"*. Se ela virasse a superfície branca do painel, cartão e coluna passariam a
+ser a **mesma matéria**, e o alvo do arrasto sumiria no instante em que a tela ficasse mais
+bonita. O `.col.alvo` (a coluna que acende durante o arrasto) depende do mesmo contraste para
+existir.
+
+> **E o molde não tem resposta para isto**, o que é diferente de ter uma que eu ignorei: a
+> Encontrar não tem nada arrastável. Copiar de lá uma moldura pensada para uma lista vertical e
+> colá-la num quadro de cinco colunas seria seguir a **letra** do molde contra o que ele quer.
+
+O **cabeçalho da coluna já é o cabeçalho do painel**, em miniatura: rótulo à esquerda, contagem à
+direita. E a contagem é **exata** — o kanban não corta em teto nenhum, então não há aqui o corte
+calado que as fatias 3 e 4 tiveram de confessar. Há assert barrando quem um dia "resolver" a
+lentidão de 2.555 cartões enfiando um `slice` calado.
+
+### Mas "não vira painel" **não é passe livre para ficar fora do sistema**
+
+Este era o bloco mais fora da régua da tela inteira — **sete linhas** com valor que não existe em
+token nenhum. O Quadros é a **visão de abertura** desta tela: é a primeira coisa que se vê.
+
+| onde | era | ficou |
+|---|---|---|
+| `.kb` gap | 14px | `--esp-3` (12) |
+| `.kb` padding | 8px **2px** 20px | `--esp-2` **`--esp-1`** `--esp-5` |
+| `.col` padding | 12px | `--esp-3` |
+| `.col h3` margem · tamanho | 10px · **12,5px** | `--esp-3` · `--txt-1` |
+| `.col h3` família | **`Montserrat`** chumbado | *(herda o `--fonte` do tema)* |
+| `.col h3 .n` tamanho | **11,5px** | `--txt-1` **+ `tabular-nums`** |
+| `.col h3 .bola` | **10px** | **9px** — o mesmo da bola do chip de fase |
+| `.col .vazia` raio · padding | **11px** · 26px 14px | `--raio-cartao` · `--esp-6` `--esp-4` |
+| `.kb .card` margem | 10px | `--esp-3` |
+
+Três dessas merecem o porquê escrito:
+
+- **A bola foi de 10 para 9px** porque é o **mesmo objeto** que o `.bola` do chip de fase logo
+  acima: mesma cor, mesma função, mesmo significado. Dois tamanhos para a mesma bolinha na mesma
+  tela é o "quase igual" que o olho sente e ninguém nomeia (D3). O assert **compara as duas** em
+  vez de guardar o número 9 — se um dia o chip mudar, a coluna vai junto.
+- **O nome da fonte chumbado saiu** porque o `--fonte` do tema **já é** Montserrat, e um nome
+  escrito à mão era o único lugar da tela que não acompanharia o tema de um cliente que mudasse a
+  família.
+- **`tabular-nums` na contagem**, pela mesma razão do contador do menu: sem ele o número dança de
+  largura ao passar de 9 para 10, e o que dança **durante um arrasto** parece que mudou de valor.
+
+> **E o `2px` virou `--esp-1` (4px), não zero.** Ele não é decoração: `.kb` tem `overflow-x:auto`,
+> e sem folga lateral ele **corta a sombra e o anel de foco** do primeiro e do último cartão. Foco
+> cortado é foco que não se vê. Uma mutação passou verde apagando essa folga — o assert de "nada
+> fora da grade" deixava passar, porque `0` é da grade. Agora há assert próprio, com o motivo.
+
+### O calendário foi conferido e **não precisou de fatia**
+
+Varri o bloco `.cal-*` com o mesmo teste: das 8 linhas fora da grade em toda a tela, **7 eram do
+kanban**. No calendário sobraram duas, e as duas são medidas de **controle**, não de espaçamento —
+`min-width:210px` no nome do mês (para o layout não pular ao trocar "maio" por "dezembro", que é
+o D14 sendo obedecido) e os botões de navegação de `34×30px`, cuja altura de 30 é a mesma do sino
+e do item de menu. Ele já vive sobre os tokens desde que nasceu.
+
+### Medido no navegador
+
+23 negócios, **uma fase deixada vazia de propósito** para exercitar o "Arraste negócios para cá".
+
+| | medido |
+|---|---|
+| painéis dentro do Quadros | **0** *(a decisão, provada na tela)* |
+| colunas · contagens | 5 · `5 · 5 · 5 · 4 · 0` |
+| `.kb` padding · gap | `8px 4px 20px` · `12px` |
+| coluna: fundo · padding · raio | `#F1F4F8` *(recuada)* · 12px · 10px |
+| cartão: fundo · raio · sombra · margem | **branco** · 13px · sim · 12px |
+| `h3`: família · tamanho · margem | Montserrat *(herdada)* · 12px · 12px |
+| contagem: tamanho · numeral | 12px · **`tabular-nums`** |
+| bola da coluna **=** bola do chip | **9px = 9px** |
+| vazia: raio · padding | 10px · `24px 16px` |
+| rolagem horizontal da página | **0** |
+
+> **O degrau que sustenta o arrasto está de pé, medido:** coluna `#F1F4F8`, cartão `#FFFFFF`.
+
+> ### O TESTE DO BATER O OLHO NÃO FOI FEITO, E O MOTIVO É O MESMO DAS OUTRAS FATIAS
+> A tela **exige sessão**, e o `gm-auth` substitui a página inteira pelo formulário de acesso —
+> eu não tenho login e não vou pedir um. O que foi medido é a **geometria e o estilo computado do
+> DOM real**, que existe e está montado por baixo do gate (é de lá que saem todos os números
+> acima). O que falta é a comparação **visual** lado a lado com o molde, e ela fica para quem
+> puder abrir a tela logado. Número medido não substitui olho — e dizer que substitui seria a
+> pior das duas coisas.
 
 - **`sw.js`** — o Trabalhador A está com ele em voo (bump para `-39` mais a entrada do
   `fpmed_icones.js`, que ainda é arquivo não versionado). Commitar o `sw.js` daqui levaria junto
