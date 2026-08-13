@@ -1664,12 +1664,21 @@ Criado em 21/07/2026 copiando SO os arquivos do app do C:\globalmed.
                  CONTINUA, so ganhando o acabamento do cabecalho do painel.
              >>> E TEM QUE FICAR CLARO QUE E OUTRA FONTE: um selo discreto "ao vivo · PNCP"
                  marca a diferenca entre o que NOS coletamos e o Brasil inteiro ao vivo.
-     >>> ITEM NOVO QUE ESTA RODADA MEDIU E NAO FEZ — **A VARREDURA DE EMOJI DA ENCONTRAR**:
-         51 ocorrencias de emoji-icone no fpmed_licitacoes.html (13x ⚠ · 6x 🎯 · 5x 🌎 · 2x 🌐 ·
-         2x 📅 · 2x 📧 · 2x ✅ · 2x ⚡ · 🔍 ⛔ 📦 📰 📄 ✓ ✕). D11 proibe emoji como icone, e o
-         Negocios ja fez a dele (59 viraram sprite SVG em 12/08). Nao entrou nesta rodada porque
-         e trabalho de SUBSTITUICAO em 51 pontos, nao de decisao — e misturar isso com a troca de
-         moldura teria feito uma fatia que ninguem consegue revisar. Fica como item proprio.
+     >>> 7f. **A VARREDURA DE EMOJI DA ENCONTRAR** — E O PROXIMO DA FILA.
+         >>> REMEDIDO EM 13/08, DEPOIS DO 7d E DO 7e (S17: estado se remede na hora de afirmar):
+               EMOJI-ICONE, o que D11 proibe .......... **36** (eram 51)
+                 ⚠ x13 · 🎯 x6 · 🌐 x2 · 📅 x2 · 📧 x2 · ✅ x2 · ⚡ x2 · ✓ 🔍 ⛔ ✕ 📦 📰 📄
+               GLIFOS TIPOGRAFICOS, que FICAM ......... 17  (→ x9 · ← x3 · ↗ x3 · ↑ · ↻)
+             Caiu de 51 pra 36 porque o 7d trocou os 5 🌎 pelo #ic-globo e o 7e nao usou nenhum.
+             >>> OS 17 NAO ENTRAM NA CONTA, e isso e fronteira DECLARADA do projeto desde o
+                 sprite do Negocios: seta tipografica dentro de texto corrido nao e icone.
+                 Contar os dois juntos daria "63" e faria a tarefa parecer maior do que e.
+             >>> O SPRITE JA ESTA CARREGADO NA TELA desde o 7d (fpmed_icones.js, 21 simbolos),
+                 entao a varredura e SUBSTITUICAO, nao decisao. Os que faltam desenho no sprite:
+                 alvo/mira (🎯), raio (⚡), caixa (📦), jornal (📰), envelope (📧), lupa (🔍),
+                 proibido (⛔), certo (✓/✅) e errado (✕) — acrescentar AO conjunto unico, como o
+                 7d fez com ic-globo e ic-sai. Nada de conjunto novo a parte (ordem do dono).
+             O Negocios ja fez a dele (59 viraram sprite em 12/08).
 
      >>> [historico] O INVENTARIO QUE EU TINHA ESCRITO ANTES DE COMECAR O PASSO 6, mantido
          porque ele mostra o que ja existia e o que era pra fazer:
