@@ -1111,16 +1111,33 @@ Criado em 21/07/2026 copiando SO os arquivos do app do C:\globalmed.
                     sabiam dizer "mudou", nunca "piorou". Agora cobram a promessa: hierarquia de
                     raio (botao < cartao), sombra escura-neutra-e-MACIA, texto escuro sem ser
                     preto, fundo claro sem ser branco, e o DEGRAU entre o fundo e o cartao.
-            >>> PROXIMA FATIA E A 2 (o menu): grupos com respiro e barra no item aceso. Ele JA
-                nasce em 3 grupos (OPORTUNIDADES/GESTAO/FERRAMENTAS) — conferido na tela — entao
-                o pedido de "separar licitacao das ferramentas" ja esta 80% atendido; falta o
-                acabamento.
-            >>> E O GAP REAL DA ENCONTRAR, VISTO NA TELA (13/08): a AREA DE CONTEUDO E BRANCA.
-                E por isso que nada flutua — cartao branco sobre fundo branco. Na amostra o
-                `main` e o fundo suave e SO os cartoes sao brancos. Esse e o primeiro conserto
-                da fatia 3, e provavelmente o que sozinho muda mais o "agradavel de ver".
-                Faltam tambem: cartao de busca, filtros em cartao com contador na faceta,
-                cabecalho com trilha ("Inicio / Encontrar") e o cartao de resultado rico.
+            >>> FATIA 2 (O MENU) **FEITA E PUBLICADA em 13/08** — commit fa8d2b2.
+                Respiro entre itens (12/20), largura 236 da amostra, rotulo de grupo no --txt-0
+                novo (10px, .14em), "em breve" virou etiqueta contornada.
+                >>> TRES VIOLACOES DE AA ACHADAS E CORRIGIDAS: o --cinza-400 carregava TEXTO em
+                    tres lugares do menu (rotulo de grupo, "HOSPITALAR" da marca, "em breve") —
+                    2,44:1, metade do minimo, e estava assim desde que o menu nasceu. Foram pro
+                    --cinza-500. Assert novo no testa_menu_lateral proibe o 400 voltar a `color:`.
+                >>> A LARGURA DO MENU VIROU TOKEN (--menu-largura). Vivia chumbada em TRES
+                    arquivos (o menu + o margin-left das 2 telas); esquecer um = menu por cima do
+                    conteudo, e so na tela esquecida.
+            >>> FATIA 3a (O CARTAO DA BUSCA) **FEITA E PUBLICADA** — mesmo commit.
+                >>> O DIAGNOSTICO QUE EU TINHA ESCRITO AQUI ESTAVA PELA METADE, e vale a correcao:
+                    eu disse "a area de conteudo e BRANCA". Medido no navegador, ela JA ERA o
+                    fundo suave. O problema era o oposto e mais simples: NAO HAVIA BRANCO NENHUM
+                    pra flutuar sobre ele. Periodo, campo, dica e atalhos eram 4 blocos soltos.
+                    Viraram UM cartao branco (raio 16, sombra macia, respiro 24, divisoria antes
+                    dos atalhos). Nada mudou de ordem, comportamento ou dado.
+            >>> FALTA NA ENCONTRAR (fatia 3b) — nesta ordem, que e a de impacto:
+                  1. O CARTAO DE RESULTADO RICO (`.lic`): borda-esquerda fina na cor da etapa,
+                     titulo forte, badges pill, linha de dados rotulo-fraco/valor-forte, 2 acoes
+                     no rodape. E a peca central e a que o dono descreveu em mais detalhe.
+                  2. GRIFO DO TERMO BUSCADO com <mark> no objeto (so o que casou de verdade).
+                  3. CONTADOR NA FACETA de filtro ("Pregao eletronico  1.624") — conta o que ja
+                     esta em memoria, nada de consulta nova.
+                  4. Cabecalho com trilha "Inicio / Encontrar" e contexto de empresa.
+                >>> E O gm-auth.js (pastilha escura + 2 emoji) continua esperando: ele aparece no
+                    canto superior direito das duas telas claras. Ver o achado registrado acima.
      8. [ ] CMED COMO CAMADA DE BASE — PMVG por baixo de todo preco; tira "Conferir CMED"
             do menu e deixa a busca crua num canto discreto. Fundacao de dados primeiro.
      8b.[ ] demais telas ganhando o tema claro, uma a uma (8 ainda escuras — e o que
