@@ -93,7 +93,21 @@ ok('32. *** para quando a planilha e MAIS VELHA que a base no ar ***',
   /e MAIS VELHA que a base no ar/.test(T));
 ok('33. ...com o motivo (rebaixar a regua sem ninguem perceber)',
   /Carregar uma planilha mais velha por cima da vigente\s*REBAIXA a regua sem ninguem perceber/.test(uc(T)));
-ok('34. *** para quando a base ja tem duas edicoes convivendo ***', /EDICOES convivendo/.test(T));
+/* ══ REAPONTADO POR DECISAO DO DONO (item 10, 13/08) ═══════════════════════════════════════
+   Este assert guardava "para quando a base ja tem duas edicoes convivendo". Conviver ERA
+   sintoma de carga pela metade — e virou o DESENHO: "VERSIONAR POR EDICAO, nada de apagar a
+   anterior; assim o teto de qualquer proposta antiga continua auditavel".
+   >>> O ALARME VELHO NAO SO FICOU INUTIL: ele PARARIA TODA CARGA a partir da segunda. Um assert
+       que exige o alarme errado e pior que assert nenhum — ele impede o conserto.
+   >>> O QUE ELE VIGIA AGORA e o que continua sendo defeito de verdade: edicao guardada com
+       CONTAGEM ESTRANHA (a CMED publica ~26 mil por edicao; um punhado de linhas nao e
+       historico, e carga que morreu no meio). E ele so PARA quando a incompleta e a VIGENTE —
+       porque ai o teto de HOJE sai de uma carga pela metade. */
+ok('34. *** vigia edicao INCOMPLETA (e nao "duas edicoes"), e so para se a incompleta for a vigente ***',
+  /carga que morreu no meio/.test(T)
+  && /Number\(e\.apresentacoes\) < 1000/.test(T)
+  && /magras\.some\(e => e\.vigente\)/.test(T)
+  && !/EDICOES convivendo/.test(T));
 ok('35. *** sem --apply nada e gravado ***',
   /\[CONFERENCIA — nada foi gravado\]/.test(T) && /if \(!APPLY\)/.test(T));
 ok('36. *** e ela confere DEPOIS da carga, e nao so antes ***',

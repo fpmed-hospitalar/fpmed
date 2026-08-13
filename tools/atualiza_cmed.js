@@ -115,7 +115,28 @@ function confereLayout(arq, rotulo, prefixoEsperado) {
   } else {
     console.log(`  publicada em ${String(atual.vigente_desde).slice(0, 10)} · ha ${atual.dias_desde} dias`);
     console.log(`  ${Number(atual.apresentacoes).toLocaleString('pt-BR')} apresentacoes · ${Number(atual.com_cap).toLocaleString('pt-BR')} com CAP`);
-    if (Number(atual.edicoes) > 1) parar(`a base tem ${atual.edicoes} EDICOES convivendo — uma carga anterior entrou pela metade. Resolver isso antes de carregar outra`);
+    /* ══ ESTE ALARME MUDOU DE ALVO (item 10, 13/08/2026) ═══════════════════════════════════
+       Ele parava quando havia mais de uma edicao na base, porque conviver ERA sintoma de carga
+       pela metade. Depois da decisao de VERSIONAR POR EDICAO, conviver e o DESENHO — e o alarme
+       de ontem pararia TODA carga a partir da segunda.
+       >>> O QUE ELE PASSA A VIGIAR e o que continua sendo defeito de verdade: edicao guardada
+           com CONTAGEM ESTRANHA. A CMED publica ~26 mil apresentacoes por edicao; uma edicao
+           com um punhado de linhas nao e historico, e uma carga que morreu no meio.
+       >>> E ELE NAO PARA MAIS, SO AVISA: com o versionamento, uma edicao velha incompleta nao
+           impede a nova de entrar — ela e passado, e o vigente e outro. Parar aqui seria deixar
+           a base desatualizada por causa de uma sujeira que nao afeta o teto de hoje. */
+    const edicoes = Number(atual.edicoes) || 1;
+    if (edicoes > 1) console.log(`  ${edicoes} edicoes guardadas (versionamento ligado — a anterior nao e apagada).`);
+    try {
+      const re = await fetch(`${SB}/rest/v1/cmed_edicoes?select=edicao,apresentacoes,vigente`, { headers: H });
+      const lista = re.ok ? await re.json() : [];
+      const magras = lista.filter(e => Number(e.apresentacoes) < 1000);
+      if (magras.length) {
+        console.log(`  ⚠️ ${magras.length} edicao(oes) guardada(s) com menos de 1.000 linhas — carga que morreu no meio:`);
+        magras.forEach(e => console.log(`     ${e.edicao}: ${e.apresentacoes} linhas${e.vigente ? '  <-- E A VIGENTE, isto E grave' : ''}`));
+        if (magras.some(e => e.vigente)) parar('a edicao VIGENTE esta incompleta — o teto de hoje sai de uma carga pela metade');
+      }
+    } catch (e) { console.log('  ⚠️ nao consegui conferir o acervo de edicoes (' + e.message + ')'); }
     // A CMED publica todo mes. Uma base de mais de ~45 dias ja passou de uma edicao — e uma
     // proposta conferida contra regua velha pode estar acima do teto vigente sem ninguem ver.
     if (atual.dias_desde > 45) console.log(`  ⚠️ a regua tem ${atual.dias_desde} dias. A CMED publica todo mes: provavelmente ha edicao mais nova.`);

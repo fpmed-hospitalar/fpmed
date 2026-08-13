@@ -121,7 +121,7 @@ const numBR = v => { const n = parseFloat(String(v == null ? '' : v).replace(/\.
   const cur = await (await fetch(`${SB}/rest/v1/cmed_pf?select=publicada&limit=1&order=publicada.desc`, { headers: H })).json();
   const edicaoAtual = (Array.isArray(cur) && cur[0]) ? cur[0].publicada : null;
   console.log('edicao na tabela hoje: ' + (edicaoAtual || 'nenhuma') + ' -> nova: ' + publicada);
-  if (!APPLY) { console.log('\nPreview OK. Rodar com --apply pra gravar (insere a nova e remove a anterior).'); return; }
+  if (!APPLY) { console.log('\nPreview OK. Rodar com --apply pra gravar (insere a nova; a anterior FICA guardada).'); return; }
   if (edicaoAtual === publicada && !process.argv.includes('--recarregar')) { console.log('mesma edicao ja carregada — nada a fazer (use --recarregar p/ refazer).'); return; }
   if (edicaoAtual === publicada) {   // --recarregar: apaga a propria edicao antes de reinserir (refeita do zero da planilha)
     const del0 = await fetch(`${SB}/rest/v1/cmed_pf?publicada=eq.${publicada}`, { method: 'DELETE', headers: { ...H, Prefer: 'count=exact' } });
@@ -136,12 +136,17 @@ const numBR = v => { const n = parseFloat(String(v == null ? '' : v).replace(/\.
     if (i % 5000 === 0) console.log('  inseridos ' + ins + '/' + regs.length + '…');
   }
   console.log('inseridos: ' + ins + ' (edicao ' + publicada + ')');
-  // remove SO edicao DIFERENTE da recem-inserida (no --recarregar a data e a mesma — deletar
-  // aqui apagaria o que acabou de entrar; foi exatamente o bug pego em 22/07, tabela foi a 0)
-  if (edicaoAtual && edicaoAtual !== publicada) {
-    const del = await fetch(`${SB}/rest/v1/cmed_pf?publicada=eq.${edicaoAtual}`, { method: 'DELETE', headers: { ...H, Prefer: 'count=exact' } });
-    console.log('edicao anterior ' + edicaoAtual + ' removida: HTTP ' + del.status + ' (' + (del.headers.get('content-range') || '') + ')');
-  }
+  /* ══ A EDICAO ANTERIOR NAO E MAIS APAGADA (item 10, 13/08/2026) ═══════════════════════════
+     Aqui havia um DELETE da edicao anterior. Decisao do dono: "VERSIONAR POR EDICAO — nada de
+     apagar a tabela anterior. Assim o teto de qualquer proposta antiga continua auditavel
+     (calculado com a CMED de QUANDO?)".
+     >>> O QUE FAZ AS TELAS CONTINUAREM VENDO UMA REGUA SO nao e mais o delete: e a
+         `cmed_edicao_vigente`, e as views `cmed_regua`/`cmed_teto`/`v_cmed_vigencia` que se
+         prendem nela (ddl/cmed_versionada.sql). Quem consome nao mudou uma linha.
+     >>> E O `--recarregar` CONTINUA APAGANDO, de proposito, mas SO a propria edicao que esta
+         reinserindo (o DELETE que sobrou la em cima). Isso nao e versionamento perdido: e
+         refazer a MESMA edicao a partir da planilha, e sem ele a recarga duplicaria a edicao
+         inteira. A distincao entre "apagar a anterior" e "refazer a atual" e o item inteiro. */
   const tot = await fetch(`${SB}/rest/v1/cmed_pf?select=id`, { headers: { ...H, Prefer: 'count=exact', Range: '0-0' } });
   console.log('total na tabela agora: ' + (tot.headers.get('content-range') || '').split('/')[1]);
 })();

@@ -1910,7 +1910,73 @@ Criado em 21/07/2026 copiando SO os arquivos do app do C:\globalmed.
                 porRegistro, porEan, com o registro ANTES do ean por medicao). O que falta e a
                 CHAVE do nosso lado — que e exatamente o passo 1.
 
-    10. [ ] **ATUALIZAR A BASE CMED PARA A EDICAO DE 11/08** (a base no banco e de 21/07).
+    10. [1/2] **CMED VERSIONADA POR EDICAO — O REDESENHO ESTA FEITO E APLICADO** (13/08).
+            Decisao do dono: "VERSIONAR POR EDICAO, nada de apagar a anterior; 21/07 fica, 11/08
+            entra por cima como vigente. Migracao aditiva, zero DELETE. Assim o teto de qualquer
+            proposta antiga continua auditavel."
+            DDL: **ddl/cmed_versionada.sql** (aplicada em 2 migracoes).
+
+            >>> O QUE PRENDIA O SISTEMA A UMA EDICAO SO — medido, nao suposto:
+                  cmed_pf     PRIMARY KEY (id)     -> ggrem NAO era unico: versionar era de graca
+                  cmed_precos PRIMARY KEY (ggrem)  -> ERA ESTE o bloqueio do banco
+                  FKs apontando pras duas .......... NENHUMA
+                  publicada / publicada_gov nulos .. 0 de 25.702 (servem de chave)
+                O resto era o DELETE no fim do carrega_cmed_pf.js.
+
+            >>> *** O PERIGO QUE NINGUEM VE ANTES DE ACONTECER, e que fez o item ser mais que
+                "parar de apagar": as views juntavam cmed_pf x cmed_precos POR GGREM E SO. Com
+                duas edicoes isso vira PRODUTO CARTESIANO (2x2 = 4 linhas por ggrem). E nao
+                quebraria de forma visivel: a cmed_teto agrega com min()/max(), entao a FAIXA
+                passaria a misturar edicoes e `apresentacoes` contaria o dobro. Regua errada sem
+                nada na tela parecer errado.
+                >>> POR ISSO ENTRARAM `cmed_edicao_vigente` (a resposta "qual e a mais nova" em
+                    UM lugar) e o filtro por edicao em cmed_regua / cmed_teto / v_cmed_vigencia.
+                    Quem consome (motor, Conferidor, Licitacoes) NAO mudou uma linha.
+
+            >>> PROVA DA MIGRACAO — retrato antes x depois, e os numeros sao IDENTICOS:
+                  cmed_pf 25.702 · cmed_precos 25.702 · cmed_regua 25.702 · cmed_teto 4.875
+                  PK agora: PRIMARY KEY (ggrem, publicada_gov)
+                  ggrem repetido na regua: 0
+                  cmed_edicoes: "2026-07-21 (25702, VIGENTE)"
+                Zero DELETE, zero TRUNCATE, zero UPDATE de dado.
+
+            >>> A 1a TENTATIVA DA MIGRACAO MORREU, e o motivo vale registrar: `create or replace
+                view` NAO deixa mudar a posicao de coluna existente ("cannot change name of view
+                column pf_unit to publicada_gov"). Eu tinha posto a coluna nova no MEIO. Inserir
+                no meio exigiria DROP CASCADE, que levaria a cmed_teto junto — um DROP evitavel,
+                num item cujo ponto e nao apagar nada. Foi pro FIM.
+                Pelo mesmo motivo a `v_cmed_vigencia` manteve o nome `edicoes` (renomear pra
+                `edicoes_guardadas` custaria um DROP por uma palavra). O SIGNIFICADO e que mudou.
+
+            >>> ARMADILHA NEUTRALIZADA NO MESMO COMMIT: os loaders ainda apagavam. Com o banco ja
+                versionado, um `--apply` teria matado a 21/07. O DELETE da edicao anterior saiu
+                do carrega_cmed_pf.js. **O `--recarregar` continua apagando de proposito, mas SO
+                a propria edicao que esta reinserindo** — a distincao entre "apagar a anterior" e
+                "refazer a atual" e o item inteiro.
+
+            >>> E O ALARME DO atualiza_cmed.js MUDOU DE ALVO: ele PARAVA quando havia mais de uma
+                edicao. Isso pararia TODA carga a partir da segunda. Agora vigia edicao com
+                CONTAGEM ESTRANHA (<1.000 linhas = carga que morreu no meio) e so PARA quando a
+                incompleta e a VIGENTE. 1 assert do testa_cmed_vigencia reapontado por DECISAO —
+                ele exigia o alarme velho, e assert que exige o alarme errado impede o conserto.
+
+     10-falta. [ ] **A CARGA DA EDICAO 11/08 E AS PROVAS** — o redesenho ja esta de pe, entao
+            isto e execucao. PONTO EXATO DE RETOMADA:
+            1. `node tools/atualiza_cmed.js` -> ja confere e ACHA a edicao nova em dados_cmed/.
+               Ele reporta: 2026-07-21 -> 2026-08-11, 26.001 linhas na planilha, layout ok
+               (cabecalho linha 54 no gov, GGREM, PMVG 19 % e CAP no lugar).
+            2. `node tools/atualiza_cmed.js --apply` -> carrega. A 21/07 FICA.
+            3. PROVAS COMBINADAS (nao pular): 3 medicamentos conferidos A MAO entre o Excel e o
+               banco (mesmo EAN -> mesmo PMVG na mesma aliquota) + remedir o casamento da
+               proposta (os 6 de 14 melhoraram com a edicao nova?).
+            4. Conferir `cmed_edicoes` mostrando as DUAS, com a 11/08 vigente.
+            >>> UMA COISA PRA OLHAR DEPOIS DA CARGA (achada agora, nao e defeito ainda): o
+                fpmed_conferidor.html imprime "N edicoes convivendo" na tela. Isso era ALARME e
+                virou FATO NORMAL — com duas edicoes guardadas a tela vai avisar de um estado
+                que agora e o desenho. Assert 17 do testa_cmed_vigencia guarda essa frase.
+                Territorio meu; entra junto com a carga.
+
+    10-hist. [ref] o pedido original: atualizar a base (a base no banco e de 21/07).
             Arquivos ja movidos pra dados_cmed/ (ver abaixo). O "gov" e o que importa.
             >>> ***ISTO VAI BATER NA CLAUSULA DE PARADA DO PROPRIO PEDIDO, E EU JA SEI POR QUE.***
                 O pedido diz: "se o desenho atual exigir substituicao destrutiva, PARA e propoe o
