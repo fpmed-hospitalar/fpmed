@@ -200,7 +200,16 @@ ok('52. o render guarda o ultimo resultado, pro refino nao ir a rede',
   /window\._ultimoRender = \{todos, kws, excl, aviso, procedencia\}/.test(src) && /function rerender\(\)/.test(src));
 ok('53. ...e o motivo esta dito (a fonte caiu 6x em 3 dias; trocar filtro nao pode custar consulta)',
   /não custa nova consulta ao PNCP|não pode\s*\n?\/\/ custar/.test(src));
-ok('54. o card mostra o PORTAL', /portal em que foi publicada/.test(src));
+/* O PORTAL VALE PORQUE A TAXA DE VITORIA E MEDIDA POR ELE (item 8: BNC 23,0% ·
+   LICITANET 22,9% · BLL 19,6% · GOV.BR 13,0%) — por isso ele TEM que estar no card.
+   >>> O ASSERT COBRAVA A STRING DO `title` do crachao antigo ("portal em que foi
+       publicada"), e ficou vermelho em 13/08 quando o card virou o cartao rico e o
+       portal desceu pro rodape como dado rotulado. Nada tinha sumido: ele so mediu o
+       MEIO em vez da promessa. E a licao S8 outra vez.
+   >>> AGORA ELE COBRA QUE O CAMPO DO PORTAL (`usuarioNome`) SEJA IMPRESSO no card,
+       com rotulo — que e o que "o card mostra o portal" sempre quis dizer. */
+ok('54. o card mostra o PORTAL, com rotulo, onde quer que ele fique',
+  /usuarioNome \? 'Portal'/.test(src) && /esc\(l\.usuarioNome \|\|/.test(src));
 ok('55. o card mostra o selo SRP com o que isso significa', /class="bdg laranja"/.test(src) && /Sistema de Registro de Preços/.test(src));
 ok('56. o selo de deserta carrega o motivo no title', /class="etq deserta" title="'\+esc\(des\.motivo\)/.test(src));
 ok('57. a marca de deserta aparece depois de cruzar, sem re-renderizar a lista',

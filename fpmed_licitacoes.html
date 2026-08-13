@@ -267,31 +267,101 @@ select[disabled],input[disabled],textarea[disabled]{
   font-size:var(--txt-1);font-weight:var(--peso-semi)}
 
 /* ── KPIs ── régua, não chips soltos ────────────────────────────────────────── */
-.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));
   background:var(--branco);border:1px solid var(--cinza-200);border-radius:var(--raio-cartao);
   box-shadow:var(--sombra-1);overflow:hidden;margin:var(--esp-6) 0 var(--esp-2)}
-.kpi{padding:var(--esp-4);border-right:1px solid var(--cinza-200)}
+.kpi{padding:var(--esp-4);border-right:1px solid var(--cinza-200);container-type:inline-size}
 .kpi:last-child{border-right:0}
 /* D9: valor forte em cima, rótulo desenfatizado embaixo. E tabular-nums, senão a
-   régua dança quando o número muda de 9 pra 10. */
-.kpi b{font-size:var(--txt-6);font-weight:var(--peso-forte);display:block;
-  line-height:var(--altura-titulo);color:var(--cinza-800);font-variant-numeric:tabular-nums}
+   régua dança quando o número muda de 9 pra 10.
+   ══ O NÚMERO HERÓI ESTOURAVA COM DINHEIRO DE VERDADE (achado em 13/08, D12) ═══════════════
+   Enchendo a tela com o pior dado real — o R$ 63.034.332,63 que a FPMED de fato ganhou — o
+   "estimado somado" saiu **"R$ 63.130.733es"**: 32px não cabem numa coluna de 150px, o
+   `overflow:hidden` do painel cortou, e o que sobrou encostou no rótulo do vizinho. Com os
+   números pequenos de todo dia (3, 12, 40%) nada disso aparecia.
+   >>> DIMINUIR É MELHOR QUE CORTAR, e aqui isso não é gosto: número cortado não é "menos
+       legível", é OUTRO NÚMERO. `R$ 63.130.733` virando `R$ 63.130.7…` num painel de dinheiro
+       é a lição S6 esperando acontecer. Por isso NÃO há `text-overflow:ellipsis` nesta regra —
+       reticências em dinheiro mentem com cara de acabamento.
+   >>> E A MEDIDA É DA COLUNA, NÃO DA JANELA. A primeira correção usou `clamp(...,2.2vw,...)` e
+       não mudou nada: `vw` é a largura da JANELA, e a janela estava larga — quem estava
+       apertado era a coluna. Medido depois de aplicar: continuava 32px e continuava cortando.
+       `cqw` é a largura do CONTAINER, que é o que a conta precisava (é a S9 de novo: eu tinha
+       corrigido outra coisa e as duas medições deram igual).
+   >>> E A COLUNA MÍNIMA SUBIU de 150 pra 190px: medir o pior caso é o que define o mínimo. */
+
+.kpi b{font-size:clamp(var(--txt-4),11cqw,var(--txt-6));font-weight:var(--peso-forte);display:block;
+  line-height:var(--altura-titulo);color:var(--cinza-800);font-variant-numeric:tabular-nums;
+  white-space:nowrap}
 .kpi span{font-size:var(--txt-1);color:var(--cinza-600);letter-spacing:.02em}
 .contagem{font-size:var(--txt-2);color:var(--cinza-600);margin:var(--esp-4) 0 var(--esp-3)}
 .contagem b{color:var(--cinza-800);font-variant-numeric:tabular-nums}
 
 /* ── CARTÃO DE LICITAÇÃO ────────────────────────────────────────────────────── */
-.lic{background:var(--branco);border:1px solid var(--cinza-200);border-radius:var(--raio-cartao);
+/* ══ O CARTÃO DE RESULTADO (13/08, item 7 fatia 3b) ═════════════════════════════════════════
+   A peça central da tela, e a que o dono descreveu em mais detalhe. Ela tinha TODOS os dados
+   certos e nenhuma hierarquia: título, objeto, etiquetas, sessão e um rodapé com sete crachás
+   do mesmo peso, com o valor pendurado na ponta. Tudo do mesmo tamanho é o mesmo que nada em
+   destaque (D1) — e era isso que fazia a lista cansar.
+   >>> NENHUM DADO ENTROU OU SAIU. O que mudou foi QUEM É GRANDE: o órgão e o número viram o
+       título; a sessão e as duas etiquetas que dizem o TIPO do certame sobem pra linha de
+       apoio; e os três números que decidem participação (valor, município, prazo) descem pro
+       rodapé no padrão rótulo-fraco/valor-forte (D9).
+
+   ── A BARRA DA ESQUERDA CODIFICA O PRAZO, e não a procedência ────────────────────────────────
+   A amostra usa a barra pra dizer de onde veio o resultado. Aqui isso seria redundante: a
+   procedência já é dita pela SEÇÃO — o índice é a lista principal e a busca nacional tem
+   bloco próprio, com aviso próprio. Codificar de novo no cartão gastaria o recurso mais
+   visível da peça pra repetir o que já está escrito duas linhas acima.
+   >>> ENTÃO ELA DIZ O QUE MUDA A DECISÃO: encerrada · encerra em ≤2 dias · aberta. E ela
+       NUNCA anda sozinha — o crachá de prazo, com os dias escritos, continua no rodapé. */
+.lic{position:relative;overflow:hidden;background:var(--branco);border-radius:var(--raio-cartao);
   padding:var(--esp-6);margin-bottom:var(--esp-4);box-shadow:var(--sombra-1);
-  transition:box-shadow var(--transicao),border-color var(--transicao)}
-.lic:hover{box-shadow:var(--sombra-2);border-color:var(--cinza-300)}
-.lic .titulo{font-size:var(--txt-2);font-weight:var(--peso-semi);color:var(--azul-700);
-  text-decoration:none;display:inline-block;line-height:1.45;letter-spacing:.01em}
-.lic .titulo:hover{text-decoration:underline}
+  transition:box-shadow var(--transicao),transform var(--transicao)}
+/* Sem borda: a sombra macia já desenha a fronteira, e os dois juntos são cara de template (D6).
+   O hover levanta 2px — movimento pequeno diz "isto é clicável" melhor que uma cor a mais. */
+.lic:hover{box-shadow:var(--sombra-2);transform:translateY(-2px)}
+.lic::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--azul-500)}
+.lic.prazo-urg::before{background:var(--ambar-500)}
+.lic.prazo-fim::before{background:var(--vermelho-500)}
+
+/* O SELO DO ÓRGÃO. Não é enfeite: ele é a âncora visual que faz o olho achar onde cada cartão
+   começa numa lista longa, e é o que dá ao título uma margem esquerda constante pra alinhar o
+   objeto e o rodapé embaixo dele. Um ícone só, do mesmo conjunto do resto do sistema. */
+.lic .selo{width:44px;height:44px;flex:0 0 auto;border-radius:var(--raio-botao);
+  background:var(--azul-50);display:grid;place-items:center;color:var(--azul-700)}
+.lic .selo svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.7;
+  stroke-linecap:round;stroke-linejoin:round}
+.lic .topo{display:flex;align-items:flex-start;gap:var(--esp-3)}
+.lic .cab{flex:1;min-width:0}
+/* O título é ESCURO e forte, não azul de link. Ele é o nome da coisa; o azul continua no
+   hover, que é onde ele precisa dizer "dá pra clicar". Título inteiro em azul numa lista de
+   vinte cartões é vinte links gritando — e aí nenhum se destaca (D5: cor é tempero). */
+.lic .titulo{font-size:var(--txt-3);font-weight:var(--peso-semi);color:var(--cinza-800);
+  text-decoration:none;display:block;line-height:1.4;letter-spacing:-.01em}
+.lic .titulo:hover{color:var(--azul-700);text-decoration:underline}
 .lic .titulo:focus-visible{outline:none;box-shadow:var(--foco);border-radius:var(--raio-botao)}
-.lic .obj{margin:var(--esp-3) 0 var(--esp-4);font-size:var(--txt-2);
-  line-height:var(--altura-texto);color:var(--cinza-700);
+/* A linha de apoio: quando é a sessão, e que TIPO de certame é. */
+.lic .sub{display:flex;align-items:center;gap:var(--esp-2);flex-wrap:wrap;
+  margin-top:var(--esp-1);font-size:var(--txt-1);color:var(--cinza-500)}
+.lic .sub .quando{color:var(--cinza-700);font-weight:var(--peso-semi)}
+/* O objeto alinha sob o título (56px = selo 44 + gap 12), como na amostra: sem isso ele volta
+   pra margem do cartão e o bloco de texto "escapa" do cabeçalho. */
+.lic .obj{margin:var(--esp-4) 0 0 56px;font-size:var(--txt-2);
+  line-height:var(--altura-texto);color:var(--cinza-600);
   display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+/* ── O GRIFO DO TERMO BUSCADO ────────────────────────────────────────────────────────────────
+   Amarelo suave, texto no cinza escuro: medido, dá 12,76:1. O grifo NÃO pode ser a única
+   diferença — ele ganha peso junto, senão quem não vê a cor não vê o grifo. */
+.lic mark{background:var(--ambar-100);color:var(--cinza-800);border-radius:var(--esp-1);
+  padding:0 3px;font-weight:var(--peso-semi)}
+/* ── O RODAPÉ: rótulo pequeno e fraco em cima, valor forte embaixo (D9) ────────────────────── */
+.lic .dados{display:flex;align-items:flex-end;gap:var(--esp-8);flex-wrap:wrap;
+  margin:var(--esp-4) 0 0 56px;padding-top:var(--esp-4);border-top:1px solid var(--cinza-100)}
+.lic .dado small{display:block;font-size:var(--txt-0);font-weight:var(--peso-forte);
+  letter-spacing:.08em;text-transform:uppercase;color:var(--cinza-500);margin-bottom:2px}
+.lic .dado span{font-size:var(--txt-2);font-weight:var(--peso-semi);color:var(--cinza-800);
+  font-variant-numeric:tabular-nums}
 
 /* etiquetas: fundo no tom 100 e texto no 700 — é assim que a cor informa sem
    gritar, e é assim que o texto passa em AA. O verde-500 CHEIO do tema escuro
@@ -725,6 +795,53 @@ const brl = n => (Number(n)||0).toLocaleString('pt-BR',{style:'currency',currenc
 const dt  = s => { if(!s) return null; const d=new Date(s); return isNaN(d)?null:d; };
 const fmtDt = s => { const d=dt(s); return d ? d.toLocaleDateString('pt-BR')+' às '+d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}) : '—'; };
 const esc = s => String(s==null?'':s).replace(/[<>&"]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c]));
+
+/* ══ O GRIFO DO TERMO BUSCADO (13/08, item 7 fatia 3b) ═══════════════════════════════════════
+   Marca no objeto o que a pessoa digitou. Não é enfeite: numa lista de objetos de 400
+   caracteres, o grifo é o que responde "por que ESTE resultado apareceu?" sem ela ter que ler
+   o parágrafo inteiro.
+
+   TRÊS COISAS QUE ELE TEM QUE FAZER CERTO, e cada uma já é um jeito conhecido de errar:
+
+   1. ESCAPAR ANTES DE MARCAR. Se eu marcasse primeiro e escapasse depois, o meu próprio
+      `<mark>` viraria `&lt;mark&gt;` na tela. Se eu não escapasse nada, um objeto com "<" viraria
+      HTML — e objeto de edital é texto de terceiro entrando na página. Escapa primeiro,
+      procura no texto ESCAPADO, e insere a marca já pronta.
+   2. IGNORAR ACENTO, e é por isso que existe o `semAcento`: quem digita "farmaceutico" tem que
+      ver "FARMACÊUTICO" grifado. Sem isso o grifo falta justamente nas palavras do ramo.
+      >>> O ÍNDICE É CALCULADO NA VERSÃO SEM ACENTO E APLICADO NA ORIGINAL. Isso só funciona
+          porque `semAcento` preserva o COMPRIMENTO (troca letra por letra, não remove) — se um
+          dia ele passar a remover caractere, as posições deslizam e o grifo marca no lugar
+          errado. Está escrito aqui porque é uma dependência invisível.
+   3. NÃO GRIFAR O QUE NÃO CASOU. Termo vazio não marca nada; termo de 1 letra também não —
+      grifar todo "a" do parágrafo é ruído que ensina a ignorar a marca. */
+function grifa(texto){
+  const cru = esc(texto);
+  let termo = '';
+  try { termo = (document.getElementById('f-kw').value || '').trim(); } catch(_) { return cru; }
+  if(termo.length < 2) return cru;
+  // cada palavra do termo é procurada por si: "albumina humana" grifa as duas mesmo quando o
+  // edital escreve "albumina (humana)" no meio.
+  const alvos = semAcento(termo).split(/\s+/).filter(p => p.length >= 2);
+  if(!alvos.length) return cru;
+  const chave = semAcento(cru);
+  if(chave.length !== cru.length) return cru;   // a premissa do item 2 não vale: não arrisca
+  const marcas = [];
+  alvos.forEach(p => { let de = 0, at;
+    while((at = chave.indexOf(p, de)) !== -1){ marcas.push([at, at + p.length]); de = at + p.length; } });
+  if(!marcas.length) return cru;
+  // funde as sobreposições, senão duas palavras coladas gerariam <mark> dentro de <mark>
+  marcas.sort((a,b) => a[0] - b[0]);
+  const juntas = [marcas[0]];
+  for(let k = 1; k < marcas.length; k++){
+    const ult = juntas[juntas.length-1];
+    if(marcas[k][0] <= ult[1]) ult[1] = Math.max(ult[1], marcas[k][1]);
+    else juntas.push(marcas[k]);
+  }
+  let saida = '', pos = 0;
+  juntas.forEach(([a,b]) => { saida += cru.slice(pos,a) + '<mark>' + cru.slice(a,b) + '</mark>'; pos = b; });
+  return saida + cru.slice(pos);
+}
 // >>> ESTAS QUATRO VÊM DO MOTOR (fpmed_teto_cmed.js), não são mais escritas aqui. A razão está
 //     no comentário lá em cima, junto da trava que impede a tela de abrir sem ele.
 const { semAcento, doses, concMags, forma, unidadePack, packNosso } = window.LimedtecTetoCMED;
@@ -2367,32 +2484,52 @@ function render(todos, kws, excl, aviso, procedencia){
     const des  = desertaDe(l);
     const titulo = esc(l.modalidadeNome||'') + ' Nº ' + esc(numCompra(l.numeroCompra, l.anoCompra))
                  + ' — ' + esc(org) + ' / ' + esc(un.ufSigla||'');
-    h += '<div class="lic">'
-      + (l.linkSistemaOrigem
-          ? '<a class="titulo" href="'+esc(l.linkSistemaOrigem)+'" target="_blank" rel="noopener">'+titulo+' ↗</a>'
-          : '<span class="titulo">'+titulo+'</span>')
-      + '<div class="obj">'+esc(l.objetoCompra||'')+'</div>'
+    /* A barra da esquerda segue o prazo — o mesmo `dias` que já monta o crachá logo abaixo.
+       Uma conta só, dois lugares que a mostram: o crachá escreve, a barra acelera. */
+    const classePrazo = dias == null ? '' : (dias < 0 ? ' prazo-fim' : (dias <= 2 ? ' prazo-urg' : ''));
+    h += '<div class="lic'+classePrazo+'">'
+      + '<div class="topo">'
+      +   '<div class="selo" aria-hidden="true"><svg viewBox="0 0 24 24">'
+      +     '<path d="M3 21h18"/><path d="M5 21V10M9.5 21V10M14.5 21V10M19 21V10"/><path d="m12 3 8 5H4z"/>'
+      +   '</svg></div>'
+      +   '<div class="cab">'
+      +     (l.linkSistemaOrigem
+            ? '<a class="titulo" href="'+esc(l.linkSistemaOrigem)+'" target="_blank" rel="noopener">'+titulo+' ↗</a>'
+            : '<span class="titulo">'+titulo+'</span>')
+      +     '<div class="sub"><span class="quando">Abertura em '+fmtDt(l.dataAberturaProposta)+'</span>'
+      +       (l.modoDisputaNome ? '<span>· '+esc(l.modoDisputaNome)+'</span>' : '')
+      +       (_ehSrp(l) ? '<span class="bdg laranja" title="Sistema de Registro de Preços: a ata vale por até 12 meses e a compra é parcelada">SRP</span>' : '')
+      +       prazo
+      +       (ehNova(l) ? '<span class="bdg nova" title="não estava no resultado da última vez que você abriu este jornal">NOVA</span>' : '')
+      +     '</div>'
+      +   '</div>'
+      + '</div>'
+      // O GRIFO entra AQUI e só aqui: no objeto, que é o texto em que a pessoa procurou.
+      // Grifar o título faria o número do pregão ficar amarelo por acaso.
+      + '<div class="obj">'+grifa(l.objetoCompra||'')+'</div>'
       + '<div class="etiquetas" id="etq-'+i+'">'
         + cats.map(c=>'<span class="etq">'+esc(c)+'</span>').join('')
         + (alvo ? '<span class="etq alvo">🎯 '+alvo+' itens no nosso estoque</span>' : '')
         // o selo NUNCA vem sem o motivo no title: "DESERTA" sem porquê vira boato dentro da tela
         + (des ? '<span class="etq deserta" title="'+esc(des.motivo)+'">⚠️ '+esc(des.rotulo)+'</span>' : '')
       + '</div>'
-      + '<div class="sessao"><b>Abertura em '+fmtDt(l.dataAberturaProposta)+'</b>'
-      +   (l.modoDisputaNome ? ' &nbsp;·&nbsp; Modo de disputa: '+esc(l.modoDisputaNome) : '')
-      +   (fim ? ' &nbsp;·&nbsp; Encerra em '+fmtDt(l.dataEncerramentoProposta) : '')
-      + '</div>'
-      + '<div class="rodape">'
-      +   '<span class="bdg cinza">Fonte: PNCP — '+esc(un.municipioNome||org)+'</span>'
-      // o PORTAL é onde a disputa acontece — e a FPMED tem taxa de vitória MEDIDA por portal
-      // (item 8: BNC 23,0% · LICITANET 22,9% · BLL 19,6% · GOV.BR 13,0%). Merece estar no card.
-      +   (l.usuarioNome ? '<span class="bdg cinza" title="portal em que foi publicada">🖥️ '+esc(l.usuarioNome)+'</span>' : '')
-      +   '<span class="bdg azul">'+esc(l.modalidadeNome||'')+'</span>'
-      +   (_ehSrp(l) ? '<span class="bdg laranja" title="Sistema de Registro de Preços: a ata vale por até 12 meses e a compra é parcelada">SRP</span>' : '')
-      +   prazo
-      +   (ehNova(l) ? '<span class="bdg nova" title="não estava no resultado da última vez que você abriu este jornal">NOVA</span>' : '')
-      +   '<span class="bdg cinza" title="Número de controle PNCP">'+esc(l.numeroControlePNCP||'')+'</span>'
-      +   '<span class="valor">'+brl(l.valorTotalEstimado)+'</span>'
+      /* ── OS TRÊS NÚMEROS QUE DECIDEM PARTICIPAÇÃO ────────────────────────────────────────
+         O rodapé tinha SETE crachás do mesmo peso e o valor pendurado na ponta direita. Sete
+         coisas iguais é o mesmo que nenhuma em destaque (D1), e o valor — que é o primeiro
+         número que qualquer pessoa procura num edital — competia com o número de controle.
+         >>> AQUI SÃO TRÊS, no padrão rótulo-fraco/valor-forte, na ordem em que a pergunta é
+             feita: quanto vale · onde é · até quando dá.
+         >>> O QUE SAIU DAQUI NÃO SUMIU DA TELA: portal e modalidade viraram etiqueta na linha
+             de apoio ou continuam no `title`; o número de controle PNCP é dado de conferência,
+             não de decisão, e passou a viver no `title` do município. Nada foi apagado — o que
+             mudou é o que ganha tamanho. */
+      + '<div class="dados">'
+      +   '<div class="dado"><small>Valor estimado</small><span>'+brl(l.valorTotalEstimado)+'</span></div>'
+      +   '<div class="dado" title="Fonte: PNCP · nº de controle '+esc(l.numeroControlePNCP||'—')+'">'
+      +     '<small>Município</small><span>'+esc(un.municipioNome||org)+(un.ufSigla?' · '+esc(un.ufSigla):'')+'</span></div>'
+      +   '<div class="dado"><small>'+(l.usuarioNome ? 'Portal' : 'Modalidade')+'</small><span>'
+      +     esc(l.usuarioNome || l.modalidadeNome || '—')+'</span></div>'
+      +   (fim ? '<div class="dado"><small>Encerra em</small><span>'+fmtDt(l.dataEncerramentoProposta)+'</span></div>' : '')
       + '</div>'
       + '<div class="acoes"><button class="btn sec mini" id="bt-'+i+'" onclick="verItens('+i+')">'
       +   '🎯 Cruzar com nosso estoque</button>'
