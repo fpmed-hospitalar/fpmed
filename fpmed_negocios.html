@@ -275,6 +275,61 @@ body{
   50%{box-shadow:0 0 0 3px rgba(44,169,224,.95),0 0 30px rgba(44,169,224,.6)}}
 @media (prefers-reduced-motion: reduce){ .card.achado{animation:none} }
 
+/* ══ O PAINEL EM VOLTA DA LISTA (13/08, item 7b · fatia 3) ═══════════════════════════════════
+   A visão Lista era uma PILHA DE CARTÕES SOLTOS — cada um com borda, sombra e 12px de buraco
+   entre eles. Agora são LINHAS dentro de um painel, com cabeçalho e rodapé: a MESMA peça que a
+   Encontrar recebeu no passo 6 do molde, com os mesmos nomes de classe e os mesmos valores.
+
+   >>> POR QUE ISSO NÃO É GOSTO. Duzentos cartões flutuando são duzentas fronteiras desenhadas,
+       duzentas sombras e cento e noventa e nove buracos — e o olho reprocessa "onde começa o
+       próximo" a cada rolagem. Num painel a fronteira é desenhada UMA vez, e o que separa as
+       linhas é o fio mais leve do sistema (`--borda-divisor`). A lista fica mais densa sem
+       ficar apertada, que é o que uma lista longa precisa.
+
+   >>> E O CARTÃO NÃO MORREU — ele continua CARTÃO onde é mesmo uma peça solta: no kanban (onde
+       ele é arrastável e tem que parecer que se pega) e na agenda (onde ele fica ao lado da
+       hora). Quem vira linha é o `.card` DENTRO do painel, e só ele. Mudar a regra base
+       apagaria o quadro inteiro, que é a visão de abertura desta tela — é o "sem apagão"
+       aplicado a uma regra de CSS.
+
+   >>> A ANATOMIA DE DENTRO DA LINHA NÃO MUDOU: a etiqueta de empresa, o título, o município, a
+       abertura, as etiquetas, o progresso e as ações continuam iguais. Mudou a MOLDURA, não o
+       conteúdo — a mesma fronteira que o passo 6 traçou na Encontrar. */
+.painel-res{background:var(--branco);border:1px solid var(--cinza-200);
+  border-radius:var(--raio-cartao);box-shadow:var(--sombra-1);overflow:hidden;
+  margin-top:var(--esp-3)}
+/* O cabeçalho e o rodapé usam a superfície sutil: eles são MOLDURA, não conteúdo, e o degrau
+   quase invisível é o que diz isso sem gastar mais uma borda. Valores idênticos aos de lá. */
+.painel-res .cabecalho{display:flex;align-items:center;gap:var(--esp-3);flex-wrap:wrap;
+  min-height:42px;padding:var(--esp-2) var(--esp-4);
+  background:var(--superficie-sutil);border-bottom:1px solid var(--borda-divisor);
+  font-size:var(--txt-1);color:var(--cinza-700)}
+.painel-res .rodape-painel{display:flex;align-items:center;gap:var(--esp-3);flex-wrap:wrap;
+  min-height:44px;padding:var(--esp-2) var(--esp-4);
+  background:var(--superficie-sutil);border-top:1px solid var(--borda-divisor);
+  font-size:var(--txt-1);color:var(--cinza-600)}
+/* O CARTÃO VIRANDO LINHA. Ele perde o que é de peça solta (borda em volta, raio, sombra e o
+   buraco de baixo) e ganha o que é de linha: o divisor e o respiro lateral da régua do painel.
+   `position:relative` FICA — é dele que as ações do canto dependem. */
+.painel-res .card{border:0;border-bottom:1px solid var(--borda-divisor);border-radius:0;
+  margin-bottom:0;box-shadow:none;padding:var(--esp-4) var(--esp-6);
+  transition:background-color var(--transicao)}
+/* *** O `:last-child` PRECISA DE UM PAI QUE SEJA SÓ DAS LINHAS, e foi a medição que mostrou. ***
+   O último filho do `.painel-res` é o RODAPÉ, não a última linha — então a regra abaixo nunca
+   casava, e o fio da última linha somava com a borda de cima do rodapé: 1,6px onde o sistema
+   desenha 0,8. Daí o `<div class="linhas">`: com ele, "última linha" volta a querer dizer última
+   linha. Um seletor posicional (`:nth-last-child(2)`) devolveria o pixel e deixaria a armadilha
+   de pé para o próximo que acrescentasse qualquer coisa depois do rodapé. */
+.painel-res .linhas .card:last-child{border-bottom:0}
+/* O hover de LINHA não levanta: linha que sobe dentro de um painel arrasta a de baixo junto e a
+   lista inteira treme. Quem diz "dá pra interagir" é o fundo — a mesma correção que a linha da
+   Encontrar levou no passo 6, e a que os indicadores desta tela levaram na fatia 2. */
+.painel-res .card:hover{background:var(--linha-hover);transform:none;box-shadow:none}
+/* As ações são ancoradas no canto do CARTÃO com valores off-grid (11px/14px) que casavam com o
+   padding antigo do cartão. Dentro do painel a régua é outra, e "quase alinhado" é o que D3
+   chama de pior que desalinhado — então elas passam a usar a mesma grade da linha. */
+.painel-res .card .acoes{bottom:var(--esp-3);right:var(--esp-6)}
+
 /* ── kanban ── */
 .kb{display:flex;gap:14px;overflow-x:auto;padding:8px 2px 20px;align-items:flex-start}
 .col{flex:0 0 300px;background:var(--cinza-100);border:1px solid var(--cinza-200);border-radius:var(--raio-cartao);padding:12px}
@@ -1231,7 +1286,65 @@ function pinta(){
   if(VIS === 'quadros') { corpo.innerHTML = kanban(l); ligarArrasto(); aplicarDestaque(); return; }
   if(VIS === 'agenda')  { corpo.innerHTML = agenda(l); return; }
   if(VIS === 'calendario'){ corpo.innerHTML = calendario(l); return; }
-  corpo.innerHTML = l.length ? l.slice(0,200).map(n => card(n)).join('') : vazioComAcao();
+  corpo.innerHTML = painelLista(l, base);
+}
+
+/* ══ O PAINEL DA LISTA (13/08, item 7b · fatia 3) ═════════════════════════════════════════════
+   A moldura é a do molde e os nomes são os da Encontrar (`.painel-res`, `.cabecalho`,
+   `.rodape-painel`). O que muda é o que o cabeçalho e o rodapé DIZEM — e aqui os dois dizem
+   coisas que esta tela sabe e a outra não.
+
+   ── O CABEÇALHO ─────────────────────────────────────────────────────────────────────────────
+   · "N de M": o "de M" é o que importa. "12" sozinho não diz se o filtro cortou 3 ou 300, e é
+     essa a informação que evita a conclusão errada de "o funil está vazio".
+   · "M" muda de nome com o escopo: com "ver arquivados" ligado o universo é o HISTÓRICO, e
+     chamá-lo de "funil" ali seria contar arquivado como negócio vivo.
+   · "N abrem hoje" só aparece QUANDO EXISTE. "0 abrem hoje" é ruído em todo dia sem sessão, e
+     ruído diário é como se ensina alguém a não ler o cabeçalho. Mesma regra da Encontrar.
+
+   >>> O SELETOR DE ORDENAÇÃO DO MOLDE NÃO ENTRA AQUI, e por um motivo oposto ao de lá: na
+       Encontrar a ordem é UMA e por isso ficou ESCRITA; aqui já existe um seletor de ordenação
+       na barra, três opções, a um palmo daqui. Repetir a ordem no rodapé seria dizer a mesma
+       coisa em dois lugares — e é assim que nasce o par que um dia discorda.
+
+   ── O RODAPÉ, E A VERDADE QUE ELE PASSOU A CONTAR ────────────────────────────────────────────
+   *** ESTA LISTA SEMPRE CORTOU EM 200, E NUNCA DISSE. *** O `slice(0,200)` está aqui desde que a
+   visão existe: com 300 negócios no escopo, cem sumiam da tela sem uma palavra — e quem
+   procurasse um deles concluiria que o negócio não está no sistema, que é a conclusão mais cara
+   que esta tela pode induzir.
+   >>> Então o rodapé conta os dois casos com frases DIFERENTES: ou estão todos aqui, ou está
+       dito quantos ficaram de fora e o que fazer para chegar neles. Copiar o "Mostrando 1–20 de
+       2.312" do molde seria pior ainda: prometeria uma página 2 que não existe.
+   >>> E ele FECHA o painel, que é a outra metade do ofício: sem rodapé a última linha encosta na
+       borda e a lista parece cortada — justamente o que ela era. */
+const TETO_LISTA = 200;
+function painelLista(l, base){
+  if(!l.length) return vazioComAcao();
+  const arq   = document.getElementById('f-arquivados').checked;
+  const total = Array.isArray(base) ? base.length : l.length;
+  const hoje  = hojeYMD();
+  const hj    = l.filter(n => n.abertura && diaDe(n.abertura) === hoje).length;
+  const most  = l.slice(0, TETO_LISTA);
+  const fora  = l.length - most.length;
+  const nfmt  = x => x.toLocaleString('pt-BR');
+
+  return '<div class="painel-res">'
+    + '<div class="cabecalho"><span><b>' + nfmt(l.length) + '</b> de <b>' + nfmt(total) + '</b> '
+    +   (arq ? 'no histórico' : 'no funil')
+    +   (hj ? ' · <b>' + hj + '</b> ' + (hj === 1 ? 'abre hoje' : 'abrem hoje') : '')
+    + '</span></div>'
+    + '<div class="linhas">' + most.map(n => card(n)).join('') + '</div>'
+    + '<div class="rodape-painel"><span>'
+    +   (fora
+        ? 'Mostrando os <b>' + nfmt(most.length) + '</b> primeiros — <b>' + nfmt(fora) + '</b> '
+          + (fora === 1 ? 'ficou' : 'ficaram') + ' de fora desta tela. '
+          + 'Filtre por fase, empresa ou busca para chegar '
+          + (fora === 1 ? 'nele' : 'neles') + '; esta lista não pagina.'
+        : 'Mostrando <b>' + nfmt(most.length) + '</b> '
+          + (most.length === 1 ? 'negócio' : 'negócios')
+          + ' — todos de uma vez, esta lista não pagina.')
+    + '</span></div>'
+    + '</div>';
 }
 
 /* ══ O VAZIO QUE NÃO É BECO ══════════════════════════════════════════════════════════════════
