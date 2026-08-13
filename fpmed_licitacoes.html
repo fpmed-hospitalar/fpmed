@@ -745,6 +745,19 @@ select[disabled],input[disabled],textarea[disabled]{
   font-size:var(--txt-0);font-weight:var(--peso-forte);letter-spacing:.06em;text-transform:uppercase}
 .selo-fonte svg{width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:1.9;
   stroke-linecap:round;stroke-linejoin:round}
+/* A VARIANTE DO HISTÓRICO (item 7e). Âmbar e não azul porque ela não é uma terceira fonte da
+   MESMA pergunta: as outras duas falam do que está aberto, esta fala do que já passou. A cor
+   separa as duas naturezas; o desenho continua o mesmo, pra não ensinar dois símbolos.
+   >>> MEDIDO: --ambar-700 (#825616) sobre --ambar-50 (#fdf5e8) = **5,89:1**; o selo azul dos
+       outros dois painéis dá 6,53:1. Os dois passam em AA com folga, o que importa porque este
+       selo é CAIXA ALTA em 10px — o tamanho em que a cor fraca deixa de ser lida antes de
+       deixar de ser vista.
+       >>> EU TINHA ESCRITO "7,26:1" AQUI, DE CABEÇA, e a conta deu 5,89. O número continuava
+           aprovando, então o comentário teria envelhecido como verdade sem nunca ter sido
+           medido — que é a S12 pela porta dos fundos: lá a cor não foi medida, aqui ela foi
+           "medida" no olho e escrita com duas casas decimais. Duas casas decimais são uma
+           afirmação de que houve conta. */
+.selo-fonte.hist{background:var(--ambar-50);color:var(--ambar-700)}
 /* O ícone da ação que SAI do sistema. Ele é o único da linha que leva pra fora, e por isso é o
    único que ganha a seta — marcar todos com ela faria a marca não marcar nada. */
 .lic .acoes svg.ic-sai{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:1.8;
@@ -1211,6 +1224,16 @@ select[disabled],input[disabled],textarea[disabled]{
        das nossas praças e está sempre disponível; o nacional é do Brasil todo e depende do PNCP
        estar no ar. São duas procedências, e misturar as duas numa lista só faria o operador
        tratar como igual o que não é. -->
+  <!-- ══ O SEU CALENDÁRIO 2025 (13/08, item 7e) ═══════════════════════════════════════════════
+       Os pregões que a FPMED importou viviam SÓ no funil, e a busca não os encontrava. Agora a
+       mesma pergunta ("albumina") é feita às TRÊS fontes.
+       >>> ELE VEM ANTES DO NACIONAL E DEPOIS DO ÍNDICE, e a ordem é a decisão: do mais nosso
+           para o mais alheio. O índice é o que coletamos das nossas praças; o Calendário é o que
+           NÓS JÁ DISPUTAMOS; o nacional é o Brasil todo, ao vivo.
+       >>> E ELE RESPONDE OUTRA PERGUNTA, que é por que não vira uma lista só com os outros: os
+           dois de cima são OPORTUNIDADE (o que está aberto), este é HISTÓRICO (o que já passou
+           pela casa). Misturar faria "já disputamos isso em 2025" parecer uma licitação aberta. -->
+  <div id="calendario" style="display:none;margin-top:var(--esp-6)"></div>
   <!-- O TRACEJADO SAIU (13/08, item 7d): ele separava a tabela crua do que vinha acima. Agora o
        que vem aqui é um PAINEL, e painel já tem fronteira própria — um tracejado por cima de uma
        borda são duas linhas dizendo a mesma coisa. O que separa passou a ser o respiro. -->
@@ -2371,8 +2394,28 @@ async function rodarRadar(){
       .filter(m => m.km <= raio);
 
     // 3. as licitações ABERTAS do NOSSO índice que batem na palavra-chave
-    const rl = await fetch(`${SB_URL}/rest/v1/licitacoes?select=municipio,uf,objeto,valor_estimado,data_encerramento&limit=1000`, {headers:SB_H});
-    const lics = rl.ok ? await rl.json() : [];
+    /* ══ DEFEITO ACHADO EM 13/08 (item 7e), e ele estava no ar desde que o Radar nasceu ═══════
+       Esta consulta era um `fetch` com `limit=1000`, sem paginar — sobre um índice que já tem
+       **3.201 linhas**. O Radar contava licitação por cidade olhando **31% da base**, e nada na
+       tela denunciava isso: cidade com 2 pregões aparecia com 0, e alguém descartaria a região.
+       >>> E O AVISO DE HONESTIDADE DA PRÓPRIA TELA ESTAVA IMPRIMINDO O NÚMERO ERRADO — ele diz
+           "a contagem é do nosso índice (N coletadas)" com o `lics.length`, então escrevia
+           "1000 coletadas". O número errado ESCONDIA o erro: quem lesse concluiria que o índice
+           tem mil linhas, e não que a leitura parou em mil. É a lição S1 inteira, de novo.
+       >>> QUEM ACHOU FOI UM ASSERT REAPONTADO NESTA RODADA. O antigo cobrava "as DUAS consultas
+           paginam" — um NÚMERO — e por isso era cego pra terceira. O novo procura as consultas e
+           cobra cada uma; achou esta na primeira execução. */
+    const lics = await lerPaginado(`${SB_URL}/rest/v1/licitacoes?select=municipio,uf,objeto,valor_estimado,data_encerramento`);
+    /* `lerPaginado` devolve null quando NADA foi lido, e null aqui não pode virar lista vazia:
+       com `[]` o Radar desenharia todas as cidades com "0 licitação" — que é exatamente a
+       conclusão errada que a frase de honestidade existe pra impedir (S6). */
+    if(lics === null){
+      box.innerHTML = '<div class="aviso err" style="text-align:left;padding:14px 18px">'
+        + 'Não consegui ler o nosso índice de licitações agora, então não dá para contar por cidade. '
+        + 'Isto <b>não</b> quer dizer que não haja licitação na região — quer dizer que eu não consegui olhar.'
+        + '</div>';
+      return;
+    }
     const agora = new Date();
     const abertas = lics.filter(l => {
       const fim = l.data_encerramento ? new Date(l.data_encerramento) : null;
@@ -2994,6 +3037,178 @@ function nacionalProtegido(){
   }
 }
 
+/* ════════════════════════════════════════════════════════════════════════════════════════════
+   O SEU CALENDÁRIO 2025 — A TERCEIRA FONTE DA BUSCA (13/08, item 7e)
+
+   FRONTEIRA, em três linhas:
+     · lê `licitacoes_acompanhadas` (2.555 linhas, origem='calendario_2025') UMA vez por sessão;
+     · filtra com o MESMO semAcento do índice, no navegador;
+     · desenha no MESMO painel do molde, com o selo de fonte próprio.
+
+   >>> POR QUE ESTA FONTE EXISTE NA BUSCA: os pregões que a FPMED importou viviam só no funil.
+       Quem procurava "albumina" na Encontrar recebia o que está ABERTO e nunca ficava sabendo
+       que a casa já tinha disputado albumina três vezes em 2025 — que é justamente o que decide
+       se vale entrar de novo, e por quanto.
+
+   >>> A LEITURA É PAGINADA, E ISSO NÃO É ZELO GENÉRICO (S1). São 2.555 linhas e o PostgREST
+       daqui corta em 1000: sem paginar, a tela leria 1.000 achando que leu tudo e concluiria
+       "a FPMED nunca disputou isso" olhando 39% da base. O `lerPaginado` já faz isso e ainda
+       marca `_bancoTruncou` quando bate no teto.
+
+   >>> E ELA É INDEPENDENTE DAS OUTRAS DUAS, pela lição dos quatro indicadores: esta tabela é de
+       GESTOR (o `valor_ganho` é resultado, não operação), então um vendedor toma 403 aqui e 200
+       no índice. Com uma leitura só, o 403 desta derrubaria a busca inteira — e a pessoa ficaria
+       sem o índice por causa de uma permissão que não tem nada a ver com ele. */
+/* O `brl` do resto da tela arredonda pro real inteiro, e para valor ESTIMADO isso está certo —
+   estimativa com centavos é precisão fingida. Aqui não: `valor_ganho` é o que a empresa de fato
+   recebeu, e é conferido contra a planilha. Duas formatações porque são duas naturezas de
+   número, e não porque uma delas é "melhor". */
+const brlExato = n => (Number(n)||0).toLocaleString('pt-BR',
+  {style:'currency', currency:'BRL', minimumFractionDigits:2, maximumFractionDigits:2});
+const CAL_COLS = 'id,status,abertura,hora,modalidade,numero,portal,cidade,uf,orgao,objeto,valor_ganho,observacao';
+let _calCache = null;        // null = ainda não li · [] = li e não há nada · array = a base
+let _calErro = null;         // a mensagem, quando a leitura falhou — nunca vira lista vazia
+
+async function carregarCalendario(){
+  if(_calCache) return _calCache;
+  const q = `${SB_URL}/rest/v1/licitacoes_acompanhadas?select=${CAL_COLS}&origem=eq.calendario_2025`
+          + `&order=abertura.desc`;
+  /* O `lerPaginado` devolve `null` quando NADA foi lido — e null aqui é "não sei", nunca "não
+     tem". A diferença é a tela dizer "não consegui olhar o seu Calendário" em vez de afirmar
+     que a empresa nunca disputou aquilo (S6, e é o erro mais caro que esta tela poderia
+     cometer: ele muda a decisão de participar). */
+  const j = await lerPaginado(q);
+  if(j === null){ _calErro = 'não consegui ler o seu Calendário 2025 agora'; return null; }
+  _calErro = null;
+  _calCache = j;
+  return j;
+}
+
+/* O FILTRO É O MESMO DO ÍNDICE, e essa igualdade é o ponto: quem digita "farmaceutico" tem que
+   achar "FARMACÊUTICO" nas TRÊS fontes. Uma segunda regra de casamento aqui criaria o par que
+   diverge — a busca acharia no índice e não acharia no Calendário, pela mesma palavra. */
+function filtraCalendario(kws, excl){
+  const base = _calCache || [];
+  if(!kws.length) return [];
+  return base.filter(l => {
+    const t = semAcento(String(l.objeto || ''));
+    if(excl.length && excl.some(x => t.includes(x))) return false;
+    return kws.some(k => t.includes(k));
+  });
+}
+
+const CAL_TETO = 30;   // o mesmo teto do nacional: a lista é resposta, não despejo de base
+
+function pintaCalendario(achados, total){
+  const box = document.getElementById('calendario');
+  if(!box) return;
+  const fmtD = d => { const x = String(d||'').slice(0,10); return x ? x.split('-').reverse().join('/') : '—'; };
+  const mostra = achados.slice(0, CAL_TETO);
+  const ganhas = achados.filter(l => Number(l.valor_ganho) > 0).length;
+
+  box.style.display = 'block';
+  box.innerHTML = '<div class="painel-res">'
+    + '<div class="cabecalho">'
+    +   '<span class="selo-fonte hist"><svg aria-hidden="true"><use href="#ic-calendario"/></svg>do seu Calendário 2025</span>'
+    +   '<span><b>' + achados.length + '</b> ' + (achados.length===1?'certame que a FPMED já acompanhou':'certames que a FPMED já acompanhou')
+    /* "N ganhas" só quando existe, pela mesma regra do "abrem hoje" e do "ainda vigentes": zero
+       em toda busca é ruído diário, e ruído diário ensina a não ler o cabeçalho. */
+    +     (ganhas ? ' · <b>' + ganhas + '</b> ' + (ganhas===1?'ganha':'ganhas') : '')
+    +   '</span>'
+    + '</div>'
+    + '<div class="nota-fonte">Isto é <b>histórico da casa</b>, não licitação aberta: são os pregões '
+    +   'do Calendário 2025 que a FPMED já acompanhou. Serve para saber <b>se já disputamos isto antes, '
+    +   'e como foi</b> — antes de decidir entrar de novo.</div>'
+    + mostra.map(l => {
+        const tit = esc(l.modalidade || 'Certame') + (l.numero ? ' Nº ' + esc(l.numero) : '')
+                  + ' — ' + esc(l.orgao || '—') + (l.uf ? ' / ' + esc(l.uf) : '');
+        const ganho = Number(l.valor_ganho) > 0;
+        /* A BARRA É SEMPRE CINZA AQUI, e é a mesma decisão medida do 7d levada ao seu limite
+           lógico: histórico não tem urgência. Uma barra azul de "aberta" numa linha de 2025
+           seria a tela sugerindo uma disputa que já acabou. */
+        return '<div class="lic prazo-nd">'
+          + '<div class="topo">'
+          +   '<div class="selo" aria-hidden="true"><svg><use href="'
+          +     (ganho ? '#ic-trofeu' : '#ic-calendario') + '"/></svg></div>'
+          +   '<div class="cab">'
+          +     '<span class="titulo"' + (l.observacao ? ' title="'+esc(l.observacao)+'"' : '') + '>' + tit + '</span>'
+          +     '<div class="sub">'
+          +       '<span class="quando">Abertura em ' + fmtD(l.abertura) + (l.hora ? ' às ' + esc(l.hora) : '') + '</span>'
+          +       (l.portal ? '<span>· ' + esc(l.portal) + '</span>' : '')
+          +       (l.status ? '<span class="bdg cinza">' + esc(l.status) + '</span>' : '')
+          +       (ganho ? '<span class="bdg v" title="a FPMED venceu este certame">GANHA</span>' : '')
+          +     '</div>'
+          +   '</div>'
+          + '</div>'
+          + '<div class="obj">' + grifa(l.objeto || '') + '</div>'
+          + '<div class="dados">'
+          +   '<div class="dado"><small>Município</small><span>' + esc(l.cidade || '—')
+          +     (l.uf ? ' · ' + esc(l.uf) : '') + '</span></div>'
+          +   '<div class="dado"><small>Portal</small><span>' + esc(l.portal || '—') + '</span></div>'
+          /* O VALOR GANHO SÓ APARECE QUANDO HOUVE GANHO. "R$ 0" numa linha perdida seria um
+             número falso: perder não é ganhar zero, é não ter a linha. Mesma regra do 7d.
+             >>> E ELE SAI COM OS CENTAVOS, ao contrário do valor estimado do índice — achado no
+                 laço visual: o `brl()` arredonda pro real inteiro (`maximumFractionDigits:0`) e
+                 R$ 63.034.332,63 apareceu como **R$ 63.034.333**. Num ESTIMADO isso é
+                 arredondamento; num VALOR GANHO é fato de contrato, e quem for conferir contra a
+                 planilha acha uma diferença de R$ 0,37 que não existe. Estimativa se arredonda;
+                 dinheiro recebido, não. */
+          +   (ganho ? '<div class="dado"><small>Valor ganho</small><span>' + brlExato(l.valor_ganho) + '</span></div>' : '')
+          + '</div>'
+          + '</div>';
+      }).join('')
+    + '<div class="rodape-painel"><span>'
+    +   (achados.length > CAL_TETO
+        ? 'Mostrando as <b>' + CAL_TETO + '</b> mais recentes de <b>' + achados.length + '</b> — refine o termo para ver as outras'
+        : 'Mostrando <b>' + achados.length + '</b> de <b>' + total + '</b> no seu Calendário 2025')
+    +   ', ordenados por <b>abertura mais recente</b>.</span></div>'
+    + '</div>';
+}
+
+/* O MESMO ESCUDO DO NACIONAL, e pelo mesmo motivo: se esta função estourar de forma síncrona, o
+   `render` inteiro morreria e a tela ficaria SEM LISTA NENHUMA por causa de uma fonte secundária.
+   O escudo troca "tela quebrada" por "bloco que diz que quebrou". */
+async function dispararCalendario(kws, excl){
+  const box = document.getElementById('calendario');
+  if(!box) return;
+  /* SEM PALAVRA-CHAVE ELE NÃO APARECE, e isso é diferente de sumir calado: sem termo não há
+     pergunta a fazer ao histórico, e despejar 2.555 linhas de 2025 embaixo do resultado seria
+     ruído com aparência de trabalho. Com termo, ele SEMPRE pinta — inclusive o zero. */
+  if(!kws.length){ box.style.display = 'none'; box.innerHTML = ''; return; }
+  const base = await carregarCalendario();
+  if(base === null){
+    box.style.display = 'block';
+    box.innerHTML = '<div class="faixa-nacional atencao"><svg aria-hidden="true"><use href="#ic-alerta"/></svg>'
+      + '<span><b>' + esc(_calErro || 'não consegui ler o seu Calendário 2025') + '.</b> '
+      + 'Isto <b>não</b> quer dizer que a FPMED nunca disputou isto — quer dizer que eu não consegui olhar. '
+      + 'O que está acima continua valendo.</span></div>';
+    return;
+  }
+  const achados = filtraCalendario(kws, excl);
+  if(!achados.length){
+    box.style.display = 'block';
+    /* ZERO AQUI É UMA RESPOSTA, e das boas: "a casa nunca disputou isto" muda a conversa com o
+       fornecedor. Por isso ele é dito, e não escondido — e é dito como zero medido, não como
+       ausência de bloco (que se lê como "a busca não funcionou"). */
+    box.innerHTML = '<div class="faixa-nacional"><svg aria-hidden="true"><use href="#ic-calendario"/></svg>'
+      + '<span>Nada no <b>seu Calendário 2025</b> bate com esta busca — consultei os <b>'
+      + (_calCache ? _calCache.length : 0) + '</b> certames que a FPMED acompanhou. '
+      + 'Aqui <b>zero quer dizer zero</b>.</span></div>';
+    return;
+  }
+  pintaCalendario(achados, _calCache.length);
+}
+function calendarioProtegido(kws, excl){
+  try{ dispararCalendario(kws, excl); }
+  catch(e){
+    const box = document.getElementById('calendario');
+    if(box){ box.style.display = 'block';
+      box.innerHTML = '<div class="faixa-nacional atencao"><svg aria-hidden="true"><use href="#ic-alerta"/></svg>'
+        + '<span><b>A busca no seu Calendário 2025 falhou aqui na tela</b> (' + esc(e.message) + '). '
+        + 'O que está acima é o nosso índice, e continua valendo.</span></div>'; }
+  }
+}
+
 function pintaNacional(termo, uf, r, erro){
   const box = document.getElementById('nacional');
   // >>> PNCP FORA NÃO APAGA O ÍNDICE. O bloco do índice já está pintado acima; aqui vira uma
@@ -3186,6 +3401,11 @@ function render(todos, kws, excl, aviso, procedencia){
          resultado é exatamente a hora em que o operador quer saber se o Brasil tem aquilo.
          O print do Lemuel era esse caso: "0 batem" e nenhum bloco nacional embaixo. */
   nacionalProtegido();
+  /* >>> O CALENDÁRIO DISPARA AQUI PELO MESMO MOTIVO, e a posição desta linha é o conserto de
+         11/08 aplicado à fonte nova: índice com ZERO resultado é exatamente a hora em que saber
+         "já disputamos isto em 2025" mais vale. Se ela ficasse depois do `if` abaixo, a fonte
+         nova nasceria com o defeito que a antiga levou meses pra ter corrigido. */
+  calendarioProtegido(kws, excl);
 
   if(!hits.length){
     h += '<div class="aviso">Nenhuma licitação bate na busca.<div class="hint" style="margin-top:6px">'
@@ -3232,6 +3452,14 @@ function render(todos, kws, excl, aviso, procedencia){
   const abremHoje = hits.filter(l => { const d = dt(l.dataAberturaProposta); return d && d >= _hoje0 && d <= _hoje1; }).length;
   h += '<div class="painel-res' + (densidade()==='compacta' ? ' compacta' : '') + '" id="painel-res">'
      + '<div class="cabecalho">'
+     /* O SELO DE FONTE ENTROU AQUI EM 13/08 (item 7e), e não é enfeite de simetria: a partir
+        de agora a mesma busca responde por TRÊS listas (índice · Calendário 2025 · PNCP ao
+        vivo). A ordem do dono é marcar a origem de cada resultado — e o lugar onde ela vale por
+        trinta linhas de uma vez é o cabeçalho do painel que as contém.
+        >>> O DESENHO É O MESMO NOS TRÊS, com a cor mudando de ofício: azul = o que coletamos,
+            âmbar = histórico da casa, azul = ao vivo. Três desenhos diferentes pra dizer a
+            mesma categoria de coisa fariam a pessoa aprender três símbolos em vez de um. */
+     +   '<span class="selo-fonte"><svg aria-hidden="true"><use href="#ic-orgao"/></svg>nosso índice do PNCP</span>'
      +   '<span><b>'+hits.length+'</b> de <b>'+todos.length+'</b> '
      +     (todos.length===1?'publicada no período':'publicadas no período')
      +     (abremHoje ? ' · <b>'+abremHoje+'</b> '+(abremHoje===1?'abre hoje':'abrem hoje') : '')

@@ -176,8 +176,16 @@ console.log('    (o Negocios ainda tem ' + qtInline + ' simbolo(s) inline; quand
 // ── 8. a casca (S13) ─────────────────────────────────────────────────────────────────────────
 ok(n + '. o sprite entrou na casca do service worker, no mesmo commit em que a tela depende dele',
   /'\.\/fpmed_icones\.js'/.test(SW)); n++;
-ok(n + '. e a VERSAO subiu (sem isso o cliente ve a tela velha e chama de "nao funcionou")',
-  /VERSAO = 'limedtec-fpmed-2026-08-13-39'/.test(SW)); n++;
+/* REAPONTADO no mesmo dia em que foi escrito (item 7e), e a licao e boa demais pra apagar: eu
+   cravei a string `-2026-08-13-39`. Na publicacao SEGUINTE ela virou -40 e o assert ficou
+   vermelho sem nada ter piorado — pior, ele estava me pedindo pra NAO publicar.
+   >>> UM TESTE ESTATICO NAO CONSEGUE PROVAR QUE A VERSAO "SUBIU NO MESMO COMMIT": isso e
+       promessa de RITUAL, e quem a guarda e a Definicao de Pronto, nao um regex. O que ele
+       consegue provar e a FORMA — que existe uma VERSAO datada e numerada, que e o que faz o
+       cache do service worker virar. Cravar o valor so transformava cada publicacao num
+       vermelho de rotina, e vermelho de rotina e como se aprende a ignorar vermelho. */
+ok(n + '. e a VERSAO tem a forma datada e numerada que faz o cache virar',
+  /VERSAO = 'limedtec-fpmed-\d{4}-\d{2}-\d{2}-\d+'/.test(SW)); n++;
 
 // ── 9. idempotencia da injecao (F4) ──────────────────────────────────────────────────────────
 /* Duas tags na mesma pagina nao podem injetar dois sprites: id repetido no documento faz o

@@ -1560,9 +1560,63 @@ Criado em 21/07/2026 copiando SO os arquivos do app do C:\globalmed.
                      Chrome nao desce abaixo do minimo dele (pedi 390 e a janela ficou em 1536) e
                      esta tela roda a 125%. Eu ia reportar "390 ok" medindo 1536.
 
-     >>> 7e. A BUSCA TAMBEM TEM QUE ACHAR O CALENDARIO 2025 — **PEDIDO NOVO DELE, 13/08.**
-             **E O PROXIMO DA FILA.** Os pregoes que a FPMED importou (o Calendario 2025 que o
-             Natanael usa) vivem no funil e a busca NAO os encontra hoje.
+     >>> 7e. A BUSCA COM TRES FONTES — **FEITO** — sw.js -> -2026-08-13-40.
+             Suite nova testa_calendario_na_busca (27 asserts, MUTACAO 20 de 20).
+             TOTAL: 3.618 asserts / 0 falhas / 97 suites (inclui as 30 do TRABALHADOR B).
+             Detalhe completo em docs/molde_encontrar.md, secao 13 (nova).
+             A busca agora pergunta a TRES fontes, cada uma com o seu selo:
+               "nosso indice do PNCP" · "do seu Calendario 2025" · "ao vivo · PNCP"
+
+             >>> A AMBIGUIDADE DO PEDIDO, RESOLVIDA E DECLARADA: "marcar a origem de CADA
+                 RESULTADO" virou TRES PAINEIS (nao uma lista misturada com etiqueta por linha).
+                 Razao: a doutrina ja escrita nesta tela diz que misturar procedencias "faria o
+                 operador tratar como igual o que nao e" — e aqui os dois de fora sao
+                 OPORTUNIDADE (o que esta aberto) e o do meio e HISTORICO (o que ja disputamos).
+                 Linha de 2025 desenhada igual a licitacao aberta faz alguem tentar disputar o
+                 que ja acabou. **Reverter e uma linha, se ele preferir a lista unica.**
+
+             >>> A LINHA DO HISTORICO E DIFERENTE DE PROPOSITO: barra SEMPRE cinza (historico nao
+                 tem prazo correndo), selo AMBAR (outra natureza, mesmo desenho — medido 5,89:1;
+                 o azul dos outros dois da 6,53:1), trofeu no icone quando houve ganho, e "valor
+                 ganho" so aparece QUANDO houve — perder nao e ganhar R$ 0.
+
+             >>> *** ESTE ITEM ACHOU UM DEFEITO QUE ESTAVA NO AR DESDE QUE O RADAR NASCEU ***
+                 O assert de cobertura cobrava "as DUAS consultas paginam" — um NUMERO. Reapontado
+                 pra "toda consulta de lista pagina", ele achou na 1a execucao:
+                   o RADAR lia `licitacoes` com fetch + limit=1000, SEM paginar, sobre um indice
+                   de 3.201 linhas. Contava licitacao por cidade olhando 31% da base — cidade com
+                   2 pregoes aparecia com 0, e alguem descartaria a regiao.
+                 >>> E O AVISO DE HONESTIDADE DA PROPRIA TELA IMPRIMIA O NUMERO ERRADO: ele diz
+                     "a contagem e do nosso indice (N coletadas)" usando o lics.length, entao
+                     escrevia "1000 coletadas". O numero errado ESCONDIA o erro.
+                 CORRIGIDO no mesmo commit, com saida visivel quando a leitura falha.
+                 >>> A LICAO NAO E SOBRE O RADAR, E SOBRE O ASSERT: o que conta QUANTIDADE fica
+                     cego pro item seguinte; o que PROCURA E COBRA CADA CASO cresce sozinho.
+
+             >>> ACHADO DO LACO VISUAL: R$ 63.034.332,63 saia como **R$ 63.034.333** — o `brl()`
+                 arredonda pro real inteiro. Em valor ESTIMADO isso e honesto (estimativa com
+                 centavos e precisao fingida); em VALOR GANHO e fato de contrato conferido contra
+                 a planilha. Entrou o `brlExato`. Duas formatacoes porque sao duas naturezas.
+
+             >>> O QUE **NAO** FOI PROVADO, e esta escrito: a leitura contra a tabela DE VERDADE.
+                 A sessao guardada no navegador esta expirada (401 medido, confirmado por leitura
+                 de controle no indice que deu o MESMO 401) e eu nao faco login — credencial e
+                 acao do dono. O LAYOUT foi provado com dado na forma da tabela; o CAMINHO DE ERRO
+                 foi provado com o 401 REAL, que e melhor que simulado. Falta alguem logado ver as
+                 2.555 linhas responderem. Por isso a jornada 1 continua AMARELA.
+
+             >>> TRES MUTACOES PASSARAM VERDE NA 1a RODADA E AS TRES ERAM O INSTRUMENTO (\r\n
+                 contra \n). A pior: o 1o replace falhou e o 2o inseriu uma SEGUNDA chamada,
+                 deixando a primeira no lugar certo — o assert viu a primeira e ficou verde, CERTO.
+                 Eu quase "consertei" um assert que estava bom.
+
+             >>> 2 ASSERTS DE VERSAO DO SW REAPONTADOS (um escrito por mim horas antes): cravavam
+                 a string exata, entao ficavam VERMELHOS na publicacao seguinte — pedindo pra nao
+                 publicar. Teste estatico nao prova "subiu no mesmo commit": isso e ritual, e quem
+                 guarda e a Definicao de Pronto. Eles provam a FORMA.
+
+     >>> 7e-hist. [ref] o pedido original: os pregoes que a FPMED importou (o Calendario 2025 que
+             o Natanael usa) vivem no funil e a busca NAO os encontrava.
              Marcar a ORIGEM de cada resultado: "do seu Calendario 2025" x "indice PNCP" x
              "busca nacional ao vivo". SEM operacao destrutiva no banco (ordem dele).
              >>> O QUE JA ESTA MEDIDO E SERVE: `licitacoes_acompanhadas` tem 2.555 linhas

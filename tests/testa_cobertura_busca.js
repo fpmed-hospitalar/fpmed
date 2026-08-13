@@ -22,8 +22,26 @@ console.log('SUITE testa_cobertura_busca — a busca le o indice INTEIRO\n');
 
 // ══════════ 1. NENHUMA CONSULTA PARA EM 1000 ══════════
 ok('1. *** nenhuma consulta ao indice usa `limit=1000` ***', !/licitacoes\?select=bruto[^`']*limit=1000/.test(L));
-ok('2. *** as DUAS consultas passam pela leitura paginada ***',
-  (L.match(/await lerPaginado\(q\)/g) || []).length === 2);
+/* REAPONTADO em 13/08 (item 7e): ele cobrava `=== 2`, o numero de consultas que existiam no dia
+   em que foi escrito. A terceira fonte da busca (o Calendario 2025) entrou e o assert ficou
+   vermelho sem NADA ter piorado — ele media a QUANTIDADE, e a promessa e "toda consulta de
+   lista pagina".
+   >>> AGORA ELE PROCURA AS CONSULTAS E COBRA CADA UMA. Assim ele passa a cobrir sozinho a
+       QUARTA fonte, no dia em que ela existir — que e o oposto de precisar ser atualizado a
+       cada uma. Um assert que exige ser reescrito a cada crescimento e um assert que, na
+       terceira pressa, alguem "conserta" trocando o numero sem ler o que ele guardava. */
+(function () {
+  const consultas = [...L.matchAll(/\$\{SB_URL\}\/rest\/v1\/(licitacoes|licitacoes_acompanhadas)\?select=/g)];
+  /* A JANELA OLHA PROS DOIS LADOS, e isso me custou um vermelho: as consultas aparecem nas duas
+     formas — `const q = ...` e depois `lerPaginado(q)` (a chamada vem DEPOIS), e
+     `lerPaginado(`...`)` com a consulta embutida (a chamada vem ANTES). Olhando so pra frente,
+     a segunda forma parecia nao paginar. */
+  const semPaginar = consultas.filter(m =>
+    !/lerPaginado\(/.test(L.slice(Math.max(0, m.index - 300), m.index + 700))).map(m => m[1]);
+  ok('2. *** TODA consulta de lista ao banco passa pela leitura paginada ***',
+    consultas.length >= 3 && semPaginar.length === 0,
+    { consultas: consultas.length, semPaginar });
+})();
 ok('3. existe UMA funcao de paginacao (nao duas copias do laco)',
   (L.match(/async function lerPaginado\(/g) || []).length === 1);
 ok('4. ela pagina pelo header Range, do jeito que o PostgREST entende',

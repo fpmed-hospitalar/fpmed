@@ -772,3 +772,111 @@ Reapontados 6 asserts alheios em `testa_busca_nacional.js` (S8, 9ª vez nesta ob
 peças que deixaram de existir (o tracejado, o emoji do título, a "coluna" da tabela), dois
 cobravam a CAIXA da primeira letra de uma frase, e um exigia a frase vaga ("pode vir edital
 antigo") no lugar da medida ("a maioria já está com a vigência encerrada").
+
+---
+
+## 13 · ITEM 7e FEITO — A BUSCA PASSOU A TER TRÊS FONTES
+
+Pedido do dono (13/08): *"a busca da Encontrar também tem que ACHAR o Calendário 2025 que o
+Natanael usa (os pregões que importamos, que hoje vivem no funil e a busca não encontra). Marcar
+a origem de cada resultado."*
+
+### A ambiguidade, e por que ela virou três painéis
+
+"Marcar a origem de **cada resultado**" pode ser (a) uma lista só, misturada, com etiqueta por
+linha, ou (b) três painéis, cada um com o seu selo de fonte. Ficou **(b)**, e a razão está no
+próprio arquivo desde 11/08: misturar procedências *"faria o operador tratar como igual o que não
+é"*. Aqui a diferença é ainda maior que naquele dia:
+
+| fonte | pergunta que ela responde |
+|---|---|
+| nosso índice do PNCP | o que está **aberto** nas nossas praças |
+| **do seu Calendário 2025** | o que a casa **já disputou** — e como foi |
+| ao vivo · PNCP | o que está aberto **no Brasil todo**, agora |
+
+Os dois de fora são **oportunidade**; o do meio é **histórico**. Uma linha de 2025 desenhada
+igual a uma licitação aberta faz alguém tentar disputar o que já acabou. Está declarado no
+CONTINUAR_AQUI para o dono reverter numa linha se discordar.
+
+### O que a linha do histórico faz de diferente
+
+- **A barra é sempre cinza.** É a decisão medida do 7d levada ao limite lógico: histórico não tem
+  prazo correndo, e uma barra azul de "aberta" numa linha de 2025 seria a tela sugerindo uma
+  disputa encerrada.
+- **O selo é âmbar**, não azul — outra natureza, mesmo desenho. Medido: `--ambar-700` sobre
+  `--ambar-50` = **5,89:1** (o selo azul dos outros dois dá 6,53:1). Os dois passam em AA.
+- **Troféu no ícone** quando houve ganho; calendário nos demais.
+- **"Valor ganho" só aparece quando houve ganho.** Perder não é ganhar R$ 0 — é não ter a linha.
+
+### Três coisas que podiam dar errado, e as três são de negócio
+
+**1. Ler 1.000 de 2.555 e achar que leu tudo (S1).** O PostgREST daqui corta em 1000. Sem
+paginar, a tela responderia *"a FPMED nunca disputou albumina"* olhando **39% da base** — e
+alguém entraria num pregão achando que é a primeira vez. A leitura usa o `lerPaginado`.
+
+**2. Falha de leitura virar "nunca disputamos" (S6).** É a pior confusão possível nesta tela.
+`lerPaginado` devolve `null` quando nada foi lido, e `null` aqui vira **aviso**, nunca lista
+vazia. **Provado com um 401 de verdade** (sessão expirada no navegador): a tela escreveu *"Isto
+não quer dizer que a FPMED nunca disputou isto — quer dizer que eu não consegui olhar."*
+
+**3. O corte em 30 ser silencioso.** Cortar é legítimo; cortar calado não. O rodapé diz
+"Mostrando as 30 mais recentes de 41".
+
+### O defeito que este item achou em OUTRO lugar
+
+O assert de cobertura da busca cobrava `=== 2` — o **número** de consultas que existiam no dia em
+que foi escrito. Repontado para "toda consulta de lista pagina", ele achou na primeira execução
+um defeito que estava no ar desde que o **Radar** nasceu:
+
+```
+const rl = await fetch(`${SB_URL}/rest/v1/licitacoes?select=...&limit=1000`)
+```
+
+O Radar contava licitação por cidade sobre **1.000 de 3.201 linhas** — cidade com 2 pregões
+aparecia com 0, e alguém descartaria a região. **Pior: o aviso de honestidade da própria tela
+imprimia `${lics.length}`**, ou seja, escrevia *"a contagem é do nosso índice (1000 coletadas)"*.
+O número errado escondia o erro. Corrigido para `lerPaginado`, com saída visível quando a leitura
+falha.
+
+> A lição não é sobre o Radar: é sobre o assert. Um que conta **quantidade** fica cego para o
+> item seguinte; um que **procura e cobra cada caso** cresce sozinho. O antigo teria continuado
+> verde para sempre.
+
+### O achado do laço visual
+
+`R$ 63.034.332,63` aparecia como **`R$ 63.034.333`**: o `brl()` da tela arredonda para o real
+inteiro (`maximumFractionDigits:0`). Num valor **estimado** isso é arredondamento honesto —
+estimativa com centavos é precisão fingida. Num **valor ganho**, que é fato de contrato conferido
+contra a planilha, é uma diferença de R$ 0,37 que não existe. Entrou o `brlExato`, e são duas
+formatações porque são duas naturezas de número.
+
+### Medido no navegador
+
+| largura CSS | cabeçalho | linha | rolagem horizontal | elementos estourando |
+|---|---|---|---|---|
+| 387 | 84px *(empilha)* | 421px | **0** | **0** |
+| 1363 | 42px | 258px | **0** | **0** |
+| 1917 | 42px | 258px | **0** | **0** |
+
+Pior caso real: órgão de 76 caracteres, objeto de 340, **R$ 63.034.332,63**, linha sem hora,
+`valor_ganho` nulo e zero, e 41 achados contra o teto de 30. Console limpo.
+
+> **O que NÃO foi provado, e está escrito:** a leitura contra a tabela **de verdade**. A sessão
+> guardada neste navegador está expirada (401 medido, confirmado por uma leitura de controle no
+> índice que deu o mesmo 401), e eu não faço login — credencial é ação do dono. O layout foi
+> provado com dado na forma da tabela; o **caminho de erro** foi provado com o 401 real. Falta
+> alguém logado ver as 2.555 linhas responderem.
+
+### Suíte
+
+`tests/testa_calendario_na_busca.js` — **27 asserts, mutação 20 de 20 barradas.**
+Três mutações passaram verde na primeira rodada e **as três eram o instrumento**: o arquivo tem
+`\r\n` e as minhas strings tinham `\n`. A pior foi a que testava a posição da chamada no
+`render`: o primeiro `replace` falhou e o segundo inseriu uma **segunda** chamada, deixando a
+primeira no lugar certo — o assert viu a primeira e ficou verde, **corretamente**. Eu quase
+"consertei" um assert que estava bom.
+
+Dois asserts de VERSÃO do service worker foram reapontados (um deles escrito por mim horas antes):
+eles cravavam a string exata, então **ficavam vermelhos na publicação seguinte, pedindo para não
+publicar**. Um teste estático não consegue provar que a VERSÃO subiu *no mesmo commit* — isso é
+promessa de ritual, e quem a guarda é a Definição de Pronto. O que ele prova é a **forma**.
