@@ -1976,7 +1976,39 @@ Criado em 21/07/2026 copiando SO os arquivos do app do C:\globalmed.
                 que agora e o desenho. Assert 17 do testa_cmed_vigencia guarda essa frase.
                 Territorio meu; entra junto com a carga.
 
+    11. [ ] **TIRAR DA TELA A LINHA DO ESTOQUE** — pedido do dono, 13/08, entrou no fim da fila.
+            Sumir com "estoque FPMED pronto: 1.381 itens (1.266 com preco unitario calculavel)"
+            da interface da Encontrar.
+            >>> SO A EXIBICAO SAI. O motor do estoque continua vivo — ele alimenta o cruzamento
+                com editais e o "Cruzar todas", que sao outra coisa. Ordem expressa dele.
+            >>> ONDE ESTA: fpmed_licitacoes.html, funcao `iniciarEstoque` (o `el.innerHTML` com
+                ic('alvo','alvo') + ' estoque FPMED pronto: ...'), no elemento #estoque-status.
+                O MESMO elemento tambem imprime o ERRO ("nao consegui ler o estoque FPMED") —
+                **conferir se o pedido inclui o erro ou so o "pronto"**. Minha leitura: some a
+                linha de SUCESSO; o ERRO fica, porque sem estoque o cruzamento nao funciona e
+                calar isso deixaria o botao "Cruzar" falhando sem explicacao. Se ele quiser os
+                dois fora, e uma linha.
+            >>> ASSERTS que citam a frase: cobrar a AUSENCIA, nao a presenca. sw.js novo,
+                publicar e provar com print.
+
     10-hist. [ref] o pedido original: atualizar a base (a base no banco e de 21/07).
+
+>>> ############################################################################
+>>> SESSAO ESGOTADA EM 13/08 — O PONTO EXATO DE RETOMADA
+>>> ############################################################################
+    Tudo que esta feito esta COMMITADO E PUSHADO. A fila, em ordem:
+      9.  EAN no cadastro (o casamento vira exato)         — nao comecado
+      10-falta. A CARGA da edicao 11/08 + as 3 provas      — o redesenho ja esta de pe
+      11. Tirar a linha do estoque da tela                 — pedido novo, pequeno
+      8-falta. A costura da CMED na Proposta               — CONGELADO (arquivo do B)
+      8b. as 8 telas ainda escuras · 8c. conferir o boletim
+
+    >>> POR QUE EU NAO COMECEI A CARGA (10-falta), e a razao e do proprio item: sao 26.001
+        linhas em duas tabelas, em lotes de 500 — mais de cem chamadas. Comecar com pouco
+        contexto e arriscar parar NO MEIO, e edicao carregada pela metade e exatamente o estado
+        que o alarme que eu acabei de escrever existe pra detectar ("carga que morreu no meio").
+        Criar o defeito que acabei de aprender a vigiar seria o pior jeito de fechar a sessao.
+        A carga e um comando e esta pronta: `node tools/atualiza_cmed.js --apply`.
             Arquivos ja movidos pra dados_cmed/ (ver abaixo). O "gov" e o que importa.
             >>> ***ISTO VAI BATER NA CLAUSULA DE PARADA DO PROPRIO PEDIDO, E EU JA SEI POR QUE.***
                 O pedido diz: "se o desenho atual exigir substituicao destrutiva, PARA e propoe o
