@@ -4578,6 +4578,21 @@ function setVis(v){
   marcarVisaoNoMenu();
   pinta();
 }
+/* ══ O `#` TAMBÉM CHEGA COM A PÁGINA JÁ ABERTA (13/08 — achado na urgência do Radar) ═══════
+   A leitura do `#` acontecia UMA vez, lá em cima, na hora de decidir o `VIS` inicial. Isso
+   cobre quem CHEGA de outra tela — e deixa de fora quem JÁ ESTÁ aqui: clicar em "Calendário"
+   no menu lateral estando no Negócios só troca o `#`, o navegador não recarrega, e sem
+   `hashchange` o item de menu não faz nada.
+   >>> É O MESMO DEFEITO que matou o Radar, na mesma semana, pela mesma causa: o menu manda
+       âncora e a tela de destino só escuta no boot. Consertei aqui junto porque procurar o
+       irmão do defeito é mais barato agora do que na próxima urgência.
+   >>> NÃO GRAVA a visão vinda do `#` como preferência? Grava sim — quem clica em "Calendário"
+       escolheu o Calendário, e o `setVis` é o único lugar que sabe guardar. Tratar o clique
+       do menu como "escolha de segunda classe" faria a tela esquecer o que a pessoa pediu. */
+window.addEventListener('hashchange', () => {
+  const daUrl = (location.hash || '').replace('#','');
+  if(VISOES.includes(daUrl) && daUrl !== VIS) setVis(daUrl);
+});
 /* UM lugar só decide qual link está aceso, e ele lê o `data-vis` do próprio link.
    >>> O SELETOR PERDEU O `header` EM 13/08 (item 7b), e isso era um defeito de verdade: o
        `<header>` deixou de existir quando as visões desceram pro cabeçalho da página, e

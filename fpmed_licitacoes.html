@@ -1726,9 +1726,63 @@ async function iniciarSeloBase(){
   const semMotor = typeof window.AlarmeColeta === 'undefined';
   pintaSeloBase(semMotor ? null : await carimboColeta(), semMotor);
 }
-function _aoAutenticar(){ iniciarEstoque(); iniciarJornais(); abreLeitorNaBarra(); iniciarSeloBase(); pintaIndicadores(); reservaAuth(); pintaChips(); }
+function _aoAutenticar(){ iniciarEstoque(); iniciarJornais(); abreLeitorNaBarra(); iniciarSeloBase(); pintaIndicadores(); reservaAuth(); pintaChips(); aplicaHash(); }
 if(window.gmAuth) _aoAutenticar();
 else document.addEventListener('gm-auth-ready', _aoAutenticar, { once:true });
+
+/* ══ O `#` DA URL É A OUTRA METADE DO CONTRATO COM O MENU ══════════════════════════════════
+   URGÊNCIA DO DONO (13/08): "clicar em RADAR no menu lateral NÃO FAZ NADA — botão morto."
+   Reproduzido com clique real e confirmado: era verdade, e estava assim desde que o menu
+   lateral nasceu.
+
+   O `limedtec-menu.js` manda Radar, Desertas e Meus Jornais pra cá como ÂNCORA
+   (`fpmed_licitacoes.html#radar`) e escreve, no próprio arquivo, quem faz o quê:
+   *"O campo continua se chamando `ancora` porque o que ele guarda é o mesmo: o `#` que
+   identifica este módulo. QUEM DECIDE O QUE FAZER COM ELE É A TELA DE DESTINO."*
+   Esta tela nunca fez a sua metade — não havia UM `location.hash` nem UM `hashchange` no
+   arquivo inteiro. O menu cumpria o contrato sozinho, e o contrato não se cumpre sozinho.
+
+   >>> ELE MORRIA DE DOIS JEITOS DIFERENTES, e o segundo é pior que o primeiro:
+       · JÁ ESTANDO no Encontrar (o caso que o dono viu): clicar só troca o `#`. O navegador
+         NÃO recarrega, e sem `hashchange` não acontece absolutamente nada — o painel não
+         abre e o menu nem troca o item aceso. Silêncio total.
+       · VINDO DE OUTRA TELA: a carga nova acende "Radar" no menu — e o painel continua
+         fechado. Esse é o pior dos dois, porque o menu AFIRMA que você chegou onde não
+         chegou. Botão morto pelo menos não mente.
+
+   >>> POR QUE A ÂNCORA NATIVA DO NAVEGADOR TAMBÉM NÃO SALVAVA: `#radar` e `#jornais` são
+       `display:none` até ganharem `.open`. O navegador não rola até o que não está na tela,
+       então nem o consolo de "pelo menos rolou até lá" existia.
+
+   >>> É UMA TABELA, E NÃO TRÊS `if`s, DE PROPÓSITO. O menu já tem três âncoras aqui e vai
+       ter mais. Um `if` por âncora é exatamente o assert que enumera os casos que conhece e
+       fica cego pro próximo — a lição que o item 7e pagou caro pra aprender (o assert que
+       contava DUAS consultas e por isso não viu a terceira, que era o Radar lendo 31% da
+       base). Aqui a tabela é a lista, e a suíte cobra ela contra o `MODULOS` do menu.  */
+const ROTAS_HASH = {
+  'radar':       () => abrirRadar(),
+  'jornais':     () => abrirJornais(),
+  /* LIGA, não ALTERNA. Quem clica "Desertas" no menu está PEDINDO desertas — chamar o
+     `soDesertas()` cru aqui faria o segundo clique no MESMO item DESLIGAR o filtro, ou seja,
+     um item de menu que desfaz o que o nome dele promete. */
+  'lk-desertas': () => { if(!window._soDesertas) soDesertas(); },
+};
+function aplicaHash(){
+  const h = (location.hash || '').replace('#','');
+  const rota = ROTAS_HASH[h];
+  if(!rota) return false;
+  rota();
+  /* ROLAR SÓ DEPOIS DE ABRIR, e nunca antes: enquanto o painel é `display:none` ele não tem
+     posição na página, e um `scrollIntoView` ali seria uma chamada que não faz nada — que é
+     precisamente o que o navegador já vinha fazendo sozinho. */
+  const alvo = document.getElementById(h);
+  if(alvo) alvo.scrollIntoView({ behavior:'smooth', block:'start' });
+  return true;
+}
+/* O `hashchange` é o que conserta o caso do dono. Ele NÃO substitui a chamada no boot: o
+   navegador não dispara `hashchange` quando a página ABRE já com `#` na URL. Os dois caminhos
+   são dois eventos diferentes, e cobrir só um deixaria metade do defeito de pé. */
+window.addEventListener('hashchange', aplicaHash);
 
 // ══ ITENS DO EDITAL ═══════════════════════════════════════════════════════════════════════
 // Endpoint confirmado pelo Lemuel. MEDIDO em 04/08: aceita tamanhoPagina até 500 e responde em

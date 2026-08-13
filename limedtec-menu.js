@@ -425,6 +425,36 @@
     return nav;
   }
 
+  /* ══ O ITEM ACESO TEM QUE SEGUIR O `#`, E NÃO SÓ A CARGA DA PÁGINA ═══════════════
+     Achado na urgência do dono de 13/08 ("clicar em RADAR não faz nada"). O defeito
+     principal era da tela de destino, que não lia o `#` — mas o menu tinha a sua
+     parte: `montar()` calcula o módulo atual UMA vez, no boot, e escreve `lm-on` no
+     HTML. Quem já estava no Encontrar e clicava em "Radar" trocava o `#` sem
+     recarregar, e o menu continuava acendendo "Buscar" — apontando pro lugar errado.
+     >>> ISSO É PIOR QUE ENFEITE ERRADO: o item aceso é a única coisa na tela que
+         responde "onde eu estou?". Ele mentindo, a pessoa clica de novo achando que
+         não clicou — que foi exatamente o que o dono viu.
+     >>> REPINTA, NÃO REMONTA: remontar o menu a cada `#` apagaria o que a tela
+         escreveu nele depois (o contador, e a revelação do Leitor pra quem tem
+         permissão). Aqui só as classes mudam. */
+  function acender() {
+    var navs = document.querySelectorAll('#limedtec-menu');
+    for (var n = 0; n < navs.length; n++) {
+      var atual = moduloAtual(navs[n].parentElement);
+      var links = navs[n].querySelectorAll('a[href]');
+      for (var i = 0; i < links.length; i++) {
+        var mod = null;
+        for (var j = 0; j < MODULOS.length; j++) {
+          if (MODULOS[j].href === links[i].getAttribute('href')) { mod = MODULOS[j]; break; }
+        }
+        var on = !!mod && mod.id === atual;
+        links[i].classList.toggle('lm-on', on);
+        if (on) links[i].setAttribute('aria-current', 'page');
+        else links[i].removeAttribute('aria-current');
+      }
+    }
+  }
+
   function iniciar() {
     var alvos = document.querySelectorAll('[data-limedtec-menu]');
     for (var i = 0; i < alvos.length; i++) montar(alvos[i]);
@@ -433,6 +463,7 @@
   if (typeof document !== 'undefined') {
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', iniciar);
     else iniciar();
+    if (typeof window !== 'undefined') window.addEventListener('hashchange', acender);
   }
 
   /* ── REVELAR O QUE TEM PORTÃO ────────────────────────────────────────────────────
@@ -486,6 +517,6 @@
   /* Exportado pra suíte e pra tela que precise montar depois (modal, troca de aba). */
   if (typeof window !== 'undefined') {
     window.LimedtecMenu = { montar: montar, moduloAtual: moduloAtual, MODULOS: MODULOS,
-      ICONE: ICONE, CSS: CSS, revelarPara: revelarPara, contador: contador };
+      ICONE: ICONE, CSS: CSS, revelarPara: revelarPara, contador: contador, acender: acender };
   }
 })();

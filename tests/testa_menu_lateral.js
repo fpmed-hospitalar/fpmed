@@ -52,7 +52,17 @@ function domFalso(url, hash) {
     querySelectorAll: (sel) => (String(sel).indexOf('data-limedtec-menu') >= 0 ? [] : [el('body')]),
     addEventListener() {},
   };
-  const win = { location: { pathname: url, hash: hash || '' }, document: doc };
+  /* O `window` FALSO GANHOU `addEventListener` EM 13/08, e o motivo vale registrar: o
+     menu passou a escutar `hashchange` (pra que o item aceso siga o `#`, no conserto do
+     "Radar e botao morto") e esta suite explodiu com "window.addEventListener is not a
+     function". O defeito era DAQUI: o `document` falso ja tinha o metodo e o `window`
+     nao, entao o dublê era menos fiel que o original em algo que todo navegador tem.
+     >>> ELE GUARDA O QUE FOI ESCUTADO em vez de engolir a chamada: dublê que engole
+         nao deixa a suite perguntar "voce se inscreveu mesmo?" — e foi exatamente essa
+         pergunta que ninguem podia fazer enquanto o Radar estava morto. */
+  const escutas = [];
+  const win = { location: { pathname: url, hash: hash || '' }, document: doc, escutas,
+    addEventListener(ev) { escutas.push(ev); } };
   return { win, doc, feitos };
 }
 
@@ -246,7 +256,7 @@ ok(n + '. todo item nasce com o slot do contador VAZIO (numero nenhum e chumbado
   } };
   const c3 = carrega('/fpmed_negocios.html');
   const api = new Function('window', 'document', M + '\nreturn window.LimedtecMenu;')(
-    { location: { pathname: '/fpmed_negocios.html', hash: '' } },
+    { location: { pathname: '/fpmed_negocios.html', hash: '' }, addEventListener() {} },
     Object.assign({ readyState: 'complete', head: { appendChild() {} },
       createElement: () => ({ setAttribute() {}, appendChild() {} }),
       getElementById: () => ({}), querySelectorAll: () => [], addEventListener() {} }, fake));
