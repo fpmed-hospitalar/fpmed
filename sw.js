@@ -1,4 +1,4 @@
-﻿/* LIMEDTEC - service worker.
+/* LIMEDTEC - service worker.
  *
  * A REGRA QUE MANDA AQUI: preco velho servido do cache e proposta errada mandada pro hospital.
  * Um erro desses nao aparece como bug - aparece como o vendedor prometendo um valor que a empresa
@@ -17,7 +17,7 @@
  */
 'use strict';
 
-const VERSAO = 'limedtec-fpmed-2026-08-13-27';
+const VERSAO = 'limedtec-fpmed-2026-08-13-28';
 const CACHE = 'limedtec-shell-' + VERSAO;
 
 // A CASCA DA FPMED. Lista MONTADA A MAO conferindo `git ls-files` (= o que o Pages serve),

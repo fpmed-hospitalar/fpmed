@@ -95,9 +95,9 @@ body{
   font-family:var(--fonte);
   font-size:var(--txt-2);
   line-height:var(--altura-texto);
-  /* o menu lateral é `position:fixed` com 224px; sem esta margem o conteúdo nasce por baixo
+  /* o menu lateral é `position:fixed` e a largura dele mora no token --menu-largura; sem esta margem o conteúdo nasce por baixo
      dele. Em ≤900px o menu vira faixa no topo e a margem sai. Igual à tela Encontrar. */
-  margin-left:224px;
+  margin-left:var(--menu-largura);
 }
 @media(max-width:900px){ body{ margin-left:0 } }
 .faixa-int{max-width:1420px;margin:0 auto;padding:0 22px;display:flex;align-items:center;gap:13px;width:100%}

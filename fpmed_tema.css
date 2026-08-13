@@ -206,7 +206,20 @@
   --esp-2: 8px;
   --esp-3: 12px;
   --esp-4: 16px;
+  /* O 5 (20px) entrou na fatia 2 do item 7: a amostra aprovada respira em 20 e 24, e
+     sem este degrau o salto de 16 pra 24 obrigava a escolher entre apertado e frouxo.
+     A grade continua sendo de 8 — 20 é o meio-passo, do mesmo jeito que o 4 é. */
+  --esp-5: 20px;
   --esp-6: 24px;
+
+  /* ══ A LARGURA DO MENU VIROU TOKEN (13/08, item 7 fatia 2) ═════════════════
+     Ela vivia CHUMBADA em três lugares: o `limedtec-menu.js` (que a desenha) e o
+     `margin-left` de cada tela que abre espaço pra ela. Alargar o menu de 224 pra
+     236 e esquecer um dos três significa o menu por cima do conteúdo, ou uma
+     faixa branca do lado — e o defeito só aparece na tela esquecida.
+     >>> É a mesma classe de defeito da dívida do `data-vis`, paga ontem: número
+         que precisa concordar em N lugares mora em UM. */
+  --menu-largura: 236px;
   --esp-8: 32px;
   --esp-12: 48px;
   --esp-16: 64px;
@@ -259,6 +272,13 @@
   --fonte: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
            'Helvetica Neue', Arial, sans-serif;
 
+  /* O degrau ZERO nasceu na fatia 2 do item 7 (13/08), pro RÓTULO DE GRUPO do menu
+     — "OPORTUNIDADES", "GESTÃO", "FERRAMENTAS". Na amostra aprovada ele é bem menor
+     que a etiqueta comum e bem mais espaçado, e é essa combinação que produz o efeito
+     que o dono nomeou ("letras afastadas"): o rótulo recua sem precisar clarear.
+     >>> ELE É O ÚNICO TAMANHO ABAIXO DE 12px, e existe só pra texto em CAIXA ALTA com
+         espaçamento largo. Frase em 10px é ilegível; sigla de três palavras, não. */
+  --txt-0: 10px;   /* rótulo de GRUPO, caixa alta e espaçado — nada mais */
   --txt-1: 12px;   /* rótulo, etiqueta, nota de rodapé */
   --txt-2: 14px;   /* CORPO PADRÃO — ferramenta densa lê melhor em 14 */
   --txt-3: 16px;   /* corpo grande, valor de destaque no cartão */

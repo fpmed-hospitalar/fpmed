@@ -86,9 +86,9 @@ body{
   font-family:var(--fonte);
   font-size:var(--txt-2);
   line-height:var(--altura-texto);
-  /* o menu lateral é `position:fixed` com 224px; sem esta margem o conteúdo
+  /* o menu lateral é `position:fixed` e a largura dele mora no token --menu-largura; sem esta margem o conteúdo
      nasce por baixo dele. Em ≤900px o menu vira faixa no topo e a margem sai. */
-  margin-left:224px;
+  margin-left:var(--menu-largura);
 }
 @media(max-width:900px){ body{ margin-left:0 } }
 
@@ -107,7 +107,20 @@ header .sub{font-size:var(--txt-1);color:var(--cinza-600);margin-left:auto;text-
 .wrap{max-width:1180px;margin:0 auto;padding:0 var(--esp-6) var(--esp-16)}
 
 /* ── PERÍODO ─────────────────────────────────────────────────────────────────── */
-.periodo{display:flex;justify-content:flex-end;gap:var(--esp-6);padding:var(--esp-6) 0 var(--esp-1);flex-wrap:wrap}
+/* ══ O CARTÃO DA BUSCA (13/08, item 7 fatia 3) ══════════════════════════════════════════════
+   A peça branca que flutua sobre o fundo suave. Ela não acrescenta nada à tela: ela AGRUPA o
+   que já estava lá — período, campo, dica e atalhos.
+   >>> SEM BORDA. A sombra macia já desenha a fronteira, e D6 diz que sombra e borda juntas dão
+       cara de template. Borda continua onde não há sombra: campo, divisória, contorno de chip.
+   >>> O RESPIRO É 24px, não 16. Foi o número que a amostra aprovada usa, e a diferença entre os
+       dois é exatamente a diferença entre "cabe" e "respira" (D2: começar com espaço demais e
+       tirar até ficar certo — nunca o contrário). */
+.cartao-busca{background:var(--branco);border-radius:var(--raio-cartao);box-shadow:var(--sombra-1);
+  padding:var(--esp-6);margin-top:var(--esp-6)}
+/* O período era `justify-content:flex-end` porque flutuava solto e precisava se ancorar numa
+   borda da tela. Dentro do cartão ele tem uma casa, e a ponta direita virou canto de caixa —
+   grudar nela é o "quase alinhado" que D3 nomeia como pior que desalinhado. */
+.periodo{display:flex;justify-content:flex-start;gap:var(--esp-6);padding:0 0 var(--esp-4);flex-wrap:wrap}
 .periodo .campo{min-width:190px}
 .periodo label{display:block;font-size:var(--txt-1);font-weight:var(--peso-semi);
   letter-spacing:.04em;text-transform:uppercase;color:var(--cinza-600);margin-bottom:var(--esp-1)}
@@ -133,7 +146,13 @@ select[disabled],input[disabled],textarea[disabled]{
    gigante: 44px de título comem a dobra inteira e empurram o resultado — que é
    o que a pessoa veio ver — pra baixo do fundo da tela. Aqui o título usa o
    --txt-5 da escala e a busca ganha o espaço. */
-.hero{padding:var(--esp-6) 0 var(--esp-4)}
+/* Dentro do cartão o hero não precisa mais do respiro que o separava do fundo: quem separa
+   agora é a parede da caixa. Padding duplicado (o do cartão + o dele) leria como buraco. */
+.hero{padding:0}
+/* Os atalhos ganharam uma divisória fina e discreta, como na amostra: eles são de outra
+   natureza que o campo de busca — são caminhos pra outro lugar, não parte da busca. A linha
+   diz isso sem precisar de um título. */
+.hero .links{margin-top:var(--esp-4);padding-top:var(--esp-4);border-top:1px solid var(--cinza-100)}
 .hero h2{font-size:var(--txt-5);font-weight:var(--peso-semi);line-height:var(--altura-titulo);
   color:var(--cinza-800);margin:0 0 var(--esp-1)}
 .hero p{margin:0 0 var(--esp-4);color:var(--cinza-600);font-size:var(--txt-2)}
@@ -450,7 +469,15 @@ select[disabled],input[disabled],textarea[disabled]{
 </header>
 
 <div class="wrap">
-  <!-- Período + Intervalo, canto direito -->
+  <!-- ══ O CARTÃO DA BUSCA (13/08, item 7 fatia 3) ═══════════════════════════════════════════
+       Período, campo de busca, a dica e os atalhos ERAM QUATRO BLOCOS SOLTOS sobre o fundo da
+       página. Cada um funcionava; juntos não formavam nada, e era essa a origem do "ainda um
+       pouco amador": o fundo suave já existia, mas não havia BRANCO NENHUM pra flutuar sobre
+       ele — e superfície que não se destaca do fundo é a mesma coisa que não ter superfície.
+       >>> ELES NÃO MUDARAM DE ORDEM NEM DE COMPORTAMENTO. O que entrou foi só a caixa em volta:
+           os quatro passaram a ser UMA peça, que é o que a Lei da Proximidade (D7) diz — o que
+           é junto fica junto, e o espaço entre grupos é maior que o espaço dentro do grupo. -->
+  <div class="cartao-busca">  <!-- Período + Intervalo, canto direito -->
   <div class="periodo">
     <div class="campo"><label>Período</label>
       <select id="f-tipoData">
@@ -498,6 +525,7 @@ select[disabled],input[disabled],textarea[disabled]{
            negócio vive); este link leva pra lá com ele já aberto, em vez de duplicar a tela. -->
       <a onclick="incluirLicitacaoManual()" title="a licitação existe mas não está no PNCP (BLL, convite, e-mail do órgão)">+ Incluir licitação</a>
     </div>
+  </div><!-- /cartao-busca -->
 
 
 

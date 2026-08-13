@@ -29,9 +29,15 @@
    vence o fpmed_tema.css. Três divergências, todas declaradas:
 
    1. TAMANHOS DE TEXTO. O protótipo usa 12,5px nos links e 9,5px nos grupos —
-      não existem na nossa escala. Aqui: --txt-2 (14px) nos links e --txt-1 (12px)
+      não existem na nossa escala. Aqui: --txt-2 (14px) nos links e --txt-0 (10px)
       nos grupos. O menu fica um fio maior e ganha legibilidade; a hierarquia
       (grupo menor e mais claro que o item) fica idêntica à do protótipo.
+      >>> ATUALIZADO EM 13/08 (item 7, fatia 2): o grupo estava em --txt-1 (12px) e
+          desceu pro --txt-0 (10px), que NASCEU pra ele. A amostra aprovada mostrou
+          que o rótulo de grupo precisa ser bem menor e bem mais espaçado que a
+          etiqueta comum — é essa combinação que faz ele recuar sem clarear. E foi
+          justamente por ele estar CLAREADO demais (--cinza-400, 2,44:1) que a
+          medição o pegou: ver o bloco do .lm-grupo no CSS.
 
    2. O TELEFONE DO RODAPÉ. O protótipo escreve "(62) 3290-4241" precedido de um
       emoji de telefone. Emoji como ícone é PROIBIDO por D11 — e essa regra não é
@@ -178,10 +184,13 @@
   /* Todo o CSS mora sob #limedtec-menu. Nada aqui pode vazar pra tela que hospeda:
      o menu é convidado, e convidado não mexe na mobília da casa. */
   var CSS = [
-    '#limedtec-menu{position:fixed;left:0;top:0;bottom:0;width:224px;z-index:40;',
+    /* 236px em vez de 224 (13/08, item 7 fatia 2): é a largura da amostra aprovada, e
+       os 12px a mais vão TODOS para o respiro lateral dos itens — não para caber mais
+       coisa. Menu mais largo com o mesmo aperto seria só menu maior. */
+    '#limedtec-menu{position:fixed;left:0;top:0;bottom:0;width:var(--menu-largura);z-index:40;',
     '  display:flex;flex-direction:column;overflow-y:auto;',
     '  background:var(--branco);border-right:1px solid var(--cinza-200);',
-    '  font-family:var(--fonte);padding:var(--esp-2) 0 var(--esp-3)}',
+    '  font-family:var(--fonte);padding:var(--esp-5) 0 var(--esp-4)}',
 
     '#limedtec-menu .lm-marca{display:flex;align-items:center;gap:var(--esp-3);',
     '  padding:var(--esp-2) var(--esp-4) var(--esp-4);',
@@ -191,17 +200,37 @@
     '  font-weight:var(--peso-forte);font-size:var(--txt-4);line-height:1}',
     '#limedtec-menu .lm-marca b{display:block;font-size:var(--txt-2);font-weight:var(--peso-semi);',
     '  color:var(--azul-800);line-height:1.15}',
-    '#limedtec-menu .lm-marca small{display:block;font-size:var(--txt-1);letter-spacing:.18em;',
-    '  color:var(--cinza-400);font-weight:var(--peso-semi);line-height:1.4}',
+    '#limedtec-menu .lm-marca small{display:block;font-size:var(--txt-0);letter-spacing:.22em;',
+    '  color:var(--cinza-500);font-weight:var(--peso-semi);line-height:1.4}',
 
-    /* O rótulo de grupo é o que transforma 14 links numa lista organizada: sem ele
-       o olho tem que ler tudo pra achar. Menor e mais claro que os itens, sempre. */
-    '#limedtec-menu .lm-grupo{padding:var(--esp-3) var(--esp-4) var(--esp-1);',
-    '  font-size:var(--txt-1);letter-spacing:.1em;text-transform:uppercase;',
-    '  color:var(--cinza-400);font-weight:var(--peso-semi)}',
+    /* ══ O RÓTULO DE GRUPO — a peça que o dono elogiou, e a que estava ilegível ═══════
+       Ele é o que transforma 14 links numa lista organizada: sem ele o olho tem que ler
+       tudo pra achar. É ele que separa LICITAÇÃO (Oportunidades + Gestão) das
+       FERRAMENTAS de apoio, que foi o pedido de 13/08.
 
+       >>> DUAS COISAS MUDARAM AQUI, E A SEGUNDA É UM CONSERTO DE VERDADE:
+           1. o tamanho caiu pro --txt-0 e o espaçamento subiu pra .14em. É a receita da
+              amostra, e é ela que faz o rótulo RECUAR sem precisar clarear — o efeito
+              vem do tamanho + caixa alta + espaçamento, exatamente como foi medido;
+           2. a COR saiu do --cinza-400 e foi pro --cinza-500. O 400 sobre branco dá
+              **2,44:1** — metade do mínimo. Ou seja: o rótulo que organiza o menu
+              inteiro estava, desde que nasceu, na fronteira do ilegível pra quem
+              enxerga menos. Ninguém tinha medido, porque cor a gente olha e acha bonita.
+       >>> O MESMO CONSERTO FOI APLICADO NOS OUTROS DOIS pontos em que o 400 carregava
+           texto neste arquivo: o "HOSPITALAR" da marca e o "em breve" do item desligado.
+           O --cinza-400 continua no arquivo, no ofício dele: borda e ícone desligado. */
+    '#limedtec-menu .lm-grupo{padding:var(--esp-5) var(--esp-5) var(--esp-2);',
+    '  font-size:var(--txt-0);letter-spacing:.14em;text-transform:uppercase;',
+    '  color:var(--cinza-500);font-weight:var(--peso-forte)}',
+    /* O primeiro grupo não precisa do respiro de cima: ele já vem depois da divisória
+       da marca, e dois espaços empilhados leem como buraco, não como separação. */
+    '#limedtec-menu .lm-grupo:first-of-type{padding-top:var(--esp-2)}',
+
+    /* RESPIRO ENTRE OS ITENS (13/08): o padding vertical subiu de 8 pra 10 e o lateral
+       de 16 pra 20. São 2px por item — e com 14 itens é o que separa "lista respirada"
+       de "lista empilhada". D2: espaço em branco é o que faz parecer caro. */
     '#limedtec-menu a,#limedtec-menu .lm-off{display:flex;align-items:center;gap:var(--esp-3);',
-    '  padding:var(--esp-2) var(--esp-4);font-size:var(--txt-2);text-decoration:none;',
+    '  padding:var(--esp-3) var(--esp-5);font-size:var(--txt-2);text-decoration:none;',
     '  color:var(--cinza-600);border-left:3px solid transparent;',
     '  transition:background-color var(--transicao),color var(--transicao)}',
     '#limedtec-menu a{cursor:pointer}',
@@ -214,9 +243,13 @@
     '#limedtec-menu a.lm-on{background:var(--azul-50);color:var(--azul-700);',
     '  border-left-color:var(--azul-500);font-weight:var(--peso-semi)}',
 
-    '#limedtec-menu .lm-off{color:var(--cinza-400);cursor:default}',
-    '#limedtec-menu .lm-breve{margin-left:auto;font-size:var(--txt-1);',
-    '  color:var(--cinza-400);font-weight:var(--peso-normal)}',
+    '#limedtec-menu .lm-off{color:var(--cinza-500);opacity:.7;cursor:default}',
+    /* "em breve" virou ETIQUETA contornada, como na amostra: um texto solto na ponta da
+       linha lê como parte do nome do módulo ("Calendário em breve"); dentro de uma
+       borda, lê como estado. E a cor saiu do 400 pelo mesmo motivo dos outros dois. */
+    '#limedtec-menu .lm-breve{margin-left:auto;font-size:var(--txt-0);letter-spacing:.06em;',
+    '  text-transform:uppercase;color:var(--cinza-500);font-weight:var(--peso-semi);',
+    '  border:1px solid var(--cinza-300);border-radius:var(--raio-pilula);padding:var(--esp-1) var(--esp-2)}',
 
     '#limedtec-menu svg{width:20px;height:20px;flex:0 0 auto;stroke:currentColor;fill:none;',
     '  stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}',

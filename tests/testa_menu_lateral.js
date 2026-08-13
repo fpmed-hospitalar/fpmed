@@ -150,6 +150,30 @@ ok(n + '. e ha link de verdade (o assert acima nao passa por lista vazia)', href
 
 // ── 5. as regras do tema e do adendo ─────────────────────────────────────────
 const CSS = c.api.CSS;
+/* ══ O --cinza-400 NAO CARREGA TEXTO (13/08, item 7 fatia 2) ═══════════════════
+   Ele vivia em TRES lugares deste arquivo como cor de texto: o rotulo de grupo
+   ("OPORTUNIDADES"/"GESTAO"/"FERRAMENTAS"), o "HOSPITALAR" da marca e o "em
+   breve". Medido contra branco: **2,44:1** - metade do minimo de AA. Ou seja, o
+   rotulo que organiza o menu inteiro nasceu na fronteira do ilegivel, e ninguem
+   tinha notado porque cor a gente olha e acha bonita, nao mede (S12).
+   >>> O TOKEN CONTINUA NO ARQUIVO, no oficio dele: borda e icone desligado. O que
+       este assert proibe e ele voltar a `color:`. Sem ele, a proxima pessoa que
+       quiser "deixar o rotulo mais discreto" desfaz o conserto em uma linha. */
+const _corDeTexto = [...CSS.matchAll(/color\s*:\s*var\(--([a-z0-9-]+)\)/g)].map(m => m[1]);
+ok(n + '. o --cinza-400 nao e usado como COR DE TEXTO (2,44:1 sobre branco reprova em AA)',
+  !_corDeTexto.includes('cinza-400'),
+  _corDeTexto.filter(c => c === 'cinza-400')); n++;
+ok(n + '. e o rotulo de grupo usa o degrau de texto MENOR (--txt-0), que nasceu pra ele',
+  /\.lm-grupo\{[\s\S]{0,200}?font-size:var\(--txt-0\)/.test(CSS.replace(/\n/g, ''))); n++;
+/* Mede a REGRA do container, e nao o arquivo inteiro: `.lm-cruz` e os `svg` tem
+   largura em px de proposito (sao tamanhos de desenho, nao layout). A primeira
+   versao deste assert nao separava as duas coisas e acusou o icone - instrumento
+   largo demais acusa o inocente, que e a S10 de novo. */
+const _regraMenu = (CSS.match(/#limedtec-menu\{[\s\S]*?\}/) || [''])[0];
+ok(n + '. a largura do menu vem do token, e nao de um numero repetido em cada tela',
+  /width:var\(--menu-largura\)/.test(_regraMenu) && !/width:\s*\d+px/.test(_regraMenu),
+  _regraMenu.slice(0, 120)); n++;
+
 ok(n + '. ZERO cor chumbada no CSS do menu - tudo vem de var()',
   (CSS.match(/#[0-9a-fA-F]{3,8}\b|\brgba?\(/g) || []).length === 0,
   (CSS.match(/#[0-9a-fA-F]{3,8}\b|\brgba?\(/g) || [])); n++;
