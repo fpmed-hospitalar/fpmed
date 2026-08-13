@@ -175,6 +175,21 @@ body{
 .nf-sec{font-size:10.5px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);font-weight:700;padding:10px 10px 5px}
 .nf{display:block;padding:9px 11px;border-radius:9px;cursor:pointer;border:1px solid transparent;transition:background .14s,border-color .14s}
 .nf:hover{background:var(--azul-50);border-color:var(--azul-200)}
+/* ══ A AFORDÂNCIA NÃO PODE MENTIR (13/08 — caçada de botão morto) ════════════════════════════
+   ACHADO CLICANDO NA TELA: o item de credenciamento SEM negócio de origem é `<a class="nf">`
+   **sem** `onclick` e **sem** `href` — e isso é decisão, está escrito na linha que o monta: o
+   credenciamento é da empresa e pode ter nascido antes de qualquer negócio, então ali não há
+   para onde ir, e o item informa em vez de navegar.
+   >>> O QUE ESTAVA ERRADO NÃO ERA O COMPORTAMENTO, ERA A PROMESSA. Ele herdava o `cursor:pointer`
+       e o fundo que acende no hover dos irmãos que navegam — ou seja, convidava um clique que
+       nunca ia honrar. Botão morto não é só o que quebra: é também o que promete e não cumpre,
+       e este é o tipo que ninguém reporta (a pessoa clica, não acontece nada, e conclui que o
+       sistema travou).
+   >>> A REGRA OLHA O QUE O ELEMENTO TEM, e não uma classe nova que alguém precisaria lembrar de
+       pôr: sem `onclick` e sem `href`, ele não finge. Item novo que nascer inerte já nasce
+       honesto, sem ninguém fazer nada. */
+.nf:not([onclick]):not([href]){cursor:default}
+.nf:not([onclick]):not([href]):hover{background:transparent;border-color:transparent}
 .nf .q{font-size:12.5px;color:var(--cinza-800);font-weight:600}
 .nf .s{font-size:11.5px;color:var(--muted);line-height:1.45;margin-top:2px}
 .nf.hoje .q{color:var(--ambar-700)}

@@ -293,6 +293,30 @@ ok(n + '. *** e ninguem enfiou um teto calado no kanban (a contagem da coluna e 
   /function kanban\(l\)\{[\s\S]{0,600}?const da = l\.filter\(n => n\.estagio === f\.k\);/.test(LIMPO)
   && !/function kanban\(l\)\{[\s\S]{0,600}?\.slice\(0/.test(LIMPO)); n++;
 
+// ── 6d. A AFORDANCIA NAO PODE MENTIR (cacada de botao morto, 13/08) ─────────
+/* Varri as duas telas clicando em TUDO. Nenhum handler morto - mas apareceu o primo silencioso
+   do botao morto: o item do sino de CREDENCIAMENTO SEM negocio de origem e `<a class="nf">` sem
+   `onclick` e sem `href`, e isso e DECISAO (o credenciamento e da empresa e pode ter nascido
+   antes de qualquer negocio; ali nao ha pra onde ir). O errado nao era o comportamento, era a
+   PROMESSA: ele herdava `cursor:pointer` e o fundo que acende no hover dos irmaos que navegam.
+   >>> Botao morto nao e so o que quebra: e tambem o que PROMETE E NAO CUMPRE. Esse e o tipo que
+       ninguem reporta - a pessoa clica, nada acontece, e conclui que o sistema travou.
+   >>> A REGRA OLHA O QUE O ELEMENTO TEM, e nao uma classe nova que alguem teria de lembrar de
+       por: item novo que nascer inerte ja nasce honesto. */
+ok(n + '. *** item de aviso sem clique nao finge ser clicavel (cursor) ***',
+  /\.nf:not\(\[onclick\]\):not\(\[href\]\)\{cursor:default\}/.test(CSS1)); n++;
+ok(n + '. ...nem acende no hover como os irmaos que navegam',
+  /\.nf:not\(\[onclick\]\):not\(\[href\]\):hover\{[^}]*background:transparent/.test(CSS1)); n++;
+/* E o par: os que NAVEGAM continuam com a promessa acesa. Sem este, "consertar" a mentira
+   apagando o ponteiro de TODOS passaria verde - e ai nenhum aviso pareceria clicavel. */
+ok(n + '. e os que navegam continuam prometendo o clique (cursor + hover)',
+  /\.nf\{[^}]*cursor:pointer/.test(CSS1)
+  && /\.nf:hover\{[^}]*background:var\(--azul-50\)/.test(CSS1)); n++;
+/* O item inerte tem de DIZER por que nao leva a lugar nenhum - senao ele so fica quieto, e
+   quieto e indistinguivel de quebrado. */
+ok(n + '. e ele diz por que nao navega ("sem negocio de origem")',
+  /sem negócio de origem/.test(LIMPO)); n++;
+
 // ── 7. A MEMORIA DO PORQUE (L6) ──────────────────────────────────────────────
 const _corrido = N.replace(/\s+/g, ' ');
 ok(n + '. o arquivo registra por que o cartao vira linha SO dentro do painel',
