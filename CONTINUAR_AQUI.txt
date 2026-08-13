@@ -203,6 +203,104 @@ Criado em 21/07/2026 copiando SO os arquivos do app do C:\globalmed.
   RETOMADA do 1B: estender tools/carrega_cmed_pf.js + DDL da cmed_pf, depois a tela.
 
 ========================================
+>>> URGENCIA FECHADA 13/08 — "O RADAR E BOTAO MORTO" (commit 498732a, sw.js -> -47)
+========================================
+ERA VERDADE, e estava assim desde que o menu lateral nasceu. REPRODUZIDO com clique real.
+A CAUSA nao estava no menu nem no Radar: estava no CONTRATO ENTRE OS DOIS. O limedtec-menu.js
+manda Radar/Desertas/Jornais como ANCORA (`fpmed_licitacoes.html#radar`) e escreve no proprio
+arquivo que "quem decide o que fazer com ele e a TELA DE DESTINO". A tela de destino nunca fez
+a metade dela: ZERO `location.hash` e ZERO `hashchange` no fpmed_licitacoes.html inteiro.
+  >>> MORRIA DE DOIS JEITOS, e o 2o e pior: (a) JA na tela — so o `#` troca, sem recarga, e
+      nada acontece; (b) VINDO DE FORA — o menu ACENDE "Radar" e o painel continua fechado.
+      Botao morto pelo menos nao mente.
+  >>> A ANCORA NATIVA nao salvava: #radar/#jornais sao display:none ate ganharem .open, e o
+      navegador nao rola ate o que nao esta na tela.
+CONSERTO: ROTAS_HASH (tabela, nao ifs) + aplicaHash no BOOT e no hashchange; "Desertas" LIGA
+em vez de alternar; o MESMO defeito no "Calendario" do Negocios consertado junto; e o item
+aceso do menu passa a seguir o `#` (repinta, nao remonta).
+SUITE NOVA testa_menu_clique (20, MUTACAO 12 de 12) — ela SIMULA O CLIQUE e le a lista de
+ancoras do MODULOS, entao ancora nova ja nasce cobrada. 3.778 asserts / 0 falhas / 102 suites.
+  >>> O DONO RE-TESTA LOGADO: 2 cliques em Radar, Desertas, Meus Jornais e Calendario.
+
+>>> VARREDURA DOS 13 ITENS DO MENU (pedida junto): 12 levam ao lugar certo; os 3 mortos eram
+    exatamente as 3 ancoras do Encontrar. ACHADO A PARTE, NAO CONSERTADO (entra na fila, nao
+    era a urgencia): 6 das 9 telas NAO TEM o menu lateral — Documentos, Leitor, Pecas,
+    Declaracoes, Sistema comercial e Conferidor usam a barra do PORTAL, que e a navegacao
+    anterior. Nao e link quebrado (todas tem volta pro Encontrar); e DOIS SISTEMAS DE
+    NAVEGACAO VIVOS AO MESMO TEMPO. Decisao de escopo do dono: unificar ou nao.
+
+>>> ARMADILHA DE INSTRUMENTO REGISTRADA (custou tempo nesta rodada, e vai custar de novo):
+    o CLIQUE DO AUTOMATIZADOR NAO NAVEGA neste ambiente. Um clique real em "Proposta" (link
+    comum, que funciona) tambem nao trocou de pagina. Medir "nao aconteceu nada" com ele leva
+    a acusar a tela de um defeito que e do instrumento. Pra provar clique, usar `a.click()`
+    no proprio elemento, que dispara navegacao de verdade.
+
+========================================
+>>> DIAGNOSTICO DO RADAR — 13/08, PEDIDO PELO DONO. O CONSERTO NAO COMECOU.
+========================================
+Feito ANDANDO PELA LOJA e conferindo contra o banco (so leitura). O menu ja foi consertado
+acima; o que segue e sobre o QUE O RADAR CONTA, e por ordem dele NUMERO ERRADO VEM PRIMEIRO.
+
+[D1] *** A CONTAGEM DE "LICITACAO ABERTA" ESTA INFLADA 2,1x *** (defeito de dado, o pior)
+     A regra e `if(fim && fim < agora) return false` — ou seja, linha SEM data de encerramento
+     conta como ABERTA. Medido no indice: 3.201 linhas, 1.426 (44,5%) sem data_encerramento.
+     O Radar conta 2.726 "abertas"; de fato abertas: 1.300.
+     CONFERIDO A MAO (indice / o que o Radar mostra / de fato abertas):
+       Goiania/GO ...... 150 / 147 / 54
+       Salvador/BA ..... 222 / 214 / 150
+       Goianesia/GO .....  77 /  45 / 34
+       Anapolis/GO ......   5 /   5 /  3
+       Nova Aurora/GO ...  48 /   0 /  0   <- as 48 estao encerradas
+     >>> "NAO SEI A DATA" NAO E "ESTA ABERTA". Sao tres estados (aberta / encerrada / sem
+         data) e a tela mostra dois. O conserto NAO e chutar: e contar os tres separados.
+
+[D2] *** A CAIXA DE MUNICIPIOS E CORTADA EM 1.000 *** (o mesmo defeito do limit=1000, na
+     OUTRA metade da tela — a correcao de 13/08 so tocou a consulta de LICITACOES)
+     A consulta pede `&limit=2000`; o PostgREST daqui tem teto de 1.000. PROVADO na API:
+     limit=1500/2000/5000 devolvem todos 1.000.
+     ALCANCE MEDIDO: ate 300 km, NENHUM dos 5.570 municipios estoura. Em 500 km, 2.857 de
+     5.570 (51%) estouram. Maior caixa do Brasil: 1.776 (regiao de Ponta Grossa/PR).
+     >>> NAO PEGA A CIDADE DA FPMED: Aparecida de Goiania da 707 em 500 km. Belo Horizonte
+         (1.370) pega. Entao esta VIVO no codigo e NAO afeta o uso padrao do dono hoje.
+     >>> E O CORTE NAO TEM `order`: quem some e arbitrario, pode ser a cidade a 10 km.
+
+[D3] O ASSERT QUE PEGOU O limit=1000 EM 13/08 ERA CEGO PRA ESTA (mesma familia, 3a vez):
+     testa_cobertura_busca linha 34 procura `/rest/v1/(licitacoes|licitacoes_acompanhadas)` —
+     TABELA CHUMBADA. A consulta de `municipios` era invisivel pra ele.
+
+[D4] TRES COISAS DIFERENTES SAEM COMO "0" na tela: "nao coletamos", "coletamos e nao ha
+     aberta" e "coletamos 48 e todas encerraram" (Nova Aurora). A frase de honestidade cobre
+     so a primeira. Nova Aurora vai pro balde "sem licitacao no nosso indice", que e FALSO.
+
+[D5] SEM SAIDA: a linha da cidade NAO E CLICAVEL. "Goianesia, 45 licitacoes, 168 km" e um
+     beco — nao da pra ver quais sao. O Radar acha e nao entrega.
+
+[D6] O FILTRO DE PALAVRA VAZA da busca de cima (`f-kw`) quando o campo do Radar esta vazio.
+     E declarado no placeholder, mas o RESULTADO nao diz qual termo usou: quem buscou
+     "albumina" e abre o Radar ve numeros pequenos sem entender por que.
+
+[D7] COBERTURA: o indice tem 7 UFs (GO 1.168 · MG 905 · BA 603 · DF 156 · MT 143 · TO 113 ·
+     MS 113). Raio de 500 km a partir de Goiania alcanca UF que a coleta nao cobre, e todas
+     elas aparecem com 0 sem que a tela diga "esta UF nao e coletada".
+
+[D8] DADO SUJO: 1 licitacao com data_encerramento em 2060-06-28 (Nova Crixas/GO). Entra na
+     conta de "abertas" pra sempre.
+
+O QUE ESTA CERTO E NAO PRECISA MEXER (medido): a distancia (Haversine, conferida contra pares
+reais), a caixa antes da trigonometria, o refino por raio, a ordenacao por DISTANCIA, a base
+de municipios (5.571 do IBGE — 5.570 + Boa Esperanca do Norte/MT, criada depois, a UNICA sem
+coordenada, e a tela DIZ isso em vez de fingir), e o casamento de nome licitacoes x municipios
+(3.201 de 3.201 casam por nome_norm+uf — 100%, sem um unico orfao).
+
+>>> CONSERTO PROPOSTO EM FATIAS (numero antes de tela, ordem do dono):
+    F1 (dado)   D1 + D8: contar os TRES estados e mostrar os tres. Descarta a data absurda.
+    F2 (dado)   D2 + D3: paginar a consulta de municipios e REAPONTAR o assert pra procurar
+                TODA consulta de lista, sem tabela chumbada.
+    F3 (verdade) D4 + D7: "0" deixa de ser um so; a tela diz quando a UF nao e coletada.
+    F4 (uso)    D5 + D6: linha clicavel abrindo as licitacoes da cidade; e dizer o termo usado.
+    F5 (visual) o painel contra o molde, com a regra de cor que ele reforcou em 13/08.
+
+========================================
 >>> ONDE PARAMOS — 06/08/2026, RODADA 6. LEIA ISTO PRIMEIRO.
 ========================================
 
