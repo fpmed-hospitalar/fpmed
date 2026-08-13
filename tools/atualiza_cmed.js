@@ -44,12 +44,10 @@ let paradas = [];
 const parar = m => { paradas.push(m); console.log('  ⛔ ' + m); };
 const ok = m => console.log('  ✓ ' + m);
 
-function achar(padrao, explicito) {
-  if (explicito) return path.isAbsolute(explicito) ? explicito : path.join(RAIZ, explicito);
-  const achados = fs.readdirSync(RAIZ).filter(f => padrao.test(f))
-    .map(f => ({ f, t: fs.statSync(path.join(RAIZ, f)).mtimeMs })).sort((a, b) => b.t - a.t);
-  return achados.length ? path.join(RAIZ, achados[0].f) : null;
-}
+// A descoberta mora em tools/pastas_cmed.js desde 13/08: procura em dados_cmed/ e, como
+// fallback, na raiz. Quatro ferramentas tinham a sua propria copia deste laco com `C:/fpmed`
+// escrito a mao, e as quatro quebrariam quando as planilhas saissem da raiz.
+const achar = require('./pastas_cmed.js').achar;
 
 /* A CONFERENCIA DE LAYOUT. Ela olha exatamente o que o carregador vai precisar — nem mais, nem
    menos. Conferir coluna que ninguem usa geraria alarme por mudanca que nao afeta nada, e alarme

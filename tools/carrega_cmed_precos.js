@@ -72,12 +72,12 @@ if (!SR) { console.error('service_role nao encontrada no segredos.local.txt'); p
 const SB = 'https://xzdowrksuswekwffoluk.supabase.co';
 const H = { apikey: SR, Authorization: 'Bearer ' + SR, 'Content-Type': 'application/json' };
 
+// Descoberta compartilhada (tools/pastas_cmed.js): dados_cmed/ primeiro, raiz como fallback.
+const _p = require('./pastas_cmed.js');
 function achar(padrao, explicito) {
-  if (explicito) { if (!fs.existsSync(explicito)) { console.error('nao existe: ' + explicito); process.exit(1); } return explicito; }
-  const achados = fs.readdirSync('C:/fpmed').filter(f => padrao.test(f))
-    .map(f => ({ f, t: fs.statSync('C:/fpmed/' + f).mtimeMs })).sort((a, b) => b.t - a.t);
-  if (!achados.length) { console.error('nenhum arquivo casando ' + padrao + ' em C:\\fpmed'); process.exit(1); }
-  return 'C:/fpmed/' + achados[0].f;
+  const r = _p.achar(padrao, explicito);
+  if (!r) { console.error('nenhum arquivo casando ' + padrao + ' em ' + _p.ondeProcurei()); process.exit(1); }
+  return r;
 }
 
 // Lê uma das duas listas e devolve {publicada, head, linhas[], prefixoVar}

@@ -49,6 +49,12 @@ scratchpad/
 # `git add -A` de virar commit. Buraco fechado.
 *.xlsm
 *.xlsb
+# 13/08/2026: a PASTA inteira das listas oficiais da CMED, e nao so a extensao delas.
+# As regras acima ja pegariam os .xlsx — mas elas cobrem EXTENSAO, e uma pasta de ingestao
+# junta companhia: um .csv exportado, um .txt de conferencia, um recorte de amostra. O repo e
+# PUBLICO, e o buraco do "Calendario 2025.xlsm" logo acima foi exatamente isto: a regra cobria
+# o que alguem lembrou de listar. A pasta e o destino da INGESTAO; o banco e o destino do DADO.
+dados_cmed/
 FPMED_Estoque_texto_para_colar.txt
 *.pdf
 *.jpg

@@ -77,7 +77,13 @@ const CASOS = [
   ['/fpmed_licitacoes.html', '#lk-desertas', 'desertas', 'e com #lk-desertas acende Desertas'],
   ['/fpmed_negocios.html', '', 'negocios', 'Negocios'],
   ['/fpmed_edital_ia.html', '', 'leitor', 'Leitor de edital'],
-  ['/fpmed_conferidor.html', '', 'conferir', 'Conferir CMED'],
+  /* REAPONTADO em 13/08 (item 8): "Conferir CMED" SAIU da lista de modulos — a CMED virou base
+     por baixo de todo preco, e um item de menu ensinava que conferir o teto e uma parada
+     separada. A tela continua existindo e continua alcancavel pelo RODAPE, mas ela nao e mais
+     um modulo — entao ela acende NADA, exatamente como qualquer tela de fora da lista.
+     >>> O assert nao virou "nao testa mais": ele passou a cobrar o comportamento NOVO, que e o
+         menu nao mentir marcando um modulo que nao corresponde a tela aberta. */
+  ['/fpmed_conferidor.html', '', null, 'Conferir CMED saiu da lista: nao acende modulo nenhum'],
   ['/fpmed_giovana.html', '', 'proposta', 'Proposta'],
   ['/fpmed_documentos.html', '', 'documentos', 'Documentos'],
   ['/fpmed_sistema_final.html', '', 'sistema', 'Sistema comercial'],
@@ -217,10 +223,14 @@ ok(n + '. o fundo da sidebar e o navy da marca, e nao um escuro improvisado',
    >>> O ASSERT QUE IMPORTA E O DE ESCONDER. Se `contador` aceitasse `null` como 0,
        uma leitura que FALHOU viraria "nao ha nenhum" na tela — afirmacao diferente
        e possivelmente falsa. E a licao S6 dentro do menu. */
+/* O link do RODAPE (a busca crua da CMED, item 8) e `<a>` mas nao e modulo: ele nao tem contador
+   e nao deve ter. Contar todos os `href` fazia o assert acusar um slot faltando por causa dele —
+   vermelho sem nada ter piorado. Agora a conta e de LINKS DE MODULO. */
+const linksModulo = hrefs.length - (html.match(/class="lm-crua"/g) || []).length;
 ok(n + '. todo item nasce com o slot do contador VAZIO (numero nenhum e chumbado)',
-  (html.match(/class="lm-num" hidden/g) || []).length === hrefs.length
+  (html.match(/class="lm-num" hidden/g) || []).length === linksModulo
   && !/lm-num[^>]*>\s*\d/.test(html),
-  { slots: (html.match(/class="lm-num" hidden/g) || []).length, links: hrefs.length }); n++;
+  { slots: (html.match(/class="lm-num" hidden/g) || []).length, linksModulo }); n++;
 (function () {
   /* Um DOM de mentira SO pro contador: ele precisa de querySelector que ache o slot.
      O outro DOM falso nao acha nada de proposito (e o que faz o assert 2 morder). */

@@ -1847,15 +1847,121 @@ Criado em 21/07/2026 copiando SO os arquivos do app do C:\globalmed.
                 explode PARA DE AVALIAR o resto; (2) um assert meu tinha `||` de reserva, que
                 passa em qualquer caso e nao guarda nada. Os dois corrigidos.
 
-     8-falta. [ ] O QUE SOBRA DO ITEM 8 (as partes de TELA):
-            a) PMVG encostado no DETALHE DO ITEM (cruzamento do fpmed_licitacoes) — territorio
-               meu, e a proxima fatia natural;
-            b) busca crua da CMED discreta no rodape;
-            c) tirar "Conferir CMED" do menu (limedtec-menu.js);
+     8-telas. [OK] AS PARTES DE TELA DO ITEM 8 — **FEITAS em 13/08**. sw.js -> -45.
+            Suite nova testa_cmed_no_detalhe (20 asserts, MUTACAO 15 de 15).
+            TOTAL: 3.746 asserts / 0 falhas / 101 suites (inclui as do TRABALHADOR B).
+            a) [OK] O TETO ENCOSTADO NO PRECO, no detalhe do item (tabela do cruzamento):
+               coluna "Teto CMED" LOGO DEPOIS do unitario do edital — encostada, como a ordem
+               pede. Teto legal por unidade, com PMVG x PF dito, o grau de confianca ESCRITO
+               ("provavel" / "confira") e a faixa quando existe.
+               >>> `paraGoverno:true` SEM PERGUNTAR, e aqui e correto: esta tela mostra licitacao
+                   PUBLICA, entao com CAP o teto e o PMVG por obrigacao legal.
+               >>> NAO apliquei `confiancaMinima` aqui, e tem motivo: e lugar de REFERENCIA, nao
+                   o instante em que o preco e decidido. Mostrar "achei por semelhanca, confira"
+                   ajuda; calar nao. Na Proposta a recomendacao continua sendo exigir 'alta'.
+               >>> CARREGA `cmed_teto` + `cmed_dicionario` (~11 mil linhas), NAO a regua inteira
+                   (25.702): o item de edital nao traz ggrem/registro/EAN, entao o caminho exato
+                   nao dispara aqui. Mesmo carregamento do Conferidor, de proposito.
+               >>> LEITURA QUE FALHA VIRA "NAO SEI", nao "sem teto" — e o indice NAO e montado
+                   sobre leitura falha, senao a tela responderia "nao encontrado" pra TUDO, que
+                   e uma afirmacao sobre a CMED feita por causa da nossa rede (S6).
+            b) [OK] busca crua da CMED no RODAPE do menu ("Consultar a tabela CMED"), discreta
+               mas link de verdade — discreta nao e escondida; esconder obrigaria a decorar URL.
+            c) [OK] "Conferir CMED" SAIU do menu. A tela nao foi apagada, continua na casca e
+               continua alcancavel pelo rodape. 2 asserts do testa_menu_lateral reapontados: o
+               que cobrava o modulo aceso agora cobra que ele NAO acenda modulo nenhum (como
+               qualquer tela de fora), e o do contador passou a contar LINKS DE MODULO (o link
+               do rodape e <a> mas nao e modulo, e nao deve ter contador).
+            >>> 3 ASSERTS MEUS NASCERAM FRACOS e a mutacao pegou os tres: cobravam que o texto
+                EXISTISSE no arquivo, nao que ele CHEGASSE na saida. O do tipo de teto passava
+                com o rotulo trocado (porque `r.tipoTeto` tambem aparece no title); o do grau
+                passava com a variavel esvaziada; o do erro passava com a guarda desligada.
+            >>> E A 15a MUTACAO ME ENGANOU DUAS VEZES: na 1a o meu alvo pegou a linha da
+                DEFINICAO da funcao, e o vermelho veio de quebra de sintaxe e nao do assert — eu
+                quase declarei cobertura por motivo errado. Na 2a o trecho que eu procurava
+                (`+'</td>'`) NUNCA existiu: a linha termina em `'</td></tr>';`. So na 3a a prova
+                ficou valida, com a sintaxe conferida junto pra separar as duas causas.
+
+     8-falta. [ ] O QUE AINDA SOBRA DO ITEM 8:
             d) **CONGELADO DE PROPOSITO**: a costura na Proposta (fpmed_giovana.html) — arquivo
                do TRABALHADOR B. O passo a passo esta escrito em docs/cmed_camada_base.md,
                secao 6, e e curto porque o motor ja entrega tudo pronto. Recomendacao registrada
                (nao decisao): `confiancaMinima:'alta'` la, porque ali o preco esta sendo DECIDIDO.
+
+     >>> ############ A FILA, DEPOIS DO ITEM 8 (3 pedidos novos chegaram em 13/08) ############
+     >>> ORDEM: eles chegaram enquanto o item 8 estava em construcao e NENHUM dizia URGENCIA,
+         entao entraram no FIM e o item 8 nao foi largado no meio (regra de 04/08).
+
+     9. [ ] **EAN NO CADASTRO — o casamento CMED vira EXATO.** Decisao do dono de 13/08, e ela
+            responde a pergunta que a fundacao do item 8 levantou.
+            PASSO 1 banco: colunas `ean` (texto) e `registro_anvisa` na tabela do estoque,
+              migracao ADITIVA (nada de UPDATE/DELETE), com indice pra busca por EAN.
+            PASSO 2 casamento em 3 degraus: EAN -> registro -> substancia+dose (o de hoje, como
+              fallback com o grau). Item sem EAN NAO piora: cai no degrau 3, comportamento atual.
+            PASSO 3 formulario: campo "Codigo de barras (EAN)" que AO PREENCHER busca na CMED e
+              auto-preenche nome/substancia/apresentacao/laboratorio. Nunca obrigatorio.
+              >>> TERRITORIO: se o formulario morar no fpmed_giovana.html, eu NAO toco — escrevo
+                  a especificacao do campo em docs/ e o B costura na fatia dele. Ordem do dono.
+            PASSO 4 acervo: NAO inventar EAN por casamento de nome (seria chave falsa). Lista de
+              pendencia "N itens sem EAN", mais usado primeiro, pro cliente preencher aos poucos.
+            PROVA: cadastrar em teste um item com EAN real e ver o PMVG casar EXATO; suite
+              cobrindo os tres degraus NA ORDEM.
+            >>> O DEGRAU 1 E 2 JA EXISTEM NO MOTOR desde a fundacao do item 8 (porGgrem,
+                porRegistro, porEan, com o registro ANTES do ean por medicao). O que falta e a
+                CHAVE do nosso lado — que e exatamente o passo 1.
+
+    10. [ ] **ATUALIZAR A BASE CMED PARA A EDICAO DE 11/08** (a base no banco e de 21/07).
+            Arquivos ja movidos pra dados_cmed/ (ver abaixo). O "gov" e o que importa.
+            >>> ***ISTO VAI BATER NA CLAUSULA DE PARADA DO PROPRIO PEDIDO, E EU JA SEI POR QUE.***
+                O pedido diz: "se o desenho atual exigir substituicao destrutiva, PARA e propoe o
+                desenho versionado por edicao antes". E o desenho atual EXIGE: esta escrito no
+                ddl/cmed_precos.sql, linhas 8-10 — "a carga da cmed_pf e DESTRUTIVA por desenho
+                (insere a edicao nova e APAGA a anterior)". Entao a primeira coisa desse item nao
+                e carregar: e desenhar o versionamento por edicao e levar pro checkpoint.
+            >>> E o `tools/atualiza_cmed.js` JA EXISTE e ja recusa carregar edicao mais VELHA que
+                a base, e ja avisa quando a regua passa de 45 dias. Conferir o que ele faz antes
+                de escrever ferramenta nova.
+            Depois: recalcular regua/teto, conferir 3 medicamentos A MAO entre Excel e banco
+            (mesmo EAN -> mesmo PMVG na mesma aliquota), e remedir o casamento (os 6 de 14
+            melhoraram?). Documentar a fonte oficial de download no docs/cmed_camada_base.md.
+
+     >>> ############ ARRUMACAO FEITA EM 13/08 (pre-condicao de commit, nao item de fila) ######
+         As 4 planilhas da CMED estavam na RAIZ do repo, que e PUBLICO. Conferido antes de mexer:
+           git ls-files ................ nenhuma rastreada
+           git log --all -- '*xls_*' ... NUNCA entraram em commit nenhum
+         Ou seja: nada a tirar de commit, nada pushado. Movidas pra `dados_cmed/`, e a PASTA
+         inteira entrou no .gitignore — nao so a extensao. As regras de cima ja pegavam .xlsx,
+         mas cobrem EXTENSAO, e pasta de ingestao junta companhia (um .csv, um .txt de
+         conferencia). O buraco do "Calendario 2025.xlsm" foi exatamente isso.
+         >>> *** LICAO NOVA, E ELA E DE FERRAMENTA: NAO REESCREVER FONTE COM `Set-Content` DO
+             POWERSHELL. *** Eu troquei o caminho nas 4 ferramentas com
+             `(Get-Content -Raw).Replace(...) | Set-Content -Encoding utf8` e isso CORROMPEU
+             todo acento e travessao dos arquivos: o diff de uma edicao de 5 linhas veio com
+             **59 linhas alteradas** no atualiza_cmed.js. Duas suites do testa_cmed_vigencia
+             ficaram vermelhas porque procuravam frases com "—" que tinham virado mojibake.
+             >>> O ESTRAGO ERA INVISIVEL NO CODIGO: nada quebrou de sintaxe, as ferramentas
+                 continuaram carregando, e o `node --check` passou nas quatro. Quem pegou foi a
+                 suite, procurando uma frase.
+             >>> A REGRA: fonte se edita com a ferramenta de edicao, que preserva a codificacao.
+                 `Set-Content` serve pra arquivo que eu mesmo gerei inteiro, nao pra reescrever
+                 arquivo que ja existe. Restaurei os 4 do git e refiz.
+             >>> E O SINAL DE QUE ALGO ESTA ERRADO E O TAMANHO DO DIFF: edicao de 5 linhas que
+                 aparece como 59 nao e edicao de 5 linhas. Conferir `git diff --numstat` depois
+                 de mexer em varios arquivos de uma vez custa um comando.
+
+         >>> E O NOME DO MODULO NOVO NAO PODE COMECAR COM `_`: o .gitignore tem `tools/_*`, regra
+             criada em 04/08 depois que um `_acesso_temp.js` entrou no repo publico. Eu criei
+             `tools/_pastas_cmed.js` e o git RECUSOU adicionar — se eu tivesse forcado com -f,
+             teria furado uma regra de seguranca; se tivesse commitado sem notar, as 4
+             ferramentas quebrariam no clone exigindo um arquivo nunca publicado. Renomeado pra
+             `tools/pastas_cmed.js`. A regra estava certa; o nome e que estava errado.
+
+         >>> E AS FERRAMENTAS QUEBRARIAM COM A MUDANCA: quatro delas procuravam as planilhas com
+             `C:/fpmed` escrito a mao, cada uma com a sua copia do laco. Virou **uma fonte unica**
+             (tools/_pastas_cmed.js): procura em dados_cmed/ primeiro e na raiz como FALLBACK —
+             a raiz continua valendo porque e onde o navegador larga um download, mas quem largar
+             la ve um aviso mandando mover. Conferido: a descoberta acha a edicao 11/08 na pasta
+             nova e as 4 ferramentas continuam carregando.
 
             >>> ACHADO NO TERRITORIO DO B, QUE EU NAO TOQUEI: o fpmed_giovana.html filtra
                 `cotacoes` por `c.ean` (~linha 2175) e **a coluna `ean` nao existe** na tabela

@@ -59,12 +59,12 @@ const norm = s => String(s || '').toUpperCase().normalize('NFD').replace(/\p{M}/
 module.exports = { cmedApresNorm, cmedDoseKey, cmedQtdApres, norm };
 if (require.main !== module) return;
 
+// Descoberta compartilhada (tools/pastas_cmed.js): dados_cmed/ primeiro, raiz como fallback.
+const _p = require('./pastas_cmed.js');
 function acharXlsx() {
-  if (argPath) { if (!fs.existsSync(argPath)) { console.error('nao existe: ' + argPath); process.exit(1); } return argPath; }
-  const fs2 = fs.readdirSync('C:/fpmed').filter(f => /^xls_conformidade.*\.xlsx$/i.test(f))
-    .map(f => ({ f, t: fs.statSync('C:/fpmed/' + f).mtimeMs })).sort((a, b) => b.t - a.t);
-  if (!fs2.length) { console.error('nenhum xls_conformidade*.xlsx em C:\fpmed'); process.exit(1); }
-  return 'C:/fpmed/' + fs2[0].f;
+  const r = _p.achar(/^xls_conformidade.*\.xlsx$/i, argPath);
+  if (!r) { console.error('nenhum xls_conformidade*.xlsx em ' + _p.ondeProcurei()); process.exit(1); }
+  return r;
 }
 const numBR = v => { const n = parseFloat(String(v == null ? '' : v).replace(/\./g, '').replace(',', '.')); return isFinite(n) && n > 0 ? n : null; };
 

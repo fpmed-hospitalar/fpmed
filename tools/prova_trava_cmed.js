@@ -26,10 +26,12 @@ const XLSX = require(path.join(RAIZ, 'node_modules', 'xlsx'));
 const TMP = path.join(os.tmpdir(), 'fpmed_prova_cmed');
 fs.mkdirSync(TMP, { recursive: true });
 
-const SITE = path.join(RAIZ, fs.readdirSync(RAIZ).filter(f => /^xls_conformidade_site.*\.xlsx$/i.test(f))[0] || '');
-const GOV = fs.readdirSync(RAIZ).filter(f => /^xls_conformidade_gov.*\.xlsx$/i.test(f))[0];
-if (!GOV || !fs.existsSync(SITE)) {
-  console.error('as duas planilhas da CMED precisam estar em C:\\fpmed pra esta prova rodar.');
+// Descoberta compartilhada (tools/pastas_cmed.js): dados_cmed/ primeiro, raiz como fallback.
+const _p = require('./pastas_cmed.js');
+const SITE = _p.achar(/^xls_conformidade_site.*\.xlsx$/i);
+const GOV = _p.achar(/^xls_conformidade_gov.*\.xlsx$/i);
+if (!GOV || !SITE) {
+  console.error('as duas planilhas da CMED precisam estar em ' + _p.ondeProcurei() + ' pra esta prova rodar.');
   process.exit(1);
 }
 

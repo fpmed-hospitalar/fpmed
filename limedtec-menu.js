@@ -153,7 +153,17 @@
            aviso é o que impede alguém de clicar sem saber que aquilo custa. */
     { id: 'leitor', rotulo: 'Leitor de edital', href: 'fpmed_edital_ia.html', tela: 'fpmed_edital_ia',
       selo: 'IA', permissao: ['licitacao@fpmed.com.br'] },
-    { id: 'conferir', rotulo: 'Conferir CMED', href: 'fpmed_conferidor.html', tela: 'fpmed_conferidor' },
+    /* ══ "CONFERIR CMED" SAIU DA LISTA (item 8, 13/08) ═══════════════════════════════════════
+       Ordem do dono: a CMED deixa de ser ABA e vira BASE por baixo de todo preço. Um item de
+       menu chamado "Conferir CMED" ensina que conferir o teto legal é uma parada separada, que
+       alguém lembra de fazer — e é justamente isso que o item 8 desfaz: o teto passa a aparecer
+       ONDE O PREÇO ESTÁ, no detalhe do item e na Proposta.
+       >>> A TELA NÃO FOI APAGADA E NÃO VIROU LINK QUEBRADO. Ela continua existindo e continua na
+           casca do service worker; o que mudou foi o lugar de onde se chega nela — o rodapé do
+           menu, como consulta crua, que é o que ela de fato é.
+       >>> POR QUE NO RODAPÉ E NÃO SUMINDO DE VEZ: colar uma planilha e conferir 200 linhas de
+           uma proposta pronta continua sendo um trabalho legítimo, e é um trabalho que nenhuma
+           camada de base faz por você. Tirar o acesso obrigaria a decorar a URL. */
     { id: 'pecas', rotulo: 'Peças', href: 'fpmed_pecas.html', tela: 'fpmed_pecas' },
     { id: 'declaracoes', rotulo: 'Declarações', href: 'fpmed_declaracoes.html', tela: 'fpmed_declaracoes' },
     { id: 'sistema', rotulo: 'Sistema comercial', href: 'fpmed_sistema_final.html', tela: 'fpmed_sistema_final' }
@@ -323,6 +333,13 @@
     '  border-top:1px solid var(--navy-borda);font-size:var(--txt-0);color:var(--navy-apoio);',
     '  line-height:1.7}',
     '#limedtec-menu .lm-rodape span{display:flex;align-items:center;gap:var(--esp-2)}',
+    /* A busca crua: mesmo alvo de clique dos itens de cima, peso menor. O `--navy-apoio` é o
+       tom do rodapé, e ela acende pro tom de leitura no hover — o mesmo gesto dos outros. */
+    '#limedtec-menu .lm-crua{display:flex;align-items:center;gap:var(--esp-2);',
+    '  padding:var(--esp-2) 0;color:var(--navy-apoio);text-decoration:none;',
+    '  transition:color var(--transicao)}',
+    '#limedtec-menu .lm-crua:hover{color:var(--navy-tinta)}',
+    '#limedtec-menu .lm-crua:focus-visible{outline:none;box-shadow:var(--foco);border-radius:var(--raio-item)}',
 
     /* Em tela estreita o menu vira uma faixa horizontal rolável no topo. Escondê-lo
        não é opção: sumiria a navegação inteira do sistema no celular. */
@@ -389,8 +406,18 @@
            dívida e bloqueado pelas 8 telas ainda escuras (trocar a etiqueta por
            tokens claros conserta duas telas e quebra oito).
        Até lá fica o que o menu já dizia: o telefone e o compromisso. */
-    h.push('<div class="lm-rodape"><span>' + svg('telefone') + '(62) 3290-4241</span>' +
-      'Compromisso com qualidade!</div>');
+    /* ══ A BUSCA CRUA DA CMED, DISCRETA, NO RODAPÉ (item 8, 13/08) ═══════════════════════════
+       Ela saiu da lista de módulos junto com o "Conferir CMED" e reapareceu aqui embaixo, como
+       consulta — que é o que ela é. Fica acima do telefone porque é ação; o telefone é dado.
+       >>> DISCRETA NÃO É ESCONDIDA. Ela é um link de verdade, com o mesmo ícone e o mesmo alvo
+           de clique dos outros; o que muda é o PESO, e é o peso que diz "isto não é uma parada
+           do seu fluxo". Esconder de vez obrigaria a decorar a URL. */
+    h.push('<div class="lm-rodape">'
+      + '<a class="lm-crua" href="fpmed_conferidor.html" '
+      +   'title="consulta crua da tabela CMED: cole uma planilha ou um texto e confira preço contra o teto legal">'
+      +   svg('conferir') + 'Consultar a tabela CMED</a>'
+      + '<span>' + svg('telefone') + '(62) 3290-4241</span>'
+      + 'Compromisso com qualidade!</div>');
 
     nav.innerHTML = h.join('');
     alvo.appendChild(nav);

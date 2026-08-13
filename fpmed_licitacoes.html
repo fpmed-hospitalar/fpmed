@@ -3696,6 +3696,89 @@ function celMatch(par, uEdital){
        + (c.marca ? ' · '+esc(c.marca) : '') + delta + '</div></div>';
 }
 
+/* ══ A CMED COMO CAMADA DE BASE, NO DETALHE DO ITEM (item 8, 13/08) ══════════════════════════
+   Ordem do dono: "a CMED deixa de ser aba e vira base por baixo de todo preço — PMVG encostado
+   no preço no detalhe do item". Aqui é o detalhe do item: a tabela do cruzamento, onde cada
+   linha do edital aparece com o que temos no estoque.
+
+   >>> O QUE SE CARREGA, E O QUE NÃO SE CARREGA. A `cmed_regua` tem 25.702 linhas e serve pro
+       casamento EXATO (ggrem/registro/EAN). O item de edital não traz nenhuma dessas chaves —
+       ele traz descrição e quantidade. Então aqui entram só a `cmed_teto` (4.875 chaves
+       PA+dose) e o `cmed_dicionario` (6.283 marca→PA): ~11 mil linhas em vez de ~37 mil.
+       Baixar a régua inteira pra usar um caminho que não vai disparar seria pagar três vezes o
+       preço por nada.
+   >>> É O MESMO CARREGAMENTO DO CONFERIDOR, de propósito. Duas telas com dois jeitos de montar
+       o mesmo índice é o par que diverge — e este projeto já pagou por isso no preço unitário.
+   >>> PAGINADO (S1): 4.875 e 6.283 passam de 1000, e o PostgREST corta em 1000. Sem paginar, a
+       tela leria 1.000 do dicionário achando que leu tudo — que é literalmente o defeito que a
+       giovana teve em 05/08. */
+let _cmedIdx = null, _cmedErro = null, _cmedPromessa = null;
+function carregarCMED(){
+  if(_cmedIdx || _cmedErro) return Promise.resolve(_cmedIdx);
+  if(_cmedPromessa) return _cmedPromessa;
+  _cmedPromessa = (async () => {
+    try{
+      if(!window.LimedtecTetoCMED) throw new Error('o motor do teto CMED não carregou');
+      const [teto, dic] = await Promise.all([
+        lerPaginado(`${SB_URL}/rest/v1/cmed_teto?select=subst_norm,dose_key,apresentacoes,teto_min,teto_max,tem_cap`),
+        lerPaginado(`${SB_URL}/rest/v1/cmed_dicionario?select=marca_norm,substancia`),
+      ]);
+      /* `null` do lerPaginado é "não consegui ler", e não "está vazia". Índice montado sobre uma
+         leitura que falhou responderia "não encontrado" pra TUDO — e "não encontrado" é uma
+         afirmação sobre a CMED, não sobre a nossa rede. Isso é a S6 no lugar mais caro possível:
+         a tela diria que o item não tem teto legal quando ela só não conseguiu perguntar. */
+      if(teto === null || dic === null) throw new Error('não consegui ler a tabela CMED');
+      _cmedIdx = LimedtecTetoCMED.indexar({ regua: [], teto, dicionario: dic });
+      return _cmedIdx;
+    }catch(e){ _cmedErro = e.message || 'falha ao carregar a CMED'; return null; }
+    finally{ _cmedPromessa = null; }
+  })();
+  return _cmedPromessa;
+}
+
+/* A CÉLULA DO TETO LEGAL. Ela responde uma pergunta que a tela não respondia: "quanto a lei
+   deixa cobrar por isto?" — ao lado do que o edital estimou e do que nós temos.
+   >>> `paraGoverno: true` SEM PERGUNTAR, e aqui isso é correto e não é chute: esta tela mostra
+       licitação pública. Com CAP=Sim o teto é o PMVG por obrigação (Resolução CMED 5/2020).
+   >>> NÃO APLICO `confiancaMinima` AQUI, e a decisão tem motivo. Este é um lugar de REFERÊNCIA,
+       não o instante em que o preço é decidido — mostrar "achei por semelhança de nome, confira"
+       ajuda; calar não. O grau vai ESCRITO na célula, então quem lê sabe o que está olhando.
+       No gerador de Proposta, onde o preço é decidido, a recomendação registrada é exigir
+       'alta' (docs/cmed_camada_base.md, seção 6). */
+function celTetoCMED(it, uE){
+  if(_cmedErro) return '<span class="hint" title="'+esc(_cmedErro)+'">não sei</span>';
+  if(!_cmedIdx)  return '<span class="hint">—</span>';
+  const r = LimedtecTetoCMED.avaliar({
+    descricao: it.descricao || '',
+    precoUnit: uE && uE.status === 'ok' ? uE.valor : null,
+    unitario: !!(uE && uE.status === 'ok'),
+    paraGoverno: true,
+  }, _cmedIdx);
+  // NÃO CASOU É SILÊNCIO, NUNCA TETO CHUTADO — a regra 1 do motor, e a ordem do dono.
+  if(r.teto == null){
+    return '<span class="hint" title="não casou com a CMED. Material e correlato não têm teto '
+         + 'CMED por natureza — só medicamento tem.">sem teto CMED</span>';
+  }
+  const grau = r.confianca === 'exata' ? '' :
+    '<span class="packbdg nowrap" title="'+(r.confianca === 'alta'
+      ? 'a marca do nome foi reconhecida no dicionário da CMED'
+      : 'o princípio ativo foi deduzido da primeira palavra do nome — confira antes de usar')
+    + '">'+(r.confianca === 'alta' ? 'provável' : 'confira')+'</span>';
+  /* A FAIXA APARECE QUANDO EXISTE, porque o teto é da APRESENTAÇÃO e não do princípio ativo:
+     DIPIRONA 1000MG tem 31 apresentações com teto de R$ 0,61 a R$ 1,45. Mostrar só um número
+     esconderia que a régua depende da embalagem que se vai ofertar. */
+  const faixa = r.faixa && r.faixa[0] !== r.faixa[1]
+    ? '<div class="hint nowrap" title="o teto é da apresentação; estas são as encontradas">'
+      + 'faixa ' + brlU(r.faixa[0]) + '–' + brlU(r.faixa[1])
+      + (r.apresentacoes ? ' · ' + r.apresentacoes + ' apres.' : '') + '</div>'
+    : '';
+  return '<b class="nowrap">'+brlU(r.teto)+'</b>'
+       + '<span class="packbdg nowrap" title="'+(r.tipoTeto === 'PMVG'
+          ? 'Preço Máximo de Venda ao Governo: com CAP, o desconto é obrigatório'
+          : 'Preço Fábrica: este item não tem CAP, então o teto é o PF')+'">'+r.tipoTeto+'</span>'
+       + grau + faixa;
+}
+
 function tabelaItens(r, i){
   if(!r.itens.length) return '<div class="aviso mini">O PNCP não devolveu itens para esta licitação.</div>';
   let h = '';
@@ -3709,7 +3792,13 @@ function tabelaItens(r, i){
         + ' title="leva os '+r.itens.length+' itens pro gerador de proposta, que casa cada um contra o estoque">'
         + ic('documento') + ' Montar proposta com estes itens</button>' : '')
      + '</div>';
-  h += '<table><thead><tr><th>Nº</th><th class="desc">Item do edital</th><th>Quantidade</th><th>Unitário do edital</th></tr></thead><tbody>';
+  /* A COLUNA DO TETO LEGAL FICA AO LADO DO PREÇO, e não no fim da linha: encostada é o que a
+     ordem pede ("PMVG encostado no preço"). Um teto legal a três colunas de distância do número
+     que ele limita é informação que existe e não é usada. */
+  h += '<table><thead><tr><th>Nº</th><th class="desc">Item do edital</th><th>Quantidade</th>'
+     + '<th>Unitário do edital</th>'
+     + '<th title="teto legal da CMED por unidade. PMVG quando o item tem CAP (desconto '
+     +   'obrigatório ao governo); PF nos demais.">Teto CMED</th></tr></thead><tbody>';
   for(const x of r.itens){
     const it = x.it, uE = unitarioEdital(it);
     const d = String(it.descricao||'').replace(/\s+/g,' ').trim();
@@ -3720,7 +3809,8 @@ function tabelaItens(r, i){
        + '</td>'
        + '<td class="nowrap">'+Number(it.quantidade||0).toLocaleString('pt-BR')
        +   '<div class="hint">'+esc(it.unidadeMedida||'')+'</div></td>'
-       + '<td>'+celPreco(uE)+'</td></tr>';
+       + '<td>'+celPreco(uE)+'</td>'
+       + '<td>'+celTetoCMED(it, uE)+'</td></tr>';
   }
   return h + '</tbody></table>';
 }
@@ -3766,7 +3856,12 @@ async function verItens(i, forcar){
   bt.innerHTML='ocultar itens';
   if(!box.innerHTML || forcar) box.innerHTML='<div class="progresso">buscando os itens do edital no PNCP…</div>';
   try{
-    box.innerHTML = tabelaItens(await puxarItens(l), i);
+    /* A CMED CARREGA EM PARALELO COM OS ITENS, e a ordem importa: se ela carregasse depois, a
+       tabela pintaria com a coluna do teto vazia e só. E o `Promise.all` NÃO deixa a CMED
+       derrubar o cruzamento — `carregarCMED` engole a própria falha e devolve null, porque o
+       cruzamento com o nosso estoque é o que a pessoa pediu; o teto é o acréscimo. */
+    const [itens] = await Promise.all([ puxarItens(l), carregarCMED() ]);
+    box.innerHTML = tabelaItens(itens, i);
     atualizaBadge(i);
   }catch(e){
     box.innerHTML = '<div class="aviso err mini">'+ic('alerta','aviso')+' '+esc(e.message)
