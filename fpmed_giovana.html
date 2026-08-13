@@ -600,6 +600,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--texto);min-
             <thead>
               <tr style="background:var(--bg)">
                 <th style="padding:9px 10px;text-align:left;font-size:11px;color:var(--muted);font-weight:600;border-bottom:1px solid var(--borda);min-width:90px">Código</th>
+                <th style="padding:9px 10px;text-align:left;font-size:11px;color:var(--muted);font-weight:600;border-bottom:1px solid var(--borda);min-width:140px" title="Código de barras. Opcional — quando preenchido, o sistema busca o produto na tabela da CMED e preenche o resto.">EAN</th>
                 <th style="padding:9px 10px;text-align:left;font-size:11px;color:var(--muted);font-weight:600;border-bottom:1px solid var(--borda);min-width:220px">Produto *</th>
                 <th style="padding:9px 10px;text-align:left;font-size:11px;color:var(--muted);font-weight:600;border-bottom:1px solid var(--borda);min-width:140px">Marca</th>
                 <th style="padding:9px 10px;text-align:left;font-size:11px;color:var(--muted);font-weight:600;border-bottom:1px solid var(--borda);min-width:80px">Unid.</th>
@@ -622,6 +623,19 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--texto);min-
         </button>
         <button class="btn btn-outline" onclick="limparImport()"><svg class="ic" aria-hidden="true"><use href="#ic-lixeira"/></svg> Limpar</button>
         <span id="imp-status" style="font-size:13px"></span>
+      </div>
+
+      <!-- ══ A PENDÊNCIA DO EAN (item 9 · d) ═════════════════════════════════════════════════
+           Ela mora AO LADO do formulário que a resolve. Uma lista de "o que falta" numa tela em
+           que não dá pra preencher seria só cobrança; aqui, quem vê o número já está com o
+           cadastro aberto na frente.
+           >>> E ela nasce FECHADA: é uma dívida de oito mil itens, não um alarme. Aberta por
+               padrão, viraria paisagem em dois dias — e o que vira paisagem não é lido. -->
+      <div style="margin-top:var(--esp-4);border-top:1px solid var(--borda-divisor);padding-top:var(--esp-3)">
+        <a onclick="abrirPendenciaEan()"
+           style="font-size:var(--txt-1);color:var(--verde);cursor:pointer;text-decoration:underline">
+          Ver quantos itens ainda estão sem código de barras</a>
+        <div id="imp-pendencia" style="display:none;margin-top:var(--esp-3)"></div>
       </div>
     </div>
 
@@ -4436,6 +4450,17 @@ function addLinhaImport() {
   const inp = "width:100%;padding:5px 7px;border:1px solid var(--borda);border-radius:6px;font-size:12px;outline:none;font-family:'Inter',sans-serif;background:#fff;color:var(--texto)";
   tr.innerHTML = `
     <td style="padding:6px 8px"><input type="text" id="${id}_codigo" placeholder="Cód." style="${inp};max-width:80px"></td>
+    <!-- ══ CÓDIGO DE BARRAS (EAN) — item 9 (b) ═══════════════════════════════════════════════
+         NUNCA OBRIGATÓRIO (ordem do dono), e o placeholder diz isso em vez de o formulário
+         cobrar depois: campo que só revela ser opcional na hora do erro já custou a paciência
+         de quem digitou. Vazio é o estado honesto — "não sabemos", que é diferente de "não tem".
+         O inputmode numérico põe o teclado de números no celular sem impedir colar de um leitor.
+         (E este comentário mora DENTRO de um template literal: crase aqui fecha a string e
+          quebra o arquivo inteiro — foi o que aconteceu na primeira tentativa.) -->
+    <td style="padding:6px 8px"><input type="text" id="${id}_ean" placeholder="EAN (opcional)"
+      inputmode="numeric" autocomplete="off" oninput="eanDigitado('${id}')"
+      title="Código de barras. Opcional — deixe vazio se não tiver."
+      style="${inp};max-width:130px"><div id="${id}_ean_aviso" style="font-size:10.5px;margin-top:2px;line-height:1.35"></div></td>
     <td style="padding:6px 8px"><input type="text" id="${id}_produto" placeholder="Nome do produto *" style="${inp}"></td>
     <td style="padding:6px 8px"><input type="text" id="${id}_marca" placeholder="Marca" style="${inp}"></td>
     <td style="padding:6px 8px"><input type="text" id="${id}_und" placeholder="CX/50" style="${inp};max-width:70px"></td>
@@ -4447,6 +4472,215 @@ function addLinhaImport() {
   `;
   tbody.appendChild(tr);
 }
+/* ══════════════════════════════════════════════════════════════════════════════════════════════
+   ITEM 9 (c) — O EAN BUSCA O PRODUTO NA CMED E PREENCHE O RESTO
+   Só LEITURA da `cmed_pf`. Nada é escrito lá, e nada da CMED é gravado sem quem digitou ver.
+
+   ── A ARMADILHA, E ELA ESTÁ MEDIDA NA SPEC DO OUTRO TRABALHADOR ─────────────────────────────
+   *** EAN NÃO É ÚNICO. *** O `docs/cmed_camada_base.md` mediu: 25.543 EAN distintos para 25.701
+   linhas — **156 colisões**, com até 3 apresentações dividindo o mesmo código. E ele nomeia o
+   defeito antigo com todas as letras: *"o `porEan` escolhia por sorte"*.
+   >>> ENTÃO AQUI NÃO SE ESCOLHE. Uma linha: preenche. Nenhuma: avisa e deixa seguir. DUAS OU
+       MAIS: mostra as opções e espera a pessoa apontar. Preencher a primeira seria repetir, no
+       cadastro, exatamente o erro que o motor já teve — e no cadastro é pior, porque a escolha
+       errada fica GRAVADA e vira a verdade de todo mundo depois.
+
+   ── E O QUE ELE **NÃO** FAZ ─────────────────────────────────────────────────────────────────
+   Não inventa EAN, não adivinha por nome, não bloqueia o salvamento e não apaga o que a pessoa
+   já digitou: campo que ela preencheu à mão só é tocado se estiver VAZIO. Quem digitou sabe de
+   algo que a tabela não sabe — o fornecedor pode ter mandado outro nome para o mesmo produto.
+   ══════════════════════════════════════════════════════════════════════════════════════════════ */
+/* ══════════════════════════════════════════════════════════════════════════════════════════════
+   ITEM 9 (d) — A PENDÊNCIA: "N itens sem EAN", os que mais importam primeiro
+
+   ── A ORDEM FOI MEDIDA, E O CRITÉRIO ÓBVIO FOI REPROVADO ────────────────────────────────────
+   "Mais usados primeiro" parecia ser frequência. Medi no banco antes de escrever:
+     8.832 linhas sem EAN · 8.332 produtos DISTINTOS · só 479 repetem · maior repetição = **4**
+   Ou seja: quase tudo aparece uma vez só, e ordenar por frequência daria uma lista praticamente
+   aleatória com cara de prioridade — que é pior que lista nenhuma, porque ela seria OBEDECIDA.
+   >>> O QUE SEPARA DE VERDADE É TER ESTOQUE: 8.455 das 8.832 linhas sem EAN têm estoque > 0.
+       Esses são os que podem ser vendidos HOJE, e é neles que um código errado ou ausente custa
+       dinheiro. A ordem é: com estoque primeiro, e dentro deles os que mais se repetem.
+
+   ── E O QUE ELA NUNCA FAZ (ordem do dono, e ela é a alma do item) ───────────────────────────
+   *** NUNCA INVENTAR EAN POR CASAMENTO DE NOME. *** A tentação é óbvia: "DIPIRONA 500MG" casa
+   com a CMED por texto, e daria pra "preencher sozinho". Não dá. O casamento por nome é o mesmo
+   que o motor faz com grau de confiança MÉDIA/BAIXA — e um EAN é uma AFIRMAÇÃO EXATA. Gravar um
+   palpite num campo de identidade não deixa rastro de que era palpite: no dia seguinte ele é
+   indistinguível de um código lido no leitor, e passa a casar preço, teto legal e proposta com
+   o produto errado, com toda a confiança do mundo.
+   >>> A lista MOSTRA o que falta e leva a pessoa até o campo. Quem digita é gente.
+   ══════════════════════════════════════════════════════════════════════════════════════════════ */
+async function abrirPendenciaEan() {
+  const el = document.getElementById('imp-pendencia');
+  if (!el) return;
+  el.style.display = 'block';
+  el.innerHTML = '<div class="loading"><div class="spinner"></div> contando o que falta…</div>';
+  try {
+    const base = LIMEDTEC.rest('cotacoes') + '?select=produto,marca,und,estoque'
+      + '&ean=is.null&produto=not.is.null&estoque=gt.0&order=produto.asc&limit=1000';
+    const r = await fetch(base, { headers: Object.assign({}, hdr(), { Prefer: 'count=exact' }) });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const linhas = await r.json();
+    /* O TOTAL SAI DO content-range, e não do tamanho da página: o PostgREST daqui corta em
+       1000, e contar `linhas.length` diria "1.000 itens sem EAN" para sempre — um número que
+       para de crescer é um número que mente. Se o cabeçalho não vier com o total, a tela diz
+       que não sabe, em vez de chutar. */
+    const cr = r.headers.get('content-range') || '';
+    const tot = (cr.split('/')[1] || '').trim();
+    const total = /^\d+$/.test(tot) ? +tot : null;
+
+    const porProduto = new Map();
+    for (const l of linhas) {
+      const k = (l.produto || '').trim();
+      if (!k) continue;
+      const a = porProduto.get(k) || { n: 0, marca: l.marca, und: l.und };
+      a.n++; porProduto.set(k, a);
+    }
+    const ordenado = [...porProduto.entries()].sort((a, b) => b[1].n - a[1].n).slice(0, 40);
+
+    el.innerHTML =
+      '<div style="display:flex;align-items:baseline;gap:var(--esp-2);flex-wrap:wrap">'
+      + '<b style="font-size:var(--txt-3);color:var(--navy)">'
+      + (total === null ? '—' : total.toLocaleString('pt-BR')) + '</b>'
+      + '<span style="font-size:var(--txt-1);color:var(--muted)">'
+      + (total === null
+          ? 'não consegui contar quantos itens estão sem código de barras'
+          : 'itens <b>com estoque</b> ainda sem código de barras')
+      + '</span></div>'
+      + '<div style="font-size:var(--txt-1);color:var(--muted);margin:var(--esp-2) 0">'
+      + 'Os com estoque vêm primeiro: são os que podem ser vendidos hoje, e é neles que o código '
+      + 'faltando custa. <b>O sistema não preenche sozinho</b> — casar por nome geraria um código '
+      + 'que parece lido no leitor e não é.</div>'
+      + '<div style="max-height:260px;overflow:auto;border:1px solid var(--borda);border-radius:var(--raio-campo)">'
+      + ordenado.map(([p, a]) =>
+          '<div style="padding:var(--esp-2) var(--esp-3);border-bottom:1px solid var(--borda-divisor);font-size:var(--txt-1)">'
+          + esc(p.slice(0, 78))
+          + (a.marca ? ' <span style="color:var(--muted)">· ' + esc(String(a.marca).slice(0, 22)) + '</span>' : '')
+          + (a.n > 1 ? ' <span style="color:var(--muted)">(' + a.n + '×)</span>' : '')
+          + '</div>').join('')
+      + '</div>';
+  } catch (e) {
+    // falha de leitura NÃO vira "está tudo com EAN": são coisas diferentes
+    el.innerHTML = '<div style="font-size:var(--txt-1);color:var(--ambar-700)">'
+      + 'Não consegui ler a lista agora — isso <b>não</b> quer dizer que está tudo preenchido.</div>';
+  }
+}
+
+const EAN_CACHE = new Map();     // ean -> resultado, pra não repetir a mesma pergunta ao banco
+
+/* EAN-13 com dígito verificador conferido. Vale a mesma régua do `_bmEanDoTexto` que ficou no
+   arquivo: código com dígito errado é ERRO DE DIGITAÇÃO, e perguntar ao banco por ele só gasta
+   viagem e devolve "não encontrado", que é uma resposta enganosa para um erro de digitação. */
+function eanValido(v) {
+  const d = String(v || '').replace(/\D/g, '');
+  if (d.length !== 13) return false;
+  let s = 0;
+  for (let i = 0; i < 12; i++) s += (+d[i]) * (i % 2 ? 3 : 1);
+  return ((10 - (s % 10)) % 10) === +d[12];
+}
+
+function _eanAviso(id, html, cor) {
+  const el = document.getElementById(id + '_ean_aviso');
+  if (el) { el.innerHTML = html; el.style.color = cor || 'var(--muted)'; }
+}
+
+let _eanTimer = {};
+function eanDigitado(id) {
+  clearTimeout(_eanTimer[id]);
+  const el = document.getElementById(id + '_ean');
+  const bruto = el ? el.value : '';
+  const d = String(bruto).replace(/\D/g, '');
+  if (!d) { _eanAviso(id, ''); return; }
+  if (d.length < 13) { _eanAviso(id, 'faltam ' + (13 - d.length) + ' dígito(s)'); return; }
+  if (!eanValido(d)) {
+    // dígito verificador errado NÃO é "não encontrado": é engano de digitação, e dizer a coisa
+    // certa aqui poupa a pessoa de procurar o produto que ela nunca ia achar.
+    _eanAviso(id, 'esse código não fecha (dígito verificador) — confira a digitação', 'var(--ambar-700)');
+    return;
+  }
+  _eanTimer[id] = setTimeout(() => buscarEanNaCmed(id, d), 250);
+}
+
+async function buscarEanNaCmed(id, ean) {
+  _eanAviso(id, 'procurando na tabela da CMED…');
+  let achados;
+  try {
+    if (EAN_CACHE.has(ean)) achados = EAN_CACHE.get(ean);
+    else {
+      /* OS NOMES DAS COLUNAS FORAM CONFERIDOS NO BANCO, não supostos: a `cmed_pf` NÃO TEM uma
+         coluna `produto`. O nome comercial é `marca_norm`, a substância é `subst_norm` e o
+         fabricante é `laboratorio`. A primeira versão desta consulta pedia `produto` e teria
+         voltado 400 na cara de quem digitasse o primeiro código. */
+      const url = LIMEDTEC.rest('cmed_pf')
+        + '?select=marca_norm,subst_norm,apresentacao,laboratorio,registro,ggrem,ean1'
+        + '&or=(ean1.eq.' + ean + ',ean2.eq.' + ean + ',ean3.eq.' + ean + ')&limit=5';
+      const r = await fetch(url, { headers: hdr() });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      achados = await r.json();
+      EAN_CACHE.set(ean, achados);
+    }
+  } catch (e) {
+    /* FALHA DE LEITURA NÃO VIRA "NÃO ENCONTRADO". São coisas diferentes e pedem ações opostas:
+       uma é "tente de novo", a outra é "digite o produto à mão". Dizer a errada manda a pessoa
+       para o caminho errado — é a lição S6 dentro de um campo de formulário. */
+    _eanAviso(id, 'não consegui consultar a CMED agora — o cadastro segue normal', 'var(--ambar-700)');
+    return;
+  }
+  if (!achados.length) {
+    // EAN NÃO ENCONTRADO AVISA E DEIXA SEGUIR (ordem do dono). Não é erro: a CMED só tem
+    // medicamento, e boa parte do que a FPMED cadastra é material e correlato.
+    _eanAviso(id, 'não está na CMED — pode ser material/correlato. Preencha o resto à mão.', 'var(--muted)');
+    return;
+  }
+  if (achados.length > 1) {
+    /* *** A COLISÃO, E É AQUI QUE ESTA FUNÇÃO GANHA O SALÁRIO. *** Escolher a primeira seria
+       repetir o "escolhia por sorte" — e no cadastro o palpite fica GRAVADO. */
+    window._eanOpcoes = window._eanOpcoes || {};
+    window._eanOpcoes[id] = achados;
+    _eanAviso(id, '<b>' + achados.length + ' produtos</b> dividem esse código — escolha qual:<br>'
+      + achados.map((a, i) =>
+          '<a onclick="eanEscolher(\'' + id + '\',' + i + ')" style="cursor:pointer;color:var(--verde);text-decoration:underline">'
+          + esc((a.marca_norm || a.subst_norm || '') + ' · ' + (a.apresentacao || '')).slice(0, 70) + '</a>').join('<br>'),
+      'var(--ambar-700)');
+    return;
+  }
+  eanAplicar(id, achados[0]);
+}
+
+function eanEscolher(id, i) {
+  const lista = (window._eanOpcoes || {})[id] || [];
+  if (lista[i]) eanAplicar(id, lista[i]);
+}
+
+/* Preenche SÓ o que está vazio. Quem digitou sabe de algo que a tabela não sabe — o fornecedor
+   pode chamar o mesmo produto por outro nome, e sobrescrever isso apagaria informação boa. */
+function eanAplicar(id, linha) {
+  const põe = (campo, valor) => {
+    const el = document.getElementById(id + '_' + campo);
+    if (el && !el.value.trim() && valor) { el.value = String(valor).trim(); return true; }
+    return false;
+  };
+  /* O NOME vem de `marca_norm` + a apresentação: no cadastro "Produto" é o que o vendedor
+     procura, e "DIPIRONA 500MG" sem a apresentação casa com meia dúzia de coisas diferentes.
+     A MARCA recebe o `laboratorio` — é ele que a planilha do fornecedor chama de marca. */
+  const nome = [linha.marca_norm || linha.subst_norm, linha.apresentacao].filter(Boolean).join(' ');
+  const n = [põe('produto', nome), põe('marca', linha.laboratorio)].filter(Boolean).length;
+  /* A SUBSTÂNCIA E O REGISTRO NÃO TÊM CAMPO NO FORMULÁRIO, e mesmo assim têm casa no banco:
+     `principio_ativo` existe na `cotacoes` e hoje é gravado SEMPRE NULO por este import, e
+     `registro_anvisa` acabou de nascer. Guardar o que a tabela oficial disse não custa uma
+     linha de tela e é o que faz o casamento por registro (a ordem que o outro trabalhador mede
+     como mais única que o EAN) ter com o que casar amanhã. */
+  window._eanExtra = window._eanExtra || {};
+  window._eanExtra[id] = { registro_anvisa: linha.registro || null,
+                           principio_ativo: linha.subst_norm || null };
+  _eanAviso(id, '<svg class="ic" aria-hidden="true"><use href="#ic-certo"/></svg> '
+    + esc((linha.subst_norm || linha.marca_norm || '').slice(0, 46))
+    + (linha.apresentacao ? ' · ' + esc(String(linha.apresentacao).slice(0, 34)) : '')
+    + (n ? '' : ' <span style="color:var(--muted)">(o que você digitou foi mantido)</span>'),
+    'var(--verde)');
+}
+
 function remLinhaImport(id) {
   impLinhas = impLinhas.filter(l => l !== id);
   const el = document.getElementById(id);
@@ -4669,9 +4903,21 @@ async function executarImport() {
       pedido: pedido || null,
       data: data || hojeLocalISO(),   // data LOCAL, não toISOString (UTC virava o dia de madrugada)
       codigo: codEl ? (codEl.value.trim() || null) : null,
+      /* ── O EAN E O REGISTRO (item 9, b/c) ────────────────────────────────────────────────
+         Só dígitos, e SÓ SE FECHAR o verificador: código torto gravado é pior que código
+         ausente, porque ele CASA com o produto errado depois. Vazio vira `null`, que é o
+         estado honesto ("não sabemos"), e nunca string vazia — `''` e `null` responderiam
+         diferente na contagem de pendência do item (d).
+         O `registro_anvisa` só existe quando veio da CMED junto com o EAN: ele não é digitado
+         em lugar nenhum, então ou é o que a tabela oficial disse, ou é nulo. */
+      ean: (() => { const e = document.getElementById(id + '_ean');
+                    const d = e ? String(e.value).replace(/\D/g, '') : '';
+                    return eanValido(d) ? d : null; })(),
+      registro_anvisa: ((window._eanExtra || {})[id] || {}).registro_anvisa || null,
       produto,
       marca: marcaEl ? (marcaEl.value.trim() || null) : null,
-      principio_ativo: null,
+      // era SEMPRE null; agora recebe a substância quando a CMED respondeu pelo EAN
+      principio_ativo: ((window._eanExtra || {})[id] || {}).principio_ativo || null,
       und: undEl ? (undEl.value.trim() || null) : null,
       compra_unit: valor,
       compra_caixa: precoCaixa,

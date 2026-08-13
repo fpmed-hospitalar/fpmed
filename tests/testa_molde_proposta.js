@@ -494,5 +494,96 @@ ok(n + '. e a remocao esta explicada, com a prova do banco junto',
   /column cotacoes\.ean does not exist/.test(G)
   && /decisão do dono, já registrada no checkpoint/.test(G.replace(/\s+/g, ' '))); n++;
 
+// ══════════════════════════════════════════════════════════════════════════════
+// ITEM 9 — EAN NO CADASTRO (b, c, d)
+// ══════════════════════════════════════════════════════════════════════════════
+const DDL = R('ddl/cotacoes_ean.sql');
+
+// ── (a) a migracao e o que o dono autorizou, e SO isso ──────────────────────
+/* A condicao veio por escrito: "ALTER TABLE ... ADD COLUMN + CREATE INDEX, e NADA alem disso".
+   O assert le o SQL e reprova qualquer verbo fora dessa lista - inclusive num arquivo que
+   alguem "melhore" depois. */
+{
+  const cmds = DDL.replace(/--[^\n]*/g, '').split(';').map(c => c.trim()).filter(Boolean);
+  const forade = cmds.filter(c => !/^ALTER TABLE .* ADD COLUMN IF NOT EXISTS/i.test(c)
+                               && !/^CREATE INDEX IF NOT EXISTS/i.test(c));
+  ok(n + '. *** a migracao do EAN e SO ADD COLUMN + CREATE INDEX (condicao do dono) ***',
+    cmds.length === 4 && forade.length === 0, { comandos: cmds.length, fora: forade.slice(0, 2) }); n++;
+  /* CUIDADO COM O `NOT NULL`: ele aparece legitimamente em `WHERE ean IS NOT NULL`, que e o
+     PREDICADO do indice parcial - nao uma restricao de coluna. A primeira versao deste assert
+     reprovou a propria migracao que o dono aprovou. O que se proibe e `SET NOT NULL`. */
+  ok(n + '. ...e nao ha UPDATE, DELETE, DROP nem ALTER de coluna existente',
+    !/\b(UPDATE|DELETE|DROP|ALTER COLUMN|SET DEFAULT|SET NOT NULL)\b/i.test(DDL.replace(/--[^\n]*/g, ''))); n++;
+}
+
+// ── (b) o campo existe e NUNCA e obrigatorio ────────────────────────────────
+ok(n + '. o cadastro tem o campo de codigo de barras', /id="\$\{id\}_ean"/.test(G)); n++;
+/* NUNCA OBRIGATORIO e ordem do dono. O assert cobra os dois lados: o campo nao tem `required`,
+   E o texto DIZ que e opcional - campo que so revela ser opcional na hora do erro ja custou a
+   paciencia de quem digitou. */
+ok(n + '. *** e ele NUNCA e obrigatorio (sem `required`, e o rotulo diz "opcional") ***',
+  /placeholder="EAN \(opcional\)"/.test(G)
+  && !/id="\$\{id\}_ean"[^>]*\brequired\b/.test(G)); n++;
+/* EAN so e gravado se FECHAR o digito verificador; senao vai `null`. Codigo torto gravado e
+   pior que codigo ausente - ele CASA com o produto errado depois, com toda a confianca. */
+ok(n + '. *** codigo que nao fecha o verificador NAO e gravado (vira null) ***',
+  /function eanValido/.test(G)
+  && /return eanValido\(d\) \? d : null;/.test(G)); n++;
+
+// ── (c) a busca na CMED e SO LEITURA, e nao escolhe por sorte ───────────────
+ok(n + '. a busca le a CMED e nada mais (nenhuma escrita nas tabelas cmed_*)',
+  /LIMEDTEC\.rest\('cmed_pf'\)/.test(G)
+  && !/method:\s*'(POST|PATCH|PUT|DELETE)'[^}]*cmed_/i.test(G)); n++;
+/* *** O ASSERT MAIS IMPORTANTE DO ITEM. *** A spec do outro trabalhador mediu 156 colisoes de
+   EAN na CMED (25.543 distintos para 25.701 linhas, ate 3 por codigo) e nomeia o defeito
+   antigo: "o `porEan` escolhia por sorte". No CADASTRO isso e pior que no motor, porque a
+   escolha errada fica GRAVADA e vira a verdade de todo mundo depois. */
+ok(n + '. *** com mais de um produto no mesmo EAN, a tela PERGUNTA em vez de escolher ***',
+  /if \(achados\.length > 1\)/.test(G)
+  && /dividem esse código — escolha qual/.test(G)
+  && /function eanEscolher/.test(G)); n++;
+ok(n + '. EAN nao encontrado avisa e DEIXA SEGUIR (nao bloqueia o cadastro)',
+  /não está na CMED — pode ser material\/correlato/.test(G)
+  && !/return false;[\s\S]{0,80}não está na CMED/.test(G)); n++;
+/* Falha de leitura NAO vira "nao encontrado": sao coisas diferentes e pedem acoes opostas -
+   uma e "tente de novo", a outra e "digite a mao". E a licao S6 dentro de um campo. */
+ok(n + '. e falha de leitura nao vira "nao encontrado"',
+  /não consegui consultar a CMED agora — o cadastro segue normal/.test(G)); n++;
+/* Preenche SO o que esta vazio: quem digitou sabe de algo que a tabela nao sabe. */
+ok(n + '. o auto-preenchimento nao sobrescreve o que a pessoa digitou',
+  /if \(el && !el\.value\.trim\(\) && valor\)/.test(G)); n++;
+/* Os nomes das colunas foram CONFERIDOS no banco: a cmed_pf nao tem `produto`. A primeira
+   versao pedia essa coluna e teria voltado 400 na cara de quem digitasse o primeiro codigo. */
+/* O `select=produto,` E LEGITIMO na `cotacoes` (ela TEM essa coluna) - a primeira versao deste
+   assert proibia a string no arquivo inteiro e reprovava a consulta da pendencia, que esta
+   certa. O que se cobra e o select DA CMED. */
+ok(n + '. a consulta usa os nomes reais da cmed_pf (marca_norm/subst_norm, nao "produto")',
+  /select=marca_norm,subst_norm,apresentacao,laboratorio,registro,ggrem,ean1/.test(G)
+  && !/rest\('cmed_pf'\)[\s\S]{0,60}select=produto/.test(G)); n++;
+
+// ── (d) a pendencia, e a ordem que foi MEDIDA ───────────────────────────────
+ok(n + '. existe a lista de pendencia "N itens sem EAN"',
+  /function abrirPendenciaEan/.test(G) && /id="imp-pendencia"/.test(G)); n++;
+/* *** NUNCA INVENTAR EAN POR CASAMENTO DE NOME (ordem do dono, e e a alma do item). *** Um EAN
+   e uma AFIRMACAO EXATA; palpite gravado num campo de identidade nao deixa rastro de que era
+   palpite, e no dia seguinte casa preco, teto legal e proposta com o produto errado. */
+ok(n + '. *** a pendencia NAO preenche sozinha, e diz isso por escrito ***',
+  /<b>O sistema não preenche sozinho<\/b>/.test(G)
+  && /NUNCA INVENTAR EAN POR CASAMENTO DE NOME/.test(G)); n++;
+/* O total sai do content-range e nao do tamanho da pagina: o PostgREST daqui corta em 1000, e
+   contar `linhas.length` diria "1.000 sem EAN" pra sempre - numero que para de crescer mente. */
+ok(n + '. o total vem do content-range, e nao do tamanho da pagina',
+  /const cr = r\.headers\.get\('content-range'\)/.test(G)
+  && /\/\^\\d\+\$\/\.test\(tot\) \? \+tot : null/.test(G)); n++;
+ok(n + '. e se o total nao vier, a tela diz que NAO SABE (nao chuta)',
+  /não consegui contar quantos itens estão sem código de barras/.test(G)); n++;
+ok(n + '. falha ao ler a pendencia nao vira "esta tudo preenchido"',
+  /isso <b>não<\/b> quer dizer que está tudo preenchido/.test(G)); n++;
+/* A ORDEM FOI MEDIDA E O CRITERIO OBVIO FOI REPROVADO: frequencia daria lista quase aleatoria
+   (8.332 produtos distintos em 8.832 linhas, maior repeticao = 4). O que separa e TER ESTOQUE. */
+ok(n + '. a ordem prioriza quem tem ESTOQUE (a frequencia foi medida e reprovada)',
+  /estoque=gt\.0/.test(G)
+  && /maior repetição = \*\*4\*\*/.test(G.replace(/\s+/g, ' '))); n++;
+
 console.log('\nRESULTADO: ' + p + ' ok, ' + f + ' falha(s)');
 if (f) process.exit(1);
