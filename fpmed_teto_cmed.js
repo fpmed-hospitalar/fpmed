@@ -158,11 +158,34 @@
   // ── O ÍNDICE ────────────────────────────────────────────────────────────────────────────
   // Montado uma vez, a partir do que a tela leu do banco. Três caminhos de busca, do mais
   // confiável para o menos — e o resultado sempre DIZ por qual deles casou.
+  /* ══ AS CHAVES EXATAS, E A CARDINALIDADE MEDIDA (item 8, 13/08/2026) ═══════════════════════
+     Medido nas 25.702 linhas da cmed_pf, lidas paginadas:
+
+       GGREM ..... chave primária, 1:1 por definição
+       REGISTRO .. 25.701 distintos · **1** colisão (e os dois irmãos têm a MESMA dose e a
+                   mesma embalagem, então o teto não muda)
+       EAN1 ...... 25.544 distintos · **155 colisões**, grupos de até 3
+
+     >>> ISSO INVERTEU O QUE EU IA ASSUMIR. O senso comum diz que o código de barras identifica a
+         embalagem e o registro identifica o produto (mais amplo) — na prática, nesta base, o
+         REGISTRO é que é praticamente único e o EAN é o que colide.
+     >>> E O `porEan` ERA UM Map DE LINHA ÚNICA, então nesses 155 casos a ÚLTIMA linha lida
+         vencia em silêncio — o motor devolvia um teto exato com cara de certeza, escolhido por
+         ordem de leitura. Agora os dois guardam GRUPO, e grupo com mais de um teto cai na mesma
+         regra da faixa: usa-se o MENOR e a faixa viaja junto. Escolher por sorte é pior que
+         mandar conferir. */
   function indexar({ regua = [], teto = [], dicionario = [] } = {}){
-    const porGgrem = new Map(), porEan = new Map(), porPaDose = new Map(), marcaParaPa = new Map();
+    const porGgrem = new Map(), porEan = new Map(), porRegistro = new Map(),
+          porPaDose = new Map(), marcaParaPa = new Map();
+    const empilha = (mapa, chave, linha) => {
+      if(!chave) return;
+      const atual = mapa.get(chave);
+      if(atual) atual.push(linha); else mapa.set(chave, [linha]);
+    };
     for(const r of regua){
       if(r.ggrem) porGgrem.set(String(r.ggrem).trim(), r);
-      if(r.ean1)  porEan.set(String(r.ean1).replace(/\D/g,''), r);
+      empilha(porEan,      String(r.ean1     || '').replace(/\D/g,''), r);
+      empilha(porRegistro, String(r.registro || '').replace(/\D/g,''), r);
     }
     for(const t of teto){
       const k = (t.subst_norm || '') + '|' + (t.dose_key || '');
@@ -173,8 +196,9 @@
       const para = (d.substancia || d.para || '').toUpperCase();
       if(de && para && !marcaParaPa.has(de)) marcaParaPa.set(de, para);
     }
-    return { porGgrem, porEan, porPaDose, marcaParaPa,
-             tamanho: { regua: porGgrem.size, teto: porPaDose.size, dicionario: marcaParaPa.size } };
+    return { porGgrem, porEan, porRegistro, porPaDose, marcaParaPa,
+             tamanho: { regua: porGgrem.size, ean: porEan.size, registro: porRegistro.size,
+                        teto: porPaDose.size, dicionario: marcaParaPa.size } };
   }
 
   // A dose_key da CMED junta a concentração e a apresentação ("500MG", "0.5G/ML+100ML"). Aqui
@@ -196,10 +220,24 @@
        'nao_encontrado' — não casou com a CMED  (a tela NÃO pode mostrar como ok)
        'sem_preco'      — não deu pra comparar  (preço ausente, zero, ou não declarado unitário)
      ─────────────────────────────────────────────────────────────────────────────────────── */
-  function avaliar(item, idx){
+  function avaliar(item, idx, opcoes){
     const r = { descricao: item && item.descricao, via: null, teto: null, tipoTeto: null,
                 faixa: null, apresentacoes: null, cap: null, situacao: 'nao_encontrado',
-                pctAcima: null, folgaRS: null, folgaPct: null, evidencia: null };
+                pctAcima: null, folgaRS: null, folgaPct: null, evidencia: null,
+                /* ══ O GRAU DE CONFIANÇA (item 8, 13/08) ═══════════════════════════════════════
+                   Ordem do dono: "casamento por registro/EAN e substância+apresentação COM GRAU
+                   DE CONFIANÇA — não casou = silêncio, nunca teto chutado."
+                     'exata' — ggrem, registro ou EAN. A própria CMED diz quem é.
+                     'alta'  — substância + dose, com a substância vinda do DICIONÁRIO CMED
+                               (a marca do nome foi reconhecida).
+                     'media' — substância + dose, com a substância CHUTADA da primeira palavra do
+                               nome. Casou, mas ninguém confirmou que aquela palavra é um
+                               princípio ativo.
+                   >>> POR QUE 'media' PRECISA EXISTIR SEPARADA, e não é preciosismo: hoje os dois
+                       caminhos devolvem resultado com a MESMA cara, e quem lê a tela não tem como
+                       saber que um deles saiu de um palpite sobre a primeira palavra. Encostar um
+                       teto legal no preço com base num palpite é a forma educada de chutar. */
+                confianca: null, motivo: null };
     if(!item || !idx) return r;
 
     const preco = num(item.precoUnit);
@@ -209,17 +247,33 @@
 
     // 1. GGREM — a chave da própria CMED. Não há como errar.
     const g = item.ggrem && idx.porGgrem.get(String(item.ggrem).trim());
-    // 2. EAN — o código de barras da embalagem.
-    const e = !g && item.ean && idx.porEan.get(String(item.ean).replace(/\D/g,''));
-    const exato = g || e;
+    /* 2. REGISTRO vem ANTES do EAN, e a ordem é MEDIDA e não intuitiva: nesta base o registro
+          tem 1 colisão em 25.702 e o EAN tem 155. Quem é mais único vai primeiro. */
+    const reg = !g && item.registro && idx.porRegistro.get(String(item.registro).replace(/\D/g,''));
+    // 3. EAN — o código de barras da embalagem.
+    const e = !g && !reg && item.ean && idx.porEan.get(String(item.ean).replace(/\D/g,''));
+    const grupo = g ? [g] : (reg || e || null);
 
-    if(exato){
-      r.via = g ? 'ggrem' : 'ean';
-      r.cap = !!exato.cap;
-      const usaPmvg = item.paraGoverno === true && exato.cap === true;
+    if(grupo && grupo.length){
+      r.via = g ? 'ggrem' : (reg ? 'registro' : 'ean');
+      r.confianca = 'exata';
+      /* Numa colisão os irmãos podem ter tetos diferentes. Vale a MESMA regra da faixa do
+         cabeçalho (regra 3): usa-se o MENOR e a faixa viaja junto. O maior faria passar preço
+         que estoura o teto da apresentação real. */
+      const primeiro = grupo[0];
+      r.cap = grupo.some(x => x.cap === true);
+      const usaPmvg = item.paraGoverno === true && r.cap === true;
       r.tipoTeto = usaPmvg ? 'PMVG' : 'PF';
-      r.teto = num(usaPmvg ? exato.pmvg_unit : exato.pf_unit);
-      r.evidencia = [exato.subst_norm, exato.apresentacao].filter(Boolean).join(' · ');
+      const tetos = grupo.map(x => num(usaPmvg ? x.pmvg_unit : x.pf_unit)).filter(v => v != null);
+      if(tetos.length){
+        r.teto = Math.min.apply(null, tetos);
+        if(tetos.length > 1 && Math.min.apply(null, tetos) !== Math.max.apply(null, tetos)){
+          r.faixa = [Math.min.apply(null, tetos), Math.max.apply(null, tetos)];
+          r.apresentacoes = grupo.length;
+        }
+      }
+      r.evidencia = [primeiro.subst_norm, primeiro.apresentacao].filter(Boolean).join(' · ')
+                  + (grupo.length > 1 ? ' (+' + (grupo.length - 1) + ' com a mesma chave)' : '');
     } else {
       // 3. PA + dose. O PA vem do nome, ou da marca pelo dicionário CMED.
       const desc = semAcento(item.descricao || '');
@@ -229,6 +283,9 @@
       }
       const chaves = chavesDoseDe(item.descricao || '');
       let achado = null, paUsado = null;
+      // `doDicionario` separa "a marca foi reconhecida" de "chutei a primeira palavra". É essa
+      // distinção que vira o grau de confiança lá embaixo.
+      const doDicionario = !!pa;
       const candidatos = pa ? [pa] : [];
       if(!pa){
         // sem marca conhecida: tenta o começo do nome como princípio ativo
@@ -244,6 +301,7 @@
       }
       if(achado){
         r.via = 'pa+dose';
+        r.confianca = doDicionario ? 'alta' : 'media';
         r.cap = !!achado.tem_cap;
         r.tipoTeto = (item.paraGoverno === true && achado.tem_cap === true) ? 'PMVG' : 'PF';
         // >>> O MENOR DA FAIXA. Ver a regra 3 no cabeçalho: o teto é da apresentação, e um
@@ -256,6 +314,26 @@
     }
 
     if(r.teto == null){ r.situacao = 'nao_encontrado'; return r; }
+
+    /* ══ A TRAVA DO GRAU MÍNIMO (item 8) ═══════════════════════════════════════════════════════
+       Quem chama declara o grau que aquele lugar exige. Encostar o PMVG no campo de preço, no
+       instante em que o preço é decidido, é diferente de listar tetos num conferidor: o primeiro
+       precisa de certeza, o segundo pode mostrar um "confira este".
+       >>> E O REBAIXAMENTO NÃO APAGA O QUE FOI ACHADO. A situação vira `nao_encontrado` — que é
+           o silêncio que a ordem pede —, mas `via`, `confianca` e `evidencia` continuam no
+           objeto, e o `motivo` diz por que calou. Uma tela que queira oferecer "achei algo
+           parecido, quer conferir?" tem com o que fazer isso; o que ela não pode é afirmar um
+           teto legal apoiada num palpite. */
+    const ORDEM = { media: 1, alta: 2, exata: 3 };
+    const minimo = opcoes && opcoes.confiancaMinima;
+    if(minimo && (ORDEM[r.confianca] || 0) < (ORDEM[minimo] || 0)){
+      r.situacao = 'nao_encontrado';
+      r.motivo = 'casou por "' + r.via + '" (confiança ' + r.confianca + '), abaixo do grau '
+               + minimo + ' que esta tela exige';
+      r.teto = null; r.faixa = null; r.tipoTeto = null;
+      return r;
+    }
+
     if(!precoVale){ r.situacao = 'sem_preco'; return r; }
 
     if(preco > r.teto){

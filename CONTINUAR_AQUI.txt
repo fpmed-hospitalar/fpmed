@@ -1800,8 +1800,70 @@ Criado em 21/07/2026 copiando SO os arquivos do app do C:\globalmed.
              Eu deixei em -2026-08-13-39. Quem commitar depois resolve o conflito subindo o
              numero, nunca voltando.
 
-     8. [ ] CMED COMO CAMADA DE BASE — PMVG por baixo de todo preco; tira "Conferir CMED"
-            do menu e deixa a busca crua num canto discreto. Fundacao de dados primeiro.
+     8. [1/2] CMED COMO CAMADA DE BASE — **A FUNDACAO ESTA FEITA** (13/08). sw.js -> -44.
+            Suite nova testa_cmed_base (27 asserts, MUTACAO 14 de 14) + guard de banco novo
+            tests/db/testa_cmed_chaves_reais (9 asserts contra a CMED de verdade).
+            TOTAL: 3.712 asserts / 0 falhas / 100 suites (inclui as do TRABALHADOR B).
+            **DOCUMENTO PROPRIO: docs/cmed_camada_base.md** — nao recomecar do zero.
+
+            >>> A INGESTAO COM PMVG POR ALIQUOTA **JA EXISTIA** desde o item 1B, e eu conferi no
+                banco antes de construir: cmed_precos 25.702 linhas, pmvg_go19 em 100%, as 26
+                aliquotas em JSONB, e a view cmed_regua ja entrega teto_gov_unit (PMVG com CAP,
+                PF sem). Reconstruir teria sido trabalho sobre trabalho.
+
+            >>> *** A DESCOBERTA QUE MUDA O ALCANCE DO ITEM — E PRECISA DE DECISAO DELE ***
+                O pedido diz "casamento por registro/EAN". Medido nos DOIS lados:
+                  CMED ............ registro 100% · ean1 99,996%
+                  NOSSA `cotacoes`  **nao existe coluna de registro nem de ean**
+                O campo `codigo` e ERP interno: amostra de 1.000, ZERO com 13 digitos (formato
+                "0020009"). E principio_ativo vem em 349 de 1.000.
+                >>> ENTAO o caminho registro/EAN vale pra PLANILHA COLADA no Conferidor (proposta
+                    de fornecedor costuma trazer EAN) e pra item de edital que declare codigo —
+                    **nao pro nosso estoque proprio**, que continua no caminho substancia+dose.
+                >>> PRA FECHAR O BURACO seria capturar EAN/registro no cadastro do estoque (ja
+                    estava anotado como pendencia desde 05/08). NAO FIZ: e coluna nova em tabela
+                    viva + mudanca no fluxo de cadastro. **Decisao dele.**
+
+            >>> A ORDEM DAS CHAVES E MEDIDA E CONTRA-INTUITIVA: ggrem -> REGISTRO -> ean.
+                  registro .. 25.700 distintos, **2** repetidas
+                  ean1 ...... 25.543 distintos, **156** repetidas
+                O senso comum diria o contrario (barras identifica embalagem, registro identifica
+                produto). Nesta base, quem quase nao colide e o registro.
+            >>> E O `porEan` ESCOLHIA POR SORTE: era Map de linha unica, entao nos 156 casos de
+                colisao a ULTIMA linha lida vencia EM SILENCIO — teto exato, com cara de certeza,
+                decidido por ordem de leitura. Agora guarda GRUPO e cai na regra 3 do motor (o
+                MENOR teto, com a faixa viajando junto). Grupo com tetos iguais NAO vira faixa.
+
+            >>> O GRAU DE CONFIANCA: exata (ggrem/registro/ean) · alta (substancia do DICIONARIO)
+                · media (substancia CHUTADA da 1a palavra do nome) · null (nao casou = silencio).
+                Antes do item 8 os dois caminhos por nome tinham a MESMA cara, e ninguem sabia que
+                um saiu de palpite. Medido na base real: 19 alta · 3 media · 18 nao casou.
+                >>> A TRAVA `confiancaMinima` rebaixa pra nao_encontrado — MAS NAO APAGA A PISTA:
+                    via, confianca, evidencia e `motivo` continuam no objeto, pra tela poder
+                    oferecer "achei algo parecido, quer conferir?" sem AFIRMAR um teto legal.
+
+            >>> DOIS ACHADOS DO PROPRIO TESTE DE MUTACAO: (1) duas mutacoes ficaram vermelhas por
+                TypeError e nao por assert — a suite explodia ao indexar faixa nula, e suite que
+                explode PARA DE AVALIAR o resto; (2) um assert meu tinha `||` de reserva, que
+                passa em qualquer caso e nao guarda nada. Os dois corrigidos.
+
+     8-falta. [ ] O QUE SOBRA DO ITEM 8 (as partes de TELA):
+            a) PMVG encostado no DETALHE DO ITEM (cruzamento do fpmed_licitacoes) — territorio
+               meu, e a proxima fatia natural;
+            b) busca crua da CMED discreta no rodape;
+            c) tirar "Conferir CMED" do menu (limedtec-menu.js);
+            d) **CONGELADO DE PROPOSITO**: a costura na Proposta (fpmed_giovana.html) — arquivo
+               do TRABALHADOR B. O passo a passo esta escrito em docs/cmed_camada_base.md,
+               secao 6, e e curto porque o motor ja entrega tudo pronto. Recomendacao registrada
+               (nao decisao): `confiancaMinima:'alta'` la, porque ali o preco esta sendo DECIDIDO.
+
+            >>> ACHADO NO TERRITORIO DO B, QUE EU NAO TOQUEI: o fpmed_giovana.html filtra
+                `cotacoes` por `c.ean` (~linha 2175) e **a coluna `ean` nao existe** na tabela
+                (medido nas 28 colunas). O filtro devolve sempre vazio: ramo MORTO que nunca
+                dispara. Nao e defeito visivel — cai no motor de sempre —, mas o caminho que
+                alguem escreveu achando que funcionava nao funciona.
+
+     8b.[ ] demais telas ganhando o tema claro, uma a uma (8 ainda escuras — e o que
      8b.[ ] demais telas ganhando o tema claro, uma a uma (8 ainda escuras — e o que
             impede consertar o gm-auth.js hoje)
      8c.[ ] conferir o boletim (amanha de manha — bloqueado por tempo, nao por trabalho)

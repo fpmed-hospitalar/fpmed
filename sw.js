@@ -17,12 +17,15 @@
  */
 'use strict';
 
-/* -41 foi do TRABALHADOR B (item 7b) e -42 é do 7f. Duas frentes publicando no mesmo dia usam
-   ESTE arquivo em comum, e a regra combinada é: quem commitar depois SOBE o número, nunca volta.
-   >>> POR QUE NÃO DÁ PRA REAPROVEITAR O -41: quem já instalou a casca no deploy dele não
-       refetcharia os meus arquivos — o service worker só troca quando a VERSÃO muda. O usuário
-       ficaria com a Encontrar de ontem e sem sintoma nenhum, que é a lição S13. */
-const VERSAO = 'limedtec-fpmed-2026-08-13-43';
+/* Duas frentes publicando no mesmo dia usam ESTE arquivo em comum, e a regra combinada é: quem
+   commitar depois SOBE o número, nunca volta. O rastro do dia: -41 e -43 do TRABALHADOR B
+   (item 7b), -42 do 7f e -44 do item 8.
+   >>> POR QUE NÃO DÁ PRA REAPROVEITAR O NÚMERO DO OUTRO: quem já instalou a casca no deploy dele
+       não refetcharia os meus arquivos — o service worker só troca quando a VERSÃO muda. O
+       usuário ficaria com a versão de ontem e sem sintoma nenhum, que é a lição S13.
+   >>> E O ITEM 8 PRECISA DE BUMP mesmo sem tela nova: ele mexe no `fpmed_teto_cmed.js`, que ESTÁ
+       na casca. Motor velho servido do cache é teto legal calculado pela regra antiga. */
+const VERSAO = 'limedtec-fpmed-2026-08-13-44';
 const CACHE = 'limedtec-shell-' + VERSAO;
 
 // A CASCA DA FPMED. Lista MONTADA A MAO conferindo `git ls-files` (= o que o Pages serve),
