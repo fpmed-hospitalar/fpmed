@@ -510,7 +510,11 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--texto);min-
 
       <div id="ia-preview" style="display:none;margin-bottom:12px">
         <div style="display:flex;align-items:center;gap:10px;background:#EAF6FC;border:1px solid var(--borda);border-radius:8px;padding:10px 14px">
-          <span style="font-size:20px" id="ia-preview-icon">📄</span>
+          <!-- O tipo do arquivo anexado vira PALAVRA, e não desenho. O emoji aqui era entregue por
+     `textContent` (não aceita SVG), e o sprite não tem — nem deve ter — um ícone de "imagem"
+     inventado às pressas. "PDF" e "Imagem" dizem exatamente o que o glifo tentava dizer, e
+     dizem para quem usa leitor de tela também. -->
+<span style="font-size:var(--txt-1);font-weight:600;color:var(--muted);letter-spacing:.4px" id="ia-preview-icon">PDF</span>
           <div style="flex:1">
             <div style="font-size:13px;color:var(--texto);font-weight:500" id="ia-preview-nome">arquivo.pdf</div>
             <div style="font-size:11px;color:var(--muted)" id="ia-preview-tipo">PDF</div>
@@ -551,7 +555,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--texto);min-
           <input type="file" id="imp-ia-file" accept="image/*,application/pdf" style="display:none" onchange="impHandleIAFile(this.files[0])">
         </div>
         <div id="imp-ia-preview" style="display:none;align-items:center;gap:10px;margin-top:12px;padding:10px 14px;background:var(--bg);border:1px solid var(--borda);border-radius:8px">
-          <span id="imp-ia-icon" style="font-size:20px">📄</span>
+          <span id="imp-ia-icon" style="font-size:var(--txt-1);font-weight:600;color:var(--muted);letter-spacing:.4px">PDF</span>
           <div style="flex:1">
             <div id="imp-ia-nome" style="font-size:13px;font-weight:600;color:var(--texto)">arquivo</div>
             <div id="imp-ia-tipo" style="font-size:11px;color:var(--muted)">—</div>
@@ -848,7 +852,7 @@ async function iniciar() {
     cotacoes = allData.filter(incluiNaBusca);   // inclui GLOBAL c/ estoque (antes cortava por compra_unit>0)
     _cotTs = Date.now();
     setDbStatus(true);
-    toast(`✓ ${cotacoes.length} produtos carregados`);
+    toast(`${cotacoes.length} produtos carregados`);
     // ITENS VINDOS DO EDITAL: só DEPOIS do estoque carregar. O convite pra importar antes disso
     // levaria a um clique que não acha nada e ensina que a ponte não funciona.
     pintaPedidoEdital();
@@ -3172,7 +3176,7 @@ function renderItens() {
         ${c._qtdAlerta?`<div class="no-print" style="margin-top:4px;font-size:11px;color:#e6a817;background:rgba(230,168,23,.08);border:1px solid rgba(230,168,23,.35);border-radius:6px;padding:4px 8px">⚠️ <strong>quantidade não convertida</strong> (entrou 1): ${c._qtdAlerta}</div>`:''}
         ${(c._conf && c._conf.nivel!=='alta' && !c._confOK)?`<div class="no-print" style="margin-top:4px;font-size:11px;color:${c._conf.nivel==='baixa'?'#ef4444':'#e6a817'};background:${c._conf.nivel==='baixa'?'rgba(239,68,68,.08)':'rgba(230,168,23,.08)'};border:1px solid ${c._conf.nivel==='baixa'?'rgba(239,68,68,.4)':'rgba(230,168,23,.35)'};border-radius:6px;padding:5px 8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
           <span style="flex:1">⚠️ <strong>CONFERIR</strong> (confiança ${c._conf.nivel}): ${c._conf.motivos.join(' · ')||'match automático'} — confira se é o produto certo</span>
-          <button class="btn btn-outline btn-sm" style="padding:2px 10px" onclick="confirmarMatch('${c.id}')">✓ Confirmar match</button>
+          <button class="btn btn-outline btn-sm" style="padding:2px 10px" onclick="confirmarMatch('${c.id}')"><svg class="ic" aria-hidden="true"><use href="#ic-certo"/></svg> Confirmar match</button>
         </div>`:''}
         ${(c._conf && c._conf.nivel!=='alta' && c._confOK)?`<div class="no-print" style="margin-top:4px;font-size:10px;color:#16c060">✓ match conferido</div>`:''}
         <div class="item-det no-print" style="margin-top:6px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
@@ -3217,14 +3221,14 @@ function renderItens() {
 async function marcarEsgotado(id){
   const c = itens.find(x=>x.id===id); if(!c) return;
   const isGlobal = (c.fornecedor||'').toString()==='1' || c.tipo==='global';
-  if (isGlobal) { toast('Item do estoque GLOBAL — 🚫 é só para fornecedor externo.','error'); return; }
-  if (!confirm(`🚫 ESGOTOU NO FORNECEDOR?\n\n${c.produto}\nFornecedor: ${nomeForn(c.fornecedor)} · Marca: ${c.marca||'—'}\n\nGrava estoque=0 NESSA cotação (preço fica intacto) e ela some das buscas até o fornecedor voltar a ter.`)) return;
+  if (isGlobal) { toast('Item do estoque GLOBAL — é só para fornecedor externo.','error'); return; }
+  if (!confirm(`ESGOTOU NO FORNECEDOR?\n\n${c.produto}\nFornecedor: ${nomeForn(c.fornecedor)} · Marca: ${c.marca||'—'}\n\nGrava estoque=0 NESSA cotação (preço fica intacto) e ela some das buscas até o fornecedor voltar a ter.`)) return;
   try {
     await sbPatch('cotacoes', `id=eq.${c.id}`, { estoque: 0 });
   } catch(e){ toast('Erro ao marcar esgotado: '+e.message,'error'); return; }
   cotacoes = cotacoes.filter(x => x.id !== c.id);   // some da busca local na hora (a carga já filtra estoque=0)
   c._esgotado = true; renderItens();
-  toast('🚫 Esgotado marcado — fora das buscas.');
+  toast('Esgotado marcado — fora das buscas.');
   // plano B na hora: rebusca o MESMO produto (o esgotado já saiu do pool)
   const alt = buscarMelhorProduto(c.produto);
   if (alt && alt.id !== c.id) {
@@ -3467,7 +3471,11 @@ function gerarPDF() {
   // vendedor confirmar (botão ✓ Confirmar match na linha). Evita mandar produto errado pro cliente.
   const semConferir = itens.filter(c => c._conf && c._conf.nivel!=='alta' && !c._confOK);
   if(semConferir.length) {
-    toast('⚠️ ' + semConferir.length + ' item(ns) com confiança média/baixa — clique "✓ Confirmar match" em cada um antes de gerar o PDF: ' + semConferir.map(c=>c.produto).slice(0,2).join(' | ') + (semConferir.length>2?` (+${semConferir.length-2})`:''), 'error');
+    /* o `⚠️` da frente saiu (D11, e aqui não cabe SVG: `toast` entrega por textContent) e o `✓`
+       de dentro das aspas saiu junto — ele citava o RÓTULO de um botão, e o botão deixou de ter
+       o glifo nesta mesma fatia. Citação que não bate com o que está na tela manda a pessoa
+       procurar uma coisa que não existe. */
+    toast(semConferir.length + ' item(ns) com confiança média/baixa — clique "Confirmar match" em cada um antes de gerar o PDF: ' + semConferir.map(c=>c.produto).slice(0,2).join(' | ') + (semConferir.length>2?` (+${semConferir.length-2})`:''), 'error');
     return;
   }
 
@@ -3585,7 +3593,7 @@ async function pedidoFechado() {
   try {
     if (numOrc) {
       const dup = await (await fetch(`${SUPA_URL}/rest/v1/compras?numero_pedido=eq.${encodeURIComponent(numOrc)}&cliente_codigo=eq.${codigo}&select=id&limit=1`, {headers:H})).json();
-      if (dup && dup.length) { toast('Este orçamento já foi fechado p/ esse cliente (não duplico)', 'error'); btn.disabled=false; btn.textContent='🔴 Pedido Fechado'; return; }
+      if (dup && dup.length) { toast('Este orçamento já foi fechado p/ esse cliente (não duplico)', 'error'); btn.disabled=false; btn.textContent='Pedido Fechado'; return; }
     }
     const hoje = hojeLocalISO();   // data LOCAL, não toISOString (UTC virava o dia de madrugada)
     const rc = await fetch(`${SUPA_URL}/rest/v1/compras`, { method:'POST', headers:{...H,'Prefer':'return=representation'}, body: JSON.stringify({
@@ -3593,16 +3601,16 @@ async function pedidoFechado() {
       cliente_nome: clienteNome, data_compra: hoje, valor_total: total, origem: 'pedido_fechado',
       numero_pedido: numOrc || null, vendedor_nome: vendedoraVal || null,
     })});
-    if (!rc.ok) { toast('Erro ao gravar compra: '+(await rc.text()).slice(0,80),'error'); btn.disabled=false; btn.textContent='🔴 Pedido Fechado'; return; }
+    if (!rc.ok) { toast('Erro ao gravar compra: '+(await rc.text()).slice(0,80),'error'); btn.disabled=false; btn.textContent='Pedido Fechado'; return; }
     const compra = (await rc.json())[0];
     const itensBody = linhas.map(l => ({ compra_id: compra.id, ...l }));
     const ri = await fetch(`${SUPA_URL}/rest/v1/compra_itens`, { method:'POST', headers:{...H,'Prefer':'return=minimal'}, body: JSON.stringify(itensBody) });
-    if (!ri.ok) { toast('Compra criada mas itens falharam: '+(await ri.text()).slice(0,80),'error'); btn.disabled=false; btn.textContent='🔴 Pedido Fechado'; return; }
+    if (!ri.ok) { toast('Compra criada mas itens falharam: '+(await ri.text()).slice(0,80),'error'); btn.disabled=false; btn.textContent='Pedido Fechado'; return; }
     await salvarOrcamento();
-    btn.textContent = '✓ Pedido Fechado!'; btn.style.background='#e0245e'; btn.style.color='#fff';
+    btn.textContent = 'Pedido Fechado!'; btn.style.background='#e0245e'; btn.style.color='#fff';
     toast('Pedido fechado e gravado no histórico do cliente #'+codigo+'!', 'success');
-    setTimeout(()=>{ btn.disabled=false; btn.textContent='🔴 Pedido Fechado'; btn.style.background=''; btn.style.color='#c81e4f'; }, 3000);
-  } catch(e) { toast('Erro: '+e.message, 'error'); btn.disabled=false; btn.textContent='🔴 Pedido Fechado'; }
+    setTimeout(()=>{ btn.disabled=false; btn.textContent='Pedido Fechado'; btn.style.background=''; btn.style.color='#c81e4f'; }, 3000);
+  } catch(e) { toast('Erro: '+e.message, 'error'); btn.disabled=false; btn.textContent='Pedido Fechado'; }
 }
 
 // ─── ENVIAR PARA COMPRAS ─────────────────────────────────────────────────────
@@ -3690,7 +3698,7 @@ async function enviarParaCompras() {
       toast('Pedido enviado para compras!', 'success');
       setTimeout(() => {
         btn.disabled = false;
-        btn.textContent = '📤 Enviar para Compras';
+        btn.textContent = 'Enviar para Compras';
         btn.style.background = '';
         btn.style.color = '';
       }, 4000);
@@ -3703,7 +3711,7 @@ async function enviarParaCompras() {
     console.error('CATCH enviarParaCompras:', e);
     toast('Erro: ' + e.message, 'error');
     btn.disabled = false;
-    btn.textContent = '📤 Enviar para Compras';
+    btn.textContent = 'Enviar para Compras';
   }
 }
 
@@ -3800,7 +3808,7 @@ function selecionarCliente(c){
   document.getElementById('cliente-id').value = c.id||'';
   if(!document.getElementById('vendedora').value && c.vendedora) document.getElementById('vendedora').value = c.vendedora;
   const ind = document.getElementById('cliente-selecionado');
-  ind.textContent = `✓ Cliente #${c.codigo} vinculado${c.cod_cliente_erp?` (ERP ${c.cod_cliente_erp})`:''}`;
+  ind.textContent = `Cliente #${c.codigo} vinculado${c.cod_cliente_erp?` (ERP ${c.cod_cliente_erp})`:''}`;
   ind.style.display='block';
   document.getElementById('resultado-cliente').style.display='none';
   document.getElementById('busca-cliente').value = '';
@@ -3963,7 +3971,7 @@ async function abrirOrcamento() {
     document.getElementById('cliente-codigo').value = orc.cliente_codigo || '';
     document.getElementById('cliente-id').value = orc.cliente_id || '';
     (function(){ const ind=document.getElementById('cliente-selecionado'); const bf=document.getElementById('btn-pedido-fechado');
-      if(orc.cliente_codigo){ ind.textContent='✓ Cliente #'+orc.cliente_codigo+(orc.cod_cliente_erp?' (ERP '+orc.cod_cliente_erp+')':''); ind.style.display='block'; if(bf){bf.style.opacity='1';bf.title='Grava a venda no histórico de compra do cliente';} }
+      if(orc.cliente_codigo){ ind.textContent='Cliente #'+orc.cliente_codigo+(orc.cod_cliente_erp?' (ERP '+orc.cod_cliente_erp+')':''); ind.style.display='block'; if(bf){bf.style.opacity='1';bf.title='Grava a venda no histórico de compra do cliente';} }
       else { ind.style.display='none'; if(bf){bf.style.opacity='0.5';bf.title='Selecione o cliente para fechar o pedido';} } })();
     document.getElementById('condicao').value = orc.condicao || 'A VISTA';
     document.getElementById('vendedora').value = orc.vendedora || '';
@@ -4005,7 +4013,7 @@ function handleIAFile(file) {
     iaArquivoTipo = file.type;
     document.getElementById('ia-preview-nome').textContent = file.name;
     document.getElementById('ia-preview-tipo').textContent = file.type.includes('pdf') ? 'PDF' : 'Imagem';
-    document.getElementById('ia-preview-icon').textContent = file.type.includes('pdf') ? '📄' : '🖼️';
+    document.getElementById('ia-preview-icon').textContent = file.type.includes('pdf') ? 'PDF' : 'Imagem';
     document.getElementById('ia-preview').style.display = 'block';
     const btn = document.getElementById('ia-btn-processar');
     btn.disabled = false;
@@ -4032,7 +4040,7 @@ async function processarComIA() {
   const btn = document.getElementById('ia-btn-processar');
   btn.disabled = true;
   btn.style.opacity = '0.5';
-  statusEl.textContent = '🤖 Analisando com IA...';
+  statusEl.textContent = 'Analisando com IA...';
 
   try {
     const isPDF = iaArquivoTipo === 'application/pdf';
@@ -4080,7 +4088,7 @@ Regras:
     // Não mascarar erro da API como "nenhum produto": mostrar o erro REAL
     if (!response.ok || data.type === 'error' || data.error) {
       statusEl.style.color = '#e03e3e';
-      statusEl.textContent = '❌ Erro da IA: ' + (data.error?.message || data.message || ('HTTP ' + response.status));
+      statusEl.textContent = 'Erro da IA: ' + (data.error?.message || data.message || ('HTTP ' + response.status));
       btn.disabled = false;
       btn.style.opacity = '1';
       return;
@@ -4109,7 +4117,7 @@ Regras:
 
     if (texto.includes('NENHUM_PRODUTO_ENCONTRADO') || !texto.trim()) {
       statusEl.style.color = '#e03e3e';
-      statusEl.textContent = '❌ Nenhum produto encontrado no arquivo.';
+      statusEl.textContent = 'Nenhum produto encontrado no arquivo.';
       btn.disabled = false;
       btn.style.opacity = '1';
       return;
@@ -4118,10 +4126,10 @@ Regras:
     document.getElementById('ia-lista-extraida').value = texto.trim();
     document.getElementById('ia-resultado').style.display = 'block';
     statusEl.style.color = 'var(--verde)';
-    statusEl.textContent = '✅ Lista extraída! Revise e clique em Buscar.';
+    statusEl.textContent = 'Lista extraída! Revise e clique em Buscar.';
   } catch(err) {
     statusEl.style.color = '#e03e3e';
-    statusEl.textContent = '❌ Erro ao chamar IA: ' + err.message;
+    statusEl.textContent = 'Erro ao chamar IA: ' + err.message;
   }
 
   btn.disabled = false;
@@ -4153,7 +4161,7 @@ function importarListaIA() {
   renderItens();
   atualizarVisibilidade();
   stEl.style.color = 'var(--verde)';
-  stEl.textContent = `✅ ${adicionados} adicionado(s)${naoEncontrados.length?' · ❌ '+naoEncontrados.length+' não encontrado(s)':''}`;
+  stEl.textContent = `${adicionados} adicionado(s)${naoEncontrados.length?' · '+naoEncontrados.length+' não encontrado(s)':''}`;
   const naoEl = document.getElementById('ia-lista-nao-encontrados');
   if (naoEncontrados.length) {
     // idem: o que a IA não achou também alimenta a fila em vez de se perder
@@ -4343,7 +4351,7 @@ async function iacBaixaAuto(itens){
       }
     } catch(e) { /* baixa é best-effort — nunca interrompe o import */ }
   }
-  if (baixados) toast(`✅ ${baixados} item(ns) da fila "Itens a Cotar" resolvido(s) automaticamente`, 'success');
+  if (baixados) toast(`${baixados} item(ns) da fila "Itens a Cotar" resolvido(s) automaticamente`, 'success');
   return baixados;
 }
 
@@ -4357,8 +4365,8 @@ async function iacAddUm(descricao, btn){
   if (btn) { btn.disabled = true; btn.textContent = '⏳'; }
   const r = await iacAdicionar(descricao, iacClienteAtual());
   if (btn) {
-    if (r.acao === 'erro') { btn.disabled = false; btn.textContent = '➕ Add à fila'; toast('Erro: '+r.msg, 'error'); return; }
-    btn.textContent = r.acao === 'novo' ? '✅ na fila' : `✅ na fila (${r.vezes||''}×)`;
+    if (r.acao === 'erro') { btn.disabled = false; btn.textContent = 'Add à fila'; toast('Erro: '+r.msg, 'error'); return; }
+    btn.textContent = r.acao === 'novo' ? 'na fila' : `na fila (${r.vezes||''}×)`;
     btn.style.opacity = '.6';
   }
   toast(r.acao === 'novo' ? 'Adicionado à fila de cotação' : 'Já estava na fila — demanda +1');
@@ -4376,7 +4384,7 @@ async function iacAddTodos(lista, btn){
     if (r.acao==='novo') novos++; else if (r.acao==='incrementou') inc++; else err++;
     if (btn) btn.textContent = `⏳ ${i+1}/${arr.length}`;
   }
-  if (btn) { btn.textContent = `✅ ${novos} novo(s)${inc?` · ${inc} já estava(m)`:''}`; btn.style.opacity='.6'; }
+  if (btn) { btn.textContent = `${novos} novo(s)${inc?` · ${inc} já estava(m)`:''}`; btn.style.opacity='.6'; }
   toast(`Fila: ${novos} novo(s)${inc?`, ${inc} incrementado(s)`:''}${err?`, ${err} erro(s)`:''}`, err?'error':'success');
 }
 
@@ -4463,7 +4471,7 @@ function impHandleIAFile(file) {
     impIATipo = file.type;
     document.getElementById('imp-ia-nome').textContent = file.name;
     document.getElementById('imp-ia-tipo').textContent = file.type.includes('pdf') ? 'PDF' : 'Imagem';
-    document.getElementById('imp-ia-icon').textContent = file.type.includes('pdf') ? '📄' : '🖼️';
+    document.getElementById('imp-ia-icon').textContent = file.type.includes('pdf') ? 'PDF' : 'Imagem';
     document.getElementById('imp-ia-preview').style.display = 'flex';
     const btn = document.getElementById('imp-ia-btn');
     btn.disabled = false; btn.style.opacity = '1';
@@ -4485,7 +4493,7 @@ async function impLerOrcamentoIA() {
   const btn = document.getElementById('imp-ia-btn');
   btn.disabled = true; btn.style.opacity = '0.5';
   st.style.color = 'var(--muted)';
-  st.textContent = '🤖 Lendo o orçamento... aguarde';
+  st.textContent = 'Lendo o orçamento... aguarde';
 
   const isPDF = impIATipo === 'application/pdf';
   const bloco = isPDF
@@ -4536,7 +4544,7 @@ Regras:
     }
     if (data && (data.type === 'error' || data.error)) {
       st.style.color = 'var(--vermelho)';
-      st.textContent = '❌ Erro da IA: ' + ((data.error&&data.error.message) || data.message || 'desconhecido');
+      st.textContent = 'Erro da IA: ' + ((data.error&&data.error.message) || data.message || 'desconhecido');
       btn.disabled = false; btn.style.opacity = '1';
       return;
     }
@@ -4572,7 +4580,7 @@ Regras:
     const itens = parsed.itens || [];
     if (!itens.length) {
       st.style.color = 'var(--vermelho)';
-      st.textContent = '❌ Nenhum item encontrado no orçamento.';
+      st.textContent = 'Nenhum item encontrado no orçamento.';
       btn.disabled = false; btn.style.opacity = '1';
       return;
     }
@@ -4608,17 +4616,17 @@ Regras:
     st.style.color = 'var(--verde-escuro)';
     if (parsed._truncado) {
       st.style.color = '#BA7517';
-      st.textContent = `⚠️ ${itens.length} item(ns) lido(s), mas o orçamento é grande e pode ter sido cortado no fim. Confira se faltou algum e complete manual se precisar.`;
+      st.textContent = `${itens.length} item(ns) lido(s), mas o orçamento é grande e pode ter sido cortado no fim. Confira se faltou algum e complete manual se precisar.`;
     } else {
-      st.textContent = `✅ ${itens.length} item(ns) lido(s)! Confira a tabela e clique em "Importar para o Banco".`;
+      st.textContent = `${itens.length} item(ns) lido(s)! Confira a tabela e clique em "Importar para o Banco".`;
     }
     if (semPreco > 0) {
       st.style.color = '#BA7517';
-      st.textContent = `⚠️ ${semPreco} de ${itens.length} item(ns) SEM PREÇO — preencha o valor na tabela antes de importar. ` + st.textContent;
+      st.textContent = `${semPreco} de ${itens.length} item(ns) SEM PREÇO — preencha o valor na tabela antes de importar. ` + st.textContent;
     }
   } catch (err) {
     st.style.color = 'var(--vermelho)';
-    st.textContent = '❌ Erro ao ler: ' + err.message + ' — tente outra foto mais nítida ou preencha manual.';
+    st.textContent = 'Erro ao ler: ' + err.message + ' — tente outra foto mais nítida ou preencha manual.';
   }
   btn.disabled = false; btn.style.opacity = '1';
 }
@@ -4677,7 +4685,7 @@ async function executarImport() {
   if (!itens.length) {
     if (puladosEstoque > 0) {
       stEl.style.color = '#BA7517';
-      stEl.textContent = `⚠️ Nada importado: todos os ${puladosEstoque} item(ns) estavam com estoque 0 (não entram no banco).`;
+      stEl.textContent = `Nada importado: todos os ${puladosEstoque} item(ns) estavam com estoque 0 (não entram no banco).`;
       toast('Nenhum item com estoque para importar', 'error');
     } else {
       toast('Adicione pelo menos um item', 'error');
@@ -4689,7 +4697,7 @@ async function executarImport() {
   const semMarcaImp = itens.filter(i => !i.marca || !String(i.marca).trim());
   if (semMarcaImp.length) {
     stEl.style.color = '#c0392b';
-    stEl.textContent = `❌ ${semMarcaImp.length} item(ns) sem MARCA — preencha antes de importar: ` + semMarcaImp.map(i=>i.produto).slice(0,3).join(' | ') + (semMarcaImp.length>3?` (+${semMarcaImp.length-3})`:'');
+    stEl.textContent = `${semMarcaImp.length} item(ns) sem MARCA — preencha antes de importar: ` + semMarcaImp.map(i=>i.produto).slice(0,3).join(' | ') + (semMarcaImp.length>3?` (+${semMarcaImp.length-3})`:'');
     toast('Marca obrigatória — preencha os itens sem marca', 'error');
     return;
   }
@@ -4698,7 +4706,7 @@ async function executarImport() {
   const estouroImp = itens.filter(i => { const nN = qtdEmbalagem(i.und, i.produto); return nN > 1 && i.compra_unit > 0 && i.compra_caixa > 0 && Math.abs(i.compra_unit - i.compra_caixa)/i.compra_caixa < 0.05; });
   if (estouroImp.length) {
     const ex = estouroImp.slice(0,6).map(i => { const nN = qtdEmbalagem(i.und, i.produto); return `• ${i.produto}: unit R$${(+i.compra_unit).toFixed(2)} = caixa R$${(+i.compra_caixa).toFixed(2)} → caixa÷${nN} = R$${(i.compra_unit/nN).toFixed(4)}`; }).join('\n');
-    if (!confirm(`⚠️ ${estouroImp.length} item(ns): o preço UNITÁRIO está igual ao da CAIXA, mas o nome indica várias unidades. O unitário não seria caixa÷N?\n\n${ex}${estouroImp.length>6?'\n…':''}\n\nOK = importar assim mesmo · Cancelar = revisar`)) {
+    if (!confirm(`${estouroImp.length} item(ns): o preço UNITÁRIO está igual ao da CAIXA, mas o nome indica várias unidades. O unitário não seria caixa÷N?\n\n${ex}${estouroImp.length>6?'\n…':''}\n\nOK = importar assim mesmo · Cancelar = revisar`)) {
       stEl.style.color = '#BA7517';
       stEl.textContent = `Importação cancelada — ${estouroImp.length} item(ns) com preço unitário = preço de caixa. Ajuste p/ caixa÷N e tente de novo.`;
       return;
@@ -4714,7 +4722,7 @@ async function executarImport() {
   }).filter(Boolean);
   if (caixaPeerImp.length) {
     const ex = caixaPeerImp.slice(0,6).map(x => `• ${x.i.produto}: unit R$${(+x.i.compra_unit).toFixed(2)} → ÷${x.s.qtd} = R$${x.s.corr}${x.s.pmin!=null?` (mercado ~R$${x.s.pmin.toFixed(4)})`:` (${x.s.forma})`}`).join('\n');
-    if (!confirm(`🔴 ${caixaPeerImp.length} item(ns) PARECEM PREÇO DE CAIXA (unit muito alto; ÷qtd = preço real por unidade). A cotação sai MUITO cara.\n\n${ex}${caixaPeerImp.length>6?'\n…':''}\n\nOK = importar assim mesmo · Cancelar = corrigir p/ ÷qtd`)) {
+    if (!confirm(`${caixaPeerImp.length} item(ns) PARECEM PREÇO DE CAIXA (unit muito alto; ÷qtd = preço real por unidade). A cotação sai MUITO cara.\n\n${ex}${caixaPeerImp.length>6?'\n…':''}\n\nOK = importar assim mesmo · Cancelar = corrigir p/ ÷qtd`)) {
       stEl.style.color = '#c0392b';
       stEl.textContent = `Importação cancelada — ${caixaPeerImp.length} item(ns) com preço parecendo de CAIXA. Ajuste p/ ÷qtd.`;
       return;
@@ -4787,23 +4795,23 @@ async function executarImport() {
   try { await iacBaixaAuto(_iacBaixarDepois); } catch(e) { console.error('baixa auto:', e); }
 
   btn.disabled = false;
-  btn.textContent = '📥 Importar para o Banco';
+  btn.textContent = 'Importar para o Banco';
 
   const total = inseridos + atualizados;
   const puladoTxt = puladosEstoque > 0 ? ` · ⏭ ${puladosEstoque} pulado(s) por estoque 0` : '';
   if (total > 0) {
     stEl.style.color = 'var(--verde-escuro)';
-    stEl.textContent = `✅ ${inseridos} novo(s) + ${atualizados} atualizado(s)${erros ? ` · ⚠️ ${erros} erro(s)` : ''}${puladoTxt}`;
+    stEl.textContent = `${inseridos} novo(s) + ${atualizados} atualizado(s)${erros ? ` · ${erros} erro(s)` : ''}${puladoTxt}`;
     await recarregarCotacoes(true);
     toast(`${inseridos} novos + ${atualizados} atualizados`, 'success');
   } else {
     stEl.style.color = 'var(--vermelho)';
     if (erros > 0) {
       // nada gravou + houve erro de escrita = sessão provavelmente expirada (writes viram 401)
-      stEl.textContent = `❌ NADA gravado — ${erros} erro(s). Sessão pode ter EXPIRADO: faça LOGIN de novo.`;
-      alert(`❌ NADA FOI GRAVADO NO BANCO.\n\n${erros} escrita(s) falharam — sua sessão provavelmente EXPIROU.\nFaça LOGOUT e LOGIN de novo e importe outra vez.`);
+      stEl.textContent = `NADA gravado — ${erros} erro(s). Sessão pode ter EXPIRADO: faça LOGIN de novo.`;
+      alert(`NADA FOI GRAVADO NO BANCO.\n\n${erros} escrita(s) falharam — sua sessão provavelmente EXPIROU.\nFaça LOGOUT e LOGIN de novo e importe outra vez.`);
     } else {
-      stEl.textContent = `❌ Nenhum item para importar.`;
+      stEl.textContent = `Nenhum item para importar.`;
     }
     toast('Erro na importação', 'error');
   }

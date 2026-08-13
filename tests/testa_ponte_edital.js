@@ -231,8 +231,18 @@ ok('36. descartar apaga o pedido e some com a faixa',
 // ── o que a tela promete por escrito ──
 ok('37. a proposta avisa que o preco nasce de TABELA, nao do edital',
   /preço de tabela, não com o preço do edital/.test(giov));
+/* ══ ASSERT REAPONTADO (13/08, item 8b fatia 3b) — S8 outra vez ══════════════════════════════
+   Ele ancorava no LITERAL do toast: `toast(\`✓ ${cotacoes.length} produtos carregados\`)`. O ✓
+   era um EMOJI USADO COMO ICONE, e saiu na varredura do D11 — a promessa nao mudou nem um
+   pouco, mas o assert ficou vermelho.
+   >>> Assert preso a um literal nao guarda a regra, guarda a DECORACAO dela: ele so sabe dizer
+       "mudou", nunca "piorou". Agora ele ancora no que a promessa realmente depende — a linha
+       que PREENCHE `cotacoes` — e cobra que o `pintaPedidoEdital()` venha DEPOIS dela e antes
+       dos enriquecimentos opcionais. Trocar o texto do toast passa; convidar pra importar antes
+       do estoque existir, nao. */
 ok('38. *** a faixa so aparece depois do estoque carregar (senao o clique nao acha nada) ***',
-  /toast\(\`✓ \$\{cotacoes\.length\} produtos carregados\`\);\n\s*\/\/[\s\S]{0,220}?pintaPedidoEdital\(\);/.test(giov));
+  /cotacoes = allData\.filter\(incluiNaBusca\);[\s\S]{0,600}?pintaPedidoEdital\(\);/.test(giov)
+  && giov.indexOf('pintaPedidoEdital();') < giov.indexOf('_fpOpcional('));
 ok('39. e sem estoque carregado o import recusa, em vez de importar zero',
   /if\(!cotacoes\.length\)\{ toast\('O estoque ainda não carregou/.test(giov));
 

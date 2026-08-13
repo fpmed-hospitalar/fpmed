@@ -392,9 +392,22 @@ ok(n + '. *** o aviso que vai pro PAPEL continua intocado (documento congelado, 
 /* 3. E A ARMADILHA QUE QUASE ME PEGOU: `toast()` e varios botoes usam `textContent`. Enfiar um
       `<svg>` numa dessas strings faria a MARCACAO SER IMPRESSA COMO TEXTO na cara do usuario.
       Onde o destino e textContent, o glifo ou fica ou sai - virar icone, nunca. */
-const textContentComSvg = (LIMPO.match(/textContent\s*=\s*[^;\n]*<svg/g) || []);
+const textContentComSvg = (G.match(/textContent\s*=\s*[^;\n]*<svg/g) || []);
 ok(n + '. *** ninguem enfiou <svg> numa string de textContent (viraria texto na tela) ***',
   textContentComSvg.length === 0, textContentComSvg.slice(0, 3)); n++;
+/* ══ E O OUTRO LADO DA MESMA REGRA: onde o destino e texto puro, o emoji SAIU ════════════════
+   Nao da pra virar icone ali, entao a saida honesta foi deixar a frase - que ja diz o que
+   aconteceu e ja tem cor propria (o `.toast.error` pinta a mensagem de erro).
+   >>> O ASSERT LE AS LINHAS DE DESTINO-TEXTO e cobra que nenhuma carregue emoji. Ele nao conta
+       o arquivo inteiro de proposito: a fatia 3 esta declaradamente pela metade, e contagem
+       global viraria vermelha na proxima passagem sem nada ter piorado. */
+const linhasDeTexto = G.split('\n').filter(l =>
+  /textContent\s*=|toast\(|alert\(|confirm\(/.test(l) && !/OBS_PADRAO/.test(l));
+const textoComEmoji = linhasDeTexto
+  .filter(l => /[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/u.test(l))
+  .map(l => l.trim().slice(0, 70));
+ok(n + '. *** nenhuma mensagem de texto puro carrega emoji (D11 onde svg nao entra) ***',
+  textoComEmoji.length === 0, textoComEmoji.slice(0, 3)); n++;
 ok(n + '. e o arquivo registra por que o sprite nao foi copiado pra ca',
   /é o `fpmed_icones\.js`, a fonte única do sistema/.test(G.replace(/\s+/g, ' '))); n++;
 

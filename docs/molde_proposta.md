@@ -399,8 +399,54 @@ mutação — e ela está em 39/39 —, não a contagem de asserts verdes.
 
 | fatia | o que | por que nesta ordem |
 |---|---|---|
-| 3b | os **5 símbolos que faltam** no sprite + os emoji em HTML gerado e em `textContent` | inventar ícone às pressas é pior que esperar um dia |
+| 3c | os **5 símbolos que faltam** no sprite (`🤖 💰 🗑 🚀 🔴`) + os emoji restantes em HTML gerado | inventar ícone às pressas é pior que esperar um dia |
 | 4 | **Cartões e listas** com a anatomia do molde + as 11 cores dos `style=` inline | depende da moldura estar de pé |
+
+---
+
+## FATIA 3b — OS DESTINOS DE TEXTO PURO
+
+`testa_molde_proposta`: **60 → 61 asserts**, **mutação 40 de 40 barradas**. Emoji no arquivo:
+**124 → 66**.
+
+Onde o glifo é entregue por `textContent` / `toast` / `alert` / `confirm`, **ele não pode virar
+SVG** — a marcação sairia impressa como texto na cara de quem usa. A saída honesta é deixar a
+frase: ela já diz o que aconteceu, e o `.toast.error` já pinta a mensagem de erro.
+
+**40 linhas** perderam o emoji por varredura restrita, com prévia conferida antes de gravar.
+
+### A prévia é que ganhou a fatia — ela pegou dois estragos antes de acontecerem
+
+| o caso | o que a varredura cega faria |
+|---|---|
+| **ícone puro** (`? '📄' : '🖼️'`) | o glifo é o **valor inteiro** da string; tirar deixaria a caixa **vazia** |
+| **string que vira vazia** (`toast('⚠️ ' + n + …)`) | sobraria `toast('' + n + …)` — lixo sintático deixado para trás |
+
+Os dois ganharam guarda no script e **tratamento próprio**:
+
+- **o tipo do arquivo anexado virou PALAVRA**: "PDF" / "Imagem". O sprite não tem — nem deve
+  ganhar às pressas — um ícone de "imagem", e a palavra diz exatamente o que o glifo tentava
+  dizer, inclusive para quem usa leitor de tela;
+- **o `toast` da confiança perdeu o `⚠️` e a concatenação inútil** — e perdeu também o `✓` que
+  estava **dentro das aspas**, citando o rótulo de um botão. O botão deixou de ter o glifo nesta
+  mesma fatia, e **citação que não bate com o que está na tela manda a pessoa procurar uma coisa
+  que não existe**. O botão citado virou `ic-certo` junto, para os dois falarem a mesma língua.
+
+### Um assert alheio reapontado (S8)
+
+`testa_ponte_edital` 38 ancorava no **literal** ``toast(`✓ ${cotacoes.length} produtos
+carregados`)`` para provar que a faixa do edital só aparece **depois** do estoque carregar. O `✓`
+saiu na varredura e o assert ficou vermelho — **sem nada ter piorado**.
+
+> Assert preso a um literal não guarda a regra, guarda a **decoração** dela: só sabe dizer
+> "mudou", nunca "piorou". Agora ele ancora na linha que **preenche `cotacoes`** e cobra que o
+> `pintaPedidoEdital()` venha depois dela e antes dos enriquecimentos opcionais. Trocar o texto do
+> toast passa; convidar para importar antes de o estoque existir, não.
+
+### Medido
+
+Sintaxe: **23 blocos inline compilados, 0 erros**. Navegador: sprite ok, 14 usos, **zero órfão**,
+e — o que esta fatia mais arriscava — **nenhuma marcação vazou como texto** na tela.
 
 ### Medições que ficaram pendentes, e o motivo é o mesmo do Negócios
 
