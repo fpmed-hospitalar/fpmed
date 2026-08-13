@@ -274,7 +274,25 @@ body{
 .card .ab{font-size:12px;color:var(--muted);margin-top:6px}
 .card .ab b{color:var(--cinza-800)}
 .card .ab.hoje b{color:var(--ambar-700)}
-.card .ab.passou b{color:var(--cinza-500)}
+/* ══ "JÁ PASSOU" É SINAL, NÃO É DESBOTADO (13/08, fatia B1) ══════════════════════════════════
+   Ele estava em `--cinza-500`, o mesmo tom do texto de apoio — ou seja, uma sessão PERDIDA
+   tinha exatamente o peso de um rótulo. O dono pediu o vermelho de sinal, e ele tem razão pela
+   razão certa: sessão que passou com o negócio parado na fase anterior é a coisa mais cara que
+   este funil mostra, e ela estava escrita como se fosse rodapé.
+   >>> `--vermelho-700` é o ofício de TEXTO vermelho sobre claro no molde (7,81:1 sobre branco).
+       Não é cor nova, é o degrau que já carrega esse significado no sistema inteiro. */
+.card .ab.passou b{color:var(--vermelho-700);font-weight:var(--peso-forte)}
+/* ══ SUSPENSO É SELO DE VERDADE ══════════════════════════════════════════════════════════════
+   A etiqueta de situação era um contorno fino com a cor vinda do JS por `style=`. Selo com
+   fundo é o que o molde usa para os sete pares de sinal — e um estado que PARA o negócio não
+   pode ser mais discreto que uma etiqueta de fase.
+   >>> O par vem fechado do tema (fundo 50 + tinta 700), como todos os outros selos do sistema.
+       Quem escolhe QUAL par é o `corSituacao`; o que muda aqui é que ele deixa de ser um
+       contorno e passa a ser um selo. */
+.card .sit-tag.suspenso,.card .sit-tag.adiado{background:var(--ambar-50);color:var(--ambar-700);
+  border-color:var(--ambar-300)}
+.card .sit-tag.cancelado{background:var(--vermelho-50);color:var(--vermelho-700);
+  border-color:var(--vermelho-300)}
 .card .etq{display:flex;gap:6px;flex-wrap:wrap;margin-top:9px}
 .etq span{font-size:10px;font-weight:600;border-radius:20px;padding:2px 9px}
 .etq .fonte{background:var(--cinza-100);border:1px solid var(--cinza-200);color:var(--cinza-600)}
@@ -703,15 +721,32 @@ textarea.anot:focus{border-color:var(--azul)}
 .ficha-fc .fc{border-bottom:1px solid var(--linha);padding:8px 0}
 .ficha-fc .fc:last-child{border-bottom:0}
 .fc-r{display:flex;align-items:baseline;gap:10px}
-.fc-rot{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;
-  min-width:120px;flex-shrink:0}
-.fc-val{font-size:12.5px;color:var(--texto);line-height:1.5;flex:1;word-break:break-word}
-.fc-val i{color:var(--muted);font-style:normal}
-.fc-bt{opacity:0;background:transparent;border:1px solid var(--linha);color:var(--muted);
-  border-radius:7px;padding:2px 9px;font-size:10.5px;cursor:pointer;font-family:inherit;
-  transition:opacity .15s,color .15s,border-color .15s;flex-shrink:0}
+/* ══ RÓTULO APAGADO, VALOR FORTE (13/08, fatia B1) ═══════════════════════════════════════════
+   Rótulo e valor tinham pesos parecidos demais: 10px em negrito 700 contra 12,5px normal. O
+   rótulo GRITAVA tanto quanto o dado, e numa ficha o dado é a única coisa que se veio ler.
+   >>> O RÓTULO PERDEU PESO (700 → 600) e o VALOR GANHOU TAMANHO E PESO (12,5 → --txt-2, normal
+       → semi) na tinta mais escura do molde. A abertura, o número, o órgão e o objeto passam a
+       saltar aos olhos porque são os ÚNICOS elementos pesados da linha.
+   >>> NENHUM HEX NOVO: --cinza-500 (rótulo), --cinza-800 (valor). Os dois já eram do molde. */
+.fc-rot{font-size:var(--txt-0);font-weight:var(--peso-semi);color:var(--cinza-500);
+  text-transform:uppercase;letter-spacing:.6px;min-width:120px;flex-shrink:0}
+.fc-val{font-size:var(--txt-2);font-weight:var(--peso-semi);color:var(--cinza-800);
+  line-height:1.45;flex:1;word-break:break-word}
+/* o "vazio" continua leve: ele não é dado, é a ausência dele — e ausência não pode ter o mesmo
+   peso do que está preenchido, senão a ficha parece cheia quando está pela metade */
+.fc-val i{color:var(--cinza-500);font-style:normal;font-weight:var(--peso-normal)}
+/* ══ O "ALTERAR" GANHOU CARA DE BOTÃO ════════════════════════════════════════════════════════
+   Ele era invisível até o hover (`opacity:0`), com o argumento de que "ficha cheia de botões
+   azuis compete com o conteúdo". O argumento continua bom — e por isso ele NÃO virou azul. O
+   que mudou é que ele deixou de ser um fantasma: quem não sabe que a ficha é editável nunca
+   passa o mouse para descobrir. Agora ele existe apagado e ACENDE no hover da linha. */
+.fc-bt{opacity:.55;background:var(--branco);border:1px solid var(--borda-controle);
+  color:var(--cinza-700);border-radius:var(--raio-item);padding:3px var(--esp-3);
+  font-size:var(--txt-0);font-weight:var(--peso-semi);cursor:pointer;font-family:inherit;
+  transition:opacity 120ms ease,background-color 120ms ease,border-color 120ms ease;flex-shrink:0}
 .fc:hover .fc-bt{opacity:1}
-.fc-bt:hover{color:var(--azul-claro);border-color:rgba(var(--azul-500-rgb),.5)}
+.fc-bt:hover{background:var(--cinza-100);border-color:var(--cinza-300);color:var(--cinza-800)}
+.fc-bt:focus-visible{opacity:1;outline:none;box-shadow:var(--foco)}
 .fc-edit label{display:block;font-size:10px;font-weight:700;color:var(--muted);margin-bottom:5px;
   text-transform:uppercase;letter-spacing:.6px}
 .fc-in{display:flex;gap:8px}
@@ -760,6 +795,10 @@ textarea.anot:focus{border-color:var(--azul)}
   background:var(--cinza-100);color:var(--cinza-700);border-radius:var(--raio-pilula);
   padding:1px var(--esp-2);line-height:1.6}
 .dw-abas button.on .cnt{background:rgba(var(--azul-500-rgb),.28);color:var(--branco)}
+/* SÓ EXISTE QUANDO HÁ CONTEÚDO: o `<span>` nasce sempre (é o mesmo id que o JS preenche), mas
+   vazio ele some. Sem isto, sete pílulas cinzas em branco apareceriam em todo negócio novo —
+   e contador que mostra nada é o mesmo que contador mentindo zero. */
+.dw-abas .cnt:empty{display:none}
 .dw-painel{display:none}
 .dw-painel.on{display:block}
 /* ── LEMBRETES ── */
@@ -1534,7 +1573,14 @@ function card(n, noKanban){
   // esconderia da empresa que ela tinha algo ali; arquivar segue sendo decisão de gente.
   const sit = n.situacao && n.situacao !== 'normal' ? n.situacao : null;
   return `<div class="card${sit&&paradoDeVez(sit)?' parado':''}" ${noKanban?`draggable="true" data-id="${n.id}"`:''} onclick="abrirDrawer(${n.id})">
-    ${sit ? `<div class="sit-tag" style="color:${corSituacao(sit)};border-color:${corSituacao(sit)}">${esc(rotuloSituacao(sit))}</div>` : ''}
+    <!-- O SELO DE SITUAÇÃO deixou de ser pintado por atributo de estilo com a cor vinda do JS:
+         agora ele carrega a CLASSE do estado e quem pinta é o CSS, com o par fechado do tema
+         (fundo 50 + tinta 700). Cor decidida em JavaScript não aparece em varredura de folha de
+         estilo — é assim que hex escrito à mão sobrevive a auditoria, e a ordem do dono sobre
+         cor fecha essa porta.
+         (Sem crase neste comentário: ele mora DENTRO de um template literal, e crase aqui fecha
+          a string e quebra o arquivo inteiro. Já me pegou duas vezes hoje.) -->
+    ${sit ? `<div class="sit-tag ${esc(sit)}">${esc(rotuloSituacao(sit))}</div>` : ''}
     <!-- A ETIQUETA DE FASE SOLTA VIROU PROGRESSO. Ela dizia "Qualificação" e pronto; o card
          agora diz em que ponto do caminho isso é. No kanban a coluna já diz a fase, então lá o
          indicador seria a mesma informação duas vezes — e card com informação repetida é card
@@ -2082,7 +2128,7 @@ function corpoDrawer(n, obs, carregando){
          ['cred','Credenciamentos','dw-cred-n'],['obs','Observações','']].map(([k,rot,cnt]) => {
         const doFoco = k === focoDa(n.estagio).aba;
         return `<button class="${doFoco?'on':''}${doFoco?' foco':''}" data-aba="${k}" onclick="abaFicha(this,'${k}')"
-          ${doFoco?'title="é a aba desta etapa do processo"':''}>${rot}${cnt?` <span id="${cnt}"></span>`:''}</button>`;
+          ${doFoco?'title="é a aba desta etapa do processo"':''}>${rot}${cnt?`<span class="cnt" id="${cnt}"></span>`:''}</button>`;
       }).join('')}
     </div>
 

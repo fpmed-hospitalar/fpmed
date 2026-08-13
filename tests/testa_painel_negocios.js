@@ -376,6 +376,59 @@ ok(n + '. e a familia ROXA da etiqueta de empresa vive no TEMA, nao na tela',
     { doHex, trio: trio && trio.replace(/\s/g, '') }); n++;
 }
 
+// ── 6f. FATIA B1 — HIERARQUIA NA FICHA (a dor no 1 do dono) ─────────────────
+/* "Ta tudo igual, chato." A ficha era o pior caso: sete abas com o MESMO peso, e a ativa
+   separada por um fundo azul a 16% de opacidade - o degrau que o olho quase nao ve. A pessoa
+   tinha de LER as sete pra saber onde estava, em vez de ENXERGAR. */
+ok(n + '. *** a aba ATIVA e um botao cheio (fundo da acao + texto branco), nao um veu ***',
+  /\.dw-abas button\.on\{[^}]*background:var\(--azul-600\)/.test(CSS1)
+  && /\.dw-abas button\.on\{[^}]*color:var\(--branco\)/.test(CSS1)
+  && !/\.dw-abas button\.on\{[^}]*rgba\(var\(--azul-500-rgb\),\.16\)/.test(CSS1)); n++;
+/* Sem borda, "botao inativo" e "texto solto" sao a mesma coisa - e era isso que fazia a
+   fileira de sete parecer uma frase. */
+ok(n + '. ...e as inativas tem BORDA (senao nao parecem clicaveis antes do hover)',
+  /\.dw-abas button\{[^}]*border:1px solid var\(--borda-controle\)/.test(CSS1)
+  && /\.dw-abas button:hover\{[^}]*background:var\(--cinza-100\)/.test(CSS1)); n++;
+/* O dono pediu reacao visivel em <=100ms. 120ms de transicao ja pinta no primeiro quadro e
+   termina antes de o olho procurar a resposta; o que nao pode e nao ter transicao nenhuma
+   (troca seca parece falha) nem ter meio segundo (parece travamento). */
+/* O CSS1 vem com as quebras COLAPSADAS, entao o comentario que explica a regra entra no meio
+   do `[^}]` e estoura qualquer janela curta. Le-se do arquivo SEM comentario. */
+const _cssSemCom = N.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\s*\n\s*/g, '');
+ok(n + '. a aba responde ao toque em tempo de olho (transicao curta, nao seca nem lenta)',
+  /\.dw-abas button\{[^}]*transition:background-color 120ms/.test(_cssSemCom)); n++;
+ok(n + '. o contador da aba so aparece quando HA conteudo',
+  /\.dw-abas \.cnt:empty\{display:none\}/.test(CSS1)
+  && /\.dw-abas \.cnt\{[^}]*font-variant-numeric:tabular-nums/.test(CSS1)); n++;
+/* ROTULO APAGADO, VALOR FORTE. Eram pesos parecidos demais (rotulo 700 x valor normal): o
+   rotulo GRITAVA tanto quanto o dado, e numa ficha o dado e a unica coisa que se veio ler. */
+ok(n + '. *** o VALOR pesa mais que o rotulo (a abertura e o orgao saltam aos olhos) ***',
+  /\.fc-val\{[^}]*font-weight:var\(--peso-semi\)/.test(CSS1)
+  && /\.fc-val\{[^}]*color:var\(--cinza-800\)/.test(CSS1)
+  && /\.fc-rot\{[^}]*color:var\(--cinza-500\)/.test(CSS1)); n++;
+/* O "vazio" continua LEVE: ausencia de dado nao pode ter o peso do dado, senao a ficha parece
+   cheia quando esta pela metade. */
+ok(n + '. e o campo vazio continua leve (ausencia nao pesa como dado)',
+  /\.fc-val i\{[^}]*font-weight:var\(--peso-normal\)/.test(CSS1)); n++;
+/* O "Alterar" era FANTASMA (`opacity:0`): quem nao sabia que a ficha e editavel nunca passava
+   o mouse pra descobrir. Agora existe apagado e ACENDE - e continua sem ser azul, porque o
+   argumento antigo ("ficha cheia de botao azul compete com o conteudo") continua valendo. */
+ok(n + '. o "Alterar" deixou de ser fantasma (existe apagado e acende no hover)',
+  /\.fc-bt\{[^}]*opacity:\.55/.test(CSS1)
+  && !/\.fc-bt\{[^}]*opacity:0[;,]/.test(CSS1)
+  && /\.fc:hover \.fc-bt\{opacity:1\}/.test(CSS1)); n++;
+/* SUSPENSO vira SELO (par fechado do tema), e a cor sai do CSS pela CLASSE - nao mais por
+   atributo de estilo montado no JS. Cor decidida em JavaScript nao aparece em varredura de
+   folha de estilo: e assim que hex escrito a mao sobrevive a auditoria. */
+ok(n + '. *** o selo de situacao e pintado por CLASSE, nao por estilo montado no JS ***',
+  /class="sit-tag \$\{esc\(sit\)\}"/.test(LIMPO)
+  && /\.card \.sit-tag\.suspenso[^{]*\{[^}]*background:var\(--ambar-50\)/.test(CSS1)
+  && !/sit-tag" style="color:\$\{corSituacao/.test(LIMPO)); n++;
+/* "JA PASSOU" estava em --cinza-500, o mesmo tom do texto de apoio: uma sessao PERDIDA tinha o
+   peso de um rodape. E a coisa mais cara que este funil mostra. */
+ok(n + '. *** "ja passou" e sinal (vermelho de texto), e nao desbotado ***',
+  /\.card \.ab\.passou b\{color:var\(--vermelho-700\)/.test(CSS1)); n++;
+
 // ── 7. A MEMORIA DO PORQUE (L6) ──────────────────────────────────────────────
 const _corrido = N.replace(/\s+/g, ' ');
 ok(n + '. o arquivo registra por que o cartao vira linha SO dentro do painel',
