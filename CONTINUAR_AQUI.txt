@@ -1573,6 +1573,33 @@ Criado em 21/07/2026 copiando SO os arquivos do app do C:\globalmed.
                  "ao vivo · PNCP"). Sao tres fontes, entao ele vira um selo POR FONTE — nao
                  inventar um segundo desenho pra dizer a mesma coisa.
 
+             >>> ESTACAO 2 JA FEITA (13/08) — O ESQUEMA MEDIDO, pra nao recomecar do zero:
+                 ddl/licitacoes_acompanhadas.sql, 2.555 linhas, origem='calendario_2025'.
+                 COLUNAS UTEIS: objeto · orgao · cidade · uf · abertura(date) · hora(text) ·
+                 modalidade · numero · numero_compra · portal · status · valor_ganho ·
+                 observacao · linha_planilha.
+                 >>> HA INDICE em abertura, orgao, portal, origem — e **NENHUM em `objeto`**,
+                     que e justamente o campo em que a pessoa procura. Isso reforca a doutrina
+                     que ja vale na tela: o termo NAO vai pro banco; quem filtra palavra e o
+                     render, com o mesmo semAcento de sempre. Filtrar no banco criaria um
+                     SEGUNDO filtro, sensivel a acento, que perderia o que o do navegador acha.
+                 >>> 2.555 LINHAS = 3 PAGINAS. O PostgREST daqui corta em 1000 (S1). Ler sem
+                     paginar traria 1.000 achando que trouxe tudo — e a tela concluiria "a FPMED
+                     nunca participou de pregao de albumina" olhando 39% da base. Usar o
+                     lerPaginado que ja existe, e conferir se truncou.
+                 >>> E A LEITURA TEM QUE SER INDEPENDENTE das outras duas: a tabela e de GESTOR
+                     (o valor_ganho e resultado, nao operacao), entao vendedor toma 403 ali e 200
+                     nas outras. Com uma leitura so, o 403 de uma derrubaria as tres — foi
+                     exatamente a licao dos 4 indicadores (passo 4).
+                 >>> A AMBIGUIDADE QUE EU RESOLVI SOZINHO, e esta declarada pra ele reverter numa
+                     linha se quiser: "marcar a origem de CADA RESULTADO" pode ser (a) uma lista
+                     so, misturada, com etiqueta por linha, ou (b) tres paineis, cada um com o
+                     seu selo de fonte. Vou de (b), porque a doutrina JA REGISTRADA nesta tela
+                     diz que misturar procedencias "faria o operador tratar como igual o que nao
+                     e" — e aqui a diferenca e maior ainda: o Calendario 2025 e HISTORICO (o que
+                     nos ja disputamos), enquanto os outros dois sao OPORTUNIDADE (o que esta
+                     aberto). Sao duas perguntas, nao duas fontes da mesma pergunta.
+
      >>> 7d-hist. [ref] o pedido original: hoje ela sai como TABELA CRUA
              (UF/ITEM/ORGAO/MODALIDADE/PUBLICADO/PORTAL). Vira o MESMO painel + linhas do
              passo 6, com selo de modalidade, barra de urgencia pela DATA, <mark> no objeto,
