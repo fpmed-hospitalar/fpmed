@@ -18,18 +18,91 @@
      que o preço é DECIDIDO — conferir depois de mandar a proposta é conferir tarde. -->
 <script src="fpmed_teto_cmed.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<!-- O DESIGN SYSTEM. Ele vem ANTES do <style> de propósito: os apelidos abaixo apontam para os
+     tokens dele, e o que não for apelido pode escrever o token direto. Ele é INERTE (só `:root` e
+     classes `.fp-*`, nenhum seletor de elemento nu), então carregá-lo não mexe num pixel sozinho —
+     é isso que faz esta fatia ser "sem apagão". -->
+<link rel="stylesheet" href="fpmed_tema.css">
 <style>
-:root{--verde:#2CA9E0;--verde-escuro:#1B8DC4;--verde-claro:#EAF6FC;--bg:#F4F7FA;--texto:#1E2A36;--muted:#8496A6;--borda:#E3EAF1;--vermelho:#E05C5C;--navy:#173A5E;--fverde:#8DC63F;--card:#FFFFFF;--sombra:0 2px 10px rgba(23,58,94,.07);}
+/* ══════════════════════════════════════════════════════════════════════════════════════════════
+   A PROPOSTA ENTROU NO DESIGN SYSTEM (13/08, item 8b · fatia 1 — a paleta)
+
+   ── O QUE A MEDIÇÃO ACHOU ANTES DE EU MEXER (L1: medir, nunca achar) ──────────────────────────
+   Rodei a fórmula da WCAG nos 17 pares que ESTA tela usa de verdade — não numa amostra bonita.
+   **12 dos 17 reprovavam em AA**, e esta é a tela em que o preço é decidido e a proposta sai para
+   o hospital. Os piores:
+     · o RÓTULO de todo o formulário e o detalhe do item ....... 3,05:1  (mínimo 4,5)
+     · o botão primário, branco sobre o azul da marca .......... 2,67:1
+     · o hover do botão primário .............................. 3,71:1
+     · o placeholder de todo campo ............................ 2,07:1
+   >>> E o 3,71:1 é a **lição S12 literal, ainda viva**: o `#1B8DC4` que nasceu neste projeto como
+       "azul de ação que parecia bonito e nunca tinha sido medido". O tema já o aposentou uma vez;
+       aqui ele tinha sobrevivido porque esta tela tinha paleta própria.
+
+   ── OS APELIDOS APONTAM PARA OS TOKENS, E NENHUM TEM VALOR PRÓPRIO ────────────────────────────
+   Mesma técnica do Negócios, e pela mesma razão medida: **133 usos** de `var(--muted)`,
+   `var(--borda)`, `var(--verde)` etc. estão FORA da folha de estilo — dentro de HTML gerado pelo
+   script — e nenhuma varredura de CSS os enxerga. Apagar os nomes antigos deixaria esses pedaços
+   sem cor, e o defeito só apareceria no dia em que alguém abrisse aquele trecho.
+   >>> Não é uma segunda paleta: é uma camada de tradução que some sozinha quando a última
+       referência antiga sair do script. Regra nova escreve o token direto.
+
+   ── E O MAPA É POR **OFÍCIO**, NÃO POR NOME. É a decisão desta fatia. ─────────────────────────
+   `--verde` (que apesar do nome é o AZUL da marca) é usado nos TRÊS ofícios que a rampa do tema
+   separa: fundo que carrega texto branco (`.btn-primary`, `.topfaixa`, `.toast.success`), borda e
+   acento (foco do campo, spinner, tracejado) e TEXTO azul (aba ativa, link, status). Um apelido
+   só não pode virar três tokens — então ele vira o degrau que passa em AA nos três:
+   **`--azul-600`** (branco por cima 5,04:1 · ele sobre branco 5,04:1 · e continua azul de marca
+   como borda). O `--azul-500` puro segue disponível para regra nova que não carregue texto.
+
+   ── MEDIDO DEPOIS: dos 17 pares usados, **os 17 passam** ──────────────────────────────────────
+   e os 2 pares novos que o mapa cria (texto azul sobre cartão e sobre a página) também passam.
+   O único par que reprova na tabela do tema — branco sobre o verde da marca, 2,04:1 — **esta tela
+   não usa**: aqui o verde é ponto de status e borda, nunca fundo de texto. O tema já o proíbe.
+
+   ── O QUE ESTA FATIA **NÃO** TOCOU, E É DECISÃO DECLARADA ─────────────────────────────────────
+   O bloco `.print-doc` (o documento que o hospital recebe) continua com as cores escritas à mão.
+   Ele não é tela: é papel, com outra restrição (tinta, contraste no impresso) e com valor
+   comercial — trocar o navy do cabeçalho da proposta muda o documento que sai assinado. Isso é
+   decisão de negócio, não de design system, e está anotado para o checkpoint.
+   ══════════════════════════════════════════════════════════════════════════════════════════════ */
+:root{
+  /* apelidos do legado -> tokens. NENHUM valor próprio mora aqui. */
+  --verde:        var(--azul-600);   /* o nome diz verde e o valor sempre foi AZUL: é a cor da
+                                        AÇÃO. Ver o mapa por ofício no cabeçalho deste bloco. */
+  --verde-escuro: var(--azul-700);   /* texto azul e hover do botão — o ofício do 700 no tema */
+  --verde-claro:  var(--azul-50);    /* fundo pálido de selo (é o mesmo valor de antes) */
+  /* ATENÇÃO — `--bg` e `--borda` NÃO SÃO SÓ NOSSOS. O tema white-label (`aplicaTema`, no
+     limedtec-config.js) escreve os nomes CRUS `--bg`, `--panel`, `--txt` e `--borda` direto no
+     `documentElement.style`, que é estilo em linha e ganha de qualquer `:root`. Ou seja: para
+     estes dois, o token abaixo é o **padrão**, e a cor do cliente **sobrepõe** — porque ele só
+     escreve `if (c[k])`. Isso é o white-label funcionando, não um defeito.
+     >>> MEDIDO NO NAVEGADOR: aqui a FPMED define `bg:#F5F9FC` e `borda:rgba(23,58,94,.16)`, e são
+         esses que aparecem na tela. Os pares foram medidos nos DOIS caminhos e passam nos dois
+         (texto sobre a página 17,65:1 com o token · 17,28:1 com a cor do cliente). Medir só o
+         token seria medir a metade que não aparece.
+     >>> E A COLISÃO É ANTERIOR A ESTA FATIA: a paleta privada já usava estes dois nomes, então o
+         `#F4F7FA` de antes também nunca chegou à tela. O que mudou é que agora está escrito. */
+  --bg:           var(--cinza-50);
+  --texto:        var(--cinza-800);
+  --muted:        var(--cinza-600);  /* era 3,05:1 como rótulo; o 600 é o ofício de rótulo (D9) */
+  --borda:        var(--cinza-200);
+  --vermelho:     var(--vermelho-700); /* carrega texto sobre claro E branco por cima: o 700 */
+  --navy:         var(--azul-900);   /* título do cartão e preço — tinta escura, nunca superfície */
+  --fverde:       var(--verde-500);  /* o verde da marca: ponto de status e borda, nunca texto */
+  --card:         var(--branco);
+  --sombra:       var(--sombra-1);
+}
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--texto);min-height:100vh;}
 
 /* HEADER */
-.topfaixa{background:var(--verde);color:#fff;font-size:12px;padding:6px 24px;display:flex;align-items:center;justify-content:space-between;}
+.topfaixa{background:var(--verde);color:var(--branco);font-size:12px;padding:6px 24px;display:flex;align-items:center;justify-content:space-between;}
 .topfaixa b{font-weight:700;}
-.top-bar{background:#fff;color:var(--texto);padding:12px 24px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--borda);box-shadow:0 1px 0 rgba(23,58,94,.04);}
+.top-bar{background:var(--branco);color:var(--texto);padding:12px 24px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--borda);box-shadow:var(--sombra-1);}
 .top-bar-logo{display:flex;align-items:center;}
 .top-bar-info{font-size:11px;color:var(--muted);}
-.db-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:#c3ccd6;margin-right:5px;vertical-align:middle;}
+.db-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--cinza-300);margin-right:5px;vertical-align:middle;}
 .db-dot.online{background:var(--fverde);animation:pulse 2s infinite;}
 @keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.5;}}
 
@@ -41,20 +114,20 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--texto);min-
 /* FORM */
 .form-group{display:flex;flex-direction:column;gap:5px;margin-bottom:13px;}
 .form-group label{font-size:10.5px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;}
-.form-group input,.form-group select,.form-group textarea{padding:9px 12px;border:1px solid var(--borda);border-radius:8px;font-size:13.5px;font-family:'Inter',sans-serif;color:var(--texto);outline:none;transition:border 0.15s;background:#fff;}
+.form-group input,.form-group select,.form-group textarea{padding:9px 12px;border:1px solid var(--borda);border-radius:8px;font-size:13.5px;font-family:'Inter',sans-serif;color:var(--texto);outline:none;transition:border 0.15s;background:var(--branco);}
 .form-group input:focus,.form-group select:focus{border-color:var(--verde);}
-.form-group input::placeholder{color:#A9B6C2;}
+.form-group input::placeholder{color:var(--cinza-500);}
 .form-row{display:grid;grid-template-columns:1fr 1fr;gap:13px;}
 .form-row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:13px;}
 
 /* BUSCA */
 .busca-wrap{display:flex;gap:10px;margin-bottom:10px;}
-.busca-wrap input{flex:1;padding:10px 14px;border:1px solid var(--borda);border-radius:8px;font-size:13.5px;font-family:'Inter',sans-serif;outline:none;background:#fff;color:var(--texto);}
-.busca-wrap input::placeholder{color:#A9B6C2;}
+.busca-wrap input{flex:1;padding:10px 14px;border:1px solid var(--borda);border-radius:8px;font-size:13.5px;font-family:'Inter',sans-serif;outline:none;background:var(--branco);color:var(--texto);}
+.busca-wrap input::placeholder{color:var(--cinza-500);}
 .busca-wrap input:focus{border-color:var(--verde);}
 
 /* RESULTADO BUSCA */
-.resultado-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--borda);border-radius:8px;margin-bottom:7px;background:#fff;}
+.resultado-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--borda);border-radius:8px;margin-bottom:7px;background:var(--branco);}
 .resultado-item .info{flex:1;}
 .resultado-item .nome{font-size:13px;font-weight:500;color:var(--texto);}
 .resultado-item .detalhe{font-size:11px;color:var(--muted);margin-top:2px;}
@@ -64,7 +137,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--texto);min-
 .item-row .item-info{flex:1;}
 .item-row .item-nome{font-size:13px;font-weight:500;line-height:1.3;color:var(--texto);}
 .item-row .item-det{font-size:11px;color:var(--muted);margin-top:2px;}
-.item-row input[type=number]{width:62px;padding:6px 8px;border:1px solid var(--borda);border-radius:7px;text-align:center;font-size:13px;outline:none;background:#fff;color:var(--texto);}
+.item-row input[type=number]{width:62px;padding:6px 8px;border:1px solid var(--borda);border-radius:7px;text-align:center;font-size:13px;outline:none;background:var(--branco);color:var(--texto);}
 .item-row .item-preco{font-family:'Montserrat',sans-serif;font-weight:700;font-size:14px;color:var(--navy);min-width:85px;text-align:right;}
 .item-preco-info{font-size:10px;color:var(--muted);text-align:right;margin-top:2px;}
 /* ── TETO CMED ── o selo fica ao lado do preço, onde a decisão acontece.
@@ -72,23 +145,28 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--texto);min-
    fraco), e o `ok` é DISCRETO de propósito: quem está dentro do teto não precisa de festa —
    precisa saber o número. Alerta que grita quando está tudo bem vira alerta ignorado. */
 .teto-badge{font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px;white-space:nowrap;cursor:help}
-.teto-badge.acima{background:rgba(239,68,68,.10);color:#ef4444;border:1px solid rgba(239,68,68,.42)}
-.teto-badge.ok{background:transparent;color:var(--muted);font-weight:600;border:1px solid var(--borda, #d8e2ea)}
+/* O "acima" media 3,21:1 — o alerta mais importante da tela era o texto menos legível dela.
+   O par fechado do tema (tinta 700 sobre fundo 50) dá 6,83:1 e é o MESMO par que o Conferidor e
+   o Licitações usam para dizer "acima do teto": um alerta, uma cor, em todo o sistema. */
+.teto-badge.acima{background:var(--vermelho-50);color:var(--vermelho-700);border:1px solid var(--vermelho-300)}
+/* o `--borda` já não pode faltar (ele é apelido de token), então o valor de emergência saiu:
+   fallback que nunca dispara é uma cor a mais para alguém achar que precisa manter igual */
+.teto-badge.ok{background:transparent;color:var(--muted);font-weight:600;border:1px solid var(--borda)}
 @media print{ .teto-badge{display:none !important} }
 
 /* ITENS NAO ENCONTRADOS */
-.nao-encontrado-row{background:#FBE9E9;border:1px dashed #F0BFBF;border-radius:8px;padding:9px 12px;margin-bottom:7px;display:flex;align-items:center;gap:8px;}
+.nao-encontrado-row{background:var(--vermelho-50);border:1px dashed var(--vermelho-300);border-radius:8px;padding:9px 12px;margin-bottom:7px;display:flex;align-items:center;gap:8px;}
 
 /* DESCONTO */
 .desc-control{display:flex;align-items:center;gap:8px;flex:1;}
-.desc-control input{width:55px;padding:5px 8px;border:1px solid var(--borda);border-radius:6px;text-align:center;font-size:12px;outline:none;background:#fff;color:var(--texto);}
+.desc-control input{width:55px;padding:5px 8px;border:1px solid var(--borda);border-radius:6px;text-align:center;font-size:12px;outline:none;background:var(--branco);color:var(--texto);}
 .desc-control span{font-size:11px;color:var(--muted);}
 
 /* BADGE */
 .badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10.5px;font-weight:600;}
 .badge-green{background:var(--verde-claro);color:var(--verde-escuro);}
 .badge-blue{background:var(--verde-claro);color:var(--verde-escuro);}
-.badge-yellow{background:#FBF3E1;color:#B07E1E;}
+.badge-yellow{background:var(--ambar-50);color:var(--ambar-700);}
 
 /* TOTAL BOX */
 .total-box{background:var(--bg);border-radius:12px;padding:16px 20px;border:1px solid var(--borda);}
@@ -97,9 +175,9 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--texto);min-
 
 /* BUTTONS */
 .btn{padding:9px 18px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:none;transition:all 0.15s;font-family:'Inter',sans-serif;display:inline-flex;align-items:center;gap:6px;}
-.btn-primary{background:var(--verde);color:#fff;width:100%;padding:14px;font-size:15px;justify-content:center;font-weight:700;}
-.btn-primary:hover{background:var(--verde-escuro);color:#fff;}
-.btn-outline{background:#fff;color:var(--texto);border:1px solid var(--borda);}
+.btn-primary{background:var(--verde);color:var(--branco);width:100%;padding:14px;font-size:15px;justify-content:center;font-weight:700;}
+.btn-primary:hover{background:var(--verde-escuro);color:var(--branco);}
+.btn-outline{background:var(--branco);color:var(--texto);border:1px solid var(--borda);}
 .btn-outline:hover{border-color:var(--verde);color:var(--verde);}
 .btn-danger{background:var(--vermelho);color:white;}
 .btn-danger:hover{opacity:0.85;}
@@ -162,7 +240,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--texto);min-
 <body>
 
 <div class="topfaixa">
-  <div style="display:flex;align-items:center;gap:14px"><a href="fpmed_sistema_final.html" style="color:#fff;text-decoration:none;font-weight:700;background:rgba(255,255,255,.18);border-radius:14px;padding:2px 10px">← Sistema</a><span>📞 <b>(62) 3290-4241</b> &nbsp;·&nbsp; Compromisso com qualidade!</span></div>
+  <div style="display:flex;align-items:center;gap:14px"><a href="fpmed_sistema_final.html" style="color:var(--branco);text-decoration:none;font-weight:700;background:rgba(255,255,255,.18);border-radius:14px;padding:2px 10px">← Sistema</a><span>📞 <b>(62) 3290-4241</b> &nbsp;·&nbsp; Compromisso com qualidade!</span></div>
   <div>FPMED HOSPITALAR</div>
 </div>
 
@@ -174,7 +252,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--texto);min-
         style="padding:6px 10px;border:1px solid var(--borda);border-radius:8px;font-size:13px;background:#fff;color:var(--texto);width:140px;outline:none;"
         onkeydown="if(event.key==='Enter') abrirOrcamento()">
       <button onclick="abrirOrcamento()" style="padding:6px 12px;background:#EAF6FC;color:var(--verde);border:1px solid var(--verde);border-radius:8px;font-size:12px;cursor:pointer;font-weight:600;">📂 Abrir</button>
-      <button onclick="salvarOrcamento()" id="btn-salvar-orc" style="padding:6px 12px;background:var(--verde);color:#fff;border:none;border-radius:8px;font-size:12px;cursor:pointer;font-weight:700;">💾 Salvar</button>
+      <button onclick="salvarOrcamento()" id="btn-salvar-orc" style="padding:6px 12px;background:var(--verde);color:var(--branco);border:none;border-radius:8px;font-size:12px;cursor:pointer;font-weight:700;">💾 Salvar</button>
     </div>
     <div class="top-bar-info">
       <span class="db-dot" id="db-dot"></span>
@@ -262,7 +340,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--texto);min-
     <div id="tab-busca">
       <div class="busca-wrap">
         <input type="text" id="busca-prod" placeholder="Digite o produto, princípio ativo ou marca..." oninput="buscarProduto(this.value)" onkeydown="if(event.key==='Enter'){event.preventDefault();buscarForcado();}">
-        <button id="btn-buscar" class="btn" style="background:var(--verde);color:#fff;font-weight:700;white-space:nowrap" onclick="buscarForcado()">🔍 Buscar</button>
+        <button id="btn-buscar" class="btn" style="background:var(--verde);color:var(--branco);font-weight:700;white-space:nowrap" onclick="buscarForcado()">🔍 Buscar</button>
       </div>
       <div id="resultado-busca"></div>
       <div class="divider"></div>
@@ -680,7 +758,7 @@ function seloVariacao(c){
   if(!v || v.var_pct==null || Number(v.var_pct)===0) return '';
   const up = Number(v.var_pct)>0, cor = up?'#e0483d':'#16c060';
   const tit = `Preço ${up?'subiu':'caiu'} ${Math.abs(v.var_pct)}% — de ${fmtBRL(v.preco_anterior)} p/ ${fmtBRL(v.preco_atual)} (desde ${fmtDate(String(v.data_anterior).slice(0,10))})`;
-  return ` <span class="badge" title="${tit}" style="background:${cor};color:#fff;font-weight:700;cursor:help">${up?'↑':'↓'} ${Math.abs(v.var_pct)}%</span>`;
+  return ` <span class="badge" title="${tit}" style="background:${cor};color:var(--branco);font-weight:700;cursor:help">${up?'↑':'↓'} ${Math.abs(v.var_pct)}%</span>`;
 }
 // AUTO-REFRESH: a cada 60s puxa o banco em background e re-renderiza a busca ativa (sem atrapalhar).
 async function autoRefreshGiovana(){
@@ -2867,7 +2945,7 @@ function buscarProduto(q, imediato=false) {
           <div class="info">
             <div class="nome">${melhor.produto}</div>
             <div class="detalhe">
-              ${ehGlobalComEstoque(melhor)?`<span class="badge" style="background:#16c060;color:#fff;font-weight:700">🏠 ESTOQUE PRÓPRIO · ${melhor.estoque} un</span> `:''}${ehRestrito()?'':`<span class="badge badge-blue">${nomeForn(melhor.fornecedor)}</span>`}
+              ${ehGlobalComEstoque(melhor)?`<span class="badge" style="background:#16c060;color:var(--branco);font-weight:700">🏠 ESTOQUE PRÓPRIO · ${melhor.estoque} un</span> `:''}${ehRestrito()?'':`<span class="badge badge-blue">${nomeForn(melhor.fornecedor)}</span>`}
               ${melhor.marca?`<span class="badge" style="background:#f0f4f0;color:var(--muted);margin-left:4px">${melhor.marca}</span>`:''}
               &nbsp;· CX/${qtdEmbalagem(melhor.und,melhor.produto)} · <strong style="color:var(--verde-escuro)">${fmtBRL(melhor._pvv)}/un</strong> · ${fmtBRL(melhor._pvv*qtdEmbalagem(melhor.und,melhor.produto))}/cx${qtdEmbDiv(melhor.und,melhor.produto)?` <span title="${qtdEmbDiv(melhor.und,melhor.produto)}" style="cursor:help">⚠️</span>`:''}${seloVariacao(melhor)}
               ${melhor.estoque>0?` · <span style="color:var(--verde-escuro)">✅ ${melhor.estoque} em estoque</span>`:''}
