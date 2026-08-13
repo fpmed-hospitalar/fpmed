@@ -145,7 +145,7 @@ nunca, em hipótese alguma, marca da GlobalMed.
    **[FEITO — 13/08]** ver a seção 7.
 3. **Header sticky** — breadcrumb, gatilho ⌘K (visual), selo "Base sincronizada", sino.
    **[FEITO — 13/08]** ver a seção 8.
-4. **Fila de 4 KPIs**, com os números reais do banco.
+4. **Fila de 4 KPIs**, com os números reais do banco. **[FEITO — 13/08]** ver a seção 9.
 5. **Barra de busca** com chips, "+ Filtro" tracejado e o botão azul.
 6. **Painel de resultados** — linha rica, barra de urgência, selos, `<mark>`, alternador
    Confortável/Compacta.
@@ -379,3 +379,91 @@ sombra **pesada** com borda grossa.
 
 Os **cinco** estados do selo foram exercitados na tela, com o motor de verdade, e cada um caiu na
 cor certa — incluindo o "motor ausente", que esconde o selo.
+
+---
+
+## 9 · PASSO 4 FEITO — OS QUATRO INDICADORES, LIGADOS NO BANCO
+
+`fpmed_licitacoes.html`, 13/08. `testa_header_encontrar`: **34 → 46 asserts, mutação 29 de 29
+barradas**. Total do projeto **3.428 / 0 falhas / 92 suítes**. Prova nova contra o banco:
+`tools/prova_indicadores.js`.
+
+### Os números, medidos no banco de verdade
+
+| cartão | número real | o do molde |
+|---|---|---|
+| Licitações **no índice** | **3.201** | 945.699 |
+| Novas em 24 h | **4** | 9.050 |
+| Em acompanhamento *(destaque navy)* | **9** | 71 |
+| Abrem hoje | **28** | 11 |
+
+### O rótulo do primeiro cartão não é o do molde, e essa é a decisão do passo
+
+O molde escreve **"Na plataforma"** embaixo de 945.699. O nosso índice tem 3.201 e cobre 7 UFs.
+
+> **"Na plataforma" ao lado de 3.201 faria alguém concluir que há 3.201 licitações no Brasil.**
+> É a mesma armadilha que o Radar já carrega por escrito desde 08/08 — *a contagem é do NOSSO
+> índice, e um número baixo pode significar "ainda não coletamos", nunca "não tem"*.
+
+O rótulo virou **"Licitações no índice"** e a legenda diz **"o que nós já coletamos do PNCP — não
+é o Brasil inteiro"**. Há assert proibindo o rótulo do molde voltar.
+
+### Duas filas de KPI na mesma tela, e isso é de propósito
+
+A tela **já tinha** uma fila de indicadores (`#kpis`). Elas respondem perguntas diferentes, e isso
+precisa estar dito para a próxima pessoa não apagar uma achando que é cópia da outra:
+
+- **os novos, no topo** falam da **base** — quanto índice temos, o que entrou, o que abre hoje,
+  quanto está no funil. Existem **antes** de qualquer busca, e são o que se olha para decidir se
+  vale procurar hoje;
+- **os antigos, sobre a lista** falam da **busca** — quantas bateram, quanto somam, quantas têm
+  aderência. Só existem **depois** de buscar.
+
+### O que falha vira traço, nunca zero
+
+As quatro contagens são **leituras independentes**, de propósito: a do funil lê `negocios`, que é
+tabela de **gestor** — um vendedor recebe 403 ali e 200 nas outras três. Com uma leitura só, o 403
+de uma derrubaria as quatro, e a tela ficaria muda sobre o índice por causa de uma permissão que
+não tem nada a ver com ele.
+
+> E o que falha vira **"—"** com o motivo no `title`. *"0 licitações no índice"* e *"não consegui
+> contar"* são afirmações diferentes, e a primeira faz alguém concluir que o sistema está vazio.
+> Lição S6 — a mesma que já custou um fechamento mensal invertido nesta casa.
+
+Provado no navegador **sem sessão**: as quatro leituras respondem 401 e os quatro cartões mostram
+"—" com *"não consegui contar: HTTP 401 — sem permissão de leitura"*.
+
+### A contagem é barata, e ela desconfia do servidor
+
+`select=id&limit=1` com `Prefer: count=exact`; o total sai do `content-range`. A tela não baixa
+3.201 linhas para escrever "3.201". E se o `content-range` vier **sem** o total, a contagem
+**falha** em vez de virar zero — o PostgREST manda `*` quando não conta, e ler isso como 0 seria a
+lição S1 outra vez (o servidor respondendo outra coisa, calado).
+
+A `prova_indicadores.js` conta **duas vezes por caminhos diferentes** — pelo `content-range`
+(o caminho da tela) e baixando as linhas paginado (o caminho lento) — e compara. Os quatro
+bateram. Ela também trava, pelo avesso, que **nenhum** dos quatro números seja um dos fictícios do
+molde, e que o índice não esteja vazio (quatro zeros passariam em todos os outros asserts).
+
+> **O que a prova não prova, e está dito nela:** ela usa a `service_role`, que ignora a RLS. Ela
+> prova a **consulta** e o **número**, não a permissão.
+
+### E os contadores do menu acenderam, da mesma leitura
+
+O slot nasceu no passo 2 esperando quem tivesse o número; quem tem é esta função. **Buscar 4**
+(verde, porque quer dizer novidade) e **Negócios 9** (neutro). Duas leituras para o mesmo número —
+uma para o cartão, outra para o menu — é como nascem dois números que um dia discordam na mesma
+tela.
+
+**Radar e Desertas continuam vazios.** O molde numera os dois (12 e 38) e os dois são fictícios;
+eu não tenho a contagem deles sem inventar uma consulta nova para cada um. Slot vazio é honesto;
+número chutado, não.
+
+### Medido no navegador
+
+| largura | colunas | rolagem horizontal | cartão estourando |
+|---|---|---|---|
+| 390 | 1 | 0 | não |
+| 900 | 2 | 0 | não |
+| 1366 | 4 | 0 | não |
+| 1920 | 4 | 0 | não |

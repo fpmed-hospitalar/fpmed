@@ -213,6 +213,50 @@ body{
   max-width:var(--largura-leitura)}
 .pagina-topo .acao{margin-left:auto}
 
+/* ══ A FILA DE INDICADORES (molde §3, passo 4 · 13/08) ═══════════════════════════════════════
+   Quatro cartões, e eles respondem uma pergunta DIFERENTE da fila de KPIs que já existe mais
+   abaixo. Isso precisa estar dito, senão a próxima pessoa acha que são duas versões da mesma
+   coisa e apaga uma:
+     · ESTES (aqui em cima) falam da BASE — quanto índice temos, o que entrou, o que abre hoje,
+       quanto está no funil. Eles existem ANTES de qualquer busca, e são o que a pessoa olha pra
+       decidir se vale procurar hoje;
+     · os DE BAIXO (#kpis) falam da BUSCA — quantas bateram, quanto somam, quantas têm aderência.
+       Eles só existem DEPOIS de buscar, e desaparecem quando a busca é refeita.
+   Base e resultado são duas perguntas, e é por isso que são duas filas.
+
+   >>> O TERCEIRO CARTÃO É NAVY, e o destaque é do molde: "Em acompanhamento" é o único dos
+       quatro que fala do TRABALHO DA CASA, e não do mundo lá fora. */
+.indicadores{display:grid;grid-template-columns:repeat(4,1fr);gap:var(--esp-3);
+  margin-top:var(--esp-4)}
+@media(max-width:900px){.indicadores{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:480px){.indicadores{grid-template-columns:1fr}}
+.ind{background:var(--branco);border:1px solid var(--cinza-200);border-radius:var(--raio-cartao);
+  box-shadow:var(--sombra-1);padding:var(--esp-4);display:flex;flex-direction:column;gap:var(--esp-2)}
+.ind .cab{display:flex;align-items:center;gap:var(--esp-2)}
+.ind .rot{font-size:var(--txt-1);font-weight:var(--peso-medio);color:var(--cinza-700)}
+.ind .ic{width:26px;height:26px;margin-left:auto;border-radius:var(--raio-botao);flex:0 0 auto;
+  display:grid;place-items:center;background:var(--cinza-100);color:var(--cinza-600)}
+.ind .ic svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:1.8;
+  stroke-linecap:round;stroke-linejoin:round}
+.ind .num{font-size:var(--txt-5);font-weight:var(--peso-forte);letter-spacing:-.025em;
+  line-height:var(--altura-titulo);color:var(--cinza-800);font-variant-numeric:tabular-nums}
+.ind .leg{font-size:var(--txt-1);color:var(--cinza-600);line-height:1.4}
+.ind--bom .ic{background:var(--sinal-bom-fundo);color:var(--sinal-bom-icone)}
+.ind--hoje .ic{background:var(--sinal-perigo-fundo);color:var(--sinal-perigo-tinta)}
+/* O cartão de destaque: navy, com a família de tinta dele. A sombra é a 2, que é a de coisa
+   ELEVADA — ele é o único dos quatro que sai do plano dos outros. */
+.ind--destaque{background:var(--navy);border-color:var(--navy);box-shadow:var(--sombra-2)}
+.ind--destaque .rot{color:var(--navy-tinta)}
+.ind--destaque .num{color:var(--branco)}
+.ind--destaque .leg{color:var(--navy-apoio)}
+.ind--destaque .ic{background:var(--navy-selo);color:var(--navy-marca)}
+/* ══ O ESTADO "NÃO SEI" DO INDICADOR — e ele NÃO é enfeite ═══════════════════════════════════
+   Três destes quatro números vêm de leituras que podem falhar (RLS, rede, sessão vencida). Um
+   número que não veio NÃO PODE virar zero: "0 licitações no índice" e "não consegui contar" são
+   afirmações diferentes, e a primeira faz alguém concluir que o sistema está vazio. Lição S6.
+   O traço é o número que a tela não tem, e o `title` diz por quê. */
+.ind .num.vazio{color:var(--cinza-400);font-weight:var(--peso-medio)}
+
 .wrap{max-width:1180px;margin:0 auto;padding:0 var(--esp-6) var(--esp-16)}
 
 /* ── PERÍODO ─────────────────────────────────────────────────────────────────── */
@@ -679,6 +723,43 @@ select[disabled],input[disabled],textarea[disabled]{
          das buscas já salvas. Aqui ele fica ao lado da busca que salva (D7). -->
     <button type="button" class="btn sec acao" onclick="salvarJornal()"
             title="salva a busca que está na tela agora como um jornal">Salvar busca</button>
+  </div>
+
+  <!-- ══ OS QUATRO INDICADORES (molde §3, passo 4) ══════════════════════════════════════════
+       >>> OS NÚMEROS DO MOLDE SÃO FICTÍCIOS — 945.699 na base, 9.050 novas, 71 no funil, 11
+           abrem hoje — e está escrito no README dele. Ordem expressa do dono: ligar no banco
+           real. Número bonito de demonstração virando número de produto é a lição S6.
+       >>> E O RÓTULO DO PRIMEIRO NÃO É "Na plataforma", que é o do molde. É "no nosso índice",
+           e a legenda diz que não é o Brasil inteiro. Esta é a MESMA regra que o Radar já
+           carrega por escrito: a contagem é do que NÓS coletamos, e um número baixo aqui pode
+           significar "ainda não coletamos", nunca "não existe". Com "Na plataforma" ao lado de
+           3 mil, alguém concluiria que há 3 mil licitações no Brasil.
+       Cada cartão nasce com "—" e só ganha número quando a leitura responde. -->
+  <div class="indicadores" id="indicadores">
+    <div class="ind">
+      <div class="cab"><span class="rot">Licitações no índice</span>
+        <span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v6c0 1.7 3.6 3 8 3s8-1.3 8-3V6"/><path d="M4 12v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/></svg></span></div>
+      <b class="num" id="ind-base">—</b>
+      <span class="leg">o que <b>nós</b> já coletamos do PNCP — não é o Brasil inteiro</span>
+    </div>
+    <div class="ind ind--bom">
+      <div class="cab"><span class="rot">Novas licitações</span>
+        <span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 4v16M4 12h16"/></svg></span></div>
+      <b class="num" id="ind-novas">—</b>
+      <span class="leg">entraram no índice nas últimas 24 horas</span>
+    </div>
+    <div class="ind ind--destaque">
+      <div class="cab"><span class="rot">Em acompanhamento</span>
+        <span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 4h12v17l-6-4-6 4z"/></svg></span></div>
+      <b class="num" id="ind-funil">—</b>
+      <span class="leg">seus negócios abertos no funil</span>
+    </div>
+    <div class="ind ind--hoje">
+      <div class="cab"><span class="rot">Abrem hoje</span>
+        <span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="8"/><path d="M12 7.5V12l3 2"/></svg></span></div>
+      <b class="num" id="ind-hoje">—</b>
+      <span class="leg" id="ind-hoje-leg">sessão de abertura marcada para hoje</span>
+    </div>
   </div>
   <!-- ══ O CARTÃO DA BUSCA (13/08, item 7 fatia 3) ═══════════════════════════════════════════
        Período, campo de busca, a dica e os atalhos ERAM QUATRO BLOCOS SOLTOS sobre o fundo da
@@ -1325,7 +1406,7 @@ async function iniciarSeloBase(){
   const semMotor = typeof window.AlarmeColeta === 'undefined';
   pintaSeloBase(semMotor ? null : await carimboColeta(), semMotor);
 }
-function _aoAutenticar(){ iniciarEstoque(); iniciarJornais(); abreLeitorNaBarra(); iniciarSeloBase(); reservaAuth(); }
+function _aoAutenticar(){ iniciarEstoque(); iniciarJornais(); abreLeitorNaBarra(); iniciarSeloBase(); pintaIndicadores(); reservaAuth(); }
 if(window.gmAuth) _aoAutenticar();
 else document.addEventListener('gm-auth-ready', _aoAutenticar, { once:true });
 
@@ -1607,6 +1688,83 @@ function pintaSeloBase(carimbo, motorAusente){
   el.innerHTML = '<span class="ponto"></span><span class="texto">' + esc(texto) + '</span>';
   el.hidden = false;
   return v;
+}
+
+/* ══ OS QUATRO INDICADORES (passo 4 do molde · 13/08) ════════════════════════════════════════
+   Os números do molde são de demonstração; estes vêm do banco. Cada um é uma CONTAGEM, e ela é
+   pedida do jeito barato: `select=id&limit=1` com `Prefer: count=exact`, e o total sai do
+   cabeçalho `content-range`. A tela não baixa 3 mil linhas pra escrever "3.197".
+
+   >>> AS QUATRO LEITURAS SÃO INDEPENDENTES, DE PROPÓSITO. A do funil lê `negocios`, que é tabela
+       de GESTOR: um vendedor recebe 403 ali e 200 nas outras três. Com uma leitura só, o 403 de
+       uma derrubaria as quatro — e a tela ficaria muda sobre o índice por causa de uma permissão
+       que não tem nada a ver com ele.
+   >>> E O QUE FALHA VIRA TRAÇO, NUNCA ZERO. "0 licitações no índice" e "não consegui contar" são
+       afirmações diferentes, e a primeira faz alguém concluir que o sistema está vazio (S6). O
+       `title` do traço diz o motivo, pra não virar um traço misterioso. */
+async function contar(caminho){
+  const r = await fetch(SB_URL + '/rest/v1/' + caminho + (caminho.includes('?') ? '&' : '?') + 'select=id&limit=1',
+    { headers: Object.assign({ 'Prefer': 'count=exact' }, SB_H) });
+  if(!r.ok) throw new Error('HTTP ' + r.status + (r.status===401||r.status===403 ? ' — sem permissão de leitura' : ''));
+  const cr = r.headers.get('content-range') || '';
+  const n = Number(String(cr).split('/')[1]);
+  /* O `content-range` é `0-0/3197`. Se ele vier sem o total (ou com `*`, que o PostgREST usa
+     quando não conta), NÃO dá pra inventar 0 — a leitura respondeu, mas não com o número. */
+  if(!isFinite(n)) throw new Error('a resposta veio sem a contagem');
+  return n;
+}
+function poeIndicador(id, valor, porque){
+  const el = document.getElementById(id);
+  if(!el) return;
+  if(typeof valor === 'number' && isFinite(valor)){
+    el.textContent = valor.toLocaleString('pt-BR');
+    el.classList.remove('vazio'); el.title = '';
+  } else {
+    el.textContent = '—';
+    el.classList.add('vazio');
+    el.title = porque || 'não consegui contar agora';
+  }
+}
+async function pintaIndicadores(){
+  const agora = new Date();
+  const iso = d => d.toISOString();
+  const ontem = new Date(agora.getTime() - 24*36e5);
+  /* "Abrem hoje" é o DIA LOCAL de quem está olhando, não o dia UTC: uma sessão marcada para as
+     8h de amanhã em Goiás já é "amanhã" às 21h de hoje em UTC, e o cartão diria o número errado
+     justamente à noite, que é quando alguém confere a agenda do dia seguinte. */
+  const ini = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate(), 0, 0, 0);
+  const fim = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate(), 23, 59, 59);
+  const leg = document.getElementById('ind-hoje-leg');
+  if(leg) leg.textContent = agora.toLocaleDateString('pt-BR', { day:'numeric', month:'long', year:'numeric' })
+    + ' · ' + agora.toLocaleDateString('pt-BR', { weekday:'long' });
+
+  const pedidos = [
+    ['ind-base',  'licitacoes'],
+    ['ind-novas', 'licitacoes?coletado_em=gte.' + encodeURIComponent(iso(ontem))],
+    ['ind-funil', 'negocios?arquivado=is.false'],
+    ['ind-hoje',  'licitacoes?data_abertura=gte.' + encodeURIComponent(iso(ini))
+                + '&data_abertura=lte.' + encodeURIComponent(iso(fim))],
+  ];
+  const conta = {};
+  await Promise.all(pedidos.map(async ([id, caminho]) => {
+    try { conta[id] = await contar(caminho); poeIndicador(id, conta[id]); }
+    catch(e){ conta[id] = null; poeIndicador(id, null, 'não consegui contar: ' + e.message); }
+  }));
+
+  /* ══ E OS CONTADORES DO MENU ACENDEM AQUI, DA MESMA LEITURA ═══════════════════════════════
+     O slot nasceu no passo 2 esperando quem tivesse o número; quem tem é esta função. Duas
+     leituras pro mesmo número (uma pro cartão, outra pro menu) é como nascem dois números que
+     um dia discordam na mesma tela.
+     >>> SÓ DOIS DOS QUATRO ITENS QUE O MOLDE NUMERA GANHAM NÚMERO. O molde põe contador também
+         no Radar (12) e nas Desertas (38); os dois são FICTÍCIOS, e eu não tenho a contagem
+         deles aqui sem inventar uma consulta nova pra cada um. Slot vazio é honesto; número
+         chutado, não. Eles acendem no dia em que a contagem existir.
+     >>> O VERDE VAI SÓ NO "novas", que é o único que quer dizer NOVIDADE. O do funil é neutro:
+         contador verde permanente vira enfeite em três dias. */
+  if (window.LimedtecMenu && LimedtecMenu.contador) {
+    LimedtecMenu.contador('buscar',   conta['ind-novas'], true);
+    LimedtecMenu.contador('negocios', conta['ind-funil']);
+  }
 }
 
 /* ══ A RESERVA DA ETIQUETA DO gm-auth ═══════════════════════════════════════════════════════

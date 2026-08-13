@@ -144,6 +144,67 @@ ok(n + '. e ele se repinta a cada busca, e nao so no boot',
 ok(n + '. o selo so e lido DEPOIS da sessao (antes dela, 401 viraria um "nao sei" falso)',
   /iniciarSeloBase\(\);/.test((L.match(/function _aoAutenticar\(\)\{[^}]*\}/) || [''])[0])); n++;
 
+// ── 4b. OS QUATRO INDICADORES (passo 4 do molde) ─────────────────────────────
+// A fila de indicadores e do mesmo topo de pagina que o header, e por isso mora nesta
+// suite. O que ela guarda aqui e UMA coisa acima de todas: que os numeros sejam do
+// BANCO. Os quatro do molde sao ficticios e estao escritos no README dele; um deles
+// vazando pra tela e a licao S6 em cima de um numero que o dono usa pra decidir.
+const FICTICIOS = ['945.699', '945699', '9.050', '9050', '2.312', '2312'];
+ok(n + '. *** nenhum numero de demonstracao do molde esta escrito na tela ***',
+  FICTICIOS.every(x => !LIMPO.includes(x)), FICTICIOS.filter(x => LIMPO.includes(x))); n++;
+ok(n + '. os quatro indicadores nascem com traco, e nao com numero',
+  (LIMPO.match(/<b class="num" id="ind-[a-z]+">—<\/b>/g) || []).length === 4,
+  (LIMPO.match(/<b class="num" id="ind-[a-z]+">[^<]*<\/b>/g) || [])); n++;
+/* ══ O ROTULO DO PRIMEIRO CARTAO — e ele NAO e o do molde ══════════════════════
+   O molde escreve "Na plataforma" embaixo de 945.699. O nosso indice tem ~3 mil e
+   cobre 7 UFs desde 06/08. "Na plataforma" ao lado de 3 mil faria alguem concluir
+   que ha 3 mil licitacoes no Brasil - e essa e a MESMA armadilha que o Radar ja
+   carrega por escrito ("a contagem e do NOSSO indice; 0 pode significar 'ainda nao
+   coletamos', nao 'nao tem'"). O rotulo e a legenda dizem de quem e o numero. */
+ok(n + '. o 1o cartao diz que a contagem e do NOSSO indice, e nao da plataforma',
+  /Licitações no índice/.test(LIMPO) && !/Na plataforma/.test(LIMPO)
+  && /não é o Brasil inteiro/.test(LIMPO)); n++;
+
+/* AS QUATRO LEITURAS SAO INDEPENDENTES. A do funil le `negocios`, que e tabela de
+   GESTOR: um vendedor recebe 403 ali e 200 nas outras tres. Com uma leitura so, o
+   403 de uma derrubaria as quatro, e a tela ficaria muda sobre o indice por causa de
+   uma permissao que nao tem nada a ver com ele. */
+const _corpoInd = (LIMPO.match(/async function pintaIndicadores\(\)\{[\s\S]*?\n\}/) || [''])[0];
+ok(n + '. as quatro contagens sao leituras independentes (um 403 no funil nao derruba as outras tres)',
+  /pedidos\.map\(async \(\[id, caminho\]\) => \{[\s\S]{0,200}?try \{[\s\S]{0,200}?catch\(e\)\{/.test(_corpoInd)); n++;
+/* ══ O ASSERT QUE VALE MAIS DESTE BLOCO ═══════════════════════════════════════
+   Leitura que falha vira TRACO, nunca zero. "0 licitacoes no indice" e "nao consegui
+   contar" sao afirmacoes diferentes, e a primeira faz alguem concluir que o sistema
+   esta vazio. Licao S6, e ela ja custou um fechamento mensal errado nesta casa. */
+ok(n + '. *** o que falha vira TRACO, nunca zero (S6) ***',
+  /function poeIndicador\(id, valor, porque\)\{[\s\S]{0,400}?typeof valor === 'number' && isFinite\(valor\)/.test(LIMPO)
+  && /el\.textContent = '—';/.test(LIMPO)); n++;
+ok(n + '. e o traco diz POR QUE, no title - traco misterioso e pior que numero errado',
+  /catch\(e\)\{ conta\[id\] = null; poeIndicador\(id, null, 'não consegui contar: ' \+ e\.message\); \}/.test(LIMPO)); n++;
+/* A contagem sai do `content-range` do PostgREST. Se ele vier sem o total (o PostgREST
+   manda `*` quando nao conta), NAO da pra inventar 0: a leitura respondeu, mas nao com
+   o numero. E o mesmo defeito da S1 - o servidor respondendo outra coisa, calado. */
+ok(n + '. a contagem vem do content-range, e sem total ela FALHA em vez de virar zero',
+  /const cr = r\.headers\.get\('content-range'\)/.test(LIMPO)
+  && /if\(!isFinite\(n\)\) throw new Error\('a resposta veio sem a contagem'\);/.test(LIMPO)); n++;
+ok(n + '. e ela nao baixa as linhas pra contar (select=id&limit=1 com Prefer: count=exact)',
+  /'select=id&limit=1'[\s\S]{0,120}?'Prefer': 'count=exact'/.test(LIMPO)); n++;
+/* "Abrem hoje" e o DIA LOCAL de quem olha, nao o dia UTC: uma sessao das 8h de amanha
+   em Goias ja e "amanha" as 21h de hoje em UTC, e o cartao diria o numero errado
+   justamente a noite - quando alguem confere a agenda do dia seguinte. */
+ok(n + '. "abrem hoje" usa o dia LOCAL, e nao o dia UTC',
+  /new Date\(agora\.getFullYear\(\), agora\.getMonth\(\), agora\.getDate\(\), 0, 0, 0\)/.test(LIMPO)
+  && /new Date\(agora\.getFullYear\(\), agora\.getMonth\(\), agora\.getDate\(\), 23, 59, 59\)/.test(LIMPO)); n++;
+/* OS CONTADORES DO MENU SAEM DA MESMA LEITURA. Duas leituras pro mesmo numero (uma pro
+   cartao, outra pro menu) e como nascem dois numeros que um dia discordam na mesma tela. */
+ok(n + '. os contadores do menu saem da MESMA leitura dos cartoes (nao de uma segunda consulta)',
+  /LimedtecMenu\.contador\('buscar',\s+conta\['ind-novas'\], true\)/.test(_corpoInd)
+  && /LimedtecMenu\.contador\('negocios', conta\['ind-funil'\]\)/.test(_corpoInd)); n++;
+ok(n + '. e so os dois que tem numero de verdade acendem (Radar e Desertas ficam vazios)',
+  !/contador\('radar'/.test(LIMPO) && !/contador\('desertas'/.test(LIMPO)); n++;
+ok(n + '. os indicadores so sao lidos DEPOIS da sessao (antes dela, 401 em tudo)',
+  /pintaIndicadores\(\);/.test((L.match(/function _aoAutenticar\(\)\{[^}]*\}/) || [''])[0])); n++;
+
 // ── 5. a reserva da etiqueta do gm-auth ──────────────────────────────────────
 /* A etiqueta fixa do gm-auth (e-mail + trocar senha + sair) tem z-index maximo e cobria o gatilho
    e o selo. Achado no PRINT, nao na suite - e por isso ele virou assert.

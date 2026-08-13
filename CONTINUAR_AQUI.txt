@@ -1262,12 +1262,41 @@ Criado em 21/07/2026 copiando SO os arquivos do app do C:\globalmed.
              LINHA INTEIRA do _aoAutenticar, letra por letra — quebrou em 11/08 e de novo hoje
              sem nada ter piorado. E o extrator do corpo era regex nao-guloso que parava na
              primeira chave interna. Agora conta chaves balanceadas e cobra a promessa.
-     >>> PROXIMO PASSO: 4 · A FILA DE 4 KPIs, com os numeros REAIS do banco.
-         >>> ATENCAO: os 4 numeros do molde sao FICTICIOS (945.699 na base, 9.050 novas, 71 no
-             funil, 11 abrem hoje). Ordem expressa do dono: ligar no banco real. E e nesse
-             passo que os CONTADORES DO MENU se acendem, das MESMAS leituras — o slot ja
-             existe (LimedtecMenu.contador), esperando quem tenha o numero.
-         Depois: 5 barra de busca com chips · 6 painel de resultados.
+     >>> PASSO 4 (OS 4 INDICADORES) **FEITO** — sw.js -> -2026-08-13-33.
+         testa_header_encontrar: 34 -> 46 asserts, MUTACAO 29 de 29. Prova nova contra o
+         banco: tools/prova_indicadores.js. TOTAL: 3.428 / 0 falhas / 92 suites.
+         Detalhe em docs/molde_encontrar.md, secao 9.
+         OS NUMEROS REAIS, medidos: indice 3.201 · novas em 24h 4 · em acompanhamento 9 ·
+         abrem hoje 28. (No molde eram 945.699 / 9.050 / 71 / 11, todos ficticios.)
+         >>> *** O ROTULO DO 1o CARTAO NAO E O DO MOLDE, e essa e a decisao do passo. *** Ele
+             escreve "Na plataforma" embaixo de 945.699. O nosso indice tem 3.201 e cobre 7 UFs
+             — "Na plataforma" ao lado de 3.201 faria alguem concluir que ha 3.201 licitacoes no
+             BRASIL. Virou "Licitacoes no indice" + "o que NOS ja coletamos do PNCP — nao e o
+             Brasil inteiro". E a mesma regra que o Radar carrega por escrito desde 08/08. Ha
+             assert proibindo o rotulo do molde voltar.
+         >>> DUAS FILAS DE KPI NA MESMA TELA, DE PROPOSITO: as novas (topo) falam da BASE e
+             existem ANTES de buscar; as antigas (#kpis, sobre a lista) falam da BUSCA e so
+             existem DEPOIS. Base e resultado sao duas perguntas.
+         >>> AS 4 CONTAGENS SAO LEITURAS INDEPENDENTES: a do funil le `negocios`, que e tabela
+             de GESTOR — vendedor toma 403 ali e 200 nas outras tres. Com uma leitura so, o 403
+             de uma derrubaria as quatro.
+         >>> O QUE FALHA VIRA TRACO, NUNCA ZERO (S6), com o motivo no title. Provado no
+             navegador SEM sessao: 401 nas quatro, quatro tracos, nenhum zero.
+         >>> A CONTAGEM E BARATA E DESCONFIA DO SERVIDOR: select=id&limit=1 + Prefer:
+             count=exact, total do content-range. Se vier SEM total (o PostgREST manda `*`
+             quando nao conta), FALHA em vez de virar zero — seria a S1 de novo. A prova conta
+             DUAS VEZES por caminhos diferentes e compara; os quatro bateram.
+         >>> OS CONTADORES DO MENU ACENDERAM da MESMA leitura: Buscar 4 (verde = novidade) e
+             Negocios 9 (neutro). Radar e Desertas continuam VAZIOS — o molde numera os dois
+             (12 e 38) e os dois sao ficticios; slot vazio e honesto, numero chutado nao.
+     >>> PROXIMO PASSO: 5 · A BARRA DE BUSCA do molde (chips de filtro DENTRO do campo,
+         "+ Filtro" tracejado com popover, botao azul).
+         >>> ATENCAO NO PASSO 5: o botao "Buscar" do molde e branco sobre #2CA9E0 = 2,67:1,
+             e REPROVA. A fuga ja esta decidida e medida: --azul-600 (#1576A5, 5,04:1), que
+             e "a cor da acao" do tema. O #2CA9E0 segue sendo a marca em tudo que nao
+             carrega texto. Ver docs/molde_encontrar.md secao 1.
+         Depois: 6 painel de resultados (linha rica, barra de urgencia, selos, <mark>,
+         alternador Confortavel/Compacta).
 
      >>> O SERVIDOR DO LACO — ARMADILHA NOVA, e me custou tres reinicios: subir o servidor
          como tarefa de fundo funciona, mas ele MORRE a cada notificacao de tarefa. E subir
