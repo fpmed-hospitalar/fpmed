@@ -1991,6 +1991,65 @@ Criado em 21/07/2026 copiando SO os arquivos do app do C:\globalmed.
             >>> ASSERTS que citam a frase: cobrar a AUSENCIA, nao a presenca. sw.js novo,
                 publicar e provar com print.
 
+    12. [ ] **QUADRO DE CHIPS DE PORTAIS** (complemento do item da busca) — pedido do dono,
+            13/08, entrou no fim da fila. Trocar o dropdown "Portal de origem" por um quadro de
+            chips multi-selecao, um por portal PRESENTE NA BASE, com contador real e
+            marcar/desmarcar todos. Chips do molde, sem logo de terceiro.
+
+            >>> O PASSO 4 DO PEDIDO ("MEDIR E REPORTAR") EU JA FIZ, E ELE MUDA O ITEM. ***
+
+            (a) A COLUNA `licitacoes.portal` NAO SERVE: ela vale **'PNCP' em 100% das 3.201
+                linhas**. E constante — a coleta grava a fonte (o PNCP), nao o portal de
+                disputa. Um quadro montado sobre ela nasceria com UM chip.
+                >>> A premissa do pedido ("licitacoes.portal guarda a origem que o PNCP informa")
+                    nao se confirma na base. O dado existe, mas em outro lugar.
+
+            (b) O PORTAL DE ORIGEM VEM EM `bruto->>'usuarioNome'`, e ai sim ha variedade:
+                **74 valores distintos** nas 3.201 linhas. E e a mesma fonte que a pesquisa
+                avancada (item 9) ja usa.
+
+            (c) *** MAS A MAIORIA NAO E PORTAL DE COMPRA. *** O `usuarioNome` do PNCP e "quem
+                PUBLICOU no PNCP" — e na pratica isso e, quase sempre, a EMPRESA DE SOFTWARE de
+                gestao publica do municipio. Os primeiros da lista medida:
+                  Compras.gov.br .................... 544 (17,0%)   <- portal de verdade
+                  Megasoft Informatica .............. 441 (13,8%)   <- casa de software
+                  BAHIA SECRETARIA DA ADMINISTRACAO . 244 ( 7,6%)   <- portal estadual
+                  Prodata Informatica ............... 216 ( 6,7%)   <- casa de software
+                  CENTI ............................. 186 ( 5,8%)
+                  Licitar Digital ................... 154 ( 4,8%)   <- portal de verdade
+                  ECustomize ........................ 112           <- casa de software
+                  Licitanet ......................... 96            <- portal
+                  BLL Compras ....................... 76            <- portal
+                  Bolsa Nacional de Compras - BNC ... 75            <- portal
+                  Portal de Compras de MG ........... 73            <- portal estadual
+                  SISLOG (Logistica de Goias) ....... 36            <- portal estadual, GO!
+                  Novo BBMNET ....................... 22 · Licitacoes-E BB 11
+                E a cauda longa: Betha Sistemas, Fiorilli, IPM, E&L, Agili, Instar, SMARAPD...
+                dezenas de casas de software com 1 a 5 licitacoes cada.
+
+            >>> O QUE ISSO SIGNIFICA PRO ITEM, sem contornar: montar o quadro DIRETO do
+                `usuarioNome` produziria **74 chips, a maioria com nome de software house** — e
+                nao o que o pedido descreve (Comprasnet, BLL, BNC, Licitanet, Licitacoes-e,
+                estaduais). O usuario procuraria "BLL" e veria "Megasoft Informatica" do lado.
+            >>> ENTAO O ITEM PRECISA DE UMA CURADORIA: um mapa `usuarioNome -> portal`, com
+                "Outros" pra cauda. E o mapa e **decisao de negocio, nao invencao minha**: dizer
+                que "Megasoft Informatica" nao e um portal de compra e conhecimento de mercado.
+                >>> DUAS SAIDAS PRO DONO ESCOLHER (acumula pro checkpoint):
+                    (i) CURADORIA: eu levanto os 74 e ele marca quais sao portais de compra de
+                        verdade; o resto vira "Outros". Quadro fiel ao pedido, custa uma
+                        passada dele na lista.
+                    (ii) SEM CURADORIA: chips so pros que passarem de um piso (ex.: >=50
+                         licitacoes) e "Outros" pro resto. Nasce sozinho e cresce sozinho, mas
+                         mistura software house com portal — e o chip "Megasoft" nao ajuda
+                         ninguem a achar licitacao.
+                    Minha recomendacao e a (i), porque o valor do quadro esta em ser a lista de
+                    ONDE SE DISPUTA, e isso nenhuma regra automatica sabe.
+            >>> E O "Outros / PNCP" QUE ELE JA PEDIU resolve o rodape das duas saidas.
+            >>> UMA COISA QUE JA E BOA NOTICIA: o quadro **nao nasce vazio nem depende da coleta
+                nacional**. Com 3.201 linhas ja ha portal de verdade com peso (Compras.gov.br
+                544, Licitar Digital 154, Licitanet 96, BLL 76, BNC 75) e um estadual de GOIAS
+                (SISLOG, 36), que e a praca da casa.
+
     10-hist. [ref] o pedido original: atualizar a base (a base no banco e de 21/07).
 
 >>> ############################################################################
