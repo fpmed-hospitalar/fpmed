@@ -27,6 +27,10 @@
 <script src="limedtec-licenca.js"></script>
 <script src="gm-auth.js?v=sessao-06ago"></script>
 <script src="fpmed_teto_cmed.js"></script>
+<!-- O MOTOR DO ALARME DE COLETA. Ele já era lido pelo sino e pelo e-mail do dono; entrou aqui em
+     13/08 pro SELO DA BASE do header. Uma regra só de "isto é alarme?", três canais dizendo a
+     mesma coisa sobre o mesmo banco. -->
+<script src="fpmed_alarme_coleta.js"></script>
 <style>
 /* ══════════════════════════════════════════════════════════════════════════════
    ENCONTRAR · TEMA CLARO — item 4 da fila da reforma.
@@ -99,10 +103,115 @@ body{
    e duas portas pra mesma coisa divergem, que é lição de sangue desta casa. */
 .faixa-int{max-width:1180px;margin:0 auto;padding:0 var(--esp-6);display:flex;
   align-items:center;gap:var(--esp-3);width:100%}
-header{background:var(--branco);border-bottom:1px solid var(--cinza-200);padding:var(--esp-4) 0}
-header h1{font-size:var(--txt-5);font-weight:var(--peso-semi);line-height:var(--altura-titulo);
-  color:var(--cinza-800);margin:0}
-header .sub{font-size:var(--txt-1);color:var(--cinza-600);margin-left:auto;text-align:right}
+
+/* ══ O HEADER STICKY DO MOLDE (13/08, passo 3) ═══════════════════════════════════════════════
+   Ele substitui DUAS coisas que estavam empilhadas: a `topfaixa` cinza (← Sistema · telefone ·
+   slogan) e o cabeçalho branco com o H1 solto. Eram 2 faixas de altura cheia gastas em navegação
+   e cortesia, antes de qualquer trabalho aparecer.
+
+   >>> O QUE ELE GANHA, E NÃO É SÓ ALTURA: ele é STICKY. A tela é uma lista longa, e o molde põe
+       aqui as duas coisas que a pessoa precisa saber DEPOIS de rolar 40 resultados — onde ela
+       está (a trilha) e se a base está em dia (o selo). Faixa que rola pra fora leva a resposta
+       embora exatamente quando a pergunta aparece.
+
+   >>> O "← SISTEMA" NÃO SUMIU: virou a RAIZ DA TRILHA. Há ordem expressa do dono de que a tela
+       tenha porta de saída ("tela sem porta de saída é beco"), e duas suítes já pegaram isso.
+       Como link solto ele era um botão a mais; como raiz da trilha ele é o mesmo caminho de
+       volta dentro da peça que já existe pra dizer onde se está. O molde tem duas migalhas
+       (Oportunidades › Encontrar); aqui são três, e a primeira é a saída.
+   >>> O TELEFONE E O SLOGAN SAÍRAM DAQUI porque agora eles vivem no RODAPÉ DO MENU, que está em
+       toda tela. Não foi informação removida: foi cópia removida. */
+.topo{position:sticky;top:0;z-index:30;background:var(--branco);
+  border-bottom:1px solid var(--cinza-200)}
+/* ══ A RESERVA DA ETIQUETA DO gm-auth — defeito achado no navegador, não previsto ═════════════
+   O `gm-auth.js` desenha uma etiqueta FIXA no canto superior direito (e-mail + trocar senha +
+   sair), com `z-index: 2147483000`. Com a `topfaixa` antiga isso não incomodava: aquela faixa
+   tinha o lado direito vazio. O header do molde põe justamente ali as suas duas peças — e o
+   primeiro print mostrou a etiqueta EM CIMA do gatilho e do selo.
+   >>> A RESERVA É MEDIDA, e não chutada: o `reservaAuth()` lê a largura real da etiqueta (ela
+       muda com o tamanho do e-mail) e escreve aqui. Um valor fixo em px estaria certo pro
+       "lemuelempresas7@outlook.com" e errado pro próximo endereço — e erraria em silêncio.
+   >>> ISTO NÃO É O CONSERTO DO gm-auth, e não pretende ser: o conserto de verdade é a etiqueta
+       virar o bloco de usuário do menu (o que o molde faz), e ele está registrado como dívida,
+       bloqueado pelas 8 telas ainda escuras. Isto aqui só impede que uma tela nova nasça com
+       dois controles empilhados no mesmo pixel. */
+.topo .faixa-int{min-height:52px;gap:var(--esp-3);flex-wrap:wrap}
+/* ══ E A RESERVA SÓ VALE NO DESKTOP — defeito achado na medição das 3 larguras ════════════════
+   Sem esta linha a reserva era aplicada em TODA largura, e em 390px ela come a faixa inteira:
+   309px de reserva num strip de 390 deixa 33px de conteúdo, e a TRILHA ENCOLHE PARA ZERO.
+   Ou seja, a porta de saída da tela desaparecia no celular — exatamente o "beco" que a ordem do
+   dono proíbe, criado por um conserto de outra coisa.
+   >>> E ELA NÃO FAZ FALTA ALI: abaixo de 900px o menu vira faixa horizontal e passa a ser o
+       PRIMEIRO elemento da página, então quem fica embaixo da etiqueta do gm-auth é o menu, não
+       o header. Medido no navegador, não suposto. */
+@media(min-width:901px){
+  .topo .faixa-int{flex-wrap:nowrap;padding-right:calc(var(--esp-6) + var(--reserva-auth, 0px))}
+}
+
+.trilha{display:flex;align-items:center;gap:var(--esp-2);font-size:var(--txt-1);
+  color:var(--cinza-600);min-width:0}
+.trilha a{color:var(--cinza-600);text-decoration:none;border-radius:var(--raio-item);
+  padding:var(--esp-1) var(--esp-1);transition:background-color var(--transicao),color var(--transicao)}
+.trilha a:hover{background:var(--cinza-100);color:var(--cinza-800)}
+.trilha a:focus-visible{outline:none;box-shadow:var(--foco)}
+.trilha b{color:var(--cinza-800);font-weight:var(--peso-semi)}
+.trilha svg{width:12px;height:12px;flex:0 0 auto;stroke:var(--cinza-400);fill:none;
+  stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+
+/* ══ O GATILHO DE BUSCA — E O RÓTULO QUE EU MUDEI DE PROPÓSITO ═══════════════════════════════
+   No molde este controle abre a PALETA DE COMANDOS (⌘K) e diz "Buscar em todo o sistema". A
+   paleta é item da Parte B — o dono mandou anotar, não construir.
+   >>> ENTÃO O RÓTULO DIZ O QUE ELE FAZ HOJE: leva ao campo de busca DESTA tela. O desenho é o do
+       molde (caixa arredondada, lupa, fundo recuado); o texto é o verdadeiro. Um controle
+       escrito "todo o sistema" que busca só nesta tela não seria acabamento, seria uma mentira
+       com a roupa certa — e a tecla ⌘K em pílula, que anuncia uma paleta que não existe, ficou
+       de fora pela mesma razão. Os dois voltam juntos, no dia da paleta. */
+.gatilho{display:flex;align-items:center;gap:var(--esp-2);min-height:30px;
+  padding:0 var(--esp-3);border:1px solid var(--borda-controle);border-radius:var(--raio-botao);
+  background:var(--cinza-50);color:var(--cinza-600);font-family:var(--fonte);
+  font-size:var(--txt-1);cursor:pointer;white-space:nowrap;
+  transition:background-color var(--transicao),border-color var(--transicao)}
+.gatilho:hover{background:var(--cinza-100);border-color:var(--cinza-300);color:var(--cinza-800)}
+.gatilho:focus-visible{outline:none;box-shadow:var(--foco)}
+.gatilho svg{width:13px;height:13px;flex:0 0 auto;stroke:currentColor;fill:none;
+  stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+@media(max-width:900px){.gatilho{display:none}}
+
+/* ══ O SELO DA BASE — O ENFEITE DO MOLDE VIROU INSTRUMENTO ═══════════════════════════════════
+   No molde ele é um selo verde fixo escrevendo "Base sincronizada". Um selo que diz sempre a
+   mesma coisa não informa nada — e o pior: ele afirma. No dia em que a coleta parar (e ela já
+   parou, duas vezes, e as duas foram descobertas tarde), esse verde estaria mentindo com
+   confiança, que é o pior erro que este sistema pode cometer.
+   >>> ENTÃO ELE LÊ O ESTADO DE VERDADE, pelo MESMO motor que o sino e o e-mail de alarme usam
+       (fpmed_alarme_coleta.js). Quatro estados, quatro cores, e o verde é só um deles.
+   >>> E "NÃO SEI" TEM COR PRÓPRIA, que não é verde nem vermelha: falhar ao ler o estado da
+       coleta não é "está tudo bem" nem "está tudo mal". */
+.selo-base{display:flex;align-items:center;gap:var(--esp-2);min-height:26px;
+  padding:0 var(--esp-2);border-radius:var(--raio-item);font-size:var(--txt-1);
+  font-weight:var(--peso-medio);white-space:nowrap;border:1px solid transparent}
+.selo-base .ponto{width:6px;height:6px;border-radius:var(--raio-pilula);flex:0 0 auto;
+  background:currentColor}
+.selo-base.ok{background:var(--sinal-bom-fundo);border-color:var(--verde-200);color:var(--sinal-bom-tinta)}
+.selo-base.atencao{background:var(--sinal-atencao-fundo);border-color:var(--ambar-100);color:var(--sinal-atencao-tinta)}
+.selo-base.grave{background:var(--sinal-perigo-fundo);border-color:var(--vermelho-100);color:var(--sinal-perigo-tinta)}
+.selo-base.nao-sei{background:var(--sinal-neutro-fundo);border-color:var(--cinza-200);color:var(--sinal-neutro-tinta)}
+@media(max-width:700px){.selo-base .texto{display:none}}
+
+/* ══ O CABEÇALHO DA PÁGINA (molde §2) ════════════════════════════════════════════════════════
+   O H1 saiu de dentro da faixa branca e virou o começo do CONTEÚDO, com subtítulo e a ação da
+   tela à direita. É o que separa "barra de sistema" de "título de página" — duas coisas que a
+   faixa antiga misturava.
+   >>> "SALVAR BUSCA" NÃO É BOTÃO NOVO: é o `salvarJornal()` que já existia, MUDADO DE LUGAR. Ele
+       morava dentro do painel "Meus Jornais", que fica FECHADO — ou seja, pra salvar a busca da
+       tela era preciso abrir o painel das buscas já salvas. Aqui ele fica ao lado da busca que
+       ele salva (D7: o que é junto fica junto), e o painel volta a ser só o lugar de gerenciar. */
+.pagina-topo{display:flex;align-items:flex-end;gap:var(--esp-4);
+  padding:var(--esp-6) 0 0;flex-wrap:wrap}
+.pagina-topo h1{font-size:var(--txt-4);font-weight:var(--peso-semi);line-height:var(--altura-titulo);
+  letter-spacing:-.02em;color:var(--cinza-800);margin:0}
+.pagina-topo .sub{font-size:var(--txt-1);color:var(--cinza-600);margin:var(--esp-1) 0 0;
+  max-width:var(--largura-leitura)}
+.pagina-topo .acao{margin-left:auto}
 
 .wrap{max-width:1180px;margin:0 auto;padding:0 var(--esp-6) var(--esp-16)}
 
@@ -115,7 +224,18 @@ header .sub{font-size:var(--txt-1);color:var(--cinza-600);margin-left:auto;text-
    >>> O RESPIRO É 24px, não 16. Foi o número que a amostra aprovada usa, e a diferença entre os
        dois é exatamente a diferença entre "cabe" e "respira" (D2: começar com espaço demais e
        tirar até ficar certo — nunca o contrário). */
-.cartao-busca{background:var(--branco);border-radius:var(--raio-cartao);box-shadow:var(--sombra-1);
+/* ══ A BORDA VOLTOU (13/08, passo 1 do molde) ═════════════════════════════════════════════════
+   Este cartão nasceu SEM BORDA de manhã, e o comentário dizia por quê: "a sombra macia já
+   desenha a fronteira, e os dois juntos são cara de template (D6)". Era verdade — com a sombra
+   MACIA da amostra, de 16px de desfoque.
+   >>> O MOLDE TROCOU A SOMBRA POR UMA DE 2px A 4%, e a frase virou meia verdade: sem a sombra
+       longa, o que sobrou foi um branco sobre um fundo a 3,7 pontos dele, sem fronteira nenhuma.
+       Medido no navegador: `border-top-width: 0px`, sombra quase invisível.
+   >>> E O MOLDE NÃO ESTÁ SE CONTRADIZENDO. Ele usa borda de 1px E sombra fraca em TODOS os
+       cartões; o que D6 proíbe é sombra PESADA com borda grossa. Um fio de 1px com 4% de sombra
+       não é isso — é a outra receita, e é a dele. */
+.cartao-busca{background:var(--branco);border:1px solid var(--cinza-200);
+  border-radius:var(--raio-cartao);box-shadow:var(--sombra-1);
   padding:var(--esp-6);margin-top:var(--esp-6)}
 /* O período era `justify-content:flex-end` porque flutuava solto e precisava se ancorar numa
    borda da tela. Dentro do cartão ele tem uma casa, e a ponta direita virou canto de caixa —
@@ -315,10 +435,12 @@ select[disabled],input[disabled],textarea[disabled]{
    visível da peça pra repetir o que já está escrito duas linhas acima.
    >>> ENTÃO ELA DIZ O QUE MUDA A DECISÃO: encerrada · encerra em ≤2 dias · aberta. E ela
        NUNCA anda sozinha — o crachá de prazo, com os dias escritos, continua no rodapé. */
-.lic{position:relative;overflow:hidden;background:var(--branco);border-radius:var(--raio-cartao);
+.lic{position:relative;overflow:hidden;background:var(--branco);border:1px solid var(--cinza-200);
+  border-radius:var(--raio-cartao);
   padding:var(--esp-6);margin-bottom:var(--esp-4);box-shadow:var(--sombra-1);
   transition:box-shadow var(--transicao),transform var(--transicao)}
-/* Sem borda: a sombra macia já desenha a fronteira, e os dois juntos são cara de template (D6).
+/* A BORDA VOLTOU pelo mesmo motivo do .cartao-busca: com a sombra do molde (2px a 4%) não sobra
+   fronteira nenhuma, e o cartão de resultado some no fundo. Ver o comentário longo lá em cima.
    O hover levanta 2px — movimento pequeno diz "isto é clicável" melhor que uma cor a mais. */
 .lic:hover{box-shadow:var(--sombra-2);transform:translateY(-2px)}
 .lic::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--azul-500)}
@@ -486,16 +608,13 @@ select[disabled],input[disabled],textarea[disabled]{
 }
 
 
-/* ── A FAIXA DE SISTEMA ── a camada que recua: discreta, e com o caminho de volta sempre à
-   vista. Ela existe pra que a tela nunca seja um beco. */
-.topfaixa{background:var(--cinza-100);color:var(--cinza-600);padding:var(--esp-2) 0;
-  font-size:var(--txt-1);border-bottom:1px solid var(--cinza-200)}
-.topfaixa .faixa-int{gap:var(--esp-3)}
-.topfaixa a{color:var(--azul-700);text-decoration:none;background:var(--azul-50);
-  padding:var(--esp-1) var(--esp-3);border-radius:var(--raio-pilula);font-size:var(--txt-1);
-  font-weight:var(--peso-semi);transition:background-color var(--transicao)}
-.topfaixa a:hover{background:var(--azul-100)}
-.topfaixa a:focus-visible{outline:none;box-shadow:var(--foco)}
+/* ── A FAIXA DE SISTEMA MORREU AQUI (13/08, passo 3 do molde) ─────────────────────────────
+   Ela era a camada que recua: "← Sistema", telefone e slogan, numa faixa cinza de altura
+   cheia acima do cabeçalho. As três coisas continuam existindo — em lugares melhores:
+     · o caminho de volta virou a RAIZ DA TRILHA do header sticky (ordem do dono: tela sem
+       porta de saída é beco — o que mudou foi a forma, não a existência);
+     · o telefone e o slogan já vivem no rodapé do menu lateral, em toda tela.
+   O que sobrava aqui, então, era uma faixa de altura cheia carregando cópia. */
 </style>
 </head>
 <body>
@@ -510,35 +629,57 @@ select[disabled],input[disabled],textarea[disabled]{
          não quebra nada, e virou código sem efeito. Quem passa a decidir a visibilidade dessa
          entrada é o menu (que a mostra pra todos) e, de verdade, a edge function, que confere
          o JWT e responde 403. Está registrado como item de fila, não escondido aqui. -->
-<div class="topfaixa" data-limedtec-instalar>
-  <div class="faixa-int">
-    <a href="fpmed_sistema_final.html">← Sistema</a>
-    <span><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" width="14" height="14" style="stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;vertical-align:-2px"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2.2 2A16 16 0 0 1 3 6.2 2 2 0 0 1 5 4z"/></svg> (62) 3290-4241</span><span>·</span><span>Compromisso com qualidade!</span>
+<div data-limedtec-menu></div>
+
+<!-- ══ O HEADER STICKY (13/08, passo 3 do molde) ═══════════════════════════════════════════════
+     Ele substitui a `topfaixa` cinza E o cabeçalho branco com o H1 solto — duas faixas de altura
+     cheia gastas em navegação e cortesia, antes de qualquer trabalho aparecer.
+     >>> A BARRA DO PORTAL MORREU EM 12/08 e não voltou: o menu lateral tem as sete entradas dela,
+         paridade conferida entrada por entrada antes de apagar.
+     >>> O `data-limedtec-instalar` MUDOU DE CASA, e isso não é detalhe: ele era o gancho do botão
+         "Instalar aplicativo" do limedtec-pwa.js, e vivia na faixa que morreu. Sem ele, o app
+         deixaria de ser instalável em silêncio — a falha mais chata que existe, porque nada
+         quebra e ninguém repara. -->
+<div class="topo">
+  <!-- O `data-limedtec-instalar` fica na FAIXA INTERNA, e não no `.topo`: o limedtec-pwa.js
+       pendura o botão como último filho do elemento marcado, e no `.topo` ele caía FORA da
+       régua de 1180px — encostado na borda da tela, 80px à esquerda de todo o resto. Aqui ele
+       entra como mais um item da linha do header. (O limedtec-pwa.js é arquivo de MOLDE; o que
+       vale pra qualquer cliente conserta-se na fábrica, não aqui.) -->
+  <div class="faixa-int" data-limedtec-instalar>
+    <nav class="trilha" aria-label="Você está em">
+      <!-- A raiz da trilha É o caminho de volta. Ordem expressa do dono: tela sem porta de
+           saída é beco. O molde tem duas migalhas; aqui são três, e a primeira é a saída. -->
+      <a href="fpmed_sistema_final.html">Sistema</a>
+      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m9 5 7 7-7 7"/></svg>
+      <span>Oportunidades</span>
+      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m9 5 7 7-7 7"/></svg>
+      <b aria-current="page">Encontrar</b>
+    </nav>
+    <span style="flex:1"></span>
+    <button type="button" class="gatilho" onclick="focarBusca()"
+            title="leva ao campo de busca desta tela">
+      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      Buscar nesta tela
+    </button>
+    <!-- Nasce ESCONDIDO e só aparece quando a leitura da coleta responde. Um selo que aparece
+         verde e depois muda de cor teria afirmado antes de saber. -->
+    <div class="selo-base" id="selo-base" hidden></div>
   </div>
 </div>
-<div data-limedtec-menu></div>
-<header>
-  <div class="faixa-int">
-    <h1>Encontrar</h1>
-    <!-- ══ A BARRA DO PORTAL ══ ela CONVIVE com o menu lateral por enquanto, e isso e uma
-         pendencia declarada, nao um desenho: as duas oferecem as mesmas sete entradas. A
-         consolidacao (uma navegacao so) e item proprio da fila — tirar a barra aqui, no meio de
-         uma fatia de tema, quebrou 18 asserts em 10 suites e provou que ela sustenta a
-         navegacao do modulo inteiro. -->
-    <!-- ══ A BARRA DO PORTAL MORREU AQUI (12/08 — NAVEGAÇÃO ÚNICA) ══════════════════════════
-         Ela oferecia sete entradas que o menu lateral já tem, todas — paridade conferida entrada
-         por entrada, contra o limedtec-menu.js, ANTES de apagar. Duas portas pra mesma coisa
-         divergem com o tempo, e esta casa já pagou: a barra estava copiada em SEIS telas, e foi
-         assim que a entrada do Leitor entrou em duas e faltou nas outras quatro.
-         >>> O "← Sistema" continua na faixa de topo, por ordem expressa: tela sem porta de saída
-             é beco, e duas suítes diferentes já me pegaram nisso.
-         >>> E ELA RESOLVE O MOBILE DE RAIZ: em 390px a barra quebrava em três linhas brigando
-             com o título. O menu já vira faixa horizontal rolável sozinho nessa largura. -->
-
-  </div>
-</header>
 
 <div class="wrap">
+  <div class="pagina-topo">
+    <div>
+      <h1>Encontrar</h1>
+      <p class="sub">Medicamento, hospitalar, material médico, soro e correlatos — todos os portais em uma busca.</p>
+    </div>
+    <!-- O MESMO `salvarJornal()` que já existia, mudado de lugar: ele morava DENTRO do painel
+         "Meus Jornais", que fica fechado — pra salvar a busca da tela era preciso abrir o painel
+         das buscas já salvas. Aqui ele fica ao lado da busca que salva (D7). -->
+    <button type="button" class="btn sec acao" onclick="salvarJornal()"
+            title="salva a busca que está na tela agora como um jornal">Salvar busca</button>
+  </div>
   <!-- ══ O CARTÃO DA BUSCA (13/08, item 7 fatia 3) ═══════════════════════════════════════════
        Período, campo de busca, a dica e os atalhos ERAM QUATRO BLOCOS SOLTOS sobre o fundo da
        página. Cada um funcionava; juntos não formavam nada, e era essa a origem do "ainda um
@@ -649,7 +790,10 @@ select[disabled],input[disabled],textarea[disabled]{
       <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:6px">
         <b style="font-family:Montserrat;font-size:var(--txt-3);color:var(--cinza-800)">Meus Jornais</b>
         <span class="hint" id="jor-resumo">carregando…</span>
-        <button class="btn mini" onclick="salvarJornal()" title="salva a busca que está na tela agora">＋ Salvar a busca atual</button>
+        <!-- O "Salvar a busca atual" SAIU DAQUI e subiu pro cabeçalho da página (13/08, passo 3).
+             Ele salva a busca que está NA TELA, e estava escondido dentro do painel das buscas JÁ
+             SALVAS — que nasce fechado. Agora este painel é só o lugar de gerenciar, que é o que
+             ele sempre foi. Dois botões pra mesma ação é o começo de dois comportamentos. -->
         <button class="btn sec mini" onclick="document.getElementById('jornais').classList.remove('open')">fechar</button>
       </div>
       <div class="hint" style="margin-bottom:10px">
@@ -1170,7 +1314,18 @@ function abreLeitorNaBarra(){
   const email = String((window.gmAuth && gmAuth.user && gmAuth.user.email) || '');
   if (window.LimedtecMenu && LimedtecMenu.revelarPara) LimedtecMenu.revelarPara(email);
 }
-function _aoAutenticar(){ iniciarEstoque(); iniciarJornais(); abreLeitorNaBarra(); }
+/* O SELO DA BASE entra aqui, e não no `buscar()`, porque ele responde uma pergunta que a pessoa
+   faz ANTES de buscar: "dá pra confiar no que esta tela vai me mostrar?". Se ele só aparecesse
+   depois do primeiro resultado, ele chegaria tarde justamente no caso que importa — o dia em que
+   a busca vem vazia porque o índice parou. Ele também se repinta a cada busca (ver `buscar`).
+   >>> ELE VIVE AQUI DENTRO, junto com o estoque e os jornais, porque a `coleta_status` é lida com
+       o JWT: chamado antes da sessão, ele responderia 401 e o selo diria "não sei" por engano —
+       um "não sei" falso é tão ruim quanto um "tudo bem" falso. */
+async function iniciarSeloBase(){
+  const semMotor = typeof window.AlarmeColeta === 'undefined';
+  pintaSeloBase(semMotor ? null : await carimboColeta(), semMotor);
+}
+function _aoAutenticar(){ iniciarEstoque(); iniciarJornais(); abreLeitorNaBarra(); iniciarSeloBase(); reservaAuth(); }
 if(window.gmAuth) _aoAutenticar();
 else document.addEventListener('gm-auth-ready', _aoAutenticar, { once:true });
 
@@ -1403,12 +1558,78 @@ function avisoBrandoPNCP(quando, emDiaAte){
   lista.insertBefore(faixa, lista.firstChild);
 }
 
+/* `ultima_tentativa` entrou na leitura em 13/08 (passo 3): o SELO DA BASE precisa dela pra
+   distinguir "o índice está velho" de "o agendador parou de rodar" — e essa é a distinção que
+   mais importa, porque com o agendador parado o carimbo de dia congela num valor BOM e mente. */
 async function carimboColeta(){
   try{
-    const r = await fetch(`${SB_URL}/rest/v1/coleta_status?fonte=eq.PNCP&select=ultima_ok,ultimo_dia_ok,ultimo_erro`, {headers:SB_H});
+    const r = await fetch(`${SB_URL}/rest/v1/coleta_status?fonte=eq.PNCP&select=ultima_ok,ultimo_dia_ok,ultimo_erro,ultima_tentativa`, {headers:SB_H});
     const j = await r.json();
     return (Array.isArray(j) && j[0]) ? j[0] : null;
   }catch(e){ return null; }
+}
+
+/* ══ O SELO DA BASE — o enfeite do molde virou instrumento (13/08, passo 3) ══════════════════
+   No molde ele é um selo verde FIXO escrevendo "Base sincronizada". Um selo que diz sempre a
+   mesma coisa não informa: ele só AFIRMA. E este projeto já viu a coleta parar duas vezes sem
+   ninguém notar — nas duas, um verde fixo teria mentido com confiança durante dias.
+
+   >>> ELE USA O MESMO MOTOR DO SINO E DO E-MAIL DE ALARME (fpmed_alarme_coleta.js). Não é
+       economia de código: é a garantia de que os três dizem a MESMA coisa sobre o mesmo banco.
+       Uma segunda régua de "isto é alarme?" aqui, escrita à mão, seria a barra do portal
+       de novo — só que sobre um número que as pessoas usam pra decidir se confiam na busca.
+   >>> QUATRO ESTADOS, e o verde é só um deles:
+         em dia ....... "Base sincronizada" (o do molde), com o último dia fechado no title;
+         atenção ...... o índice ainda não fechou um dia inteiro;
+         grave ........ índice atrasado, ou o agendador parado;
+         não sei ...... a leitura falhou — e isso tem COR PRÓPRIA, nem verde nem vermelha.
+   >>> SE O MOTOR NÃO CARREGAR, o selo não aparece. Ele nunca inventa "está tudo bem": a única
+       coisa pior que não ter o selo é ter um selo verde que ninguém alimentou. */
+function pintaSeloBase(carimbo, motorAusente){
+  const el = document.getElementById('selo-base');
+  if(!el) return null;
+  if(motorAusente){ el.hidden = true; return null; }
+  const v = window.AlarmeColeta.avaliar(carimbo, new Date());
+  let classe, texto, titulo;
+  if(!v){
+    classe = 'ok'; texto = 'Base sincronizada';
+    titulo = carimbo && carimbo.ultimo_dia_ok
+      ? 'Último dia coletado por inteiro: ' + carimbo.ultimo_dia_ok.split('-').reverse().join('/')
+      : 'A coleta está em dia.';
+  } else if(v.nivel === 'nao_sei'){
+    classe = 'nao-sei'; texto = 'Base: não sei'; titulo = v.detalhe;
+  } else {
+    classe = v.nivel === 'grave' ? 'grave' : 'atencao';
+    texto = v.titulo; titulo = v.detalhe;
+  }
+  el.className = 'selo-base ' + classe;
+  el.title = titulo;
+  el.innerHTML = '<span class="ponto"></span><span class="texto">' + esc(texto) + '</span>';
+  el.hidden = false;
+  return v;
+}
+
+/* ══ A RESERVA DA ETIQUETA DO gm-auth ═══════════════════════════════════════════════════════
+   A etiqueta fixa do gm-auth (e-mail + trocar senha + sair) fica no canto superior direito, com
+   z-index máximo, e cobria o gatilho e o selo do header novo. Isto MEDE a largura dela e reserva
+   o espaço — medir em vez de chutar, porque a largura muda com o tamanho do e-mail de quem
+   entrou. Sem etiqueta (deslogado, ou impressão), a reserva é zero e o header usa a largura toda.
+   >>> ELA RECALCULA NO RESIZE porque a etiqueta é fixa e o header é fluido: só a primeira
+       medição deixaria a reserva certa em 1920 e errada depois de encolher a janela. */
+function reservaAuth(){
+  const b = document.getElementById('gm-auth-bar');
+  const l = b && !b.hidden ? Math.ceil(b.getBoundingClientRect().width) : 0;
+  document.documentElement.style.setProperty('--reserva-auth', l ? (l + 12) + 'px' : '0px');
+}
+window.addEventListener('resize', reservaAuth);
+
+/* O gatilho do header. No molde ele abre a paleta de comandos (Parte B); aqui ele leva ao campo
+   de busca desta tela, que é o que o rótulo dele diz. */
+function focarBusca(){
+  const c = document.getElementById('f-kw') || document.querySelector('.buscabox input');
+  if(!c) return;
+  c.scrollIntoView({block:'center', behavior:'smooth'});
+  c.focus();
 }
 // "Atualizar agora": vai no PNCP ao vivo. Se falhar, AVISA sem travar — o que está na tela
 // continua servindo, porque veio do banco e não da API.
@@ -2178,6 +2399,10 @@ async function buscar(aoVivo){
   }catch(e){ doBanco = null; }
 
   const carimbo = await carimboColeta();
+  /* O selo do header lê O MESMO carimbo — uma leitura, dois lugares. Ele já foi pintado no boot;
+     aqui ele se REPINTA, porque uma busca pode demorar e o estado da coleta pode ter mudado
+     no meio (o "Atualizar agora" chama isto de novo). */
+  pintaSeloBase(carimbo, typeof window.AlarmeColeta === 'undefined');
   const quando = carimbo && carimbo.ultima_ok ? new Date(carimbo.ultima_ok) : null;
   // ATÉ QUE DIA O ÍNDICE ESTÁ COMPLETO (10/08). É esta a pergunta que o operador faz — "posso
   // confiar que hoje está tudo aqui?" — e ela é sobre o DADO. O `ultima_ok` é sobre a EXECUÇÃO,

@@ -1226,11 +1226,48 @@ Criado em 21/07/2026 copiando SO os arquivos do app do C:\globalmed.
              Ela nunca mutou o codigo e passou verde. Corrigida pra mutar a chamada.
          >>> MEDIDO NO NAVEGADOR nas 3 larguras, nas DUAS telas: 390/1366/1920 com ZERO
              rolagem horizontal; em 390 o menu vira faixa horizontal navy.
-     >>> PROXIMO PASSO: 3 · HEADER STICKY (trilha "Oportunidades > Encontrar", gatilho da
-         paleta ⌘K so no visual, selo "Base sincronizada", sino). Depois: 4 fila de 4 KPIs
-         com numero REAL do banco · 5 barra de busca com chips · 6 painel de resultados.
-         >>> ATENCAO NO PASSO 3: a "topfaixa" atual (← Sistema · telefone · slogan) e o que
-             o header do molde SUBSTITUI. Ela ainda esta nas duas telas.
+     >>> PASSO 3 (O HEADER STICKY) **FEITO** — sw.js -> -2026-08-13-32.
+         Ele substituiu DUAS faixas de altura cheia (a topfaixa cinza e o cabecalho com o H1
+         solto) por UMA linha de 52px, sticky. Suite nova testa_header_encontrar (34 asserts,
+         MUTACAO 18 de 18). TOTAL: 3.416 / 0 falhas / 92 suites.
+         Detalhe completo em docs/molde_encontrar.md, secao 8.
+         >>> O "← SISTEMA" NAO SUMIU: virou a RAIZ DA TRILHA (Sistema > Oportunidades >
+             Encontrar). A ordem do dono continua cumprida — o que mudou foi a forma.
+         >>> O GATILHO DIZ O QUE FAZ. No molde ele abre a paleta ⌘K e escreve "Buscar em todo
+             o sistema"; a paleta e Parte B. O desenho e o do molde, o texto e "Buscar nesta
+             tela", e a tecla ⌘K em pilula ficou de fora pela mesma razao. Os dois voltam
+             juntos, no dia da paleta.
+         >>> *** O SELO VERDE FIXO DO MOLDE VIROU INSTRUMENTO — e este e o ponto do passo. ***
+             Selo que diz sempre a mesma coisa nao informa, so AFIRMA. Ele agora le o estado
+             pelo MESMO motor do sino e do e-mail (fpmed_alarme_coleta.js): em dia = "Base
+             sincronizada" (o do molde) · sem dia fechado = atencao · indice atrasado ou
+             agendador parado = grave · leitura falhou = "Base: nao sei", com COR PROPRIA.
+             E sem o motor carregado o selo SOME, em vez de inventar um verde.
+         >>> TRES DEFEITOS QUE SO O NAVEGADOR MOSTROU:
+             1. a etiqueta fixa do gm-auth COBRIA o gatilho e o selo (z-index 2147483000).
+                Entrou uma reserva MEDIDA da largura dela (ela muda com o e-mail de quem
+                entrou; numero fixo erraria em silencio no proximo endereco);
+             2. *** e a reserva criou um defeito PIOR: aplicada em toda largura, em 390px ela
+                comia a faixa inteira e A TRILHA ENCOLHIA PRA ZERO — a porta de saida sumia no
+                celular. O "beco" que a ordem proibe, criado por um conserto de outra coisa.
+                So apareceu na medicao das 3 larguras. Reserva agora so acima de 900px;
+             3. o botao "Instalar aplicativo" caia FORA da regua de 1180px (235 contra 315).
+                O gancho data-limedtec-instalar mudou pra faixa interna. O limedtec-pwa.js NAO
+                foi tocado: e arquivo de molde, conserta-se na fabrica.
+         >>> E O PASSO 1 DEIXOU UMA DIVIDA QUE ESTE PASSO PAGOU: .cartao-busca e .lic foram
+             desenhados SEM BORDA porque "a sombra macia ja desenha a fronteira" — verdade com
+             a sombra de 16px da amostra. Com a do molde (2px a 4%) nao sobrou fronteira
+             nenhuma. A borda voltou nos dois.
+         >>> DOIS ASSERTS ALHEIOS REAPONTADOS (S8, 8a vez): o testa_itens_edital 82 cobrava a
+             LINHA INTEIRA do _aoAutenticar, letra por letra — quebrou em 11/08 e de novo hoje
+             sem nada ter piorado. E o extrator do corpo era regex nao-guloso que parava na
+             primeira chave interna. Agora conta chaves balanceadas e cobra a promessa.
+     >>> PROXIMO PASSO: 4 · A FILA DE 4 KPIs, com os numeros REAIS do banco.
+         >>> ATENCAO: os 4 numeros do molde sao FICTICIOS (945.699 na base, 9.050 novas, 71 no
+             funil, 11 abrem hoje). Ordem expressa do dono: ligar no banco real. E e nesse
+             passo que os CONTADORES DO MENU se acendem, das MESMAS leituras — o slot ja
+             existe (LimedtecMenu.contador), esperando quem tenha o numero.
+         Depois: 5 barra de busca com chips · 6 painel de resultados.
 
      >>> O SERVIDOR DO LACO — ARMADILHA NOVA, e me custou tres reinicios: subir o servidor
          como tarefa de fundo funciona, mas ele MORRE a cada notificacao de tarefa. E subir

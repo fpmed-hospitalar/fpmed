@@ -248,12 +248,37 @@ ok('80. ...via `hidden` no HTML, e nao sumindo depois (menu que pisca ensina a e
   /menu que pisca com\s*um link a mais no boot/.test(uc(_MENU_LEITOR)));
 ok('81. ...e o motivo de existir (nao oferecer o que a edge function vai negar)',
   /N[ÃA]O OFERECER o que vai ser negado/.test(uc(_MENU_LEITOR)));
-ok('82. e ela e revelada no MESMO ponto em que a tela autentica (sem 2o boot)',
-  /function _aoAutenticar\(\)\{ iniciarEstoque\(\); iniciarJornais\(\); abreLeitorNaBarra\(\); \}/.test(L)
-  // 11/08: o `_aoAutenticar` do Negócios ganhou o `formManualDaSessao()` (quem chega do Encontrar
-  // com "+ Incluir licitação"). O que este assert protege é o mesmo — a barra é revelada no ponto
-  // único de autenticação, e não num segundo boot.
-  && /function _aoAutenticar\(\)\{ carregar\(\)[\s\S]{0,80}abreLeitorNaBarra\(\); \}/.test(N));
+/* ══ ESTE ASSERT MEDIA O MEIO, E CAIU DUAS VEZES PELO MESMO MOTIVO (licao S8) ═══════════════
+   Ele cobrava a LINHA INTEIRA do `_aoAutenticar`, escrita letra por letra. Em 11/08 ele quebrou
+   porque o Negocios ganhou o `formManualDaSessao()`; em 13/08 quebrou de novo porque o Encontrar
+   ganhou o selo da base e a reserva da etiqueta do gm-auth. Nas duas vezes NADA tinha piorado —
+   a entrada do leitor continuava sendo revelada no ponto unico de autenticacao.
+   >>> O QUE ELE PROMETE E "sem 2o boot": a revelacao acontece DENTRO do `_aoAutenticar`, e nao
+       num segundo caminho de arranque. E isso que ele passa a medir — a chamada dentro da
+       funcao, com o que mais houver ali dentro. Acrescentar um passo de boot passa; tirar a
+       revelacao dali, ou criar um segundo boot que a chame, reprova. */
+/* O corpo sai por CONTAGEM DE CHAVES, e nao por regex nao-guloso: o `_aoAutenticar` do Negocios
+   tem um `.then(() => { ... })` dentro, e o `[\s\S]*?}` parava na primeira chave interna —
+   entregava meio corpo e o assert reprovava por instrumento, nao por defeito (S10). */
+function _corpoBoot(t){
+  const i = t.indexOf('function _aoAutenticar()');
+  if (i < 0) return '';
+  const ini = t.indexOf('{', i);
+  let n = 0;
+  for (let k = ini; k < t.length; k++) {
+    if (t[k] === '{') n++;
+    else if (t[k] === '}') { n--; if (!n) return t.slice(ini + 1, k); }
+  }
+  return '';
+}
+ok('82. e ela e revelada DENTRO do ponto unico de autenticacao (sem 2o boot)',
+  /abreLeitorNaBarra\(\);/.test(_corpoBoot(L)) && /abreLeitorNaBarra\(\);/.test(_corpoBoot(N))
+  /* E ha UM unico ponto de CHAMADA em cada tela. Conta `abreLeitorNaBarra();` — a chamada com
+     ponto e virgula — e nao o nome solto: o nome aparece tambem na definicao e dentro de um
+     comentario, e contar as tres acusaria uma tela correta (S10, instrumento largo demais). */
+  && (L.match(/abreLeitorNaBarra\(\);/g) || []).length === 1
+  && (N.match(/abreLeitorNaBarra\(\);/g) || []).length === 1,
+  { encontrar: _corpoBoot(L).trim(), negocios: _corpoBoot(N).trim() });
 
 console.log('\nRESULTADO: ' + p + ' ok, ' + f + ' falha(s)');
 if (f) process.exit(1);

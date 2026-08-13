@@ -144,6 +144,7 @@ nunca, em hipótese alguma, marca da GlobalMed.
 2. **Sidebar navy 228px** — grupos, contadores à direita, item ativo, badge "IA".
    **[FEITO — 13/08]** ver a seção 7.
 3. **Header sticky** — breadcrumb, gatilho ⌘K (visual), selo "Base sincronizada", sino.
+   **[FEITO — 13/08]** ver a seção 8.
 4. **Fila de 4 KPIs**, com os números reais do banco.
 5. **Barra de busca** com chips, "+ Filtro" tracejado e o botão azul.
 6. **Painel de resultados** — linha rica, barra de urgência, selos, `<mark>`, alternador
@@ -281,3 +282,100 @@ ensinaram coisas diferentes:
 
 Nas **duas** telas que carregam o menu (Encontrar e Negócios). Item aceso confirmado em cada uma
 (Buscar e Negócios), com fundo `#243045` e ícone `#2CA9E0`.
+
+---
+
+## 8 · PASSO 3 FEITO — O HEADER STICKY, E O SELO QUE DEIXOU DE SER ENFEITE
+
+`fpmed_licitacoes.html`, 13/08. Suíte nova `testa_header_encontrar` (**34 asserts, mutação 18 de
+18 barradas**). Total do projeto **3.416 / 0 falhas / 92 suítes**.
+
+O header substituiu **duas** faixas de altura cheia — a `topfaixa` cinza (← Sistema · telefone ·
+slogan) e o cabeçalho branco com o H1 solto — por **uma linha de 52px, sticky**. Ganhou trilha,
+gatilho de busca e o selo da base; o H1 desceu para o conteúdo, com subtítulo e a ação da tela.
+
+### As quatro decisões que não são "copiar o molde"
+
+**1 · O "← Sistema" virou a raiz da trilha.** Há ordem expressa do dono — *"tela sem porta de
+saída é beco"* — e duas suítes já pegaram isso antes. Como link solto ele era mais um botão; como
+raiz da trilha é o mesmo caminho de volta dentro da peça que já existe para dizer onde se está. O
+molde tem duas migalhas; aqui são três, e a primeira é a saída.
+
+**2 · O gatilho diz o que faz.** No molde ele abre a **paleta ⌘K** e escreve "Buscar em todo o
+sistema". A paleta é Parte B. O desenho é o do molde; o texto é **"Buscar nesta tela"**, que é o
+que ele faz — e a tecla `⌘K` em pílula ficou de fora pela mesma razão. Um controle escrito "todo
+o sistema" que busca só nesta tela não é acabamento, é uma mentira com a roupa certa. Os dois
+voltam juntos, no dia da paleta.
+
+**3 · O selo verde fixo do molde virou instrumento.** Este é o ponto do passo.
+
+> Um selo que diz sempre a mesma coisa não informa — ele só **afirma**. E este projeto já viu a
+> coleta parar **duas vezes** sem ninguém notar; nas duas, um verde fixo teria mentido com
+> confiança durante dias.
+
+Ele lê o estado de verdade pelo **mesmo motor do sino e do e-mail de alarme**
+(`fpmed_alarme_coleta.js`) — uma régua só de "isto é alarme?", três canais dizendo a mesma coisa
+sobre o mesmo banco. Quatro estados, e o verde é um deles:
+
+| estado do banco | o selo |
+|---|---|
+| em dia | 🟢 "Base sincronizada" *(o do molde)*, com o último dia fechado no `title` |
+| nenhum dia fechado | 🟡 "O índice ainda não fechou um dia inteiro" |
+| índice atrasado · agendador parado | 🔴 o título do alarme |
+| a leitura falhou | ⚪ "Base: não sei" — **cor própria**, nem verde nem vermelha |
+
+E se o motor não carregar, **o selo some**. A única coisa pior que não ter o selo é ter um verde
+que ninguém alimentou.
+
+**4 · "Salvar busca" mudou de lugar, e não é botão novo.** É o `salvarJornal()` que já existia,
+e ele morava **dentro** do painel "Meus Jornais" — que nasce fechado. Ou seja: para salvar a
+busca da tela era preciso abrir o painel das buscas **já salvas**. Agora ele fica ao lado da
+busca que salva (D7), e o painel volta a ser só o lugar de gerenciar. A cópia antiga saiu — dois
+botões para a mesma ação é como nascem dois comportamentos.
+
+### Três defeitos que só o navegador mostrou
+
+1. **A etiqueta do `gm-auth` cobria o gatilho e o selo.** Ela é `position:fixed` no canto superior
+   direito com `z-index: 2147483000`; com a `topfaixa` antiga isso não incomodava, porque aquela
+   faixa tinha o lado direito vazio. Entrou uma **reserva medida** (`reservaAuth()` lê a largura
+   real da etiqueta — ela muda com o tamanho do e-mail; um valor fixo em px estaria certo hoje e
+   errado no próximo endereço, e erraria em silêncio).
+2. **E a reserva criou o defeito seguinte, que é pior:** aplicada em toda largura, ela come a
+   faixa inteira em 390px — 309px de reserva num strip de 390 deixa 33px, e **a trilha encolhia
+   para zero**. A porta de saída desaparecia no celular: o "beco" que a ordem do dono proíbe,
+   criado por um conserto de outra coisa. Só apareceu na medição das 3 larguras. A reserva passou
+   a valer só acima de 900px — e ali ela não faz falta, porque abaixo disso o menu vira faixa
+   horizontal e quem fica sob a etiqueta é ele, não o header.
+3. **O botão "Instalar aplicativo" caía fora da régua.** O `limedtec-pwa.js` pendura o botão como
+   último filho do elemento marcado com `data-limedtec-instalar`; no `.topo` (largura total) ele
+   nascia a 235px, contra os 315px de todo o resto. O gancho passou para a faixa interna. O
+   `limedtec-pwa.js` **não foi tocado**: é arquivo de molde, e o que vale para qualquer cliente
+   conserta-se na fábrica.
+
+### E uma consequência do passo 1 que este passo pagou
+
+`.cartao-busca` e `.lic` foram desenhados **sem borda**, com o comentário *"a sombra macia já
+desenha a fronteira, e os dois juntos são cara de template (D6)"*. Era verdade com a sombra de
+16px da amostra. Com a do molde (2px a 4%) não sobrou fronteira nenhuma sobre um fundo a 3,7
+pontos do branco — medido no navegador: `border-top-width: 0px`. A borda voltou nos dois. O molde
+não se contradiz: ele usa borda de 1px **e** sombra fraca em todos os cartões; o que D13 proíbe é
+sombra **pesada** com borda grossa.
+
+### Dois asserts alheios reapontados (lição S8, oitava vez nesta obra)
+
+| suíte | cobrava | por que caiu | cobra agora |
+|---|---|---|---|
+| `testa_itens_edital` 82 | a **linha inteira** do `_aoAutenticar`, letra por letra | quebrou em 11/08 (Negócios ganhou um passo) e de novo hoje (Encontrar ganhou dois) — nas duas, nada tinha piorado | que `abreLeitorNaBarra()` seja chamada **dentro** do boot único, e que haja **um** ponto de chamada |
+| — | — | e o extrator do corpo era um regex não-guloso que parava na primeira chave interna, entregando meio corpo | contagem de chaves balanceadas |
+
+### Medido no navegador (SW desregistrado, servidor local)
+
+| largura | rolagem horizontal | header | trilha visível | trilha e H1 na mesma régua |
+|---|---|---|---|---|
+| 390 | 0 | sticky, 53px | sim | sim |
+| 700 | 0 | sticky, 53px | sim | sim |
+| 1366 | 0 | sticky, 53px | sim | sim |
+| 1920 | 0 | sticky, 53px | sim | sim |
+
+Os **cinco** estados do selo foram exercitados na tela, com o motor de verdade, e cada um caiu na
+cor certa — incluindo o "motor ausente", que esconde o selo.
