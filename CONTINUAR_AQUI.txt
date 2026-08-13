@@ -1138,6 +1138,37 @@ Criado em 21/07/2026 copiando SO os arquivos do app do C:\globalmed.
                   4. Cabecalho com trilha "Inicio / Encontrar" e contexto de empresa.
                 >>> E O gm-auth.js (pastilha escura + 2 emoji) continua esperando: ele aparece no
                     canto superior direito das duas telas claras. Ver o achado registrado acima.
+     >>> ############ 13/08, FIM DA SESSAO — LEIA ISTO PRIMEIRO ############
+     >>> CHEGOU O MOLDE OFICIAL DA ENCONTRAR, e ele SUBSTITUI a amostra como alvo.
+         Zip "Tela Encontrar FPMED2.zip" no Downloads dele (o 2o, com screenshots/).
+         Ele NAO entra no repo (.gitignore) — e referencia. O que entra e o resultado.
+         >>> **A ANALISE JA ESTA FEITA E MEDIDA: docs/molde_encontrar.md.** Nao recomecar.
+             Tem os 41 pares do molde medidos pela WCAG (38 passam), as 2 fugas
+             obrigatorias, a tabela de deltas dos tokens e a ordem de ataque em 6 passos.
+         >>> O ACHADO QUE MANDA NA FATIA 1: o botao primario "Buscar" do molde e branco
+             sobre #2CA9E0 = **2,67:1**, pouco mais da metade do minimo. E a licao S12 de
+             novo, e o tema JA tem a saida pronta — a rampa de azul com oficios separados
+             (--azul-600 #1576A5 da 5,04:1 e e "A COR DA ACAO"). A fuga usa cor que ja
+             existe; o #2CA9E0 segue sendo a marca em tudo que nao carrega texto.
+             2a fuga: #8C99A9 como texto (2,85-2,90:1) -> #6B7787 (4,55:1), o tom ao lado,
+             DO PROPRIO MOLDE.
+         >>> CUIDADO QUE NAO ESTA OBVIO: o molde e uma tela mais DENSA (base 13px contra
+             os nossos 14). Mexer no --txt-2 muda TODA tela que carrega o tema — a fatia
+             dos tokens tem que conferir a Encontrar E o Negocios depois.
+         >>> E OS NUMEROS DO MOLDE SAO FICTICIOS (945.699 na base, 9.050 novas, 2.312
+             resultados, 71 no funil). Os 4 KPIs ligam no BANCO REAL — ordem expressa
+             dele. Numero de demonstracao virando numero de produto e a licao S6.
+         >>> PARTE B (nao construir agora, ja anotada): itens 9 a 13 = aderencia (precisa
+             backend), paleta ⌘K funcional, drawer de detalhe, navegacao por teclado e
+             barra de selecao em massa. Todos especificados no README do molde.
+     >>> ARMADILHA QUE ME CUSTOU UMA RODADA HOJE, e vale pra qualquer medicao visual:
+         o SERVICE WORKER serve a copia ANTIGA do arquivo. Eu media a tela velha achando
+         que media a nova (a regra aplicada ainda dizia o valor antigo). TODA medicao no
+         navegador comeca desregistrando o SW:
+           navigator.serviceWorker.getRegistrations().then(r=>r.forEach(x=>x.unregister()))
+         E o servidor do laco: se der 404, e processo velho segurando a porta 8099 —
+         matar TODOS os node e subir de novo com -WorkingDirectory C:\fpmed.
+
      8. [ ] CMED COMO CAMADA DE BASE — PMVG por baixo de todo preco; tira "Conferir CMED"
             do menu e deixa a busca crua num canto discreto. Fundacao de dados primeiro.
      8b.[ ] demais telas ganhando o tema claro, uma a uma (8 ainda escuras — e o que

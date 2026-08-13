@@ -77,3 +77,9 @@ _PASSO_A_PASSO_*.txt
 #     repo e o `git add -A` a incluiu no commit do item 6. Saiu antes do push. O repo e
 #     PUBLICO, e arquivo que nao e meu nao vai pra la sem o dono mandar.
 fpmed_*_amostra.html
+# E o mesmo vale pro MOLDE oficial exportado do Claude Design (13/08): o zip e os
+# arquivos do handoff sao REFERENCIA. O que entra no repo e o resultado — token e
+# tela — mais a medicao registrada em docs/molde_encontrar.md.
+design_handoff_*/
+Encontrar.dc.html
+Encontrar.html
