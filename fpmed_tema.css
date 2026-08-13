@@ -190,6 +190,36 @@
   --verde-800: #3d5a19;
   --verde-900: #2c4113;
 
+/* ══ ROXO — a família que faltava, e ela nasceu de uma dívida medida (13/08) ═════════════════
+   O `#6C5CC4` vivia no fpmed_negocios.html com um comentário assumindo a exceção: "a única cor
+   sem token: identifica EMPRESA no card multi-empresa; entra no tema quando o item 12 definir a
+   família". A ordem do dono sobre cor encerrou essa espera — a ÚNICA fuga permitida é a que o AA
+   obrigar, e "ainda não tem token" não é uma delas.
+   >>> OFÍCIO: identidade de EMPRESA no multi-empresa. Ela não é estado (não quer dizer bom nem
+       ruim) — por isso é família própria, e não um empréstimo do azul ou do verde, que já têm
+       significado. Medido: 700 sobre 50 = 8,19:1 · branco sobre 700 = 9,39:1 · 500 sobre branco
+       = 5,30:1. O 500 é a MARCA da família e não carrega texto pequeno, como as outras. */
+--roxo-50:  #f0eefb;   /* fundo de selo */
+--roxo-200: #cfc8ee;   /* borda de selo */
+--roxo-500: #6C5CC4;   /* «» a cor da família — preenchimento e acento */
+--roxo-700: #453a8c;   /* TEXTO roxo sobre claro (8,19:1 sobre o 50) */
+
+/* ══ O VÉU (scrim) — o que escurece a tela atrás de um painel que se abre ════════════════════
+   Ele estava escrito à mão como `rgba(18,23,33,.45)` no Negócios. A tinta de sobreposição do
+   molde é `rgba(10,21,38)` — a MESMA que este arquivo já usa nas sombras —, e usar duas tintas
+   de escurecimento no sistema é ter duas respostas para a mesma pergunta. */
+--veu: rgba(10,21,38,.45);
+
+/* ══ O AZUL EM TRIO, PARA COMPOR TRANSPARÊNCIA ══════════════════════════════════════════════
+   Sete lugares do Negócios precisam do azul da marca COM ALFA (o pulso do cartão achado, o anel
+   do passo atual, a aba acesa da ficha, a borda de campo em foco). Não dá para pôr alfa num hex
+   guardado em `var()`, e por isso eles estavam escritos à mão — sete cópias do mesmo `44,169,224`.
+   >>> O TRIO RESOLVE SEM INVENTAR COR: `rgba(var(--azul-500-rgb), .55)`. A tinta continua vindo
+       de UM lugar; o que a tela escolhe é só a opacidade, que não é cor.
+   >>> ELE TEM DE ANDAR JUNTO COM O `--azul-500`. Há assert no `testa_tema` cobrando que os dois
+       digam o mesmo — trio que envelhece sozinho é a cópia de novo, só que mais difícil de ver. */
+--azul-500-rgb: 44,169,224;
+
   /* ── VERMELHO — perigo, erro, prejuízo (D5: SÓ em perigo) ────────────────── */
   --vermelho-50:  #fdecea;
   --vermelho-100: #fbd5d0;
