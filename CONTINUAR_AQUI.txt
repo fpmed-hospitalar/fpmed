@@ -1314,11 +1314,28 @@ Criado em 21/07/2026 copiando SO os arquivos do app do C:\globalmed.
              varria o arquivo INTEIRO, comentario incluido — e ficou vermelho por causa do
              comentario que registra a MEDICAO que justifica a fuga. Assert que so fica verde se
              eu apagar a explicacao esta contra a L6. Passou a ler sem comentario.
-     >>> PROXIMO PASSO: 6 · O PAINEL DE RESULTADOS (cabecalho com contagem e alternador
-         Confortavel/Compacta, linha rica com barra de urgencia, selos, <mark> no termo,
-         coluna direita com valor e pastilha de prazo, rodape com paginacao).
-         >>> ATENCAO: a aderencia ("92% aderente" + barra) e PARTE B (precisa de backend). O que
-             existe hoje e o cruzamento com o estoque, que e outra coisa.
+     >>> PROXIMO PASSO: 6 · O PAINEL DE RESULTADOS. **INVENTARIEI ANTES DE PARAR, pra ninguem
+         refazer o que ja existe** (conferido no arquivo, nao suposto):
+           JA EXISTE, da fatia 3b de 13/08:
+             · o cartao de resultado rico (.lic) com titulo forte e acoes no rodape;
+             · a BARRA DE URGENCIA lateral (.lic::before + .prazo-urg / .prazo-fim);
+             · o GRIFO do termo buscado com <mark> (e ele ja escapa o HTML — ver o comentario
+               do "<mark> viraria &lt;mark&gt;");
+             · o valor a direita (.valor).
+           FALTA, e e o que o passo 6 e:
+             · CABECALHO DO PAINEL (42px, fundo --superficie-sutil): "N de X resultados ·
+               1 abre hoje" + alternador de densidade Confortavel/Compacta + seletor de
+               ordenacao. >>> O alternador e o unico dos tres que muda o que se ve; os outros
+               dois sao leitura. A densidade do molde e padding 13px 14px x 8px 14px.
+             · RODAPE (44px): "Mostrando 1-N de X" + paginacao.
+               >>> CUIDADO: a tela hoje NAO PAGINA o resultado na interface — ela renderiza a
+                   lista inteira. Paginar de verdade e mudanca de fluxo, nao acabamento; se o
+                   rodape entrar, ele tem que dizer a verdade sobre o que esta na tela.
+             · os SELOS de modalidade e situacao em pill (os tokens --sinal-* ja existem).
+           NAO ENTRA (Parte B, ordem do dono de anotar e nao construir):
+             · a caixa de selecao por linha e a barra de selecao em massa;
+             · a aderencia ("92% aderente" + barra) — precisa de BACKEND. O que existe hoje e
+               o cruzamento com o estoque proprio, que responde outra pergunta.
          Com o 6 fechado, a Encontrar esta pronta — e ai vem o NEGOCIOS (ordem do dono:
          "publica ENCONTRAR, prova com print, SO ENTAO Negocios").
 
