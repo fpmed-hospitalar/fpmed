@@ -25,7 +25,7 @@
        usuÃ¡rio ficaria com a versÃ£o de ontem e sem sintoma nenhum, que Ã© a liÃ§Ã£o S13.
    >>> E O ITEM 8 PRECISA DE BUMP mesmo sem tela nova: ele mexe no `fpmed_teto_cmed.js`, que ESTÃ
        na casca. Motor velho servido do cache Ã© teto legal calculado pela regra antiga. */
-const VERSAO = 'limedtec-fpmed-2026-08-13-70';
+const VERSAO = 'limedtec-fpmed-2026-08-13-71';
 const CACHE = 'limedtec-shell-' + VERSAO;
 
 // A CASCA DA FPMED. Lista MONTADA A MAO conferindo `git ls-files` (= o que o Pages serve),

@@ -5149,13 +5149,34 @@ function pintaConversaEdital(id){
       ${conversaCaixa(id)}`;
     return;
   }
+  /* ── "BUSCAR EDITAL AGORA" (14/08) — a espera virou ação ────────────────────────────────
+     A B6 deixou aqui a frase "entra na próxima passada", que é o jeito educado de dizer
+     "espere". A fatia A14 da outra janela publicou a função `buscar-edital` no servidor
+     (auth obrigatória, freio de 20/hora, registro sempre), e agora dá pra pedir a coleta
+     DESTE certame na hora.
+     >>> NÃO LEVA SELO DE "IA · tem custo", e isso foi conferido, não suposto: a função não
+         chama modelo nenhum e não escreve no livro-caixa da IA — o custo dela é banda e CPU.
+         Selo de custo onde não há custo ensina a ignorar o selo onde há.
+         (O nome daquela tabela não aparece escrito aqui de propósito: a suíte desta seção
+          prova que a tela não a toca procurando o literal, e citá-lo na prosa a derrubaria.)
+     >>> E O BOTÃO SÓ APARECE ONDE CLICAR MUDA ALGUMA COISA. Em "sem número de controle" a
+         função responde 422 por desenho, e em "não deu pra extrair" o arquivo é escaneado:
+         buscar de novo traz o mesmo PDF. Botão que não pode dar certo é porta pintada. */
+  const btBuscar = rot => `<div style="margin-top:8px"><button class="btn-ed sec" id="cv-bt-buscar"`
+    + ` onclick="buscarEditalAgora(${id},this)"><svg class="ic" aria-hidden="true"><use href="#ic-baixar"/></svg> ${rot}</button>`
+    + `<span class="salvo" id="cv-busca-msg" style="margin-left:8px"></span></div>`;
+
   const nota = txt => `<div class="salvo">${txt}</div>` + (botaoAnexo ? '<div style="margin-top:8px">' + botaoAnexo + '</div>' : '');
   if(c.estado === 'nao_coletado')
     cx.innerHTML = nota('Este edital <b>ainda não foi buscado no PNCP</b> — e isso é diferente de "não existe". '
-      + 'A coleta roda por fora da tela e passa pelas licitações que estão nos <b>meus negócios</b>, '
-      + 'então este aqui entra na próxima passada. Enquanto isso: ' + pedirAnexo);
+        + 'A coleta automática passa pelas licitações que estão nos <b>meus negócios</b>, então este aqui '
+        + 'entra na próxima passada — ou você pede agora, no botão abaixo. Se preferir não esperar nem pedir: ' + pedirAnexo)
+      + btBuscar('buscar o edital agora no PNCP');
   else if(c.estado === 'sem_arquivo')
-    cx.innerHTML = nota('O <b>PNCP respondeu que não publicou edital</b> para este certame — não adianta esperar a coleta. ' + pedirAnexo);
+    cx.innerHTML = nota('O <b>PNCP respondeu que não publicou edital</b> para este certame'
+        + (c.agora ? ' — verifiquei agora mesmo' : '') + ' — não adianta esperar a coleta. ' + pedirAnexo)
+      // o órgão PODE publicar depois; sem este botão não haveria como descobrir isso
+      + btBuscar('verificar de novo no PNCP');
   else if(c.estado === 'sem_texto')
     cx.innerHTML = nota('O arquivo do PNCP existe, mas <b>não deu para extrair o texto</b>'
       + (c.motivo ? ' (' + esc(c.motivo) + ')' : '') + '. Costuma ser PDF escaneado, que é só imagem. ' + pedirAnexo);
@@ -5165,6 +5186,64 @@ function pintaConversaEdital(id){
   else
     cx.innerHTML = nota('<b style="color:var(--vermelho-700)">Não consegui procurar o edital'
       + (c.motivo ? ' (' + esc(c.motivo) + ')' : '') + '.</b> Isto <b>não</b> quer dizer que ele não exista.');
+}
+
+/* ── BUSCAR EDITAL AGORA: a chamada, e os finais que ela sabe distinguir ────────────────────
+   A função do servidor devolve TRÊS finais separados de propósito (achei e extraí · achei e não
+   deu pra extrair · o órgão não publicou nada), e esta tela não pode fundir os três num "ok":
+   as ações de quem lê são diferentes em cada um.
+
+   >>> UMA COISA QUE ESTA TELA SABE E O BANCO NÃO. Quando o PNCP responde que não há arquivo, a
+       função devolve `semArquivo` e NÃO grava linha nenhuma — não há o que gravar. Então recarregar
+       do banco depois da busca traria de volta "ainda não foi buscado", que acabou de deixar de ser
+       verdade na frente de quem clicou. Por isso este caminho pinta o estado que ACABOU de ser
+       medido, em vez de reler. (Ele não sobrevive a um F5 — está anotado pro arquiteto.) */
+async function buscarEditalAgora(id, bt){
+  const n = NEG.find(x => x.id === id); if(!n) return;
+  const diz = t => { const m = document.getElementById('cv-busca-msg'); if(m) m.innerHTML = t; };
+  // reação imediata: o clique some do caminho antes de qualquer rede (a chamada leva segundos)
+  if(bt){ bt.disabled = true; bt.style.opacity = '.6'; bt.textContent = 'buscando…'; }
+  diz('perguntando ao PNCP quais arquivos este certame publicou — pode levar até um minuto.');
+  try{
+    const tok = tokenSessaoNeg();
+    if(!tok) throw new Error('sua sessão expirou — entre de novo');
+    const ctrl = String(n.numero_controle || '').trim();
+    const r = await fetch(`${SB_URL}/functions/v1/buscar-edital`, {
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer ' + tok},
+      body: JSON.stringify(ctrl ? { negocio_id: id, numero_controle: ctrl } : { negocio_id: id }),
+      signal: AbortSignal.timeout(180000)});
+    const j = await r.json().catch(() => ({}));
+    if(!r.ok) throw new Error((j.error || ('o serviço respondeu ' + r.status)) + (j.detalhe ? ' — ' + j.detalhe : ''));
+
+    if(j.semArquivo){
+      // o banco não guarda este fato; a tela guarda o que acabou de medir (ver o cabeçalho acima)
+      EDITAL_CONVERSA = { estado:'sem_arquivo', agora:true };
+      pintaConversaEdital(id);
+      return;
+    }
+    // achou arquivo: o banco agora TEM as linhas, então reler é o certo — é a mesma leitura que
+    // qualquer colega vai fazer ao abrir esta ficha, e não uma verdade só desta aba.
+    await carregarConversaEdital(id);
+    const cx = document.getElementById('cv-cx');
+    if(cx){
+      const resumo = document.createElement('div');
+      resumo.className = 'salvo';
+      resumo.style.marginTop = '8px';
+      resumo.innerHTML = j.extraidos
+        ? 'Busquei agora: <b>' + j.extraidos + ' documento(s)</b> lido(s) do PNCP, '
+          + Number(j.chars || 0).toLocaleString('pt-BR') + ' caracteres.'
+        // ACHOU E NÃO LEU é um final próprio, e o motivo de cada arquivo vem junto: "deu erro"
+        // faria a pessoa clicar de novo pra sempre num PDF que é imagem.
+        : 'Busquei agora: o PNCP tem <b>' + (j.arquivos || 0) + ' arquivo(s)</b>, mas não deu pra extrair texto de nenhum'
+          + ((j.detalhes || []).filter(d => d.erro).length
+              ? ' — ' + esc((j.detalhes.find(d => d.erro) || {}).erro || '') : '') + '.';
+      cx.appendChild(resumo);
+    }
+  }catch(e){
+    if(bt){ bt.disabled = false; bt.style.opacity = ''; bt.textContent = 'tentar de novo'; }
+    diz('<b style="color:var(--vermelho-700)">' + esc(e.message) + '</b>');
+  }
 }
 
 function conversaCaixa(id){

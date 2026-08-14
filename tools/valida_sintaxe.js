@@ -37,7 +37,17 @@ const semEstilo = (html) => html.replace(/(^|\n)([ \t]*)<style\b[^>]*>[\s\S]*?<\
 let erros = 0, blocos = 0;
 for (const arq of alvos) {
   const html = semEstilo(fs.readFileSync(arq, 'utf8'));
-  const re = /<script\b([^>]*)>([\s\S]*?)<\/script>/gi;
+  /* ══ E A ETIQUETA `<script>` PRECISAVA DA MESMA ÂNCORA QUE O `<style>` (achado em 14/08) ═══
+     O bloco acima resolveu o falso positivo do `<style>` citado em comentário, e deixou o
+     `<script>` com o defeito idêntico. O `fpmed_negocios.html` acusa erro de sintaxe HÁ DIAS
+     por causa de um COMENTÁRIO que explica um defeito antigo e escreve, na frase, a palavra
+     `<script>`: a varredura abre um bloco ali e passa a compilar PROSA em português.
+     >>> E este é o pior estado possível pra uma ferramenta: um vermelho fixo, que não é erro,
+         numa tela grande. Ele ensina todo mundo a passar o olho e seguir — e o dia em que
+         houver erro de verdade, o vermelho vai estar lá do mesmo jeito, dizendo o mesmo nada.
+     Mesma diferença que a âncora do `<style>` enxerga: etiqueta de verdade abre no começo da
+     linha; a que mora dentro de uma frase (ou de uma string) vem depois de outra coisa. */
+  const re = /(?:^|\n)[ \t]*<script\b([^>]*)>([\s\S]*?)<\/script>/gi;
   let m, i = 0, ruins = 0;
   while ((m = re.exec(html))) {
     const attrs = m[1] || '', corpo = m[2] || '';

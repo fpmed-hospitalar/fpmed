@@ -243,6 +243,66 @@ ok('39. ...e o Negocios ordena pela mesma chave',
 ok('40. as duas reconhecem o mesmo marcador de "o PNCP nao publicou arquivo"',
   /não publicou arquivo/.test(ENC) && /não publicou arquivo/.test(src));
 
+// ══════════════════════════════════════════════════════════════════════════════════════════
+// 7. "BUSCAR EDITAL AGORA" — a espera virou acao (14/08, fatia B9)
+// A B6 deixou o lugar deste botao escrito como uma frase de espera ("entra na proxima
+// passada"). A fatia A14 da outra janela publicou a funcao `buscar-edital` no servidor, e
+// agora o lugar tem botao.
+// ══════════════════════════════════════════════════════════════════════════════════════════
+{
+  const semColeta = pinta({ estado: 'nao_coletado' });
+  ok('41. *** "ainda nao coletei" agora oferece BUSCAR AGORA, e nao so esperar ***',
+    /buscarEditalAgora\(5,this\)/.test(semColeta), semColeta.slice(0, 200));
+  ok('42. ...e continua oferecendo o anexo pra quem nao quer esperar nem pedir',
+    /Anexe o edital/.test(semColeta));
+
+  const semArq = pinta({ estado: 'sem_arquivo' });
+  ok('43. "o PNCP nao publicou" tambem tem botao — o orgao PODE publicar depois',
+    /buscarEditalAgora\(5,this\)/.test(semArq) && /verificar de novo/.test(semArq));
+  ok('44. ...e quando a verificacao acabou de ser feita, a tela DIZ isso',
+    /verifiquei agora mesmo/.test(pinta({ estado: 'sem_arquivo', agora: true })));
+
+  /* *** O BOTAO SO APARECE ONDE CLICAR PODE MUDAR ALGUMA COISA ***
+     Em "sem numero de controle" a funcao responde 422 POR DESENHO — nao ha o que buscar no
+     PNCP de um negocio que veio de planilha. Em "nao deu pra extrair" o arquivo e escaneado:
+     buscar de novo traz exatamente o mesmo PDF. Botao que nao pode dar certo e porta pintada,
+     e porta pintada e pior que parede: ela convida. */
+  ok('45. *** sem numero de controle NAO ganha o botao (a funcao responde 422 por desenho) ***',
+    !/buscarEditalAgora/.test(pinta({ estado: 'sem_controle' })));
+  ok('46. *** "nao deu pra extrair" NAO ganha o botao (buscar de novo traz o mesmo PDF) ***',
+    !/buscarEditalAgora/.test(pinta({ estado: 'sem_texto' })));
+  ok('47. e o estado "erro" tambem nao — a falha foi ao LER O NOSSO BANCO, nao o PNCP',
+    !/buscarEditalAgora/.test(pinta({ estado: 'erro', motivo: 'HTTP 500' })));
+
+  // *** ESTA BUSCA NAO GASTA IA, E O SELO NAO PODE DIZER QUE GASTA ***
+  // A funcao do servidor nao chama modelo nenhum. Selo de custo onde nao ha custo ensina a
+  // ignorar o selo onde ha — e o selo onde ha e o da conversa, logo ali do lado.
+  ok('48. *** o botao de buscar NAO carrega selo de custo de IA ***',
+    !/cv-bt-buscar[\s\S]{0,400}selo-ia/.test(src));
+
+  const CH = (src.match(/async function buscarEditalAgora[\s\S]*?\n\}/) || [''])[0];
+  ok('49. a chamada vai pra edge function `buscar-edital`, com o JWT da sessao',
+    /functions\/v1\/buscar-edital/.test(CH) && /'Bearer ' \+ tok/.test(CH), CH.length);
+  ok('50. *** sessao morta e dita antes de chamar, nao depois de falhar ***',
+    /if\(!tok\) throw new Error\('sua sessão expirou/.test(CH));
+  ok('51. o botao desabilita no clique — a chamada leva segundos e o duplo-clique dobraria o PNCP',
+    /bt\.disabled = true/.test(CH));
+  /* *** OS TRES FINAIS DA FUNCAO SAO TRES NA TELA TAMBEM ***: extrai · achou e nao extraiu ·
+     o orgao nao publicou. Fundir os tres num "ok" apagaria justamente a diferenca que decide
+     o que a pessoa faz em seguida. */
+  ok('52. *** o final "nao publicou nada" e tratado separado dos outros dois ***',
+    /if\(j\.semArquivo\)/.test(CH) && /estado:'sem_arquivo', agora:true/.test(CH));
+  ok('53. ...e "achei mas nao extrai" diz o motivo do arquivo, nao um "deu erro"',
+    /não deu pra extrair texto de nenhum/.test(CH) && /detalhes/.test(CH));
+  /* Quando o PNCP responde que nao ha arquivo, a funcao NAO grava linha (nao ha o que gravar).
+     Reler o banco traria de volta "ainda nao foi buscado" — que acabou de deixar de ser verdade
+     na frente de quem clicou. Por isso este caminho pinta, e o outro rele. */
+  ok('54. *** o caminho "achei arquivo" RELE do banco (a verdade tem que valer pro colega tambem) ***',
+    /await carregarConversaEdital\(id\)/.test(CH));
+  ok('55. o erro devolve o botao pra tentar de novo, em vez de deixar a tela morta',
+    /bt\.disabled = false[\s\S]{0,120}tentar de novo/.test(CH));
+}
+
 console.log('\nRESULTADO: ' + p + ' ok, ' + f + ' falha(s)');
 process.exitCode = f ? 1 : 0;
 })();
