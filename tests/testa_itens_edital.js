@@ -237,8 +237,15 @@ const _MENU_LEITOR = R('limedtec-menu.js');
 //     passou a existir num lugar so — o menu lateral, carregado pelas duas telas. Era esse o
 //     ponto: a lista do piloto vivia copiada em tres arquivos, e foi assim que a entrada entrou
 //     em duas telas e faltou nas outras quatro.
-ok('78. *** a entrada do leitor existe UMA VEZ, no menu, e as duas telas o carregam ***',
-  /id: 'leitor'/.test(_MENU_LEITOR) && /limedtec-menu\.js/.test(L) && /limedtec-menu\.js/.test(N)
+/* ══ 78 REAPONTADO EM 14/08 (fatia A2) ══════════════════════════════════════════════════════
+   Ele cobrava `id: 'leitor'` no menu. O Leitor saiu do menu por decisao do dono e virou motor
+   chamado de dentro do pregao — entao o assert passou a exigir exatamente o que a decisao
+   desfaz. O que ele PROTEGIA continua valendo e continua cobrado: a entrada existe num lugar
+   SO. Ela so mudou de lugar — do menu para a porta interna. */
+ok('78. *** a porta do leitor existe UMA VEZ (agora e o motor, nao o menu), e as telas carregam o menu ***',
+  !/id: 'leitor'/.test(_MENU_LEITOR)
+  && /LeitorEdital/.test(R('fpmed_leitor_motor.js'))
+  && /limedtec-menu\.js/.test(L) && /limedtec-menu\.js/.test(N)
   && /data-limedtec-menu/.test(N));
 ok('79. *** e nasce ESCONDIDA, revelada so pra quem tem o piloto ***',
   /m\.permissao \? ' hidden data-permissao=/.test(_MENU_LEITOR)

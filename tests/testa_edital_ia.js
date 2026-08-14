@@ -36,13 +36,32 @@ console.log('SUITE testa_edital_ia — leitor de edital em prova de custo\n');
 //        de Licitacoes, e o menu do sistema tem UMA entrada pra esse portal inteiro.
 ok('1. *** a tela continua fora do menu lateral (ela e do portal de Licitacoes) ***',
   !/fpmed_edital_ia/.test(MENU));
-// 12/08: o portao saiu da barra e foi pro MENU, com a lista num lugar so (ela vivia copiada
-// em tres telas). A promessa e a mesma: a entrada EXISTE e nasce ESCONDIDA.
-ok('2. *** no menu ela existe, mas nasce ESCONDIDA (portao de piloto) ***',
-  /permissao: \['licitacao@fpmed\.com\.br'\]/.test(R('limedtec-menu.js'))
-  && /m\.permissao \? ' hidden data-permissao=/.test(R('limedtec-menu.js'))
-  && /function abreLeitorNaBarra\(\)/.test(LIC)
-  && /LimedtecMenu\.revelarPara/.test(LIC));
+/* ══ 2 REAPONTADO EM 14/08 (fatia A2), POR DECISAO DO DONO ══════════════════════════════════
+   Ele cobrava "a entrada existe no menu e nasce escondida pelo portao de piloto". Essa promessa
+   foi REVOGADA: o Leitor deixou de ser destino do menu e virou MOTOR, chamado de dentro do
+   detalhe do pregao. Assert que exige a entrada impediria a propria decisao.
+   >>> MAS O QUE ELE PROTEGIA DE VERDADE NAO PODE CAIR JUNTO, e e mais importante agora que
+       antes: o motor tem que continuar INTEIRO. Permissao, custo e registro nunca moraram no
+       menu — moram na edge function — e e isso que o assert passa a cobrar, junto com a porta
+       interna chamando A MESMA edge function.
+   >>> A PORTA NAO PODE TER LISTA DE PERMISSAO PROPRIA. Se ela tivesse, existiriam duas
+       respostas pra "quem pode gastar?", e um dia elas discordariam num numero que vira
+       fatura. O assert PROIBE isso explicitamente. */
+const MOTOR = R('fpmed_leitor_motor.js');
+ok('2. *** o motor virou porta interna, e ela chama a MESMA edge function ***',
+  /functions\/v1\/ler-edital/.test(MOTOR) && /LeitorEdital/.test(MOTOR));
+/* LE O CODIGO, NAO A PROSA — 2a vez que isto me morde hoje. O modulo CITA `usos_ia` no
+   comentario justamente pra explicar que NAO grava lá; um assert de ausencia que olha o arquivo
+   inteiro transforma "explicou bem" em vermelho, e a saida facil vira apagar a explicacao. */
+const semCom = s => s.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+ok('2b. *** a porta NAO tem lista de permissao nem conta de custo propria (uma resposta so) ***',
+  !/licitacao@fpmed\.com\.br/.test(semCom(MOTOR)) && !/usos_ia/.test(semCom(MOTOR))
+  && !/input_tokens|custo_brl/.test(semCom(MOTOR)));
+ok('2c. *** e o 403 chega ao chamador MARCADO, porque nao e falha e sim "voce nao esta na lista" ***',
+  /semPermissao = true/.test(MOTOR) && /não é falha/.test(MOTOR));
+ok('2d. *** a tela avulsa continua existindo (a particao de PDF de 80 paginas mora nela) ***',
+  fs.existsSync(path.join(__dirname, '..', 'fpmed_edital_ia.html')));
+ok('2e. e o Leitor saiu do menu de verdade', !/'leitor'/.test(R('limedtec-menu.js')));
 ok('3. *** nem na casca do service worker ***', !/fpmed_edital_ia/.test(SW));
 ok('4. ...e o motivo da casca esta escrito (tela que so funciona pagando nao serve offline)',
   /não tem o que fazer offline/.test(TELA));

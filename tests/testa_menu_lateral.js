@@ -87,7 +87,8 @@ const CASOS = [
   ['/fpmed_licitacoes.html', '#jornais', 'jornais', 'o mesmo arquivo com #jornais acende Meus Jornais'],
   ['/fpmed_licitacoes.html', '#lk-desertas', 'desertas', 'e com #lk-desertas acende Desertas'],
   ['/fpmed_negocios.html', '', 'negocios', 'Negocios'],
-  ['/fpmed_edital_ia.html', '', 'leitor', 'Leitor de edital'],
+  // o Leitor saiu do menu em 14/08 (fatia A2): virou motor chamado de dentro do pregao, e a
+  // tela avulsa deixou de ser destino navegavel. Sem entrada no menu, nao ha modulo pra acender.
   /* REAPONTADO em 13/08 (item 8): "Conferir CMED" SAIU da lista de modulos — a CMED virou base
      por baixo de todo preco, e um item de menu ensinava que conferir o teto e uma parada
      separada. A tela continua existindo e continua alcancavel pelo RODAPE, mas ela nao e mais
@@ -295,9 +296,32 @@ ok(n + '. o contador e uma COLUNA: encostado a direita e com digito de largura f
        que este item ganhasse contagem APAGAR o aviso — e o aviso e o que impede
        alguem de clicar sem saber que aquilo custa. Por isso os dois convivem, e ha
        assert pra que continuem dois. */
-ok(n + '. o Leitor de edital carrega o selo "IA" (aviso de que o modulo custa por uso)',
-  (c.api.MODULOS.find(m => m.id === 'leitor') || {}).selo === 'IA'
-  && /class="lm-selo"/.test(html)); n++;
+/* ══ REAPONTADO EM 14/08 (fatia A2): O SELO NAO TEM MAIS DONO NO MENU ═══════════════════════
+   O unico modulo com `selo` era o Leitor, e ele saiu. Cobrar "o Leitor carrega o selo IA"
+   passou a exigir de volta a entrada que a decisao do dono tirou.
+   >>> O AVISO NAO SUMIU DO PRODUTO — MUDOU DE LUGAR, e vai pro botao "Conversar com o edital"
+       no detalhe do pregao (fatia A4), que e onde o gasto passa a ser disparado. Aviso longe da
+       decisao nao muda decisao; aviso colado nela, muda.
+   >>> O MECANISMO FICA E CONTINUA COBRADO. Se o suporte a `selo` sumisse do menu junto com o
+       ultimo usuario dele, o proximo modulo que gastar dinheiro por uso nasceria sem aviso — e
+       ninguem lembraria que um dia houve um. O assert prova o mecanismo com um modulo de
+       mentira, que e como se testa uma capacidade que hoje nao tem cliente. */
+ok(n + '. nenhum modulo do menu carrega selo hoje (o unico que tinha, o Leitor, saiu em 14/08)',
+  c.api.MODULOS.every(m => !m.selo)); n++;
+ok(n + '. *** mas o menu AINDA sabe desenhar selo (o proximo modulo que custar por uso precisa) ***',
+  (function () {
+    const falso = { id: 'buscar', rotulo: 'Teste', href: 'x.html', selo: 'IA' };
+    const orig = c.api.MODULOS.slice();
+    c.api.MODULOS.length = 0; c.api.MODULOS.push(falso);
+    const alvo = { getAttribute: () => null, setAttribute() {}, appendChild() {} };
+    let saiu = '';
+    try {
+      const nav = c.api.montar(Object.assign({}, alvo, { getAttribute: k => (k === 'data-montado' ? null : null) }));
+      saiu = nav ? nav.innerHTML : '';
+    } catch (_) { saiu = ''; }
+    c.api.MODULOS.length = 0; orig.forEach(m => c.api.MODULOS.push(m));
+    return /class="lm-selo"/.test(saiu) && />IA</.test(saiu);
+  })()); n++;
 ok(n + '. e o selo e outra peca que o contador (rotulo x numero, os dois podem coexistir)',
   /\.lm-selo\{/.test(CSS) && /\.lm-selo \+ \.lm-num\{/.test(CSS)); n++;
 ok(n + '. o selo usa o verde da marca com o navy por cima (9,04:1), e nao cor escrita a mao',

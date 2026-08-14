@@ -153,8 +153,23 @@
            muda; o selo é RÓTULO e não muda. Se eu tivesse reaproveitado o slot do
            número, o dia em que este item ganhasse contagem apagaria o aviso — e o
            aviso é o que impede alguém de clicar sem saber que aquilo custa. */
-    { id: 'leitor', rotulo: 'Leitor de edital', href: 'fpmed_edital_ia.html', tela: 'fpmed_edital_ia',
-      selo: 'IA', permissao: ['licitacao@fpmed.com.br'] },
+    /* ══ O LEITOR SAIU DO MENU EM 14/08 (fatia A2) — E NÃO FOI DESLIGADO ═══════════════
+       Decisão do dono: ele deixa de ser DESTINO e vira MOTOR, chamado de dentro do
+       detalhe do pregão (fatia A4) e, depois, do Negócios (contrato da fatia A5).
+       >>> O MOTOR ESTÁ INTACTO POR CONSTRUÇÃO, e isso não é promessa: permissão (lista
+           de e-mail contra o JWT, 403), custo (contado do `usage` real) e registro
+           (`usos_ia`) vivem na edge function `ler-edital`, no servidor. Tirar um item de
+           menu não encosta em nenhum dos três. A porta interna é o
+           `fpmed_leitor_motor.js`, que chama a MESMA edge function — de propósito, pra
+           não existirem duas respostas pra "quem pode?" e "quanto custou?".
+       >>> A TELA `fpmed_edital_ia.html` CONTINUA EXISTINDO e continua na casca do service
+           worker. O que mudou é que não se chega mais nela pelo menu — o caminho passa a
+           ser o pregão. Apagar a tela seria jogar fora a partição de PDF de 80 páginas,
+           que está testada e é cara de reescrever.
+       >>> O SELO "IA" SAIU JUNTO, e ele era o aviso de que aquele item gasta por uso. O
+           aviso não some do produto: ele muda de lugar, para o botão "Conversar com o
+           edital" no detalhe — que é onde o gasto passa a ser disparado. Aviso longe da
+           decisão não muda decisão. */
     /* ══ "CONFERIR CMED" SAIU DA LISTA (item 8, 13/08) ═══════════════════════════════════════
        Ordem do dono: a CMED deixa de ser ABA e vira BASE por baixo de todo preço. Um item de
        menu chamado "Conferir CMED" ensina que conferir o teto legal é uma parada separada, que

@@ -25,7 +25,7 @@
        usuÃ¡rio ficaria com a versÃ£o de ontem e sem sintoma nenhum, que Ã© a liÃ§Ã£o S13.
    >>> E O ITEM 8 PRECISA DE BUMP mesmo sem tela nova: ele mexe no `fpmed_teto_cmed.js`, que ESTÃ
        na casca. Motor velho servido do cache Ã© teto legal calculado pela regra antiga. */
-const VERSAO = 'limedtec-fpmed-2026-08-13-54';
+const VERSAO = 'limedtec-fpmed-2026-08-13-55';
 const CACHE = 'limedtec-shell-' + VERSAO;
 
 // A CASCA DA FPMED. Lista MONTADA A MAO conferindo `git ls-files` (= o que o Pages serve),
@@ -70,6 +70,12 @@ const SHELL = [
      em que a Encontrar passou a depender dele â€” que e exatamente a licao dos dois de cima, que
      ficaram no ar sem casca por um dia. Offline, sem ele a tela abre sem os icones das linhas. */
   './fpmed_icones.js',
+  /* A PORTA INTERNA DO LEITOR (fatia A2, 14/08). Ela entra na casca NO MESMO commit em que
+     nasce — que e a licao ja paga duas vezes aqui: o fpmed_tema.css e o limedtec-menu.js
+     ficaram um dia no ar sem casca porque a tela nova foi publicada sem reler esta lista, e
+     offline a tela abria sem tema e sem navegacao. Com rede, o 404 nao acontece e o defeito
+     nao aparece. */
+  './fpmed_leitor_motor.js',
   './limedtec-licenca.js',
   './limedtec-papeis.js',              // a matriz de papeis que a tela de Usuarios imprime
   './limedtec-sessao.js',              // portao de perfil da tela de Usuarios (so ela o carrega)
