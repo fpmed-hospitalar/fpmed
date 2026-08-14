@@ -72,7 +72,7 @@
    "historico" que nao existe e nao conta que "Meus arquivos", o numero de controle, os selos e
    os campos de EAN passaram a existir. Guia velho servido com confianca e pior que guia nenhum:
    quem nao acha o que ele descreve conclui que e ELE quem nao sabe usar o sistema. */
-const VERSAO = 'limedtec-fpmed-2026-08-14-82';
+const VERSAO = 'limedtec-fpmed-2026-08-14-83';
 const CACHE = 'limedtec-shell-' + VERSAO;
 
 // A CASCA DA FPMED. Lista MONTADA A MAO conferindo `git ls-files` (= o que o Pages serve),

@@ -460,10 +460,34 @@ select[disabled],input[disabled],textarea[disabled]{
 @media(max-width:700px){.links .sai{margin-left:0}.links .sai::before{display:none}}
 
 /* ── GRADE: filtros à esquerda, resultados à direita ─────────────────────────── */
-#painel-busca{display:grid;grid-template-columns:262px 1fr;gap:var(--esp-4);
+/* ══ A COLUNA DE FILTROS RECOLHEU (fatia A27) ══════════════════════════════════════════════
+   Ela ocupava 262px FIXOS de um terço da tela e ficava SEMPRE aberta — o defeito nº 5 da lista
+   do dono. Numa tela de 1366px isso é um quinto da largura gasto com nove campos que, na
+   maioria das buscas, estão todos vazios; e é ele que espremia a lista de resultados até o
+   ponto de ela precisar rolar de lado.
+   >>> AGORA NASCE FECHADA, e o que fica na tela é o BOTÃO com a conta ("Filtros (3)") mais os
+       chips do que está ligado — que já existiam, dentro da barra de busca, desde o passo 5 do
+       molde. Não há uma segunda lista de chips: seriam duas leituras do mesmo refino
+       divergindo no dia em que entrasse um critério novo.
+   >>> `filtrarPorOrgao()` ABRE A GAVETA por código (era `classList.add('open')`, e agora passa
+       pelo `alternaFiltros(true)`, porque abrir virou DUAS classes). Esse gesto volta a ter
+       efeito visível: desde 11/08 ele apontava para uma regra vazia. */
+/* `minmax(0,1fr)` E NÃO `1fr` — AQUI MORA O DEFEITO Nº 2 DO PRINT DO DONO (a barra de rolagem
+   horizontal no rodapé da página, e o selo "DOS MEUS NEGÓCIOS" cortado na direita). Coluna de
+   grade `1fr` tem piso `auto`: ela NÃO encolhe abaixo do conteúdo mais largo que houver dentro.
+   A tabela de resultado do detalhe tem sete colunas `nowrap`; quando ela media mais que a
+   coluna, a coluna crescia, a grade crescia e a PÁGINA INTEIRA passava a rolar de lado. Com
+   piso zero, quem rola é a tabela dentro da caixa dela — nunca a tela. */
+#painel-busca{display:grid;grid-template-columns:minmax(0,1fr);gap:var(--esp-4);
   align-items:start;margin-top:var(--esp-4)}
-@media(max-width:900px){#painel-busca{grid-template-columns:1fr}}
-#avancada{background:var(--branco);border:1px solid var(--cinza-200);
+#painel-busca.com-filtros{grid-template-columns:262px minmax(0,1fr)}
+@media(max-width:900px){#painel-busca.com-filtros{grid-template-columns:1fr}}
+.barra-filtros{display:flex;align-items:center;gap:var(--esp-3);flex-wrap:wrap;
+  margin-bottom:var(--esp-3)}
+.barra-filtros .conta{background:var(--azul-600);color:var(--branco);border-radius:var(--raio-pilula);
+  padding:0 var(--esp-2);font-size:var(--txt-0);font-weight:var(--peso-forte);
+  font-variant-numeric:tabular-nums;margin-left:var(--esp-1)}
+#avancada{display:none;background:var(--branco);border:1px solid var(--cinza-200);
   border-radius:var(--raio-cartao);box-shadow:var(--sombra-1);
   padding:var(--esp-4);text-align:left;position:sticky;top:var(--esp-3);
   max-height:calc(100vh - 28px);overflow:auto;overflow-x:hidden}
@@ -472,10 +496,10 @@ select[disabled],input[disabled],textarea[disabled]{
    modalidade, valor e situação existiam — e o operador buscava sem saber que dava pra filtrar.
    >>> NENHUM FILTRO FOI ACRESCENTADO NEM TIRADO. São os mesmos campos, no mesmo formulário,
        lendo os mesmos ids. O que mudou é que eles deixaram de estar escondidos.
-   >>> `#avancada.open` CONTINUA EXISTINDO porque `soDesertas()` e o Radar abrem a gaveta por
-       código. Numa coluna sempre visível "abrir" não faz nada — e é isso que a regra vazia diz,
-       em vez de deixar o `classList.add('open')` apontando pra um seletor que sumiu. */
-#avancada.open{}
+   >>> `#avancada.open` VOLTOU A TER EFEITO na fatia A27: entre 11/08 e hoje ele era uma regra
+       VAZIA (a coluna estava sempre visível), e `soDesertas()` chamava `classList.add('open')`
+       num seletor que não fazia nada. Com a coluna recolhida, abrir voltou a ser abrir. */
+#avancada.open{display:block}
 #avancada h5{margin:0 0 var(--esp-3);font-size:var(--txt-1);font-weight:var(--peso-semi);
   letter-spacing:.1em;text-transform:uppercase;color:var(--cinza-600)}
 #avancada .grid3{grid-template-columns:1fr;gap:var(--esp-3)}
@@ -767,68 +791,200 @@ select[disabled],input[disabled],textarea[disabled]{
   text-decoration:none;font-family:inherit}
 .mais .cx a:hover,.mais .cx button:hover{background:var(--cinza-50)}
 
-/* ══ O PAINEL DE DETALHE DO PREGÃO (fatia A4) ═══════════════════════════════════════════════
-   Mesma caixa dos painéis de Órgãos e Meus Jornais — mesma cor, mesma borda, mesmo raio. Três
-   painéis com três desenhos é o que faz um sistema parecer montado. */
-#detalhe{display:none;background:var(--branco);border:1px solid var(--cinza-200);
-  border-radius:var(--raio-cartao);padding:var(--esp-4);margin-bottom:var(--esp-4);
-  box-shadow:var(--sombra-1);text-align:left}
-#detalhe.open{display:block}
-.det-topo{display:flex;align-items:flex-start;gap:var(--esp-3);margin-bottom:var(--esp-3)}
-.det-tit{font-family:Montserrat,sans-serif;font-size:var(--txt-3);
-  font-weight:var(--peso-semi);color:var(--cinza-800)}
-.det-barra{display:flex;align-items:center;gap:var(--esp-3);margin-bottom:var(--esp-3);flex-wrap:wrap}
-.det-busca{flex:1;min-width:220px;height:34px;border:1px solid var(--cinza-300);
-  border-radius:var(--raio-item);padding:0 var(--esp-3);font-family:inherit;
-  font-size:var(--txt-1);color:var(--cinza-800);background:var(--branco)}
-.det-itens{max-height:520px;overflow:auto;border:1px solid var(--cinza-200);
-  border-radius:var(--raio-botao)}
-/* A SANFONA POR ITEM. Fechada, cada item cabe numa linha e dá pra varrer 200 deles; aberta,
-   ela mostra o teto legal e o que temos. Um edital hospitalar com 500 itens todos abertos é
-   uma parede de texto que ninguém lê. */
-.det-item{border-bottom:1px solid var(--borda-divisor)}
-.det-item:last-child{border-bottom:0}
-.det-item>summary{display:flex;align-items:center;gap:var(--esp-3);padding:var(--esp-2) var(--esp-3);
-  cursor:pointer;list-style:none;font-size:var(--txt-1);color:var(--cinza-800)}
-.det-item>summary::-webkit-details-marker{display:none}
-.det-item>summary:hover{background:var(--cinza-50)}
-.det-item .n{flex:0 0 34px;color:var(--cinza-600);font-variant-numeric:tabular-nums;text-align:right}
-.det-item .d{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.det-item .q{flex:0 0 auto;color:var(--cinza-600);white-space:nowrap}
-.det-item .v{flex:0 0 auto;font-weight:var(--peso-semi);font-variant-numeric:tabular-nums;white-space:nowrap}
-.det-corpo{padding:var(--esp-2) var(--esp-3) var(--esp-4) calc(34px + var(--esp-6));
-  background:var(--cinza-50)}
-/* ══ O QUE A FATIA A21 ACRESCENTOU AO DETALHE ═════════════════════════════════════════════════
-   O TETO CMED NA LINHA do item — quem varre 300 itens atrás de margem não abre 300 sanfonas.
-   Ele é a única coluna nova, e vem em `--cinza-700` (não no tom do valor) porque é REFERÊNCIA
-   legal, não o preço da compra: dois números do mesmo peso na mesma linha fariam a pessoa somar
-   um ao outro com o olho. */
-.det-item .t{flex:0 0 auto;white-space:nowrap;color:var(--cinza-700);
-  font-variant-numeric:tabular-nums;font-size:var(--txt-1)}
-.det-item .t i{font-style:normal;color:var(--cinza-600);font-size:var(--txt-0);
-  margin-left:var(--esp-1)}
-.det-item .t.vazio{color:var(--cinza-500)}
-/* O ITEM QUE CASOU COM A BUSCA DE DENTRO. Ele já vem no topo; o fundo é o que diz POR QUE ele
-   está lá — sem isso, "o primeiro da lista" e "o que eu procurei" viram a mesma coisa no dia em
-   que a busca não achar nada. Mesmo âmbar do `<mark>` do objeto, pelo mesmo motivo: é a cor que
-   este sistema já usa para "isto aqui é o que você procurou". */
-.det-item.achado>summary{background:var(--ambar-50)}
-.det-item.achado>summary:hover{background:var(--ambar-100)}
+/* ══ O PAINEL DE DETALHE DO PREGÃO — DRAWER (fatia A27, 14/08/2026) ════════════════════════════
+   ANTES ele era um bloco `display:block` ACIMA da lista. O dono abriu, viu o detalhe EMPURRAR a
+   lista num rolo infinito e escreveu: *"está muito difícil de mexer"*. E era: um edital de 600
+   itens (o maior do índice, medido) abria como 600 linhas empurrando os resultados pra baixo —
+   fechar deixava a pessoa a meio quilômetro de onde ela estava.
+   >>> AGORA É PAINEL PRÓPRIO, com rolagem DELE. A lista de trás não se move (o `body` trava a
+       rolagem enquanto o painel está aberto, e a posição é guardada e devolvida no fechar).
+   >>> O ALVO É docs/molde_detalhe.html, desenhado pelo arquiteto. As cores dele eram
+       APROXIMAÇÕES: cada uma foi trocada pelo token exato do fpmed_tema.css. O que foi copiado
+       é a ESTRUTURA — cabeçalho fixo, chips de estado, ficha em grade com rótulo EM CIMA, abas,
+       barra, tabela com cabeçalho fixo e rodapé de seleção.
+   >>> AS DIVERGÊNCIAS DE TOKEN ESTÃO DECLARADAS NO RELATÓRIO, uma a uma, com o degrau da rampa
+       que entrou no lugar. Zero hex à mão neste bloco. */
+/* O véu FECHA ao clique, e por isso ele tem cursor de mão: afordância honesta vale também
+   para a peça que não parece peça (a varredura de cliques da B12 acusa o contrário). */
+#det-veu{position:fixed;inset:0;background:var(--veu);z-index:60;display:none;cursor:pointer}
+#det-veu.open{display:block}
+/* `width:min(1080px,96vw)` — nunca mais largo que a tela, que é o defeito nº 2 do print do dono
+   (a página inteira rolava de lado e o selo "DOS MEUS NEGÓCIOS" ficava cortado na direita). */
+#detalhe{position:fixed;top:0;right:0;bottom:0;z-index:61;width:min(1080px,96vw);
+  background:var(--branco);box-shadow:var(--sombra-3);
+  display:none;flex-direction:column;overflow-y:auto;overscroll-behavior:contain;text-align:left}
+#detalhe.open{display:flex}
+/* O `overflow:hidden` no body é o que impede a lista de trás de rolar junto. A posição é
+   guardada em JS e devolvida no fechar — `overflow:hidden` sozinho já costuma preservar o
+   scrollTop, mas "costuma" não é prova, e a ordem do dono é voltar ao MESMO ponto. */
+body.det-aberto{overflow:hidden}
 
-/* AS SEÇÕES DO DETALHE (itens · arquivos · resultado). Um <h4> discreto e um fio: elas são
-   assunto diferente dentro do mesmo painel, e sem separação a lista de arquivos parecia
-   continuação da lista de itens. */
-.det-secao{margin-top:var(--esp-5)}
-.det-secao h4{margin:0 0 var(--esp-2);font-family:Montserrat,sans-serif;font-size:var(--txt-1);
-  font-weight:var(--peso-forte);color:var(--cinza-600);text-transform:uppercase;
-  letter-spacing:.05em;padding-bottom:var(--esp-2);border-bottom:1px solid var(--borda-divisor)}
+/* ── CABEÇALHO FIXO: modalidade + nº, órgão · município/UF · unidade, fechar ─────────────── */
+.det-cab{flex:none;padding:var(--esp-4) var(--esp-5) var(--esp-3);
+  border-bottom:1px solid var(--cinza-200);background:var(--branco)}
+.det-topo{display:flex;align-items:flex-start;gap:var(--esp-3)}
+.det-tit{margin:0;font-family:Montserrat,sans-serif;font-size:var(--txt-4);
+  line-height:var(--altura-titulo);font-weight:var(--peso-forte);color:var(--cinza-800)}
+.det-org{margin:var(--esp-1) 0 0;color:var(--cinza-600);font-size:var(--txt-1);
+  line-height:var(--altura-texto)}
+.det-fechar{margin-left:auto;flex:none;width:32px;height:32px;border:1px solid var(--cinza-300);
+  background:var(--branco);border-radius:var(--raio-botao);color:var(--cinza-600);
+  font-size:var(--txt-3);line-height:1;cursor:pointer;transition:background-color var(--transicao)}
+.det-fechar:hover{background:var(--cinza-100)}
+.det-fechar:focus-visible{outline:none;box-shadow:var(--foco)}
 .det-selos{display:flex;align-items:center;gap:var(--esp-2);flex-wrap:wrap;
-  margin-bottom:var(--esp-3)}
+  margin-top:var(--esp-3)}
+.det-cab .acoes{margin-top:var(--esp-3)}
+/* O botão da IA: o mesmo azul de ação do sistema, em fundo tênue — ele não é o gesto primário
+   (o verde é), mas também não é um secundário qualquer: ele GASTA DINHEIRO, e o preço vem
+   escrito ao lado dele, não escondido atrás do clique. */
+.btn.bt-ia{background:var(--azul-50);border-color:var(--azul-100);color:var(--azul-700)}
+.btn.bt-ia:hover:not([disabled]){background:var(--azul-100)}
+.det-custo{font-size:var(--txt-0);color:var(--cinza-500);margin-left:var(--esp-1)}
+
+/* ── FICHA EM GRADE: rótulo pequeno EM CIMA, valor forte EMBAIXO ─────────────────────────────
+   É o defeito nº 1 do print do dono: "Publicação13/08/2026 às 09:16", "Valor estimadoR$ ...",
+   "N° controle PNCP03381462...". Rótulo e valor eram irmãos numa linha só, sem separação
+   nenhuma — e o olho lia uma palavra grudada num número. Aqui o rótulo é um BLOCO (`display:
+   block`), em caixa alta e no menor degrau da rampa; o valor vem embaixo, forte. Não há como
+   grudar: são duas linhas. */
+.det-ficha{flex:none;display:grid;grid-template-columns:repeat(auto-fit,minmax(168px,1fr));
+  gap:var(--esp-3) var(--esp-6);padding:var(--esp-4) var(--esp-5);
+  border-bottom:1px solid var(--cinza-200);background:var(--cinza-50)}
+.det-ficha .f-rot{display:block;font-size:var(--txt-0);font-weight:var(--peso-semi);
+  letter-spacing:.06em;text-transform:uppercase;color:var(--cinza-500);margin-bottom:var(--esp-1)}
+.det-ficha .f-val{display:block;font-size:var(--txt-2);font-weight:var(--peso-semi);
+  color:var(--cinza-800);font-variant-numeric:tabular-nums;line-height:var(--altura-texto);
+  overflow-wrap:anywhere}
+.det-ficha .f-val.forte{font-size:var(--txt-3)}
+/* NÃO INFORMADO É PALAVRA, NUNCA "R$ 0,00" NEM TRAVESSÃO SOZINHO — a mesma regra que o B já
+   matou no Negócios. O tom é o cinza mais claro que ainda passa em AA. */
+.det-ficha .f-val.vazio{font-weight:var(--peso-normal);color:var(--cinza-500)}
+.det-objeto{flex:none;margin:0;padding:var(--esp-3) var(--esp-5);
+  border-bottom:1px solid var(--cinza-200);font-size:var(--txt-1);
+  color:var(--cinza-700);line-height:var(--altura-texto)}
+
+/* ── ABAS: Itens (n) · Documentos (n) · Resultado ── a ativa em azul de ação CHEIO ───────── */
+.det-abas{flex:none;display:flex;gap:var(--esp-2);padding:var(--esp-3) var(--esp-5) 0;
+  border-bottom:1px solid var(--cinza-200);background:var(--branco);flex-wrap:wrap}
+.det-aba{height:32px;padding:0 var(--esp-4);border:1px solid var(--cinza-300);border-bottom:none;
+  background:var(--branco);border-radius:var(--raio-botao) var(--raio-botao) 0 0;
+  font-family:inherit;font-size:var(--txt-1);font-weight:var(--peso-semi);color:var(--cinza-600);
+  cursor:pointer;display:flex;align-items:center;gap:var(--esp-2);
+  transition:background-color var(--transicao)}
+.det-aba:hover{background:var(--cinza-100)}
+.det-aba:focus-visible{outline:none;box-shadow:var(--foco)}
+.det-aba[aria-selected="true"]{background:var(--azul-600);border-color:var(--azul-600);color:var(--branco)}
+.det-aba .n{font-size:var(--txt-0);background:var(--cinza-100);color:var(--cinza-600);
+  border-radius:var(--raio-pilula);padding:0 var(--esp-2);font-variant-numeric:tabular-nums}
+.det-aba[aria-selected="true"] .n{background:var(--azul-700);color:var(--branco)}
+
+/* ── BARRA DA TABELA: busca dentro dos itens + contador honesto + densidade ──────────────── */
+.det-barra{flex:none;display:flex;align-items:center;gap:var(--esp-3);flex-wrap:wrap;
+  padding:var(--esp-3) var(--esp-5);border-bottom:1px solid var(--cinza-200);background:var(--branco)}
+.det-busca{flex:1;min-width:220px;height:34px;border:1px solid var(--borda-busca);
+  border-radius:var(--raio-campo);padding:0 var(--esp-3);font-family:inherit;
+  font-size:var(--txt-1);color:var(--cinza-800);background:var(--branco)}
+.det-busca:focus-visible{outline:none;box-shadow:var(--foco)}
+.det-dens{display:flex;border:1px solid var(--cinza-300);border-radius:var(--raio-botao);overflow:hidden}
+.det-dens button{height:32px;padding:0 var(--esp-3);border:0;background:var(--branco);
+  font-family:inherit;font-size:var(--txt-1);font-weight:var(--peso-semi);color:var(--cinza-600);cursor:pointer}
+.det-dens button[aria-pressed="true"]{background:var(--cinza-100);color:var(--cinza-800)}
+.det-dens button:focus-visible{outline:none;box-shadow:var(--foco)}
+/* O AVISO ÂMBAR DE LEITURA INCOMPLETA. Os tokens `--sinal-atencao-*` são o par que o tema já
+   mede para "atenção" — e são o hex EXATO que o molde aproximou (#FEF6E4 / #8A5A00). */
+.det-aviso{flex:none;margin:var(--esp-3) var(--esp-5);padding:var(--esp-3);
+  border-radius:var(--raio-botao);background:var(--sinal-atencao-fundo);
+  border:1px solid var(--ambar-100);color:var(--sinal-atencao-tinta);
+  font-size:var(--txt-1);line-height:var(--altura-texto)}
+.det-aviso.erro{background:var(--sinal-perigo-fundo);border-color:var(--vermelho-100);
+  color:var(--sinal-perigo-tinta)}
+.det-aviso.neutro{background:var(--cinza-50);border-color:var(--cinza-200);color:var(--cinza-600)}
+
+/* ── A TABELA DOS ITENS ────────────────────────────────────────────────────────────────────
+   O dono viu "500 itens numa lista crua de caixinhas com código e descrição" e pediu tabela.
+   O fundamento é padrão de mercado para tabela densa, e a caixa mandou os números: linha de
+   40px compacta / 48px confortável, texto à esquerda e NÚMERO À DIREITA sempre, cabeçalho
+   fixo, FIO DE 1px em vez de zebra (zebra em tabela interativa briga com o hover e com a
+   linha marcada — três fundos disputando a mesma linha), hover na linha, e o termo buscado
+   destacado dentro dela.
+   >>> A ALTURA É `min-height` NA CÉLULA, E NÃO `height`: a descrição do item mede 149
+       caracteres em média e 343 no percentil 90 (medido em 96.163 itens do banco). Com altura
+       FIXA, 1 em cada 10 itens teria a descrição cortada no meio — e é a descrição que diz se
+       é a dipirona certa. A linha começa em 40/48 e cresce quando o texto exige. */
+.det-rolo{flex:1 1 auto;min-height:200px;overflow:auto}
+.det-tab2{width:100%;border-collapse:separate;border-spacing:0}
+.det-tab2 thead th{position:sticky;top:0;z-index:2;background:var(--branco);
+  border-bottom:1px solid var(--cinza-300);text-align:left;
+  font-size:var(--txt-0);font-weight:var(--peso-forte);letter-spacing:.06em;text-transform:uppercase;
+  color:var(--cinza-500);padding:var(--esp-2) var(--esp-3);white-space:nowrap}
+.det-tab2 thead th.num{text-align:right}
+.det-tab2 tbody td{border-bottom:1px solid var(--cinza-200);padding:var(--esp-2) var(--esp-3);
+  min-height:var(--det-linha,48px);height:var(--det-linha,48px);
+  font-size:var(--txt-2);color:var(--cinza-700);vertical-align:middle;
+  line-height:var(--altura-texto)}
+.det-rolo.compacta{--det-linha:40px}
+.det-tab2 tbody tr:hover td{background:var(--linha-hover)}
+.det-tab2 tbody tr.marcada td{background:var(--linha-ativa)}
+.det-tab2 td.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+/* ══ A DESCRIÇÃO TEM TETO DE LINHAS, E O TETO É MEDIDO ═════════════════════════════════════
+   Medido nos 98.654 itens do banco: 149 caracteres em média, 343 no percentil 90, 2.048 no
+   maior. 7.267 itens (7,4%) passam de 400 caracteres e 546 passam de 1.200 — nesta coluna,
+   1.200 caracteres desenham uma linha de ~380px de altura, ou seja, UMA linha ocupando metade
+   da tela numa tabela feita para varrer 500.
+   >>> ENTÃO O TEXTO É APARADO EM 3 LINHAS (2 na compacta) e o resto vai para o `title`. Isso
+       cobre a mediana inteira sem cortar nada — 149 caracteres cabem em 2 linhas nesta largura
+       — e limita justamente os 7,4% que quebrariam a varredura.
+   >>> APARAR NÃO É ESCONDER: quem precisa do texto inteiro passa o mouse, e a descrição
+       completa também está na aba do edital. Cortar em UMA linha, como a sanfona antiga fazia,
+       era o que escondia a dose — e é a dose que diz se é a dipirona certa. */
+   >>> O APARO MORA NUM <span> DENTRO DA CÉLULA, e não na célula: `display:-webkit-box` num
+       <td> tira dele o `display:table-cell`, e a coluna deixa de se alinhar com o cabeçalho.
+       A tabela inteira sairia do lugar por causa de um corte de texto. */
+.det-tab2 td.desc{color:var(--cinza-800);min-width:220px}
+.det-tab2 td.desc .d{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;
+  overflow:hidden}
+.det-rolo.compacta .det-tab2 td.desc .d{-webkit-line-clamp:2}
+.det-tab2 td.desc mark{background:var(--grifo);color:var(--cinza-800);
+  padding:0 var(--esp-1);border-radius:var(--raio-mini)}
+.det-tab2 .seq{color:var(--cinza-500);font-variant-numeric:tabular-nums}
+/* "sem referência" / "sem teto CMED" / "nada a comparar" — as frases honestas. Elas são TEXTO,
+   e por isso não podem parecer número: peso normal e o cinza claro. Um "R$ 0,00" no lugar
+   delas faria toda proposta parecer acima do teto legal. */
+.det-tab2 .vazio{color:var(--cinza-500);font-weight:var(--peso-normal);
+  font-variant-numeric:normal;white-space:nowrap}
+.det-selo{display:inline-block;font-size:var(--txt-0);font-weight:var(--peso-semi);
+  padding:0 var(--esp-2);border-radius:var(--raio-pilula);white-space:nowrap;
+  line-height:calc(var(--txt-2) + var(--esp-1))}
+.det-selo.cabe{background:var(--verde-50);color:var(--verde-700)}
+.det-selo.estoura{background:var(--sinal-perigo-fundo);color:var(--sinal-perigo-tinta)}
+.det-selo.sem{background:var(--cinza-100);color:var(--cinza-600)}
+.det-tab2 .teto-ok{color:var(--verde-700);font-weight:var(--peso-semi)}
+.det-tab2 .teto-estoura{color:var(--sinal-perigo-tinta);font-weight:var(--peso-semi)}
+.det-tab2 input[type=checkbox]{width:15px;height:15px;accent-color:var(--azul-600);cursor:pointer}
+
+/* ── RODAPÉ DE SELEÇÃO: SÓ existe quando há item marcado ─────────────────────────────────── */
+.det-rodape{flex:none;display:flex;align-items:center;gap:var(--esp-3);flex-wrap:wrap;
+  padding:var(--esp-3) var(--esp-5);border-top:1px solid var(--cinza-200);
+  background:var(--superficie-sutil)}
+.det-rodape .n{font-size:var(--txt-2);font-weight:var(--peso-semi);color:var(--cinza-800)}
+/* O painel de conversa com a IA e o corpo de Documentos/Resultado ficam no MESMO rolo da
+   tabela — são conteúdo de aba, e aba que rola por fora do painel seria uma segunda rolagem. */
+.det-secao-corpo{padding:var(--esp-4) var(--esp-5)}
+
+/* A `.det-secao` (o <h4> discreto com o fio embaixo) MORREU NA FATIA A27: quem separa itens de
+   arquivos e de resultado agora são as ABAS, e um título repetindo o nome da aba logo abaixo
+   dela é a mesma palavra duas vezes. A regra sai junto com o markup — CSS que sobra de um
+   desenho que acabou é o que faz a próxima pessoa achar que a peça ainda existe. */
 .det-docs .doc{display:flex;align-items:center;gap:var(--esp-2);flex-wrap:wrap;
   padding:var(--esp-2) 0;border-bottom:1px solid var(--borda-divisor);font-size:var(--txt-1)}
 .det-docs .doc:last-child{border-bottom:0}
 .det-docs .nome{font-weight:var(--peso-semi);color:var(--cinza-800)}
 .det-docs .tipo,.det-docs .tam{color:var(--cinza-600)}
+/* A CAIXA QUE SEGURA A TABELA LARGA. A `.det-tab` do resultado tem sete colunas `nowrap` e não
+   cabe em 1080px quando o nome do vencedor é longo. Sem esta caixa ela empurrava a largura pra
+   fora — que é exatamente o que o dono viu. Rola a tabela, nunca a página. */
+.det-tab-caixa{overflow-x:auto;max-width:100%}
 .det-tab{width:100%;border-collapse:collapse;font-size:var(--txt-1)}
 .det-tab th{text-align:left;color:var(--cinza-600);font-weight:var(--peso-semi);font-size:var(--txt-0);
   text-transform:uppercase;letter-spacing:.04em;padding:var(--esp-2);
@@ -1384,6 +1540,17 @@ svg.ic.bom{color:var(--verde-700)}
   <!-- ══ A GRADE DO BUSCADOR ══ filtros a esquerda, resultados a direita (padrao Prime) ══
        Os filtros ficam FIXOS ao rolar (`position:sticky`): numa lista de 200 licitacoes,
        ter que subir ate o topo pra mudar a UF e o tipo de atrito que faz ninguem filtrar. -->
+  <!-- ══ A BARRA QUE ABRE OS FILTROS (fatia A27) ═══════════════════════════════════════════
+       A coluna de filtros nasce FECHADA. O que fica na tela é este botão com a conta do que
+       está ligado — e os chips de cada critério continuam onde sempre estiveram, dentro da
+       barra de busca. Uma segunda lista de chips aqui seria duas leituras do mesmo refino. -->
+  <div class="barra-filtros">
+    <button type="button" class="btn sec mini" id="bt-filtros" aria-expanded="false"
+            aria-controls="avancada" onclick="alternaFiltros()"
+            title="UF, modalidade, portal, valor, órgão, situação e registro de preços">Filtros</button>
+    <span class="hint" id="filtros-resumo"></span>
+  </div>
+
   <div id="painel-busca">
     <div id="avancada">
       <h5>Filtros</h5>
@@ -1455,12 +1622,9 @@ svg.ic.bom{color:var(--verde-700)}
 
   <div id="estoque-status" class="hint" style="min-height:18px;margin:10px 0 2px"></div>
   <div id="status" class="hint" style="min-height:18px;margin-bottom:8px"></div>
-  <!-- ── O DETALHE DO PREGÃO (fatia A4) ──────────────────────────────────────────────────────
-       Ele fica ACIMA da lista, e não dentro do cartão: dentro, abrir o detalhe do 12º resultado
-       empurraria os outros dezoito pra baixo e a pessoa perderia o lugar onde estava. Aqui ele
-       aparece sempre no mesmo ponto, e a lista continua intacta atrás dele.
-       >>> NASCE FECHADO e sem conteúdo — a mesma regra dos outros painéis desta tela. -->
-  <div id="detalhe"></div>
+  <!-- O DETALHE SAIU DAQUI NA FATIA A27 e virou painel lateral (drawer), no fim do documento.
+       Ele ficava neste ponto, ACIMA da lista, e abrir um edital de 600 itens empurrava os
+       resultados num rolo infinito — o defeito nº 3 da lista do dono. Ver `#detalhe`. -->
   <div id="lista"><div class="aviso vazio">Ajuste os filtros e clique na lupa para buscar.</div></div>
   <!-- A BUSCA NACIONAL VEM DEPOIS DO ÍNDICE, e essa ordem é a decisão: o índice é nosso, rápido,
        das nossas praças e está sempre disponível; o nacional é do Brasil todo e depende do PNCP
@@ -1484,6 +1648,17 @@ svg.ic.bom{color:var(--verde-700)}
   </div>
 </div>
 <button id="aoTopo" onclick="window.scrollTo({top:0,behavior:'smooth'})" title="Voltar ao topo">↑</button>
+
+<!-- ══ O PAINEL DE DETALHE DO PREGÃO (fatia A27) ═══════════════════════════════════════════════
+     Ele mora AQUI, no fim do documento e FORA da grade de busca, porque é `position:fixed`: um
+     elemento fixo dentro de uma coluna de grade continua sendo filho dela para efeito de
+     empilhamento e de largura mínima, e era assim que a tabela larga do resultado esticava a
+     coluna e fazia a PÁGINA rolar de lado.
+     >>> NASCE FECHADO e sem conteúdo, como todos os painéis desta tela.
+     >>> O véu vem ANTES do painel: mesma pilha, e o painel por cima sem precisar de z-index
+         maior que o do menu lateral. -->
+<div id="det-veu" onclick="fecharDetalhe()" aria-hidden="true"></div>
+<div id="detalhe" role="dialog" aria-modal="true" aria-label="Detalhe do pregão"></div>
 
 <script>
 // ── ?aba=negocios ── o portal atende pelas DUAS portas (08/08) ────────────────────────────
@@ -2880,12 +3055,39 @@ function tiraCriterio(id){
   pintaChips();
   rerender();
 }
+/* ══ A COLUNA DE FILTROS ABRE E FECHA (fatia A27) ═════════════════════════════════════════════
+   Ela ocupava um terço da tela e ficava sempre aberta — o defeito nº 5 da lista do dono. Agora
+   nasce fechada, e quem diz que ela existe é o botão com a conta.
+   >>> A CONTA É A MESMA DOS CHIPS (`criteriosRefino`), e não uma segunda contagem: "Filtros (3)"
+       ao lado de dois chips seria a tela discordando de si mesma na mesma linha.
+   >>> UF E MODALIDADE NÃO ENTRAM NA CONTA, e isso é medido, não gosto: elas nascem preenchidas
+       (GO · Pregão eletrônico) e são parâmetros da CONSULTA ao PNCP, não refino do resultado.
+       Contá-las faria o botão dizer "Filtros (2)" em 100% das visitas — um aviso que nunca
+       muda é um aviso que ninguém lê. */
+function alternaFiltros(forcar){
+  const p = document.getElementById('painel-busca'), a = document.getElementById('avancada');
+  if(!p || !a) return;
+  const abrir = (forcar === undefined) ? !a.classList.contains('open') : !!forcar;
+  a.classList.toggle('open', abrir);
+  p.classList.toggle('com-filtros', abrir);
+  const b = document.getElementById('bt-filtros');
+  if(b) b.setAttribute('aria-expanded', String(abrir));
+  pintaChips();
+}
 /* Pinta os chips DENTRO da barra de busca. Chamado depois de todo render e depois de mexer num
    critério — os dois momentos em que o que está ligado pode ter mudado. */
 function pintaChips(){
   const alvo = document.getElementById('chips-refino');
   if(!alvo) return 0;
   const cs = criteriosRefino(refino());
+  /* O BOTÃO É PINTADO AQUI, no mesmo lugar e a partir da mesma lista dos chips. */
+  const b = document.getElementById('bt-filtros');
+  if(b) b.innerHTML = 'Filtros' + (cs.length ? '<span class="conta">'+cs.length+'</span>' : '');
+  /* A LEGENDA SÓ APARECE QUANDO NÃO HÁ CHIP. Com critérios ligados, quem explica o que está
+     valendo são os próprios chips — a legenda ao lado deles seria ruído sobre a resposta. */
+  const r = document.getElementById('filtros-resumo');
+  if(r) r.textContent = cs.length ? ''
+    : 'UF, modalidade, portal, valor, órgão, situação e registro de preços';
   alvo.innerHTML = cs.map(c =>
     '<span class="chip-f" title="' + esc(c.rotulo + ': ' + c.valor) + '">'
     + '<span class="campo">' + esc(c.rotulo) + '</span>'
@@ -3005,7 +3207,10 @@ function pintaOrgaos(){
 function filtrarPorOrgao(nome){
   const e = document.getElementById('f-orgao'); if(e) e.value = nome;
   document.getElementById('orgaos').classList.remove('open');
-  document.getElementById('avancada').classList.add('open');
+  /* ABRIR A GAVETA PASSA PELO `alternaFiltros` (fatia A27), e não por `classList.add` direto:
+     abrir agora é DUAS classes (a coluna aparece e a grade vira duas colunas). Quem soubesse
+     só metade deixaria a coluna visível espremida em cima da lista. */
+  alternaFiltros(true);
   rerender();
 }
 
@@ -3067,11 +3272,50 @@ function jaNoFunil(l){
   return _NO_FUNIL.has(numCompra(l.numeroCompra, l.anoCompra));
 }
 
-function fecharDetalhe(){
-  DET = null;
-  const el = document.getElementById('detalhe');
-  if(el) el.classList.remove('open');
+/* ══ ABRIR E FECHAR O PAINEL (fatia A27) ══════════════════════════════════════════════════════
+   O dono pediu, com estas palavras, que fechar devolvesse a pessoa ao MESMO ponto da rolagem.
+   Isso não é conforto: a lista de resultados tem centenas de cartões, e quem abriu o 40º e
+   voltou pro topo perdeu o lugar — o gesto seguinte é rolar de novo procurando onde estava.
+   >>> `body.det-aberto{overflow:hidden}` É QUEM TRAVA A LISTA DE TRÁS. Só `position:fixed` no
+       painel não bastaria: a roda do mouse, ao chegar no fim da rolagem interna, continuaria
+       rolando a página atrás (é o "scroll chaining"). O `overscroll-behavior:contain` do CSS
+       cuida da roda; o `overflow:hidden` cuida do teclado e da barra.
+   >>> E A POSIÇÃO É GUARDADA EM JS. `overflow:hidden` costuma preservar o `scrollTop`, mas
+       "costuma" não é prova — e o que o dono pediu é uma promessa, não uma tendência. */
+let _DET_ROLAGEM = 0;
+let _DET_FOCO_ANTES = null;
+function abreOPainel(){
+  const el = document.getElementById('detalhe'), veu = document.getElementById('det-veu');
+  if(!el) return;
+  if(!el.classList.contains('open')){
+    _DET_ROLAGEM = window.scrollY || window.pageYOffset || 0;
+    _DET_FOCO_ANTES = document.activeElement;
+    document.body.classList.add('det-aberto');
+  }
+  el.classList.add('open');
+  if(veu) veu.classList.add('open');
 }
+function fecharDetalhe(){
+  const aberto = DET != null;
+  DET = null;
+  const el = document.getElementById('detalhe'), veu = document.getElementById('det-veu');
+  if(el){ el.classList.remove('open'); el.innerHTML = ''; }
+  if(veu) veu.classList.remove('open');
+  document.body.classList.remove('det-aberto');
+  if(!aberto) return;
+  /* A ORDEM IMPORTA: devolver a rolagem ANTES de tirar o `overflow:hidden` não adianta (a
+     página ainda não tem altura pra rolar). Por isso o `scrollTo` vem depois da classe sair. */
+  window.scrollTo({ top: _DET_ROLAGEM, behavior: 'auto' });
+  /* O FOCO VOLTA PRA ONDE ESTAVA. Sem isso, quem navega por teclado fecha o painel e cai no
+     começo do documento — e tem que atravessar o menu inteiro pra voltar ao 40º cartão. */
+  try{ if(_DET_FOCO_ANTES && _DET_FOCO_ANTES.focus) _DET_FOCO_ANTES.focus(); }catch(_){}
+  _DET_FOCO_ANTES = null;
+}
+/* ESC FECHA. É a tecla que todo painel modal do mundo atende, e a primeira que a pessoa tenta.
+   A guarda do `DET` existe pra não roubar o Esc de quem está usando outro painel desta tela. */
+document.addEventListener('keydown', function(ev){
+  if(ev.key === 'Escape' && DET){ ev.stopPropagation(); fecharDetalhe(); }
+});
 
 /* ══ O CLIQUE NO CARTÃO INTEIRO (fatia A21) ═══════════════════════════════════════════════════
    Ele ignora TODO controle de verdade que estiver embaixo do cursor. Sem esta linha, marcar a
@@ -3197,12 +3441,15 @@ let _DET_TOKEN = 0;
 async function abrirDetalheDe(l, foco, i){
   if(!l) return;
   const t = ++_DET_TOKEN;
-  DET = { i: (i == null ? null : i), token: t, lic:l, dados:null, busca:'', foco: foco || null };
+  /* `aba` E `sel` SÃO ESTADO DO PAINEL, e não do DOM (fatia A27). O painel repinta quatro vezes
+     enquanto as leituras voltam (resultado, CMED, funil, edital); se a aba escolhida e os itens
+     marcados morassem só nas caixinhas da tela, cada resposta que chegasse apagaria a escolha de
+     quem já estava trabalhando. */
+  DET = { i: (i == null ? null : i), token: t, lic:l, dados:null, busca:'', foco: foco || null,
+          aba: (foco === 'resultado' ? 'resultado' : 'itens'), sel: new Set() };
   const vale = () => DET && DET.token === t;
-  const el = document.getElementById('detalhe');
-  el.classList.add('open');
+  abreOPainel();
   pintaDetalhe('lendo');
-  el.scrollIntoView({ behavior:'smooth', block:'start' });
   carregarResultado(l).then(() => { if(vale()) pintaDetalhe(); });
   /* A CMED É PEDIDA JUNTO, E NÃO ESPERADA: o índice do teto legal é grande e a lista de itens é
      o que a pessoa veio ver. Sem isso, a coluna do teto ficaria "—" para sempre em quem nunca
@@ -3237,10 +3484,31 @@ function abrirDetalhe(i, foco){
    no funil e duas pessoas trabalham a mesma coisa sem saber.
    >>> O CONTRATO DA URL ESTÁ ESCRITO EM docs/contrato_itens_editais.md (fatia A5), porque quem
        vai ler do outro lado não pode ter que abrir este arquivo pra descobrir o formato. */
+/* A SELEÇÃO MORA NO `DET.sel`, e não nas caixinhas (fatia A27) — ver o comentário do
+   `abrirDetalheDe`. A ordem é a do edital, porque é o número do item que a pessoa vai usar
+   na proposta, e uma lista fora de ordem na URL do funil chegaria embaralhada do outro lado. */
 function detItensMarcados(){
-  return [...document.querySelectorAll('#detalhe .det-item input[type=checkbox]:checked')]
-    .map(c => c.getAttribute('data-item')).filter(Boolean);
+  if(!DET) return [];
+  const d = DET.dados || { itens: [] };
+  return d.itens.map((x, k) => String(x.it.numeroItem != null ? x.it.numeroItem : (k+1)))
+    .filter(n => DET.sel.has(n));
 }
+function detMarca(n, ligado){
+  if(!DET) return;
+  if(ligado) DET.sel.add(String(n)); else DET.sel.delete(String(n));
+  pintaDetalhe();
+}
+function detMarcaTodos(ligado){
+  if(!DET) return;
+  const d = DET.dados || { itens: [] };
+  d.itens.forEach((x, k) => {
+    const n = String(x.it.numeroItem != null ? x.it.numeroItem : (k+1));
+    if(ligado) DET.sel.add(n); else DET.sel.delete(n);
+  });
+  pintaDetalhe();
+}
+function detLimpaSelecao(){ if(DET){ DET.sel.clear(); pintaDetalhe(); } }
+function detAba(a){ if(DET){ DET.aba = a; pintaDetalhe(); } }
 function mandarDetalheProFunil(){
   if(!DET) return;
   /* A CHAVE É O `numero_controle` DO PNCP, E SÓ ELE — está escrito assim no contrato
@@ -3413,25 +3681,13 @@ async function carregarResultado(l){
        resposta plausível, uniforme e completamente falsa. Reusar não foi economia: foi a
        diferença entre um número certo e um erro silencioso. */
 
-/* ══ O TETO CMED NA PRÓPRIA LINHA DO ITEM (fatia A21) ═════════════════════════════════════════
-   A caixa pede o teto CMED/PMVG NA LINHA, e não só dentro da sanfona aberta: quem varre 300
-   itens procurando onde há margem não abre 300 sanfonas.
-   >>> É A MESMA CHAMADA DO `celTetoCMED`, e tem que continuar sendo. O que muda é só o tamanho
-       do que cabe numa linha (o número e o tipo; a faixa e o grau continuam no detalhe aberto).
-       Uma segunda regra de teto foi o erro que a fatia A4 quase cometeu e deixou escrito. */
-function tetoCurto(it, uE){
-  if(_cmedErro || !_cmedIdx) return '';
-  const r = LimedtecTetoCMED.avaliar({
-    descricao: it.descricao || '',
-    precoUnit: uE && uE.status === 'ok' ? uE.valor : null,
-    unitario: !!(uE && uE.status === 'ok'),
-    paraGoverno: true,
-  }, _cmedIdx);
-  if(r.teto == null) return '<span class="t vazio" title="não casou com a CMED — material e '
-    + 'correlato não têm teto por natureza, só medicamento tem">sem teto</span>';
-  return '<span class="t" title="teto legal da CMED por unidade · ' + esc(r.tipoTeto) + '">'
-    + brlU(r.teto) + ' <i>' + esc(r.tipoTeto) + '</i></span>';
-}
+/* ══ O `tetoCurto` MORREU NA FATIA A27 ════════════════════════════════════════════════════════
+   Ele existia para caber numa LINHA DE SANFONA, ao lado do texto, e por isso mostrava só o
+   número e o tipo — a faixa e o grau de confiança ficavam escondidos dentro do item aberto.
+   Com a sanfona virando TABELA, o teto ganhou coluna própria e cabe inteiro: o `detCelTeto`
+   mostra número, tipo (PF/PMVG) e o grau quando ele não é exato.
+   >>> APAGADO EM VEZ DE DEIXADO PARA TRÁS de propósito: função de teto que ninguém chama é a
+       semente da SEGUNDA regra de teto — o erro que a A4 quase cometeu e deixou escrito acima. */
 
 const _kb = n => { const b = Number(n)||0; return b <= 0 ? null
   : b < 1024 ? b + ' B'
@@ -3485,8 +3741,10 @@ function secaoDocumentos(){
         + '</div>';
     }).join('') + '</div>';
   }
-  return '<div class="det-secao"><h4>Arquivos do edital</h4>' + corpo
-    + '<div class="acoes" style="margin-top:10px">'
+  /* O `<h4>` SAIU NA FATIA A27: quem nomeia esta seção agora é a ABA ("Documentos (4)"), e um
+     título repetindo o nome da aba logo abaixo dela é a mesma palavra duas vezes. */
+  return '<div class="det-secao-corpo">' + corpo
+    + '<div class="acoes">'
     + '<button class="btn sec mini" onclick="conversarComEdital()" '
     + 'title="usa inteligência artificial e consome crédito por uso — o preço aparece antes de gastar">'
     + 'Conversar com o edital <span class="lm-selo-ia">IA</span></button>'
@@ -3526,7 +3784,7 @@ function secaoResultado(l){
     corpo = '<div class="hint" style="margin-bottom:8px"><b>'+r.length+'</b> '
       + (r.length===1?'item com resultado publicado':'itens com resultado publicado')
       + (total > 0 ? ' · <b>'+brl(total)+'</b> somando quantidade × valor homologado' : '') + '</div>'
-      + '<table class="det-tab"><thead><tr><th>Nº</th><th class="desc">Item</th><th>Vencedor</th>'
+      + '<div class="det-tab-caixa"><table class="det-tab"><thead><tr><th>Nº</th><th class="desc">Item</th><th>Vencedor</th>'
       + '<th>Qtd</th><th>Valor unitário</th><th>Teto CMED</th><th>Margem</th></tr></thead><tbody>'
       + r.map(x => {
           const it = { descricao: x.descricao, valorUnitarioEstimado: x.resultado_valor_unit,
@@ -3553,9 +3811,82 @@ function secaoResultado(l){
             + '<td>'+celTetoCMED(it, uR)+'</td>'
             + '<td class="nowrap">'+margem+'</td></tr>';
         }).join('')
-      + '</tbody></table>';
+      + '</tbody></table></div>';
   }
-  return '<div class="det-secao"><h4>Resultado do certame</h4>' + corpo + '</div>';
+  return '<div class="det-secao-corpo">' + corpo + '</div>';
+}
+
+/* ══ O TETO DA CMED PARA UMA LINHA DA TABELA (fatia A27) ═══════════════════════════════════════
+   Devolve OBJETO, e não HTML — e isso é a decisão, não um detalhe de estilo: a MESMA resposta
+   alimenta a coluna "TETO CMED" e a coluna "Situação" (o selo "cabe · X%" / "estoura · X%").
+   Perguntar duas vezes ao motor seria a garantia de que um dia as duas colunas discordariam
+   dentro da mesma linha — e a pessoa não teria como saber qual das duas acreditar.
+   >>> OS TRÊS "NÃO SEI" SÃO DISTINTOS: `lendo` (a régua ainda está vindo), `erro` (a leitura
+       falhou) e `sem-teto` (perguntei e este item não tem teto). Achatá-los num "—" faria
+       "ainda não olhei" ter a mesma cara de "não existe teto", que é a confusão mais cara
+       desta tela inteira. */
+function detTeto(it, uE){
+  if(_cmedErro) return { estado:'erro', msg:_cmedErro };
+  if(!_cmedIdx)  return { estado:'lendo' };
+  const r = LimedtecTetoCMED.avaliar({
+    descricao: it.descricao || '',
+    precoUnit: uE && uE.status === 'ok' ? uE.valor : null,
+    unitario: !!(uE && uE.status === 'ok'),
+    paraGoverno: true,
+  }, _cmedIdx);
+  if(r.teto == null) return { estado:'sem-teto' };
+  return { estado:'ok', teto:r.teto, tipoTeto:r.tipoTeto, confianca:r.confianca, faixa:r.faixa };
+}
+const _pct1 = n => Math.abs(n).toLocaleString('pt-BR', { maximumFractionDigits:1 });
+
+/* A CÉLULA "REFERÊNCIA". Ela mostra o unitário DESEMBALADO (o que sai do `unitarioEdital`), e
+   não o número cru do PNCP — porque é ele que vai ao lado do teto da CMED, que é por unidade.
+   Pôr "R$ 124,00 / caixa 100" encostado num teto de "R$ 1,42" faria toda linha parecer 100x
+   acima do limite legal: é o mesmo erro de embalagem que a Global pagou em faturamento.
+   >>> E NUNCA "R$ 0,00": sem valor publicado a célula DIZ "sem referência". */
+function detRef(uE){
+  if(uE.status === 'sigiloso')  return '<span class="vazio" title="o órgão não publicou o valor '
+    + 'de referência deste item — o teto da CMED ao lado é a única régua legal que sobra">orçamento sigiloso</span>';
+  if(uE.status === 'sem-preco') return '<span class="vazio">sem referência</span>';
+  if(uE.status === 'conferir')  return '<span class="vazio" title="a unidade não declara quantas '
+    + 'unidades vêm na embalagem — ' + esc(brlU(uE.bruto)) + ' por embalagem">conferir emb.</span>';
+  return '<b>' + brlU(uE.valor) + '</b>'
+       + (uE.pack > 1 ? '<span class="packbdg">un · cx' + uE.pack + '</span>' : '');
+}
+function detCelTeto(t){
+  if(t.estado === 'erro')     return '<span class="vazio" title="'+esc(t.msg||'')+'">não sei</span>';
+  if(t.estado === 'lendo')    return '<span class="vazio">lendo a régua…</span>';
+  if(t.estado === 'sem-teto') return '<span class="vazio" title="não casou com a CMED. Material e '
+    + 'correlato não têm teto CMED por natureza — só medicamento tem.">sem teto CMED</span>';
+  const grau = t.confianca === 'exata' ? ''
+    : '<span class="packbdg" title="' + (t.confianca === 'alta'
+        ? 'a marca do nome foi reconhecida no dicionário da CMED'
+        : 'o princípio ativo foi deduzido da primeira palavra do nome — confira antes de usar')
+      + '">' + (t.confianca === 'alta' ? 'provável' : 'confira') + '</span>';
+  return '<b>' + brlU(t.teto) + '</b><span class="packbdg">' + esc(t.tipoTeto) + '</span>' + grau;
+}
+/* O SELO DA COLUNA "SITUAÇÃO" — o veredito da linha em duas palavras.
+   >>> A BASE DA PORCENTAGEM É O TETO NOS DOIS SENTIDOS, e isso é uma divergência DECLARADA em
+       relação ao molde do arquiteto: lá, "cabe · 20%" estava calculado sobre o preço de
+       referência e "estoura · 28%" sobre o teto — duas bases na mesma coluna. Com bases
+       diferentes, dois itens com a mesma folga real mostrariam números diferentes. A base
+       única é o TETO porque ele é a régua legal, e é a MESMA base que a coluna "Margem" do
+       resultado já usa nesta tela desde a A21. */
+function detSelo(t, uE){
+  if(t.estado === 'lendo')  return '<span class="det-selo sem">lendo a régua…</span>';
+  if(t.estado === 'erro')   return '<span class="det-selo sem">não sei</span>';
+  if(t.estado === 'ok' && uE.status === 'ok'){
+    const d = (uE.valor - t.teto) / t.teto * 100;
+    return d <= 0
+      ? '<span class="det-selo cabe" title="o valor de referência está ABAIXO do teto legal">cabe · '+_pct1(d)+'%</span>'
+      : '<span class="det-selo estoura" title="o valor de referência está ACIMA do teto legal da CMED">estoura · '+_pct1(d)+'%</span>';
+  }
+  if(t.estado === 'ok')  return '<span class="det-selo sem" title="o órgão não publicou preço de '
+    + 'referência: o teto da CMED é a única régua que existe para este item">única régua</span>';
+  if(uE.status === 'ok') return '<span class="det-selo sem" title="tem preço de referência, mas '
+    + 'não casou com a CMED — material e correlato não têm teto por natureza">sem teto CMED</span>';
+  return '<span class="det-selo sem" title="sem valor de referência publicado e sem teto CMED — '
+    + 'não há duas pontas para comparar">nada a comparar</span>';
 }
 
 function pintaDetalhe(estado){
@@ -3567,16 +3898,20 @@ function pintaDetalhe(estado){
   const est = estadoLic(l);
   const titulo = esc(l.modalidadeNome||'') + ' Nº ' + esc(numCompra(l.numeroCompra, l.anoCompra));
 
+  /* ══════════════════════════════════════════════════════════════════════════════════════════
+     A ABA "ITENS" — a peça que o dono chamou de "lista crua de caixinhas".
+     ══════════════════════════════════════════════════════════════════════════════════════════ */
   let corpo;
   if(estado === 'lendo'){
-    corpo = '<div class="aviso">Lendo os itens do edital no PNCP…</div>';
+    corpo = '<div class="det-rolo"><div class="det-secao-corpo"><span class="hint">'
+      + 'Lendo os itens do edital no PNCP…</span></div></div>';
   }else if(estado === 'erro'){
     /* O ERRO DIZ O QUE FALHOU E O QUE CONTINUA VALENDO. "Não consegui ler os itens" não é "esta
        licitação não tem itens" — e sem essa frase as duas leituras se confundem. */
-    corpo = '<div class="aviso err" style="text-align:left;padding:14px 18px">'
+    corpo = '<div class="det-rolo"><div class="det-aviso erro" style="margin-top:var(--esp-4)">'
       + ic('alerta','aviso') + ' Não consegui ler os itens deste edital agora ('+esc(DET.erro||'')+').'
       + ' Isto <b>não</b> quer dizer que o edital não tenha itens — quer dizer que eu não consegui olhar.'
-      + ' O resto do que está aqui em cima veio da busca e continua valendo.</div>';
+      + ' O resto do que está aqui em cima veio da busca e continua valendo.</div></div>';
   }else{
     const d = DET.dados || { itens:[], casados:0, truncado:false };
     /* ══ O ITEM QUE CASOU É PUXADO PRO TOPO — E OS OUTROS FICAM (fatia A21) ═══════════════════
@@ -3596,173 +3931,235 @@ function pintaDetalhe(estado){
     const lista = termo
       ? d.itens.filter(casaTermo).concat(d.itens.filter(x => !casaTermo(x)))
       : d.itens;
-    const pct = aderenciaPct(l);
+    const compacta = densidade() === 'compacta';
     corpo =
+      /* ── A BARRA: busca dentro dos itens · contador honesto · densidade ───────────────── */
       '<div class="det-barra">'
       + '<input type="search" class="det-busca" placeholder="procurar dentro dos '+d.itens.length+' itens deste edital…" '
-      +   'value="'+esc(DET.busca||'')+'" oninput="detBusca(this.value)">'
+      +   'value="'+esc(DET.busca||'')+'" oninput="detBusca(this.value)" aria-label="procurar dentro dos itens deste edital">'
       + '<span class="hint">'
       +   (termo
-          ? '<b>'+achados+'</b> '+(achados===1?'item casa':'itens casam')+' com “'+esc(DET.busca)+'”'
-            + (achados ? ' — no topo da lista' : '') + ' · os outros '+(d.itens.length-achados)+' continuam abaixo'
+          ? '<b>'+achados+'</b> '+(achados===1?'item contém':'itens contêm')+' “'+esc(DET.busca)+'”'
+            + (achados ? ' · mostrando todos, os que casam vêm primeiro' : ' · a lista continua inteira')
           : d.itens.length + ' ' + (d.itens.length===1?'item':'itens'))
-      +   (pct != null ? ' · <b>'+pct+'%</b> com equivalente no nosso estoque' : '')
       + '</span>'
+      + '<div class="det-dens" role="group" aria-label="densidade da tabela">'
+      +   '<button type="button" aria-pressed="'+(compacta?'true':'false')+'" onclick="poeDensidade(\'compacta\')">Compacta</button>'
+      +   '<button type="button" aria-pressed="'+(compacta?'false':'true')+'" onclick="poeDensidade(\'confortavel\')">Confortável</button>'
       + '</div>'
-      /* O TETO TRUNCADO É DITO NA CARA, e no lugar onde ele engana: em cima da LISTA. Escondido
-         no rodapé, alguém leria "40 itens" como o edital inteiro. */
+      + '</div>'
+      /* ── O AVISO ÂMBAR DE LEITURA INCOMPLETA, com o número REAL ────────────────────────
+         Ele é dito EM CIMA da lista, no lugar onde engana: escondido no rodapé, alguém leria
+         "40 itens" como o edital inteiro.
+         >>> E ELE NÃO INVENTA O QUE FALTA. O molde do arquiteto dizia "li 5 de 7 — faltam 142
+             itens", e nós não sabemos o total: o PNCP só diz que há mais página, nunca quantas.
+             Dizer "faltam 142" seria número bonito sobre coisa não sabida. O número real que
+             temos é quantos foram lidos, e é esse que a frase carrega. */
       + (d.truncado
-          ? '<div class="aviso" style="text-align:left;padding:10px 14px;margin-bottom:10px"><span class="hint">'
-            + 'O PNCP entrega os itens em páginas e eu paro em '+ITENS_TETO_PAG+'. Este edital bateu no teto: '
-            + '<b>a lista abaixo está incompleta</b>, e a nota de aderência não é calculada porque o total não é sabido.'
-            + '</span></div>'
+          ? '<div class="det-aviso">' + ic('alerta','aviso')
+            + ' O PNCP entrega os itens em páginas e eu paro em <b>'+ITENS_TETO_PAG+' páginas</b>. Este edital bateu no '
+            + 'teto: os <b>'+d.itens.length+' itens</b> abaixo <b>não são todos</b>, e eu não sei quantos faltam — o '
+            + 'PNCP diz que há mais página, nunca quantas. Por isso a aderência não é calculada. '
+            + '<button class="btn sec mini" onclick="recarregarItensDetalhe()">Ler de novo</button></div>'
           : '')
-      + '<div class="det-itens">'
-      + (lista.length ? lista.map((x, k) => {
-          const it = x.it;
-          const casou = x.pares && x.pares.length;
-          const uE = unitarioEdital(it);
-          return '<details class="det-item'+(casaTermo(x) ? ' achado' : '')+'">'
-            + '<summary>'
-            /* A CAIXA POR ITEM alimenta o `?itens=` da URL do funil: quem manda um edital de 500
-               itens pro funil raramente disputa os 500. O `stopPropagation` existe porque a
-               caixa vive dentro do <summary>, e sem ele marcar o item abriria a sanfona junto. */
-            +   '<input type="checkbox" data-item="'+esc(String(it.numeroItem != null ? it.numeroItem : (k+1)))+'" '
-            +     'onclick="event.stopPropagation()" aria-label="marcar este item">'
-            +   '<span class="n">'+esc(it.numeroItem != null ? it.numeroItem : (k+1))+'</span>'
-            /* O grifo usa o termo DESTE campo, e não o da busca da tela: são duas perguntas
-               diferentes, e marcar a palavra da busca de fora dentro de uma procura por outra
-               coisa marcaria a linha errada. */
-            +   '<span class="d">'+grifaCom(String(it.descricao||'—'), DET.busca)+'</span>'
-            +   '<span class="q">'+esc(it.quantidade != null ? it.quantidade : '—')+' '+esc(it.unidadeMedida||'')+'</span>'
-            /* SIGILOSO NÃO É TRAVESSÃO. Ordem da caixa: quando o órgão não publica o valor de
-               referência, a linha DIZ isso — travessão no lugar do número faz a pessoa procurar
-               um dado que ninguém escondeu por engano. */
-            +   '<span class="v">'+(it.orcamentoSigiloso === true
-                  ? '<span class="conferir nowrap" title="o órgão não publicou o valor de referência '
-                    + 'deste item — o teto da CMED ao lado é a única régua legal que sobra">sigiloso</span>'
-                  : it.valorUnitarioEstimado != null ? brl(it.valorUnitarioEstimado) : '—')+'</span>'
-            // O TETO CMED NA LINHA (fatia A21): quem varre 300 itens não abre 300 sanfonas.
-            +   tetoCurto(it, uE)
-            +   (casou ? '<span class="bdg v" title="temos item equivalente no estoque">temos</span>'
-                       : '<span class="bdg cinza">sem equivalente</span>')
-            + '</summary>'
-            + '<div class="det-corpo">'
-            +   '<div class="dados">'
-            +     '<div class="dado"><small>Valor de referência (unitário)</small><span>'
-            +       (it.valorUnitarioEstimado != null ? brl(it.valorUnitarioEstimado) : 'não informado')+'</span></div>'
-            +     '<div class="dado"><small>Teto CMED</small><span>'
-            /* AQUI MORA A REGRA MAIS IMPORTANTE DESTA TELA, e ela é do motor, não daqui: não
-               casou NÃO É ZERO — é "sem teto CMED". Material e correlato, que é metade de um
-               edital hospitalar, não tem teto por natureza. */
-            +       celTetoCMED(it, null)+'</span></div>'
-            +     '<div class="dado"><small>Situação no PNCP</small><span>'+esc(it.situacaoCompraItemNome||'—')+'</span></div>'
-            +   '</div>'
-            +   (casou
-                ? '<div class="hint" style="margin-top:8px">No nosso estoque: '
-                  + x.pares.slice(0,3).map(p => esc(String(p.produto||p.nome||'').slice(0,60))).join(' · ') + '</div>'
-                : '')
-            + '</div></details>';
-        }).join('')
+      /* ── A TABELA ──────────────────────────────────────────────────────────────────────── */
+      + (lista.length
+        ? '<div class="det-rolo'+(compacta?' compacta':'')+'">'
+          + '<table class="det-tab2"><thead><tr>'
+          +   '<th style="width:34px"><input type="checkbox" aria-label="marcar todos os itens" '
+          +     (DET.sel.size && DET.sel.size === d.itens.length ? 'checked ' : '')
+          +     'onclick="detMarcaTodos(this.checked)"></th>'
+          +   '<th style="width:56px">Nº</th>'
+          +   '<th>Descrição do item</th>'
+          +   '<th class="num" style="width:88px">Qtd</th>'
+          +   '<th style="width:70px">Un.</th>'
+          +   '<th class="num" style="width:132px">Referência</th>'
+          +   '<th class="num" style="width:150px">Teto CMED</th>'
+          +   '<th style="width:118px">Situação</th>'
+          + '</tr></thead><tbody>'
+          + lista.map((x, k) => {
+              const it = x.it;
+              const n = String(it.numeroItem != null ? it.numeroItem : (k+1));
+              const uE = unitarioEdital(it);
+              const t = detTeto(it, uE);
+              const marcada = DET.sel.has(n);
+              return '<tr'+(marcada?' class="marcada"':'')+'>'
+                /* A CAIXA POR ITEM alimenta o `?itens=` da URL do funil: quem manda um edital de
+                   500 itens pro funil raramente disputa os 500. */
+                + '<td><input type="checkbox" '+(marcada?'checked ':'')
+                +   'aria-label="marcar o item '+esc(n)+'" onclick="detMarca(\''+esc(n)+'\', this.checked)"></td>'
+                + '<td class="num seq">'+esc(n)+'</td>'
+                /* O grifo usa o termo da busca DE DENTRO do edital, e não o da busca da tela:
+                   são duas perguntas diferentes, e marcar a palavra de uma dentro da resposta
+                   da outra marcaria a linha errada. */
+                + '<td class="desc"><span class="d" title="'+esc(String(it.descricao||''))+'">'
+                +   grifaCom(String(it.descricao||'—'), DET.busca)+'</span></td>'
+                + '<td class="num">'+(it.quantidade != null
+                    ? Number(it.quantidade).toLocaleString('pt-BR') : '<span class="vazio">—</span>')+'</td>'
+                + '<td>'+esc(it.unidadeMedida||'—')+'</td>'
+                + '<td class="num">'+detRef(uE)+'</td>'
+                + '<td class="num">'+detCelTeto(t)+'</td>'
+                + '<td>'+detSelo(t, uE)+'</td>'
+              + '</tr>';
+            }).join('')
+          + '</tbody></table></div>'
         /* LISTA VAZIA NÃO PODE TER CARA DE "NÃO TEM" (ordem da caixa, fatia A21). O PNCP devolver
            zero item é um fato sobre a PUBLICAÇÃO — muita compra direta publica o objeto e nunca
            publica a tabela de itens —, e não sobre o edital. E o caminho fica na tela: pedir de
            novo é um clique, porque a resposta de agora pode não ser a de daqui a pouco. */
-        : '<div class="aviso" style="text-align:left;padding:14px 18px">'
+        : '<div class="det-rolo"><div class="det-aviso neutro">'
           + '<b>Não há itens lidos para este edital.</b> O PNCP respondeu, e a lista de itens '
           + 'desta contratação veio vazia — o que costuma querer dizer que o órgão publicou o '
           + 'objeto mas não a tabela de itens. Isto <b>não</b> quer dizer que o edital não tenha '
-          + 'itens: eles podem estar só dentro do arquivo do edital.'
-          + '<div class="acoes" style="margin-top:10px">'
-          + '<button class="btn mini" onclick="recarregarItensDetalhe()">Buscar os itens agora</button>'
-          + '</div></div>')
-      + '</div>';
+          + 'itens: eles podem estar só dentro do arquivo do edital. '
+          + '<button class="btn sec mini" onclick="recarregarItensDetalhe()">Buscar os itens agora</button>'
+          + '</div></div>');
   }
 
   /* ══ AS AÇÕES DO DETALHE SEGUEM O MESMO ESTADO DO CARTÃO (fatia A21) ═════════════════════════
      Se o cartão esconde "adicionar" num pregão encerrado e o detalhe o oferece, a regra deixou
-     de existir — basta um clique a mais pra furá-la. Uma decisão, dois lugares, uma função. */
-  const acoes = '<div class="acoes" style="margin-bottom:14px">'
+     de existir — basta um clique a mais pra furá-la. Uma decisão, dois lugares, uma função.
+     >>> O CUSTO DA IA VEM ESCRITO AO LADO DO BOTÃO, e não atrás do clique (ordem da caixa:
+         "custo de IA sempre às claras"). Quem paga tem que ver o preço antes de gastar. */
+  const nArq = Array.isArray(DET.arquivos)
+    ? DET.arquivos.filter(a => !/não publicou arquivo|nenhum deles e edital/.test(a.extracao_erro||'')).length : 0;
+  const acoes = '<div class="acoes">'
     + (est === EST_ABERTA
         ? '<button class="btn mini bt-verde" onclick="mandarDetalheProFunil()">'
           + '＋ Adicionar aos meus negócios</button>'
-          + ' <span class="hint">manda junto os itens que você marcar abaixo</span>'
         : est === EST_ENCERRADA
           ? '<span class="hint"><b>Certame encerrado.</b> Não dá para disputar, e por isso não '
             + 'ofereço "adicionar aos negócios" — o que este edital ainda vale é o <b>preço '
-            + 'praticado</b>, na seção de resultado.</span>'
+            + 'praticado</b>, na aba Resultado.</span>'
           : '<span class="hint"><b>Prazo não informado nesta fonte.</b> Não sei dizer se ainda '
             + 'está aberto — confira no PNCP antes de decidir.</span>')
-    + '<span style="flex:1"></span>'
-    + (l.linkSistemaOrigem
-        ? '<a class="btn sec mini" href="'+esc(l.linkSistemaOrigem)+'" target="_blank" rel="noopener">'
-          + 'Abrir no PNCP' + ic('sai','sai') + '</a>' : '')
+    + '<button class="btn sec mini bt-ia" onclick="conversarComEdital()" '
+    +   'title="usa inteligência artificial e consome crédito por uso — o preço aparece antes de gastar">'
+    +   '✦ Conversar com o edital<span class="det-custo">custa por leitura</span></button>'
+    + '<button class="btn sec mini" onclick="detAba(\'documentos\')">Arquivos do edital'
+    +   (nArq ? '<span class="det-custo">'+nArq+'</span>' : '') + '</button>'
+    /* "MAIS AÇÕES" usa o mesmo `.mais` que o cartão da lista já usa, e o `fechaMais` global
+       (que já existe) fecha ao clicar fora. Uma segunda gaveta suspensa nesta tela divergiria
+       da primeira no dia em que uma delas ganhasse teclado. */
+    + '<span class="mais"><button class="btn sec mini" aria-haspopup="true" '
+    +   'onclick="this.parentNode.classList.toggle(\'on\')">··· mais ações</button><div class="cx">'
+    +   (l.linkSistemaOrigem
+        ? '<a href="'+esc(l.linkSistemaOrigem)+'" target="_blank" rel="noopener">Abrir no PNCP'+ic('sai','sai')+'</a>' : '')
+    +   '<button onclick="recarregarItensDetalhe()">Reler os itens no PNCP</button>'
+    +   (est === EST_ABERTA ? '' : '<button onclick="detAba(\'resultado\')">Usar como referência de preço</button>')
+    + '</div></span>'
     + '</div>';
 
+  /* ══ AS ABAS ══════════════════════════════════════════════════════════════════════════════
+     Itens · Documentos · Resultado. Antes as três seções vinham EMPILHADAS no mesmo rolo, e
+     quem abria um edital de 600 itens precisava rolar os 600 pra chegar nos arquivos.
+     >>> A CONTA NA ABA SÓ APARECE QUANDO EU SEI. `DET.arquivos === undefined` é "ainda não
+         perguntei ao banco" — pôr "(0)" ali diria "não tem arquivo" sobre uma pergunta que
+         nunca foi feita. */
+  const d0 = DET.dados || { itens: [] };
+  const conta = n => (n == null ? '' : '<span class="n">'+n+'</span>');
+  const aba = (id, rot, n) => '<button class="det-aba" role="tab" aria-selected="'
+    + (DET.aba === id ? 'true' : 'false') + '" onclick="detAba(\''+id+'\')">'+rot+conta(n)+'</button>';
+  const abas = '<nav class="det-abas" role="tablist">'
+    + aba('itens', 'Itens', DET.dados ? d0.itens.length : null)
+    + aba('documentos', 'Documentos', DET.arquivos === undefined ? null : nArq)
+    + aba('resultado', 'Resultado', DET.resultado === undefined ? null : DET.resultado.length)
+    + '</nav>';
+
+  /* ══ O RODAPÉ DE SELEÇÃO — SÓ EXISTE QUANDO HÁ ITEM MARCADO ═══════════════════════════════
+     Barra de ação em massa parada e vazia é mobília: ela ocupa 56px de altura em 100% das
+     visitas para servir na minoria delas. Aqui ela nasce do gesto. */
+  const nSel = DET.sel.size;
+  const rodape = nSel
+    ? '<footer class="det-rodape">'
+      + '<span class="n">'+nSel+(nSel===1?' item selecionado':' itens selecionados')+'</span>'
+      + '<span style="flex:1"></span>'
+      + (est === EST_ABERTA
+          ? '<button class="btn mini bt-verde" onclick="mandarDetalheProFunil()">'
+            + '＋ Adicionar aos meus negócios com estes itens</button>' : '')
+      + '<button class="btn sec mini" onclick="detLimpaSelecao()">Limpar seleção</button>'
+      + '</footer>'
+    : '';
+
   el.innerHTML =
-    '<div class="det-topo">'
-    + '<div style="min-width:0">'
-    +   '<div class="det-tit">'+titulo+'</div>'
-    +   '<div class="hint">'+esc(org)
-    +     (un.nomeUnidade && un.nomeUnidade !== org ? ' · '+esc(un.nomeUnidade) : '')
-    +     (un.municipioNome ? ' · '+esc(un.municipioNome) : '')+(un.ufSigla?'/'+esc(un.ufSigla):'')+'</div>'
+    /* ══ CABEÇALHO FIXO ═══════════════════════════════════════════════════════════════════════
+       Modalidade + nº · órgão · município/UF · unidade · botão fechar. Ele NÃO rola: quem está
+       no item 380 de um edital de 600 precisa continuar sabendo de qual pregão está falando. */
+    '<header class="det-cab">'
+    + '<div class="det-topo">'
+    +   '<div style="min-width:0">'
+    +     '<h2 class="det-tit">'+titulo+'</h2>'
+    +     '<p class="det-org">'+esc(org)
+    +       (un.nomeUnidade && un.nomeUnidade !== org ? ' · '+esc(un.nomeUnidade) : '')
+    +       (un.municipioNome ? ' · '+esc(un.municipioNome) : '')+(un.ufSigla?'/'+esc(un.ufSigla):'')
+    +       (un.codigoUnidade ? ' · unidade '+esc(un.codigoUnidade) : '')+'</p>'
+    +   '</div>'
+    +   '<button class="det-fechar" onclick="fecharDetalhe()" title="Fechar (Esc)" aria-label="Fechar o detalhe">✕</button>'
     + '</div>'
+    /* ══ A FILA DE CHIPS DE ESTADO (fatia A21, redesenhada na A27) ══════════════════════════
+       Situação apurada por DATA + situação declarada + registro de preço + modo de disputa +
+       portal + origem + "DOS MEUS NEGÓCIOS". Os dois primeiros ficam lado a lado de propósito:
+       a `situacaoCompraNome` vale "Divulgada no PNCP" em 100% do índice (medido), e mostrá-la
+       sozinha faria um pregão de 2024 parecer vivo. Quem separa é a data, e é ela que tem cor. */
+    + '<div class="det-selos">'
+    +   '<span class="bdg '+(est===EST_ABERTA?'v':est===EST_ENCERRADA?'cinza':'a')+'">'
+    +     (est===EST_ABERTA?'RECEBENDO PROPOSTA':est===EST_ENCERRADA?'ENCERRADA':'PRAZO NÃO INFORMADO')+'</span>'
+    +   selosContexto(l)
+    +   (l.usuarioNome ? '<span class="bdg cinza" title="portal em que este certame foi publicado">'
+          + esc(l.usuarioNome)+'</span>' : '')
     /* O SELO DE ORIGEM DIZ DE ONDE ESTE REGISTRO VEIO, e ele não é decorativo: o que a tela sabe
        sobre a licitação depende da porta por onde ela entrou (a busca do PNCP não devolve janela
        de proposta nem valor estimado; a consulta devolve). Sem o selo, "abertura não informada"
        parece defeito nosso. */
-    + '<span class="selo-fonte">'+ic('orgao')+(l._daBusca ? 'busca do PNCP' : 'nosso índice do PNCP')+'</span>'
+    +   '<span class="selo-fonte">'+ic('orgao')+(l._daBusca ? 'busca do PNCP' : 'nosso índice do PNCP')+'</span>'
     /* O SELO "DOS MEUS NEGÓCIOS" é LEITURA do que já existe no funil — a Encontrar não escreve
        negócio nenhum. Ele existe pra impedir o erro mais caro desta tela: mandar pro funil um
-       pregão que já está lá, e duas pessoas trabalharem o mesmo edital sem saber. */
-    + (jaNoFunil(l) ? '<span class="bdg azul" title="esta licitação já está no seu funil">DOS MEUS NEGÓCIOS</span>' : '')
-    + '<span style="flex:1"></span>'
-    + '<button class="btn sec mini" onclick="fecharDetalhe()">fechar</button>'
-    + '</div>'
-    /* ══ A LINHA DE SITUAÇÃO E CONTEXTO (fatia A21) ════════════════════════════════════════════
-       Situação declarada no PNCP + o estado apurado por data + os selos que mudam a decisão. Os
-       dois primeiros ficam LADO A LADO de propósito: a `situacaoCompraNome` vale "Divulgada no
-       PNCP" em 100% do índice (medido), e mostrá-la sozinha faria um pregão de 2024 parecer
-       vivo. Quem separa é a data, e é ela que ganha a cor. */
-    + '<div class="det-selos">'
-    +   '<span class="bdg '+(est===EST_ABERTA?'v':est===EST_ENCERRADA?'cinza':'a')+'">'
-    +     (est===EST_ABERTA?'RECEBENDO PROPOSTA':est===EST_ENCERRADA?'ENCERRADA':'PRAZO NÃO INFORMADO')+'</span>'
-    +   (l.situacaoCompraNome ? '<span class="bdg cinza" title="situação declarada pelo órgão no PNCP">'
-          + esc(l.situacaoCompraNome)+'</span>' : '')
-    +   selosContexto(l)
+       pregão que já está lá, e duas pessoas trabalharem o mesmo edital sem saber.
+       >>> ELE ESTAVA CORTADO NA DIREITA no print do dono. A causa não era ele: era a página
+           inteira rolando de lado (ver `#painel-busca`, `minmax(0,1fr)`). */
+    +   (jaNoFunil(l) ? '<span class="bdg azul" title="esta licitação já está no seu funil">DOS MEUS NEGÓCIOS</span>' : '')
     + '</div>'
     + acoes
     + '<div id="det-conversa"></div>'
-    /* ══ O CABEÇALHO DE DADOS — A ANATOMIA QUE O DONO PEDIU ("igual acontece no SigaPregão") ═══
-       Publicação · abertura · encerramento · valor · nº de controle · CÓDIGO DA UNIDADE.
-       >>> O CÓDIGO DA UNIDADE É O QUE FALTAVA, e ele é prático: é a UASG do Comprasnet, o número
-           por onde o gestor acha o pregão no portal de origem. MEDIDO: vem preenchido em 322 de
-           322 linhas da forma de consulta. Ele estava no `bruto` desde sempre e nunca chegou à
-           tela. */
-    + '<div class="dados" style="margin:0 0 14px">'
-    +   '<div class="dado"><small>Publicação</small><span>'
-    +     (l.dataPublicacaoPncp ? fmtDt(l.dataPublicacaoPncp) : '<span class="hint">não informada</span>')+'</span></div>'
-    +   '<div class="dado"><small>Abertura</small><span>'
-    +     (dt(l.dataAberturaProposta) ? fmtDt(l.dataAberturaProposta) : '<span class="hint">não informada</span>')+'</span></div>'
-    +   '<div class="dado"><small>Encerramento</small><span>'
-    +     (dt(l.dataEncerramentoProposta) ? fmtDt(l.dataEncerramentoProposta) : '<span class="hint">não informado</span>')+'</span></div>'
-    +   '<div class="dado"><small>Valor estimado</small><span>'+celValor(l.valorTotalEstimado)+'</span></div>'
-    +   '<div class="dado"><small>Nº controle PNCP</small><span>'+esc(l.numeroControlePNCP||'—')+'</span></div>'
-    +   (un.codigoUnidade
-        ? '<div class="dado" title="código da unidade compradora no PNCP — é a UASG no Comprasnet, '
-          + 'o número por onde se acha o pregão no portal de origem">'
-          + '<small>Código da unidade</small><span>'+esc(un.codigoUnidade)+'</span></div>' : '')
+    + '</header>'
+    /* ══ A FICHA EM GRADE — RÓTULO EM CIMA, VALOR EMBAIXO ══════════════════════════════════
+       É o defeito nº 1 da lista do dono: "Publicação13/08/2026 às 09:16". Aqui não há como
+       grudar, porque rótulo e valor são duas LINHAS, e o rótulo é caixa-alta miúda.
+       >>> NUNCA "R$ 0,00" NEM TRAVESSÃO SOZINHO: o que não foi informado diz "não informada",
+           no tom fraco. A busca do PNCP não devolve janela de proposta nem valor estimado —
+           medido — e chamar isso de zero seria inventar um dado que ninguém publicou. */
+    + '<div class="det-ficha">'
+    +   '<div><span class="f-rot">Publicação</span>'
+    +     (l.dataPublicacaoPncp ? '<span class="f-val">'+fmtDt(l.dataPublicacaoPncp)+'</span>'
+                                : '<span class="f-val vazio">não informada</span>')+'</div>'
+    +   '<div><span class="f-rot">Abertura da sessão</span>'
+    +     (dt(l.dataAberturaProposta) ? '<span class="f-val">'+fmtDt(l.dataAberturaProposta)+'</span>'
+                                      : '<span class="f-val vazio">não informada</span>')+'</div>'
+    +   '<div><span class="f-rot">Encerramento</span>'
+    +     (dt(l.dataEncerramentoProposta) ? '<span class="f-val">'+fmtDt(l.dataEncerramentoProposta)+'</span>'
+                                          : '<span class="f-val vazio">não informado</span>')+'</div>'
+    +   '<div><span class="f-rot">Valor estimado</span>'
+    +     (Number(l.valorTotalEstimado) > 0
+          ? '<span class="f-val forte">'+brl(l.valorTotalEstimado)+'</span>'
+          : '<span class="f-val vazio">não informado</span>')+'</div>'
+    +   '<div><span class="f-rot">Nº de controle PNCP</span>'
+    +     (l.numeroControlePNCP ? '<span class="f-val">'+esc(l.numeroControlePNCP)+'</span>'
+                                : '<span class="f-val vazio">não informado</span>')+'</div>'
+    /* A ADERÊNCIA SÓ SAI COM OS ITENS LIDOS, e o denominador é dito junto: "38%" sozinho sobre
+       uma leitura truncada seria porcentagem de um total que não se sabe. */
+    +   '<div><span class="f-rot">Aderência ao seu estoque</span>'
+    +     (aderenciaPct(l) != null && DET.dados && !DET.dados.truncado
+          ? '<span class="f-val">'+aderenciaPct(l)+'% · '+(DET.dados.casados||0)+' de '+d0.itens.length+'</span>'
+          : '<span class="f-val vazio">'+(DET.dados ? 'não dá para calcular' : 'lendo os itens…')+'</span>')+'</div>'
     + '</div>'
-    + '<div class="obj" style="margin:0 0 14px">'+grifa(l.objetoCompra||'')+'</div>'
-    /* A ORDEM DAS SEÇÕES SEGUE O QUE A PESSOA VEIO FAZER. Quem clicou em "usar como referência de
-       preço" veio pelo RESULTADO, e ele sobe; quem abriu o cartão veio pelos ITENS. Uma ordem
-       fixa faria metade das visitas começar rolando a tela. */
-    + (DET.foco === 'resultado' ? secaoResultado(l) : '')
-    + '<div class="det-secao"><h4>Itens do edital</h4>' + corpo + '</div>'
-    + secaoDocumentos()
-    + (DET.foco === 'resultado' ? '' : (est === EST_ENCERRADA || (DET.resultado && DET.resultado.length)
-        ? secaoResultado(l) : ''))
-    + acoes;
+    /* O OBJETO EM UMA LINHA DE TEXTO, com o termo buscado destacado (é o `grifa`, que já marca
+       o que a pessoa procurou na busca de fora). */
+    + '<p class="det-objeto">'+grifa(l.objetoCompra||'')+'</p>'
+    + abas
+    + (DET.aba === 'documentos' ? '<div class="det-rolo">'+secaoDocumentos()+'</div>'
+     : DET.aba === 'resultado'  ? '<div class="det-rolo">'+secaoResultado(l)+'</div>'
+     : corpo)
+    + rodape;
 }
 
 /* "Buscar os itens agora" — o mesmo caminho do cruzamento, forçando a releitura. O cache de 15
@@ -5286,6 +5683,16 @@ function poeDensidade(d){
   const p = document.getElementById('painel-res');
   if(p) p.classList.toggle('compacta', d === 'compacta');
   document.querySelectorAll('.dens button').forEach(b =>
+    b.setAttribute('aria-pressed', String(/Compacta/.test(b.textContent) === (d === 'compacta'))));
+  /* ══ A TABELA DO DETALHE SEGUE A MESMA PREFERÊNCIA (fatia A27) ═══════════════════════════
+     O alternador Compacta/Confortável já existia no cabeçalho da LISTA, e a caixa pede um
+     igual na barra da tabela de itens. Eles gravam na MESMA chave: quem escolheu "compacta"
+     uma vez escolheu para o sistema, não para um painel. Duas preferências com o mesmo nome
+     seriam a tela desobedecendo em metade dos lugares.
+     >>> AQUI TAMBÉM É TROCA DE CLASSE, e não repintura: a linha muda de 48px para 40px sem
+         perder a seleção de itens nem a posição da rolagem da tabela. */
+  document.querySelectorAll('.det-rolo').forEach(r => r.classList.toggle('compacta', d === 'compacta'));
+  document.querySelectorAll('.det-dens button').forEach(b =>
     b.setAttribute('aria-pressed', String(/Compacta/.test(b.textContent) === (d === 'compacta'))));
 }
 

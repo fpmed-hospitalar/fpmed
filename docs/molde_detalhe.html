@@ -1,0 +1,275 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MOLDE — Detalhe do pregão (FPMED)</title>
+<style>
+:root{
+  /* tokens do molde FPMED — o A deve confirmar cada um contra fpmed_tema.css */
+  --navy:#0E1B33; --fundo:#FAFBFC; --branco:#FFFFFF;
+  --texto:#0A1526; --cinza-800:#1F2A3C; --cinza-600:#5B6675; --cinza-500:#7A8494;
+  --cinza-300:#D7DCE3; --cinza-200:#E6EAF0; --cinza-100:#F2F4F8;
+  --azul:#2CA9E0; --azul-acao:#1576A5; --azul-50:#EAF6FC;
+  --verde:#8DC63F; --verde-700:#4E7A12; --verde-50:#F1F8E6;
+  --ambar-50:#FEF6E4; --ambar-700:#8A5A00;
+  --vermelho-50:#FEF0EF; --vermelho-700:#B42318;
+  --raio-4:4px; --raio-8:8px; --raio-12:12px; --raio-pill:999px;
+  --sombra:0 1px 2px rgba(16,26,43,.04);
+  --sombra-painel:0 12px 40px rgba(16,26,43,.18);
+  --linha:38px;   /* compacta */
+  --linha-conf:46px; /* confortável */
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--cinza-100);color:var(--texto);
+  font:14px/1.45 "Inter",-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+  -webkit-font-smoothing:antialiased}
+.veu{position:fixed;inset:0;background:rgba(10,21,38,.45)}
+/* ── PAINEL: rolagem é DELE, a lista atrás não se move ───────────────── */
+.painel{position:fixed;top:0;right:0;bottom:0;width:min(1080px,96vw);
+  background:var(--branco);box-shadow:var(--sombra-painel);
+  display:flex;flex-direction:column;overflow:hidden}
+/* ── CABEÇALHO FIXO ─────────────────────────────────────────────────── */
+.cab{padding:16px 20px 12px;border-bottom:1px solid var(--cinza-200);background:var(--branco)}
+.cab-l1{display:flex;align-items:flex-start;gap:12px}
+.cab h1{margin:0;font-size:18px;line-height:1.25;font-weight:700;letter-spacing:-.01em}
+.cab .org{margin:3px 0 0;color:var(--cinza-600);font-size:13px}
+.fechar{margin-left:auto;flex:none;width:32px;height:32px;border:1px solid var(--cinza-300);
+  background:var(--branco);border-radius:var(--raio-8);color:var(--cinza-600);
+  font-size:16px;line-height:1;cursor:pointer;transition:background-color 120ms}
+.fechar:hover{background:var(--cinza-100)}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.chip{font-size:11.5px;font-weight:600;letter-spacing:.02em;padding:3px 9px;
+  border-radius:var(--raio-pill);border:1px solid transparent;white-space:nowrap}
+.chip.verde{background:var(--verde-50);color:var(--verde-700);border-color:#CFE6A6}
+.chip.ambar{background:var(--ambar-50);color:var(--ambar-700);border-color:#F0DCA8}
+.chip.azul{background:var(--azul-50);color:var(--azul-acao);border-color:#BFE3F5}
+.chip.neutro{background:var(--cinza-100);color:var(--cinza-600);border-color:var(--cinza-200)}
+/* ── AÇÕES: primária verde, secundárias discretas ───────────────────── */
+.acoes{display:flex;align-items:center;gap:8px;margin-top:12px;flex-wrap:wrap}
+.bt{height:34px;padding:0 14px;border-radius:var(--raio-8);font-size:13px;font-weight:600;
+  border:1px solid var(--cinza-300);background:var(--branco);color:var(--cinza-800);
+  cursor:pointer;display:inline-flex;align-items:center;gap:7px;transition:background-color 120ms}
+.bt:hover{background:var(--cinza-100)}
+.bt.primaria{background:var(--verde-700);border-color:var(--verde-700);color:#fff}
+.bt.primaria:hover{background:#436B0F}
+.bt.ia{border-color:#BFE3F5;background:var(--azul-50);color:var(--azul-acao)}
+.custo{font-size:11px;color:var(--cinza-500);margin-left:2px}
+/* ── FICHA: rótulo em cima, valor forte embaixo (nunca grudados) ─────── */
+.ficha{display:grid;grid-template-columns:repeat(auto-fit,minmax(168px,1fr));
+  gap:12px 22px;padding:14px 20px;border-bottom:1px solid var(--cinza-200);background:var(--fundo)}
+.f-rot{display:block;font-size:10.5px;font-weight:600;letter-spacing:.06em;
+  text-transform:uppercase;color:var(--cinza-500);margin-bottom:2px}
+.f-val{font-size:14px;font-weight:600;color:var(--cinza-800);font-variant-numeric:tabular-nums}
+.f-val.forte{font-size:16px}
+.f-val.vazio{font-weight:500;color:var(--cinza-500)}
+.objeto{padding:12px 20px;border-bottom:1px solid var(--cinza-200);font-size:13px;
+  color:var(--cinza-800);line-height:1.5}
+.objeto b{background:#FFF3C4;padding:0 2px;border-radius:2px;font-weight:600}
+/* ── ABAS ───────────────────────────────────────────────────────────── */
+.abas{display:flex;gap:6px;padding:10px 20px 0;border-bottom:1px solid var(--cinza-200)}
+.aba{height:32px;padding:0 14px;border:1px solid var(--cinza-300);border-bottom:none;
+  background:var(--branco);border-radius:var(--raio-8) var(--raio-8) 0 0;
+  font-size:13px;font-weight:600;color:var(--cinza-600);cursor:pointer;
+  display:flex;align-items:center;gap:6px;transition:background-color 120ms}
+.aba:hover{background:var(--cinza-100)}
+.aba.on{background:var(--azul-acao);border-color:var(--azul-acao);color:#fff}
+.aba .n{font-size:11px;background:var(--cinza-100);color:var(--cinza-600);
+  border-radius:var(--raio-pill);padding:1px 6px;font-variant-numeric:tabular-nums}
+.aba.on .n{background:rgba(255,255,255,.28);color:#fff}
+/* ── BARRA DA TABELA ────────────────────────────────────────────────── */
+.barra{display:flex;align-items:center;gap:10px;padding:12px 20px;background:var(--branco);
+  border-bottom:1px solid var(--cinza-200);flex-wrap:wrap}
+.busca{flex:1;min-width:220px;height:34px;border:1px solid var(--cinza-300);
+  border-radius:var(--raio-8);padding:0 12px;font-size:13px;color:var(--texto);background:var(--branco)}
+.busca::placeholder{color:var(--cinza-500)}
+.conta{font-size:12px;color:var(--cinza-600);font-variant-numeric:tabular-nums}
+.dens{display:flex;border:1px solid var(--cinza-300);border-radius:var(--raio-8);overflow:hidden}
+.dens button{height:32px;padding:0 10px;border:0;background:var(--branco);font-size:12px;
+  font-weight:600;color:var(--cinza-600);cursor:pointer}
+.dens button.on{background:var(--cinza-100);color:var(--cinza-800)}
+/* ── TABELA: cabeçalho fixo, fios de 1px, número à direita ──────────── */
+.rolo{overflow:auto;flex:1}
+table{width:100%;border-collapse:separate;border-spacing:0}
+thead th{position:sticky;top:0;z-index:2;background:var(--branco);
+  border-bottom:1px solid var(--cinza-300);text-align:left;
+  font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--cinza-500);padding:9px 12px;white-space:nowrap}
+thead th.num{text-align:right}
+tbody td{border-bottom:1px solid var(--cinza-200);padding:0 12px;height:var(--linha);
+  font-size:13px;color:var(--cinza-800);vertical-align:middle}
+tbody tr:hover td{background:var(--azul-50)}
+tbody tr.marcada td{background:#F4FAFE}
+td.num{text-align:right;font-variant-numeric:tabular-nums}
+td.desc{color:var(--texto)}
+td.desc mark{background:#FFF3C4;padding:0 2px;border-radius:2px}
+.seq{color:var(--cinza-500);font-variant-numeric:tabular-nums}
+.vazio{color:var(--cinza-500);font-style:normal}
+.teto-ok{color:var(--verde-700);font-weight:600}
+.teto-estoura{color:var(--vermelho-700);font-weight:600}
+.selo{font-size:10.5px;font-weight:600;padding:2px 7px;border-radius:var(--raio-pill)}
+.selo.cabe{background:var(--verde-50);color:var(--verde-700)}
+.selo.estoura{background:var(--vermelho-50);color:var(--vermelho-700)}
+.selo.sem{background:var(--cinza-100);color:var(--cinza-600)}
+input[type=checkbox]{width:15px;height:15px;accent-color:var(--azul-acao);cursor:pointer}
+/* ── RODAPÉ DE SELEÇÃO: só aparece com item marcado ─────────────────── */
+.rodape{display:flex;align-items:center;gap:12px;padding:12px 20px;
+  border-top:1px solid var(--cinza-200);background:var(--branco)}
+.rodape .n{font-size:13px;font-weight:600}
+.aviso{margin:12px 20px;padding:10px 12px;border-radius:var(--raio-8);
+  background:var(--ambar-50);border:1px solid #F0DCA8;color:var(--ambar-700);font-size:12.5px}
+.nota{padding:10px 20px;font-size:11.5px;color:var(--cinza-500);border-top:1px solid var(--cinza-200)}
+</style>
+</head>
+<body>
+<div class="veu"></div>
+
+<section class="painel" role="dialog" aria-label="Detalhe do pregão">
+
+  <!-- CABEÇALHO FIXO -->
+  <header class="cab">
+    <div class="cab-l1">
+      <div>
+        <h1>Pregão eletrônico nº 4/2026</h1>
+        <p class="org">FUNDO MUNICIPAL DE SAÚDE DE CAÇU · Caçu/GO · unidade 655</p>
+      </div>
+      <button class="fechar" title="Fechar (Esc)">✕</button>
+    </div>
+
+    <div class="chips">
+      <span class="chip verde">RECEBENDO PROPOSTA</span>
+      <span class="chip azul">REGISTRO DE PREÇO</span>
+      <span class="chip neutro">DISPUTA ABERTA</span>
+      <span class="chip neutro">LICITANET</span>
+      <span class="chip neutro">nosso índice do PNCP</span>
+      <span class="chip ambar">DOS MEUS NEGÓCIOS</span>
+    </div>
+
+    <div class="acoes">
+      <button class="bt primaria">+ Adicionar aos meus negócios</button>
+      <button class="bt ia">✦ Conversar com o edital <span class="custo">custa por leitura</span></button>
+      <button class="bt">Arquivos do edital <span class="custo">4</span></button>
+      <button class="bt">··· mais ações</button>
+    </div>
+  </header>
+
+  <!-- FICHA: rótulo em cima, valor embaixo — nunca grudados -->
+  <div class="ficha">
+    <div><span class="f-rot">Publicação</span><span class="f-val">13/08/2026 · 09:16</span></div>
+    <div><span class="f-rot">Abertura da sessão</span><span class="f-val">13/08/2026 · 09:16</span></div>
+    <div><span class="f-rot">Encerramento</span><span class="f-val">01/09/2026 · 09:00</span></div>
+    <div><span class="f-rot">Valor estimado</span><span class="f-val forte">R$ 4.995.303,00</span></div>
+    <div><span class="f-rot">Nº de controle PNCP</span><span class="f-val">03381462000194-1-000006/2026</span></div>
+    <div><span class="f-rot">Aderência ao seu estoque</span><span class="f-val">38% · 190 de 500</span></div>
+  </div>
+
+  <p class="objeto">Aquisição, com entrega parcelada, de materiais e <b>medicamentos</b>
+    médico-hospitalares para o SAMU e demais unidades da rede municipal de saúde.</p>
+
+  <!-- ABAS -->
+  <nav class="abas">
+    <button class="aba on">Itens <span class="n">500</span></button>
+    <button class="aba">Documentos <span class="n">4</span></button>
+    <button class="aba">Resultado</button>
+  </nav>
+
+  <!-- BARRA DA TABELA -->
+  <div class="barra">
+    <input class="busca" placeholder="procurar dentro dos 500 itens deste edital…" value="dipirona">
+    <span class="conta"><b>7</b> itens contêm “dipirona” · mostrando todos, os que casam vêm primeiro</span>
+    <div class="dens">
+      <button class="on">Compacta</button><button>Confortável</button>
+    </div>
+  </div>
+
+  <div class="aviso">O PNCP entrega os itens em páginas e eu li 5 de 7 — <b>faltam 142 itens</b>.
+    A aderência acima é sobre os 358 já lidos. <b>Ler o resto</b></div>
+
+  <!-- TABELA -->
+  <div class="rolo">
+    <table>
+      <thead>
+        <tr>
+          <th style="width:34px"><input type="checkbox"></th>
+          <th style="width:52px">Nº</th>
+          <th>Descrição do item</th>
+          <th class="num" style="width:78px">Qtd</th>
+          <th style="width:64px">Un.</th>
+          <th class="num" style="width:104px">Referência</th>
+          <th class="num" style="width:104px">Teto CMED</th>
+          <th style="width:96px">Situação</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="marcada">
+          <td><input type="checkbox" checked></td>
+          <td class="seq">18</td>
+          <td class="desc"><mark>DIPIRONA</mark> SÓDICA 500 MG/ML SOLUÇÃO INJETÁVEL AMPOLA 2 ML</td>
+          <td class="num">12.000</td><td>AMP</td>
+          <td class="num">R$ 1,18</td>
+          <td class="num teto-ok">R$ 1,42</td>
+          <td><span class="selo cabe">cabe · 20%</span></td>
+        </tr>
+        <tr class="marcada">
+          <td><input type="checkbox" checked></td>
+          <td class="seq">19</td>
+          <td class="desc"><mark>DIPIRONA</mark> SÓDICA 500 MG COMPRIMIDO</td>
+          <td class="num">40.000</td><td>COMP</td>
+          <td class="num">R$ 0,09</td>
+          <td class="num teto-estoura">R$ 0,07</td>
+          <td><span class="selo estoura">estoura · 28%</span></td>
+        </tr>
+        <tr>
+          <td><input type="checkbox"></td>
+          <td class="seq">21</td>
+          <td class="desc"><mark>DIPIRONA</mark> GOTAS 500 MG/ML FRASCO 10 ML</td>
+          <td class="num">3.500</td><td>FR</td>
+          <td class="num vazio">sem referência</td>
+          <td class="num teto-ok">R$ 2,86</td>
+          <td><span class="selo sem">única régua</span></td>
+        </tr>
+        <tr>
+          <td><input type="checkbox"></td>
+          <td class="seq">1</td>
+          <td class="desc">ABAIXADOR DE LÍNGUA EM MADEIRA — PACOTE C/ 100 UN</td>
+          <td class="num">600</td><td>PCT</td>
+          <td class="num">R$ 12,40</td>
+          <td class="num vazio">sem teto CMED</td>
+          <td><span class="selo sem">material</span></td>
+        </tr>
+        <tr>
+          <td><input type="checkbox"></td>
+          <td class="seq">2</td>
+          <td class="desc">ÁGUA PARA AUTOCLAVE 5.000 ML</td>
+          <td class="num">1.200</td><td>FR</td>
+          <td class="num">R$ 8,90</td>
+          <td class="num vazio">sem teto CMED</td>
+          <td><span class="selo sem">material</span></td>
+        </tr>
+        <tr>
+          <td><input type="checkbox"></td>
+          <td class="seq">3</td>
+          <td class="desc">ALMOTOLIA PLÁSTICA 250 ML ÂMBAR</td>
+          <td class="num">300</td><td>UN</td>
+          <td class="num vazio">sem referência</td>
+          <td class="num vazio">sem teto CMED</td>
+          <td><span class="selo sem">nada a comparar</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- RODAPÉ: só existe com item marcado -->
+  <footer class="rodape">
+    <span class="n">2 itens selecionados</span>
+    <button class="bt primaria" style="margin-left:auto">+ Adicionar aos meus negócios com estes itens</button>
+    <button class="bt">Limpar seleção</button>
+  </footer>
+
+  <p class="nota">MOLDE DE REFERÊNCIA — desenhado pelo arquiteto em 14/08/2026 para a fatia A27.
+    Os valores de cor aqui são APROXIMAÇÕES dos tokens: o A deve substituir cada um pelo token
+    exato do fpmed_tema.css. O que manda nesta peça é a ESTRUTURA (hierarquia, densidade,
+    alinhamento, estados honestos), não os hex.</p>
+</section>
+</body>
+</html>
