@@ -480,8 +480,24 @@ ok(n + '. *** o ramo morto do EAN saiu dos DOIS lugares (escolha e confianca) **
   && !/casou por EAN/.test(LIMPO)); n++;
 /* Deixar UM dos dois lados de pe seria pior que deixar os dois: o motor pararia de usar o EAN
    pra ESCOLHER e continuaria a usa-lo pra se dizer CONFIANTE. */
-ok(n + '. ...e nenhum `.ean` sobrou no codigo (so no comentario que explica a remocao)',
-  !/\.ean\b/.test(LIMPO)); n++;
+/* ══ ESTE ASSERT PROIBIA `.ean` NO ARQUIVO INTEIRO, e ele reprovou na fatia B17 ═══════════════
+   A proibicao larga era um PROXY de 13/08 pra uma coisa que era verdade naquele dia: a coluna
+   `cotacoes.ean` nao existia. Ela existe desde a B7, e a B17 passou a MOSTRAR o EAN na linha do
+   item — que e o oposto do defeito: exibir o que o banco tem, sem escolher nada por ele.
+   >>> O QUE SE QUER PROIBIR NUNCA FOI A LETRA `.ean`: e o MOTOR usar EAN pra escolher produto ou
+       pra se dizer confiante. Entao o assert desceu do arquivo inteiro pras duas funcoes onde a
+       decisao mora — e ficou mais forte, porque agora ele nomeia o lugar em vez de varrer tudo.
+   Assert que reprova o certo ensina a desligar o teste; assert que aponta o lugar certo sobrevive
+   a fatia seguinte. */
+const _motor = (LIMPO.match(/function buscarMelhorProduto\([\s\S]*?\n\}/) || [''])[0]
+             + (LIMPO.match(/function _bmConfianca\([\s\S]*?\n\}/) || [''])[0];
+ok(n + '. (controle) achei as duas funcoes onde a decisao do motor mora', _motor.length > 400); n++;
+ok(n + '. ...e o MOTOR nao usa `.ean` pra escolher produto nem pra se dizer confiante',
+  !/\.ean\b/.test(_motor), (_motor.match(/.{0,40}\.ean\b.{0,40}/g) || []).slice(0, 3)); n++;
+/* E o `gerarPDF` tambem nao: o papel esta congelado desde a B8, e um EAN aparecendo la seria
+   mudanca de layout entrando pela porta dos fundos. */
+ok(n + '. ...e o papel (gerarPDF) tambem nao fala de EAN',
+  !/\.ean\b|identidadeHTML/.test((LIMPO.match(/function gerarPDF\(\)[\s\S]*?\n\}/) || [''])[0])); n++;
 /* O VALIDADOR FICA, e e decisao declarada: ele e puro (texto -> EAN-13 valido), nao custa nada
    parado, e e a peca que se reconecta no dia em que a decisao do cadastro vier. Apaga-lo seria
    jogar fora a metade que a pergunta pendente precisa. */

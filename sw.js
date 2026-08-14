@@ -59,7 +59,12 @@
    telas que mandam o arquivo pro cofre com o cracha `anon` — ou seja, continuaria sem conseguir
    anexar NADA, com a tela dizendo "salvando..." e o banco recebendo zero linha. E o sintoma seria
    identico ao de antes do conserto, o que faria qualquer um concluir que o conserto nao pegou. */
-const VERSAO = 'limedtec-fpmed-2026-08-13-80';
+/* -81 pela FATIA B17: a identidade do item (marca, EAN e registro ANVISA) e o conserto do
+   `hdr()`/`esc()` estao no `fpmed_giovana.html`, que ESTA na casca. Sem bump, quem ja instalou
+   continuaria montando proposta sem ver que o item nao tem EAN — e continuaria com a fila de
+   pendencia respondendo "nao consegui ler a lista" para sempre, que e o defeito que manteve
+   8.455 itens com estoque sem codigo de barras desde a B7. */
+const VERSAO = 'limedtec-fpmed-2026-08-13-81';
 const CACHE = 'limedtec-shell-' + VERSAO;
 
 // A CASCA DA FPMED. Lista MONTADA A MAO conferindo `git ls-files` (= o que o Pages serve),

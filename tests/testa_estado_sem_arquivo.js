@@ -77,9 +77,14 @@ ok(n + '. ...e o portugues correto continua la (o conserto nao apagou "NAO"/"VER
   /VERSÃO muda/.test(SW) && /NÃO DÁ PRA REAPROVEITAR/.test(SW)); n++;
 /* SEM BUMP, O CONSERTO NAO CHEGA em quem ja instalou a casca — e o sintoma continuaria
    identico, o que se le como "o conserto nao funcionou". */
-ok(n + '. ...e a versao do service worker subiu pela fatia A21',
-  /const VERSAO = 'limedtec-fpmed-2026-08-13-79'/.test(SW)
-  && /-79 pela FATIA A21/.test(SW)); n++;
+/* ESTE ASSERT FIXAVA O NUMERO EXATO (-79) e reprovava na fatia B16, que bumpou pra -80 por um
+   motivo proprio e legitimo. Assert que reprova o CERTO ensina a desligar o teste — e o que ele
+   quer proteger nao e "a versao e 79": e "a A21 bumpou, e nenhum bump posterior desandou o dela".
+   Entao agora ele le o numero e exige que seja o da A21 OU MAIOR. Um bump pra tras (ou o sumico
+   da nota da A21) continua reprovando, que e o defeito de verdade. */
+const _vsw = +((SW.match(/const VERSAO = 'limedtec-fpmed-\d{4}-\d{2}-\d{2}-(\d+)'/) || [])[1] || -1);
+ok(n + '. ...e a versao do service worker subiu pela fatia A21 (e nunca voltou atras)',
+  _vsw >= 79 && /-79 pela FATIA A21/.test(SW), _vsw); n++;
 ok(n + '. e a logica do sw.js nao foi tocada (so comentario)',
   /const CACHE = 'limedtec-shell-' \+ VERSAO;/.test(SW)
   && /addEventListener\('fetch'/.test(SW)); n++;

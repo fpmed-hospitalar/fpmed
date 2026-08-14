@@ -775,6 +775,27 @@ const EDGE_URL_G = 'https://xzdowrksuswekwffoluk.supabase.co/functions/v1/api';
 const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh6ZG93cmtzdXN3ZWt3ZmZvbHVrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ2NzE2MTMsImV4cCI6MjEwMDI0NzYxM30.Pk-SlV_pZdniESyrajDdfHdHcnmyCwCMtP_TrShh75Y';
 const H = { 'Content-Type':'application/json', 'apikey':SUPA_KEY, 'Authorization':'Bearer '+SUPA_KEY };
 
+/* ══ `hdr()` E `esc()` NUNCA EXISTIRAM NESTA TELA — E É POR ISSO QUE O EAN NUNCA FOI GRAVADO ══
+   MEDIDO EM 14/08 (fatia B17), e a medição é do BANCO, não do código-fonte:
+       cotacoes: 8.832 linhas · com EAN = 0 · com registro_anvisa = 0
+   As colunas nasceram na B7 e continuam 100% vazias. O motivo estava em três funções da fatia
+   do EAN (`abrirPendenciaEan`, `buscarEanNaCmed`, `eanAplicar`): elas chamam `hdr()` e `esc()`,
+   e nenhum dos dois é declarado neste arquivo nem em nenhum dos nove scripts que a tela carrega.
+   (O `esc` do `gm-auth.js` mora dentro do IIFE dele — não é global.)
+   >>> ENTÃO AS TRÊS ESTOURAVAM UM ReferenceError NA PRIMEIRA LINHA ÚTIL. A pendência caía no
+       próprio catch e mostrava "Não consegui ler a lista agora" para sempre; a busca do EAN na
+       CMED morria antes de perguntar; e o "aplicar" morria DEPOIS de gravar `_eanExtra`, então
+       nem o aviso verde aparecia.
+   >>> POR QUE NENHUMA SUÍTE PEGOU: as suítes recortam FUNÇÃO por âncora e rodam a função — e
+       `hdr`/`esc` são de fora dela, então o recorte nunca os exercitou. O arquivo "tem o
+       código", e o código está escrito certo; o que faltava era o chão embaixo dele.
+   >>> É a terceira roupa da mesma lição da B15/B16: quem sabia a verdade era o servidor —
+       aqui, a coluna vazia — e ninguém tinha perguntado a ele.
+   O conserto é de duas linhas, e NÃO nasce um segundo escapador: `esc` é o `_escEd` que a tela
+   já usa desde sempre. Dois escapadores é onde um deles um dia deixa passar uma aspa. */
+function hdr(){ return Object.assign({}, H); }
+function esc(s){ return _escEd(s); }
+
 // ── ACESSO POR CARGO (camada de TELA) ────────────────────────────────────────
 // A trava REAL é a RLS no banco (db_rls_cargos.sql): vendedor/propostas leem a view
 // cotacoes_vendedor (sem custo) e não gravam. Aqui só espelhamos isso na UI.
@@ -3184,6 +3205,74 @@ function atualizarVisibilidade() {
   ['card-itens','card-total','card-acoes'].forEach(id => document.getElementById(id).style.display = temItens?'':'none');
 }
 
+/* ══ A IDENTIDADE DO ITEM: MARCA, EAN E REGISTRO ANVISA (fatia B17) ═══════════════════════════
+   Edital de medicamento costuma exigir os três na proposta, e até aqui a linha do item só
+   mostrava a MARCA. O EAN e o registro já existem na `cotacoes` (colunas da B7) e vinham no
+   `select=*` desde sempre — chegavam na tela e não eram desenhados em lugar nenhum.
+
+   ── ONDE FALTA, NÃO SE INVENTA, E TAMBÉM NÃO SE ESCONDE ─────────────────────────────────────
+   Sumir com a linha quando o campo está vazio faria a proposta parecer completa. Dizer "sem EAN
+   cadastrado" na cara de quem monta é o que dá a ele a chance de resolver ANTES de mandar — que
+   é a única hora em que resolver ainda vale alguma coisa.
+
+   ── E UM EAN QUE NÃO FECHA É PIOR QUE EAN NENHUM ────────────────────────────────────────────
+   Um dígito trocado não dá erro em canto nenhum: ele casa com OUTRO produto e devolve um teto
+   com cara de certo (é a regra que a `testa_ean_cadastro` já defende no cadastro). Então aqui o
+   dígito verificador é conferido e a linha DENUNCIA quando não fecha, em vez de exibir o número
+   como se ele valesse.
+
+   ── PURA DE PROPÓSITO ───────────────────────────────────────────────────────────────────────
+   `identidadeDoItem` não toca no DOM nem na rede: é ela que a suíte executa com um item real
+   que tem EAN e outro que não tem. O que a suíte prova é o que a tela desenha. */
+function identidadeDoItem(c){
+  const digitos = String((c && c.ean) || '').replace(/\D/g, '');
+  const registro = String((c && c.registro_anvisa) || '').trim();
+  return {
+    marca: String((c && c.marca) || '').trim() || null,
+    ean: digitos || null,
+    // `eanValido` mora no outro bloco de script desta mesma tela; declaração de função é global.
+    eanFecha: digitos ? eanValido(digitos) : null,
+    registro: registro || null,
+    faltas: [!String((c && c.marca) || '').trim() ? 'marca' : null,
+             !digitos ? 'ean' : null,
+             !registro ? 'registro' : null].filter(Boolean),
+  };
+}
+/* O ATALHO SÓ APARECE PARA QUEM PODE CHEGAR LÁ. A lista de pendência mora na aba "Importar
+   Cotação", que é de gestor (`podeImportarCotacao`). Oferecer o link a um vendedor seria uma
+   afordância mentindo: ele clicaria e nada aconteceria — o `gTab` recusa a aba na porta. */
+function identidadeHTML(c){
+  const id = identidadeDoItem(c);
+  /* O NOME DO PRODUTO VAI PARAR DENTRO DE UM `onclick`, e nome de produto é texto de terceiro:
+     vem de planilha de fornecedor. `_escEd` cuida de `< > & "` (o `"` fecharia o atributo) e a
+     aspa simples vira `&#39;` (ela fecharia a string do JavaScript). Escapar só a aspa simples
+     deixaria a porta do `"` aberta. */
+  const alvo = esc(String((c && c.produto) || '')).replace(/'/g, '&#39;');
+  const podeIr = (typeof podeImportarCotacao === 'function') && podeImportarCotacao();
+  const falta = txt => '<span style="color:var(--ambar-700)">' + txt + '</span>'
+    + (podeIr ? ' <a onclick="irParaPendenciaEan(\'' + alvo + '\')" style="color:var(--verde);'
+                + 'cursor:pointer;text-decoration:underline" title="abre a lista de itens sem código de '
+                + 'barras, com este produto na frente">preencher</a>' : '');
+  const partes = [];
+  if(id.ean && id.eanFecha) partes.push('EAN ' + esc(id.ean));
+  else if(id.ean) partes.push('<span style="color:var(--vermelho-700)">EAN ' + esc(id.ean)
+    + ' não fecha (dígito verificador) — confira o cadastro</span>');
+  else partes.push(falta('sem EAN cadastrado'));
+  if(id.registro) partes.push('ANVISA ' + esc(id.registro));
+  else partes.push(falta('sem registro ANVISA'));
+  return partes.join(' · ');
+}
+/* Leva até a lista de pendência JÁ COM O PRODUTO IDENTIFICADO — a caixa pediu com estas
+   palavras. Sem isso, a pessoa cairia numa lista de oito mil linhas para achar a que ela
+   acabou de ver na proposta. */
+function irParaPendenciaEan(produto){
+  if(typeof podeImportarCotacao === 'function' && !podeImportarCotacao()) return;
+  if(typeof gTab === 'function') gTab('impcot');
+  abrirPendenciaEan(produto);
+  const el = document.getElementById('imp-pendencia');
+  if(el && el.scrollIntoView) el.scrollIntoView({ behavior:'smooth', block:'center' });
+}
+
 function renderItens() {
   const el = document.getElementById('lista-itens');
   if (!itens.length) { el.innerHTML='<div class="empty-state" style="padding:20px"><div class="icon"><svg class="ic" aria-hidden="true"><use href="#ic-caixa"/></svg> </div><p>Nenhum item adicionado</p></div>'; calcTotal(); return; }
@@ -3213,6 +3302,11 @@ function renderItens() {
           ${c.estoque>0?` · <span style="color:var(--verde-escuro)">Estoque: ${c.estoque}</span>`:''}
           ${c.validade?` · Venc: ${fmtDate(c.validade)}`:''}
         </div>
+        <!-- ══ A IDENTIDADE EXIGIDA PELO EDITAL (B17) — e ela é `no-print` de propósito ═══════
+             O documento impresso está CONGELADO (ordem da caixa desde a B8). Esta linha vive na
+             tela, que é onde a proposta é MONTADA e onde ainda dá tempo de consertar. Ver a
+             fatia B17 no relatório para o caminho que NÃO foi tomado no papel, e o porquê. -->
+        <div class="item-det no-print" style="margin-top:3px">${identidadeHTML(c)}</div>
         ${(c._bpAlerta && !ehRestrito())?`<div class="no-print" style="margin-top:4px;font-size:11px;color:var(--ambar-700);background:var(--ambar-50);border:1px solid var(--ambar-300);border-radius:6px;padding:4px 8px"><svg class="ic" aria-hidden="true"><use href="#ic-alerta"/></svg> conferir preço: ${c._bpAlerta.msg}</div>`:''}
         ${c._qtdAlerta?`<div class="no-print" style="margin-top:4px;font-size:11px;color:var(--ambar-700);background:var(--ambar-50);border:1px solid var(--ambar-300);border-radius:6px;padding:4px 8px"><svg class="ic" aria-hidden="true"><use href="#ic-alerta"/></svg> <strong>quantidade não convertida</strong> (entrou 1): ${c._qtdAlerta}</div>`:''}
         ${(c._conf && c._conf.nivel!=='alta' && !c._confOK)?`<div class="no-print" style="margin-top:4px;font-size:11px;color:${c._conf.nivel==='baixa'?'var(--vermelho-700)':'var(--ambar-700)'};background:${c._conf.nivel==='baixa'?'var(--vermelho-50)':'var(--ambar-50)'};border:1px solid ${c._conf.nivel==='baixa'?'var(--vermelho-300)':'var(--ambar-300)'};border-radius:6px;padding:5px 8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
@@ -4538,7 +4632,12 @@ function addLinhaImport() {
    o produto errado, com toda a confiança do mundo.
    >>> A lista MOSTRA o que falta e leva a pessoa até o campo. Quem digita é gente.
    ══════════════════════════════════════════════════════════════════════════════════════════════ */
-async function abrirPendenciaEan() {
+/* O `alvo` chegou na B17: quem clica em "preencher" na linha da proposta vem para cá COM O
+   PRODUTO NA MÃO. Sem ele, a pessoa cairia numa lista de milhares de linhas para reencontrar
+   a que ela acabou de ver. E se o produto não estiver na página lida, a tela DIZ isso — em vez
+   de mostrar a lista genérica e deixar a pessoa achando que ela procurou e não achou. */
+async function abrirPendenciaEan(alvo) {
+  const buscado = String(alvo || '').trim();
   const el = document.getElementById('imp-pendencia');
   if (!el) return;
   el.style.display = 'block';
@@ -4564,9 +4663,20 @@ async function abrirPendenciaEan() {
       const a = porProduto.get(k) || { n: 0, marca: l.marca, und: l.und };
       a.n++; porProduto.set(k, a);
     }
-    const ordenado = [...porProduto.entries()].sort((a, b) => b[1].n - a[1].n).slice(0, 40);
+    /* O ALVO VAI PARA A FRENTE E FICA MARCADO. Ele não "fura a fila" da regra de prioridade:
+       a ordem por estoque/repetição continua valendo para todo o resto — o alvo é só o item
+       que a pessoa veio resolver, e escondê-lo no meio de 40 linhas seria perder o clique. */
+    const todos = [...porProduto.entries()].sort((a, b) => b[1].n - a[1].n);
+    const achou = buscado ? todos.find(([p]) => p === buscado) : null;
+    const ordenado = achou ? [achou, ...todos.filter(x => x !== achou).slice(0, 39)] : todos.slice(0, 40);
 
     el.innerHTML =
+      (buscado && !achou
+        ? '<div style="font-size:var(--txt-1);color:var(--ambar-700);margin-bottom:var(--esp-2)">'
+          + '<b>' + esc(buscado.slice(0, 78)) + '</b> não apareceu nesta lista — ela só traz os itens '
+          + '<b>com estoque</b>, e traz mil por vez. Procure o produto no cadastro para preencher o código.'
+          + '</div>'
+        : '') +
       '<div style="display:flex;align-items:baseline;gap:var(--esp-2);flex-wrap:wrap">'
       + '<b style="font-size:var(--txt-3);color:var(--navy)">'
       + (total === null ? '—' : total.toLocaleString('pt-BR')) + '</b>'
@@ -4581,7 +4691,8 @@ async function abrirPendenciaEan() {
       + 'que parece lido no leitor e não é.</div>'
       + '<div style="max-height:260px;overflow:auto;border:1px solid var(--borda);border-radius:var(--raio-campo)">'
       + ordenado.map(([p, a]) =>
-          '<div style="padding:var(--esp-2) var(--esp-3);border-bottom:1px solid var(--borda-divisor);font-size:var(--txt-1)">'
+          '<div style="padding:var(--esp-2) var(--esp-3);border-bottom:1px solid var(--borda-divisor);font-size:var(--txt-1)'
+          + (buscado && p === buscado ? ';background:var(--ambar-50);font-weight:600' : '') + '">'
           + esc(p.slice(0, 78))
           + (a.marca ? ' <span style="color:var(--muted)">· ' + esc(String(a.marca).slice(0, 22)) + '</span>' : '')
           + (a.n > 1 ? ' <span style="color:var(--muted)">(' + a.n + '×)</span>' : '')
