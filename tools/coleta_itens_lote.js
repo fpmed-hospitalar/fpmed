@@ -204,15 +204,34 @@ async function alvosDoFunil() {
   return out.filter(l => !vistos.has(l.id) && vistos.add(l.id));
 }
 
+/* ══ O TETO DE 1000 DO POSTGREST, DECLARADO ═══════════════════════════════════════════════════
+   Esta instância pagina em 1000 e NÃO avisa: pedir `limit=1300` devolve 1000 com cara de lista
+   inteira. Foi assim que a primeira rodada em lote leu 1.000 das 1.292 vivas e terminou dizendo
+   "1000/1000" — número certo, conclusão errada. É a terceira vez que o mesmo teto morde esta
+   obra (o dicionário CMED e a busca da tela foram as outras duas), e por isso aqui ele é PAGINADO
+   em vez de confiado. */
+const PAG = 1000;
+async function paginado(base, quantos) {
+  let out = [];
+  for (let de = 0; out.length < quantos; de += PAG) {
+    const pedaco = Math.min(PAG, quantos - out.length);
+    const lote = await le(`${base}&limit=${pedaco}&offset=${de}`);
+    if (!Array.isArray(lote) || !lote.length) break;
+    out = out.concat(lote);
+    if (lote.length < pedaco) break;
+  }
+  return out;
+}
+
 async function alvosVivos(quantos) {
   const agora = new Date().toISOString();
-  return le(`licitacoes?select=${CAMPOS}&data_encerramento=gte.${agora}`
-    + `&itens_lidos_em=is.null&order=data_encerramento.asc&limit=${quantos}`);
+  return paginado(`licitacoes?select=${CAMPOS}&data_encerramento=gte.${agora}`
+    + `&itens_lidos_em=is.null&order=data_encerramento.asc`, quantos);
 }
 
 async function alvosSemPrazo(quantos) {
-  return le(`licitacoes?select=${CAMPOS}&data_encerramento=is.null`
-    + `&itens_lidos_em=is.null&order=data_publicacao.desc&limit=${quantos}`);
+  return paginado(`licitacoes?select=${CAMPOS}&data_encerramento=is.null`
+    + `&itens_lidos_em=is.null&order=data_publicacao.desc`, quantos);
 }
 
 (async () => {

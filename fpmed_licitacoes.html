@@ -1834,6 +1834,21 @@ function numCompra(numero, ano){
 const SB_URL = 'https://xzdowrksuswekwffoluk.supabase.co';
 const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh6ZG93cmtzdXN3ZWt3ZmZvbHVrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ2NzE2MTMsImV4cCI6MjEwMDI0NzYxM30.Pk-SlV_pZdniESyrajDdfHdHcnmyCwCMtP_TrShh75Y';
 const SB_H  = { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY };
+/* ── O MOTOR DO LEITOR PRECISA ACHAR ESTE ENDEREÇO, E `const` NÃO APARECE NO `window` ─────────
+   Achado pela auditoria do Trabalhador B em 14/08, na tela dele, e a mesma falta existia aqui.
+   O `fpmed_leitor_motor.js` monta a URL da edge function assim (fatia A2):
+       LIMEDTEC_CLIENTE.supabase.url  ||  glob.SB_URL  ||  gmAuth.SB
+   `const` no topo de um <script> fica no escopo léxico e NÃO vira propriedade de `window` —
+   então `glob.SB_URL` era indefinido, `urlDaEdge()` devolvia `null`, e "Conversar com o edital"
+   a partir da Encontrar morria em "não sei o endereço do serviço de leitura".
+   >>> ESTA LINHA É O SEGUNDO CAMINHO DO PRÓPRIO CONTRATO, e não um atalho: o motor foi escrito
+       esperando encontrar `SB_URL` no global. Nenhum endereço novo é escrito aqui — uma segunda
+       cópia da URL do banco é a doença que aquele arquivo existe pra evitar.
+   >>> E A CAUSA DE RAIZ FOI CONSERTADA NO MOTOR, na mesma fatia: o primeiro caminho apontava
+       para `LIMEDTEC_CLIENTE.supabase.url`, e a chave do `cliente.config.js` sempre se chamou
+       `banco`. Um caminho de configuração que nomeia uma chave inexistente não falha — ele cai
+       calado pro próximo `||`, e a tela seguinte que esquecer esta linha herda o mesmo defeito. */
+window.SB_URL = SB_URL;
 const COLS  = 'produto,principio_ativo,und,marca,estoque,codigo,global_venda1,venda_unit_calculada';
 
 async function carregarEstoque(){

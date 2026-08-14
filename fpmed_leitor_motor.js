@@ -41,9 +41,23 @@
   'use strict';
 
   /* A URL SAI DA CONFIG, e não é escrita aqui: uma segunda cópia do endereço do banco é a
-     mesma doença que este arquivo inteiro existe pra evitar. */
+     mesma doença que este arquivo inteiro existe pra evitar.
+
+     ══ `banco`, E NÃO `supabase` — O CAMINHO PRINCIPAL NUNCA CASOU (conserto de 14/08, A14) ══
+     Este arquivo nasceu procurando `LIMEDTEC_CLIENTE.supabase.url`, e a chave do
+     `cliente.config.js` sempre se chamou `banco`:
+         banco: { url: '…', anonKey: '…' }
+     >>> E O DEFEITO NÃO GRITOU, QUE É O PIOR JEITO DE ERRAR: um caminho de configuração que
+         nomeia uma chave inexistente não estoura — ele cai calado pro próximo `||`. Então o
+         motor passou a depender do `window.SB_URL`, que só existe na tela que se lembrar de
+         escrever a linha. Duas telas esqueceram (Negócios e Encontrar), e nas duas a conversa
+         com o edital morria em "não sei o endereço" — um sintoma que não aponta pra cá.
+     O `supabase.url` FICA na lista, atrás do certo: se algum cliente já tiver a config no
+     formato antigo, tirá-lo quebraria a instalação dele pra consertar um nome. */
   function urlDaEdge() {
-    var base = (glob.LIMEDTEC_CLIENTE && glob.LIMEDTEC_CLIENTE.supabase && glob.LIMEDTEC_CLIENTE.supabase.url)
+    var c = glob.LIMEDTEC_CLIENTE || {};
+    var base = (c.banco && c.banco.url)
+      || (c.supabase && c.supabase.url)
       || glob.SB_URL || (glob.gmAuth && glob.gmAuth.SB) || '';
     if (!base) return null;
     return String(base).replace(/\/$/, '') + '/functions/v1/ler-edital';

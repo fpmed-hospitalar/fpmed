@@ -25,9 +25,25 @@ const fs = require('fs');
 const APPLY = process.argv.includes('--apply');
 const CONFERIR = process.argv.includes('--conferir');
 
-// ── AS 15 TAREFAS-MODELO (spec 6.2 do LICITACOES_SPEC.md) ──────────────────────────────────
+// ── O KIT DE TAREFAS-MODELO (spec 6.2 do LICITACOES_SPEC.md) ───────────────────────────────
 // Uma secao por fase. Elas nascem com o negocio: checklist que o operador precisa CRIAR e
 // checklist que ele nao usa.
+//
+// >>> SAO QUATORZE, E NAO QUINZE (alinhado em 14/08, fatia A14). "Enviar proposta atualizada"
+//     saiu do kit em 11/08 porque virou BOTAO de verdade na fase Habilitacao (anexar a versao
+//     ajustada). Checkbox que duplica acao real e pior que ruido: ele pode estar MARCADO
+//     enquanto a proposta ajustada nao foi anexada, e ai o checklist afirma o que nao aconteceu.
+//     A tela ja tinha tirado (fpmed_negocios.html); este semeador tinha ficado pra tras, e duas
+//     listas com o mesmo nome e conteudo diferente e como um negocio nasce diferente conforme
+//     quem o criou.
+// >>> REGRA GERAL, pra valer nas proximas: todo item do checklist que virar funcao real SAI da
+//     lista fixa. O checklist e pro que so existe como intencao.
+// >>> E OS 2.555 REGISTROS ANTIGOS NAO SAO TOCADOS. Eles seguem com os 15 itens no `tarefas`
+//     (JSONB), inclusive este. Apagar item de checklist de negocio ja fechado seria reescrever
+//     o que a pessoa marcou — e o valor de um checklist e ser o registro do que ela decidiu.
+//     A lista nova vale pra quem NASCER daqui pra frente.
+// >>> NAO ESCREVA O NUMERO A MAO em texto nenhum: quem conta e o `TAREFAS_MODELO.length`. Foi
+//     assim que o "15" sobreviveu tres dias a uma lista de 14.
 const TAREFAS_MODELO = [
   ['oportunidade',  'Analisar o edital'],
   ['oportunidade',  'Providenciar documentação de habilitação/qualificação'],
@@ -42,7 +58,7 @@ const TAREFAS_MODELO = [
   ['classificacao', 'Analisar documentação dos concorrentes'],
   ['classificacao', 'Analisar produto dos concorrentes'],
   ['classificacao', 'Enviar recurso / contrarrazão'],
-  ['classificacao', 'Enviar proposta atualizada'],
+  /* aqui vivia 'Enviar proposta atualizada' — virou botao real em 11/08. Ver o cabecalho. */
   ['contrato',      'Assinar contrato'],
 ];
 const novasTarefas = () => TAREFAS_MODELO.map(([secao, texto]) => ({ secao, texto, feita: false }));
@@ -190,8 +206,8 @@ async function conferir() {
       modalidade: x.modalidade, numero: x.numero, objeto: x.objeto,
       abertura: x.abertura ? `${x.abertura}T${x.hora || '09:00'}:00-03:00` : null,
       valor_ganho: x.valor_ganho,
-      // tarefas SO no que esta em jogo: 15 itens x 2.555 seria 38 mil objetos pra responder
-      // uma pergunta que o card arquivado nem faz.
+      // tarefas SO no que esta em jogo: o kit inteiro x 2.555 seria dezenas de milhares de
+      // objetos pra responder uma pergunta que o card arquivado nem faz.
       tarefas: arq ? null : novasTarefas(),
       origem: 'calendario_2025',
     };
@@ -213,7 +229,9 @@ async function conferir() {
   FASES.forEach(f => console.log(`     ${f.padEnd(14)} ${porFase[f] || 0}`));
   console.log(`  arquivados (historico)  ${regs.length - ativos.length}`);
   console.log(`     dos quais em 'contrato' (ganhos) ... ${porFaseArq.contrato || 0}`);
-  console.log(`com tarefas materializadas ${regs.filter(r => r.tarefas).length} × 15 itens`);
+  // o numero vem da lista, e nao da memoria de quem escreveu a linha — foi assim que o "15"
+  // sobreviveu tres dias a uma lista que ja tinha 14.
+  console.log(`com tarefas materializadas ${regs.filter(r => r.tarefas).length} × ${TAREFAS_MODELO.length} itens`);
   console.log('\nativos:');
   ativos.slice(0, 15).forEach(r => console.log(`  [${r.estagio.padEnd(13)}] ${String(r.abertura || '').slice(0, 16).replace('T', ' ')} · ${(r.portal || '—').slice(0, 14).padEnd(14)} · ${(r.titulo || '').slice(0, 52)}`));
 
