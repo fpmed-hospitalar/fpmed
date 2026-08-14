@@ -82,8 +82,9 @@ ok(n + '. carregar NAO monta nada sozinho (sem [data-limedtec-menu], nada aconte
 // ── 2. o modulo aceso ────────────────────────────────────────────────────────
 const CASOS = [
   ['/fpmed_licitacoes.html', '', 'buscar', 'a tela Encontrar acende Buscar'],
-  ['/fpmed_licitacoes.html', '#radar', 'radar', 'o mesmo arquivo com #radar acende Radar'],
-  ['/fpmed_licitacoes.html', '#jornais', 'jornais', 'e com #jornais acende Meus Jornais'],
+  // o caso do '#radar' saiu em 14/08 com o proprio Radar (fatia A1). O que ele provava — que o
+  // MESMO arquivo acende modulos diferentes conforme o `#` — continua provado pelos dois abaixo.
+  ['/fpmed_licitacoes.html', '#jornais', 'jornais', 'o mesmo arquivo com #jornais acende Meus Jornais'],
   ['/fpmed_licitacoes.html', '#lk-desertas', 'desertas', 'e com #lk-desertas acende Desertas'],
   ['/fpmed_negocios.html', '', 'negocios', 'Negocios'],
   ['/fpmed_edital_ia.html', '', 'leitor', 'Leitor de edital'],

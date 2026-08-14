@@ -77,7 +77,6 @@
      e é isso que faz o menu parecer desenhado por uma pessoa, não montado. */
   var ICONE = {
     buscar: '<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>',
-    radar: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1" fill="currentColor"/>',
     desertas: '<path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/>',
     jornais: '<path d="M4 5h13v14H4z"/><path d="M17 8h3v11H5"/><path d="M7 9h7M7 12.5h7M7 16h4"/>',
     negocios: '<rect x="4" y="4" width="4.5" height="16" rx="1"/><rect x="10" y="4" width="4.5" height="11" rx="1"/><rect x="16" y="4" width="4.5" height="7" rx="1"/>',
@@ -94,8 +93,8 @@
 
   /* O MAPA. Cada módulo diz para onde vai e como se reconhece que já se está nele.
 
-     >>> RADAR, DESERTAS E JORNAIS NÃO SÃO TELAS. Conferido no código: são seções
-     DENTRO do Encontrar (`id="radar"`, `id="jornais"`, e os atalhos `lk-desertas`
+     >>> DESERTAS E JORNAIS NÃO SÃO TELAS. Conferido no código: são seções
+     DENTRO do Encontrar (`id="jornais"` e os atalhos `lk-desertas`
      e `lk-jornais`). Tratá-las como telas separadas quebraria o clique dentro da
      própria tela e deixaria o menu marcando o módulo errado. Por isso `ancora`:
      estando no Encontrar, rola até a seção; vindo de fora, abre o Encontrar já
@@ -103,7 +102,10 @@
   var MODULOS = [
     { g: 'Oportunidades' },
     { id: 'buscar', rotulo: 'Buscar', href: 'fpmed_licitacoes.html', tela: 'fpmed_licitacoes' },
-    { id: 'radar', rotulo: 'Radar', href: 'fpmed_licitacoes.html#radar', ancora: 'radar' },
+    /* O RADAR SAIU EM 14/08 (fatia A1) — decisão do dono: desnecessário. Ele era a 2ª entrada
+       daqui e a única do menu que fazia uma pergunta geográfica ("quais cidades num raio").
+       >>> A ENTRADA SAI JUNTO COM A TELA, no mesmo commit, e isso não é zelo: item de menu que
+           sobrevive ao destino vira exatamente o botão morto que a urgência de 13/08 caçou. */
     { id: 'desertas', rotulo: 'Desertas', href: 'fpmed_licitacoes.html#lk-desertas', ancora: 'lk-desertas' },
     { id: 'jornais', rotulo: 'Meus Jornais', href: 'fpmed_licitacoes.html#jornais', ancora: 'jornais' },
 

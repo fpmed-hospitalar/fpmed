@@ -137,15 +137,17 @@ function clicaNoMenu(hash, jaDesertas) {
   return { achou, chamou, rolou, soDesertas: win._soDesertas };
 }
 
-const cRadar = clicaNoMenu('#radar');
-ok(n + '. *** CLICAR "Radar" abre o Radar *** (era isto que nao acontecia)',
-  cRadar.achou === true && cRadar.chamou.join() === 'abrirRadar', cRadar); n++;
-ok(n + '. ...e ROLA ate ele — depois de abrir, porque `display:none` nao tem pra onde rolar',
-  cRadar.rolou.join() === 'radar', cRadar.rolou); n++;
-
+/* O "Radar" era o 1o caso desta secao — foi ele que originou a suite. Saiu em 14/08 (fatia A1,
+   decisao do dono: desnecessario), e os asserts dele sairam JUNTO, no mesmo commit.
+   >>> ASSERT ORFAO NAO E ZELO, E RUIDO: ele fica vermelho pra sempre por uma remocao
+       intencional, e suite que mora vermelha para de ser lida. A promessa que o Radar
+       exercitava continua exercitada pelos Jornais e pelas Desertas, e o assert final da
+       secao 4 cobra CADA ancora que o menu tiver — entao a cobertura nao encolheu com ele. */
 const cJor = clicaNoMenu('#jornais');
-ok(n + '. CLICAR "Meus Jornais" abre os jornais',
+ok(n + '. *** CLICAR "Meus Jornais" abre os jornais *** (era isto que nao acontecia)',
   cJor.achou === true && cJor.chamou.join() === 'abrirJornais', cJor); n++;
+ok(n + '. ...e ROLA ate ele — depois de abrir, porque `display:none` nao tem pra onde rolar',
+  cJor.rolou.join() === 'jornais', cJor.rolou); n++;
 
 const cDes = clicaNoMenu('#lk-desertas', false);
 ok(n + '. CLICAR "Desertas" LIGA o filtro de desertas',
@@ -180,10 +182,10 @@ ok(n + '. *** nenhuma ancora do Encontrar e botao morto (clicada uma a uma) ***'
    `#radar` e `#jornais` sao `display:none` ate ganharem `.open`. Se um dia alguem
    "simplificar" isso pra display:block, o painel passa a nascer aberto na tela —
    e o defeito vira o oposto, igualmente errado. */
-ok(n + '. o painel do Radar nasce fechado e so abre com `.open` (por isso a ancora nativa nao bastava)',
-  /#orgaos,#radar\{display:none/.test(L) && /#orgaos\.open,#radar\.open\{display:block\}/.test(L)); n++;
-ok(n + '. idem o painel dos Jornais',
+ok(n + '. o painel dos Jornais nasce fechado e so abre com `.open` (por isso a ancora nativa nao bastava)',
   /#jornais\{display:none/.test(L) && /#jornais\.open\{display:block\}/.test(L)); n++;
+ok(n + '. idem o painel de Orgaos',
+  /#orgaos\{display:none/.test(L) && /#orgaos\.open\{display:block\}/.test(L)); n++;
 
 // ══════════ 6. O MOTIVO FICA ESCRITO ══════════
 // Conserto sem o porque escrito volta na proxima refatoracao.

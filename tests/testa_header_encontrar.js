@@ -216,7 +216,12 @@ ok(n + '. os indicadores so sao lidos DEPOIS da sessao (antes dela, 401 em tudo)
    >>> O proprio pedido previa isto ("se dispara uma ACAO nesta tela, NAO remova —
        so arrume o estilo"), e este assert e o que impede a leitura apressada de
        voltar numa proxima passagem. */
-for (const fn of ['abrirOrgaos', 'soDesertas', 'abrirRadar', 'abrirJornais', 'porNumero']) {
+/* ERAM SEIS, VIRARAM CINCO EM 14/08: o "Radar" saiu por decisao do dono (fatia A1), e o atalho
+   dele saiu junto com a tela no MESMO commit. Isso nao contradiz o assert — CONFIRMA o que ele
+   guarda: o atalho existe enquanto existir a acao que ele dispara. Some a acao, some o atalho.
+   O que continua proibido e o inverso: apagar o atalho DEIXANDO a acao, que e o que
+   transformaria o item do menu em promessa sem destino. */
+for (const fn of ['abrirOrgaos', 'soDesertas', 'abrirJornais', 'porNumero']) {
   ok(n + '. o atalho "' + fn + '" continua na tela — ele dispara ACAO aqui, nao e link repetido',
     new RegExp('<a onclick="' + fn + '\\(\\)').test(LIMPO)
     && new RegExp('function ' + fn + '\\(').test(LIMPO)); n++;
