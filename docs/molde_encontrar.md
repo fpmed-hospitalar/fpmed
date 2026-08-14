@@ -1028,13 +1028,8 @@ Suite: `tests/testa_painel_resultados.js` (+6 asserts, 27 no total).
 Estas nao sao erro de nenhum dos dois lados: sao escolhas que a tela ja fez, com motivo
 registrado. Ficam aqui para o dono decidir, e nao para eu decidir sozinho.
 
-1. **A linha selecionada e MUITO mais azul que a do molde.** Molde: fundo `#F8FBFE` (quase
-   branco) **e a barra de urgencia da esquerda vira `#2CA9E0`**. Nosso: fundo `--azul-50`
-   (`#eaf6fc`) e a barra CONTINUA na cor da urgencia.
-   > Trocar so o fundo pelo do molde deixaria a selecao quase invisivel, porque nao temos a barra
-   > azul que compensa. Sao duas metades do mesmo desenho, e importar meia mecanica e como se
-   > troca acabamento por defeito. **Decisao do dono: manter os dois azuis nossos, ou adotar o
-   > par completo do molde?**
+1. ~~**A linha selecionada e MUITO mais azul que a do molde.**~~ **DECIDIDA PELO DONO em 14/08 —
+   virou DIVERGENCIA DECLARADA. Ver a secao propria logo abaixo.**
 2. **Cinco indicadores, e nao os quatro do molde** — e com outro conteudo. Os do molde sao
    agregados da plataforma ("945.699 na base"); os nossos sao medidos da BUSCA em curso. Com
    3.201 licitacoes no indice, "945.699" nao teria de onde sair.
@@ -1051,3 +1046,97 @@ registrado. Ficam aqui para o dono decidir, e nao para eu decidir sozinho.
 7. **O trilho do molde e `#EDF1F6` e o divisor dele e `#EEF1F6`** — duas tintas a UMA unidade de
    distancia. O tema tem uma so (`--borda-divisor`). Criar um token para um degrau que o olho
    nao separa seria aumentar o vocabulario sem aumentar o que ele diz.
+
+---
+
+# DIVERGENCIA DECLARADA n. 1 — A LINHA SELECIONADA (decidida pelo dono em 14/08, fatia A17)
+
+> **O molde manda, e esta e a excecao registrada.** Enquanto ela estiver escrita aqui, a tela
+> NAO deve ser "corrigida" para o molde: o que parece esquecimento e decisao.
+
+## O que diverge
+
+| | molde oficial | FPMED (o que fica) |
+|---|---|---|
+| fundo da linha selecionada | `#F8FBFE` — quase branco | `--azul-50` (`#eaf6fc`) |
+| barra da esquerda, selecionada | vira `#2CA9E0` (azul) | **continua na cor do PRAZO** |
+
+## A razao do dono, nas palavras dele
+
+> *"Fica o NOSSO. A barrinha carrega INFORMACAO (urgencia); no molde ela e decoracao.
+> **Informacao vence decoracao**, e selecao invisivel e pior que divergencia."*
+
+Isso resolve as duas metades de uma vez, e e por isso que a divergencia e de PAR e nao de cor:
+
+* No molde, o fundo pode ser quase branco **porque a barra azul faz o trabalho de dizer
+  "selecionado"**. Sao duas metades do mesmo mecanismo.
+* Aqui a barra ja tem emprego: ela e o prazo (hoje · amanha · depois · encerrada). Pinta-la de
+  azul ao selecionar **apagaria a urgencia justamente nas linhas que a pessoa escolheu** — que
+  sao as que ela vai ler com atencao e sobre as quais vai decidir se monta proposta.
+* Sobrando so o fundo para anunciar a selecao, ele precisa ser mais azul que o do molde. Importar
+  meia mecanica seria trocar acabamento por defeito.
+
+## A medicao (fatia A17) — `node tools/mede_selecao.js`
+
+**Os fundos.** Dois fundos claros nao alcancam os 3:1 do 1.4.11 sem virar azul-marinho, e uma
+lista listrada de cor forte seria pior de ler. Entao a leitura honesta e dupla: a razao WCAG
+(o numero que a regra pede) **e** o degrau de luminancia (o numero que diz se o olho separa).
+
+| par | WCAG | degrau de luminancia |
+|---|---|---|
+| selecionada x normal (branco) | 1,10:1 | **9,57 pts** |
+| selecionada x hover | 1,05:1 | 4,80 pts |
+| hover x normal *(referencia)* | 1,05:1 | 4,76 pts |
+
+**A selecao e 2,0x mais marcada que o hover** — "marcado" e "o mouse passou aqui" nao se
+confundem, que era o risco real de um azul timido.
+
+E vale dizer o que anuncia a selecao de verdade: **a caixa NATIVA marcada** (`accent-color:
+--azul-600`, 4,58:1 sobre o fundo selecionado) — ela traz teclado, leitor de tela e o contraste
+do sistema de graca. O fundo azul e **reforco**, nao a unica pista de estado.
+
+**O texto por cima do fundo selecionado (AA = 4,5:1).** Aqui a fatia achou um defeito de verdade:
+
+| tom | sobre o branco | sobre a selecao | |
+|---|---|---|---|
+| `--cinza-500` *(o que estava la)* | 4,55:1 | **4,14:1** | **REPROVAVA** |
+| `--cinza-600` *(o que ficou)* | 6,13:1 | **5,57:1** | passa |
+| `--cinza-700` | 8,86:1 | 8,05:1 | passa |
+| `--cinza-800` | 18,29:1 | 16,62:1 | passa |
+| `--azul-700` | 7,18:1 | 6,53:1 | passa |
+
+> **O defeito era CONDICIONAL, que e o pior jeito de um contraste errar.** O `--cinza-500` e o
+> cinza mais claro que ainda passa em AA — e passa **por 0,05, sobre o branco**. O fundo da linha
+> selecionada nao e branco. A linha nascia legal e ficava ilegal no instante em que alguem a
+> marcava. Auditoria de tela parada nunca ve isso, porque tela parada nao tem linha selecionada;
+> quem usa ve exatamente nas linhas que escolheu.
+> Atingia `.lic .sub` (a linha de apoio) e `.lic .dado small` (o rotulo de 10px em caixa alta, o
+> texto menor da linha inteira — o mais fragil, e estava no tom mais claro).
+> **A fuga e a de sempre nesta obra: sobe UM degrau da propria rampa.** O `--cinza-600` e, alias,
+> o token que o tema ja nomeia "RÓTULO / meta".
+
+**A barra de prazo contra o fundo novo.** O criterio precisa ser o certo, senao a medicao mente
+nas duas direcoes: o 1.4.11 pede 3:1 para objeto grafico *necessario para entender o conteudo*, e
+abre excecao para o que tambem esta **em texto**. Esta: toda linha traz a pilula "abre hoje" /
+"abre amanha" / "abre em N dias" / "sessao ja passou".
+
+| barra | sobre a selecao | sobre o branco | |
+|---|---|---|---|
+| hoje (perigo) `#E4572E` | 3,35:1 | 3,68:1 | passa 3:1 |
+| amanha (atencao) `#F0A202` | 1,93:1 | 2,13:1 | fraca nos DOIS fundos |
+| depois (normal) `#E6EBF1` | 1,09:1 | 1,20:1 | fraca nos DOIS fundos |
+| encerrada `#D6DEE9` | 1,23:1 | 1,36:1 | fraca nos DOIS fundos |
+
+**Nenhuma barra passa a reprovar POR CAUSA da selecao** — as tres fracas ja eram fracas sobre o
+branco. Isso e assunto de outra fatia, e nao desta; chamar de defeito da selecao seria culpar a
+mudanca errada. A cobertura de texto que sustenta a excecao foi medida junto, e passa nas quatro:
+hoje 5,92:1 · amanha 5,51:1 · depois 5,66:1 · encerrada 11,45:1.
+
+## O que trava isto
+
+`tests/testa_selecao_linha.js` — 21 asserts. Ele cobre o estado selecionado (fundo, hover que nao
+apaga a selecao, barra que continua sendo prazo), **le os tons de texto DAS REGRAS `.lic` da
+tela** em vez de uma lista escrita a mao (lista a mao envelhece calada no dia em que alguem
+acrescenta um `color:` novo na linha), e exige que esta divergencia continue declarada aqui —
+divergencia sem registro vira, dois meses depois, "alguem esqueceu de copiar o molde", e o
+proximo a passar por ali conserta pro molde, apagando uma decisao do dono sem saber que existiu.

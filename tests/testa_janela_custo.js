@@ -82,14 +82,17 @@ ok(n + '. (controle) a janela realmente PINTA — e pinta so por token',
   tokensUsados.length >= 10, tokensUsados.length); n++;
 /* Token que nao existe no tema nao estoura: o navegador ignora a declaracao e a peca sai
    TRANSPARENTE ou sem espaco. Um erro de digitacao num token vira um dialogo invisivel. */
-const orfaos = tokensUsados.filter(t => !new RegExp('^\\s*' + t + '\\s*:', 'm').test(TEMA));
+/* A ANCORA NAO PODE SER `^\s*`: o tema declara PARES na mesma linha (`--sinal-perigo-tinta:
+   #B42318;   --sinal-perigo-fundo: #FEF0EF;`), e um leitor ancorado no comeco da linha nao ve o
+   segundo — acusaria de orfao um token que existe. Achado ao escrever a A17. */
+const orfaos = tokensUsados.filter(t => !new RegExp('(?:^|;)\\s*' + t + '\\s*:', 'm').test(TEMA));
 ok(n + '. *** todos os tokens usados EXISTEM no fpmed_tema.css (token orfao = peca invisivel) ***',
   orfaos.length === 0, orfaos); n++;
 
 // ══════════════ 3. O CONTRASTE DO DESTAQUE, MEDIDO ══════════════
 /* O valor e a informacao pela qual a janela existe. Ele sai em --azul-800 sobre --azul-50, e um
    par novo de cor sobre cor exige medicao — a rampa foi construida pra fundo branco. */
-const tk = t => (TEMA.match(new RegExp('^\\s*--' + t + '\\s*:\\s*([^;]+);', 'm')) || [])[1].trim();
+const tk = t => (TEMA.match(new RegExp('(?:^|;)\\s*--' + t + '\\s*:\\s*([^;]+);', 'm')) || [])[1].trim();
 const lum = hex => {
   const h = hex.replace('#', '');
   const c = [0, 2, 4].map(i => {

@@ -809,9 +809,19 @@ select[disabled],input[disabled],textarea[disabled]{
   cursor:pointer;width:100%}
 .lic .titulo:hover{color:var(--azul-700);text-decoration:underline}
 .lic .titulo:focus-visible{outline:none;box-shadow:var(--foco);border-radius:var(--raio-botao)}
-/* A linha de apoio: quando é a sessão, e que TIPO de certame é. */
+/* A linha de apoio: quando é a sessão, e que TIPO de certame é.
+   ══ SUBIU DE --cinza-500 PARA --cinza-600 NA FATIA A17, E O MOTIVO É A LINHA SELECIONADA ══════
+   O --cinza-500 é o cinza mais claro que ainda passa em AA — 4,55:1, e passa POR 0,05 SOBRE O
+   BRANCO. O fundo da linha selecionada não é branco: é o --azul-50. Medido ali, o mesmo texto
+   cai para 4,14:1 e REPROVA.
+   >>> O DEFEITO ERA CONDICIONAL, QUE É O PIOR JEITO DE UM CONTRASTE ERRAR: a linha nascia legal
+       e ficava ilegal no instante em que alguém a marcava. Quem audita a tela parada nunca vê,
+       porque a tela parada não tem linha selecionada — e quem usa vê exatamente nas linhas que
+       escolheu, que são as que vai ler com atenção.
+   A fuga é a de sempre nesta obra: sobe UM degrau da própria rampa. O --cinza-600 dá 5,57:1
+   sobre a seleção e 6,17:1 sobre o branco, e o tema já o nomeia "RÓTULO / meta". */
 .lic .sub{display:flex;align-items:center;gap:var(--esp-2);flex-wrap:wrap;
-  margin-top:var(--esp-1);font-size:var(--txt-1);color:var(--cinza-500)}
+  margin-top:var(--esp-1);font-size:var(--txt-1);color:var(--cinza-600)}
 .lic .sub .quando{color:var(--cinza-700);font-weight:var(--peso-semi)}
 /* O objeto alinha sob o título (56px = selo 44 + gap 12), como na amostra: sem isso ele volta
    pra margem do cartão e o bloco de texto "escapa" do cabeçalho. */
@@ -826,8 +836,12 @@ select[disabled],input[disabled],textarea[disabled]{
 /* ── O RODAPÉ: rótulo pequeno e fraco em cima, valor forte embaixo (D9) ────────────────────── */
 .lic .dados{display:flex;align-items:flex-end;gap:var(--esp-8);flex-wrap:wrap;
   margin:var(--esp-4) 0 0 56px;padding-top:var(--esp-4);border-top:1px solid var(--cinza-100)}
+/* O rótulo também subiu para --cinza-600 na A17, pelo mesmo motivo do `.sub` — e aqui havia um
+   agravante: ele é 10px em CAIXA ALTA com espaçamento, o texto menor da linha inteira. Era o
+   candidato mais frágil a perder legibilidade sobre a seleção, e era o que estava no tom mais
+   claro. O --cinza-600 é, aliás, o token que o tema já chama de "RÓTULO / meta". */
 .lic .dado small{display:block;font-size:var(--txt-0);font-weight:var(--peso-forte);
-  letter-spacing:.08em;text-transform:uppercase;color:var(--cinza-500);margin-bottom:2px}
+  letter-spacing:.08em;text-transform:uppercase;color:var(--cinza-600);margin-bottom:2px}
 .lic .dado span{font-size:var(--txt-2);font-weight:var(--peso-semi);color:var(--cinza-800);
   font-variant-numeric:tabular-nums}
 
