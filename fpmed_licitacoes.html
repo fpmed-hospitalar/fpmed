@@ -27,6 +27,10 @@
 <script src="limedtec-licenca.js"></script>
 <script src="gm-auth.js?v=sessao-06ago"></script>
 <script src="fpmed_teto_cmed.js"></script>
+<!-- A porta interna do Leitor de edital (fatia A2). Ela entra aqui no MESMO commit em que o
+     detalhe do pregão passou a chamá-la — a lição já paga duas vezes nesta obra: tela publicada
+     dependendo de script que não foi declarado abre quebrada offline, e com rede ninguém vê. -->
+<script src="fpmed_leitor_motor.js"></script>
 <!-- O MOTOR DO ALARME DE COLETA. Ele já era lido pelo sino e pelo e-mail do dono; entrou aqui em
      13/08 pro SELO DA BASE do header. Uma regra só de "isto é alarme?", três canais dizendo a
      mesma coisa sobre o mesmo banco. -->
@@ -2679,6 +2683,7 @@ async function abrirDetalhe(i){
      tinha aberto o cruzamento nesta sessão — e "—" é indistinguível de "não tem teto". */
   carregarCMED().then(() => { if(DET && DET.i === i) pintaDetalhe(); });
   carregarFunil().then(() => { if(DET && DET.i === i) pintaDetalhe(); });
+  carregarEdital(l).then(() => { if(DET && DET.i === i) pintaDetalhe(); });
   try{
     /* MESMO CAMINHO DO "Cruzar com nosso estoque": se a pessoa já cruzou este edital, o cache
        responde na hora e o detalhe abre instantâneo. Se não cruzou, cruzar aqui é o que faz a
@@ -2735,15 +2740,33 @@ function mandarDetalheProFunil(){
 async function conversarComEdital(){
   const cx = document.getElementById('det-conversa');
   if(!cx || !DET) return;
-  if(!DET.editalTexto){
+  const ed = DET.edital;
+  /* OS TRÊS ESTADOS DE "NÃO DÁ" DIZEM COISAS DIFERENTES, porque as ações são diferentes: numa
+     vale mandar coletar, na outra vale anexar à mão, na terceira precisa de leitura por imagem.
+     Um "não foi possível" genérico faria as três parecerem a mesma falha nossa. */
+  if(!ed){
     cx.innerHTML = '<div class="aviso" style="text-align:left;padding:12px 14px"><span class="hint">'
-      + 'Ainda não tenho o texto do edital deste pregão. O abastecimento automático a partir do '
-      + 'PNCP é a próxima etapa; até lá, o edital pode ser anexado ao negócio no funil.</span></div>';
+      + 'Ainda não busquei o edital deste pregão no PNCP. A coleta é sob demanda — ela roda para '
+      + 'as licitações que entram nos seus negócios.</span></div>';
     return;
   }
-  cx.innerHTML = '<div class="aviso">Lendo o edital…</div>';
+  if(ed.semArquivo){
+    cx.innerHTML = '<div class="aviso" style="text-align:left;padding:12px 14px"><span class="hint">'
+      + '<b>Edital não publicado no PNCP.</b> O órgão não anexou o arquivo — o PNCP respondeu que '
+      + 'não há documento para esta licitação. Dá para anexar o edital à mão no negócio, dentro do funil.'
+      + '</span></div>';
+    return;
+  }
+  if(ed.semControle || ed.semTexto){
+    cx.innerHTML = '<div class="aviso" style="text-align:left;padding:12px 14px"><span class="hint">'
+      + (ed.motivo ? 'O edital foi baixado, mas não deu para extrair o texto: ' + esc(ed.motivo)
+                   : 'Encontrei o arquivo do edital, mas ainda sem texto extraído.')
+      + '</span></div>';
+    return;
+  }
+  cx.innerHTML = '<div class="aviso">Lendo o edital ('+ed.paginas+' páginas)…</div>';
   try{
-    const r = await LeitorEdital.perguntar({ texto: DET.editalTexto, tarefa: 'resumo' });
+    const r = await LeitorEdital.perguntar({ texto: ed.texto, tarefa: 'resumo', paginas: ed.paginas });
     cx.innerHTML = '<div class="aviso" style="text-align:left;padding:12px 14px">'+esc(JSON.stringify(r).slice(0,600))+'</div>';
   }catch(e){
     cx.innerHTML = '<div class="aviso err" style="text-align:left;padding:12px 14px">'
@@ -2755,6 +2778,45 @@ async function conversarComEdital(){
 }
 
 function detBusca(v){ if(DET){ DET.busca = v; pintaDetalhe(); } }
+
+/* ══ O EDITAL DESTA LICITAÇÃO (fatia A6) ══════════════════════════════════════════════════════
+   Lê a `licitacao_arquivos`, que o `tools/coleta_editais.js` abastece. São TRÊS estados, e a
+   tela precisa distinguir os três — dois deles seriam confundidos se ela só perguntasse "tem
+   texto?":
+     · `null` ................ ainda não coletei esta licitação (posso coletar)
+     · `{semArquivo:true}` ... o PNCP RESPONDEU que não publicou edital (não adianta insistir)
+     · `{texto}` ............. tenho o texto e dá pra conversar
+   >>> "AINDA NÃO COLETEI" E "O PNCP NÃO PUBLICOU" TÊM A MESMA CARA NA TELA se a gente só olhar
+       a ausência de texto — e as ações são opostas: numa vale ir buscar, na outra vale anexar
+       à mão. Por isso o coletor grava uma LINHA para o caso sem arquivo, com o motivo escrito,
+       em vez de simplesmente não gravar nada.
+   >>> PEGA O MAIOR TEXTO, e não o primeiro: um pregão publica edital, termo de referência,
+       minutas e estudo técnico. Medido num caso real: o edital deu 71.105 chars e o termo de
+       referência 173.557 — é no TR que costuma estar a tabela de itens, que é o que alguém
+       pergunta. Pegar "o primeiro que tiver texto" entregaria o menor por acaso de ordenação. */
+async function carregarEdital(l){
+  const ctrl = String(l.numeroControlePNCP||'').trim();
+  if(!ctrl){ if(DET) DET.edital = { semControle:true }; return; }
+  try{
+    const r = await fetch(`${SB_URL}/rest/v1/licitacao_arquivos`
+      + `?select=titulo,tipo,url_pncp,texto_extraido,texto_chars,texto_paginas,extracao_erro`
+      + `&numero_controle=eq.${encodeURIComponent(ctrl)}`, {headers:SB_H});
+    if(!r.ok) return;                                     // continua "não sei"
+    const arqs = await r.json();
+    if(!DET) return;
+    if(!arqs.length){ DET.edital = null; return; }        // nunca coletado
+    const semArq = arqs.find(a => /não publicou arquivo/.test(a.extracao_erro||''));
+    if(semArq){ DET.edital = { semArquivo:true }; return; }
+    const comTexto = arqs.filter(a => (a.texto_chars||0) > 0)
+                         .sort((a,b) => (b.texto_chars||0) - (a.texto_chars||0));
+    DET.edital = comTexto.length
+      ? { texto: comTexto[0].texto_extraido, titulo: comTexto[0].titulo, tipo: comTexto[0].tipo,
+          paginas: comTexto[0].texto_paginas, chars: comTexto[0].texto_chars,
+          outros: arqs.length - 1 }
+      : { semTexto:true, motivo: (arqs.find(a=>a.extracao_erro)||{}).extracao_erro || null,
+          arquivos: arqs.length };
+  }catch(_){ /* rede: segue "não sei", e a tela não afirma nada */ }
+}
 
 /* O TETO CMED DE UM ITEM VEM DE `celTetoCMED`, QUE JÁ EXISTIA — eu tinha começado a escrever
    uma segunda função aqui, e ela teria sido uma segunda resposta pra "qual o teto legal deste
@@ -2867,6 +2929,14 @@ function pintaDetalhe(estado){
     +   ' <button class="btn sec mini" onclick="conversarComEdital()" '
     +     'title="usa inteligência artificial e consome crédito por uso">'
     +     'Conversar com o edital <span class="lm-selo-ia">IA</span></button>'
+    /* O ESTADO DO EDITAL FICA AO LADO DO BOTÃO, e não escondido dentro dele: quem vê "53
+       páginas" antes de clicar sabe que vai pagar por uma leitura longa; quem vê "não publicado
+       no PNCP" não clica à toa. O aviso que chega depois do clique chega depois do gasto. */
+    +   (DET.edital && DET.edital.texto
+          ? ' <span class="hint">edital de <b>'+DET.edital.paginas+'</b> páginas pronto para leitura</span>'
+          : DET.edital && DET.edital.semArquivo
+            ? ' <span class="hint">o PNCP não publicou o edital desta licitação</span>'
+            : DET.edital === undefined ? '' : ' <span class="hint">edital ainda não coletado</span>')
     + '</div>'
     + '<div id="det-conversa"></div>'
     + '<div class="dados" style="margin:0 0 14px">'
