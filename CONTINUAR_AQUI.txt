@@ -20,10 +20,46 @@
                      a acao primaria do cartao passou a ser "abrir o detalhe", e commitar a A3
                      sozinha deixaria esse botao morto por um commit — exatamente o defeito que
                      a urgencia de 13/08 cacou.
-  [ ] A5 ........... contrato com o B — **O B ESTA ESPERANDO ISTO**. E O PROXIMO.
-  [ ] A6 ........... abastecimento de editais (o "conversar com o edital" depende dele)
-  [ ] A7 ........... resultado por item
-  [ ] A8 ........... busca nacional em fases
+  [OK] A5 .......... CONTRATO COM O B (commit e00ca53). docs/contrato_itens_editais.md + o
+                     esquema ADITIVO que ele descreve (licitacao_itens, licitacao_arquivos, RLS
+                     ligada). Chave = `numero_controle` (3.201/3.201 preenchidos e distintos),
+                     e nao o `id`: a tela mostra licitacao de DUAS fontes, e a que vem ao vivo
+                     nao tem linha no indice. O B pode escrever contra isto hoje.
+  [OK] A6 .......... ABASTECIMENTO DE EDITAIS (commit 6c62c14). tools/coleta_editais.js, SO sob
+                     demanda. 4 editais/TR extraidos (69k a 173k chars) + 1 caso "sem arquivo".
+                     ACHADO: o PNCP responde 404 quando o orgao nao anexou nada — eu esperava
+                     lista vazia, e o caso mais comum do fallback honesto caia no balde de erro.
+  [OK] A7 .......... RESULTADO POR ITEM (commit 82fbb60). 195 itens de uma licitacao encerrada
+                     real, 192 com resultado, conferidos contra o PNCP campo a campo.
+                     ACHADO GRAVE: o upsert NAO ERA UPSERT — faltava `?on_conflict=`, e o meu
+                     assert da A6 ja afirmava "re-rodar reescreve" sem nunca ter sido executado.
+  [OK] A8 .......... BUSCA NACIONAL, fase 1. Ver o bloco proprio abaixo — a medicao mudou o
+                     desenho da fatia.
+
+>>> A MEDICAO DA A8 QUE MUDA O QUE VEM DEPOIS (14/08). Com o tsvector funcionando, busquei
+    "albumina" e deu ZERO. Nao era defeito: medido com ILIKE cru nas 3.201 licitacoes —
+      albumina 0 · soro 0 · dipirona 0 · seringa 4 · caneta 0
+    O `objeto` do PNCP e GENERICO ("aquisicao de material medico-hospitalar", 226 chars de
+    media). O nome do produto mora na descricao dos ITENS. Contraste medido: "caneta" aparece
+    0 vezes em 3.201 objetos e 5 vezes nos 195 itens de UMA licitacao.
+    >>> ENTAO COLETAR AS 27 UFs NAO RESOLVERIA SOZINHO: a busca por produto continuaria dando
+        zero, so que sobre uma base 4x maior — e zero numa base grande e mais convincente e mais
+        falso. O que faltava nao era ABRANGENCIA, era PROFUNDIDADE. A busca passou a olhar os
+        DOIS e a DIZER onde casou (objeto x itens sao oportunidades de tamanhos diferentes).
+    >>> CONSEQUENCIA PRA FILA: encher `licitacao_itens` vale mais que ampliar UF. Hoje ela tem
+        195 itens de 1 licitacao. Enquanto isso, buscar produto no indice responde quase sempre
+        zero — e a busca AO VIVO no PNCP continua sendo o caminho pra "quem compra albumina".
+
+>>> BLOQUEIO EXTERNO MEDIDO EM 14/08 (nao e defeito nosso):
+      /api/consulta/v1/contratacoes/publicacao -> TimeoutError em 30.022 ms
+      /api/pncp/v1/orgaos/.../itens            -> HTTP 200 em      179 ms
+    A API de CONSULTA do PNCP (a que alimenta a varredura diaria) esta fora; a de DETALHE
+    (itens, arquivos, resultados) responde normal. As 27 UFs estao configuradas e o mecanismo
+    tem backoff, circuit breaker e retomada por dia — falta a janela em que o PNCP responda.
+
+>>> O SELETOR DE PORTAIS TEM **UM** PORTAL, e isso e fato: v_portais = PNCP · 3.201 · 1.292
+    abertas. Confirma a medicao do item 12 do dono (a coluna `portal` e constante). Ele cresce
+    quando entrar a 1a fonte da fase 2, e nao antes.
 
   >>> REGRA NOVA (dono, 14/08): COMMIT SEMPRE POR CAMINHO (`git add <arquivo>`), NUNCA
       `git add .` — as duas janelas dividem o diretorio e o commit 0fd4978 levou 30 linhas da

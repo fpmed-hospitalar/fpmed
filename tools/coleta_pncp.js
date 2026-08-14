@@ -29,9 +29,24 @@ const fs = require('fs');
 const arg = n => { const i = process.argv.indexOf(n); return i > -1 ? process.argv[i + 1] : null; };
 const PREVIEW = process.argv.includes('--preview');
 
-// ── PARÂMETROS DA COLETA ───────────────────────────────────────────────────────────────────
-// GO é o mercado; as vizinhas entram porque órgão de divisa compra de quem está do lado.
-const UFS = (arg('--uf') || 'GO,DF,MG,MT,MS,TO,BA').split(',').map(s => s.trim()).filter(Boolean);
+/* ── PARÂMETROS DA COLETA ───────────────────────────────────────────────────────────────────
+   ══ AS 27 UFs ENTRARAM NA FATIA A8 (14/08/2026) ═══════════════════════════════════════════
+   Eram 7: GO (o mercado) e as vizinhas, porque órgão de divisa compra de quem está do lado. A
+   ordem da caixa é coleta NACIONAL, e a lista passou a ser o Brasil inteiro.
+   >>> A ORDEM DA LISTA NÃO É ALFABÉTICA, E ISSO É DESENHO: as 7 de sempre vêm PRIMEIRO. A
+       varredura marca UF por UF (`ufs_feitas`) e o dia só fecha quando todas terminam — então,
+       se a janela de execução acabar no meio, o que ficou pronto é o que mais importa. Ordem
+       alfabética faria uma coleta interrompida entregar Acre e Alagoas e deixar Goiás pra
+       amanhã.
+   >>> E ISTO NÃO É "BAIXAR O BRASIL INTEIRO" NO SENTIDO QUE A CAIXA PROÍBE. A proibição é
+       sobre EDITAIS (arquivos de 2 a 12 MB, um por licitação). Aqui é o CABEÇALHO da licitação
+       — objeto, órgão, datas, valor —, que é o índice de busca e é para isso que a API pública
+       do PNCP existe. Os editais continuam sob demanda. */
+const UFS = (arg('--uf') || [
+  'GO','DF','MG','MT','MS','TO','BA',                                    // o mercado e as vizinhas
+  'SP','RJ','PR','SC','RS','ES','PE','CE','PA','MA','PB','RN','AL',      // o resto, por volume
+  'PI','SE','AM','RO','AC','RR','AP',
+].join(',')).split(',').map(s => s.trim()).filter(Boolean);
 // 6 = pregão eletrônico · 8 = dispensa · 9 = inexigibilidade. São as que a FPMED disputa.
 const MODALIDADES = (arg('--mod') || '6,8,9').split(',').map(s => parseInt(s.trim())).filter(Boolean);
 /* TAM_PAGINA — MEDIDO DUAS VEZES, e as duas medições estão certas:
