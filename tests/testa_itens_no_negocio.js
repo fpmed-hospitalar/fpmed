@@ -133,13 +133,31 @@ API.poe([], {});
 ok('19. item sem resultado nenhum tambem cai no neutro, e nao no verde',
   /sem teto CMED/.test(API.tetoDoItem(ITEM('9', 5))));
 
-// Sem preco de referencia nao ha comparacao — e isso nao e "dentro do teto".
+/* ══ SEM PRECO DE REFERENCIA: NENHUM VEREDITO, MAS A REGUA APARECE (atualizado na fatia B14) ══
+   ATE 14/08 estes dois asserts cobravam a frase "nada a comparar", e ela estava CERTA sobre a
+   comparacao e inutil pra quem estava ali: sao 7.456 itens em 277 certames, e e justamente
+   neles que a pessoa mais precisa de uma regua, porque nao tem a do edital.
+   >>> O QUE A B14 MUDOU: o teto da CMED passa a aparecer, em NEUTRO, dito como o que ele e — "a
+       unica regua". O teto ja estava calculado (`avaliar` devolve `sem_preco` mas devolve o
+       `teto` junto, porque ele e atributo do REMEDIO e nao da comparacao).
+   >>> O QUE ESTES ASSERTS CONTINUAM PROTEGENDO, e agora com mais forca: que a tela NAO afirme
+       "cabe no teto" nem pinte de verde uma comparacao que nao foi feita. O que mudou foi o
+       silencio virar informacao; o veredito continua proibido. */
 API.poe([], { '1': { situacao: 'abaixo', teto: 5 } });
 const semRef = API.tetoDoItem(ITEM('1', null));
-ok('20. *** edital sem preco de referencia: nada a comparar, e nao "cabe" ***',
-  /nada a comparar/.test(semRef) && !/cabe no teto/.test(semRef), semRef);
-ok('21. ...e referencia ZERO tambem nao vira comparacao',
-  /nada a comparar/.test(API.tetoDoItem(ITEM('1', 0))));
+ok('20. *** edital sem preco de referencia: NENHUM veredito de "cabe", nem verde ***',
+  !/cabe no teto/.test(semRef) && !/class="cabe"/.test(semRef) && !/estoura/.test(semRef), semRef);
+ok('20b. ...mas o teto da CMED aparece, dito como a UNICA REGUA que sobrou',
+  /única régua/.test(semRef) && /R\$ 5,00/.test(semRef) && /neutro/.test(semRef), semRef);
+const refZero = API.tetoDoItem(ITEM('1', 0));
+ok('21. *** referencia ZERO cai no MESMO caminho de "sem referencia" ***',
+  refZero === semRef, refZero);
+/* E quando nem a CMED conhece o item, a tela diz AS DUAS ausencias — em vez de fingir que a
+   falta e uma so. Sem isto, "sem teto CMED" pareceria a unica coisa faltando. */
+API.poe([], { '1': { situacao: 'nao_encontrado', teto: null } });
+ok('21b. ...e sem referencia E sem CMED, a tela nomeia as duas ausencias',
+  /sem referência e sem teto/.test(API.tetoDoItem(ITEM('1', 0)))
+  && !/R\$ 0,00/.test(API.tetoDoItem(ITEM('1', 0))), API.tetoDoItem(ITEM('1', 0)));
 
 // ══════════════════════════════════════════════════════════════════════════════════════════
 // 3. A LINHA INTEIRA

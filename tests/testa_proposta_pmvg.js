@@ -62,9 +62,18 @@ ok('10. *** o anexo vai pro bucket que JA existe ***',
   /storage\/v1\/object\/documentos\//.test(N) && /O BUCKET E O `documentos`, QUE JA EXISTE/.test(D));
 ok('11. ...com o motivo (bucket novo = 2o conjunto de policies dizendo a mesma coisa)',
   /dois lugares pra errar\s*quem pode subir arquivo/.test(uc(D)));
+/* ══ ESTE ASSERT COBRAVA UMA FRASE, E PASSOU A COBRAR O COMPORTAMENTO (14/08, fatia B15) ══════
+   Ele exigia o texto "A VERSÃO NÃO VAI DAQUI" no HTML. A B15 juntou as tres copias do envio numa
+   so (`subirAnexo`) e reescreveu o comentario — a regra continuou identica e o assert reprovou a
+   palavra. Frase e proxy; o que importa e que NENHUM insert em `negocio_anexos` mande `versao`.
+   >>> Agora ele conta os inserts e confere os campos de cada um. Se alguem escrever `versao:` num
+       corpo de insert, reprova — inclusive num insert novo que ainda nao existe hoje. */
 ok('12. *** a VERSAO nao vai da tela: quem calcula e a trigger ***',
   /create trigger anexo_versao_t before insert on public\.negocio_anexos/.test(D)
-  && /A VERSÃO NÃO VAI DAQUI/.test(N));
+  && (() => {
+    const corpos = [...N.matchAll(/negocio_id: \w+, categoria[\s\S]{0,320}?\}\)/g)].map(m => m[0]);
+    return corpos.length >= 1 && corpos.every(c => !/\bversao\s*:/.test(c));
+  })());
 ok('13. ...com o motivo (duas abas mandariam "2" e uma sobrescreveria a outra)',
   /duas abas abertas mandariam "2" ao mesmo tempo e uma sobrescreveria a outra/.test(uc(N)));
 ok('14. *** as 7 categorias nascem de uma vez (a fundacao serve os dois pedidos) ***',

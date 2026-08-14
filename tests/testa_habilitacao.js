@@ -33,8 +33,20 @@ console.log('SUITE testa_habilitacao — rotulo, checklist e tarefas\n');
 
 // ══════════ 1. O ROTULO MUDOU, A CHAVE NAO ══════════
 ok('1. *** a fase se chama Habilitacao na tela ***', /\{ k:'classificacao', n:'Habilitação'/.test(N));
-ok('2. *** e a CHAVE continua `classificacao` (nada de migracao de dado) ***',
-  /k:'classificacao'/.test(N) && !/k:'habilitacao'/.test(N));
+/* ══ O ASSERT OLHAVA O ARQUIVO INTEIRO, E ISSO FICOU ERRADO EM 14/08 (fatia B15) ═════════════
+   Ele cobrava que a string `k:'habilitacao'` nao existisse em lugar NENHUM do fpmed_negocios —
+   um proxy barato pra "ninguem renomeou a chave da FASE". A B15 criou as gavetas de "Meus
+   arquivos" e uma delas e `{ k:'habilitacao', n:'Habilitacao' }`: uma GAVETA DE ARQUIVO, que
+   nao tem nada a ver com a fase do funil, e o assert reprovou.
+   >>> ENTAO ELE PASSOU A OLHAR ONDE A DECISAO MORA: o bloco `FASES`. E a mesma protecao, e
+       agora ela e verdadeira — se alguem trocar a chave da fase, reprova; se alguem criar uma
+       gaveta, uma categoria ou um filtro chamado "habilitacao", nao reprova, porque nenhum
+       desses e a chave gravada em 2.555 linhas. Proxy que reprova o certo ensina a desligar o
+       teste. */
+const BLOCO_FASES = (N.match(/const FASES = \[[\s\S]*?\n\];/) || [])[0] || '';
+ok('2. *** e a CHAVE da FASE continua `classificacao` (nada de migracao de dado) ***',
+  BLOCO_FASES.length > 100 && /k:'classificacao'/.test(BLOCO_FASES)
+  && !/k:'habilitacao'/.test(BLOCO_FASES), BLOCO_FASES.length);
 ok('3. nao sobrou "Classificação" visivel em lugar nenhum',
   (N.match(/Classificação/g) || []).length === 1);   // so a que explica a troca, no comentario
 ok('4. o rotulo sai de UM lugar (FASES) — etiquetas, quadros e filtros leem dali',

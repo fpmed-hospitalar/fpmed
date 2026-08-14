@@ -207,8 +207,22 @@ ok('49. *** TODA secao tem uma linha de explicacao — a nova ou a que ja existi
       || /placeholder="/.test(trecho);
   });
 })());
-ok('49b. *** e nenhuma tem DUAS (a linha nova nao empilhou por cima da que ja havia) ***',
-  (N.match(/class="sec-dica"/g) || []).length === 2);
+/* ══ O ASSERT CONTAVA O ARQUIVO INTEIRO, E ISSO ENVELHECEU EM 14/08 (fatias B13/B15) ═════════
+   Ele fixava em 2 o numero TOTAL de `sec-dica` do arquivo — um proxy pra "ninguem empilhou uma
+   segunda linha cinza por cima da que ja havia". Funcionou enquanto so duas secoes tinham dica;
+   duas secoes NOVAS ("Numero de controle do PNCP" e "Meus arquivos") nasceram com a sua, cada
+   uma com UMA, e o assert reprovou o comportamento certo.
+   >>> ENTAO ELE PASSOU A MEDIR O DEFEITO DE VERDADE: nenhuma secao pode ter DUAS. Conta por
+       secao, e nao no total — assim ele continua pegando a sobreposicao (que foi um defeito
+       real, visto num print pro cliente) e para de brigar com secao nova. */
+ok('49b. *** e nenhuma secao tem DUAS (a linha nova nao empilhou por cima da que ja havia) ***',
+  (() => {
+    const pos = [...N.matchAll(/<h4>/g)].map(m => m.index);
+    return pos.every((i, k) => {
+      const fim = k + 1 < pos.length ? pos[k + 1] : N.length;
+      return (N.slice(i, fim).match(/class="sec-dica"/g) || []).length <= 1;
+    });
+  })());
 ok('49c. ...com o erro registrado, porque ele so apareceu no print pro cliente',
   /EU SOBREPUS/.test(N) && /duas\s*linhas cinzas empilhadas dizendo a mesma coisa/.test(uc(N)));
 ok('50. ...com o motivo (o que enchia era ter que ADIVINHAR o que cada uma faz)',

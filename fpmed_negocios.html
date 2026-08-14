@@ -689,6 +689,41 @@ body{
 .ctx-semvalor{color:var(--ambar-700);font-weight:600}
 .ctx-semvalor i{display:block;font-style:normal;font-size:11px;font-weight:400;color:var(--muted);margin-top:2px}
 
+/* ── MEUS ARQUIVOS (14/08, fatia B15) ───────────────────────────────────────────────────────
+   A VERSÃO ANTIGA CONTINUA VISÍVEL, e apagada de propósito: ela precisa estar lá (é a prova do
+   que foi enviado em cada rodada) e não pode competir com a mais nova (é a que vale hoje).
+   Sumir com ela seria mentir; deixá-la igual seria fazer alguém abrir a errada numa disputa. */
+.arq-g{margin-bottom:14px}
+.arq-g > .cab{display:flex;align-items:baseline;gap:8px;font-family:Montserrat;font-weight:700;
+  font-size:11px;letter-spacing:1.1px;text-transform:uppercase;color:var(--azul-claro);
+  padding-bottom:5px;border-bottom:1px solid var(--linha);margin-bottom:7px}
+.arq-g > .cab i{font-style:normal;font-weight:400;letter-spacing:0;text-transform:none;
+  font-size:11px;color:var(--muted);margin-left:auto}
+.arq-sub{font-size:11px;font-weight:600;color:var(--cinza-700);margin:7px 0 4px}
+.arq-l{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:3px 10px;
+  grid-template-areas:"v nome de" ". meta meta";
+  padding:7px 2px;border-bottom:1px solid var(--linha);font-size:12.5px}
+.arq-l:last-child{border-bottom:0}
+.arq-l.velha{opacity:.55}
+.arq-v{grid-area:v;font-size:10.5px;font-weight:700;color:var(--azul-claro);
+  border:1px solid var(--linha);border-radius:20px;padding:1px 7px;white-space:nowrap;align-self:start}
+.arq-l.velha .arq-v{color:var(--muted)}
+.arq-n{grid-area:nome;color:var(--azul-claro);cursor:pointer;text-decoration:underline;
+  text-underline-offset:2px;word-break:break-word;min-width:0}
+.arq-n:hover{color:var(--azul)}
+/* A PROCEDÊNCIA É UMA ETIQUETA, e não uma linha de texto: numa disputa, "veio do PNCP" e "alguém
+   anexou" não valem a mesma coisa, e essa diferença tem que ser lida de relance. */
+.arq-de{grid-area:de;font-size:10px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;
+  border:1px solid;border-radius:20px;padding:1px 8px;white-space:nowrap;align-self:start}
+.arq-de.pncp{color:var(--verde-700);background:var(--verde-50);border-color:var(--verde-200)}
+.arq-de.mao{color:var(--cinza-700);background:var(--painel2);border-color:var(--linha)}
+.arq-de.empresa{color:var(--ambar-700);background:var(--ambar-50);border-color:var(--ambar-100)}
+.arq-meta{grid-area:meta;font-size:11px;color:var(--muted);line-height:1.45}
+@media(max-width:520px){
+  .arq-l{grid-template-areas:"v nome nome" ". de de" ". meta meta"}
+  .arq-de{justify-self:start}
+}
+
 /* >>> `.ag-secao` FICOU ÓRFÃ em 13/08 (fatia 4): o "Já passaram" que ela desenhava virou o
        CABEÇALHO do segundo painel da Agenda. O grep está feito e é conclusivo — ela não é usada
        em mais lugar nenhum. Fica pela mesma regra do `.fase-tag` logo acima: seletor órfão não
@@ -2530,6 +2565,7 @@ async function abrirDrawer(id){
                      carregarProposta(id); carregarAta(id); carregarItensGanhos(id);
                      carregarEdital(id); carregarItensEdital(id); carregarConversaEdital(id);
                      pintaControlePNCP(id); carregarContextoLic(id);
+                     montaSeletorArquivos(); carregarMeusArquivos(id);
                      // O kit NÃO tem `carregar`: ele já veio dentro do negócio (`negocios.tarefas`
                      // vem no mesmo `select=*` da lista). Uma leitura a mais aqui seria uma
                      // chance a mais de a aba abrir vazia por causa da rede.
@@ -2674,7 +2710,7 @@ function corpoDrawer(n, obs, carregando){
          Gerenciamento de Ata. A aba da etapa ganha um ponto verde: é o "você está aqui" do
          segundo nível, e ele existe porque a pessoa PODE ter navegado pra outra e voltado. -->
     <div class="dw-abas">
-      ${[['info','Informações',''],['itens','Itens','dw-itens-n'],['lembretes','Lembretes','dw-lem-n'],['tarefas','Tarefas','dw-tar-n'],
+      ${[['info','Informações',''],['itens','Itens','dw-itens-n'],['arq','Meus arquivos','dw-arq-n'],['lembretes','Lembretes','dw-lem-n'],['tarefas','Tarefas','dw-tar-n'],
          ['prop','Proposta','dw-prop-n'],['ata','Gerenciamento de Ata','dw-ata-n'],
          ['cred','Credenciamentos','dw-cred-n'],['obs','Observações','']].map(([k,rot,cnt]) => {
         const doFoco = k === focoDa(n.estagio).aba;
@@ -2761,6 +2797,34 @@ function corpoDrawer(n, obs, carregando){
              nenhuma. Este aviso conta quantos itens estão assim e nomeia a régua que sobra. -->
         <div id="ctx-itens"></div>
         <div id="itens-cx"><div class="salvo">carregando…</div></div>
+      </div>
+    </div>
+
+    <!-- ══ MEUS ARQUIVOS — TODO O PAPEL DESTE CERTAME NUM LUGAR SÓ (14/08, fatia B15) ══════════
+         Pedido antigo do dono, da pilha do SigaPregão. Até hoje os documentos deste mesmo
+         certame moravam em três telas diferentes: o edital na aba Informações, a proposta na
+         aba Proposta e os assinados no Gerenciamento de Ata — e o que a coleta baixa do PNCP
+         não aparecia em lugar nenhum da ficha. Quem precisa "do papel deste pregão" tinha que
+         saber em qual aba cada tipo mora, que é justamente o que ele não quer saber.
+         >>> ISTO NÃO É UM SEGUNDO LUGAR DE GUARDAR ARQUIVO, e essa é a regra da caixa. Nenhuma
+             tabela nasceu aqui e nenhum dado foi movido: é uma VISÃO sobre o que já existe —
+             negocio_anexos (o que alguém anexou), licitacao_arquivos (o que a coleta do A
+             baixou do PNCP) e os documentos da empresa. Anexar daqui usa o MESMO subirAnexo
+             das outras três telas.
+         (sem crase neste comentário: ele mora dentro do template literal do drawer) -->
+    <div class="${pnl(n,"arq")}" id="aba-arq">
+      <div class="dw-sec">
+        <h4>Meus arquivos</h4>
+        <div class="sec-dica">Todo o papel deste certame num lugar só, por categoria. As versões
+          empilham: <b>nada se sobrescreve e nada se apaga</b> — mandar de novo cria a versão
+          seguinte, e a anterior continua aqui, marcada como antiga.</div>
+        <div id="arq-lista"><div class="salvo">carregando…</div></div>
+        ${editavel ? `<div class="prop-novo">
+          <select id="arq-cat" style="background:var(--painel2);color:var(--texto);border:1px solid var(--linha);border-radius:8px;padding:8px 10px;font-size:12.5px;font-family:inherit"></select>
+          <input type="file" id="arq-arq" multiple>
+          <button class="btn-ed" id="arq-bt" onclick="anexarEmMeusArquivos(${n.id})"><svg class="ic" aria-hidden="true"><use href="#ic-clipe"/></svg> Anexar</button>
+        </div><div class="salvo" id="arq-msg"></div>`
+        : '<div class="salvo">só quem grava pode anexar arquivo.</div>'}
       </div>
     </div>
 
@@ -3132,6 +3196,16 @@ async function lerEditalIA(id){
    é: "sem teto CMED".
    ══════════════════════════════════════════════════════════════════════════════════════════════ */
 let ITENS_EDITAL = [], ITENS_DE = null, ITENS_ERRO = null, ITENS_CMED = null, ITENS_BUSCA = '';
+
+/* SEM REFERÊNCIA = AUSENTE **OU ZERO** (14/08, fatia B14). A regra mora numa função só porque
+   ela é usada em três lugares — a linha do item, a coluna do teto e o selo de contexto da
+   ficha — e três cópias dela é exatamente como uma delas volta a aceitar o zero, calada. Foi o
+   que aconteceu: a linha testava `!= null` e a coluna do teto exigia `> 0`, e as duas
+   discordavam sobre o MESMO item, na mesma linha da tela.
+   >>> ELA MORA AQUI, no bloco dos itens, e não junto do selo que também a usa: é uma pergunta
+       sobre ITEM DE EDITAL, e é este bloco que a bancada de teste extrai e executa. Fora daqui,
+       ela ficaria de fora da suíte que cobre a aba Itens — que é a que a pega errada. */
+const semReferencia = it => it == null || it.valor_unitario_ref == null || !(Number(it.valor_unitario_ref) > 0);
 
 // A chave é o `numero_controle` (contrato A5, seção 0). O negócio antigo não tem — ele nasceu
 // antes da coluna existir — e nesse caso ainda dá pra chegar lá pelo `licitacao_id`, que ele
@@ -3775,27 +3849,18 @@ async function anexarProposta(id){
   const arq = (document.getElementById('prop-arq').files || [])[0];
   if(!arq){ msg.textContent = 'escolha o PDF da proposta.'; return; }
   bt.disabled = true; msg.textContent = 'enviando…';
-  try{
-    // Caminho sem acento e sem espaço: nome de arquivo com caractere estranho quebra a URL
-    // assinada na hora de baixar, e o erro só aparece meses depois, na hora de precisar.
-    const limpo = arq.name.normalize('NFD').replace(/\p{M}/gu,'').toLowerCase().replace(/[^a-z0-9._-]+/g,'-');
-    const path = 'negocio-' + id + '/proposta/' + Date.now() + '-' + limpo;
-    const up = await fetch(`${SB_URL}/storage/v1/object/documentos/${encodeURIComponent(path)}`, {
-      method:'POST', headers: Object.assign({}, SB_H), body: arq });
-    if(!up.ok) throw new Error(up.status===403 ? 'só gestor pode enviar arquivo' : ('não consegui enviar (HTTP '+up.status+')'));
-    // >>> A VERSÃO NÃO VAI DAQUI. Quem calcula é uma trigger no banco: duas abas abertas
-    //     mandariam "2" ao mesmo tempo e uma sobrescreveria a outra sem erro nenhum.
-    const r = await fetch(`${SB_URL}/rest/v1/negocio_anexos`, {method:'POST',
-      headers: Object.assign({'Prefer':'return=representation'}, SB_H, {'Content-Type':'application/json'}),
-      body: JSON.stringify({ negocio_id: id, categoria: CAT_PROPOSTA, arquivo_path: path,
-        arquivo_nome: arq.name, bytes: arq.size,
-        enviado_por: (window.gmAuth && gmAuth.user && gmAuth.user.email) || null })});
-    if(!r.ok) throw new Error('o arquivo subiu, mas não consegui registrar (HTTP ' + r.status + ')');
-    const nova = (await r.json())[0];
-    document.getElementById('prop-arq').value = '';
-    msg.textContent = 'anexada como v' + (nova ? nova.versao : '?') + '. A anterior continua lá.';
+  /* ══ A TERCEIRA CÓPIA DO ENVIO TAMBÉM MORREU AQUI (14/08, fatia B15) ═══════════════════════
+     A VERSÃO NUNCA FOI DAQUI e continua não sendo: quem a calcula é uma trigger no banco, porque
+     duas abas abertas mandariam "2" ao mesmo tempo e uma sobrescreveria a outra sem erro nenhum.
+     O que mudou é que o ENVIO agora é o mesmo `subirAnexo` das outras — as três carregavam o
+     mesmo defeito de `Content-Type` e nenhuma delas funcionava. */
+  const r = await subirAnexo(id, arq, CAT_PROPOSTA);
+  document.getElementById('prop-arq').value = '';
+  if(r.ok){
+    msg.textContent = 'anexada como v' + (r.linha ? r.linha.versao : '?') + '. A anterior continua lá.';
     await carregarProposta(id);
-  }catch(e){ msg.textContent = 'não consegui anexar: ' + e.message; }
+    carregarMeusArquivos(id);           // a aba nova lê a mesma tabela
+  } else msg.textContent = 'não consegui anexar: ' + r.erro;
   bt.disabled = false;
 }
 
@@ -4301,6 +4366,33 @@ async function salvarManual(){
    terceiro, e três cópias é onde uma delas começa a divergir. Agora as três chamam daqui.
    Devolve `{ok, erro}` em vez de estourar: quem chama precisa CONTINUAR com os outros arquivos
    quando um falha, e não abortar a fila inteira no primeiro tropeço. */
+/* ══ O TIPO DO ARQUIVO PRECISA IR NO CABEÇALHO, E ESSA LINHA ESTAVA ERRADA ══════════════════
+   MEDIDO EM 14/08, na fatia B15, com o cofre de verdade:
+     Content-Type: application/json  ->  HTTP 400 {"statusCode":"415","invalid_mime_type"}
+     Content-Type: application/pdf   ->  HTTP 200
+   O envio mandava `Object.assign({}, SB_H)`, e o `SB_H` desta tela carrega
+   `'Content-Type': 'application/json'` — que é o certo para as chamadas REST e é exatamente o
+   errado para o cofre de arquivos, que valida o tipo por este cabeçalho.
+   >>> ENTÃO NENHUM BOTÃO "ANEXAR" DESTA TELA FUNCIONAVA. E a prova de que ninguém tinha
+       conseguido é o próprio banco: `negocio_anexos` estava com ZERO linhas.
+   >>> POR QUE ISSO NUNCA APARECEU NUMA SUÍTE: as suítes leem o código-fonte, e o código-fonte
+       "manda o arquivo" — está lá, escrito. Quem sabia a verdade era o cofre, e ninguém tinha
+       perguntado a ele. É a mesma lição da B2 e da B12, na terceira roupa.
+   >>> E O TIPO CONTINUA SENDO DECIDIDO PELO SERVIDOR. Esta função não guarda uma lista de
+       formatos aceitos: ela manda o tipo certo e TRADUZ a recusa. Uma segunda lista aqui um dia
+       discordaria da do cofre — e a tela recusaria um arquivo que o cofre aceita, ou prometeria
+       um que ele recusa. */
+const MIME_POR_EXT = { pdf:'application/pdf', png:'image/png', jpg:'image/jpeg',
+                       jpeg:'image/jpeg', webp:'image/webp' };
+function tipoDoArquivo(arq){
+  // O navegador quase sempre sabe; quando ele não sabe (arquivo sem extensão conhecida no
+  // sistema), a extensão do nome é o melhor palpite honesto — e se estiver errado, quem recusa
+  // é o cofre, com a frase de baixo.
+  const doNavegador = String((arq && arq.type) || '').trim();
+  if(doNavegador) return doNavegador;
+  const ext = String((arq && arq.name) || '').toLowerCase().split('.').pop();
+  return MIME_POR_EXT[ext] || 'application/octet-stream';
+}
 async function subirAnexo(negocioId, arq, categoria){
   try{
     // Caminho sem acento e sem espaço: nome com caractere estranho quebra a URL assinada na hora
@@ -4308,8 +4400,22 @@ async function subirAnexo(negocioId, arq, categoria){
     const limpo = arq.name.normalize('NFD').replace(/\p{M}/gu,'').toLowerCase().replace(/[^a-z0-9._-]+/g,'-');
     const path = 'negocio-' + negocioId + '/' + categoria + '/' + Date.now() + '-' + limpo;
     const up = await fetch(`${SB_URL}/storage/v1/object/documentos/${encodeURIComponent(path)}`, {
-      method:'POST', headers: Object.assign({}, SB_H), body: arq });
-    if(!up.ok) return { ok:false, erro: up.status===403 ? 'só gestor pode enviar arquivo' : ('o envio respondeu ' + up.status) };
+      method:'POST', headers: Object.assign({}, SB_H, {'Content-Type': tipoDoArquivo(arq)}), body: arq });
+    if(!up.ok){
+      // A RECUSA POR TIPO TEM QUE DIZER O QUE FAZER. "HTTP 400" manda a pessoa chamar suporte;
+      // "o cofre guarda PDF e imagem" manda ela converter o arquivo e seguir sozinha.
+      let motivo = 'o envio respondeu ' + up.status;
+      if(up.status === 403) motivo = 'só gestor pode enviar arquivo';
+      else {
+        const t = await up.text().catch(() => '');
+        if(/invalid_mime_type|415/.test(t))
+          motivo = 'o cofre de arquivos não aceita este formato (' + tipoDoArquivo(arq) + ') — '
+                 + 'ele guarda PDF e imagem (PNG, JPEG, WEBP). Converta para PDF e mande de novo.';
+        else if(/exceeded the maximum|413/.test(t) || up.status === 413)
+          motivo = 'o arquivo passou do tamanho que o cofre aceita (20 MB)';
+      }
+      return { ok:false, erro: motivo };
+    }
     const r = await fetch(`${SB_URL}/rest/v1/negocio_anexos`, {method:'POST',
       headers: Object.assign({'Prefer':'return=representation'}, SB_H, {'Content-Type':'application/json'}),
       body: JSON.stringify({ negocio_id: negocioId, categoria, arquivo_path: path,
@@ -5410,6 +5516,8 @@ async function depoisDeGravarControle(id){
   // gravar não deveria precisar fechar e abrir a gaveta pra ver isso aparecer.
   carregarConversaEdital(id);
   carregarContextoLic(id);
+  // E "Meus arquivos" também: é a chave que faz o edital baixado do PNCP aparecer lá (fatia B15).
+  carregarMeusArquivos(id);
 }
 
 /* ══════════════════════════════════════════════════════════════════════════════════════════════
@@ -5448,11 +5556,6 @@ async function depoisDeGravarControle(id){
    contradizendo. Zero é um número, e número se acredita.
    ══════════════════════════════════════════════════════════════════════════════════════════════ */
 let CTX_LIC = null;   // a licitação ligada · null = ainda lendo · false = não há · {erro} = falhou
-
-/* SEM REFERÊNCIA = ausente OU zero. A regra mora numa função só porque ela é usada em três
-   lugares (o selo, o aviso da aba e a linha do item) e três cópias dela é como uma delas passa a
-   aceitar o zero de novo, calada. */
-const semReferencia = it => it == null || it.valor_unitario_ref == null || !(Number(it.valor_unitario_ref) > 0);
 
 async function carregarContextoLic(id){
   const n = NEG.find(x => x.id === id); if(!n) return;
@@ -5889,7 +5992,18 @@ const ATA_CATS = [
   { k:'itens_ganhos',   n:'Itens ganhos' },
   { k:'retorno_precos', n:'Retorno de preços' },
 ];
-const nomeCat = k => (ATA_CATS.find(c => c.k === k) || {}).n || k;
+/* ══ OS NOMES DAS CATEGORIAS MORAM NUM LUGAR SÓ (14/08, fatia B15) ═══════════════════════════
+   Antes `nomeCat` sabia só as seis da Ata, porque só a Ata precisava. Com "Meus arquivos"
+   mostrando as doze, uma segunda lista de nomes seria "Ata da sessão" aqui e "ata_sessao" ali,
+   no mesmo dia e na mesma tela. `ATA_CATS` continua sendo a lista da ABA DA ATA (é ela que monta
+   aquele seletor); os NOMES saem daqui. */
+const CAT_NOMES = {
+  edital:'Edital', anexo_edital:'Anexo do edital', proposta:'Proposta enviada',
+  proposta_final:'Proposta final', habilitacao:'Habilitação', ata:'Ata de registro de preços',
+  contrato:'Contrato', ata_sessao:'Ata da sessão', itens_ganhos:'Itens ganhos',
+  retorno_precos:'Retorno de preços', recurso:'Recurso', outro:'Outro documento',
+};
+const nomeCat = k => CAT_NOMES[k] || (ATA_CATS.find(c => c.k === k) || {}).n || k;
 let ANEXOS_ATA = [], RELATORIO_ATA = null;
 
 async function carregarAta(id){
@@ -6050,23 +6164,282 @@ async function anexarAta(id){
   const cat = document.getElementById('ata-cat').value;
   if(!arq){ msg.textContent = 'escolha o arquivo.'; return; }
   bt.disabled = true; msg.textContent = 'enviando…';
-  try{
-    const limpo = arq.name.normalize('NFD').replace(/\p{M}/gu,'').toLowerCase().replace(/[^a-z0-9._-]+/g,'-');
-    const path = 'negocio-' + id + '/' + cat + '/' + Date.now() + '-' + limpo;
-    const up = await fetch(`${SB_URL}/storage/v1/object/documentos/${encodeURIComponent(path)}`, {
-      method:'POST', headers: Object.assign({}, SB_H), body: arq });
-    if(!up.ok) throw new Error(up.status===403 ? 'só gestor pode enviar arquivo' : ('não consegui enviar (HTTP '+up.status+')'));
-    const r = await fetch(`${SB_URL}/rest/v1/negocio_anexos`, {method:'POST',
-      headers: Object.assign({'Prefer':'return=representation'}, SB_H, {'Content-Type':'application/json'}),
-      body: JSON.stringify({ negocio_id: id, categoria: cat, arquivo_path: path,
-        arquivo_nome: arq.name, bytes: arq.size,
-        enviado_por: (window.gmAuth && gmAuth.user && gmAuth.user.email) || null })});
-    if(!r.ok) throw new Error('o arquivo subiu, mas não consegui registrar (HTTP ' + r.status + ')');
-    const nova = (await r.json())[0];
-    document.getElementById('ata-arq').value = '';
-    msg.textContent = nomeCat(cat) + ' anexado como v' + (nova ? nova.versao : '?') + '.';
+  /* ══ ESTA CÓPIA DO ENVIO MORREU EM 14/08 (fatia B15) ═══════════════════════════════════════
+     `subirAnexo` nasceu em 11/08 dizendo, no próprio comentário, que "as três chamam daqui" —
+     e esta e a da proposta continuaram com o código copiado. As três carregavam o MESMO defeito
+     do `Content-Type`, e consertá-lo em uma só teria deixado duas quebradas. É a demonstração do
+     que aquele comentário avisava: três cópias é onde uma delas começa a divergir. */
+  const r = await subirAnexo(id, arq, cat);
+  document.getElementById('ata-arq').value = '';
+  if(r.ok){
+    msg.textContent = nomeCat(cat) + ' anexado como v' + (r.linha ? r.linha.versao : '?') + '.';
     await carregarAta(id);
-  }catch(e){ msg.textContent = 'não consegui anexar: ' + e.message; }
+    carregarMeusArquivos(id);           // a aba nova lê a mesma tabela
+  } else msg.textContent = 'não consegui anexar: ' + r.erro;
+  bt.disabled = false;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════════
+   MEUS ARQUIVOS — TODO O PAPEL DESTE CERTAME NUM LUGAR SÓ (14/08, fatia B15)
+
+   Pedido antigo do dono, da pilha do SigaPregão. Até esta fatia, os documentos do MESMO certame
+   moravam em três telas: o edital na aba Informações, a proposta na aba Proposta, os assinados
+   no Gerenciamento de Ata — e o que a coleta do A baixa do PNCP não aparecia em canto nenhum da
+   ficha. Quem precisa "do papel deste pregão" tinha que saber em qual aba cada tipo mora, que é
+   exatamente o que ele não quer ter que saber.
+
+   ── É UMA VISÃO, E NÃO UM SEGUNDO LUGAR DE GUARDAR ───────────────────────────────────────────
+   Regra da caixa, e ela é a decisão de projeto inteira desta fatia: *não criar um segundo lugar
+   de guardar arquivo; se hoje há mais de um, unifique a VISÃO sem migrar dado*. Então:
+     · nenhuma tabela nasceu aqui;
+     · nenhuma linha foi movida ou reescrita;
+     · anexar daqui chama o MESMO `subirAnexo` das outras três telas, que grava no MESMO
+       `negocio_anexos`, no MESMO bucket, com a MESMA trigger de versão.
+   As abas Proposta e Ata continuam existindo e continuam mostrando o que sempre mostraram: elas
+   respondem "em que ponto está este negócio", e esta responde "cadê o papel". Fundir as três
+   numa só apagaria a primeira pergunta.
+
+   ── TRÊS PROCEDÊNCIAS, E ELAS NÃO VALEM A MESMA COISA NUMA DISPUTA ───────────────────────────
+   · DO PNCP    — `licitacao_arquivos`, baixado pela coleta do A. É documento oficial publicado,
+     com o link ORIGINAL do portal junto (nunca reescrito, contrato A5 seção 4).
+   · À MÃO      — `negocio_anexos`. Alguém desta casa anexou; a linha diz quem e quando.
+   · DA EMPRESA — `documentos`. Certidões e afins, que valem para TODOS os certames e têm
+     validade própria. Aparecem em Habilitação com a etiqueta dizendo que são da empresa — sem
+     ela, alguém leria uma CND vencida como se fosse a que mandou neste pregão.
+   >>> A ETIQUETA DA PROCEDÊNCIA NÃO É ENFEITE. Numa impugnação, "o edital que eu baixei do PNCP"
+       e "o edital que alguém me mandou por e-mail" são argumentos diferentes.
+
+   ── AS VERSÕES EMPILHAM, E A ANTIGA FICA VISÍVEL ─────────────────────────────────────────────
+   A regra é a que a Ata já usa desde 11/08, e ela é do BANCO, não desta tela: a `versao` sai de
+   trigger por (negócio, categoria) e não há policy de UPDATE nem de DELETE. Aqui a versão antiga
+   aparece apagada, e não some: sumir seria mentir sobre o que foi enviado; deixá-la igual à nova
+   faria alguém abrir a errada na hora da disputa.
+
+   ── UMA FONTE QUE FALHA NÃO APAGA AS OUTRAS ──────────────────────────────────────────────────
+   São três leituras independentes. Se a do PNCP cair, os anexos à mão continuam na tela e o
+   aviso diz QUAL fonte faltou — "não consegui ler" nunca vira "não existe", que é a lição que
+   este projeto repete desde a fatia A6.
+   ══════════════════════════════════════════════════════════════════════════════════════════════ */
+
+/* AS SEIS GAVETAS SÃO AS QUE O DONO NOMEOU, nesta ordem, e ela é a ordem do processo: o edital
+   chega, a proposta vai, a habilitação é conferida, a ata sai, o recurso (quando há) vem depois.
+   >>> `proposta_final` FICA EM PROPOSTA, e não em Ata, embora a aba da Ata a mostre lá. A gaveta
+       responde "o que é este documento" e a aba responde "em que fase estou" — e a categoria de
+       cada arquivo aparece escrita na própria linha, então nenhuma das duas leituras engana. */
+const ARQ_GAVETAS = [
+  { k:'edital',      n:'Edital e anexos', cats:['edital','anexo_edital'] },
+  { k:'proposta',    n:'Proposta',        cats:['proposta','proposta_final'] },
+  { k:'habilitacao', n:'Habilitação',     cats:['habilitacao'] },
+  { k:'ata',         n:'Ata',             cats:['ata','contrato','ata_sessao','itens_ganhos','retorno_precos'] },
+  { k:'recurso',     n:'Recurso',         cats:['recurso'] },
+  { k:'outros',      n:'Outros',          cats:['outro'] },
+];
+// Categoria que a tela ainda não conhece (uma futura, criada por outra janela) cai em "Outros" —
+// e não some. Sumir seria a tela decidindo que um arquivo do negócio não existe.
+const gavetaDaCategoria = c => (ARQ_GAVETAS.find(g => g.cats.indexOf(c) >= 0) || { k:'outros' }).k;
+
+let ARQ_NEG = [], ARQ_PNCP = [], ARQ_EMPRESA = [], ARQ_FALHAS = [];
+
+async function carregarMeusArquivos(id){
+  const n = NEG.find(x => x.id === id); if(!n) return;
+  ARQ_NEG = []; ARQ_PNCP = []; ARQ_EMPRESA = []; ARQ_FALHAS = [];
+  const chave = String(n.numero_controle || '').trim();
+  /* AS TRÊS LEITURAS CORREM JUNTAS e cada uma guarda a própria falha. Em sequência, a primeira
+     lenta seguraria as outras duas; num `Promise.all` sem captura, a primeira que falha derrubaria
+     a tela inteira — e a tela inteira caindo porque o PNCP piscou é o defeito, não a proteção. */
+  await Promise.all([
+    (async () => {
+      try{
+        const r = await fetch(`${SB_URL}/rest/v1/negocio_anexos?negocio_id=eq.${id}`
+          + '&select=*&order=categoria.asc,versao.desc', {headers:SB_H});
+        if(!r.ok) throw new Error('HTTP ' + r.status);
+        ARQ_NEG = await r.json();
+      }catch(e){ ARQ_FALHAS.push('os arquivos anexados aqui (' + e.message + ')'); }
+    })(),
+    (async () => {
+      if(!chave) return;                       // sem chave do PNCP não há o que perguntar
+      try{
+        const r = await fetch(`${SB_URL}/rest/v1/licitacao_arquivos`
+          + '?select=titulo,tipo,url_pncp,bytes,texto_chars,texto_paginas,extracao_erro,coletado_em'
+          + `&numero_controle=eq.${encodeURIComponent(chave)}&order=sequencial.asc`, {headers:SB_H});
+        if(!r.ok) throw new Error('HTTP ' + r.status);
+        ARQ_PNCP = await r.json();
+      }catch(e){ ARQ_FALHAS.push('os arquivos baixados do PNCP (' + e.message + ')'); }
+    })(),
+    (async () => {
+      // Documento da EMPRESA: sem empresa no negócio não há o que mostrar, e mostrar os de todas
+      // as empresas seria pôr a certidão de uma na ficha da outra.
+      if(!n.empresa_id) return;
+      try{
+        const r = await fetch(`${SB_URL}/rest/v1/v_documentos_situacao?empresa_id=eq.${n.empresa_id}`
+          + '&ativo=is.true&select=id,nome,tipo,validade,situacao,dias_para_vencer,arquivo_path,'
+          + 'arquivo_nome,arquivo_bytes,criado_em&order=validade.asc.nullslast', {headers:SB_H});
+        if(!r.ok) throw new Error('HTTP ' + r.status);
+        ARQ_EMPRESA = (await r.json()).filter(d => d.arquivo_path);   // sem arquivo não é arquivo
+      }catch(e){ ARQ_FALHAS.push('os documentos da empresa (' + e.message + ')'); }
+    })(),
+  ]);
+  if(ABERTO === id) pintaMeusArquivos(id);
+}
+
+/* ══ A UNIFICAÇÃO, PURA ══════════════════════════════════════════════════════════════════════
+   Entram as três listas como o banco as devolve; sai UMA lista com a mesma forma, agrupada e
+   ordenada. Sem DOM e sem rede, para a suíte poder executá-la — inclusive com uma das fontes
+   vazia, que é o estado real de hoje. */
+function unificaArquivos(doNegocio, doPncp, daEmpresa){
+  const out = [];
+  for(const a of (doNegocio || [])) out.push({
+    gaveta: gavetaDaCategoria(a.categoria), categoria: a.categoria,
+    rotuloCat: nomeCat(a.categoria), nome: a.arquivo_nome, versao: a.versao,
+    quando: a.enviado_em, quem: a.enviado_por, bytes: a.bytes, de: 'mao', path: a.arquivo_path,
+  });
+  for(const a of (doPncp || [])){
+    /* A CATEGORIA DO ARQUIVO DO PNCP É O `tipo` QUE O PNCP PUBLICOU — "Edital", "Termo de
+       Referência", "Minuta do Contrato". Ele é mais preciso que as nossas duas gavetas e é a
+       palavra do órgão; a gaveta só decide onde a linha aparece. */
+    const tipo = String(a.tipo || '').trim();
+    out.push({
+      gaveta: 'edital', categoria: /edital/i.test(tipo) ? 'edital' : 'anexo_edital',
+      rotuloCat: tipo || 'documento do certame',
+      nome: a.titulo || tipo || 'documento do PNCP', versao: null,
+      quando: a.coletado_em, quem: null, bytes: a.bytes, de: 'pncp', url: a.url_pncp,
+      chars: a.texto_chars, erro: a.extracao_erro,
+    });
+  }
+  for(const d of (daEmpresa || [])) out.push({
+    gaveta: 'habilitacao', categoria: 'habilitacao',
+    rotuloCat: d.tipo ? String(d.tipo) : 'documento da empresa',
+    nome: d.arquivo_nome || d.nome, versao: null, quando: d.criado_em, quem: null,
+    bytes: d.arquivo_bytes, de: 'empresa', path: d.arquivo_path,
+    validade: d.validade, situacao: d.situacao, dias: d.dias_para_vencer, titulo: d.nome,
+  });
+  /* A MAIS NOVA DE CADA CATEGORIA É MARCADA AQUI, e não desenhada por posição na lista: o
+     `order` do banco poderia mudar num refactor e a marca passaria a apontar a versão errada
+     sem nada quebrar. Ela sai da MAIOR versão, que é o que "mais nova" quer dizer. */
+  const topo = {};
+  for(const x of out) if(x.versao != null && (topo[x.categoria] == null || x.versao > topo[x.categoria])) topo[x.categoria] = x.versao;
+  for(const x of out) x.maisNova = x.versao == null ? true : x.versao === topo[x.categoria];
+  return out;
+}
+
+function pintaMeusArquivos(id){
+  const box = document.getElementById('arq-lista'); if(!box) return;
+  const n = NEG.find(x => x.id === id) || {};
+  const tudo = unificaArquivos(ARQ_NEG, ARQ_PNCP, ARQ_EMPRESA);
+  const cnt = document.getElementById('dw-arq-n');
+  if(cnt) cnt.textContent = tudo.length ? '(' + tudo.length + ')' : '';
+
+  // UMA FONTE QUE FALHOU É DITA, e dita ANTES da lista: quem lê uma lista curta precisa saber se
+  // ela é curta porque há pouco, ou porque uma das fontes não respondeu.
+  const aviso = ARQ_FALHAS.length
+    ? '<div class="ctx-nota">Não consegui ler ' + esc(ARQ_FALHAS.join(' · ')) + '. '
+      + 'Isto <b>não</b> quer dizer que esses arquivos não existam — quer dizer que eu não os li. '
+      + 'O que está na lista abaixo está completo.</div>'
+    : '';
+
+  if(!tudo.length){
+    box.innerHTML = aviso + '<div class="salvo">Nenhum arquivo ainda. Anexe aqui embaixo — edital, '
+      + 'proposta, habilitação, ata, recurso — e tudo deste certame fica junto.'
+      + (String(n.numero_controle || '').trim() ? '' : ' Este negócio ainda não tem o <b>número de '
+        + 'controle do PNCP</b>: com ele informado na aba Informações, o edital que a coleta baixa '
+        + 'do portal aparece aqui sozinho.') + '</div>';
+    return;
+  }
+
+  /* GAVETA VAZIA NÃO APARECE. Seis cabeçalhos com "nenhum" embaixo empurram pra baixo os dois que
+     existem, e a lista deixa de ser lida — é a mesma decisão que a aba da Ata tomou em 11/08. */
+  const html = ARQ_GAVETAS.map(g => {
+    const daGaveta = tudo.filter(x => x.gaveta === g.k);
+    if(!daGaveta.length) return '';
+    // Dentro da gaveta, agrupado por categoria — porque é POR CATEGORIA que a versão empilha
+    // (a trigger conta por negócio+categoria). Misturar as categorias faria "v1" e "v2" de
+    // documentos diferentes parecerem duas versões do mesmo.
+    const cats = [];
+    for(const x of daGaveta) if(cats.indexOf(x.rotuloCat) < 0) cats.push(x.rotuloCat);
+    const corpo = cats.map(c => {
+      const linhas = daGaveta.filter(x => x.rotuloCat === c)
+        .slice().sort((a,b) => (b.versao || 0) - (a.versao || 0));
+      return (cats.length > 1 ? `<div class="arq-sub">${esc(c)}</div>` : '')
+        + linhas.map(linhaDeArquivo).join('');
+    }).join('');
+    return `<div class="arq-g"><div class="cab">${esc(g.n)}<i>${daGaveta.length} arquivo${daGaveta.length>1?'s':''}</i></div>${corpo}</div>`;
+  }).join('');
+  box.innerHTML = aviso + html;
+}
+
+function linhaDeArquivo(x){
+  const tam = x.bytes ? (x.bytes >= 1048576 ? (x.bytes/1048576).toFixed(1) + ' MB'
+                                            : Math.max(1, Math.round(x.bytes/1024)) + ' KB') : null;
+  const quando = x.quando ? new Date(x.quando).toLocaleDateString('pt-BR') : null;
+  const abre = x.de === 'pncp'
+    // O LINK DO PNCP É O ORIGINAL, NUNCA REESCRITO (contrato A5, seção 4). Ele é a prova de onde
+    // o documento veio, e um link nosso por cima disso seria uma cópia sem procedência.
+    ? `onclick="window.open('${esc(x.url)}','_blank','noopener')" title="abrir no PNCP (link original)"`
+    : `onclick="abrirAnexo('${esc(x.path)}', this)" title="abrir o arquivo"`;
+  const etiqueta = x.de === 'pncp' ? '<span class="arq-de pncp">do PNCP</span>'
+                 : x.de === 'empresa' ? '<span class="arq-de empresa">da empresa</span>'
+                 : '<span class="arq-de mao">anexado à mão</span>';
+  const meta = [
+    x.rotuloCat,
+    quando,
+    x.quem ? esc(String(x.quem).split('@')[0]) : null,
+    tam,
+    // O que cada procedência acrescenta, e só ela: o texto extraído (que é o que a IA lê), a
+    // validade da certidão (que é o que desclassifica), e nada para o anexo comum.
+    x.de === 'pncp' ? (x.erro ? 'sem texto extraído: ' + esc(String(x.erro).slice(0,60))
+                     : (x.chars ? Number(x.chars).toLocaleString('pt-BR') + ' caracteres lidos' : null)) : null,
+    x.de === 'empresa' ? (x.validade
+        ? 'vale até ' + new Date(String(x.validade) + 'T12:00:00').toLocaleDateString('pt-BR')
+          + (x.situacao && x.situacao !== 'ok' ? ' · ' + esc(x.situacao) : '')
+        : 'sem validade cadastrada') : null,
+    x.de === 'empresa' ? 'vale para todos os certames' : null,
+    x.versao != null && !x.maisNova ? 'versão anterior — nada se apaga' : null,
+  ].filter(Boolean).map(esc).join(' · ');
+  return `<div class="arq-l${x.versao != null && !x.maisNova ? ' velha' : ''}">
+    <span class="arq-v">${x.versao != null ? 'v' + x.versao : '—'}</span>
+    <span class="arq-n" ${abre}>${esc(x.titulo || x.nome || '(sem nome)')}</span>
+    ${etiqueta}
+    <span class="arq-meta">${meta}</span>
+  </div>`;
+}
+
+/* O SELETOR DE CATEGORIA É MONTADO EM JAVASCRIPT, e não escrito no HTML da gaveta: ele tem doze
+   opções em seis grupos, e escrever isso dentro do template literal do drawer seria a décima
+   terceira lista de categorias do arquivo — a que esquece de crescer junto. */
+function montaSeletorArquivos(){
+  const sel = document.getElementById('arq-cat'); if(!sel || sel.options.length) return;
+  sel.innerHTML = ARQ_GAVETAS.map(g =>
+    `<optgroup label="${esc(g.n)}">`
+    + g.cats.map(c => `<option value="${esc(c)}">${esc(nomeCat(c))}</option>`).join('')
+    + '</optgroup>').join('');
+}
+
+async function anexarEmMeusArquivos(id){
+  const msg = document.getElementById('arq-msg'), bt = document.getElementById('arq-bt');
+  const arqs = Array.from((document.getElementById('arq-arq') || {}).files || []);
+  const cat = (document.getElementById('arq-cat') || {}).value;
+  if(!arqs.length){ msg.textContent = 'escolha o arquivo.'; return; }
+  if(!cat){ msg.textContent = 'escolha a categoria — é ela que faz o agrupamento existir.'; return; }
+  bt.disabled = true;
+  const falhou = [];
+  for(let i = 0; i < arqs.length; i++){
+    msg.textContent = 'subindo ' + (i+1) + ' de ' + arqs.length + '…';
+    const r = await subirAnexo(id, arqs[i], cat);      // O MESMO caminho das outras três telas
+    if(!r.ok) falhou.push({ nome: arqs[i].name, motivo: r.erro });
+  }
+  document.getElementById('arq-arq').value = '';
+  // O QUE SUBIU, SUBIU — mesma frase da fatia do edital, pelo mesmo motivo: dizer só "não deu
+  // certo" faria a pessoa mandar tudo de novo e criar versões duplicadas do que já está lá.
+  msg.innerHTML = falhou.length
+    ? '<b style="color:var(--vermelho-700)">' + falhou.length + ' de ' + arqs.length + ' não subiram:</b><br>'
+      + falhou.map(x => '· ' + esc(x.nome) + ' — ' + esc(x.motivo)).join('<br>')
+      + (falhou.length < arqs.length ? '<br>Os outros ' + (arqs.length - falhou.length) + ' estão na lista acima.' : '')
+    : arqs.length + ' arquivo(s) anexado(s) em ' + esc(nomeCat(cat)) + '.';
+  await carregarMeusArquivos(id);
+  /* AS OUTRAS ABAS RELEEM JUNTO. Elas leem o MESMO `negocio_anexos`; sem isto, anexar um edital
+     por aqui o deixaria invisível na aba Informações até alguém fechar e abrir a gaveta — e a
+     pessoa concluiria que anexou no lugar errado, e anexaria de novo. */
+  carregarEdital(id); carregarProposta(id); carregarAta(id);
   bt.disabled = false;
 }
 
