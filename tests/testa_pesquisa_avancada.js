@@ -285,7 +285,15 @@ ok('53. ...e o motivo esta dito (a fonte caiu 6x em 3 dias; trocar filtro nao po
        com rotulo — que e o que "o card mostra o portal" sempre quis dizer. */
 ok('54. o card mostra o PORTAL, com rotulo, onde quer que ele fique',
   /usuarioNome \? 'Portal'/.test(src) && /esc\(l\.usuarioNome \|\|/.test(src));
-ok('55. o card mostra o selo SRP com o que isso significa', /class="bdg laranja"/.test(src) && /Sistema de Registro de Preços/.test(src));
+/* ══ O SELO SRP MUDOU DE COR E DE ROTULO NA FATIA A21, POR ORDEM DA CAIXA ═══════════════════
+   Era `bdg laranja` escrito "SRP". A caixa manda: *"REGISTRO DE PRECO (verde)"* — por extenso e
+   no verde, junto dos outros dois selos de contexto (orcamento sigiloso em ambar, modo de
+   disputa em cinza). A sigla so e legivel pra quem ja sabe o que ela quer dizer.
+   >>> O QUE O ASSERT PROTEGE CONTINUA IGUAL: o selo nunca aparece sem DIZER o que significa. A
+       frase inteira ("a ata vale por ate 12 meses e a compra e parcelada") segue no `title`. */
+ok('55. o card mostra o selo de registro de preco com o que isso significa',
+  /REGISTRO DE PREÇO<\/span>/.test(src) && /Sistema de Registro de Preços/.test(src)
+  && /function selosContexto\(l\)/.test(src));
 ok('56. o selo de deserta carrega o motivo no title', /class="etq deserta" title="'\+esc\(des\.motivo\)/.test(src));
 ok('57. a marca de deserta aparece depois de cruzar, sem re-renderizar a lista',
   /const des = desertaDe\(l\);/.test(src) && /cx\.querySelector\('\.etq\.deserta'\)/.test(src));

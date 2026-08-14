@@ -42,14 +42,37 @@ for (const [tema, re] of [
    nosso indice (tem id) e o PNCP ao vivo (nao tem linha nenhuma aqui). */
 ok(n + '. *** o documento promete `numero_controle` como chave ***',
   /numero_controle.*, nunca o `id`|A chave: `numero_controle`/.test(DOC)); n++;
+/* ══ A ANCORA MUDOU DE ENDERECO NA FATIA A21, E O QUE ELA PROTEGE NAO MUDOU ══════════════════
+   O assert cobrava a linha DENTRO do `mandarDetalheProFunil`. Na A21 o CARTAO passou a oferecer
+   a mesma acao ("Adicionar aos meus negocios") e a montagem do endereco virou UMA funcao,
+   `irProNegocios` — porque duas montagens do mesmo endereco e como o `&itens=` some de um dos
+   lados sem ninguem perceber.
+   >>> ENTAO O QUE ELE COBRA AGORA E A FUNCAO UNICA: a chave continua sendo o numeroControlePNCP,
+       e continua sendo a UNICA. Um assert amarrado ao nome da funcao antiga teria ficado
+       vermelho por uma mudanca que melhora exatamente o que ele guarda. */
 ok(n + '. *** e a tela ENVIA o numeroControlePNCP, e nao outra chave ***',
   /adicionar=' \+ encodeURIComponent\(id\)/.test(LIMPO)
-  && /const id = String\(DET\.lic\.numeroControlePNCP \|\| ''\)\.trim\(\)/.test(LIMPO)); n++;
+  && /const id = String\(\(l && l\.numeroControlePNCP\) \|\| ''\)\.trim\(\)/.test(LIMPO)); n++;
+ok(n + '. ...e ha UMA montagem so do endereco (o cartao e o detalhe passam pela mesma funcao)',
+  (LIMPO.match(/adicionar=' \+ encodeURIComponent/g) || []).length === 1
+  && /function irProNegocios\(l, itens\)/.test(LIMPO)
+  && /irProNegocios\(DET\.lic, detItensMarcados\(\)\)/.test(LIMPO)); n++;
 /* ESTE ASSERT NASCEU DE UM DEFEITO MEU: eu tinha deixado um fallback pro `chaveLic`
    (cnpj/ano/sequencial). Uma chave de outro formato chega no outro lado como "nao encontrei
    esta licitacao" — sem erro e sem aviso, so um assistente que abre vazio. */
 ok(n + '. *** sem numero de controle a tela DIZ que nao da, em vez de navegar torto ***',
-  !/chaveLic\(DET\.lic\)/.test(LIMPO)
+  /* O QUE NAO PODE EXISTIR E O FALLBACK PRA `chaveLic` DENTRO DA PONTE — nao a palavra
+     `chaveLic` no arquivo inteiro. Ela e a chave do cache de itens desde sempre (`_numCtrl` do
+     jornal usa, e a A21 passou a usa-la pra INVALIDAR o cache no "buscar os itens agora"). Um
+     assert que proibisse o nome no arquivo todo ficaria vermelho por usos que nao tem nada a
+     ver com o que ele guarda — entao ele olha DENTRO da funcao da ponte, e so ela. */
+  (() => {
+    const i = LIMPO.indexOf('function irProNegocios(l, itens){');
+    if (i < 0) return false;
+    const corpo = LIMPO.slice(i, LIMPO.indexOf('\n}', i));
+    // a funcao NAO navega sem a chave: devolve `false`, e quem chamou e que fala com a tela
+    return !/chaveLic/.test(corpo) && /if\(!id\) return false;/.test(corpo);
+  })()
   && /não trouxe o número de controle do PNCP/.test(L)); n++;
 ok(n + '. o `itens` vai separado por virgula, como o documento diz',
   /itens=' \+ encodeURIComponent\(itens\.join\(','\)\)/.test(LIMPO)

@@ -163,8 +163,28 @@ const X = {
     && !/if\(!aoVivo\)\{\s*\n\s*const doBanco = await buscarNoBanco/.test(tela));
   ok('37b. ...e so RENDERIZA direto do banco quando nao e "Atualizar agora"',
     /if\(!aoVivo && doBanco && doBanco\.length\)\{/.test(tela));
-  ok('38. o banco devolve o `bruto`, que e a MESMA forma que o render ja consome',
-    /select=bruto/.test(tela) && /j\.map\(x => x\.bruto\)/.test(tela));
+  /* ══ ESTE ASSERT ESTAVA CERTO E A PREMISSA DELE ERA FALSA — MEDIDO EM 14/08 (fatia A21) ═════
+     Ele cobrava que o banco devolvesse o `bruto` CRU, "porque e a mesma forma que o render ja
+     consome". A frase valia quando so o `coleta_pncp.js` gravava. Depois a fatia A13 mandou o
+     `coleta_pncp_busca.js` gravar pela API de BUSCA, que responde OUTRA forma — e ninguem
+     reconferiu esta linha.
+     >>> MEDIDO CONTRA O BANCO: 3.476 das 3.876 linhas tem `objetoCompra` (forma da consulta) e
+         **400 tem `_coleta:'busca'`** (forma da busca). Nessas 400 o render lia `objetoCompra`,
+         `orgaoEntidade`, `modalidadeNome` e `numeroControlePNCP` como `undefined` — cartao sem
+         titulo, sem objeto, com "R$ 0" de valor e sem a chave do funil.
+     >>> ENTAO O QUE O ASSERT COBRA AGORA E A TRADUCAO, e ele cobra que ela seja UMA: `select=bruto`
+         continua (nao ha segunda consulta), e as tres portas de leitura passam pelo mesmo
+         `normalizaBruto`. Sem essa contagem, alguem acrescenta a quarta porta sem tradutor e as
+         400 voltam a ser mudas. */
+  ok('38. o banco devolve o `bruto`, e a tela TRADUZ as duas formas numa so',
+    /select=bruto/.test(tela) && /function normalizaBruto\(b\)/.test(tela)
+    && !/j\.map\(x => x\.bruto\)/.test(tela)
+    && (tela.match(/normalizaBruto\(x\.bruto\)/g) || []).length === 3);
+  ok('38b. ...e o que a busca NAO manda continua nulo, nunca zero (prazo, valor, SRP)',
+    /if\(b\.objetoCompra != null \|\| b\.orgaoEntidade\) return b;/.test(tela)
+    && !/dataAberturaProposta:/.test(tela.slice(tela.indexOf('function normalizaBruto'),
+        tela.indexOf('function normalizaBruto') + 2400))
+    && /function celValor\(v\)/.test(tela));
   // sem isso haveria um segundo caminho de codigo pra divergir do primeiro com o tempo
   ok('39. *** banco vazio ou fora CAI pro ao vivo (nunca mostra vazio dizendo que nao ha licitacao) ***',
     /if\(doBanco && doBanco\.length\)\{/.test(tela) && /catch\(e\)\{ return null; \}/.test(tela));

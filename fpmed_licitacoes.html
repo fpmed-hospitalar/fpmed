@@ -686,6 +686,31 @@ select[disabled],input[disabled],textarea[disabled]{
    o tamanho do objeto faz a pessoa caçar o alvo a cada linha.
    >>> O CARTÃO SELECIONADO MUDA DE FUNDO, e não ganha borda: borda desloca o conteúdo em 1px e
        a lista inteira "pula" a cada clique. O fundo diz o mesmo sem mexer em nada de lugar. */
+/* ══ O CARTÃO INTEIRO É CLICÁVEL (fatia A21 — urgência do dono) ═══════════════════════════════
+   O cursor é o único sinal NOVO que isso precisou: o hover de fundo que diz "dá pra interagir"
+   já existia na linha desde o passo 6 do molde, e ele estava mentindo por omissão — a linha
+   inteira acendia e só um pedacinho dela respondia.
+   >>> NADA DE `transform` NEM DE BORDA: a decisão medida de 13/08 continua valendo. Linha que
+       sobe dentro de um painel arrasta a de baixo e a lista inteira treme. */
+.lic.clicavel{cursor:pointer}
+
+/* ══ OS CHIPS DE CATEGORIA — A ETIQUETA QUE FILTRA (fatia A21) ════════════════════════════════
+   Eles nascem com a MESMA cara das etiquetas que já existiam (o dono já sabe ler aquela forma) e
+   ganham só o que o clique exige: cursor, foco visível e um estado ligado.
+   >>> AS DUAS COMBINAÇÕES SÃO MEDIDAS, e nenhuma é o par padrão do `.etq`:
+         ligado ... --verde-500 com --cinza-800 = 8,96:1 (é o par do `.bdg.nova`, já medido em
+                    9,04:1 no menu — o mesmo par, a mesma conta);
+         hover ... --verde-200 com --verde-800 = 5,84:1. O `--verde-700` do `.etq` sobre o
+                    `--verde-200` dá 4,06:1 e **REPROVA** em AA para texto pequeno; ficar com ele
+                    seria um hover que apaga a etiqueta na hora exata em que o dedo está nela. */
+.etq.chip{border:0;font-family:var(--fonte);font-size:inherit;cursor:pointer;
+  display:inline-flex;align-items:center;gap:var(--esp-1);
+  transition:background-color var(--transicao),color var(--transicao)}
+.etq.chip b{font-weight:var(--peso-forte)}
+.etq.chip:hover{background:var(--verde-200);color:var(--verde-800)}
+.etq.chip.on{background:var(--verde-500);color:var(--cinza-800);font-weight:var(--peso-semi)}
+.etq.chip:focus-visible{outline:none;box-shadow:var(--foco)}
+
 .lic .sel{flex:0 0 auto;display:grid;place-items:center;padding-top:var(--esp-2)}
 .lic .sel input{width:17px;height:17px;accent-color:var(--azul-600);cursor:pointer;margin:0}
 .lic.escolhida{background:var(--azul-50)}
@@ -773,6 +798,44 @@ select[disabled],input[disabled],textarea[disabled]{
 .det-item .v{flex:0 0 auto;font-weight:var(--peso-semi);font-variant-numeric:tabular-nums;white-space:nowrap}
 .det-corpo{padding:var(--esp-2) var(--esp-3) var(--esp-4) calc(34px + var(--esp-6));
   background:var(--cinza-50)}
+/* ══ O QUE A FATIA A21 ACRESCENTOU AO DETALHE ═════════════════════════════════════════════════
+   O TETO CMED NA LINHA do item — quem varre 300 itens atrás de margem não abre 300 sanfonas.
+   Ele é a única coluna nova, e vem em `--cinza-700` (não no tom do valor) porque é REFERÊNCIA
+   legal, não o preço da compra: dois números do mesmo peso na mesma linha fariam a pessoa somar
+   um ao outro com o olho. */
+.det-item .t{flex:0 0 auto;white-space:nowrap;color:var(--cinza-700);
+  font-variant-numeric:tabular-nums;font-size:var(--txt-1)}
+.det-item .t i{font-style:normal;color:var(--cinza-600);font-size:var(--txt-0);
+  margin-left:var(--esp-1)}
+.det-item .t.vazio{color:var(--cinza-500)}
+/* O ITEM QUE CASOU COM A BUSCA DE DENTRO. Ele já vem no topo; o fundo é o que diz POR QUE ele
+   está lá — sem isso, "o primeiro da lista" e "o que eu procurei" viram a mesma coisa no dia em
+   que a busca não achar nada. Mesmo âmbar do `<mark>` do objeto, pelo mesmo motivo: é a cor que
+   este sistema já usa para "isto aqui é o que você procurou". */
+.det-item.achado>summary{background:var(--ambar-50)}
+.det-item.achado>summary:hover{background:var(--ambar-100)}
+
+/* AS SEÇÕES DO DETALHE (itens · arquivos · resultado). Um <h4> discreto e um fio: elas são
+   assunto diferente dentro do mesmo painel, e sem separação a lista de arquivos parecia
+   continuação da lista de itens. */
+.det-secao{margin-top:var(--esp-5)}
+.det-secao h4{margin:0 0 var(--esp-2);font-family:Montserrat,sans-serif;font-size:var(--txt-1);
+  font-weight:var(--peso-forte);color:var(--cinza-600);text-transform:uppercase;
+  letter-spacing:.05em;padding-bottom:var(--esp-2);border-bottom:1px solid var(--borda-divisor)}
+.det-selos{display:flex;align-items:center;gap:var(--esp-2);flex-wrap:wrap;
+  margin-bottom:var(--esp-3)}
+.det-docs .doc{display:flex;align-items:center;gap:var(--esp-2);flex-wrap:wrap;
+  padding:var(--esp-2) 0;border-bottom:1px solid var(--borda-divisor);font-size:var(--txt-1)}
+.det-docs .doc:last-child{border-bottom:0}
+.det-docs .nome{font-weight:var(--peso-semi);color:var(--cinza-800)}
+.det-docs .tipo,.det-docs .tam{color:var(--cinza-600)}
+.det-tab{width:100%;border-collapse:collapse;font-size:var(--txt-1)}
+.det-tab th{text-align:left;color:var(--cinza-600);font-weight:var(--peso-semi);font-size:var(--txt-0);
+  text-transform:uppercase;letter-spacing:.04em;padding:var(--esp-2);
+  border-bottom:1px solid var(--cinza-200);white-space:nowrap}
+.det-tab td{padding:var(--esp-2);border-bottom:1px solid var(--cinza-100);vertical-align:top;
+  color:var(--cinza-700);line-height:var(--altura-texto)}
+.det-tab .desc{min-width:220px}
 /* O SELO "IA" MUDOU DE ENDEREÇO NA FATIA A2: saiu do item de menu e veio pro botão que dispara
    o gasto. Mesmo desenho de sempre — verde da marca com o navy por cima, o par que já estava
    medido em 9,04:1 no menu. Aviso longe da decisão não muda decisão. */
@@ -1059,6 +1122,21 @@ svg.ic.bom{color:var(--verde-700)}
 .btn.sec{background:var(--branco);color:var(--cinza-800);border-color:var(--cinza-300)}
 .btn.sec:hover:not([disabled]){background:var(--cinza-50);border-color:var(--cinza-400)}
 .btn.mini{padding:var(--esp-1) var(--esp-3);font-size:var(--txt-1)}
+/* ══ O BOTÃO VERDE DE "ADICIONAR AOS MEUS NEGÓCIOS" (fatia A21) ═══════════════════════════════
+   Ele existia desde a fatia A4, escrito como `style="background:var(--verde-500);color:var(
+   --cinza-800)"` DENTRO da string do detalhe. A A21 pôs a mesma ação no cartão, e estilo inline
+   copiado em dois lugares é como um dos dois envelhece sozinho — vira classe.
+   >>> O PAR É O MEDIDO, e não um verde escolhido no olho: --verde-500 com --cinza-800 dá 8,96:1,
+       o mesmo par do `.bdg.nova` e do selo IA (9,04:1 medido no menu, na A2).
+   >>> POR QUE VERDE E NÃO O AZUL DO `.btn`: nesta tela o azul é "ver/consultar" e esta é a única
+       ação que MOVE o trabalho pra frente — ela cria trabalho no funil de alguém. Cor aqui é
+       ofício, não ênfase (D5). */
+.btn.bt-verde{background:var(--verde-500);color:var(--cinza-800);border-color:transparent}
+/* O HOVER ESCURECE O FUNDO E MANTÉM A TINTA. Eu tinha escrito `color:var(--branco)` aqui e ele
+   REPROVA: branco sobre --verde-600 dá 3,02:1, abaixo do AA de 4,5 — o botão ficaria ilegível
+   justamente enquanto o dedo está nele. Com a tinta parada, --cinza-800 sobre --verde-600 dá
+   6,05:1 e o hover ainda diz o que precisa dizer. */
+.btn.bt-verde:hover:not([disabled]){background:var(--verde-600)}
 .btn[disabled],.btn[aria-disabled="true"]{cursor:not-allowed;background:var(--cinza-100);
   border-color:var(--cinza-200);color:var(--cinza-400)}
 
@@ -1489,9 +1567,17 @@ const ic = (nome, cls) => '<svg class="ic' + (cls ? ' ' + cls : '') + '" aria-hi
    3. NÃO GRIFAR O QUE NÃO CASOU. Termo vazio não marca nada; termo de 1 letra também não —
       grifar todo "a" do parágrafo é ruído que ensina a ignorar a marca. */
 function grifa(texto){
-  const cru = esc(texto);
   let termo = '';
-  try { termo = (document.getElementById('f-kw').value || '').trim(); } catch(_) { return cru; }
+  try { termo = (document.getElementById('f-kw').value || '').trim(); } catch(_) { return esc(texto); }
+  return grifaCom(texto, termo);
+}
+/* A MESMA MARCAÇÃO, COM O TERMO VINDO DE FORA (fatia A21). A busca DENTRO dos itens do detalhe
+   tem o seu próprio campo, e ela precisa grifar o que casou pelo mesmo critério — sem acento, por
+   palavra, sem <mark> dentro de <mark>. Escrever uma segunda marcação ali seria duas regras de
+   grifo na mesma tela, e é a segunda que erra no acento. */
+function grifaCom(texto, termo){
+  const cru = esc(texto);
+  termo = String(termo == null ? '' : termo).trim();
   if(termo.length < 2) return cru;
   // cada palavra do termo é procurada por si: "albumina humana" grifa as duas mesmo quando o
   // edital escreve "albumina (humana)" no meio.
@@ -1867,6 +1953,142 @@ function numCompra(numero, ano){
   return s + (ano && !/\/\d{4}$/.test(s) ? '/'+ano : '');
 }
 
+/* ══ O BRUTO DO ÍNDICE VEM EM DUAS FORMAS — E A TELA SÓ SABIA LER UMA (fatia A21, 14/08) ═══════
+   MEDIDO hoje contra o banco: das 3.876 linhas do índice, 3.476 guardam o `bruto` na forma da API
+   de CONSULTA (`objetoCompra`, `orgaoEntidade`, `modalidadeNome`…) e **400 guardam a forma da API
+   de BUSCA** (`description`, `orgao_nome`, `municipio_nome`…) — as que a fatia A13 trouxe para
+   cobrir as 27 UFs no dia em que a consulta caiu.
+   >>> ESSAS 400 NASCERAM MUDAS NA TELA, E NINGUÉM TINHA VISTO. O `render` lê `l.objetoCompra`,
+       `l.orgaoEntidade.razaoSocial`, `l.modalidadeNome` e `l.numeroControlePNCP`: os quatro vêm
+       `undefined` nelas. O cartão saía com título " Nº — / ", objeto em branco, município "—",
+       **"R$ 0" de valor estimado** e SEM a chave do funil — e sem a chave o "Mandar pro funil"
+       recusa e o detalhe não acha nada. É literalmente o cartão que o dono descreveu: um
+       retângulo em que a única coisa que funciona é sair do sistema.
+       A coleta da A13 funcionou. Quem não sabia ler era esta tela.
+   >>> O CONSERTO É DE LEITURA, NÃO DE BANCO. Reescrever as 400 linhas seria UPDATE em cima do
+       único registro do que a fonte respondeu — a caixa proíbe, e com razão. A tradução acontece
+       na porta de entrada, uma vez, e o resto do arquivo continua falando UMA língua só.
+   >>> O QUE A BUSCA NÃO MANDA CONTINUA NULO, NUNCA ZERO: abertura, encerramento, valor estimado,
+       SRP e modo de disputa não existem nessa resposta (medido, campo a campo). Preenchê-los com
+       0/false faria a tela AFIRMAR "sem prazo, R$ 0, não é registro de preço" sobre uma licitação
+       a que ela nunca perguntou nada. */
+function normalizaBruto(b){
+  if(!b || typeof b !== 'object') return b;
+  if(b.objetoCompra != null || b.orgaoEntidade) return b;      // já é a forma da consulta
+  if(b.numero_controle_pncp == null) return b;                 // nem uma nem outra: devolve como veio
+  const seq = parseInt(String(b.numero_sequencial == null ? '' : b.numero_sequencial).replace(/\D/g,''), 10);
+  return {
+    _daBusca: true, _termo: b._termo || null,
+    numeroControlePNCP: b.numero_controle_pncp,
+    /* O NÚMERO DO EDITAL NÃO VEM NESTA FONTE — o que vem é o SEQUENCIAL da compra no PNCP. É o
+       mesmo número que o painel "ao vivo" já mostra há duas fatias, e ele bate com o que está
+       dentro do próprio número de controle (…-1-000016/2026 → 16/2026). O detalhe diz de onde
+       ele veio, para ninguém procurar "pregão 16" no portal do órgão. */
+    numeroCompra: b.numero_sequencial == null ? null : String(b.numero_sequencial),
+    anoCompra: b.ano == null ? null : Number(b.ano),
+    sequencialCompra: isFinite(seq) && seq > 0 ? seq : null,
+    modalidadeNome: b.modalidade_licitacao_nome || b.tipo_nome || null,
+    objetoCompra: b.description || b.title || '',
+    situacaoCompraNome: b.situacao_nome || null,
+    dataPublicacaoPncp: b.data_publicacao_pncp || null,
+    orgaoEntidade: { cnpj: b.orgao_cnpj || null, razaoSocial: b.orgao_nome || null },
+    unidadeOrgao: { municipioNome: b.municipio_nome || null, ufSigla: b.uf || null,
+                    nomeUnidade: b.unidade_nome || null, codigoUnidade: b.unidade_codigo || null },
+    linkSistemaOrigem: b.item_url ? 'https://pncp.gov.br/app/editais' + b.item_url : null,
+    dataFimVigencia: b.data_fim_vigencia || null,
+  };
+}
+
+/* VALOR QUE NÃO VEIO NÃO É R$ 0. O `brl()` transforma `undefined` em "R$ 0" — e "R$ 0" numa
+   linha de licitação lê-se como "compra sem valor", que é uma afirmação. Nas 400 da busca o
+   campo simplesmente não existe na resposta do PNCP. */
+function celValor(v){
+  const n = Number(v);
+  return (v == null || !isFinite(n) || n <= 0)
+    ? '<span class="hint" style="font-weight:var(--peso-normal)">não informado</span>' : brl(n);
+}
+
+/* ══ O ESTADO DO CERTAME — É ELE QUE DECIDE AS AÇÕES DO CARTÃO (fatia A21) ═════════════════════
+   Ordem do dono: *"afordância honesta, nada de botão que não pode dar certo"*. "Adicionar aos
+   meus negócios" num pregão que encerrou há três meses é exatamente esse botão — ele funciona,
+   cria o negócio, e o negócio nasce morto no funil de alguém.
+   >>> QUEM DECIDE É A DATA DE ENCERRAMENTO DA PROPOSTA, e não a `situacaoCompraNome`: MEDIDO no
+       índice, ela vale "Divulgada no PNCP" em 100% das linhas da forma de consulta. O campo
+       existe, tem cara de estado e não discrimina nada. Data discrimina.
+   >>> SEM DATA É UM TERCEIRO ESTADO, E NÃO "ENCERRADA". São 710 linhas sem prazo no índice.
+       Tratá-las como encerradas esconderia o caminho de disputar de uma licitação que pode estar
+       aberta; tratá-las como abertas prometeria disputa de uma que pode ter fechado. O estado
+       próprio é o que deixa a tela DIZER que não sabe e oferecer o caminho de conferir. */
+const EST_ABERTA = 'aberta', EST_ENCERRADA = 'encerrada', EST_SEM_PRAZO = 'sem-prazo';
+function estadoLic(l, agora){
+  const fim = dt(l && l.dataEncerramentoProposta);
+  if(!fim) return EST_SEM_PRAZO;
+  return fim > (agora || new Date()) ? EST_ABERTA : EST_ENCERRADA;
+}
+
+/* ══ OS SELOS DE CONTEXTO (fatia A21) ══════════════════════════════════════════════════════════
+   Três fatos que o PNCP publica, que MUDAM A DECISÃO do gestor e não apareciam em lugar nenhum:
+     · ORÇAMENTO SIGILOSO — não existe valor de referência, e o teto CMED vira a única régua;
+     · REGISTRO DE PREÇO — a ata vale por até 12 meses e a compra é parcelada;
+     · MODO DE DISPUTA — aberto, fechado, aberto-fechado.
+   >>> O SIGILOSO NÃO VEM DA LICITAÇÃO, VEM DO ITEM — e isso foi medido hoje, não suposto:
+       `orcamentoSigilosoCodigo` **não existe em nenhuma** das 3.876 linhas do índice, enquanto
+       `orcamentoSigiloso` veio em 12 de 12 editais consultados no `/itens` (2 deles com item
+       sigiloso de verdade). Ou seja: o selo só pode ser dito DEPOIS de ler os itens. Antes disso
+       esta função cala — e calar aqui é a diferença entre "não tem sigilo" e "ainda não olhei".
+   >>> E O SIGILOSO NÃO É "—" NA COLUNA DE PREÇO. A caixa é explícita: nada de travessão com cara
+       de dado faltando, nada de aderência calculada como zero. Quem diz isso na linha do item é
+       o `celPreco`, que já tinha o estado 'sigiloso' desde a fatia do pack. */
+function selosContexto(l){
+  const s = [];
+  if(_ehSrp(l)) s.push('<span class="bdg v" title="Sistema de Registro de Preços: a ata vale por '
+    + 'até 12 meses e a compra é parcelada — ganhar aqui não é vender tudo de uma vez">REGISTRO DE PREÇO</span>');
+  const r = CRUZ.get(chaveLic(l));
+  const sig = r && Array.isArray(r.itens) ? r.itens.filter(x => x.it && x.it.orcamentoSigiloso === true).length : 0;
+  if(sig) s.push('<span class="bdg a" title="o órgão não publicou o valor de referência '
+    + (sig === (r.itens.length) ? 'destes itens' : 'de ' + sig + ' item(ns)')
+    + ' — sem preço estimado, o teto da CMED é a única régua legal que sobra">ORÇAMENTO SIGILOSO</span>');
+  if(l.modoDisputaNome) s.push('<span class="bdg cinza" title="modo de disputa declarado no PNCP">'
+    + esc(l.modoDisputaNome) + '</span>');
+  return s.join('');
+}
+
+/* ══ AS CATEGORIAS DEIXARAM DE SER PALPITE NO TÍTULO (fatia A21) ═══════════════════════════════
+   A `categorias(objeto)` lia o OBJETO da compra e devolvia etiqueta por palavra encontrada. Numa
+   base do ramo hospitalar isso pinta "Medicamentos" e "Material hospitalar" em quase tudo — o
+   objeto padrão é "aquisição de medicamentos e material médico-hospitalar". A etiqueta dizia o
+   que o TEXTO dizia, não o que o edital TEM: um pregão com 300 itens de gaze e 2 de dipirona
+   ganhava as duas etiquetas do mesmo tamanho.
+   >>> AGORA É FATO APURADO, ITEM A ITEM. Casou na CMED = MEDICAMENTO (a CMED regula medicamento
+       por lei, e só ele); não casou = MATERIAL. Injetável e suplemento saem da descrição do
+       ITEM — que é o nome do produto, não a prosa do edital.
+   >>> SEM ITENS LIDOS, SEM CHIP — e sem a régua da CMED carregada, também não. Um chip
+       "Material" montado sobre uma CMED que não carregou classificaria o edital inteiro como
+       material, uniformemente e por engano. É a S6 vestida de etiqueta.
+   >>> E O CHIP FILTRA. Ordem do dono: *"chip que não filtra é enfeite"*. */
+function categoriasDosItens(l){
+  const r = CRUZ.get(chaveLic(l));
+  if(!r || !Array.isArray(r.itens) || !r.itens.length) return null;
+  if(!_cmedIdx) return null;
+  const c = new Map(), poe = k => c.set(k, (c.get(k)||0) + 1);
+  for(const x of r.itens){
+    const d = semAcento(String(x.it.descricao||''));
+    const t = LimedtecTetoCMED.avaliar({ descricao: x.it.descricao||'', unitario:true, paraGoverno:true }, _cmedIdx);
+    poe(t && t.teto != null ? 'medicamento' : 'material');
+    if(/solucao injetavel|soro fisiologico|cloreto de sodio 0,9|ringer|glicosad|agua para injec/.test(d)) poe('solução injetável');
+    if(/suplemento|dieta enteral|nutricao enteral|formula infantil|modulo (?:proteico|de proteina)/.test(d)) poe('suplemento');
+  }
+  return [...c.entries()].sort((a,b) => b[1]-a[1]).map(([rotulo, n]) => ({ rotulo, n }));
+}
+/* O filtro por categoria vive junto do refino, mas NÃO é um refino: ele depende de leitura de
+   itens, e por isso a lista precisa dizer quantas ficaram de fora por ainda não terem sido
+   lidas. Sumir com elas caladamente faria "3 de 40" parecer resposta sobre as 40. */
+let FILTRO_CAT = null;
+function filtrarPorCategoria(cat){
+  FILTRO_CAT = (FILTRO_CAT === cat) ? null : cat;
+  rerender();
+}
+
 // ══ ESTOQUE PRÓPRIO FPMED ═════════════════════════════════════════════════════════════════
 // 1.381 linhas (tipo='global'). O PostgREST desta instância pagina em 1000 — qualquer laço que
 // suponha 2000 perde metade. O Bearer aqui é a anon; o gm-auth troca pelo JWT antes de sair.
@@ -2166,7 +2388,9 @@ async function buscarNoBanco(uf, mod, de, ate){
   if (uf)  q += `&uf=eq.${encodeURIComponent(uf)}`;
   if (mod) q += `&modalidade_cod=eq.${encodeURIComponent(mod)}`;
   const j = await lerPaginado(q);
-  return j ? j.map(x => x.bruto).filter(Boolean) : null;
+  // normalizaBruto: as 400 linhas da forma "busca" viram a forma da consulta AQUI, na porta de
+  // entrada — ver o comentário grande da fatia A21, junto da função.
+  return j ? j.map(x => normalizaBruto(x.bruto)).filter(Boolean) : null;
 }
 // ── O ÍNDICE INTEIRO, sem janela de data (10/08) ──────────────────────────────────────────
 // Usado quando a janela escolhida não tem nada E o operador digitou um termo. Não filtra por
@@ -2244,7 +2468,7 @@ async function buscarNoBancoAmplo(uf, mod){
   if (uf)  q += `&uf=eq.${encodeURIComponent(uf)}`;
   if (mod) q += `&modalidade_cod=eq.${encodeURIComponent(mod)}`;
   const j = await lerPaginado(q);
-  return j ? j.map(x => x.bruto).filter(Boolean) : null;
+  return j ? j.map(x => normalizaBruto(x.bruto)).filter(Boolean) : null;
 }
 
 /* ══ A BUSCA TAMBÉM PELOS ITENS DO EDITAL (fatia A9 · 14/08) ═════════════════════════════════
@@ -2332,7 +2556,7 @@ async function brutosPorControle(controles, uf, mod){
     try{
       const r = await fetch(q, {headers: SB_H, signal: AbortSignal.timeout(20000)});
       if(!r.ok) continue;
-      for(const x of await r.json()) if(x && x.bruto) out.push(x.bruto);
+      for(const x of await r.json()) if(x && x.bruto) out.push(normalizaBruto(x.bruto));
     }catch(e){ /* um lote que falha não derruba os outros */ }
   }
   return out;
@@ -2838,14 +3062,60 @@ function fecharDetalhe(){
   if(el) el.classList.remove('open');
 }
 
-async function abrirDetalhe(i){
+/* ══ O CLIQUE NO CARTÃO INTEIRO (fatia A21) ═══════════════════════════════════════════════════
+   Ele ignora TODO controle de verdade que estiver embaixo do cursor. Sem esta linha, marcar a
+   caixa de seleção, abrir "⋯ mais ações" ou apertar qualquer botão abriria o painel junto — um
+   gesto com dois efeitos, que é como se ensina alguém a ter medo de clicar.
+   >>> `closest` E NÃO `tagName`: o clique de verdade quase sempre acontece no <b>, no <svg> ou
+       no texto DENTRO do botão, e o alvo do evento é esse filho — comparar a etiqueta do alvo
+       deixaria passar exatamente o caso comum. */
+function cliqueCartao(ev, i){
+  const alvo = ev && ev.target;
+  if(alvo && alvo.closest && alvo.closest('button,a,input,select,textarea,label,summary,.mais')) return;
+  abrirDetalhe(i);
+}
+
+/* ══ A PONTE PRO NEGÓCIOS, NUM LUGAR SÓ (fatia A21) ═══════════════════════════════════════════
+   O cartão e o detalhe passaram a oferecer "Adicionar aos meus negócios", e as duas mandam pelo
+   MESMO endereço — o contrato está escrito em docs/contrato_itens_editais.md, seção 0.
+   >>> A CHAVE É O `numero_controle` DO PNCP, E SÓ ELE. Sem ela o outro lado abre vazio, sem erro
+       e sem aviso: um assistente que não encontrou a licitação tem a mesma cara de um assistente
+       ainda carregando. Por isso, sem a chave, esta função NÃO NAVEGA — ela devolve o motivo pra
+       quem chamou dizer na tela. */
+function irProNegocios(l, itens){
+  const id = String((l && l.numeroControlePNCP) || '').trim();
+  if(!id) return false;
+  const q = 'adicionar=' + encodeURIComponent(id)
+          + (itens && itens.length ? '&itens=' + encodeURIComponent(itens.join(',')) : '');
+  location.href = 'fpmed_negocios.html?' + q;
+  return true;
+}
+function adicionarAosNegocios(i){
+  const l = (window._hits||[])[i]; if(!l) return;
+  if(irProNegocios(l)) return;
+  const st = document.getElementById('status');
+  if(st) st.innerHTML = '<span class="conferir">Esta licitação não trouxe o número de controle do '
+    + 'PNCP, que é a chave que o funil usa para reconhecê-la. Dá para incluí-la à mão pelo Negócios.</span>';
+}
+/* "Conversar com o edital" a partir do cartão ABRE O DETALHE ANTES, e isso não é rodeio: quem vai
+   autorizar um gasto precisa ver o que vai ser lido (nome do arquivo, tamanho, nº de páginas), e
+   é o detalhe que carrega essa informação. A janela de custo continua sendo a do motor — uma só,
+   no lugar onde o preço nasce. */
+async function conversarDoCartao(i){
+  await abrirDetalhe(i);
+  conversarComEdital();
+}
+function abrirReferencia(i){ abrirDetalhe(i, 'resultado'); }
+
+async function abrirDetalhe(i, foco){
   const l = (window._hits||[])[i];
   if(!l) return;
-  DET = { i, lic:l, dados:null, busca:'' };
+  DET = { i, lic:l, dados:null, busca:'', foco: foco || null };
   const el = document.getElementById('detalhe');
   el.classList.add('open');
   pintaDetalhe('lendo');
   el.scrollIntoView({ behavior:'smooth', block:'start' });
+  carregarResultado(l).then(() => { if(DET && DET.i === i) pintaDetalhe(); });
   /* A CMED É PEDIDA JUNTO, E NÃO ESPERADA: o índice do teto legal é grande e a lista de itens é
      o que a pessoa veio ver. Sem isso, a coluna do teto ficaria "—" para sempre em quem nunca
      tinha aberto o cruzamento nesta sessão — e "—" é indistinguível de "não tem teto". */
@@ -2885,17 +3155,14 @@ function mandarDetalheProFunil(){
          errado: o outro lado resolve por `numero_controle`, então uma chave de outro formato
          chegaria lá como "não encontrei esta licitação" — sem erro, sem aviso, só um assistente
          que abre vazio. Sem a chave certa, é melhor DIZER que não dá do que navegar torto. */
-  const id = String(DET.lic.numeroControlePNCP || '').trim();
-  if(!id){
-    const cx = document.getElementById('det-conversa');
-    if(cx) cx.innerHTML = '<div class="aviso err" style="text-align:left;padding:12px 14px">'
-      + 'Esta licitação não trouxe o número de controle do PNCP, que é a chave que o funil usa '
-      + 'para reconhecê-la. Dá para incluí-la à mão pelo Negócios.</div>';
-    return;
-  }
-  const itens = detItensMarcados();
-  const q = 'adicionar=' + encodeURIComponent(id) + (itens.length ? '&itens=' + encodeURIComponent(itens.join(',')) : '');
-  location.href = 'fpmed_negocios.html?' + q;
+  /* A MONTAGEM DA URL MORA NO `irProNegocios` DESDE A A21 — o cartão passou a oferecer a mesma
+     ação, e duas montagens do mesmo endereço é como o `&itens=` some de um dos lados sem
+     ninguém perceber. */
+  if(irProNegocios(DET.lic, detItensMarcados())) return;
+  const cx = document.getElementById('det-conversa');
+  if(cx) cx.innerHTML = '<div class="aviso err" style="text-align:left;padding:12px 14px">'
+    + 'Esta licitação não trouxe o número de controle do PNCP, que é a chave que o funil usa '
+    + 'para reconhecê-la. Dá para incluí-la à mão pelo Negócios.</div>';
 }
 
 /* ══ "CONVERSAR COM O EDITAL" (fatias A2 + A6) ════════════════════════════════════════════════
@@ -2990,6 +3257,11 @@ async function carregarEdital(l){
     if(!r.ok) return;                                     // continua "não sei"
     const arqs = await r.json();
     if(!DET) return;
+    /* A LISTA INTEIRA FICA GUARDADA DESDE A A21 — o detalhe ganhou a seção "Arquivos do edital",
+       e ela precisa de TODOS (nome, tipo, tamanho, e se o texto já foi extraído). Antes daqui só
+       sobrevivia o maior texto, porque era o único uso. Um pregão publica edital, termo de
+       referência, minutas e planilha; mostrar só um faria a pessoa procurar os outros no portal. */
+    DET.arquivos = arqs;
     if(!arqs.length){ DET.edital = null; return; }        // nunca coletado
     const semArq = arqs.find(a => /não publicou arquivo/.test(a.extracao_erro||''));
     if(semArq){ DET.edital = { semArquivo:true }; return; }
@@ -3004,6 +3276,29 @@ async function carregarEdital(l){
   }catch(_){ /* rede: segue "não sei", e a tela não afirma nada */ }
 }
 
+/* ══ O RESULTADO DO CERTAME (fatia A21) ═══════════════════════════════════════════════════════
+   Quem já ganhou, por quanto e quantos. Ele mora nas colunas `resultado_*` da `licitacao_itens`
+   (fatia A7) e é o que dá ofício a um pregão encerrado: preço praticado é munição de proposta.
+   >>> LÊ SÓ AS LINHAS QUE TÊM VENCEDOR. `resultado_vencedor` nulo é "ainda não sei", nunca "não
+       ganhou" — está escrito na DDL e é a mesma regra em toda parte deste sistema. Trazer as
+       nulas e desenhá-las como derrota seria afirmar sobre uma sessão que talvez nem foi julgada.
+   >>> FALHA DE REDE NÃO VIRA "SEM RESULTADO": `DET.resultado` fica `undefined` (não sei) em vez
+       de `[]` (li e não há). A tela distingue os dois. */
+async function carregarResultado(l){
+  const ctrl = String((l && l.numeroControlePNCP) || '').trim();
+  if(!ctrl){ if(DET) DET.resultado = []; return; }
+  try{
+    const r = await fetch(`${SB_URL}/rest/v1/licitacao_itens`
+      + `?select=numero_item,descricao,quantidade,unidade,valor_unitario_ref,resultado_vencedor,`
+      + `resultado_cnpj,resultado_valor_unit,resultado_quantidade,resultado_situacao,resultado_lido_em`
+      + `&numero_controle=eq.${encodeURIComponent(ctrl)}&resultado_vencedor=not.is.null`
+      + `&order=numero_item`, {headers:SB_H});
+    if(!r.ok) return;                                     // continua "não sei"
+    const j = await r.json();
+    if(DET) DET.resultado = Array.isArray(j) ? j : [];
+  }catch(_){ /* rede: segue "não sei", e a tela não afirma nada */ }
+}
+
 /* O TETO CMED DE UM ITEM VEM DE `celTetoCMED`, QUE JÁ EXISTIA — eu tinha começado a escrever
    uma segunda função aqui, e ela teria sido uma segunda resposta pra "qual o teto legal deste
    item", com regras próprias. As regras não são pouca coisa: `paraGoverno:true` (com CAP o teto
@@ -3015,12 +3310,149 @@ async function carregarEdital(l){
        resposta plausível, uniforme e completamente falsa. Reusar não foi economia: foi a
        diferença entre um número certo e um erro silencioso. */
 
+/* ══ O TETO CMED NA PRÓPRIA LINHA DO ITEM (fatia A21) ═════════════════════════════════════════
+   A caixa pede o teto CMED/PMVG NA LINHA, e não só dentro da sanfona aberta: quem varre 300
+   itens procurando onde há margem não abre 300 sanfonas.
+   >>> É A MESMA CHAMADA DO `celTetoCMED`, e tem que continuar sendo. O que muda é só o tamanho
+       do que cabe numa linha (o número e o tipo; a faixa e o grau continuam no detalhe aberto).
+       Uma segunda regra de teto foi o erro que a fatia A4 quase cometeu e deixou escrito. */
+function tetoCurto(it, uE){
+  if(_cmedErro || !_cmedIdx) return '';
+  const r = LimedtecTetoCMED.avaliar({
+    descricao: it.descricao || '',
+    precoUnit: uE && uE.status === 'ok' ? uE.valor : null,
+    unitario: !!(uE && uE.status === 'ok'),
+    paraGoverno: true,
+  }, _cmedIdx);
+  if(r.teto == null) return '<span class="t vazio" title="não casou com a CMED — material e '
+    + 'correlato não têm teto por natureza, só medicamento tem">sem teto</span>';
+  return '<span class="t" title="teto legal da CMED por unidade · ' + esc(r.tipoTeto) + '">'
+    + brlU(r.teto) + ' <i>' + esc(r.tipoTeto) + '</i></span>';
+}
+
+const _kb = n => { const b = Number(n)||0; return b <= 0 ? null
+  : b < 1024 ? b + ' B'
+  : b < 1048576 ? (b/1024).toFixed(0) + ' KB'
+  : (b/1048576).toFixed(1).replace('.', ',') + ' MB'; };
+
+/* ══ "ARQUIVOS DO EDITAL" (fatia A21) ═════════════════════════════════════════════════════════
+   O dono mandou prints do SigaPregão e disse "quero ver as informações igual acontece lá". A
+   seção de documentos é uma delas: nome, tipo, tamanho — e, aqui, uma coisa que o SigaPregão não
+   tem como dizer: QUAL deles já foi lido pelo sistema (é o que a IA vai conseguir responder).
+   >>> TRÊS ESTADOS, E NÃO DOIS. `undefined` = ainda não perguntei ao banco; `[]` = perguntei e
+       não há linha nenhuma (nunca coletado); linha com "não publicou arquivo" = o PNCP RESPONDEU
+       que não existe documento. Os três levam a gestos diferentes, e é por isso que a A6 grava
+       uma linha para o caso vazio em vez de simplesmente não gravar nada. */
+function secaoDocumentos(){
+  const arqs = DET.arquivos;
+  let corpo;
+  if(arqs === undefined){
+    corpo = '<div class="hint">consultando os arquivos deste edital…</div>';
+  }else if(!arqs.length){
+    corpo = '<div class="hint">Este edital ainda <b>não foi coletado</b>. A coleta de arquivos é '
+      + 'sob demanda — ela roda para as licitações que entram nos seus negócios.</div>';
+  }else if(arqs.some(a => /não publicou arquivo/.test(a.extracao_erro||''))){
+    corpo = '<div class="hint"><b>O órgão não publicou arquivo no PNCP.</b> Não é falha de coleta: '
+      + 'o PNCP respondeu que não há documento para esta licitação. Dá para anexar o edital à mão '
+      + 'no negócio, dentro do funil.</div>';
+  }else{
+    corpo = '<div class="det-docs">' + arqs.map(a => {
+      const lido = (a.texto_chars||0) > 0;
+      return '<div class="doc">'
+        + '<span class="nome">' + esc(a.titulo || a.tipo || 'arquivo sem nome') + '</span>'
+        + (a.tipo ? '<span class="tipo">' + esc(a.tipo) + '</span>' : '')
+        + (_kb(a.bytes) ? '<span class="tam">' + _kb(a.bytes) + '</span>' : '')
+        + (lido
+            ? '<span class="bdg v" title="o texto deste arquivo já está no banco — é ele que a IA lê, '
+              + 'e por isso perguntar dez vezes custa UMA extração">texto extraído · '
+              + Number(a.texto_chars).toLocaleString('pt-BR') + ' caracteres</span>'
+            : '<span class="bdg cinza" title="' + esc(a.extracao_erro || 'ainda sem texto extraído')
+              + '">sem texto extraído</span>')
+        + (a.url_pncp ? ' <a href="' + esc(a.url_pncp) + '" target="_blank" rel="noopener" '
+            + 'class="btn sec mini">abrir' + ic('sai','sai') + '</a>' : '')
+        + '</div>';
+    }).join('') + '</div>';
+  }
+  return '<div class="det-secao"><h4>Arquivos do edital</h4>' + corpo
+    + '<div class="acoes" style="margin-top:10px">'
+    + '<button class="btn sec mini" onclick="conversarComEdital()" '
+    + 'title="usa inteligência artificial e consome crédito por uso — o preço aparece antes de gastar">'
+    + 'Conversar com o edital <span class="lm-selo-ia">IA</span></button>'
+    /* O ESTADO DO EDITAL FICA AO LADO DO BOTÃO, e não escondido dentro dele: quem vê "53 páginas"
+       antes de clicar sabe que vai pagar por uma leitura longa. O aviso que chega depois do
+       clique chega depois do gasto. */
+    + (DET.edital && DET.edital.texto
+        ? ' <span class="hint">edital de <b>'+DET.edital.paginas+'</b> páginas pronto para leitura</span>'
+        : DET.edital && DET.edital.semArquivo
+          ? ' <span class="hint">o PNCP não publicou o edital desta licitação</span>'
+          : DET.edital === undefined ? '' : ' <span class="hint">edital ainda não coletado</span>')
+    + '</div></div>';
+}
+
+/* ══ O RESULTADO, ITEM A ITEM, COM A MARGEM CONTRA O TETO (fatia A21) ═════════════════════════
+   É o que dá ofício a um pregão encerrado. "Quanto foi pago por dipirona em Jequié" vale mais na
+   hora de montar preço do que qualquer estimativa — e a MARGEM contra o teto CMED diz se o
+   vencedor comprimiu ou se sobrou espaço.
+   >>> A MARGEM SÓ APARECE QUANDO OS DOIS LADOS SÃO UNITÁRIOS DE VERDADE. O preço do resultado
+       vem na unidade do EDITAL ("Caixa 100 UN"), e o teto da CMED é por unidade. Comparar sem
+       desembalar dá erro de 100x — é o mesmo defeito de faturamento que a Global teve, e é por
+       isso que a conta passa pelo `unitarioEdital`, que é quem sabe abrir a embalagem.
+   >>> E `resultado` VAZIO NÃO É "NINGUÉM GANHOU". Pode ser que a coleta de resultado ainda não
+       tenha passado por este edital. A frase diz qual das duas. */
+function secaoResultado(l){
+  const r = DET.resultado;
+  let corpo;
+  if(r === undefined){
+    corpo = '<div class="hint">consultando o resultado deste certame…</div>';
+  }else if(!r.length){
+    corpo = '<div class="hint">Ainda <b>não coletei o resultado</b> deste certame. Isto <b>não</b> '
+      + 'quer dizer que ele tenha sido deserto — quer dizer que a coleta de resultado por item '
+      + 'ainda não passou por aqui. Ela roda para as licitações que estão nos seus negócios.</div>';
+  }else{
+    const ganhos = r.filter(x => Number(x.resultado_valor_unit) > 0);
+    const total = ganhos.reduce((s,x) => s + (Number(x.resultado_valor_unit)||0) * (Number(x.resultado_quantidade)||0), 0);
+    corpo = '<div class="hint" style="margin-bottom:8px"><b>'+r.length+'</b> '
+      + (r.length===1?'item com resultado publicado':'itens com resultado publicado')
+      + (total > 0 ? ' · <b>'+brl(total)+'</b> somando quantidade × valor homologado' : '') + '</div>'
+      + '<table class="det-tab"><thead><tr><th>Nº</th><th class="desc">Item</th><th>Vencedor</th>'
+      + '<th>Qtd</th><th>Valor unitário</th><th>Teto CMED</th><th>Margem</th></tr></thead><tbody>'
+      + r.map(x => {
+          const it = { descricao: x.descricao, valorUnitarioEstimado: x.resultado_valor_unit,
+                       unidadeMedida: x.unidade };
+          const uR = unitarioEdital(it);
+          let margem = '<span class="hint">—</span>';
+          if(_cmedIdx && uR.status === 'ok'){
+            const t = LimedtecTetoCMED.avaliar({ descricao: x.descricao || '', precoUnit: uR.valor,
+              unitario: true, paraGoverno: true }, _cmedIdx);
+            if(t.teto != null && t.teto > 0){
+              const d = (uR.valor - t.teto) / t.teto * 100;
+              margem = '<span class="delta '+(d<=0?'bom':'ruim')+'" title="'
+                + (d<=0 ? 'o vencedor ficou abaixo do teto legal' : 'ACIMA do teto legal da CMED')
+                + '">'+(d>0?'+':'')+d.toLocaleString('pt-BR',{maximumFractionDigits:1})+'%</span>';
+            }
+          }
+          return '<tr><td class="nowrap">'+esc(String(x.numero_item))+'</td>'
+            + '<td class="desc">'+grifaCom(String(x.descricao||'—'), DET.busca || '')+'</td>'
+            + '<td>'+esc(String(x.resultado_vencedor||'—').slice(0,44))
+            + (x.resultado_cnpj ? '<div class="hint nowrap">'+esc(x.resultado_cnpj)+'</div>' : '')+'</td>'
+            + '<td class="nowrap">'+(x.resultado_quantidade != null
+                ? Number(x.resultado_quantidade).toLocaleString('pt-BR') : '—')+'</td>'
+            + '<td>'+celPreco(uR)+'</td>'
+            + '<td>'+celTetoCMED(it, uR)+'</td>'
+            + '<td class="nowrap">'+margem+'</td></tr>';
+        }).join('')
+      + '</tbody></table>';
+  }
+  return '<div class="det-secao"><h4>Resultado do certame</h4>' + corpo + '</div>';
+}
+
 function pintaDetalhe(estado){
   const el = document.getElementById('detalhe');
   if(!el || !DET) return;
   const l = DET.lic;
   const org = (l.orgaoEntidade||{}).razaoSocial || '—';
   const un = l.unidadeOrgao || {};
+  const est = estadoLic(l);
   const titulo = esc(l.modalidadeNome||'') + ' Nº ' + esc(numCompra(l.numeroCompra, l.anoCompra));
 
   let corpo;
@@ -3035,16 +3467,33 @@ function pintaDetalhe(estado){
       + ' O resto do que está aqui em cima veio da busca e continua valendo.</div>';
   }else{
     const d = DET.dados || { itens:[], casados:0, truncado:false };
+    /* ══ O ITEM QUE CASOU É PUXADO PRO TOPO — E OS OUTROS FICAM (fatia A21) ═══════════════════
+       Aqui a busca FILTRAVA: digitar "dipirona" fazia os outros 297 itens do edital sumirem, e
+       a contagem passava a "3 de 300". Some com o que a pessoa não pediu pra ver, e some
+       silenciosamente — o edital continua tendo 300 itens e a tela passa a falar de 3.
+       >>> A ORDEM DO DONO É "PUXADO PARA O TOPO", e ela é melhor que filtrar por um motivo
+           prático: quem procura "dipirona" num edital hospitalar quer ver a dipirona PRIMEIRO e
+           continuar rolando pelo resto — é assim que se descobre que o edital também tem
+           dipirona sódica escrita de outro jeito, que o filtro teria escondido.
+       >>> A ORDEM ORIGINAL DO EDITAL É PRESERVADA DENTRO DE CADA GRUPO (`sort` estável, e o
+           índice `k` vem do array já ordenado), porque o número do item é a referência que a
+           pessoa vai usar na proposta. */
     const termo = semAcento(String(DET.busca||'').trim());
+    const casaTermo = x => !!termo && semAcento(String(x.it.descricao||'')).includes(termo);
+    const achados = termo ? d.itens.filter(casaTermo).length : 0;
     const lista = termo
-      ? d.itens.filter(x => semAcento(String(x.it.descricao||'')).includes(termo))
+      ? d.itens.filter(casaTermo).concat(d.itens.filter(x => !casaTermo(x)))
       : d.itens;
     const pct = aderenciaPct(l);
     corpo =
       '<div class="det-barra">'
       + '<input type="search" class="det-busca" placeholder="procurar dentro dos '+d.itens.length+' itens deste edital…" '
       +   'value="'+esc(DET.busca||'')+'" oninput="detBusca(this.value)">'
-      + '<span class="hint">'+lista.length+' de '+d.itens.length+' '+(d.itens.length===1?'item':'itens')
+      + '<span class="hint">'
+      +   (termo
+          ? '<b>'+achados+'</b> '+(achados===1?'item casa':'itens casam')+' com “'+esc(DET.busca)+'”'
+            + (achados ? ' — no topo da lista' : '') + ' · os outros '+(d.itens.length-achados)+' continuam abaixo'
+          : d.itens.length + ' ' + (d.itens.length===1?'item':'itens'))
       +   (pct != null ? ' · <b>'+pct+'%</b> com equivalente no nosso estoque' : '')
       + '</span>'
       + '</div>'
@@ -3060,7 +3509,8 @@ function pintaDetalhe(estado){
       + (lista.length ? lista.map((x, k) => {
           const it = x.it;
           const casou = x.pares && x.pares.length;
-          return '<details class="det-item">'
+          const uE = unitarioEdital(it);
+          return '<details class="det-item'+(casaTermo(x) ? ' achado' : '')+'">'
             + '<summary>'
             /* A CAIXA POR ITEM alimenta o `?itens=` da URL do funil: quem manda um edital de 500
                itens pro funil raramente disputa os 500. O `stopPropagation` existe porque a
@@ -3068,9 +3518,20 @@ function pintaDetalhe(estado){
             +   '<input type="checkbox" data-item="'+esc(String(it.numeroItem != null ? it.numeroItem : (k+1)))+'" '
             +     'onclick="event.stopPropagation()" aria-label="marcar este item">'
             +   '<span class="n">'+esc(it.numeroItem != null ? it.numeroItem : (k+1))+'</span>'
-            +   '<span class="d">'+grifa(String(it.descricao||'—'))+'</span>'
+            /* O grifo usa o termo DESTE campo, e não o da busca da tela: são duas perguntas
+               diferentes, e marcar a palavra da busca de fora dentro de uma procura por outra
+               coisa marcaria a linha errada. */
+            +   '<span class="d">'+grifaCom(String(it.descricao||'—'), DET.busca)+'</span>'
             +   '<span class="q">'+esc(it.quantidade != null ? it.quantidade : '—')+' '+esc(it.unidadeMedida||'')+'</span>'
-            +   '<span class="v">'+(it.valorUnitarioEstimado != null ? brl(it.valorUnitarioEstimado) : '—')+'</span>'
+            /* SIGILOSO NÃO É TRAVESSÃO. Ordem da caixa: quando o órgão não publica o valor de
+               referência, a linha DIZ isso — travessão no lugar do número faz a pessoa procurar
+               um dado que ninguém escondeu por engano. */
+            +   '<span class="v">'+(it.orcamentoSigiloso === true
+                  ? '<span class="conferir nowrap" title="o órgão não publicou o valor de referência '
+                    + 'deste item — o teto da CMED ao lado é a única régua legal que sobra">sigiloso</span>'
+                  : it.valorUnitarioEstimado != null ? brl(it.valorUnitarioEstimado) : '—')+'</span>'
+            // O TETO CMED NA LINHA (fatia A21): quem varre 300 itens não abre 300 sanfonas.
+            +   tetoCurto(it, uE)
             +   (casou ? '<span class="bdg v" title="temos item equivalente no estoque">temos</span>'
                        : '<span class="bdg cinza">sem equivalente</span>')
             + '</summary>'
@@ -3091,16 +3552,54 @@ function pintaDetalhe(estado){
                 : '')
             + '</div></details>';
         }).join('')
-        : '<div class="aviso">'+(termo ? 'Nenhum item deste edital casa com “'+esc(DET.busca)+'”.' : 'O PNCP não devolveu itens para este edital.')+'</div>')
+        /* LISTA VAZIA NÃO PODE TER CARA DE "NÃO TEM" (ordem da caixa, fatia A21). O PNCP devolver
+           zero item é um fato sobre a PUBLICAÇÃO — muita compra direta publica o objeto e nunca
+           publica a tabela de itens —, e não sobre o edital. E o caminho fica na tela: pedir de
+           novo é um clique, porque a resposta de agora pode não ser a de daqui a pouco. */
+        : '<div class="aviso" style="text-align:left;padding:14px 18px">'
+          + '<b>Não há itens lidos para este edital.</b> O PNCP respondeu, e a lista de itens '
+          + 'desta contratação veio vazia — o que costuma querer dizer que o órgão publicou o '
+          + 'objeto mas não a tabela de itens. Isto <b>não</b> quer dizer que o edital não tenha '
+          + 'itens: eles podem estar só dentro do arquivo do edital.'
+          + '<div class="acoes" style="margin-top:10px">'
+          + '<button class="btn mini" onclick="recarregarItensDetalhe()">Buscar os itens agora</button>'
+          + '</div></div>')
       + '</div>';
   }
 
+  /* ══ AS AÇÕES DO DETALHE SEGUEM O MESMO ESTADO DO CARTÃO (fatia A21) ═════════════════════════
+     Se o cartão esconde "adicionar" num pregão encerrado e o detalhe o oferece, a regra deixou
+     de existir — basta um clique a mais pra furá-la. Uma decisão, dois lugares, uma função. */
+  const acoes = '<div class="acoes" style="margin-bottom:14px">'
+    + (est === EST_ABERTA
+        ? '<button class="btn mini bt-verde" onclick="mandarDetalheProFunil()">'
+          + '＋ Adicionar aos meus negócios</button>'
+          + ' <span class="hint">manda junto os itens que você marcar abaixo</span>'
+        : est === EST_ENCERRADA
+          ? '<span class="hint"><b>Certame encerrado.</b> Não dá para disputar, e por isso não '
+            + 'ofereço "adicionar aos negócios" — o que este edital ainda vale é o <b>preço '
+            + 'praticado</b>, na seção de resultado.</span>'
+          : '<span class="hint"><b>Prazo não informado nesta fonte.</b> Não sei dizer se ainda '
+            + 'está aberto — confira no PNCP antes de decidir.</span>')
+    + '<span style="flex:1"></span>'
+    + (l.linkSistemaOrigem
+        ? '<a class="btn sec mini" href="'+esc(l.linkSistemaOrigem)+'" target="_blank" rel="noopener">'
+          + 'Abrir no PNCP' + ic('sai','sai') + '</a>' : '')
+    + '</div>';
+
   el.innerHTML =
     '<div class="det-topo">'
-    + '<div>'
+    + '<div style="min-width:0">'
     +   '<div class="det-tit">'+titulo+'</div>'
-    +   '<div class="hint">'+esc(org)+(un.municipioNome ? ' · '+esc(un.municipioNome) : '')+(un.ufSigla?' · '+esc(un.ufSigla):'')+'</div>'
+    +   '<div class="hint">'+esc(org)
+    +     (un.nomeUnidade && un.nomeUnidade !== org ? ' · '+esc(un.nomeUnidade) : '')
+    +     (un.municipioNome ? ' · '+esc(un.municipioNome) : '')+(un.ufSigla?'/'+esc(un.ufSigla):'')+'</div>'
     + '</div>'
+    /* O SELO DE ORIGEM DIZ DE ONDE ESTE REGISTRO VEIO, e ele não é decorativo: o que a tela sabe
+       sobre a licitação depende da porta por onde ela entrou (a busca do PNCP não devolve janela
+       de proposta nem valor estimado; a consulta devolve). Sem o selo, "abertura não informada"
+       parece defeito nosso. */
+    + '<span class="selo-fonte">'+ic('orgao')+(l._daBusca ? 'busca do PNCP' : 'nosso índice do PNCP')+'</span>'
     /* O SELO "DOS MEUS NEGÓCIOS" é LEITURA do que já existe no funil — a Encontrar não escreve
        negócio nenhum. Ele existe pra impedir o erro mais caro desta tela: mandar pro funil um
        pregão que já está lá, e duas pessoas trabalharem o mesmo edital sem saber. */
@@ -3108,30 +3607,62 @@ function pintaDetalhe(estado){
     + '<span style="flex:1"></span>'
     + '<button class="btn sec mini" onclick="fecharDetalhe()">fechar</button>'
     + '</div>'
-    /* AS AÇÕES DO DETALHE. O verde é o único primário: é a ação que move o trabalho adiante. */
-    + '<div class="acoes" style="margin-bottom:14px">'
-    +   '<button class="btn mini" style="background:var(--verde-500);color:var(--cinza-800)" '
-    +     'onclick="mandarDetalheProFunil()">Adicionar aos meus negócios</button>'
-    +   ' <button class="btn sec mini" onclick="conversarComEdital()" '
-    +     'title="usa inteligência artificial e consome crédito por uso">'
-    +     'Conversar com o edital <span class="lm-selo-ia">IA</span></button>'
-    /* O ESTADO DO EDITAL FICA AO LADO DO BOTÃO, e não escondido dentro dele: quem vê "53
-       páginas" antes de clicar sabe que vai pagar por uma leitura longa; quem vê "não publicado
-       no PNCP" não clica à toa. O aviso que chega depois do clique chega depois do gasto. */
-    +   (DET.edital && DET.edital.texto
-          ? ' <span class="hint">edital de <b>'+DET.edital.paginas+'</b> páginas pronto para leitura</span>'
-          : DET.edital && DET.edital.semArquivo
-            ? ' <span class="hint">o PNCP não publicou o edital desta licitação</span>'
-            : DET.edital === undefined ? '' : ' <span class="hint">edital ainda não coletado</span>')
+    /* ══ A LINHA DE SITUAÇÃO E CONTEXTO (fatia A21) ════════════════════════════════════════════
+       Situação declarada no PNCP + o estado apurado por data + os selos que mudam a decisão. Os
+       dois primeiros ficam LADO A LADO de propósito: a `situacaoCompraNome` vale "Divulgada no
+       PNCP" em 100% do índice (medido), e mostrá-la sozinha faria um pregão de 2024 parecer
+       vivo. Quem separa é a data, e é ela que ganha a cor. */
+    + '<div class="det-selos">'
+    +   '<span class="bdg '+(est===EST_ABERTA?'v':est===EST_ENCERRADA?'cinza':'a')+'">'
+    +     (est===EST_ABERTA?'RECEBENDO PROPOSTA':est===EST_ENCERRADA?'ENCERRADA':'PRAZO NÃO INFORMADO')+'</span>'
+    +   (l.situacaoCompraNome ? '<span class="bdg cinza" title="situação declarada pelo órgão no PNCP">'
+          + esc(l.situacaoCompraNome)+'</span>' : '')
+    +   selosContexto(l)
     + '</div>'
+    + acoes
     + '<div id="det-conversa"></div>'
+    /* ══ O CABEÇALHO DE DADOS — A ANATOMIA QUE O DONO PEDIU ("igual acontece no SigaPregão") ═══
+       Publicação · abertura · encerramento · valor · nº de controle · CÓDIGO DA UNIDADE.
+       >>> O CÓDIGO DA UNIDADE É O QUE FALTAVA, e ele é prático: é a UASG do Comprasnet, o número
+           por onde o gestor acha o pregão no portal de origem. MEDIDO: vem preenchido em 322 de
+           322 linhas da forma de consulta. Ele estava no `bruto` desde sempre e nunca chegou à
+           tela. */
     + '<div class="dados" style="margin:0 0 14px">'
-    +   '<div class="dado"><small>Abertura</small><span>'+fmtDt(l.dataAberturaProposta)+'</span></div>'
-    +   '<div class="dado"><small>Encerra em</small><span>'+fmtDt(l.dataEncerramentoProposta)+'</span></div>'
-    +   '<div class="dado"><small>Valor estimado</small><span>'+brl(l.valorTotalEstimado)+'</span></div>'
+    +   '<div class="dado"><small>Publicação</small><span>'
+    +     (l.dataPublicacaoPncp ? fmtDt(l.dataPublicacaoPncp) : '<span class="hint">não informada</span>')+'</span></div>'
+    +   '<div class="dado"><small>Abertura</small><span>'
+    +     (dt(l.dataAberturaProposta) ? fmtDt(l.dataAberturaProposta) : '<span class="hint">não informada</span>')+'</span></div>'
+    +   '<div class="dado"><small>Encerramento</small><span>'
+    +     (dt(l.dataEncerramentoProposta) ? fmtDt(l.dataEncerramentoProposta) : '<span class="hint">não informado</span>')+'</span></div>'
+    +   '<div class="dado"><small>Valor estimado</small><span>'+celValor(l.valorTotalEstimado)+'</span></div>'
     +   '<div class="dado"><small>Nº controle PNCP</small><span>'+esc(l.numeroControlePNCP||'—')+'</span></div>'
+    +   (un.codigoUnidade
+        ? '<div class="dado" title="código da unidade compradora no PNCP — é a UASG no Comprasnet, '
+          + 'o número por onde se acha o pregão no portal de origem">'
+          + '<small>Código da unidade</small><span>'+esc(un.codigoUnidade)+'</span></div>' : '')
     + '</div>'
-    + corpo;
+    + '<div class="obj" style="margin:0 0 14px">'+grifa(l.objetoCompra||'')+'</div>'
+    /* A ORDEM DAS SEÇÕES SEGUE O QUE A PESSOA VEIO FAZER. Quem clicou em "usar como referência de
+       preço" veio pelo RESULTADO, e ele sobe; quem abriu o cartão veio pelos ITENS. Uma ordem
+       fixa faria metade das visitas começar rolando a tela. */
+    + (DET.foco === 'resultado' ? secaoResultado(l) : '')
+    + '<div class="det-secao"><h4>Itens do edital</h4>' + corpo + '</div>'
+    + secaoDocumentos()
+    + (DET.foco === 'resultado' ? '' : (est === EST_ENCERRADA || (DET.resultado && DET.resultado.length)
+        ? secaoResultado(l) : ''))
+    + acoes;
+}
+
+/* "Buscar os itens agora" — o mesmo caminho do cruzamento, forçando a releitura. O cache de 15
+   minutos existe pra não bater no PNCP a cada clique; quando a pessoa PEDE de novo, ela está
+   dizendo que a resposta de antes não serviu. */
+async function recarregarItensDetalhe(){
+  if(!DET) return;
+  CRUZ.delete(chaveLic(DET.lic));
+  const i = DET.i;
+  pintaDetalhe('lendo');
+  try{ DET.dados = await puxarItens(DET.lic); if(DET && DET.i===i) pintaDetalhe(); }
+  catch(e){ if(DET && DET.i===i){ DET.erro = e.message; pintaDetalhe('erro'); } }
 }
 
 // ══ A PONTE ENCONTRAR → NEGÓCIOS (08/08) ══════════════════════════════════════════════════
@@ -4104,6 +4635,19 @@ function render(todos, kws, excl, aviso, procedencia, procIcone){
     return !!(porItem && porItem.has(_numCtrl(l)));
   };
   let hits = todos.filter(casa);          // `let`: a fatia A3 reordena a lista antes de desenhar
+  /* ══ O FILTRO POR CHIP DE CATEGORIA (fatia A21) — E ELE PRECISA CONFESSAR ════════════════════
+     O chip só existe onde os itens já foram lidos. Ligar o filtro e simplesmente sumir com o
+     resto faria "3 de 40" parecer resposta sobre as 40 — quando 31 delas nem foram olhadas.
+     Por isso a conta das SEM ITENS LIDOS é feita aqui e dita no cabeçalho do painel. */
+  let semItensNoFiltro = 0;
+  if(FILTRO_CAT){
+    const antes = hits;
+    semItensNoFiltro = antes.filter(l => categoriasDosItens(l) == null).length;
+    hits = antes.filter(l => {
+      const c = categoriasDosItens(l);
+      return !!c && c.some(x => x.rotulo === FILTRO_CAT);
+    });
+  }
   const agora = new Date();
   const abertas = hits.filter(l=>{ const d=dt(l.dataEncerramentoProposta); return d && d>agora; });
   const soma = hits.reduce((s,l)=>s+(Number(l.valorTotalEstimado)||0),0);
@@ -4225,6 +4769,15 @@ function render(todos, kws, excl, aviso, procedencia, procIcone){
      +     (todos.length===1?'publicada no período':'publicadas no período')
      +     (abremHoje ? ' · <b>'+abremHoje+'</b> '+(abremHoje===1?'abre hoje':'abrem hoje') : '')
      +   '</span>'
+     +   (FILTRO_CAT
+        ? '<span class="etq chip on">'+esc(FILTRO_CAT)
+          + ' <button type="button" class="btn sec mini" style="padding:0 var(--esp-2);margin-left:var(--esp-1)" '
+          + 'onclick="filtrarPorCategoria('+JSON.stringify(FILTRO_CAT).replace(/"/g,'&quot;')+')" '
+          + 'aria-label="tirar o filtro de categoria">×</button></span>'
+          + (semItensNoFiltro ? '<span class="hint" title="o chip de categoria só existe depois que os '
+              + 'itens do edital são lidos — estas ainda não foram, e por isso não dá pra dizer se '
+              + 'entram ou não neste filtro"><b>'+semItensNoFiltro+'</b> fora da conta: itens ainda não lidos</span>' : '')
+        : '')
      +   '<span class="hint" id="sel-conta" style="font-weight:var(--peso-semi)"></span>'
      +   '<span style="flex:1"></span>'
      /* ══ O CONTROLE "ORDENAR" (fatia A3) ═══════════════════════════════════════════════════
@@ -4269,7 +4822,10 @@ function render(todos, kws, excl, aviso, procedencia, procIcone){
       : dias<0  ? '<span class="bdg r">encerrada</span>'
       : dias<=2 ? '<span class="bdg a">encerra em '+dias+'d</span>'
       : '<span class="bdg v">encerra em '+dias+'d</span>';
-    const cats = categorias(l.objetoCompra);
+    /* As categorias vêm do CASAMENTO DOS ITENS, nunca do objeto (fatia A21). `null` = itens
+       ainda não lidos, e aí o cartão não inventa etiqueta nenhuma. */
+    const cats = categoriasDosItens(l);
+    const est  = estadoLic(l, agora);
     const alvo = aderencia(l);
     const des  = desertaDe(l);
     const titulo = esc(l.modalidadeNome||'') + ' Nº ' + esc(numCompra(l.numeroCompra, l.anoCompra))
@@ -4279,7 +4835,18 @@ function render(todos, kws, excl, aviso, procedencia, procIcone){
     const urg = urgenciaAbertura(l.dataAberturaProposta, agora);
     const pct = aderenciaPct(l);
     const escolhida = ESCOLHIDAS.has(chaveLic(l));
-    h += '<div class="lic'+urg.classe+(escolhida?' escolhida':'')+'">'
+    /* ══ O CARTÃO INTEIRO ABRE O DETALHE (fatia A21 — urgência do dono) ═══════════════════════
+       Era só o título. Um alvo de 300px de largura e 20 de altura dentro de um cartão de 200px
+       de altura: o resto do cartão parecia clicável, não era, e o único clique que sempre
+       respondia era o que TIRAVA a pessoa do sistema.
+       >>> O `cliqueCartao` IGNORA CONTROLE, e é isso que o faz seguro: marcar a caixa de seleção,
+           abrir "⋯ mais ações" ou clicar num botão não pode abrir o painel por tabela — seriam
+           três gestos com dois efeitos.
+       >>> E ELE NÃO É `role="button"`: o cartão contém botões, caixa e links, e um botão dentro
+           de outro é markup inválido que o leitor de tela anuncia errado. O caminho de teclado
+           continua sendo o título (que é um <button> de verdade, focável e anunciado); o clique
+           no corpo é um atalho de mouse por cima, não a única porta. */
+    h += '<div class="lic clicavel'+urg.classe+(escolhida?' escolhida':'')+'" onclick="cliqueCartao(event,'+i+')">'
       + '<div class="topo">'
       /* A CAIXA DE SELEÇÃO É A PRIMEIRA COISA DA LINHA, antes do selo do órgão: ela é o único
          controle do cartão que não abre nada, e o olho tem que achá-la sem procurar. */
@@ -4301,10 +4868,15 @@ function render(todos, kws, excl, aviso, procedencia, procIcone){
              painel. Âncora que não leva a um endereço quebra o "abrir em nova aba" do meio da
              pessoa e mente pro leitor de tela sobre o que vai acontecer. */
       +     '<button type="button" class="titulo" onclick="abrirDetalhe('+i+')">'+titulo+'</button>'
-      +     '<div class="sub"><span class="quando">Abertura em '+fmtDt(l.dataAberturaProposta)+'</span>'
+      /* "Abertura em —" era o travessão com cara de dado faltando que a caixa proíbe. Nas 400
+         linhas vindas da busca do PNCP a janela de proposta não existe na resposta (medido), e
+         dizer isso é diferente de mostrar um traço. */
+      +     '<div class="sub">' + (dt(l.dataAberturaProposta)
+              ? '<span class="quando">Abertura em '+fmtDt(l.dataAberturaProposta)+'</span>'
+              : '<span class="quando" title="esta licitação entrou pelo índice de busca do PNCP, '
+                + 'que não devolve a janela de proposta">abertura não informada</span>')
       +       urg.pastilha
-      +       (l.modoDisputaNome ? '<span>· '+esc(l.modoDisputaNome)+'</span>' : '')
-      +       (_ehSrp(l) ? '<span class="bdg laranja" title="Sistema de Registro de Preços: a ata vale por até 12 meses e a compra é parcelada">SRP</span>' : '')
+      +       selosContexto(l)
       +       prazo
       +       (ehNova(l) ? '<span class="bdg nova" title="não estava no resultado da última vez que você abriu este jornal">NOVA</span>' : '')
       +     '</div>'
@@ -4314,7 +4886,19 @@ function render(todos, kws, excl, aviso, procedencia, procIcone){
       // Grifar o título faria o número do pregão ficar amarelo por acaso.
       + '<div class="obj">'+grifa(l.objetoCompra||'')+'</div>'
       + '<div class="etiquetas" id="etq-'+i+'">'
-        + cats.map(c=>'<span class="etq">'+esc(c)+'</span>').join('')
+        /* ══ OS CHIPS DE CATEGORIA — E ELES FILTRAM (fatia A21) ═══════════════════════════════
+           Cada chip diz QUANTOS itens daquele tipo o edital tem, porque é o número que separa
+           "um pregão de medicamento" de "um pregão de gaze com duas caixas de dipirona".
+           >>> SEM ITENS LIDOS, EM VEZ DE CHIP, VAI A VERDADE + O CAMINHO. "itens ainda não lidos"
+               com um botão que os lê é a lista vazia deixando de ter cara de "não tem". */
+        + (cats
+            ? cats.map(c => '<button type="button" class="etq chip'+(FILTRO_CAT===c.rotulo?' on':'')
+                + '" onclick="event.stopPropagation();filtrarPorCategoria('+JSON.stringify(c.rotulo).replace(/"/g,'&quot;')+')" '
+                + 'title="'+esc(c.n + (c.n===1?' item':' itens') + ' deste edital · clique para mostrar só as licitações com ' + c.rotulo)+'">'
+                + esc(c.rotulo) + ' <b>' + c.n + '</b></button>').join('')
+            : '<span class="etq zero" title="a lista de itens deste edital ainda não foi lida — '
+              + 'sem ela a tela não sabe dizer se é medicamento ou material, e não chuta pelo título">'
+              + 'itens ainda não lidos</span>')
         /* A NOTA DE ADERÊNCIA substituiu a etiqueta "N itens no nosso estoque" quando dá pra
            calcular a razão. Ela diz a mesma coisa em menos espaço e responde melhor a pergunta
            real: "quanto DESTE edital eu atendo?" — 40 itens casados em 500 e 40 em 45 são
@@ -4355,7 +4939,7 @@ function render(todos, kws, excl, aviso, procedencia, procIcone){
              não de decisão, e passou a viver no `title` do município. Nada foi apagado — o que
              mudou é o que ganha tamanho. */
       + '<div class="dados">'
-      +   '<div class="dado"><small>Valor estimado</small><span>'+brl(l.valorTotalEstimado)+'</span></div>'
+      +   '<div class="dado"><small>Valor estimado</small><span>'+celValor(l.valorTotalEstimado)+'</span></div>'
       +   '<div class="dado" title="Fonte: PNCP · nº de controle '+esc(l.numeroControlePNCP||'—')+'">'
       +     '<small>Município</small><span>'+esc(un.municipioNome||org)+(un.ufSigla?' · '+esc(un.ufSigla):'')+'</span></div>'
       +   '<div class="dado"><small>'+(l.usuarioNome ? 'Portal' : 'Modalidade')+'</small><span>'
@@ -4373,14 +4957,37 @@ function render(todos, kws, excl, aviso, procedencia, procIcone){
              ACENDE a nota de aderência ali em cima. Esconder o gesto que produz o número que
              a própria linha exibe faria a nota parecer que aparece sozinha em algumas linhas
              e não em outras. */
+      /* ══ AS AÇÕES SEGUEM O ESTADO DO CERTAME (fatia A21 — urgência do dono) ═════════════════
+         ABERTA .......... dá pra disputar: "Adicionar aos meus negócios" em verde.
+         ENCERRADA ....... NÃO dá. Em vez de esconder o cartão, ele muda de ofício: o que sobra
+                           de um pregão encerrado é o PREÇO PRATICADO, que é munição de proposta.
+                           Por isso "Ver itens e resultado" e "Usar como referência de preço" —
+                           e nenhum caminho para criar um negócio que já nasceria perdido.
+         SEM PRAZO ....... a tela não sabe, e diz. Oferece conferir no portal, que é o gesto
+                           que responde a pergunta — em vez de chutar um dos dois estados. */
       + '<div class="acoes">'
-      +   '<button class="btn mini" onclick="abrirDetalhe('+i+')">Ver itens e detalhes</button>'
+      +   '<button class="btn mini" onclick="abrirDetalhe('+i+')">'
+      +     (est === EST_ENCERRADA ? 'Ver itens e resultado' : 'Ver itens e detalhes') + '</button>'
+      /* O SEGUNDO BOTÃO MUDA DE NOME CONFORME JÁ SE LEU OU NÃO os itens: antes de ler, o que ele
+         faz é BUSCAR (é o "buscar agora" que a caixa pede pro estado sem itens); depois de ler,
+         ele é o cruzamento com o estoque, que é o que acende a nota de aderência. Mesmo botão,
+         porque é o mesmo gesto — o rótulo é que precisa dizer a verdade sobre o momento. */
       +   ' <button class="btn sec mini" id="bt-'+i+'" onclick="verItens('+i+')">'
-      +   ic('alvo') + ' Cruzar com nosso estoque</button>'
-      // A PONTE ENCONTRAR -> NEGÓCIOS. Achar a oportunidade e decidir disputar são o mesmo
-      // gesto; antes disso, quem achasse algo aqui tinha que ir pro funil e digitar de novo.
-      +   ' <button class="btn sec mini" id="bf-'+i+'" onclick="mandarProFunil('+i+')" '
-      +     'title="cria o negócio no funil, na fase Oportunidade">＋ Mandar pro funil</button>'
+      +     ic('alvo') + (cats ? ' Cruzar com nosso estoque' : ' Buscar os itens agora') + '</button>'
+      +   (est === EST_ABERTA
+          // A PONTE ENCONTRAR -> NEGÓCIOS. Achar a oportunidade e decidir disputar são o mesmo
+          // gesto; antes disso, quem achasse algo aqui tinha que ir pro funil e digitar de novo.
+          ? ' <button class="btn mini bt-verde" onclick="adicionarAosNegocios('+i+')" '
+            + 'title="abre o assistente do Negócios já com esta licitação e os itens escolhidos">'
+            + '＋ Adicionar aos meus negócios</button>'
+            + ' <button class="btn sec mini" onclick="conversarDoCartao('+i+')" '
+            + 'title="usa inteligência artificial e consome crédito por uso — o preço aparece antes de gastar">'
+            + 'Conversar com o edital <span class="lm-selo-ia">IA</span></button>'
+          : est === EST_ENCERRADA
+            ? ' <button class="btn sec mini" onclick="abrirReferencia('+i+')" '
+              + 'title="mostra o que foi pago por item, ao lado do teto legal da CMED — histórico de '
+              + 'preço é munição de proposta">Usar como referência de preço</button>'
+            : ' <span class="hint">prazo não informado nesta fonte — confira no portal antes de decidir</span>')
       +   '<span style="flex:1"></span>'
       +   '<span class="mais"><button type="button" class="btn sec mini" '
       +     'onclick="event.stopPropagation();this.parentNode.classList.toggle(\'on\')" '
@@ -4391,6 +4998,13 @@ function render(todos, kws, excl, aviso, procedencia, procIcone){
           + 'Abrir no PNCP' + ic('sai','sai') + '</a>'
         : '<button type="button" disabled title="este edital não trouxe link do portal de origem">'
           + 'Abrir no PNCP (sem link)</button>')
+      /* O criador DIRETO continua existindo, e ficou aqui embaixo: ele grava o negócio sem
+         passar pelo assistente e sem escolher itens. É útil quando se quer só marcar a
+         oportunidade, e é justamente por não escolher item que ele NÃO pode ser o caminho
+         principal — o assistente do Negócios é o único lugar onde a escolha acontece. */
+      +       (est === EST_ABERTA
+        ? '<button type="button" id="bf-'+i+'" onclick="mandarProFunil('+i+')">'
+          + 'Criar o negócio direto (sem escolher itens)</button>' : '')
       +     '</span></span>'
       + '</div>'
       + '<div class="itens" id="itens-'+i+'" style="display:none"></div>'
@@ -4596,6 +5210,26 @@ function tabelaItens(r, i){
 function atualizaBadge(i){
   const l = (window._hits||[])[i]; if(!l) return;
   const n = aderencia(l), cx = document.getElementById('etq-'+i);
+  /* ══ OS CHIPS APARECEM AQUI, e não num `rerender()` (fatia A21) ══════════════════════════════
+     Antes de cruzar, o cartão diz "itens ainda não lidos" — é o estado honesto. No instante em
+     que a leitura volta, a etiqueta tem que virar os chips de categoria. Fazer isso com um
+     `rerender()` da lista inteira jogaria a pessoa de volta pro topo da página e fecharia as
+     sanfonas abertas, no meio de um "Cruzar todas" que ainda está andando. */
+  if(cx){
+    const cats = categoriasDosItens(l);
+    const zero = cx.querySelector('.etq.zero');
+    if(cats && zero){
+      const frag = cats.map(c => '<button type="button" class="etq chip'+(FILTRO_CAT===c.rotulo?' on':'')
+        + '" onclick="event.stopPropagation();filtrarPorCategoria('+JSON.stringify(c.rotulo).replace(/"/g,'&quot;')+')" '
+        + 'title="'+esc(c.n + (c.n===1?' item':' itens') + ' deste edital · clique para mostrar só as licitações com ' + c.rotulo)+'">'
+        + esc(c.rotulo) + ' <b>' + c.n + '</b></button>').join('');
+      zero.insertAdjacentHTML('beforebegin', frag);
+      zero.remove();
+    }
+    // e o botão deixa de dizer "buscar": os itens já foram lidos.
+    const bt = document.getElementById('bt-'+i);
+    if(bt && cats && /Buscar os itens/.test(bt.textContent||'')) bt.innerHTML = ic('alvo')+' Cruzar com nosso estoque';
+  }
   if(cx){
     let el = cx.querySelector('.etq.alvo');
     if(n){
