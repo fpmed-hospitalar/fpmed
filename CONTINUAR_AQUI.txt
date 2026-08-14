@@ -5,6 +5,103 @@
     relatorio. Detalhe no CLAUDE.md, secao ATALHOS DO DONO.
 
 ========================================
+>>> CAIXA A — RODADA 3, EXECUTADA INTEIRA (A16-A20). 14/08/2026
+========================================
+  [OK] A16 .. A JANELA DE CUSTO NO PADRAO DO MOLDE (commit f9f11a9). O confirm() cru virou
+             janela desenhada, e ela mora NO MOTOR — a Encontrar so informa o nome do
+             documento e o Negocios do B herda sem escrever uma linha. Desenha-la na tela que
+             pediu criaria a SEGUNDA janela de custo, que e a segunda conta de custo um degrau
+             acima. Titulo, o que vai ser lido (nome + tamanho), o VALOR ATE R$ X em destaque,
+             a frase honesta do teto e dois botoes com o verbo da acao.
+             >>> DECISAO QUE CONTRARIA O HABITO: o foco nasce no "Cancelar". Aqui a acao
+                 primaria GASTA — um Enter de sobra confirmaria um gasto que ninguem leu.
+             MEDIDO no banco: orcar 10->10 linhas; cancelar 10->10; confirmar 10->11, UMA VEZ
+             SO, US$ 0,002708 cobrado dentro do teto anunciado de US$ 0,01031.
+             ZERO hex e ZERO rgba() a mao na janela; 20 tokens, todos conferidos.
+             DOM minimo proprio (tests/dom_minimo.js) em vez de jsdom — dependencia de 3 MB por
+             um dialogo seria trocar um problema pequeno por um permanente.
+             ACHADO: o gm-auth tem DOIS z-index e o primeiro do arquivo e o do OVERLAY DE LOGIN
+             (2147483647). Esse esta CERTO acima de tudo: sessao caida tem que cobrir ate um
+             dialogo de custo aberto. A janela ficou em 2147483100 — acima da etiqueta, abaixo
+             do login.
+  [OK] A17 .. A DIVERGENCIA DA SELECAO, DECLARADA (commit 8555d67). Registrada em
+             docs/molde_encontrar.md com secao propria, a razao do dono (a barra carrega PRAZO;
+             informacao vence decoracao) e a medicao inteira.
+             >>> ACHADO, E ERA CONDICIONAL — o pior jeito de um contraste errar: o --cinza-500
+                 passa em AA por 0,05 SOBRE O BRANCO (4,55:1). O fundo da linha selecionada nao
+                 e branco: sobre o --azul-50 ele cai pra 4,14:1 e REPROVA. A linha nascia legal
+                 e ficava ilegal no instante em que alguem a marcava — auditoria de tela parada
+                 nunca ve. Atingia `.lic .sub` e `.lic .dado small` (10px caixa alta, o texto
+                 menor da linha, e estava no tom mais claro). Os dois subiram pro --cinza-600
+                 (5,57:1 sobre a selecao), que e o token que o tema ja chama de "RÓTULO/meta".
+             Selecionada x normal: 1,10:1 WCAG e 9,57 pts de luminancia — 2,0x o hover. A
+             leitura e DUPLA de proposito: dois fundos claros nao alcancam 3:1 sem virar
+             azul-marinho, e declarar so um dos numeros esconderia isso.
+             As 3 barras de prazo fracas ja eram fracas sobre o BRANCO — nao e da selecao.
+  [OK] A18 .. COBERTURA ATE O FIM + WATCHDOG (commits 6359cb6, 6064da0).
+             vivas sem itens 107 -> 1 (a que sobrou e a TRUNCADA, que volta por desenho);
+             licitacoes com itens 2.130 -> 2.631; itens 35.537 -> 40.342; sem prazo 1.109 -> 710.
+             Os 192 resultados da A7: INTACTOS (o cuidado da A9 e lei).
+             3 licitacoes conferidas contra o PNCP, 4 campos cada — contar linha nao prova nada
+             sobre conteudo.
+             WATCHDOG: tools/watchdog_pncp.js + ddl/pncp_sondagens.sql. Sonda a consulta com UMA
+             requisicao de UM registro, no MESMO endereco e teto da varredura; grava TODA
+             sondagem (a que falha e que da a duracao da queda); NA VIRADA dispara sozinho a
+             varredura normal. NAO recua tres anos: as 1.955 datas nulas vao de 09/2023 a
+             08/2026, e cobrir 1.070 dias contra uma API que acabou de voltar seria a primeira
+             coisa a derruba-la de novo. O log DIZ quantas ficaram.
+             33 asserts SIMULANDO A VOLTA — o unico jeito, porque o caminho da volta e por
+             definicao o que nao acontece enquanto se testa.
+             WATCHDOG_PNCP.bat + AGENDAR_WATCHDOG.bat (um clique liga, outro desliga). NAO
+             agendei sozinho: rodar de 20 em 20 min para sempre nesta maquina e decisao do dono.
+  [OK] A19 .. ATA ANTIGA PELO NUMERO INFORMADO (commit c2b3fae). Edge `valida-controle` no ar +
+             tools/valida_controle_pncp.js + contrato escrito pro B (secao 7 do
+             docs/contrato_itens_editais.md).
+             A ESCADA: formato, existencia e ANO BLOQUEIAM; orgao e municipio SO AVISAM —
+             comparar nome de orgao e comparar texto escrito por gente, e recusar o numero certo
+             de quem digitou certo ensina a pessoa a ignorar o aviso.
+             >>> O ASSERT MAIS IMPORTANTE: "nao consegui perguntar" NUNCA vira "nao existe".
+                 Com a consulta do PNCP fora, confundir as duas faria a pessoa APAGAR um numero
+                 certo. Veredito proprio: `nao_sei`.
+             Existencia perguntada por /itens E /arquivos (a de detalhe, que responde) — o
+             detalhe da compra mudou pra dentro da consulta (301) e perguntar la nunca aprovaria
+             nada. Duas portas, porque compra sem item publicado existe.
+             PROVA: numero inexistente RECUSADO (CLI e edge, 409), ano trocado BLOQUEADO, numero
+             certo CONFERIDO e gravado, o coletor passou a ver ("NA FILA: 1 de 106") e o negocio
+             enxerga os 192 itens ganhos da A7.
+             REMEDIDO HOJE: com o indice ja em 3.876, as 4 juncoes ambiguas continuam TODAS de
+             municipio errado. O numero vem de gente.
+  [OK] A20 .. A BUSCA POR PRODUTO, MEDIDA (commit e3991e0). E o achado nao foi um zero: foi o
+             contrario. "equipo" devolvia 539 licitacoes de pipoca, pula-pula, trio eletrico e
+             frigobar, porque o stemmer funde equipo/equipamento/equipe no radical `equip` — os
+             TRES devolviam 539.
+             >>> PIOR QUE O ZERO DA A8: la a busca dizia "nao achei" sobre um pais comprando —
+                 honesto na cara. Aqui sao 539 resultados PLAUSIVEIS e quase todos errados.
+                 Resposta cheia e errada custa mais tempo que resposta vazia.
+             Medi 15 termos: 14 entre 93-100% de confirmacao literal, equipo em 15%. Por isso o
+             conserto e uma LISTA editavel (busca_palavra_inteira, com motivo e numero em cada
+             linha) e nao regra geral — exigir palavra inteira em tudo mataria "cateteres"
+             achando "cateter".
+             equipo 539 -> 35 · soro fisiologico 9 -> 71 · dieta enteral 14 -> 23.
+             DEFEITO DO PLURAL, achado APOS o conserto: a lista casava pelo termo exato, entao
+             "equipos" ficou em 539. Meio conserto e pior que nenhum. Agora o termo (ou ele sem
+             o "s") casa, e os sinonimos saem do termo CANONICO.
+             A LINHA CLINICA APARECEU NA PROVA: o 1o resultado de "albumina" na base E "albumina
+             de soro bovino (BSA)", num edital de BIOLOGIA MOLECULAR. A busca esta certa; o que
+             seria errado e um SINONIMO juntando as duas.
+             LIMITE DECLARADO: busca por PEDACO de palavra nao existe ("soro fisiol" = 0).
+
+  Suites ao fim da rodada 3: 4.545 asserts, 119 suites, 0 falhas.
+
+  >>> PENDENCIAS DO DONO (rodada 3), em uma linha cada:
+      1. AGENDAR O WATCHDOG: clique em AGENDAR_WATCHDOG.bat -> opcao 1. Sem isso ele so roda
+         quando alguem manda, e a volta do PNCP pode ser as 3 da manha de um domingo.
+      2. APAGAR O REGISTRO DE PROVA: o negocio 2567 ("[PROVA A19 ...]") nasce ARQUIVADO e nao
+         entra no funil de trabalho. Apagar e DELETE, e DELETE e decisao sua.
+      3. O CAMPO DA FICHA e do B: a edge `valida-controle` esta no ar e documentada na secao 7
+         do docs/contrato_itens_editais.md — ele liga na proxima rodada dele.
+
+========================================
 >>> CAIXA A — RODADA 2, EXECUTADA INTEIRA. 14/08/2026
 ========================================
   [OK] A9 ... A BUSCA POR PRODUTO PASSOU A ACHAR (commit 2a89421). tools/coleta_itens_lote.js.
