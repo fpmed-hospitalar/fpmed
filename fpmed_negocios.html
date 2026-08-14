@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <!-- ESTA TELA DEIXOU DE SER ESCURA (12/08, item 5 da reforma: "kanban protagonista").
      Ela declarava data-tema="dark" porque era dona da própria paleta — o que mandava o
      aplicaTema não escrever cor aqui. Agora ela vive sobre os tokens do fpmed_tema.css,
@@ -3616,7 +3616,7 @@ function pintaProposta(id){
   box.innerHTML = ANEXOS.length
     ? ANEXOS.map(a => `<div class="anx">
         <span class="v">v${a.versao}</span>
-        <span class="n" onclick="abrirAnexo('${esc(a.arquivo_path)}')" title="abrir">${esc(a.arquivo_nome)}</span>
+        <span class="n" onclick="abrirAnexo('${esc(a.arquivo_path)}', this)" title="abrir">${esc(a.arquivo_nome)}</span>
         <span class="q">${esc(new Date(a.enviado_em).toLocaleDateString('pt-BR'))}${a.enviado_por?' · '+esc(String(a.enviado_por).split('@')[0]):''}${a.bytes?' · '+(a.bytes/1024).toFixed(0)+' KB':''}</span>
       </div>`).join('')
       + `<div style="margin-top:10px"><button class="btn-ed" onclick="conferirProposta(${id})" id="conf-bt"><svg class="ic" aria-hidden="true"><use href="#ic-balanca"/></svg> Conferir a v${ANEXOS[0].versao} contra o teto CMED</button></div>`
@@ -3627,7 +3627,17 @@ function pintaProposta(id){
 
 // URL ASSINADA e não pública — o bucket é privado. Mesma regra da tela de Documentos: o link vale
 // 60 segundos, que é o tempo de abrir. Link de proposta que vale para sempre é link que vaza.
-async function abrirAnexo(path){
+/* ── B12: ABRIR ANEXO PASSOU A DIZER QUE ESTÁ ABRINDO ────────────────────────────────────────
+   Assinar a URL é uma viagem ao servidor, e até ela voltar a tela ficava IDÊNTICA. Num arquivo
+   grande, ou numa rede de hotel de plantão de licitação, isso é meio segundo de nada — e meio
+   segundo de nada é um segundo clique, que abre DUAS abas.
+   >>> O ELEMENTO CLICADO CHEGA COMO PARÂMETRO (`this`), e não é procurado por id: os três
+       lugares que chamam esta função montam listas, e id repetido em lista é o defeito seguinte.
+       Quem não passar o elemento continua funcionando — o aviso é que não aparece. */
+async function abrirAnexo(path, el){
+  const rotulo = el ? el.textContent : null;
+  if(el){ el.textContent = 'abrindo…'; el.style.pointerEvents = 'none'; }
+  const devolve = () => { if(el){ el.textContent = rotulo; el.style.pointerEvents = ''; } };
   try{
     const r = await fetch(`${SB_URL}/storage/v1/object/sign/documentos/${encodeURIComponent(path)}`, {
       method:'POST', headers: Object.assign({'Content-Type':'application/json'}, SB_H),
@@ -3635,7 +3645,8 @@ async function abrirAnexo(path){
     if(!r.ok) throw new Error('HTTP ' + r.status);
     const j = await r.json();
     window.open(SB_URL + '/storage/v1' + j.signedURL, '_blank', 'noopener');
-  }catch(e){ alert('Não consegui abrir o arquivo: ' + e.message); }
+    devolve();
+  }catch(e){ devolve(); alert('Não consegui abrir o arquivo: ' + e.message); }
 }
 
 async function anexarProposta(id){
@@ -5037,7 +5048,7 @@ function pintaEdital(id){
       <div class="salvo" style="color:var(--azul-claro);font-weight:600">${rot} (${l.length})</div>
       ${l.map(a => `<div class="anx">
         <span class="v">v${a.versao}</span>
-        <span class="n" onclick="abrirAnexo('${esc(a.arquivo_path)}')" title="abrir o arquivo">${esc(a.arquivo_nome)}</span>
+        <span class="n" onclick="abrirAnexo('${esc(a.arquivo_path)}', this)" title="abrir o arquivo">${esc(a.arquivo_nome)}</span>
         <span class="q">${esc(new Date(a.enviado_em).toLocaleDateString('pt-BR'))}${a.enviado_por?' · '+esc(String(a.enviado_por).split('@')[0]):''}${a.bytes?' · '+(a.bytes/1024).toFixed(0)+' KB':''}</span>
       </div>`).join('')}</div>`;
   };
@@ -5411,7 +5422,7 @@ function pintaAta(id){
         <div class="salvo" style="color:var(--azul-claro);font-weight:600">${esc(c.n)} (${porCat[c.k].length})</div>
         ${porCat[c.k].map(a => `<div class="anx">
           <span class="v">v${a.versao}</span>
-          <span class="n" onclick="abrirAnexo('${esc(a.arquivo_path)}')" title="abrir">${esc(a.arquivo_nome)}</span>
+          <span class="n" onclick="abrirAnexo('${esc(a.arquivo_path)}', this)" title="abrir">${esc(a.arquivo_nome)}</span>
           <span class="q">${esc(new Date(a.enviado_em).toLocaleDateString('pt-BR'))}${a.enviado_por?' · '+esc(String(a.enviado_por).split('@')[0]):''}</span>
         </div>`).join('')}
       </div>`).join('')
@@ -5684,7 +5695,7 @@ function pintaGanhos(id){
               sozinha num campo que a empresa usa pra decidir onde disputar. Confira a tabela acima
               e confirme — a confirmação fica no histórico com a marca de que veio de leitura.
             </div>
-            <button class="btn-ed" onclick="confirmarValorGanho(${id}, ${total.toFixed(2)})">✓ Confirmar ${brl(total)} e gravar os ${g.length} itens</button>
+            <button class="btn-ed" id="ata-conf-bt" onclick="confirmarValorGanho(${id}, ${total.toFixed(2)})">✓ Confirmar ${brl(total)} e gravar os ${g.length} itens</button>
           </div>`
         : (comTotal.length ? '<div class="salvo" style="margin-top:10px">O valor ganho é campo de gestor.</div>' : ''))
     + custoDaLeitura(RELATORIO_ATA.custo);
@@ -5700,6 +5711,15 @@ async function confirmarValorGanho(id, valor){
     + (itensIA.length ? ' e os ' + itensIA.length + ' itens do resultado' : '') + '?'
     + (antes ? '\n\nO valor atual é ' + brl(antes) + ' e será substituído.' : '')
     + '\n\nEste número alimenta a taxa de vitória.')) return;
+  /* ── B12: O BOTÃO RESPONDE ANTES DA REDE ───────────────────────────────────────────────────
+     Daqui até o fim são DUAS ou TRÊS viagens ao servidor (o valor, o rastro e os itens). Sem
+     esta linha, entre o "OK" da confirmação e a primeira mensagem a tela ficava idêntica ao que
+     era — e um botão que não muda depois do clique é um botão que se clica de novo. Clicar duas
+     vezes aqui grava DUAS confirmações do mesmo valor, que é justamente o rastro sujo que este
+     botão existe para produzir limpo. */
+  const btConf = document.getElementById('ata-conf-bt');
+  const rotuloConf = btConf ? btConf.textContent : '';
+  if(btConf){ btConf.disabled = true; btConf.textContent = 'gravando…'; }
   try{
     // >>> O RASTRO DIZ DE ONDE VEIO. `gravar` já registra a alteração; o que se acrescenta aqui é
     //     a anotação de que o número nasceu de uma leitura por IA e foi CONFIRMADO por alguém.
@@ -5751,7 +5771,13 @@ async function confirmarValorGanho(id, valor){
     saida.innerHTML += '<div class="salvo ok" style="margin-top:8px">✓ valor ganho gravado como ' + brl(valor)
       + msgItens + ' — a confirmação está no histórico.</div>';
     carregarRastro(id); carregarItensGanhos(id); pinta();
-  }catch(e){ saida.innerHTML += '<div class="salvo erro" style="margin-top:8px">não consegui gravar: ' + esc(e.message) + '</div>'; }
+    // gravou: o botão NÃO volta a ser clicável — confirmar duas vezes o mesmo valor é o defeito
+    if(btConf) btConf.textContent = '✓ confirmado';
+  }catch(e){
+    saida.innerHTML += '<div class="salvo erro" style="margin-top:8px">não consegui gravar: ' + esc(e.message) + '</div>';
+    // falhou: aí sim volta, porque tentar de novo é o certo
+    if(btConf){ btConf.disabled = false; btConf.textContent = rotuloConf; }
+  }
 }
 
 /* ── O MAPA DE PREÇOS DA DISPUTA ─────────────────────────────────────────────────────────────
@@ -6143,15 +6169,34 @@ async function criarLembrete(id){
   }catch(e){ msg.textContent = '<svg class="ic" aria-hidden="true"><use href="#ic-alerta"/></svg> ' + e.message; }
   bt.disabled = false;
 }
+/* ── B12: A MARCAÇÃO DA TAREFA ERA UM CLIQUE MUDO — E, PIOR, UM CLIQUE MENTIROSO ─────────────
+   Como estava: a caixinha ia à rede ANTES de mexer em qualquer coisa (o sino e a lista só
+   mudavam depois da resposta), e o `catch` engolia a falha sem uma palavra.
+   >>> O MUDO ERA O MENOR DOS DOIS PROBLEMAS. O navegador marca a caixinha sozinho no clique;
+       com a rede caída, ela ficava MARCADA na tela e NÃO marcada no banco — e ninguém ficava
+       sabendo. A tarefa que a pessoa "concluiu" reaparecia no dia seguinte, sem explicação.
+   >>> AGORA: a lista e o sino mudam NA HORA (o clique responde em zero rede) e, se a gravação
+       falhar, a marcação VOLTA ATRÁS na tela e a tela DIZ que voltou. Desfazer em silêncio
+       seria a mesma mentira ao contrário. */
 async function marcarLembrete(negId, id, feito){
+  const l = LEMBRETES.find(x => x.id === id);
+  const antes = l ? l.feito : undefined;
+  if(l) l.feito = feito;
+  pintaLembretes(negId); pintaNotif();          // resposta imediata: nada de rede até aqui
   try{
-    await fetch(`${SB_URL}/rest/v1/lembretes?id=eq.${id}`, {method:'PATCH',
+    const r = await fetch(`${SB_URL}/rest/v1/lembretes?id=eq.${id}`, {method:'PATCH',
       headers: Object.assign({}, SB_H, {'Content-Type':'application/json'}),
       body: JSON.stringify({ feito, feito_em: feito ? new Date().toISOString() : null,
                              atualizado_em: new Date().toISOString() })});
-    const l = LEMBRETES.find(x => x.id === id); if(l) l.feito = feito;
+    if(!r.ok) throw new Error('o servidor respondeu ' + r.status);
+  }catch(e){
+    if(l) l.feito = antes;
     pintaLembretes(negId); pintaNotif();
-  }catch(e){ /* a marcação volta no próximo carregamento; não vale travar a ficha por isso */ }
+    const box = document.getElementById('lem-lista');
+    if(box) box.insertAdjacentHTML('afterbegin',
+      '<div class="salvo erro" style="margin-bottom:8px">Não consegui gravar a marcação ('
+      + esc(e.message) + ') — ela <b>voltou como estava</b>. Tente de novo.</div>');
+  }
 }
 
 // ══ SITUAÇÃO DO CERTAME ══════════════════════════════════════════════════════════════════

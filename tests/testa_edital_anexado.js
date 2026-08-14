@@ -91,8 +91,13 @@ ok('28. *** e o comentario diz que NAO e so dos manuais ***',
   /Não só nos incluídos à mão/.test(uc(N)));
 ok('29. ...com o motivo (o PNCP guarda o link; ter o PDF aqui nao depende do portal estar no ar)',
   /que não depende do portal\s*estar no ar no dia da sessão/.test(uc(N)));
+/* Em 14/08 (fatia B12) este assert ficou vermelho SEM nada ter piorado: a chamada ganhou um
+   segundo argumento (`this`), pra função poder escrever "abrindo…" no próprio nome enquanto a
+   URL assinada não volta. O que ele guarda é a PROMESSA — clicar no nome abre o arquivo —, e
+   ela continua de pé; o que mudou foi a forma de escrever. Reapontado pra promessa, com o
+   parâmetro opcional, para o mesmo susto não se repetir na próxima melhoria. */
 ok('30. *** o CLIQUE no nome ABRE o arquivo ***',
-  /<span class="n" onclick="abrirAnexo\('\$\{esc\(a\.arquivo_path\)\}'\)" title="abrir o arquivo">/.test(N));
+  /<span class="n" onclick="abrirAnexo\('\$\{esc\(a\.arquivo_path\)\}'(?:, this)?\)" title="abrir o arquivo">/.test(N));
 ok('31. *** por link ASSINADO e curto (o bucket e privado) ***',
   /expiresIn: 60/.test(N) && /link de edital que vale para sempre é link que vaza/.test(uc(N)));
 ok('32. *** os dois grupos aparecem separados ***', /bloco\('edital', 'Edital'\) \+ bloco\('anexo_edital', 'Anexos do edital'\)/.test(N));

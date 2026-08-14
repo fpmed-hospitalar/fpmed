@@ -37,7 +37,11 @@
 /* -75 pela FATIA B11: o Guia do usuario (`fpmed_ajuda.html`) ENTROU na casca acima. Arquivo novo
    na lista sem bump nao e baixado por quem ja instalou — a casca so e remontada quando a versao
    muda. Seria a ajuda existindo pra quem chega hoje e nao existindo pra quem ja usa o app. */
-const VERSAO = 'limedtec-fpmed-2026-08-13-75';
+/* -76 pela FATIA B12: os tres consertos de clique moram no `fpmed_negocios.html`, que ESTA na
+   casca. Sem bump, quem ja instalou continuaria com a marcacao de tarefa que mente quando a rede
+   cai — e esse e justamente o defeito que so aparece com rede ruim, ou seja, exatamente na
+   situacao em que o cache velho e servido. */
+const VERSAO = 'limedtec-fpmed-2026-08-13-76';
 const CACHE = 'limedtec-shell-' + VERSAO;
 
 // A CASCA DA FPMED. Lista MONTADA A MAO conferindo `git ls-files` (= o que o Pages serve),
