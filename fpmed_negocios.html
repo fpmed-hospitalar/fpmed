@@ -669,6 +669,26 @@ body{
 .nc-div b{color:var(--texto)}
 .nc-acoes{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:9px}
 
+/* ── OS SELOS DE CONTEXTO DA FICHA (14/08, fatia B14) ───────────────────────────────────────
+   Eles são PEQUENOS e ficam ACIMA dos campos, e as duas coisas são a mesma decisão: são o
+   contexto em que os números abaixo se leem, não mais um número. Do tamanho de um campo,
+   virariam concorrentes do valor estimado — que é o dado que a pessoa veio ver.
+   >>> AS CORES SÃO TRÊS PORQUE AS PERGUNTAS SÃO TRÊS: verde = oportunidade (registro de preço
+       vale por 12 meses); âmbar = cuidado ao montar preço (não há régua do edital); neutro =
+       fato do certame, sem julgamento (o modo de disputa). Cor igual pra tudo seria decoração. */
+.ctx-linha{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
+.ctx-selo{display:inline-flex;align-items:center;gap:5px;padding:2px 9px;border-radius:20px;
+  font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;border:1px solid}
+.ctx-selo.verde{color:var(--verde-700);background:var(--verde-50);border-color:var(--verde-200)}
+.ctx-selo.ambar{color:var(--ambar-700);background:var(--ambar-50);border-color:var(--ambar-100)}
+.ctx-selo.neutro{color:var(--cinza-700);background:var(--painel2);border-color:var(--linha)}
+.ctx-nota{background:var(--ambar-50);border:1px solid var(--ambar-100);border-left:3px solid var(--ambar-600);
+  border-radius:9px;padding:8px 11px;font-size:12px;color:var(--cinza-800);line-height:1.5;margin-bottom:10px}
+/* O "—" do valor estimado não pode ficar com cara de dado que faltou carregar: aqui ele vira
+   uma frase que diz POR QUE não há número e QUAL régua vale no lugar. */
+.ctx-semvalor{color:var(--ambar-700);font-weight:600}
+.ctx-semvalor i{display:block;font-style:normal;font-size:11px;font-weight:400;color:var(--muted);margin-top:2px}
+
 /* >>> `.ag-secao` FICOU ÓRFÃ em 13/08 (fatia 4): o "Já passaram" que ela desenhava virou o
        CABEÇALHO do segundo painel da Agenda. O grep está feito e é conclusivo — ela não é usada
        em mais lugar nenhum. Fica pela mesma regra do `.fase-tag` logo acima: seletor órfão não
@@ -2503,10 +2523,13 @@ async function abrirDrawer(id){
   // conferido no negócio anterior apareceria embaixo do campo do próximo — e o botão "Gravar"
   // que ele traz junto gravaria no negócio errado.
   NC_RESP = null; NC_FALHA = null; NC_AVISO = null; NC_DEPOIS = null; NC_TROCANDO = false;
+  // E OS SELOS DE CONTEXTO TAMBÉM (fatia B14): "registro de preço" herdado do negócio anterior
+  // seria uma afirmação sobre ESTE certame feita a partir do dado de outro.
+  CTX_LIC = null;
   if(ABERTO === id){ carregarRastro(id); carregarLembretes(id); carregarCredenciamentos(id);
                      carregarProposta(id); carregarAta(id); carregarItensGanhos(id);
                      carregarEdital(id); carregarItensEdital(id); carregarConversaEdital(id);
-                     pintaControlePNCP(id);
+                     pintaControlePNCP(id); carregarContextoLic(id);
                      // O kit NÃO tem `carregar`: ele já veio dentro do negócio (`negocios.tarefas`
                      // vem no mesmo `select=*` da lista). Uma leitura a mais aqui seria uma
                      // chance a mais de a aba abrir vazia por causa da rede.
@@ -2579,6 +2602,14 @@ function corpoDrawer(n, obs, carregando){
          sessão. É a razão de a ficha ter virado editável, escrita onde ela importa. */
   const sugereRemarcar = editavel && sit && (sit === 'suspenso' || sit === 'adiado');
   const ficha = `<div class="ficha-fc">
+      <!-- ══ A LINHA DE CONTEXTO (14/08, fatia B14) ═════════════════════════════════════════
+           Os selos que mudam a decisão do gestor vivem AQUI, e não só na tela Encontrar: é
+           dentro do negócio que se decide o lance. Ela nasce vazia e é preenchida por
+           pintaContexto quando a licitação chega — selo nenhum é desenhado a partir de campo
+           que o banco não tem.
+           (sem crase neste comentário: ele mora dentro do template literal do drawer) -->
+      <div class="ctx-linha" id="ctx-linha"></div>
+      <div id="ctx-nota"></div>
       ${sugereRemarcar ? `<div class="remarcar-aviso">
         <div><b>${esc(rotuloSituacao(sit))}</b> — enquanto a data antiga continuar aqui, o aviso
           de sessão aponta o dia errado.</div>
@@ -2725,6 +2756,10 @@ function corpoDrawer(n, obs, carregando){
     <div class="${pnl(n,"itens")}" id="aba-itens">
       <div class="dw-sec">
         <h4>Itens do edital</h4>
+        <!-- A COLUNA DE REFERÊNCIA EXPLICA A AUSÊNCIA (fatia B14). Quando o edital não publicou
+             preço, dizer "sem referência" e parar por aí deixa quem monta preço sem régua
+             nenhuma. Este aviso conta quantos itens estão assim e nomeia a régua que sobra. -->
+        <div id="ctx-itens"></div>
         <div id="itens-cx"><div class="salvo">carregando…</div></div>
       </div>
     </div>
@@ -3150,6 +3185,10 @@ function pintaItensEdital(id){
      apareceria — e no caso comum (itens chegam depois) ela diria "nenhum" para sempre. É a mesma
      linha que a conversa do edital já tem em `pintaEdital`, pelo mesmo motivo. */
   pintaControlePNCP(id);
+  /* E OS SELOS TAMBÉM (fatia B14): o selo "sem valor de referência" é contado DOS ITENS. Sem
+     esta linha ele dependeria de a licitação chegar depois da lista — e das duas ordens
+     possíveis, uma delas o apagaria. */
+  pintaContexto(id);
 
   /* O BLOCO DOS GANHOS VEM PRIMEIRO, e ele existe mesmo quando não há lista de edital nenhuma:
      os 105 negócios importados do Calendário 2025 têm valor ganho e NÃO têm `numero_controle`.
@@ -3257,7 +3296,15 @@ function linhaDeItem(n, it){
     ? Number(it.quantidade).toLocaleString('pt-BR') + (it.unidade ? ' ' + it.unidade : '') : '—';
   // Sem referência, o rótulo "referência do edital" some junto: dizer "sem referência" e logo
   // abaixo "referência do edital" é a mesma frase se contradizendo em duas linhas.
-  const temRef = it.valor_unitario_ref != null;
+  /* ══ ZERO NÃO É REFERÊNCIA, E ISSO FOI MEDIDO (14/08, fatia B14) ═══════════════════════════
+     `valor_unitario_ref` NUNCA é nulo neste banco — mas é **zero** em 7.456 dos 40.342 itens,
+     espalhados por 277 certames. A condição antiga (`!= null`) dava `true` para todos eles, e a
+     linha saía "R$ 0,00 · referência do edital": um preço que ninguém publicou, escrito como se
+     existisse. E a coluna do teto, ao lado, já dizia "nada a comparar" para o MESMO item —
+     porque ela sempre exigiu `> 0`. Duas colunas da mesma linha se contradizendo.
+     >>> ZERO É UM NÚMERO, E NÚMERO SE ACREDITA. É a mesma frase que o comentário do teto CMED
+         usa três blocos acima, pela mesma razão; a diferença é que ali ela já valia. */
+  const temRef = !semReferencia(it);
   return `<div class="it-l${meu ? ' meu' : ' apagado'}">
     <span class="it-n">${esc(it.numero_item)}</span>
     <span class="it-d">${esc(it.descricao || '(sem descrição)')}
@@ -3281,8 +3328,22 @@ function tetoDoItem(it){
   if(ITENS_CMED === null) return '<span class="it-t"><b class="lendo">conferindo…</b></span>';
   if(ITENS_CMED === 'erro') return '<span class="it-t"><b class="neutro">tabela CMED indisponível</b><i>não é "sem teto" — é que eu não li</i></span>';
   const r = ITENS_CMED[it.numero_item];
-  if(it.valor_unitario_ref == null || !(Number(it.valor_unitario_ref) > 0))
-    return '<span class="it-t"><b class="neutro">nada a comparar</b><i>sem preço de referência</i></span>';
+  /* ══ SEM REFERÊNCIA DO EDITAL, O TETO DA CMED É A ÚNICA RÉGUA — E ELA APARECE (fatia B14) ══
+     Antes, item sem preço de referência saía como "nada a comparar" e ponto. Está correto sobre
+     a COMPARAÇÃO e é inútil para quem está ali: são 7.456 itens em 277 certames, e é justamente
+     neles que a pessoa mais precisa de uma régua, porque não tem a do edital.
+     >>> O TETO EXISTE E JÁ FOI CALCULADO. `avaliar` devolve `sem_preco` quando não há preço pra
+         comparar, mas devolve o `teto` junto — ele é atributo do REMÉDIO, não da comparação.
+         Esconder um número que já está na mão porque o edital calou é calar junto.
+     >>> E ELE NÃO VIRA VEREDITO. Sai em neutro, dizendo que é a única régua — nunca em verde,
+         que seria "cabe no teto" sobre uma comparação que não foi feita. */
+  if(semReferencia(it)){
+    if(r && r.situacao !== 'nao_encontrado' && r.teto != null)
+      return `<span class="it-t"><b class="neutro">teto ${esc(r.tipoTeto || 'CMED')} ${brl(r.teto)}</b>`
+        + '<i>o edital não publicou referência — esta é a única régua</i></span>';
+    return '<span class="it-t"><b class="neutro">sem referência e sem teto</b>'
+      + '<i>o edital não publicou preço e a CMED não conhece este item</i></span>';
+  }
   if(!r || r.situacao === 'nao_encontrado')
     return '<span class="it-t"><b class="neutro">sem teto CMED</b><i>pode ser material, ou o nome não casou</i></span>';
   if(r.situacao === 'sem_preco')
@@ -5345,9 +5406,159 @@ async function depoisDeGravarControle(id){
       + ' — está tudo na aba <b>Itens</b>.'
     : 'A chave está no negócio. Os itens <b>ainda não</b> foram trazidos do PNCP: o coletor passa '
       + 'por este negócio na próxima rodada e eles aparecem na aba <b>Itens</b> sem você fazer mais nada.';
-  // A conversa com o edital depende da MESMA chave — e quem acabou de gravar não deveria
-  // precisar fechar e abrir a gaveta pra ver o edital aparecer.
+  // A conversa com o edital e os selos de contexto dependem da MESMA chave — e quem acabou de
+  // gravar não deveria precisar fechar e abrir a gaveta pra ver isso aparecer.
   carregarConversaEdital(id);
+  carregarContextoLic(id);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════════
+   OS SELOS DE CONTEXTO DA FICHA (14/08, fatia B14)
+
+   O A põe estes selos na Encontrar. Eles precisam existir aqui também porque a Encontrar
+   responde "vale a pena olhar?" e a ficha responde "quanto eu ofereço?" — e é a segunda que
+   decide dinheiro. Um gestor que descobre que o certame é REGISTRO DE PREÇO só na hora de
+   assinar já montou o preço de um fornecimento único.
+
+   ── DE ONDE SAI CADA UM, MEDIDO EM 14/08 ─────────────────────────────────────────────────────
+   · REGISTRO DE PREÇO  — `licitacoes.bruto->>srp`. Presente em 3.476 das 3.876 licitações do
+     índice; 640 delas com `true`. Dado real, do PNCP, gravado pela coleta do A.
+   · MODO DE DISPUTA    — coluna `licitacoes.modo_disputa`, preenchida nas mesmas 3.476.
+     Os valores REAIS do índice: "Não se aplica" (1.558), "Dispensa Com Disputa" (877),
+     "Aberto" (765), "Aberto-Fechado" (260), "Fechado-Aberto" (12) e "Fechado" (4).
+   · ORÇAMENTO SIGILOSO — **não existe no banco hoje.** Medido: ZERO das 3.876 linhas têm
+     `orcamentoSigilosoCodigo` em `bruto`, em nenhuma forma. O endpoint que a coleta usa não
+     traz o campo. Então o selo NÃO É DESENHADO — e não é desenhado por ausência, nunca por
+     dedução. Está nas PENDÊNCIAS DO ARQUITETO para o A coletar, com o caminho exato medido.
+
+   >>> POR QUE NÃO DEDUZIR "SIGILOSO" DE "VALOR ESTIMADO VAZIO": porque estaria errado, e isso
+       também foi medido hoje. A licitação 01640429000106-1-000117/2026 é, segundo o próprio
+       PNCP, "Compra parcialmente sigilosa" — e tem valor estimado de R$ 901.955,51 e os 195
+       itens com referência publicada. Sigiloso ATÉ a fase de lances vira público depois dela.
+       Um selo deduzido diria "sigiloso" a quem já pode ver o valor, e calaria sobre o certame
+       que está sigiloso agora. O contrário do que ele existe pra fazer.
+
+   ── O QUE DÁ PRA DIZER HOJE, E É O QUE O DONO PEDIU DE VERDADE ───────────────────────────────
+   O pedido por trás do selo sigiloso é: *"não mostrar '—' com cara de dado faltando; dizer que
+   o teto CMED é a única régua"*. Isso não depende do campo que falta — depende dos ITENS, que
+   estão no banco. E ali há um defeito medido: `valor_unitario_ref` nunca é nulo, mas é **ZERO**
+   em 7.456 dos 40.342 itens (277 certames). A tela mostrava "R$ 0,00 · referência do edital"
+   para todos eles — um preço de referência que não existe, escrito como se existisse, na mesma
+   linha em que a coluna do teto dizia "nada a comparar". Duas colunas da MESMA linha se
+   contradizendo. Zero é um número, e número se acredita.
+   ══════════════════════════════════════════════════════════════════════════════════════════════ */
+let CTX_LIC = null;   // a licitação ligada · null = ainda lendo · false = não há · {erro} = falhou
+
+/* SEM REFERÊNCIA = ausente OU zero. A regra mora numa função só porque ela é usada em três
+   lugares (o selo, o aviso da aba e a linha do item) e três cópias dela é como uma delas passa a
+   aceitar o zero de novo, calada. */
+const semReferencia = it => it == null || it.valor_unitario_ref == null || !(Number(it.valor_unitario_ref) > 0);
+
+async function carregarContextoLic(id){
+  const n = NEG.find(x => x.id === id); if(!n) return;
+  CTX_LIC = null;
+  try{
+    const chave = String(n.numero_controle || '').trim();
+    const filtro = chave ? 'numero_controle=eq.' + encodeURIComponent(chave)
+                 : (n.licitacao_id ? 'id=eq.' + encodeURIComponent(String(n.licitacao_id)) : null);
+    if(!filtro){ CTX_LIC = false; }
+    else{
+      /* OS CAMPOS DO `bruto` SAEM POR APELIDO, e não pelo `bruto` inteiro: um jsonb de licitação
+         tem dezenas de chaves e trazê-lo completo por causa de dois campos seria pagar banda por
+         negócio aberto. O PostgREST resolve o caminho no servidor. */
+      const r = await fetch(`${SB_URL}/rest/v1/licitacoes?select=id,numero_controle,modo_disputa,`
+        + 'valor_estimado,srp:bruto->>srp,sigiloso_cod:bruto->>orcamentoSigilosoCodigo,'
+        + `sigiloso_txt:bruto->>orcamentoSigilosoDescricao&${filtro}&limit=1`, {headers:SB_H});
+      if(!r.ok) throw new Error('o banco respondeu ' + r.status);
+      CTX_LIC = (await r.json())[0] || false;
+    }
+  }catch(e){
+    // erro de leitura NÃO vira "não é registro de preço": são coisas diferentes, e a segunda é
+    // uma afirmação sobre o certame que eu não posso fazer se nem consegui ler a linha dele.
+    CTX_LIC = { erro: e.message };
+  }
+  if(ABERTO === id) pintaContexto(id);
+}
+
+/* ══ A LISTA DE SELOS, PURA ══════════════════════════════════════════════════════════════════
+   Entra o que o banco tem; sai o que a tela desenha. Sem DOM e sem rede, para que a suíte possa
+   executá-la com dado real e com dado ausente — e provar que a ausência não vira selo. */
+function selosDoContexto(lic, itens){
+  const s = [];
+  if(!lic || lic.erro) return s;
+  // REGISTRO DE PREÇO. Só o `true` vira selo: `false` é o caso comum e não muda decisão nenhuma,
+  // e `null` é "a coleta não trouxe" — que não é uma afirmação sobre o certame.
+  if(String(lic.srp) === 'true') s.push({ tom:'verde', txt:'Registro de preço',
+    dica:'A ata vale por até 12 meses: quem vence fornece conforme o órgão pedir, e não tudo de uma vez.' });
+  /* ORÇAMENTO SIGILOSO — as palavras são as do PNCP, nunca as minhas. A única leitura que esta
+     função faz do dado é reconhecer o caso "sem sigilo", que não é aviso nenhum. Traduzir código
+     em nome aqui seria manter, nesta tela, uma tabela de domínio do PNCP que ninguém atualiza. */
+  const sig = String(lic.sigiloso_txt || '').trim();
+  if(sig && !/sem sigilo/i.test(sig)) s.push({ tom:'ambar', txt:'Orçamento sigiloso', dica: sig });
+  // MODO DE DISPUTA: o valor como o PNCP escreve. "Não se aplica" também é resposta — escondê-lo
+  // deixaria o silêncio significando duas coisas ("não se aplica" e "não coletei").
+  const md = String(lic.modo_disputa || '').trim();
+  if(md) s.push({ tom:'neutro', txt:'Disputa: ' + md, dica:'modo de disputa publicado no PNCP' });
+
+  /* SEM VALOR DE REFERÊNCIA — este sai dos ITENS, e não de bandeira nenhuma. Ele é o que o dono
+     pediu quando falou do sigiloso: não deixar o "—" com cara de dado que faltou. Só vira selo
+     quando é o edital INTEIRO; poucos itens sem preço são um recado da aba Itens, não um selo. */
+  if(Array.isArray(itens) && itens.length && itens.every(semReferencia))
+    s.push({ tom:'ambar', txt:'Sem valor de referência',
+      dica:'O edital não publicou preço de referência para nenhum item — o teto da CMED é a única régua aqui.' });
+  return s;
+}
+
+function pintaContexto(id){
+  const linha = document.getElementById('ctx-linha');
+  const n = NEG.find(x => x.id === id) || {};
+  const lic = CTX_LIC;
+  const selos = selosDoContexto(lic && !lic.erro ? lic : null, ITENS_EDITAL);
+  if(linha) linha.innerHTML = selos.map(x =>
+    `<span class="ctx-selo ${x.tom}" title="${esc(x.dica || '')}">${esc(x.txt)}</span>`).join('');
+
+  const nota = document.getElementById('ctx-nota');
+  if(nota){
+    const semRef = selos.some(x => x.txt === 'Sem valor de referência');
+    const sig = selos.find(x => x.tom === 'ambar' && x.txt === 'Orçamento sigiloso');
+    nota.innerHTML = (semRef || sig)
+      ? '<div class="ctx-nota">' + (sig ? '<b>' + esc(sig.dica) + '.</b> ' : '')
+        + (semRef ? 'Este edital <b>não publicou valor de referência</b> para os itens. Não é dado '
+            + 'que faltou carregar: ele não existe. ' : '')
+        + 'A régua que sobra é o <b>teto legal da CMED</b>, e ele está na coluna da direita da aba '
+        + '<b>Itens</b>, item por item.</div>'
+      : '';
+  }
+
+  /* O "—" DO VALOR ESTIMADO. Ele é o campo que a pessoa mais olha antes de decidir preço, e
+     vazio ele parece defeito de carregamento. Aqui ele passa a dizer o que é — e só quando há
+     motivo medido pra dizer, nunca por padrão. */
+  const alvo = document.getElementById('fcv-valor_estimado');
+  if(alvo && !(Number(n.valor_estimado) > 0)){
+    const semRef = selos.some(x => x.txt === 'Sem valor de referência');
+    const sig = selos.some(x => x.txt === 'Orçamento sigiloso');
+    if(semRef || sig) alvo.innerHTML = '<span class="ctx-semvalor">não há valor de referência publicado'
+      + '<i>' + (sig ? 'o orçamento deste certame é sigiloso — ' : 'o edital não publicou preço — ')
+      + 'o teto da CMED é a régua, na aba Itens</i></span>';
+  }
+
+  pintaAvisoRefItens();
+}
+
+/* O AVISO DA ABA ITENS. Ele CONTA — "9 de 40 itens" — porque a ação de quem lê muda com o
+   número: um item sem referência é um caso; o edital inteiro sem referência é outra disputa. */
+function pintaAvisoRefItens(){
+  const box = document.getElementById('ctx-itens'); if(!box) return;
+  if(!ITENS_EDITAL.length){ box.innerHTML = ''; return; }
+  const sem = ITENS_EDITAL.filter(semReferencia).length;
+  if(!sem){ box.innerHTML = ''; return; }
+  const todos = sem === ITENS_EDITAL.length;
+  box.innerHTML = '<div class="ctx-nota">'
+    + (todos ? '<b>Nenhum item deste edital tem valor de referência publicado.</b> '
+             : '<b>' + sem + ' de ' + ITENS_EDITAL.length + ' itens</b> vieram sem valor de referência. ')
+    + 'Onde o edital não publicou preço, a coluna do meio diz <b>sem referência</b> — e não '
+    + 'R$ 0,00, que seria um preço que ninguém publicou escrito como se existisse. '
+    + 'Para esses, a régua é o <b>teto da CMED</b>, na coluna da direita.</div>';
 }
 
 /* ══════════════════════════════════════════════════════════════════════════════════════════════
