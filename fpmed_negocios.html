@@ -452,6 +452,69 @@ body{
 .ag-lin{display:flex;gap:14px;align-items:flex-start;margin-bottom:10px}
 .ag-hora{flex:0 0 62px;text-align:right;font-family:Montserrat;font-weight:700;font-size:14px;color:var(--azul-claro);padding-top:15px}
 .ag-lin .card{flex:1;margin-bottom:0}
+/* ── A LINHA DE PRAZO DO KIT (14/08, fatia B4) ──────────────────────────────────────────────
+   Ela é MENOR que o cartão de sessão de propósito: sessão é o acontecimento, prazo é o que
+   você tem que fazer antes dele. Dar o mesmo peso visual aos dois faria a agenda parecer ter o
+   dobro de pregões. O fio da esquerda é o que diz "isto é de outra natureza" sem precisar de
+   rótulo — e a cor dele é a mesma escala de estado que o resto da tela usa. */
+.ag-lin.pz{align-items:stretch;margin-bottom:8px;cursor:pointer}
+.ag-lin.pz .ag-hora{font-size:12px;font-weight:700;color:var(--muted);padding-top:10px}
+.pz-cx{flex:1;border-left:2px solid var(--linha);padding:7px 0 7px 12px}
+.ag-lin.pz:hover .pz-cx{border-left-color:var(--azul-claro)}
+.pz-ck{display:flex;align-items:center;gap:8px;cursor:pointer}
+.pz-ck input{width:14px;height:14px;accent-color:var(--azul-claro);cursor:pointer;flex:0 0 auto}
+.pz-t{font-size:12.5px;font-weight:600;color:var(--texto)}
+.pz-n{font-size:11px;color:var(--muted);margin:2px 0 0 22px}
+.pz-l{font-size:10.5px;color:var(--muted);margin:2px 0 0 22px;opacity:.9}
+.ag-lin.pz.e-hoje .pz-cx{border-left-color:var(--ambar-600)}
+.ag-lin.pz.e-hoje .pz-l b{color:var(--ambar-700)}
+.ag-lin.pz.venceu .pz-cx{border-left-color:var(--vermelho-300)}
+.ag-lin.pz.venceu .pz-t{color:var(--vermelho-700)}
+.ag-lin.pz.venceu .pz-l b{color:var(--vermelho-700)}
+/* ── O MEDIDOR DO KIT NO CARD (14/08, fatia B4) ─────────────────────────────────────────────
+   O "4/15" saiu do card em 11/08 porque media um checklist sem data — um número que não mudava
+   e não cobrava nada. Ele volta medindo o kit COM prazo, e volta com a única coisa que faltava
+   pra ele valer alguma coisa no relance: o prazo mais próximo, escrito ao lado. */
+.cd-kit{display:flex;align-items:center;gap:8px;margin:0 0 7px;flex-wrap:wrap}
+.cd-kit .barra{flex:0 0 54px;height:4px;border-radius:3px;background:var(--linha);overflow:hidden}
+.cd-kit .barra i{display:block;height:100%;background:var(--azul-claro)}
+.cd-kit .txt{font-size:10.5px;color:var(--muted);letter-spacing:.2px}
+.cd-kit .pzx{font-size:10.5px;font-weight:700;color:var(--ambar-700)}
+.cd-kit .pzx.venceu{color:var(--vermelho-700)}
+/* ── O KIT NA FICHA ─────────────────────────────────────────────────────────────────────────
+   A linha inteira é o alvo do clique, e não só o quadradinho de 14px: caixinha de checklist
+   que exige mira é caixinha que se marca errado. O rótulo <label> já faz isso de graça — o que
+   o CSS precisa é dar a ela a área e o retorno de hover que provam que ela é clicável. */
+.kit-cx{border:1px solid var(--linha);border-radius:10px;overflow:hidden}
+.kit-s{background:var(--painel2);padding:5px 12px;font-size:10.5px;font-weight:700;
+  letter-spacing:.6px;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--linha)}
+.kit-l{display:flex;align-items:center;gap:9px;padding:7px 12px;font-size:12.5px;
+  border-bottom:1px solid var(--linha);cursor:pointer}
+.kit-l:last-child{border-bottom:0}
+.kit-l:hover{background:var(--linha-hover)}
+.kit-l input{width:14px;height:14px;accent-color:var(--azul-claro);cursor:pointer;flex:0 0 auto}
+.kit-l input:disabled{cursor:default}
+.kit-t{flex:1;color:var(--texto)}
+.kit-l.feita .kit-t{color:var(--muted);text-decoration:line-through}
+.kit-p{flex:0 0 auto;font-size:11px;font-weight:700;color:var(--azul-claro);white-space:nowrap}
+.kit-p.hoje{color:var(--ambar-700)}
+.kit-p.venceu{color:var(--vermelho-700)}
+.kit-p.sem{color:var(--muted);font-weight:400;font-style:italic}
+@media(max-width:520px){.kit-l{flex-wrap:wrap}.kit-p{margin-left:23px}}
+/* ── OS PRAZOS PENDURADOS NA LINHA DA ABERTURA ──────────────────────────────────────────────
+   Recuados sob o campo de que dependem: o recuo é o que diz "isto é consequência daquilo".
+   Soltos, virariam um terceiro campo da ficha e alguém tentaria editá-los. */
+.pza{margin:2px 0 0 0;padding:9px 12px;background:var(--painel2);border:1px solid var(--linha);
+  border-radius:9px}
+.pza-t{font-size:10.5px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--muted)}
+.pza ul{list-style:none;margin:6px 0 0;padding:0}
+.pza li{font-size:12px;color:var(--texto);padding:2px 0}
+.pza li b:first-child{display:inline-block;min-width:78px;color:var(--azul-claro)}
+.pza li.hoje b:first-child{color:var(--ambar-700)}
+.pza li.venceu b:first-child,.pza li.venceu b{color:var(--vermelho-700)}
+.pza li.ok{color:var(--muted)}
+.pza li.ok b:first-child{color:var(--muted)}
+.pza li.sem{color:var(--muted)}
 /* >>> `.ag-secao` FICOU ÓRFÃ em 13/08 (fatia 4): o "Já passaram" que ela desenhava virou o
        CABEÇALHO do segundo painel da Agenda. O grep está feito e é conclusivo — ela não é usada
        em mais lugar nenhum. Fica pela mesma regra do `.fase-tag` logo acima: seletor órfão não
@@ -833,6 +896,40 @@ textarea.anot:focus{border-color:var(--azul)}
 .tf.feita span{color:var(--muted);text-decoration:line-through}
 /* ── O FORMULÁRIO DE INCLUSÃO ── mesmo desenho dos painéis: ele abre no lugar, não em outra tela */
 #form-manual{background:var(--painel);border:1px solid var(--linha);border-radius:12px;padding:16px 18px;margin:14px 0}
+/* ── O ASSISTENTE DE 3 PASSOS (14/08, fatia B4) ─────────────────────────────────────────────
+   Ele mora no MESMO painel do formulário manual, e não numa janela por cima. Modal empilhada
+   sobre a lista esconde justamente o funil contra o qual a pessoa está conferindo se aquele
+   pregão já está lá — e a duplicata é o erro caro deste fluxo.
+   >>> A TRILHA DE PASSOS É UM INDICADOR, NÃO UM MENU: ela não é clicável. Pular pro passo 3 sem
+       passar pelo 2 criaria negócio com os campos que o índice trouxe e ninguém conferiu. */
+.a-passos{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0 14px}
+.a-p{font-size:11px;font-weight:700;letter-spacing:.4px;padding:4px 11px;border-radius:20px;
+  border:1px solid var(--linha);color:var(--muted)}
+.a-p.on{border-color:var(--azul-claro);color:var(--azul-claro);background:var(--painel2)}
+.a-p.feito{border-color:var(--verde-300);color:var(--verde-700)}
+.a-barra{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
+.a-barra input{flex:1;min-width:190px}
+.a-lista{max-height:320px;overflow:auto;border:1px solid var(--linha);border-radius:10px}
+.a-item{display:flex;gap:10px;align-items:flex-start;padding:8px 12px;font-size:12.5px;
+  border-bottom:1px solid var(--linha);cursor:pointer}
+.a-item:last-child{border-bottom:0}
+.a-item:hover{background:var(--linha-hover)}
+.a-item input{width:14px;height:14px;margin-top:2px;accent-color:var(--azul-claro);cursor:pointer;flex:0 0 auto}
+.a-n{flex:0 0 46px;font-weight:700;color:var(--azul-claro);font-size:11.5px;padding-top:1px}
+.a-d{flex:1;color:var(--texto)}
+.a-d i{display:block;font-style:normal;font-size:11px;color:var(--muted);margin-top:2px}
+.a-rodape{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:12px}
+.a-rodape .salvo{margin-top:0}
+.a-alerta{background:var(--ambar-50);border:1px solid var(--ambar-100);border-left:3px solid var(--ambar-600);
+  border-radius:9px;padding:10px 13px;font-size:12.5px;color:var(--cinza-800);line-height:1.55;margin-bottom:10px}
+.a-ok{background:var(--painel2);border:1px solid var(--verde-300);border-radius:9px;
+  padding:11px 13px;font-size:12.5px;color:var(--texto);line-height:1.55}
+.a-resumo{margin-top:10px;border:1px solid var(--linha);border-radius:10px;overflow:hidden}
+.a-r{display:flex;gap:12px;align-items:baseline;padding:7px 12px;font-size:12.5px;
+  border-bottom:1px solid var(--linha)}
+.a-r span{flex:0 0 118px;color:var(--muted);font-size:11.5px}
+.a-r b{color:var(--texto);font-weight:600}
+.a-resumo .pza{border:0;border-radius:0;margin:0}
 .fm-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:11px;margin-top:10px}
 .fm-c label{display:block;font-size:10.5px;font-weight:600;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:.3px}
 .fm-c input,.fm-c select,.fm-c textarea{width:100%;background:var(--painel2);color:var(--texto);
@@ -1031,6 +1128,16 @@ textarea.anot:focus{border-color:var(--azul)}
       <option value="orgao">Ordenar por: Órgão</option>
     </select>
     <a class="lnk" onclick="toggleFiltro()">Filtrar</a>
+    <!-- ══ DUAS PORTAS PARA CRIAR NEGÓCIO, E ISSO NÃO É O DEFEITO QUE MATEI EM 12/08 ══════════
+         Lá eram três controles para a MESMA ação, com nomes diferentes. Aqui são duas ações
+         diferentes com o mesmo destino: o assistente é para quem está TRAZENDO um edital (vem
+         da Encontrar ou tem o número de controle na mão, e quer escolher itens e prazos); o
+         "+ Incluir licitação" é o caminho expresso de quem já sabe os campos de cor e digita
+         mais rápido que qualquer passo-a-passo.
+         >>> E OS DOIS GRAVAM PELA MESMA FUNÇÃO (`criarNegocio`). O contrato do A avisa que dois
+             criadores com regras diferentes é como o mesmo pregão entra duas vezes no funil;
+             duas ENTRADAS com um criador só não tem esse problema. -->
+    <a class="lnk" onclick="abrirAssistente()" id="lk-assist" title="passo a passo: escolher os itens, conferir os dados e o kit de prazos">Assistente</a>
     <a class="lnk" onclick="abrirFormManual()" id="lk-manual" title="a licitação existe mas não está no PNCP (BLL, convite, e-mail do órgão)">+ Incluir licitação</a>
     <input type="text" id="f-busca" placeholder="órgão, objeto, nº…" style="display:none;min-width:230px" oninput="pinta()">
     <div class="dir">
@@ -1298,6 +1405,124 @@ function notificacoes(lista){
        laço que nunca termina não virar uma tela que nunca abre — e se ele for atingido, a tela
        DIZ, porque 20.000 negócios truncados em silêncio seriam este mesmo bug de novo. */
 const PAG_NEG = 1000, TETO_PAG_NEG = 20;
+/* ══ O KIT DE 15 TAREFAS VOLTOU — MAS AGORA COM PRAZO (14/08, fatia B4) ═══════════════════════
+   O checklist fixo saiu da tela em 11/08 por ordem do dono, e a razão registrada foi "a equipe
+   não usa". Ela estava certa sobre o que existia: quinze caixinhas SEM DATA, iguais em todo
+   negócio, são uma lista que ninguém tem motivo pra abrir — não havia dia nenhum em que uma
+   delas cobrasse alguma coisa.
+   >>> O QUE VOLTA NÃO É AQUILO. Em 13/08 o dono mandou os prints do fluxo de mercado e pediu o
+       kit com DATAS ancoradas na abertura, entrando na Agenda. Com data, três das quinze deixam
+       de ser intenção e viram PRAZO: elas aparecem num dia, cobram naquele dia e vencem. É
+       outra coisa, e é por isso que a decisão de 11/08 não é contrariada — ela vale, inteira,
+       pro checklist morto que saiu.
+
+   ── AS TRÊS DATAS, E DE ONDE ELAS VÊM ────────────────────────────────────────────────────────
+   Não foram escolhidas aqui: são os prazos da Lei 14.133/2021 que a tela de Peças já conta, com
+   os mesmos artigos e o mesmo número de dias. Se um dia a conta mudar, ela precisa mudar nos
+   DOIS lugares — e é por isso que os artigos estão escritos junto, e não só o número.
+
+   ── O QUE NÃO TEM DATA CONTINUA SEM DATA, e isso é honestidade e não preguiça ────────────────
+   "Analisar mercado" não tem prazo legal nenhum. Inventar um (dois dias antes? cinco?) encheria
+   a Agenda de datas que a lei não pede e a equipe não reconhece — e a primeira data inventada
+   que alguém desmentisse levaria as três verdadeiras junto, porque ninguém separa.
+
+   ── DIAS ÚTEIS, SÁBADO E DOMINGO FORA. FERIADO NÃO ENTRA ─────────────────────────────────────
+   Mesma conta e mesma confissão da tela de Peças: uma tabela de feriados municipais que ninguém
+   mantém envelhece em silêncio e passa a mentir com cara de precisão. A tela GARANTE a parte
+   objetiva (fim de semana não conta) e DIZ que o feriado do órgão precisa ser conferido.
+   ═════════════════════════════════════════════════════════════════════════════════════════════ */
+const KIT_ANCORAS = {
+  'Solicitar esclarecimentos / Impugnar edital':
+    { dias:-3, lei:'Lei 14.133/2021, art. 164 — até 3 dias úteis ANTES da abertura' },
+  'Participar da disputa':
+    { dias: 0, lei:'é a própria sessão — dia e hora da abertura' },
+  'Enviar recurso / contrarrazão':
+    { dias: 3, lei:'Lei 14.133/2021, art. 165 — 3 dias úteis DEPOIS da sessão' },
+};
+const KIT_TOTAL = 15;
+
+/* Anda `n` dias ÚTEIS a partir de um instante, para trás (n<0) ou para frente (n>0), e devolve
+   ISO. Com n=0 devolve o próprio instante — a disputa É a abertura, hora incluída.
+   >>> A HORA DO DIA É PRESERVADA de propósito: `setDate` não mexe no relógio, então o prazo de
+       um pregão das 08:00 cai às 08:00 do dia limite. Zerar a hora poria o prazo à meia-noite,
+       que no fuso -03 é o dia ERRADO quando o navegador converte de volta — o mesmo defeito que
+       já arquivou uma licitação neste projeto em 06/08. */
+function diasUteisDe(iso, n){
+  if(!iso) return null;
+  const d = new Date(iso); if(isNaN(d)) return null;
+  let faltam = Math.abs(n|0); const passo = n < 0 ? -1 : 1;
+  while(faltam > 0){ d.setDate(d.getDate() + passo); const s = d.getDay(); if(s!==0 && s!==6) faltam--; }
+  return d.toISOString();
+}
+
+/* ── O PRAZO É DERIVADO DA ABERTURA, E NÃO GRAVADO JUNTO DA TAREFA ────────────────────────────
+   Esta foi a decisão de desenho da fatia, e ela é a MESMA que este projeto já tomou duas vezes,
+   pelas mesmas razões escritas: o lembrete da sessão não é linha no banco, e o calendário mensal
+   não tem tabela de eventos. Nos dois casos o argumento foi um só — no dia do adiamento haveria
+   a data nova num lugar e a velha no outro, e alguém apareceria no dia errado.
+   >>> AQUI ELE VALE INTEIRO. O prazo do kit é uma CONTA sobre a abertura, e a abertura já está
+       gravada. Guardar o resultado da conta criaria a obrigação de reescrever 3 campos toda vez
+       que a data muda — e o dia em que uma dessas escritas falhasse (rede caindo no meio do
+       PATCH), a ficha mostraria a sessão em 25/08 e o prazo de impugnação contado a partir de
+       12/08, sem ninguém saber qual dos dois estava certo.
+   >>> ISSO É O QUE FAZ A FATIA B2 (RECALCULAR AO REMARCAR) SER DE GRAÇA E NUNCA FALHAR: não há
+       recálculo — há uma conta que só existe no momento de mostrar. Trocou a abertura, trocaram
+       os três prazos, no card, na agenda e na ficha, na mesma repintura.
+   >>> E O `feita` CONTINUA GRAVADO, porque ele é o contrário: não é conta nenhuma, é uma decisão
+       que uma pessoa tomou. Sem escrever, some.
+   >>> SEM ABERTURA, PRAZO É `null` — e não uma data qualquer. "Não sei quando" é um estado, e a
+       tela diz isso com todas as letras em vez de mostrar hoje. */
+function prazoDaTarefa(n, t){
+  const a = KIT_ANCORAS[t && t.texto];
+  if(!a || !n || !n.abertura) return null;
+  return diasUteisDe(n.abertura, a.dias);
+}
+
+// Só as tarefas do kit que TÊM prazo e ainda NÃO foram feitas. Prazo de tarefa concluída na
+// Agenda é ruído: ele cobra uma coisa que já foi entregue, e quem aprende a ignorar um prazo
+// aprende a ignorar os outros.
+function prazosDoKit(n){
+  if(!n || n.arquivado || !Array.isArray(n.tarefas)) return [];
+  return n.tarefas
+    .map((t,i) => Object.assign({}, t, { i, prazo: prazoDaTarefa(n, t), dias: (KIT_ANCORAS[t.texto]||{}).dias }))
+    .filter(t => t.prazo && !t.feita);
+}
+
+// O medidor "4/15". `total` é o tamanho do que está GRAVADO, e não a constante: negócio antigo
+// com 15 e negócio novo com 15 batem, mas se um dia um tiver 14 o card precisa dizer 14 — o
+// contrário seria a tela afirmando uma tarefa que não existe naquele registro.
+function contaKit(n){
+  const t = (n && Array.isArray(n.tarefas)) ? n.tarefas : [];
+  return { feitas: t.filter(x => x.feita).length, total: t.length };
+}
+
+/* A LINHA DE PRAZO NA AGENDA. Ela é irmã da linha de sessão — mesma coluna de hora à esquerda,
+   mesmo dia, mesma faixa — e não um aviso solto no rodapé do dia. O olho percorre a agenda pela
+   coluna da esquerda, e prazo que sai dessa coluna vira decoração.
+   >>> ELA TEM A CAIXINHA, e isso é o que separa este kit do checklist que saiu em 11/08: dá pra
+       marcar feito NO DIA e NO LUGAR em que a pessoa está olhando, sem abrir a ficha. Checklist
+       que só se marca lá dentro é checklist que se marca nunca.
+   >>> "até" NA COLUNA DA HORA, e não uma hora inventada: o prazo do art. 164 é um DIA (até 3
+       dias úteis antes), e escrever 08:00 ali afirmaria uma hora-limite que a lei não deu. A
+       única que traz hora é a disputa, porque ela É a sessão. */
+function linhaDePrazo(x, ehHoje){
+  const venceu = x.d < hojeYMD();
+  const naSessao = x.p.dias === 0;
+  const a = KIT_ANCORAS[x.p.texto] || {};
+  const quem = [x.n.portal, x.n.numero].filter(Boolean).join(' · ') + (x.n.orgao ? ' — ' + x.n.orgao : '');
+  return `<div class="ag-lin pz${venceu?' venceu':''}${ehHoje?' e-hoje':''}" onclick="abrirDrawer(${x.n.id})">
+    <div class="ag-hora">${naSessao ? (horaDe(x.p.prazo)||'--:--') : 'até'}</div>
+    <div class="pz-cx">
+      <label class="pz-ck" onclick="event.stopPropagation()">
+        <input type="checkbox" onchange="marcaTarefa(${x.n.id},${x.p.i},this.checked)">
+        <span class="pz-t">${esc(x.p.texto)}</span>
+      </label>
+      <div class="pz-n">${esc(quem)}</div>
+      <div class="pz-l">${esc(a.lei || 'prazo do kit')}${venceu ? ' · <b>venceu</b>' : (ehHoje ? ' · <b>é hoje</b>' : '')}</div>
+    </div>
+  </div>`;
+}
+
 async function lerNegociosPaginado(){
   let out = [], pag = 0;
   window._negTruncou = false;
@@ -1573,8 +1798,10 @@ function seloConferencia(id){
 }
 
 function card(n, noKanban){
-  // O medidor "4/15" saiu do card em 11/08 junto com o checklist fixo (decisão do Lemuel: a
-  // equipe não usa). O `tarefas` continua no banco — some da tela, não do dado.
+  // O medidor "4/15" tinha saído do card em 11/08 junto com o checklist fixo. Ele VOLTOU em
+  // 14/08 (fatia B4) porque o que ele mede mudou: agora o kit tem prazo, e um medidor de coisas
+  // com prazo é outro objeto — ver `medidorKit`. A decisão de 11/08 continua valendo pro que
+  // ela julgou: o checklist sem data.
   const dia = diaDe(n.abertura), hoje = hojeYMD();
   const quando = dia === hoje ? ' hoje' : (dia && dia < hoje ? ' passou' : '');
   // Os campos do card são os que a FPMED já usa na planilha: portal, órgão, número,
@@ -1596,6 +1823,11 @@ function card(n, noKanban){
          indicador seria a mesma informação duas vezes — e card com informação repetida é card
          que se lê pela metade. -->
     ${noKanban ? '' : progressoCard(n)}
+    <!-- O MEDIDOR DO KIT APARECE NOS DOIS, lista e kanban: diferente da etapa (que a coluna do
+         kanban já diz), quantas tarefas faltam e qual prazo vem primeiro é informação que a
+         coluna NÃO dá. Repetir o que a coluna diz é ruído; dizer o que ela não diz é o motivo
+         de o card existir. -->
+    ${medidorKit(n)}
     ${n.empresa_id ? `<div class="emp">${esc((EMPRESAS.find(e=>e.id===n.empresa_id)||{}).razao_social || 'empresa').split(' ').slice(0,2).join(' ')}</div>` : ''}
     <div><span class="tit" title="${esc(n.objeto||'')}">${esc([n.portal,n.modalidade,n.numero].filter(Boolean).join(' · '))}${n.orgao?' — '+esc(n.orgao):''}</span></div>
     <div class="org">${esc(n.municipio||'')}${n.uf?' · '+esc(n.uf):''}</div>
@@ -1640,6 +1872,17 @@ function agenda(l){
   const futuro = comData.filter(n => diaDe(n.abertura) >= hoje);
   const passado = comData.filter(n => diaDe(n.abertura) < hoje);
 
+  /* Os prazos saem de TODOS os negócios com data, e não só dos do painel — porque o prazo é
+     dividido pelo DIA DELE, e não pelo dia do pregão. Um pregão do dia 25 (futuro) tem prazo de
+     impugnação no dia 20, que pode já ter passado: ele é do painel de trás, e some se eu
+     recortar por negócio. Perder de vista um prazo VENCIDO de um pregão que ainda vai acontecer
+     é exatamente o que não pode acontecer — é o único que ainda dá pra explicar pra alguém. */
+  const prazos = [];
+  comData.forEach(n => prazosDoKit(n).forEach(p => {
+    const d = diaDe(p.prazo); if(d) prazos.push({ p, n, d });
+  }));
+  const prazoFut = prazos.filter(x => x.d >= hoje), prazoPas = prazos.filter(x => x.d < hoje);
+
   /* ══ OS DOIS TETOS DA AGENDA, QUE TAMBÉM ERAM CALADOS (13/08, item 7b · fatia 4) ═════════════
      A visão Lista cortava em 200 sem dizer; esta corta em DOIS lugares — 300 no que vem pela
      frente e 200 no que já passou — e também nunca disse. O da frente é o mais perigoso dos
@@ -1650,19 +1893,36 @@ function agenda(l){
          a suíte que existe pra provar a ordem da agenda quebraria por causa de um número. */
   const TETO_FUTURO = 300, TETO_PASSADO = 200;
 
-  const bloco = (lista, cresc) => {
-    const porDia = {};
+  /* ══ OS PRAZOS DO KIT ENTRAM AQUI (14/08, fatia B4) ═════════════════════════════════════════
+     Um prazo do kit é um COMPROMISSO NUM DIA, igual a uma sessão — e a Agenda é a tela que
+     responde "o que eu tenho pra fazer, e quando". Deixá-lo só dentro da ficha seria repetir o
+     erro do checklist antigo: uma lista que só existe pra quem já abriu o negócio, ou seja,
+     pra quem já lembrou dele.
+     >>> ELE ENTRA NO DIA DELE, e não no dia do pregão. O prazo de impugnação de um pregão do
+         dia 25 cai no dia 20 — e é no dia 20 que a pessoa precisa vê-lo. Por isso a lista de
+         dias é a UNIÃO dos dias com sessão e dos dias com prazo: um dia que só tem prazo
+         precisa existir na agenda, senão o prazo não aparece em lugar nenhum.
+     >>> ELES NÃO ENTRAM NA CONTAGEM DE SESSÕES. "3 sessões" tem que continuar querendo dizer
+         três pregões abrindo; somar prazo ali inflaria o número que a pessoa usa pra medir o
+         dia. Quando o dia SÓ tem prazo, o cabeçalho diz "2 prazos" — que é o que ele é. */
+  const bloco = (lista, cresc, prazos) => {
+    const porDia = {}, prazoDia = {};
     lista.forEach(n => { const d = diaDe(n.abertura); (porDia[d] = porDia[d]||[]).push(n); });
-    const dias = Object.keys(porDia).sort();
+    (prazos||[]).forEach(x => { (prazoDia[x.d] = prazoDia[x.d]||[]).push(x); });
+    const dias = Object.keys(porDia).concat(Object.keys(prazoDia))
+      .filter((d, i, a) => a.indexOf(d) === i).sort();
     if(!cresc) dias.reverse();
     return dias.map(d => {
       const r = rotuloDia(d);
       // dentro do dia, SEMPRE por hora crescente: é a ordem em que as sessões acontecem
-      const doDia = porDia[d].slice().sort((a,b) => String(a.abertura).localeCompare(String(b.abertura)));
+      const doDia = (porDia[d]||[]).slice().sort((a,b) => String(a.abertura).localeCompare(String(b.abertura)));
+      const osPrazos = (prazoDia[d]||[]);
       return `<div class="ag-dia${d===hoje?' hoje':''}">
           <span class="d">${r.data}</span><span class="sem">${M1(r.semana)}</span>
-          <span class="q">${nSessoes(doDia.length)}</span></div>`
-        + doDia.map(n => `<div class="ag-lin"><div class="ag-hora">${horaDe(n.abertura)||'--:--'}</div>${card(n)}</div>`).join('');
+          <span class="q">${doDia.length ? nSessoes(doDia.length)
+            : osPrazos.length + (osPrazos.length === 1 ? ' prazo' : ' prazos')}</span></div>`
+        + doDia.map(n => `<div class="ag-lin"><div class="ag-hora">${horaDe(n.abertura)||'--:--'}</div>${card(n)}</div>`).join('')
+        + osPrazos.map(x => linhaDePrazo(x, d === hoje)).join('');
     }).join('');
   };
 
@@ -1676,12 +1936,12 @@ function agenda(l){
          `overflow:hidden` (é ele que apara os cantos das linhas contra o raio do painel), e
          sticky dentro de um ancestral que corta não gruda em lugar nenhum. Prometer no CSS o que
          o navegador não faz é pior que não prometer. */
-  const painelDeSessoes = (titulo, lista, teto, cresc, quais) => {
+  const painelDeSessoes = (titulo, lista, teto, cresc, quais, prazos) => {
     const most = lista.slice(0, teto), fora = lista.length - most.length;
     const nfmt = x => x.toLocaleString('pt-BR');
     return '<div class="painel-res agenda">'
       + '<div class="cabecalho"><span>' + titulo + '</span></div>'
-      + '<div class="linhas">' + bloco(most, cresc) + '</div>'
+      + '<div class="linhas">' + bloco(most, cresc, prazos) + '</div>'
       + '<div class="rodape-painel"><span>'
       /* O rodapé diz QUAIS ficaram, e não só quantas: numa lista ordenada por tempo, "as 300
          primeiras" não informa nada — "as 300 mais próximas" diz onde a tesoura passou. */
@@ -1699,15 +1959,21 @@ function agenda(l){
 
   const hj = futuro.filter(n => diaDe(n.abertura) === hoje).length;
   let html = '';
-  html += futuro.length
+  // O painel da frente abre TAMBÉM quando só há prazo e nenhuma sessão: dizer "nada marcado"
+  // com três prazos correndo seria a agenda mentindo justamente no dia em que ela importa.
+  html += (futuro.length || prazoFut.length)
         ? painelDeSessoes('<b>' + futuro.length.toLocaleString('pt-BR') + '</b> de hoje em diante'
-            + (hj ? ' · <b>' + hj + '</b> ' + (hj === 1 ? 'é hoje' : 'são hoje') : ''),
-            futuro, TETO_FUTURO, true, 'mais próximas')
+            + (hj ? ' · <b>' + hj + '</b> ' + (hj === 1 ? 'é hoje' : 'são hoje') : '')
+            + (prazoFut.length ? ' · <b>' + prazoFut.length + '</b> '
+                + (prazoFut.length === 1 ? 'prazo' : 'prazos') : ''),
+            futuro, TETO_FUTURO, true, 'mais próximas', prazoFut)
         : '<div class="vazio">Nada marcado de hoje em diante. Marque "ver arquivados" para rever o histórico.</div>';
-  if(passado.length) html += painelDeSessoes(
+  if(passado.length || prazoPas.length) html += painelDeSessoes(
         'Já passaram · <b>' + passado.length.toLocaleString('pt-BR') + '</b> '
-          + (passado.length === 1 ? 'sessão' : 'sessões'),
-        passado, TETO_PASSADO, false, 'mais recentes');
+          + (passado.length === 1 ? 'sessão' : 'sessões')
+          + (prazoPas.length ? ' · <b>' + prazoPas.length + '</b> '
+              + (prazoPas.length === 1 ? 'prazo vencido' : 'prazos vencidos') : ''),
+        passado, TETO_PASSADO, false, 'mais recentes', prazoPas);
   return html;
 }
 
@@ -1979,6 +2245,22 @@ function ligarArrasto(){
 }
 
 // ── gravação ───────────────────────────────────────────────────────────────────────────────
+/* O ÚNICO LUGAR QUE CRIA NEGÓCIO (14/08, fatia B4). Antes havia um só porque só havia um
+   formulário; agora há duas entradas (o assistente e o "+ Incluir licitação"), e sem esta
+   função haveria duas gravações — que é exatamente o que o contrato do A adverte na seção 2:
+   dois criadores com regras diferentes é como o mesmo pregão entra duas vezes no funil e duas
+   pessoas trabalham a mesma coisa sem saber.
+   >>> ELA NÃO DECIDE NADA sobre o conteúdo: quem monta o corpo é quem chamou. O que ela
+       centraliza é o CAMINHO — cabeçalho, `return=representation` e a tradução do 401/403 em
+       frase de gente. Regra de negócio aqui dentro voltaria a ser a segunda regra. */
+async function criarNegocio(corpo){
+  const r = await fetch(`${SB_URL}/rest/v1/negocios`, {method:'POST',
+    headers: Object.assign({'Prefer':'return=representation'}, SB_H, {'Content-Type':'application/json'}),
+    body: JSON.stringify(corpo)});
+  if(!r.ok) throw new Error('HTTP ' + r.status + (r.status===401||r.status===403 ? ' — sem permissão de gravar' : ''));
+  return (await r.json())[0];
+}
+
 async function gravar(id, campos){
   const r = await fetch(`${SB_URL}/rest/v1/negocios?id=eq.${id}`, {
     method:'PATCH', headers:SB_H,
@@ -2034,7 +2316,11 @@ async function abrirDrawer(id){
   }
   if(ABERTO === id){ carregarRastro(id); carregarLembretes(id); carregarCredenciamentos(id);
                      carregarProposta(id); carregarAta(id); carregarItensGanhos(id);
-                     carregarEdital(id); }
+                     carregarEdital(id);
+                     // O kit NÃO tem `carregar`: ele já veio dentro do negócio (`negocios.tarefas`
+                     // vem no mesmo `select=*` da lista). Uma leitura a mais aqui seria uma
+                     // chance a mais de a aba abrir vazia por causa da rede.
+                     pintaKit(id); }
 }
 function fecharDrawer(){
   ABERTO = null;
@@ -2098,6 +2384,7 @@ function corpoDrawer(n, obs, carregando){
       ${campo('abertura', 'Abertura', null, n.abertura && fmtDtH(n.abertura)
           ? esc(fmtDtH(n.abertura)) + (dia===hoje?' <b style="color:var(--ambar)">· é hoje</b>':(dia&&dia<hoje?' <span class="salvo">· já passou</span>':''))
           : '')}
+      ${prazosAncorados(n)}
       ${campo('situacao', 'Situação', null, (n.situacao && n.situacao!=='normal')
           ? `<b style="color:${corSituacao(n.situacao)}">${esc(rotuloSituacao(n.situacao))}</b>` : 'normal')}
       ${campo('portal', 'Portal', null, esc(n.portal||''))}
@@ -2207,6 +2494,11 @@ function corpoDrawer(n, obs, carregando){
     </div>
 
     <div class="${pnl(n,"tarefas")}" id="aba-tarefas">
+      <!-- ══ O KIT PADRÃO, COM OS TRÊS PRAZOS DA LEI (14/08, fatia B4) ═══════════════════════
+           Ele vem ANTES das tarefas escritas à mão porque é o que tem data: a aba responde
+           "o que precisa ser feito neste negócio", e o que tem prazo responde primeiro.
+           (sem crase neste comentário: ele mora dentro do template literal do drawer) -->
+      <div class="dw-sec" id="kit-sec"><div id="kit-lista"></div></div>
       <div class="dw-sec">
         <h4>Tarefas deste negócio</h4>
         <div class="dica" style="font-size:11.5px;color:var(--muted);margin-bottom:8px">
@@ -2508,6 +2800,128 @@ async function lerEditalIA(id){
     }));
   }catch(e){ /* sem sessionStorage o leitor abre sem contexto, que é o comportamento normal dele */ }
   location.href = 'fpmed_edital_ia.html';
+}
+
+/* ══ OS PRAZOS QUE PENDEM DESTA DATA (14/08, fatias B2 + B4) ══════════════════════════════════
+   Este bloco fica GRUDADO na linha da abertura, e é ele que faz a remarcação ser visível em vez
+   de prometida. Remarcar de 12/08 pra 25/08 muda três datas aqui na mesma repintura, na frente
+   de quem acabou de remarcar — que é a única prova que interessa a um gestor: ele vê as datas
+   novas, não uma frase dizendo que elas mudaram.
+   >>> ELE APARECE MESMO SEM ABERTURA, dizendo que não dá pra contar. Sumir seria deixar o
+       operador achar que o kit não tem prazo nenhum, quando o que falta é a data de origem.
+   >>> E ELE NÃO É EDITÁVEL, de propósito: prazo do art. 164 não se digita. O que se corrige é a
+       abertura, logo acima — e aí estes três se corrigem sozinhos. */
+function prazosAncorados(n){
+  if(!n || !Array.isArray(n.tarefas) || !n.tarefas.length) return '';
+  const doKit = n.tarefas.filter(t => KIT_ANCORAS[t.texto]);
+  if(!doKit.length) return '';
+  const hoje = hojeYMD();
+  const item = t => {
+    const a = KIT_ANCORAS[t.texto], pz = prazoDaTarefa(n, t);
+    if(!pz) return `<li class="sem">${esc(t.texto)} — <i>sem data enquanto a abertura estiver em branco</i></li>`;
+    const d = diaDe(pz), venceu = d < hoje && !t.feita;
+    return `<li class="${t.feita ? 'ok' : (venceu ? 'venceu' : (d === hoje ? 'hoje' : ''))}" title="${esc(a.lei)}">
+      <b>${a.dias === 0 ? esc(fmtDtH(pz) || '') : esc(new Date(pz).toLocaleDateString('pt-BR'))}</b>
+      ${esc(t.texto)}${t.feita ? ' · <i>feita</i>' : (venceu ? ' · <b>venceu</b>' : (d === hoje ? ' · <b>é hoje</b>' : ''))}</li>`;
+  };
+  return `<div class="fc"><div class="pza">
+      <div class="pza-t">Prazos contados desta data</div>
+      <ul>${doKit.map(item).join('')}</ul>
+      <div class="salvo">Dias <b>úteis</b> (sábado e domingo fora). <b>Feriado do órgão não entra
+        nesta conta.</b> Remarcar a abertura acima move os três de uma vez — eles são contados dela,
+        e não guardados à parte.</div>
+    </div></div>`;
+}
+
+/* ══ O KIT NA FICHA ══════════════════════════════════════════════════════════════════════════
+   As quinze caixinhas voltaram, mas com uma diferença que muda o objeto: três delas mostram a
+   DATA em que vencem, contada da abertura, e a mesma data está na Agenda. O resto continua sem
+   data, e a tela diz que não tem — em vez de fingir um prazo que a lei não deu.
+   >>> A CONFISSÃO DO FERIADO VEM JUNTO, no mesmo lugar em que a tela de Peças a faz. Um número
+       que parece exato e não é vale menos que um número com a ressalva escrita ao lado.
+   >>> NEGÓCIO SEM KIT NÃO GANHA KIT SOZINHO. Os 2.555 registros antigos já têm as 15 tarefas
+       gravadas; os que não têm (criados depois de 11/08, quando o checklist saiu) recebem um
+       botão e não uma escrita automática — gravar em massa por causa de uma tela aberta é como
+       se estraga um histórico. */
+function pintaKit(id){
+  const box = document.getElementById('kit-lista'); if(!box) return;
+  const n = NEG.find(x => x.id === id); if(!n) return;
+  const editavel = ehGestor();
+  const t = Array.isArray(n.tarefas) ? n.tarefas : [];
+  if(!t.length){
+    box.innerHTML = '<h4>Kit padrão</h4>'
+      + '<div class="salvo">Este negócio não tem o kit de tarefas. Ele nasce junto com o negócio no '
+      + 'assistente; os que vieram antes disso podem recebê-lo agora — nada do que já está escrito se perde.</div>'
+      + (editavel ? `<div style="margin-top:8px"><button class="btn-ed" id="kit-bt" onclick="aplicarKit(${id})">Aplicar o kit padrão (15 tarefas)</button>
+           <span class="salvo" id="kit-msg"></span></div>` : '');
+    return;
+  }
+  const c = contaKit(n), hoje = hojeYMD();
+  const secoes = FASES.map(f => f.k).filter(k => t.some(x => x.secao === k));
+  // seção que não está no FASES (dado antigo) não pode sumir: ela vai pro fim, com o nome cru
+  t.forEach(x => { if(secoes.indexOf(x.secao) < 0) secoes.push(x.secao); });
+  const linha = (x, i) => {
+    const pz = prazoDaTarefa(n, x);
+    const a = KIT_ANCORAS[x.texto];
+    let sel = '';
+    if(a && !pz){
+      sel = '<span class="kit-p sem" title="' + esc(a.lei) + '">sem data — falta a abertura</span>';
+    } else if(pz){
+      const d = diaDe(pz), venceu = d < hoje && !x.feita;
+      sel = '<span class="kit-p' + (venceu ? ' venceu' : (d === hoje ? ' hoje' : '')) + '" title="' + esc(a.lei) + '">'
+        + (a.dias === 0 ? esc(fmtDtH(pz) || '') : 'até ' + esc(new Date(pz).toLocaleDateString('pt-BR')))
+        + (venceu ? ' · venceu' : (d === hoje ? ' · é hoje' : '')) + '</span>';
+    }
+    return `<label class="kit-l${x.feita?' feita':''}">
+      <input type="checkbox" ${x.feita?'checked':''} ${editavel?'':'disabled'} onchange="marcaTarefa(${id},${i},this.checked)">
+      <span class="kit-t">${esc(x.texto)}</span>${sel}</label>`;
+  };
+  box.innerHTML = `<h4>Kit padrão · <b>${c.feitas}/${c.total}</b></h4>
+    <div class="salvo">Três destas têm prazo contado da abertura, em dias <b>úteis</b> — e as três
+      estão na Agenda, no dia delas. <b>Feriado não entra nesta conta</b>: confira o calendário do
+      órgão. As demais não têm prazo legal, e por isso não têm data.</div>
+    <div class="kit-cx">` + secoes.map(s => `<div class="kit-s">${esc(nomeFase(s))}</div>`
+      + t.map((x,i) => x.secao === s ? linha(x,i) : '').join('')).join('')
+    + `</div><div class="salvo" id="kit-msg"></div>`;
+}
+
+/* Marcar é uma escrita OTIMISTA com volta: a caixinha muda na hora (a interação não pode esperar
+   a rede) e desfaz sozinha se o banco recusar. O contrário — esperar o PATCH pra pintar — faz o
+   clique parecer que não funcionou, e a pessoa clica de novo. */
+async function marcaTarefa(id, i, feita){
+  const n = NEG.find(x => x.id === id); if(!n || !Array.isArray(n.tarefas)) return;
+  const antes = n.tarefas;
+  n.tarefas = n.tarefas.map((t,k) => k === i ? Object.assign({}, t, { feita: !!feita }) : t);
+  if(ABERTO === id) pintaKit(id);
+  pinta();                                     // o medidor do card e o prazo da agenda acompanham
+  try{ await gravar(id, { tarefas: n.tarefas }); }
+  catch(e){
+    n.tarefas = antes;
+    if(ABERTO === id) pintaKit(id);
+    pinta();
+    const m = document.getElementById('kit-msg');
+    if(m){ m.style.color = 'var(--vermelho-700)'; m.textContent = 'não salvou: ' + e.message; }
+  }
+}
+
+// Aplicar o kit é ADITIVO por definição: só existe pra negócio que tem `tarefas` VAZIO. Se um
+// dia alguém chamar isto com tarefas gravadas, a função recusa — sobrescrever o que a pessoa
+// marcou seria apagar trabalho, e nenhum botão desta tela faz isso.
+async function aplicarKit(id){
+  const n = NEG.find(x => x.id === id); if(!n) return;
+  if(Array.isArray(n.tarefas) && n.tarefas.length) return;
+  const bt = document.getElementById('kit-bt'), msg = document.getElementById('kit-msg');
+  if(bt) bt.disabled = true; if(msg) msg.textContent = 'aplicando…';
+  const novo = novasTarefas();
+  try{
+    await gravar(id, { tarefas: novo });
+    n.tarefas = novo;
+    if(ABERTO === id) pintaKit(id);
+    pinta();
+  }catch(e){
+    if(bt) bt.disabled = false;
+    if(msg){ msg.style.color = 'var(--vermelho-700)'; msg.textContent = 'não consegui aplicar: ' + e.message; }
+  }
 }
 
 /* ── TAREFAS PERSONALIZADAS ──────────────────────────────────────────────────────────────────
@@ -2996,6 +3410,10 @@ function fecharFormManual(){
 }
 function abrirFormManual(){
   const el = document.getElementById('form-manual'); if(!el) return;
+  // O assistente e este formulário dividem o MESMO painel — abrir um tem que desligar o outro.
+  // Sem isto, `ASS` continuaria de pé sobre um DOM que já é de outra tela, e o primeiro clique
+  // num botão do assistente escreveria em campos que não existem mais.
+  ASS = null;
   // A MESMA REGRA DA FICHA: quem grava negócio inclui licitação. `ehGestor()` é a mesma função
   // que decide se os campos da ficha abrem — duas regras de permissão pra mesma coisa seriam
   // duas chances de discordarem, e a do banco (RLS) venceria as duas de qualquer jeito.
@@ -3110,11 +3528,7 @@ async function salvarManual(){
       criado_por: (window.gmAuth && gmAuth.user && gmAuth.user.email) || null,
       arquivado: false,
     };
-    const r = await fetch(`${SB_URL}/rest/v1/negocios`, {method:'POST',
-      headers: Object.assign({'Prefer':'return=representation'}, SB_H, {'Content-Type':'application/json'}),
-      body: JSON.stringify(corpo)});
-    if(!r.ok) throw new Error('HTTP ' + r.status + (r.status===401||r.status===403 ? ' — sem permissão de gravar' : ''));
-    const novo = (await r.json())[0];
+    const novo = await criarNegocio(corpo);
 
     /* ── OS ARQUIVOS VÊM DEPOIS, E DE PROPÓSITO ────────────────────────────────────────────
        O negócio JÁ ESTÁ CRIADO neste ponto. Se um upload falhar agora, o cadastro não se perde:
@@ -3196,6 +3610,408 @@ async function subirAnexo(negocioId, arq, categoria){
        numa semana com 20 disputas abertas a taxa despencaria sozinha, sem nada ter dado errado.
        A regra passou a ser: só entra no denominador o que JÁ ACABOU (arquivado) ou já ganhou.
    >>> E A TELA DIZ A CONTA. "10,6%" sem denominador é um número que ninguém pode conferir. */
+/* ══════════════════════════════════════════════════════════════════════════════════════════════
+   O ASSISTENTE "ADICIONAR AOS MEUS NEGÓCIOS" — 3 PASSOS (14/08, fatia B4)
+
+   ── DE ONDE ELE É CHAMADO ────────────────────────────────────────────────────────────────────
+   Duas portas, um destino: `?adicionar=<numero_controle>&itens=<n,n,n>` (a Encontrar navega pra
+   cá — contrato A5, seção 2) e o link "Assistente" da barra, sem parâmetro nenhum.
+   >>> O CONTRATO DIZ `numero_controle`, E A CAIXA DIZIA `id`. Quando os dois discordam, vence
+       quem foi MEDIDO: o A conferiu 3.201 de 3.201 licitações com número de controle preenchido
+       e distinto, e escreveu o `location.href` da Encontrar contra ele. Aceitar só o id faria a
+       ponte chegar aqui como "não encontrei esta licitação" — sem erro e sem aviso.
+   >>> MAS ELE ACEITA OS DOIS, e isso não é indecisão: um `?adicionar=123` puramente numérico é
+       resolvido por `licitacoes.id`, porque existe link antigo por aí e porque a caixa do dono
+       falava nesse formato. Custa uma condição e evita uma tela que abre vazia.
+
+   ── O QUE ELE NÃO FAZ ────────────────────────────────────────────────────────────────────────
+   Não bloqueia. Item indisponível, licitação fora do índice, banco sem itens: em todos esses
+   casos ele DIZ o que houve e segue. Um assistente que trava no passo 1 porque uma tabela ainda
+   está vazia é pior do que não existir — a pessoa veio criar um negócio, não auditar o banco.
+
+   ── O ESTADO É DE TELA, E POR ISSO NÃO É GRAVADO ─────────────────────────────────────────────
+   Fechar o assistente no meio não deixa negócio pela metade no banco: nada é escrito até o
+   passo 3. Meio-negócio criado "pra não perder o preenchimento" é o registro que aparece no
+   funil sem ninguém saber de onde veio.
+   ══════════════════════════════════════════════════════════════════════════════════════════════ */
+let ASS = null;
+
+function fecharAssistente(){
+  ASS = null;
+  const el = document.getElementById('form-manual');
+  if(el){ el.style.display = 'none'; el.innerHTML = ''; }
+}
+
+function abrirAssistente(nc, itensUrl){
+  const el = document.getElementById('form-manual'); if(!el) return;
+  fecharFormManual();
+  // Mesma regra de permissão da ficha e do formulário manual — `ehGestor()`, e não uma terceira
+  // cópia. A do banco (RLS) venceria as três de qualquer jeito; ter três é ter três chances de
+  // a tela prometer o que o banco vai negar.
+  if(!ehGestor()){
+    el.style.display = 'block';
+    el.innerHTML = '<div class="pk-topo"><b>Adicionar aos meus negócios</b>'
+      + '<button class="btn-ed sec" style="margin-left:auto" onclick="fecharAssistente()">fechar</button></div>'
+      + '<div class="salvo">Só quem grava negócio pode adicionar licitação ao funil — é a mesma regra da ficha.</div>';
+    return;
+  }
+  ASS = {
+    passo: 1,
+    nc: String(nc || '').trim(),
+    lic: null, licBuscada: false,
+    itens: null, itensErro: null,
+    marcados: Array.isArray(itensUrl) ? itensUrl.slice() : [],
+    veioDaUrl: Array.isArray(itensUrl) && itensUrl.length > 0,
+    busca: '', criado: null, msg: '',
+  };
+  el.style.display = 'block';
+  el.scrollIntoView({behavior:'smooth', block:'nearest'});
+  pintaAssist();
+  if(ASS.nc) carregarEditalDoAssistente();
+}
+
+/* Duas leituras em paralelo e independentes: a licitação (pro pré-preenchimento) e os itens. Se
+   uma falhar, a outra continua valendo — o assistente não precisa das duas pra funcionar, e
+   amarrar as duas num `Promise.all` que estoura junto perderia a que deu certo. */
+async function carregarEditalDoAssistente(){
+  const nc = ASS.nc, soNumero = /^\d+$/.test(nc);
+  const alvo = soNumero ? `id=eq.${encodeURIComponent(nc)}` : `numero_controle=eq.${encodeURIComponent(nc)}`;
+  try{
+    const r = await fetch(`${SB_URL}/rest/v1/licitacoes?${alvo}&select=*&limit=1`, {headers:SB_H});
+    if(r.ok){ const d = await r.json(); if(ASS) ASS.lic = d[0] || null; }
+  }catch(e){ /* licitação fora do índice é caso PREVISTO, não erro: o PNCP ao vivo não tem linha
+                aqui (contrato A5, seção 0). O passo 2 abre com os campos em branco e diz por quê. */ }
+  if(ASS) ASS.licBuscada = true;
+  // Se veio por `id`, a chave dos itens continua sendo o `numero_controle` — é ela que
+  // `licitacao_itens` guarda. Sem esta tradução a lista viria vazia com o edital no índice.
+  const chave = (ASS && ASS.lic && ASS.lic.numero_controle) ? ASS.lic.numero_controle : nc;
+  try{
+    const r = await fetch(`${SB_URL}/rest/v1/licitacao_itens?numero_controle=eq.${encodeURIComponent(chave)}`
+      + '&select=numero_item,descricao,quantidade,unidade,valor_unitario_ref&order=id&limit=2000', {headers:SB_H});
+    if(!r.ok) throw new Error('o banco respondeu ' + r.status);
+    if(ASS) ASS.itens = await r.json();
+  }catch(e){ if(ASS) ASS.itensErro = e.message; }
+  if(ASS) pintaAssist();
+}
+
+/* ── SAIR DO PASSO 2 GUARDA O QUE FOI DIGITADO, E ISSO NÃO É DETALHE ──────────────────────────
+   O passo 3 substitui o HTML do passo 2: quando ele é pintado, os `<input>` do 2 já não estão
+   no DOM. Ler `document.getElementById('a-orgao').value` lá devolveria vazio e o assistente
+   criaria um negócio em branco — em silêncio, que é o pior jeito de errar. Então os valores são
+   copiados para `ASS.form` na SAÍDA do passo 2, e é de `ASS.form` que todo o resto lê.
+   >>> E É POR ISSO QUE VOLTAR PRO PASSO 2 NÃO PERDE NADA: ele repinta a partir da licitação, e
+       o que a pessoa mudou está guardado — `assistValor` dá preferência ao que ela digitou. */
+const _ASS_CAMPOS = ['a-titulo','a-empresa','a-portal','a-numero','a-orgao','a-municipio','a-uf',
+  'a-modalidade','a-abertura','a-estagio','a-valor','a-objeto'];
+function assistGuardaPasso2(){
+  if(!ASS || ASS.passo !== 2) return;
+  ASS.form = ASS.form || {};
+  _ASS_CAMPOS.forEach(k => { const el = document.getElementById(k); if(el) ASS.form[k] = el.value; });
+  const kit = document.getElementById('a-kit');
+  ASS.form['a-kit'] = kit ? kit.checked : true;
+}
+// O que a pessoa digitou vence o que veio do índice — ela está corrigindo o índice, não o
+// contrário. `''` digitado também vence: apagar um campo é uma decisão.
+function assistValor(k, doIndice){
+  const f = (ASS && ASS.form) || {};
+  return Object.prototype.hasOwnProperty.call(f, k) ? f[k] : (doIndice == null ? '' : String(doIndice));
+}
+function assistPasso(p){
+  if(!ASS) return;
+  assistGuardaPasso2();
+  ASS.passo = p;
+  pintaAssist();
+}
+function assistFiltra(){
+  if(!ASS) return;
+  ASS.busca = (document.getElementById('a-busca') || {}).value || '';
+  const cx = document.getElementById('a-itens');
+  if(cx) cx.innerHTML = assistListaItens();
+}
+function assistMarca(i, on){
+  if(!ASS || !ASS.itens) return;
+  const num = String(ASS.itens[i].numero_item);
+  const k = ASS.marcados.indexOf(num);
+  if(on && k < 0) ASS.marcados.push(num);
+  if(!on && k >= 0) ASS.marcados.splice(k, 1);
+  const c = document.getElementById('a-conta');
+  if(c) c.innerHTML = assistConta();
+}
+// "Todos" marca os VISÍVEIS, e o rótulo diz isso. Um "Todos" que marcasse os 500 do edital
+// enquanto a busca mostra 6 seria a pior surpresa possível — e ela só apareceria no passo 3.
+function assistTodos(on){
+  if(!ASS || !ASS.itens) return;
+  assistVisiveis().forEach(x => {
+    const num = String(x.numero_item), k = ASS.marcados.indexOf(num);
+    if(on && k < 0) ASS.marcados.push(num);
+    if(!on && k >= 0) ASS.marcados.splice(k, 1);
+  });
+  const cx = document.getElementById('a-itens'); if(cx) cx.innerHTML = assistListaItens();
+  const c = document.getElementById('a-conta'); if(c) c.innerHTML = assistConta();
+}
+function assistVisiveis(){
+  const q = (ASS.busca||'').trim().toLowerCase();
+  const l = ASS.itens || [];
+  if(!q) return l;
+  return l.filter(x => (String(x.descricao||'') + ' ' + String(x.numero_item||'')).toLowerCase().includes(q));
+}
+function assistConta(){
+  const t = (ASS.itens||[]).length, m = ASS.marcados.length;
+  if(!t) return m ? `<b>${m}</b> item(ns) marcados na tela anterior` : 'o pregão inteiro';
+  return m ? `<b>${m}</b> de ${t} marcados` : `nenhum marcado — vale como <b>o pregão inteiro</b>`;
+}
+function assistListaItens(){
+  const vis = assistVisiveis(), l = ASS.itens || [];
+  if(!vis.length) return '<div class="salvo">Nenhum item bate com essa busca.</div>';
+  return vis.map(x => {
+    const i = l.indexOf(x), num = String(x.numero_item);
+    const ref = x.valor_unitario_ref != null ? ' · ref. ' + brl(x.valor_unitario_ref) : '';
+    const qtd = x.quantidade != null ? x.quantidade + (x.unidade ? ' ' + x.unidade : '') : '';
+    return `<label class="a-item">
+      <input type="checkbox" ${ASS.marcados.indexOf(num)>=0?'checked':''} onchange="assistMarca(${i},this.checked)">
+      <span class="a-n">${esc(num)}</span>
+      <span class="a-d">${esc(x.descricao||'(sem descrição)')}
+        <i>${esc(qtd)}${ref ? esc(ref) : ''}</i></span></label>`;
+  }).join('');
+}
+
+/* Os três prazos aparecem JÁ NO PASSO 2, calculados ao vivo do campo de abertura. É de propósito
+   que eles não esperem a criação: o kit é uma promessa de datas, e uma promessa que só se
+   confere depois de salvar é uma promessa que ninguém confere. */
+function assistPrevePrazos(){
+  const cx = document.getElementById('a-prazos'); if(!cx) return;
+  const v = (document.getElementById('a-abertura') || {}).value || '';
+  const iso = v ? new Date(v + ':00').toISOString() : null;
+  const fake = { abertura: iso, tarefas: novasTarefas() };
+  cx.innerHTML = iso ? prazosAncorados(fake)
+    : '<div class="salvo">Sem data de abertura os três prazos não existem — não é que sejam hoje, '
+      + 'é que não há de onde contá-los. Dá pra criar assim e preencher a data depois na ficha.</div>';
+}
+
+function pintaAssist(){
+  const el = document.getElementById('form-manual'); if(!el || !ASS) return;
+  const topo = `<div class="pk-topo"><b>Adicionar aos meus negócios</b>
+      <span class="salvo">${ASS.nc ? 'edital ' + esc(ASS.nc) : 'sem edital de origem — inclusão à mão'}</span>
+      <button class="btn-ed sec" style="margin-left:auto" onclick="fecharAssistente()">fechar</button></div>
+    <div class="a-passos">${[[1,'Itens'],[2,'O negócio'],[3,'Enviar']].map(([k,r]) =>
+      `<span class="a-p${ASS.passo===k?' on':(ASS.passo>k?' feito':'')}">${ASS.passo>k?'✓':k} ${r}</span>`).join('')}</div>`;
+  el.innerHTML = topo + (ASS.passo === 1 ? assistPasso1() : ASS.passo === 2 ? assistPasso2() : assistPasso3());
+  // Os dois pedaços que dependem do DOM recém-criado moram aqui, e num lugar só: quem repinta
+  // não precisa lembrar de chamá-los. Foi assim que o resumo apareceu vazio na primeira versão.
+  if(ASS.passo === 2) assistPrevePrazos();
+  if(ASS.passo === 3 && !ASS.criado) pintaResumoAssist();
+}
+
+function assistPasso1(){
+  const dup = assistDuplicata();
+  const avisoDup = dup ? `<div class="a-alerta"><b>Já existe um negócio deste edital</b> —
+      ${esc([dup.portal, dup.numero].filter(Boolean).join(' · ') || 'sem número')}${dup.orgao ? ' — ' + esc(dup.orgao) : ''}.
+      Criar outro é possível (órgão que republica existe), mas quase sempre é engano.
+      <button class="btn-ed sec" onclick="fecharAssistente();abrirDrawer(${dup.id})">abrir o que já existe</button></div>` : '';
+  let corpo;
+  if(!ASS.nc){
+    corpo = `<div class="salvo">Este assistente também serve pra incluir à mão. Sem número de
+      controle do PNCP não há lista de itens pra escolher — os dados do certame vêm no passo 2.</div>`;
+  } else if(ASS.itensErro){
+    // Erro de leitura NÃO vira "sem itens": são coisas diferentes, e a segunda é uma afirmação
+    // sobre o edital que eu não posso fazer se nem consegui perguntar.
+    corpo = `<div class="a-alerta">Não consegui ler os itens deste edital (${esc(ASS.itensErro)}).
+      Isso não quer dizer que ele não tenha itens — quer dizer que eu não sei. Dá pra seguir e
+      escolher os itens depois, na aba Itens do negócio.</div>`;
+  } else if(ASS.itens === null){
+    corpo = '<div class="salvo">procurando os itens deste edital…</div>';
+  } else if(!ASS.itens.length){
+    corpo = `<div class="a-alerta"><b>Os itens deste edital ainda não estão disponíveis aqui.</b>
+        A tabela existe e é abastecida sob demanda pela tela Encontrar; até ela passar por este
+        edital, a lista fica vazia. <b>O assistente não trava por isso</b> — siga para o passo 2.</div>`
+      + (ASS.veioDaUrl ? `<div class="salvo" style="margin-top:8px">A tela anterior marcou
+        <b>${ASS.marcados.length}</b> item(ns) — ${esc(ASS.marcados.join(', '))}. Eles vão ser
+        guardados no negócio mesmo sem a descrição: o número é o que liga com o edital.</div>` : '');
+  } else {
+    const vis = assistVisiveis().length;
+    corpo = `<div class="a-barra">
+        <input type="text" id="a-busca" placeholder="buscar por descrição ou nº do item" value="${esc(ASS.busca)}" oninput="assistFiltra()">
+        <button class="btn-ed sec" onclick="assistTodos(true)">marcar os ${vis} visíveis</button>
+        <button class="btn-ed sec" onclick="assistTodos(false)">desmarcar</button>
+      </div>
+      <div class="a-lista" id="a-itens">${assistListaItens()}</div>`;
+  }
+  return avisoDup + corpo
+    + `<div class="a-rodape"><span class="salvo" id="a-conta">${assistConta()}</span>
+        <button class="btn-ed" onclick="assistPasso(2)">Continuar →</button></div>
+       <div class="salvo">Não marcar nada quer dizer <b>o pregão inteiro</b>, e não "nenhum item" —
+        é o que está escrito no contrato da ponte, e é o que quem manda um edital pro funil quer dizer.</div>`;
+}
+
+// A duplicata é procurada pelo número de controle (a chave) e, se não houver, pelo trio
+// portal+número+órgão que `achaDuplicata` já usava. Duas perguntas, porque o negócio antigo
+// não tem número de controle gravado — ele nasceu antes desta coluna existir.
+function assistDuplicata(){
+  if(ASS.nc){
+    const porNc = NEG.find(x => x.numero_controle && String(x.numero_controle) === ASS.nc);
+    if(porNc) return porNc;
+  }
+  const l = ASS.lic;
+  return l ? achaDuplicata(l.portal, l.numero_compra, l.orgao) : null;
+}
+
+function assistPasso2(){
+  const l = ASS.lic || {};
+  const camp = (id, rot, extra) => `<div class="fm-c"><label>${rot}</label>${extra}</div>`;
+  const abIso = l.data_abertura ? new Date(l.data_abertura) : null;
+  const abLocal = abIso && !isNaN(abIso)
+    ? abIso.getFullYear() + '-' + String(abIso.getMonth()+1).padStart(2,'0') + '-' + String(abIso.getDate()).padStart(2,'0')
+      + 'T' + String(abIso.getHours()).padStart(2,'0') + ':' + String(abIso.getMinutes()).padStart(2,'0')
+    : '';
+  const nome = [l.portal, l.modalidade, l.numero_compra].filter(Boolean).join(' · ')
+             + (l.orgao ? ' — ' + l.orgao : '');
+  const semIndice = ASS.nc && ASS.licBuscada && !ASS.lic;
+  return (semIndice ? `<div class="a-alerta">Este edital <b>não está no nosso índice</b> — ele veio
+      ao vivo do PNCP, e por isso os campos abaixo estão em branco. O número de controle fica
+      guardado no negócio de qualquer jeito, e é por ele que a aba Itens e o edital se ligam
+      depois.</div>` : '')
+    + `<div class="fm-grid">
+      ${camp('a-titulo','Nome do negócio', `<input id="a-titulo" value="${esc(assistValor('a-titulo', nome))}" placeholder="portal · modalidade · nº — órgão">`)}
+      ${camp('a-empresa','Empresa', `<select id="a-empresa">${EMPRESAS.map(e =>
+        `<option value="${e.id}"${String(assistValor('a-empresa',''))===String(e.id)?' selected':''}>${esc(e.razao_social)}</option>`).join('')}</select>`)}
+      ${camp('a-portal','Portal', `<input id="a-portal" list="m-portais" value="${esc(assistValor('a-portal', l.portal))}">
+        <datalist id="m-portais">${PORTAIS_SUGERIDOS.map(x=>`<option value="${esc(x)}">`).join('')}</datalist>`)}
+      ${camp('a-numero','Número do certame', `<input id="a-numero" value="${esc(assistValor('a-numero', l.numero_compra))}">`)}
+      ${camp('a-orgao','Órgão', `<input id="a-orgao" value="${esc(assistValor('a-orgao', l.orgao))}">`)}
+      ${camp('a-municipio','Município', `<input id="a-municipio" value="${esc(assistValor('a-municipio', l.municipio))}">`)}
+      ${camp('a-uf','UF', `<input id="a-uf" maxlength="2" style="text-transform:uppercase" value="${esc(assistValor('a-uf', l.uf))}">`)}
+      ${camp('a-modalidade','Modalidade', `<input id="a-modalidade" value="${esc(assistValor('a-modalidade', l.modalidade))}">`)}
+      ${camp('a-abertura','Abertura (data e hora)', `<input id="a-abertura" type="datetime-local" value="${esc(assistValor('a-abertura', abLocal))}" oninput="assistPrevePrazos()">`)}
+      ${camp('a-estagio','Entra no funil em', `<select id="a-estagio">${FASES.map(f =>
+        `<option value="${f.k}"${(assistValor('a-estagio','oportunidade')===f.k)?' selected':''}>${esc(f.n)}</option>`).join('')}</select>`)}
+      ${camp('a-valor','Valor estimado (opcional)', `<input id="a-valor" type="number" step="0.01" min="0" value="${esc(assistValor('a-valor', l.valor_estimado))}">`)}
+    </div>
+    <div class="fm-c" style="margin-top:10px"><label>Objeto</label>
+      <textarea id="a-objeto" rows="2">${esc(assistValor('a-objeto', l.objeto))}</textarea></div>
+
+    <!-- ══ O KIT, COM AS DATAS NA CARA ══════════════════════════════════════════════════════
+         (sem crase neste comentário: ele mora dentro do template literal) -->
+    <div class="fm-c" style="margin-top:12px">
+      <label><input type="checkbox" id="a-kit"${assistValor('a-kit', true) === false ? '' : ' checked'} style="accent-color:var(--azul);width:14px;height:14px">
+        Criar com o kit <b>Padrão</b> — as 15 tarefas, três delas com prazo</label>
+      <div id="a-prazos" style="margin-top:8px"></div>
+    </div>
+    <div class="a-rodape"><button class="btn-ed sec" onclick="assistPasso(1)">← Itens</button>
+      <span class="salvo" id="a-conta">${assistConta()}</span>
+      <button class="btn-ed" onclick="assistPasso(3)">Continuar →</button></div>`;
+}
+
+function assistPasso3(){
+  if(ASS.criado){
+    const n = ASS.criado;
+    /* ── A SAÍDA DUPLA ────────────────────────────────────────────────────────────────────────
+       Quem acabou de mandar um edital pro funil está no meio de UMA de duas coisas: garimpando
+       oportunidades (e quer voltar pra lista de onde veio) ou montando o negócio (e quer abrir
+       o que acabou de criar). Escolher por ela mandaria metade das pessoas pro lugar errado, e
+       a que foi pro errado não volta — ela desiste do passo seguinte. */
+    return `<div class="a-ok"><b>Pronto.</b> O negócio está no funil, na fase
+        ${esc(nomeFase(n.estagio))}${n.abertura ? ', com a abertura em ' + esc(fmtDtH(n.abertura)||'') : ''}.
+        ${Array.isArray(n.tarefas) && n.tarefas.length ? 'O kit entrou com ' + n.tarefas.length + ' tarefas.' : ''}</div>
+      <div class="a-rodape">
+        <button class="btn-ed sec" onclick="location.href='fpmed_licitacoes.html'">← voltar às oportunidades</button>
+        <button class="btn-ed" onclick="fecharAssistente();abrirDrawer(${n.id})">ver meus negócios ↗</button>
+      </div>`;
+  }
+  return `<div class="salvo">Confira e envie. Nada foi gravado até aqui — fechar agora não deixa
+      negócio pela metade no funil.</div>
+    <div class="a-resumo" id="a-resumo"></div>
+    <div class="a-rodape"><button class="btn-ed sec" onclick="assistPasso(2)">← O negócio</button>
+      <button class="btn-ed" id="a-bt" onclick="enviarDoAssistente()">Enviar para meus negócios</button>
+      <span class="salvo" id="a-msg">${esc(ASS.msg||'')}</span></div>`;
+}
+
+function pintaResumoAssist(){
+  const cx = document.getElementById('a-resumo'); if(!cx || !ASS) return;
+  const f = ASS.form || {};
+  const emp = (EMPRESAS.find(e => String(e.id) === String(f['a-empresa'])) || {}).razao_social || '—';
+  const ab = f['a-abertura'] ? new Date(f['a-abertura'] + ':00') : null;
+  const linha = (r, v) => `<div class="a-r"><span>${r}</span><b>${v}</b></div>`;
+  const kit = f['a-kit'] !== false;
+  const fake = { abertura: ab ? ab.toISOString() : null, tarefas: novasTarefas() };
+  cx.innerHTML = linha('Nome', esc(f['a-titulo'] || '—'))
+    + linha('Empresa', esc(emp))
+    + linha('Entra em', esc(nomeFase(f['a-estagio'] || 'oportunidade')))
+    + linha('Abertura', ab && !isNaN(ab) ? esc(fmtDtH(ab.toISOString())||'') : '<i>sem data</i>')
+    + linha('Itens', ASS.marcados.length ? '<b>' + ASS.marcados.length + '</b> marcados' : 'o pregão inteiro')
+    + linha('Kit de tarefas', kit ? '15 tarefas, 3 com prazo' : '<i>sem kit</i>')
+    + (ASS.nc ? linha('Nº de controle', esc(ASS.nc)) : '')
+    + (kit && ab && !isNaN(ab) ? prazosAncorados(fake) : '');
+}
+
+async function enviarDoAssistente(){
+  if(!ASS) return;
+  const bt = document.getElementById('a-bt'), msg = document.getElementById('a-msg');
+  const f = ASS.form || {};
+  const orgao = (f['a-orgao']||'').trim(), numero = (f['a-numero']||'').trim();
+  const titulo = (f['a-titulo']||'').trim();
+  // O MESMO MÍNIMO DO FORMULÁRIO MANUAL: sem órgão nem número o card fica sem título e ninguém
+  // acha aquilo de novo. O nome do negócio não substitui: ele é rótulo, não identificação.
+  if(!orgao && !numero && !titulo){
+    if(msg) msg.textContent = 'preencha ao menos o órgão, o número ou o nome — volte ao passo 2.';
+    return;
+  }
+  if(bt) bt.disabled = true; if(msg) msg.textContent = 'enviando…';
+  try{
+    const valor = parseFloat(String(f['a-valor']||'').replace(',', '.'));
+    const ab = (f['a-abertura']||'').trim();
+    const corpo = {
+      empresa_id: Number(f['a-empresa']) || null,
+      estagio: f['a-estagio'] || 'oportunidade',
+      situacao: 'normal',
+      titulo: titulo || null,
+      portal: (f['a-portal']||'').trim() || null,
+      numero: numero || null,
+      orgao: orgao || null,
+      municipio: (f['a-municipio']||'').trim() || null,
+      uf: (f['a-uf']||'').trim() ? (f['a-uf']).toUpperCase().slice(0,2) : null,
+      modalidade: (f['a-modalidade']||'').trim() || null,
+      objeto: (f['a-objeto']||'').trim() || null,
+      // A REGRA DO FUSO, de novo: montado como hora LOCAL e convertido pelo navegador. Já
+      // arquivou uma licitação neste projeto uma vez.
+      abertura: ab ? new Date(ab + ':00').toISOString() : null,
+      valor_estimado: isFinite(valor) && valor > 0 ? valor : null,
+      numero_controle: ASS.nc || null,
+      licitacao_id: (ASS.lic && ASS.lic.id) || null,
+      // `null` e `[]` querem dizer coisas diferentes, e o DDL registra as duas: sem marcação é
+      // O PREGÃO INTEIRO (contrato A5, seção 2), e não um negócio sem item nenhum.
+      itens_participo: ASS.marcados.length ? ASS.marcados.slice() : null,
+      tarefas: f['a-kit'] !== false ? novasTarefas() : null,
+      // A procedência diz a verdade sobre o registro: veio do PNCP se trouxe número de controle.
+      origem: ASS.nc ? 'licitacoes' : 'manual',
+      criado_por: (window.gmAuth && gmAuth.user && gmAuth.user.email) || null,
+      arquivado: false,
+    };
+    const novo = await criarNegocio(corpo);
+    ASS.criado = novo;
+    await carregar(); pinta();
+    pintaAssist();
+  }catch(e){
+    if(msg) msg.textContent = 'não consegui enviar: ' + e.message;
+    if(bt) bt.disabled = false;
+  }
+}
+
+/* ── A CHEGADA PELA URL (contrato A5, seção 2) ────────────────────────────────────────────────
+   `?adicionar=<numero_controle>&itens=<n,n,n>`. Consumido de uma vez e apagado do endereço:
+   recarregar a página não pode reabrir um assistente que a pessoa já fechou, e não pode criar
+   o mesmo negócio duas vezes porque alguém apertou F5.
+   >>> `history.replaceState` e não `location.replace`: trocar o endereço sem recarregar mantém
+       o assistente aberto com o estado que ele acabou de montar. */
+function assistenteDaUrl(){
+  let p;
+  try{ p = new URLSearchParams(location.search); }catch(e){ return; }
+  const nc = (p.get('adicionar') || '').trim();
+  if(!nc) return;
+  const itens = (p.get('itens') || '').split(',').map(s => s.trim()).filter(Boolean);
+  try{ history.replaceState(null, '', location.pathname + location.hash); }catch(e){}
+  abrirAssistente(nc, itens);
+}
+
 function numerosDoTopo(){
   const ganhos = NEG.filter(n => Number(n.valor_ganho) > 0);
   // DECIDIDAS = ganhou, ou chegou à Habilitação e o processo já terminou.
@@ -3543,6 +4359,34 @@ function progressoCard(n){
   return `<div class="cd-prog" title="etapa ${atual+1} de ${FASES.length}: ${esc(nomeFase(n.estagio))}">
     <span class="bolas">${bolas}</span>
     <span class="txt">etapa ${atual+1} de ${FASES.length} · <b style="color:${corFase(n.estagio)}">${esc(nomeFase(n.estagio))}</b></span>
+  </div>`;
+}
+
+/* O MEDIDOR DO KIT NO CARD (14/08, fatia B4). Três informações e nada mais: quantas faltam, a
+   barrinha pro relance, e o PRÓXIMO PRAZO — que é a única delas capaz de mudar o que a pessoa
+   vai fazer nos próximos cinco minutos.
+   >>> CARD SEM KIT NÃO GANHA MEDIDOR VAZIO. Negócio sem `tarefas` gravadas não é "0 de 15": é
+       um negócio que nunca recebeu kit, e um "0/15" cinza em cima dele acusaria a pessoa de um
+       atraso que não existe.
+   >>> O PRAZO MOSTRADO É O MAIS PRÓXIMO AINDA ABERTO, vencido inclusive — e vencido aparece em
+       vermelho, na frente. Esconder o vencido pra mostrar o próximo faria o card ficar calmo
+       exatamente no negócio em que alguém perdeu uma data. */
+function medidorKit(n){
+  const c = contaKit(n);
+  if(!c.total) return '';
+  const pct = Math.round((c.feitas / c.total) * 100);
+  const hoje = hojeYMD();
+  const prox = prazosDoKit(n).slice().sort((a,b) => String(a.prazo).localeCompare(String(b.prazo)))[0];
+  let sel = '';
+  if(prox){
+    const d = diaDe(prox.prazo), venceu = d < hoje;
+    const q = venceu ? 'venceu' : (d === hoje ? 'é hoje' : new Date(prox.prazo).toLocaleDateString('pt-BR'));
+    sel = `<span class="pzx${venceu?' venceu':''}" title="${esc(prox.texto)}">${esc(q)}</span>`;
+  }
+  return `<div class="cd-kit" title="${c.feitas} de ${c.total} tarefas do kit concluídas">
+    <span class="barra"><i style="width:${pct}%"></i></span>
+    <span class="txt">${c.feitas}/${c.total} tarefas</span>
+    ${sel}
   </div>`;
 }
 
@@ -4518,8 +5362,21 @@ async function carregarRastro(id){
     const d = await r.json();
     if(!d.length){ box.innerHTML = ''; return; }
     const rot = { abertura:'Abertura', situacao:'Situação', portal:'Portal', numero:'Número', orgao:'Órgão', objeto:'Objeto' };
+    /* ── A DATA REMARCADA SE LÊ COMO DATA, E NÃO COMO CARIMBO DO BANCO (14/08, fatia B2) ──────
+       O gatilho grava `de`/`para` em texto cru — "2026-08-12 11:00:00+00". Isso está certo no
+       banco e errado na tela: o gestor que vive PROVANDO prazo precisa ler "12/08/2026 às 08:00
+       → 25/08/2026 às 08:00", que é a frase que ele vai repetir pro órgão. E o fuso importa:
+       11:00+00 é 08:00 em Goiás, e o carimbo cru diria a hora errada em voz alta.
+       >>> SÓ A EXIBIÇÃO MUDA. O que está gravado continua igual, letra por letra — é o registro
+           legal, e reescrevê-lo pra ficar bonito é o começo de um histórico que não vale nada. */
+    const leg = (campo, v) => {
+      if(v == null || v === '') return '—';
+      if(campo !== 'abertura') return String(v);
+      const f = fmtDtH(v);
+      return f || String(v);
+    };
     box.innerHTML = '<h4>O que já foi alterado</h4>'
-      + d.map(x => `<div class="rastro"><b>${esc(rot[x.campo]||x.campo)}</b>: ${esc(x.de||'—')} → ${esc(x.para||'—')}
+      + d.map(x => `<div class="rastro"><b>${esc(rot[x.campo]||x.campo)}</b>: ${esc(leg(x.campo, x.de))} → ${esc(leg(x.campo, x.para))}
            <span>por ${esc((x.quem_email||'alguém').split('@')[0])} em ${new Date(x.quando).toLocaleString('pt-BR')}</span></div>`).join('');
   }catch(e){ box.innerHTML = '<h4>O que já foi alterado</h4><div class="salvo">não consegui ler o histórico de alterações</div>'; }
 }
@@ -4824,7 +5681,11 @@ function reservaAuth(){
   document.documentElement.style.setProperty('--reserva-auth', l ? (l + 12) + 'px' : '0px');
 }
 window.addEventListener('resize', reservaAuth);
-function _aoAutenticar(){ carregar().then(() => { pinta(); formManualDaSessao(); }); abreLeitorNaBarra(); reservaAuth(); }
+/* O assistente da URL espera o `carregar()` de propósito: ele precisa de `EMPRESAS` (pro seletor
+   do passo 2) e de `NEG` (pra procurar a duplicata antes de deixar criar). Aberto antes, ele
+   mostraria um seletor de empresa vazio e deixaria criar o mesmo pregão duas vezes — que é o
+   erro caro deste fluxo, e o único que o contrato do A pede explicitamente pra evitar. */
+function _aoAutenticar(){ carregar().then(() => { pinta(); formManualDaSessao(); assistenteDaUrl(); }); abreLeitorNaBarra(); reservaAuth(); }
 if(window.gmAuth) _aoAutenticar();
 else document.addEventListener('gm-auth-ready', _aoAutenticar, { once:true });
 </script>

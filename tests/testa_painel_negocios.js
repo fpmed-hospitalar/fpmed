@@ -177,15 +177,20 @@ ok(n + '. *** os dois tetos da Agenda tem nome (nenhum numero solto num slice) *
    existe pra provar a ORDEM da agenda quebraria por causa de um numero. */
 ok(n + '. ...e eles moram DENTRO da funcao, que e de onde a outra suite a extrai',
   /function agenda\(l\)\{[\s\S]{0,1600}?const TETO_FUTURO/.test(LIMPO)); n++;
+/* A ASSINATURA GANHOU UM 6o PARAMETRO EM 14/08 (fatia B4): `prazos`, os prazos do kit que caem
+   nos dias daquele painel. O que esta suite protege NAO e a aridade da funcao - e o fato de a
+   Agenda passar pelo painel-resultado com a variante `agenda`. Prender o teste no numero de
+   parametros faria toda fatia que acrescenta informacao a agenda ficar vermelha sem que nada do
+   desenho tivesse mudado. Os quatro primeiros continuam exigidos, na ordem. */
 ok(n + '. a Agenda passa pelo painel, com a marca de que ela e a variante de agenda',
   /'<div class="painel-res agenda">'/.test(LIMPO)
-  && /const painelDeSessoes = \(titulo, lista, teto, cresc, quais\)/.test(LIMPO)); n++;
+  && /const painelDeSessoes = \(titulo, lista, teto, cresc, quais/.test(LIMPO)); n++;
 /* SAO DOIS PAINEIS, e nao um com divisoria: os dois blocos correm em ordens OPOSTAS (um cresce,
    o outro decresce) e tem TETOS diferentes. Um rodape so teria de contar dois cortes numa frase
    - e a frase que serve pros dois nao serve pra nenhum. */
 ok(n + '. sao DOIS paineis (frente e passado), cada um com o seu teto',
-  /painelDeSessoes\([\s\S]{0,400}?futuro, TETO_FUTURO, true, 'mais próximas'\)/.test(LIMPO)
-  && /painelDeSessoes\([\s\S]{0,300}?passado, TETO_PASSADO, false, 'mais recentes'\)/.test(LIMPO)); n++;
+  /painelDeSessoes\([\s\S]{0,700}?futuro, TETO_FUTURO, true, 'mais próximas'/.test(LIMPO)
+  && /painelDeSessoes\([\s\S]{0,400}?passado, TETO_PASSADO, false, 'mais recentes'/.test(LIMPO)); n++;
 /* Numa lista ordenada por TEMPO, "as 300 primeiras" nao informa nada: "as 300 mais proximas"
    diz ONDE a tesoura passou. E a mesma exigencia do rodape da Lista, um degrau mais fina. */
 ok(n + '. *** e o rodape diz QUAIS ficaram, nao so quantas ("mais proximas"/"mais recentes") ***',

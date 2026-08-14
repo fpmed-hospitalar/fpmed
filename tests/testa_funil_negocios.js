@@ -43,6 +43,11 @@ function bloco(ini, fim) {
 // `card` vira um selo com o id: a agenda é testada pela ORDEM que produz, não pelo HTML do card.
 const ctx = (new Function(
   'const card = n => "[" + n.id + "]";' +
+  /* `esc` mora ACIMA da âncora `const hojeYMD =`, e a agenda passou a precisar dele em 14/08:
+     a linha de prazo do kit escreve texto de tarefa e nome de órgão dentro do HTML. Extraí-lo
+     junto (em vez de recopiar um escape aqui) é a mesma regra do resto desta suíte — o que se
+     testa é o código que está no ar, e um segundo escape aqui poderia divergir do de lá. */
+  bloco('const esc = s =>', 'const brl =') +
   bloco('const hojeYMD =', 'async function carregar') +
   /* A ÂNCORA DE FIM ERA `// ── drag-and-drop`, e o calendário mensal (item 6) nasceu ENTRE os
      dois — então esta extração passou a arrastar junto um bloco que não é dela, inclusive um
