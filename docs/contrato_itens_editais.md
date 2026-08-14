@@ -225,3 +225,114 @@ de uma que ainda não está lá, o comando é
 
 Nada aqui exige que você espere por nada: as tabelas, o formato da URL e o motor do leitor estão
 de pé, com dado real dentro.
+
+---
+
+## 7 · O NÚMERO DO PNCP INFORMADO À MÃO — `valida-controle` (fatia A19, 14/08/2026)
+
+**O campo na ficha é seu. A conferência é minha, e ela já está no ar.**
+
+### O problema, medido
+
+Das **2.561** linhas de `negocios`, **zero** têm `numero_controle` e **zero** têm `licitacao_id`.
+As 105 Atas vieram do "Calendário 2025" — uma planilha — que nunca teve a chave do PNCP. Sem
+chave não há o que pedir ao portal: o PNCP responde por número de controle.
+
+E **casar na marra não funciona, e isso foi medido duas vezes**: em 14/08, juntar por
+UF + ano + número deu 2 correspondências "únicas" e as **duas eram de cidade errada** (Palmeiras
+de Goiás casando com a Câmara de Jataí). Refeito hoje com o índice já em 3.876 linhas, as 4
+correspondências ambíguas continuam **todas** de município errado. O número de pregão se repete
+entre municípios: "P.E. 4/2026" existe em centenas de prefeituras no mesmo ano.
+
+> Por isso a decisão do dono foi: **quem quiser recuperar informa o número**. A máquina não
+> adivinha — ela **confere**.
+
+### Como chamar
+
+```
+POST  {SUPABASE_URL}/functions/v1/valida-controle
+Authorization: Bearer <access_token da sessão>     ← obrigatório (401 sem ele)
+Content-Type: application/json
+
+{
+  "numero_controle": "01640429000106-1-000117/2026",   // obrigatório, o que a pessoa digitou
+  "negocio_id": 2567,                                  // opcional p/ conferir, OBRIGATÓRIO p/ gravar
+  "gravar": true,                                      // opcional — sem ele, só confere
+  "confirmado": true                                   // só quando houver divergência que avisa
+}
+```
+
+**Conferir NÃO grava.** Pode chamar enquanto a pessoa digita, sem medo — a gravação exige
+`gravar: true`. Isso é de propósito: gravar por tabela mudaria o dado de um negócio ganho só
+porque alguém colou um número pra ver o que dava.
+
+### O que ela responde
+
+```jsonc
+{
+  "ok": true,                    // atalho: true só quando veredito === "confere"
+  "veredito": "confere",         // formato | nao_existe | nao_sei | diverge | confere
+  "podeGravar": true,            // FALSE = nem com confirmação
+  "divergencias": [              // vazio quando confere
+    { "campo": "órgão", "informado": "CAMARA MUNICIPAL DE JATAI",
+      "negocio": "MUNICIPIO DE PALMEIRAS DE GOIAS", "bloqueia": false }
+  ],
+  "mensagem": "…",               // JÁ PRONTA PRA TELA, em português, dizendo o que fazer
+  "numero_controle": "01640429000106-1-000117/2026",
+  "partes":   { "cnpj": "…", "ordem": "1", "sequencial": "117", "ano": "2026" },
+  "orgao_pncp": "MUNICIPIO DE PEDRA BONITA",       // a razão social do CNPJ, direto do PNCP
+  "no_indice": { "id": 6719, "orgao": "…", "municipio": "Pedra Bonita", "uf": "MG" },  // ou null
+  "gravou": true,
+  "licitacao_id": 6719
+}
+```
+
+### Os cinco vereditos, e o que a tela deve fazer com cada um
+
+| veredito | HTTP | `podeGravar` | o que mostrar |
+|---|---|---|---|
+| `formato` | 200 (409 se pediu gravar) | ❌ | a `mensagem` já ensina o formato, com exemplo |
+| `nao_existe` | 200 / 409 | ❌ | a `mensagem` nomeia o engano mais provável (trocar o sequencial pelo nº do edital) |
+| `nao_sei` | 200 / 409 | ❌ | **não diga que o número está errado.** O PNCP não respondeu — "tente de novo daqui a pouco" |
+| `diverge` | 200 / 409 | depende | se `podeGravar`, mostre os dois nomes e um botão "gravar assim mesmo" que reenvia com `confirmado: true`. Se não, **não ofereça o botão** |
+| `confere` | 200 | ✅ | pode gravar direto |
+
+> **`nao_sei` ≠ `nao_existe`, e essa é a distinção mais importante deste endpoint.** A API de
+> consulta do PNCP está fora desde 14/08. Se a tela tratar "não consegui perguntar" como "seu
+> número está errado", a pessoa apaga um número **certo**.
+
+> **Por que órgão e município só AVISAM, e ano BLOQUEIA.** Comparar nome de órgão é comparar
+> texto escrito por gente: "MUNICIPIO DE X", "PREFEITURA MUNICIPAL DE X" e "P. M. X" são a mesma
+> entidade. Qualquer regra apertada o bastante pra pegar a divergência real também recusaria
+> essas três — e recusar o número certo de quem digitou certo ensina a pessoa a ignorar o aviso.
+> Já o ano é identidade pura: ou é 2025 ou é 2026.
+
+### O que acontece depois de gravar
+
+A edge grava **os dois campos** — `numero_controle` (a chave que o PNCP entende) e
+`licitacao_id` (a que amarra ao nosso índice, quando ele conhece a licitação). Gravar só um
+deixaria metade da ponte de pé; foi o defeito da A9.
+
+A partir daí **o coletor enxerga o negócio sozinho**: `tools/fila_resultado_atas.js` lê esse
+campo e manda o `coleta_resultados.js` buscar itens e resultado por item. Você não precisa
+chamar mais nada.
+
+### O que você NÃO precisa (nem deve) fazer
+
+* **não reimplemente a conferência na tela.** Ela já existe em dois lugares por necessidade
+  (node, para o operador; Deno, para você) e há uma suíte comparando os dois — uma terceira
+  cópia no navegador seria a que discorda no dia em que alguém amarrar um resultado no edital
+  errado;
+* **não monte a mensagem de erro.** A `mensagem` vem pronta, em português, dizendo o que fazer;
+* **não tente adivinhar o número** a partir de UF + ano + número da compra. Está medido: erra.
+
+### Provado em 14/08 — `node tools/prova_controle_informado.js` (14 de 14)
+
+Um negócio sem chave (como as 105 Atas) recebendo o número à mão:
+`01640429000106-1-999999/2026` **recusado** com `nao_existe` (na CLI e na edge, HTTP 409, sem
+gravar); ano trocado **bloqueado**; `01640429000106-1-000117/2026` **conferido** contra o PNCP
+("MUNICIPIO DE PEDRA BONITA") e gravado com `licitacao_id`; o negócio passou a aparecer na fila
+do resultado por item e enxerga os **192 itens com vencedor e valor** que a fatia A7 já havia
+conferido campo a campo contra o PNCP.
+
+Suíte: `tests/testa_controle_informado.js`.
