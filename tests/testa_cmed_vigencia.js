@@ -153,14 +153,54 @@ const FILEIRA = (() => {
   const i = N.indexOf('class="dw-acoes"'); if (i < 0) return '';
   const j = N.indexOf('fecharDrawer()', i); return j < 0 ? '' : N.slice(i, j + 40);
 })();
-ok('44. *** existe "Conferir preços (CMED)" na fileira do rodape da ficha ***',
-  // >>> 12/08: o rotulo perdeu o emoji (D11 — os icones da tela viraram SVG). A promessa e que a
-  //     acao EXISTE na fileira do rodape com esse nome, nao qual pictograma vem antes dele.
-  /cmed:\s*\{ rot: '[^']*Conferir preços \(CMED\)', fn: `location\.href='fpmed_conferidor\.html'`/.test(N));
-ok('45. ...e ele e ATALHO, nao uma segunda tela de conferencia',
-  /O Conferidor já existe; isto é atalho/.test(uc(N)));
-ok('46. ...com o motivo de estar aqui (a hora do preço é a hora do pregão)',
-  /quem está com a\s*ficha do pregão aberto é quem vai cotar/.test(uc(N)));
+/* ══ 14/08 (fatia B3): A PROMESSA DESTE BLOCO SE INVERTEU, POR ORDEM DO DONO ═════════════════
+   Ate 13/08 esta suite exigia que existisse "Conferir preços (CMED)" no rodape da ficha,
+   levando pro Conferidor. A ordem do dono e literal: *a CMED nunca abre janela nem aba fora*.
+   Aquele botao fazia `location.href` — ele TROCAVA a tela e largava o negocio pra tras, e de
+   la so se volta pelo botao do navegador. Chamar aquilo de "atalho" era eu me enganando.
+   >>> ENTAO O QUE SE EXIGE AGORA E O CONTRARIO, e com a mesma severidade: que o botao NAO
+       exista, que NENHUM caminho da ficha leve pro Conferidor, e que a comparacao contra o teto
+       esteja na LINHA DO ITEM, dentro da propria ficha.
+   >>> O CONFERIDOR NAO FOI DESLIGADO. Ele continua no menu e continua sendo a tela de quem
+       chega com um PDF de proposta. O que ele deixou de ser e um destino alcancado de DENTRO
+       do negocio — e e isso que as tres linhas abaixo passam a guardar. */
+/* O NOME DA TELA CONTINUA ESCRITO NO ARQUIVO, e tem que continuar: os dois comentarios que
+   explicam POR QUE o botao saiu citam o `location.href` que ele fazia. Apagar a explicacao
+   junto com o codigo deixaria a proxima pessoa reintroduzindo o botao por achar que faltava.
+   >>> ENTAO A PROVA E SOBRE O CODIGO, e nao sobre o texto: os comentarios de bloco saem antes
+       de procurar. O que nao pode existir e um caminho EXECUTAVEL pro Conferidor. */
+const semComentarios = s => s.replace(/\/\*[\s\S]*?\*\//g, ' ');
+ok('44. *** NENHUM caminho EXECUTAVEL da ficha leva pra tela do Conferidor (lei do dono) ***',
+  !/fpmed_conferidor\.html/.test(semComentarios(N)),
+  (semComentarios(N).match(/.{60}fpmed_conferidor\.html.{20}/) || [''])[0]);
+ok('45. ...e a acao do rodape virou a ABA ITENS desta mesma ficha, sem sair dela',
+  /itens:\s*\{ rot: '[^']*Itens e teto CMED', fn: `abaFicha\(/.test(N));
+ok('46. ...com o motivo escrito (um atalho que TROCA a tela e uma segunda tela)',
+  /um atalho que\s*TROCA a tela e larga o negócio pra trás é uma segunda tela/.test(uc(N)));
+// *** E A CMED NAO PODE ABRIR JANELA NENHUMA ***: `window.open` existe nesta tela para imprimir
+// (conferencia, ganhas, mapa, carta) e para o zap. O que nao pode e um `window.open`/`_blank`
+// que leve A CMED pra fora. A prova e por RECORTE do bloco da aba Itens, que e o unico lugar
+// onde a comparacao contra o teto agora vive.
+const ABA_ITENS = (() => {
+  const i = N.indexOf('A ABA ITENS — E O TETO CMED POR BAIXO (14/08, fatia B3)');
+  // >>> O RECORTE COMECA DEPOIS DO `*/` DO CABECALHO, e isso nao e detalhe: a ancora esta DENTRO
+  //     de um comentario de bloco, entao fatiar a partir dela deixa um pedaco de comentario sem
+  //     o `/*` que o abre — e o `semComentarios` nao tem como reconhece-lo. Como esse cabecalho
+  //     e justamente o que explica o `location.href` que FOI REMOVIDO, o teste acusava o proprio
+  //     texto que documenta a remocao. O recorte e de CODIGO.
+  const c = i < 0 ? -1 : N.indexOf('*/', i);
+  const j = N.indexOf('OS PRAZOS QUE PENDEM DESTA DATA', i);
+  return c < 0 || j < 0 ? '' : N.slice(c + 2, j);
+})();
+ok('46b. *** a comparacao contra o teto nao abre janela nem aba nenhuma ***',
+  ABA_ITENS.length > 2000 && !/window\.open|_blank|location\.href/.test(semComentarios(ABA_ITENS)),
+  ABA_ITENS.length);
+ok('46c. ...e ela usa o MESMO motor de teto, nao uma segunda regra',
+  /window\.LimedtecTetoCMED/.test(ABA_ITENS) && /carregarIdxCMED\(\)/.test(ABA_ITENS));
+// *** "NAO ENCONTRADO" NUNCA VIRA VERDE E NUNCA VIRA ZERO ***
+ok('46d. *** item que a CMED nao conhece fica NEUTRO, e a tela diz que neutro nao e ok ***',
+  /sem teto CMED/.test(ABA_ITENS)
+  && /Sem teto na CMED não quer dizer dentro do teto/.test(uc(ABA_ITENS)));
 
 // ══════════ 7. A TRAVA E EXERCITADA, E NAO SO LIDA ══════════
 // Assert de texto prova que a MENSAGEM de parada existe. Nao prova que ela dispara — e esta

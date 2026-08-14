@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <!-- ESTA TELA DEIXOU DE SER ESCURA (12/08, item 5 da reforma: "kanban protagonista").
      Ela declarava data-tema="dark" porque era dona da própria paleta — o que mandava o
      aplicaTema não escrever cor aqui. Agora ela vive sobre os tokens do fpmed_tema.css,
@@ -22,6 +22,19 @@
 <script src="limedtec-licenca.js"></script>
 <script src="gm-auth.js?v=sessao-06ago"></script>
 <script src="fpmed_alarme_coleta.js"></script>
+<!-- ══ O MOTOR DE TETO NUNCA TINHA SIDO CARREGADO AQUI (achado em 14/08, fatia B3) ═══════════
+     Esta tela já tinha uma "Conferência contra o teto CMED" na aba Proposta, escrita para usar
+     `window.LimedtecTetoCMED` — e este <script> não existia. O motor nunca esteve na página:
+     `conferirProposta` batia no `if(!T)` e respondia "o motor de teto não carregou — recarregue
+     a tela", em toda tentativa, desde que a função foi publicada. Recarregar não resolvia nada,
+     porque não havia o que carregar.
+     >>> POR QUE PASSOU: o Conferidor e a Proposta carregam o mesmo arquivo e funcionam, então o
+         motor "existia" em toda conferência que alguém testou. E as suítes conferem o código
+         que CHAMA o motor, não a etiqueta que o traz — o `<script src>` de uma tela não aparece
+         em nenhuma expressão regular sobre a função que o usa.
+     >>> ELE JÁ ESTAVA NA CASCA DO SERVICE WORKER (`./fpmed_teto_cmed.js` no SHELL), então esta
+         linha não muda nada offline: o arquivo já era baixado, só não era usado por ninguém. -->
+<script src="fpmed_teto_cmed.js"></script>
 <style>
 /* ══════════════════════════════════════════════════════════════════════════════════════════════
    NEGÓCIOS · TEMA CLARO — item 5 da fila da reforma ("kanban protagonista").
@@ -521,6 +534,46 @@ body{
 .pza li.ok{color:var(--muted)}
 .pza li.ok b:first-child{color:var(--muted)}
 .pza li.sem{color:var(--muted)}
+/* ── A ABA ITENS E A COLUNA DO TETO (14/08, fatia B3) ───────────────────────────────────────
+   DUAS FILEIRAS, E NÃO QUATRO COLUNAS. A primeira versão punha nº · descrição · referência ·
+   teto lado a lado, e ficou bonita na largura da tela cheia — mas esta lista mora DENTRO da
+   gaveta, que tem cerca de 530px. Medido no navegador: as quatro colunas somavam 544px e o
+   veredito era o que ficava cortado ("estoura o teto · +362.2" sem o "%"). Cortar justamente
+   a conclusão é o pior lugar possível para faltar espaço.
+   >>> ENTÃO A LINHA VIROU DUAS FILEIRAS: em cima o que o item É (nº, descrição, quantidade);
+       embaixo, recuado sob a descrição, o par que se compara — referência do edital e teto
+       legal, lado a lado, que é como a comparação se lê.
+   >>> "APAGADO" NÃO É "SUMIDO", e a diferença é o ponto: o item que não é meu continua legível
+       (opacity, não display:none) porque quem monta preço precisa ver o lote inteiro. Sumir
+       diria "não existe"; apagar diz "não é seu". */
+.it-barra{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:10px 0}
+.it-barra input{flex:1;min-width:190px}
+.it-barra .salvo{margin-top:0}
+.it-cx{border:1px solid var(--linha);border-radius:10px;max-height:420px;overflow-y:auto}
+.it-l{display:grid;grid-template-columns:38px minmax(0,1fr) minmax(0,auto);
+  grid-template-areas:"n desc desc" ". preco teto";
+  gap:5px 12px;padding:9px 12px;font-size:12.5px;border-bottom:1px solid var(--linha)}
+.it-l:last-child{border-bottom:0}
+.it-l.apagado{opacity:.45}
+.it-l.meu{border-left:3px solid var(--azul-claro);padding-left:9px}
+.it-n{grid-area:n;font-weight:700;color:var(--azul-claro);font-size:11.5px;padding-top:1px}
+.it-d{grid-area:desc;color:var(--texto);line-height:1.45;min-width:0}
+.it-d i,.it-p i,.it-t i{display:block;font-style:normal;font-size:11px;color:var(--muted);margin-top:2px}
+.it-p{grid-area:preco;color:var(--texto);min-width:0}
+.it-p b.sem{color:var(--muted);font-weight:600}
+.it-t{grid-area:teto;min-width:0;text-align:right}
+.it-t b{display:block;font-size:11.5px}
+.it-t b.cabe{color:var(--verde-700)}
+.it-t b.estoura{color:var(--vermelho-700)}
+.it-t b.neutro{color:var(--muted);font-weight:600}
+.it-t b.lendo{color:var(--azul-claro);font-weight:600}
+/* O grau de confiança é um sussurro, e é assim que ele tem que ser: ele qualifica o teto sem
+   competir com o veredito. Do mesmo tamanho, viraria uma segunda conclusão na mesma linha. */
+.it-t .conf{display:block;font-style:normal;font-size:10px;color:var(--ambar-700);margin-top:2px}
+@media(max-width:520px){
+  .it-l{grid-template-areas:"n desc desc" ". preco preco" ". teto teto"}
+  .it-t{text-align:left}
+}
 /* >>> `.ag-secao` FICOU ÓRFÃ em 13/08 (fatia 4): o "Já passaram" que ela desenhava virou o
        CABEÇALHO do segundo painel da Agenda. O grep está feito e é conclusivo — ela não é usada
        em mais lugar nenhum. Fica pela mesma regra do `.fase-tag` logo acima: seletor órfão não
@@ -2336,7 +2389,7 @@ async function abrirDrawer(id){
   }
   if(ABERTO === id){ carregarRastro(id); carregarLembretes(id); carregarCredenciamentos(id);
                      carregarProposta(id); carregarAta(id); carregarItensGanhos(id);
-                     carregarEdital(id);
+                     carregarEdital(id); carregarItensEdital(id);
                      // O kit NÃO tem `carregar`: ele já veio dentro do negócio (`negocios.tarefas`
                      // vem no mesmo `select=*` da lista). Uma leitura a mais aqui seria uma
                      // chance a mais de a aba abrir vazia por causa da rede.
@@ -2473,7 +2526,7 @@ function corpoDrawer(n, obs, carregando){
          Gerenciamento de Ata. A aba da etapa ganha um ponto verde: é o "você está aqui" do
          segundo nível, e ele existe porque a pessoa PODE ter navegado pra outra e voltado. -->
     <div class="dw-abas">
-      ${[['info','Informações',''],['lembretes','Lembretes','dw-lem-n'],['tarefas','Tarefas','dw-tar-n'],
+      ${[['info','Informações',''],['itens','Itens','dw-itens-n'],['lembretes','Lembretes','dw-lem-n'],['tarefas','Tarefas','dw-tar-n'],
          ['prop','Proposta','dw-prop-n'],['ata','Gerenciamento de Ata','dw-ata-n'],
          ['cred','Credenciamentos','dw-cred-n'],['obs','Observações','']].map(([k,rot,cnt]) => {
         const doFoco = k === focoDa(n.estagio).aba;
@@ -2509,6 +2562,22 @@ function corpoDrawer(n, obs, carregando){
            não pra desconfiar, mas pra saber onde conferir. -->
       <div class="dw-sec">${selaOrigem(n)}</div>
       <div class="dw-sec" id="dw-rastro"></div>
+    </div>
+
+    <!-- ══ ABA ITENS — E O TETO CMED POR BAIXO, NUNCA EM OUTRA TELA (14/08, fatia B3) ═════════
+         LEI DO DONO, com as palavras dele: a CMED NUNCA abre janela nem aba fora. Até hoje o
+         rodapé da ficha tinha "Conferir preços (CMED)" mandando pro Conferidor — outra tela,
+         sem o negócio junto, e de onde se volta pelo botão do navegador. Ele saiu neste commit.
+         O que ficou no lugar não é um botão pra outro lugar: é uma COLUNA nesta linha.
+         >>> AQUI ESTÃO TODOS OS ITENS DO EDITAL, e não só os meus. Quem monta preço precisa ver
+             o lote inteiro pra entender o que está sendo comprado; os meus ficam em destaque e
+             o resto apagado, que é a diferença entre "não é meu" e "não existe".
+         (sem crase neste comentário: ele mora dentro do template literal do drawer) -->
+    <div class="${pnl(n,"itens")}" id="aba-itens">
+      <div class="dw-sec">
+        <h4>Itens do edital</h4>
+        <div id="itens-cx"><div class="salvo">carregando…</div></div>
+      </div>
     </div>
 
     <div class="${pnl(n,"lembretes")}" id="aba-lembretes">
@@ -2667,6 +2736,14 @@ function corpoDrawer(n, obs, carregando){
 function abaFicha(bt, qual){
   document.querySelectorAll('.dw-abas button').forEach(b => b.classList.toggle('on', b === bt));
   document.querySelectorAll('.dw-painel').forEach(p => p.classList.toggle('on', p.id === 'aba-' + qual));
+  /* ── A CMED SÓ É LIDA QUANDO A ABA ITENS ABRE (14/08, fatia B3) ────────────────────────────
+     `carregarIdxCMED()` traz a tabela de teto inteira. Fazer isso em todo `abrirDrawer` seria
+     baixar a CMED completa porque alguém clicou num card pra ver a data da sessão — e são
+     dezenas de cliques por manhã. Abrir a aba Itens é o ato explícito que justifica a leitura.
+     >>> UMA VEZ SÓ POR SESSÃO: o índice fica em memória (`IDX_CMED`), então do segundo negócio
+         em diante a coluna preenche na hora. E `ITENS_CMED !== null` impede reconferir a mesma
+         lista a cada ida e volta entre abas. */
+  if(qual === 'itens' && ABERTO && ITENS_CMED === null && ITENS_EDITAL.length) conferirItensDoEdital(ABERTO);
 }
 
 // ══ LEMBRETES ════════════════════════════════════════════════════════════════════════════
@@ -2833,6 +2910,223 @@ async function lerEditalIA(id){
     }));
   }catch(e){ /* sem sessionStorage o leitor abre sem contexto, que é o comportamento normal dele */ }
   location.href = 'fpmed_edital_ia.html';
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════════
+   A ABA ITENS — E O TETO CMED POR BAIXO (14/08, fatia B3)
+
+   ── A LEI DO DONO, E O QUE ELA CUSTOU ────────────────────────────────────────────────────────
+   "CMED nunca abre janela nem aba fora." O rodapé desta ficha tinha um botão "Conferir preços
+   (CMED)" que fazia `location.href='fpmed_conferidor.html'` — outra tela, SEM o negócio junto, e
+   de onde só se volta pelo botão do navegador. Ele saiu. No lugar não entrou outro botão pra
+   outro lugar: entrou uma COLUNA na linha do item. O Conferidor continua existindo e continua
+   sendo a tela de quem chega com um PDF de proposta na mão; ele só deixou de ser um destino
+   ALCANÇADO DE DENTRO do negócio.
+
+   ── O QUE ESTÁ SENDO COMPARADO, DITO SEM ROdEIO ──────────────────────────────────────────────
+   Aqui o preço da esquerda é o **valor de referência DO EDITAL** (`licitacao_itens.valor_
+   unitario_ref`) — não é o nosso preço. Então "vermelho" não quer dizer "nossa proposta
+   estoura": quer dizer **o órgão referenciou acima do teto legal**, que é uma informação
+   diferente e igualmente útil (é impugnação, e é o que faz o pregão ser disputável ou não).
+   A tela escreve isso com todas as letras; um vermelho que a pessoa leia como "minha proposta"
+   faria refazer preço que estava certo.
+
+   ── O MOTOR É O MESMO, E ISSO NÃO É ECONOMIA DE CÓDIGO ───────────────────────────────────────
+   `LimedtecTetoCMED` — o mesmo do Conferidor e o mesmo da conferência de proposta que já vive
+   nesta tela. Uma segunda regra de teto seriam duas respostas para "este preço é legal?", e uma
+   delas estaria errada sem ninguém saber qual. `carregarIdxCMED()` também já existe e já
+   guarda o índice em memória: abrir a aba no segundo negócio não relê a tabela.
+
+   ── "NÃO ENCONTRADO" NUNCA VIRA ZERO E NUNCA VIRA VERDE ──────────────────────────────────────
+   Item que a CMED não conhece pode ser material (que não tem teto) ou remédio que a busca não
+   casou. Pintar de verde daria um "está tudo certo" que ninguém apurou; mostrar teto R$ 0,00
+   seria pior ainda, porque zero é um número e número se acredita. O estado é NEUTRO e diz o que
+   é: "sem teto CMED".
+   ══════════════════════════════════════════════════════════════════════════════════════════════ */
+let ITENS_EDITAL = [], ITENS_DE = null, ITENS_ERRO = null, ITENS_CMED = null, ITENS_BUSCA = '';
+
+// A chave é o `numero_controle` (contrato A5, seção 0). O negócio antigo não tem — ele nasceu
+// antes da coluna existir — e nesse caso ainda dá pra chegar lá pelo `licitacao_id`, que ele
+// tem. Duas portas para a mesma linha; nenhuma inventa uma terceira chave.
+async function carregarItensEdital(id){
+  const n = NEG.find(x => x.id === id); if(!n) return;
+  ITENS_EDITAL = []; ITENS_ERRO = null; ITENS_CMED = null; ITENS_BUSCA = '';
+  ITENS_DE = n.numero_controle || null;
+  try{
+    if(!ITENS_DE && n.licitacao_id){
+      const rl = await fetch(`${SB_URL}/rest/v1/licitacoes?id=eq.${n.licitacao_id}&select=numero_controle`, {headers:SB_H});
+      if(rl.ok){ const d = await rl.json(); ITENS_DE = (d[0] || {}).numero_controle || null; }
+    }
+    if(ITENS_DE){
+      const r = await fetch(`${SB_URL}/rest/v1/licitacao_itens?numero_controle=eq.${encodeURIComponent(ITENS_DE)}`
+        + '&select=numero_item,descricao,quantidade,unidade,valor_unitario_ref,situacao'
+        + ',resultado_vencedor,resultado_valor_unit,resultado_situacao&order=id&limit=2000', {headers:SB_H});
+      if(!r.ok) throw new Error('o banco respondeu ' + r.status);
+      ITENS_EDITAL = await r.json();
+    }
+  }catch(e){ ITENS_ERRO = e.message; }
+  if(ABERTO !== id) return;
+  pintaItensEdital(id);
+  // Quem clicou na aba ANTES de a lista chegar não pode ficar com a coluna do teto vazia pra
+  // sempre: naquele momento não havia item nenhum pra conferir, e o gatilho da aba não vai
+  // disparar de novo. Se a aba já está aberta agora, a conferência sai daqui.
+  const painel = document.getElementById('aba-itens');
+  if(ITENS_EDITAL.length && painel && painel.classList.contains('on')) conferirItensDoEdital(id);
+}
+
+// `null` em `itens_participo` quer dizer O PREGÃO INTEIRO (contrato A5, seção 2) — e não
+// "nenhum item". Tratar ausência como zero apagaria a lista inteira do negócio que veio sem
+// marcação, que é justamente o caso mais comum.
+function participoDoItem(n, numeroItem){
+  if(!n || !Array.isArray(n.itens_participo)) return true;
+  return n.itens_participo.indexOf(String(numeroItem)) >= 0;
+}
+
+function pintaItensEdital(id){
+  const cx = document.getElementById('itens-cx'); if(!cx) return;
+  const n = NEG.find(x => x.id === id); if(!n) return;
+  const cnt = document.getElementById('dw-itens-n');
+  if(cnt) cnt.textContent = ITENS_EDITAL.length ? '(' + ITENS_EDITAL.length + ')' : '';
+
+  if(ITENS_ERRO){
+    cx.innerHTML = '<div class="salvo" style="color:var(--vermelho-700)">'
+      + '<svg class="ic" aria-hidden="true"><use href="#ic-alerta"/></svg> não consegui ler os itens deste edital ('
+      + esc(ITENS_ERRO) + '). Isso não quer dizer que ele não tenha itens — quer dizer que eu não sei.</div>';
+    return;
+  }
+  if(!ITENS_DE){
+    cx.innerHTML = '<div class="salvo">Este negócio não está ligado a um edital do PNCP — ele foi '
+      + 'incluído à mão ou veio do Calendário 2025, e nos dois casos não há lista de itens oficial pra ler. '
+      + 'Os itens que a empresa ganhar entram pelo <b>Gerenciamento de Ata</b>.</div>';
+    return;
+  }
+  if(!ITENS_EDITAL.length){
+    cx.innerHTML = '<div class="salvo">Os itens deste edital ainda não foram lidos do PNCP. '
+      + 'Eles são buscados sob demanda pela tela <b>Encontrar</b>; assim que ela passar por este edital '
+      + '(controle ' + esc(ITENS_DE) + '), eles aparecem aqui — sem precisar refazer nada.</div>';
+    return;
+  }
+
+  const meus = ITENS_EDITAL.filter(x => participoDoItem(n, x.numero_item)).length;
+  const todos = !Array.isArray(n.itens_participo);
+  const q = (ITENS_BUSCA||'').trim().toLowerCase();
+  const vis = q ? ITENS_EDITAL.filter(x => (String(x.descricao||'') + ' ' + String(x.numero_item||'')).toLowerCase().includes(q)) : ITENS_EDITAL;
+
+  cx.innerHTML = `
+    <div class="salvo">${todos
+      ? '<b>Este negócio é o pregão inteiro</b> — ninguém marcou item, e sem marcação vale o edital todo.'
+      : '<b>' + meus + '</b> de <b>' + ITENS_EDITAL.length + '</b> itens são os que a empresa disputa. '
+        + 'Os demais continuam na lista, apagados: quem monta preço precisa ver o lote inteiro.'}</div>
+    <div class="it-barra">
+      <input type="text" id="it-busca" placeholder="buscar por descrição ou nº do item" value="${esc(ITENS_BUSCA)}" oninput="filtraItens(${id})">
+      <span class="salvo" id="it-cmed-msg">${ITENS_CMED === null ? 'conferindo contra a tabela CMED…' : ''}</span>
+    </div>
+    <div class="it-cx">${vis.map(x => linhaDeItem(n, x)).join('') || '<div class="salvo" style="padding:10px 12px">Nenhum item bate com essa busca.</div>'}</div>
+    <div class="salvo">${rodapeDosItens()}</div>`;
+}
+
+function filtraItens(id){
+  ITENS_BUSCA = (document.getElementById('it-busca') || {}).value || '';
+  const n = NEG.find(x => x.id === id); if(!n) return;
+  const q = ITENS_BUSCA.trim().toLowerCase();
+  const vis = q ? ITENS_EDITAL.filter(x => (String(x.descricao||'') + ' ' + String(x.numero_item||'')).toLowerCase().includes(q)) : ITENS_EDITAL;
+  const cx = document.querySelector('#itens-cx .it-cx');
+  if(cx) cx.innerHTML = vis.map(x => linhaDeItem(n, x)).join('') || '<div class="salvo" style="padding:10px 12px">Nenhum item bate com essa busca.</div>';
+}
+
+/* A COMPARAÇÃO CONTRA O TETO, EMBUTIDA. Roda ao abrir a aba, e não num botão: um botão faria a
+   coluna nascer vazia e ficar vazia, porque quem não sabe o que ele faz não clica. O índice fica
+   em memória (`carregarIdxCMED` já guardava), então o segundo negócio da sessão é instantâneo.
+   >>> paraGoverno = true SEMPRE, pela mesma razão já escrita na conferência de proposta: isto é
+       uma licitação, e o teto que vale numa venda ao governo é o PMVG, não o PF. */
+async function conferirItensDoEdital(id){
+  const T = window.LimedtecTetoCMED;
+  const msg = () => document.getElementById('it-cmed-msg');
+  if(!T || typeof T.avaliar !== 'function'){
+    ITENS_CMED = 'erro'; if(ABERTO === id) pintaItensEdital(id); return;
+  }
+  try{
+    const idx = await carregarIdxCMED();
+    const mapa = {};
+    for(const it of ITENS_EDITAL){
+      const preco = it.valor_unitario_ref != null ? Number(it.valor_unitario_ref) : null;
+      mapa[it.numero_item] = T.avaliar({
+        descricao: it.descricao,
+        precoUnit: preco,
+        // O valor de referência do PNCP é POR UNIDADE de `unidade` — é assim que o campo é
+        // publicado. Declarar `unitario` é obrigação de quem chama (o motor não presume), e
+        // presumir errado daria "10x acima do teto" numa referência correta.
+        unitario: preco != null && preco > 0,
+        paraGoverno: true,
+      }, idx);
+    }
+    ITENS_CMED = mapa;
+  }catch(e){
+    // erro de leitura da CMED NÃO vira "sem teto": são coisas diferentes, e a segunda é uma
+    // afirmação sobre o remédio que eu não posso fazer se nem consegui ler a tabela.
+    ITENS_CMED = 'erro';
+    if(msg()) msg().textContent = 'não consegui ler a tabela CMED: ' + e.message;
+  }
+  if(ABERTO === id) pintaItensEdital(id);
+}
+
+function linhaDeItem(n, it){
+  const meu = participoDoItem(n, it.numero_item);
+  const qtd = it.quantidade != null
+    ? Number(it.quantidade).toLocaleString('pt-BR') + (it.unidade ? ' ' + it.unidade : '') : '—';
+  // Sem referência, o rótulo "referência do edital" some junto: dizer "sem referência" e logo
+  // abaixo "referência do edital" é a mesma frase se contradizendo em duas linhas.
+  const temRef = it.valor_unitario_ref != null;
+  return `<div class="it-l${meu ? ' meu' : ' apagado'}">
+    <span class="it-n">${esc(it.numero_item)}</span>
+    <span class="it-d">${esc(it.descricao || '(sem descrição)')}
+      <i>${esc(qtd)}${meu ? '' : ' · não é um item deste negócio'}</i></span>
+    <span class="it-p">${temRef ? '<b>' + brl(it.valor_unitario_ref) + '</b><i>referência do edital</i>'
+                                : '<b class="sem">sem referência</b><i>o edital não publicou preço</i>'}</span>
+    ${tetoDoItem(it)}
+  </div>`;
+}
+
+/* A COLUNA DO TETO. Ela tem QUATRO estados e nenhum deles é um número inventado:
+     · verde   — cabe: a referência do edital está dentro do teto legal, e diz de quanto é a folga
+     · vermelho— estoura: a referência passou do teto, e diz em quantos por cento
+     · neutro  — "sem teto CMED": a CMED não conhece este item (material, ou nome que não casou)
+     · neutro  — "sem referência": o edital não publicou preço, então não há o que comparar
+   >>> O GRAU DE CONFIANÇA VAI JUNTO quando não é exato. O motor distingue casamento por
+       registro/EAN (a própria CMED diz quem é) de casamento por substância chutada da primeira
+       palavra do nome; encostar um teto legal num palpite sem dizer que é palpite é a forma
+       educada de chutar. */
+function tetoDoItem(it){
+  if(ITENS_CMED === null) return '<span class="it-t"><b class="lendo">conferindo…</b></span>';
+  if(ITENS_CMED === 'erro') return '<span class="it-t"><b class="neutro">tabela CMED indisponível</b><i>não é "sem teto" — é que eu não li</i></span>';
+  const r = ITENS_CMED[it.numero_item];
+  if(it.valor_unitario_ref == null || !(Number(it.valor_unitario_ref) > 0))
+    return '<span class="it-t"><b class="neutro">nada a comparar</b><i>sem preço de referência</i></span>';
+  if(!r || r.situacao === 'nao_encontrado')
+    return '<span class="it-t"><b class="neutro">sem teto CMED</b><i>pode ser material, ou o nome não casou</i></span>';
+  if(r.situacao === 'sem_preco')
+    return '<span class="it-t"><b class="neutro">sem preço comparável</b></span>';
+  const selo = r.confianca && r.confianca !== 'exata'
+    ? '<em class="conf">casou por ' + esc(r.confianca === 'alta' ? 'substância (dicionário CMED)' : 'substância (palpite do nome)') + '</em>' : '';
+  if(r.situacao === 'acima')
+    return `<span class="it-t"><b class="estoura">estoura o teto · +${Number(r.pctAcima||0).toFixed(1)}%</b>
+      <i>teto ${esc(r.tipoTeto || 'CMED')} ${brl(r.teto)}</i>${selo}</span>`;
+  return `<span class="it-t"><b class="cabe">cabe no teto</b>
+    <i>teto ${esc(r.tipoTeto || 'CMED')} ${brl(r.teto)}${r.folgaPct != null ? ' · folga ' + Number(r.folgaPct).toFixed(1) + '%' : ''}</i>${selo}</span>`;
+}
+
+function rodapeDosItens(){
+  const base = 'A coluna da direita compara o <b>valor de referência do edital</b> com o teto legal — '
+    + 'ela <b>não</b> é a sua proposta. Vermelho aqui quer dizer que o <b>órgão</b> referenciou acima do teto.';
+  if(ITENS_CMED === null || ITENS_CMED === 'erro') return base;
+  const vals = Object.keys(ITENS_CMED).map(k => ITENS_CMED[k]);
+  const acima = vals.filter(x => x && x.situacao === 'acima').length;
+  const dentro = vals.filter(x => x && x.situacao === 'abaixo').length;
+  const fora = vals.filter(x => !x || x.situacao === 'nao_encontrado').length;
+  return base + '<br><b>' + dentro + '</b> dentro · <b>' + acima + '</b> acima · <b>' + fora + '</b> sem teto na CMED. '
+    + fraseReguaNeg()
+    + '<br><b>Sem teto na CMED não quer dizer dentro do teto.</b> Pode ser material (que não tem teto legal) '
+    + 'ou remédio cujo nome não casou com a tabela.';
 }
 
 /* ══ OS PRAZOS QUE PENDEM DESTA DATA (14/08, fatias B2 + B4) ══════════════════════════════════
@@ -4258,12 +4552,12 @@ const ETAPA_FOCO = {
   qualificacao: {
     aba: 'prop',
     faz: 'Montar e conferir a proposta: preço contra o teto da CMED, e credenciamento na indústria se faltar.',
-    acoes: ['cmed', 'edital'],
+    acoes: ['itens', 'edital'],
   },
   disputa: {
     aba: 'lembretes',
     faz: 'A sessão é o que manda agora: confirme data e hora, e deixe o lembrete de abertura no sino.',
-    acoes: ['zap', 'cmed'],
+    acoes: ['zap', 'itens'],
   },
   classificacao: {
     aba: 'info',
@@ -4273,7 +4567,7 @@ const ETAPA_FOCO = {
   contrato: {
     aba: 'ata',
     faz: 'Fim do processo: anexe a ata assinada e registre o que foi ganho — é isso que alimenta a taxa de vitória.',
-    acoes: ['ata', 'cmed'],
+    acoes: ['ata', 'itens'],
   },
 };
 const focoDa = k => ETAPA_FOCO[k] || ETAPA_FOCO.oportunidade;
@@ -4291,10 +4585,19 @@ function acoesDaFicha(n){
     //     responde 403. Isto aqui só evita oferecer o que vai ser negado.
     edital:     { rot: '<svg class="ic" aria-hidden="true"><use href="#ic-documento"/></svg> Ler edital (IA)', fn: `lerEditalIA(${n.id})`, pode: podeLerEdital(),
                   dica: 'lê o PDF do edital com IA — cada leitura tem custo e fica registrada' },
-    // O teto CMED é decidido na hora do preço, e a hora do preço é aqui: quem está com a ficha do
-    // pregão aberto é quem vai cotar. O Conferidor já existe; isto é atalho, não segunda tela.
-    cmed:       { rot: '<svg class="ic" aria-hidden="true"><use href="#ic-balanca"/></svg> Conferir preços (CMED)', fn: `location.href='fpmed_conferidor.html'`, pode: true,
-                  dica: 'confere a proposta contra o teto legal da CMED' },
+    /* ══ O BOTÃO QUE LEVAVA PRA FORA MORREU AQUI (14/08, fatia B3) ══════════════════════════
+       Ele era `Conferir preços (CMED)` -> `location.href='fpmed_conferidor.html'`. Eu tinha
+       escrito ao lado dele que era "atalho, não segunda tela" — e estava errado: um atalho que
+       TROCA a tela e larga o negócio pra trás é uma segunda tela, e de lá só se volta pelo
+       botão do navegador. A lei do dono é literal: a CMED nunca abre janela nem aba fora.
+       >>> O QUE FICA NO LUGAR NÃO É OUTRO BOTÃO PRA OUTRO LUGAR. É a aba Itens desta mesma
+           ficha, onde o teto é uma COLUNA da linha do item, ao lado da referência do edital.
+           A pergunta ("este preço cabe no teto?") passou a ser respondida onde ela nasce.
+       >>> O CONFERIDOR NÃO FOI DESLIGADO. Ele continua no menu, e continua sendo a tela certa
+           pra quem chega com um PDF de proposta na mão. O que ele deixou de ser é um destino
+           alcançado de DENTRO do negócio. */
+    itens:      { rot: '<svg class="ic" aria-hidden="true"><use href="#ic-balanca"/></svg> Itens e teto CMED', fn: `abaFicha(document.querySelector('[data-aba=itens]'),'itens')`, pode: true,
+                  dica: 'os itens do edital, com o teto legal na própria linha — sem sair daqui' },
     // AÇÃO DA FASE HABILITAÇÃO: recurso, esclarecimento e contrarrazão são AS PEÇAS, que já
     // existem com a conta de dias úteis. Este botão é ATALHO COM CONTEXTO, não uma segunda tela:
     // ele leva os dados do certame e a tela de Peças faz o resto. Duplicar as Peças aqui criaria

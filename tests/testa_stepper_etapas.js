@@ -180,9 +180,13 @@ ok('45. *** `arquivar` e `fechar` NUNCA vao pro menu ***',
 ok('46. *** as acoes viraram DADO, e nao HTML solto ***', /function acoesDaFicha\(n\)/.test(N));
 ok('47. ...e por isso da pra escolher quais mostrar sem duplicar a lista',
   /não dava pra escolher\s*quais mostrar sem duplicar a lista/.test(uc(N)));
+/* O motivo da acao `cmed` mudou de lugar em 14/08 (fatia B3): o botao que levava pro Conferidor
+   saiu por ordem do dono, e no lugar entrou a aba Itens desta mesma ficha. O que esta suite
+   guarda continua sendo o mesmo: cada acao carrega POR ESCRITO a razao de existir. Trocou a
+   acao, entao trocou a frase que se procura — nao a exigencia. */
 ok('48. *** cada acao carrega o motivo dela (nao se perderam na mudanca) ***',
   /o que diverge, nelas, é prazo legal/.test(uc(N))
-  && /a hora do preço é aqui/.test(uc(N))
+  && /A pergunta \("este preço cabe no teto\?"\) passou a ser respondida onde ela nasce/.test(uc(N))
   && /Esconder botão\s*NÃO é a permissão/.test(uc(N)));
 /* ── 11/08: EU SOBREPUS, E O PRINT PRO CLIENTE MOSTROU ────────────────────────────────────
    Escrevi que "as que ja tinham explicacao ficam como estao" e acrescentei a linha em TODAS.
