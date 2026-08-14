@@ -262,12 +262,12 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--texto);min-
 .btn-primary:hover{background:var(--verde-escuro);color:var(--branco);}
 .btn-outline{background:var(--branco);color:var(--texto);border:1px solid var(--borda);}
 .btn-outline:hover{border-color:var(--verde);color:var(--verde);}
-.btn-danger{background:var(--vermelho);color:white;}
+.btn-danger{background:var(--vermelho);color:var(--branco);}
 .btn-danger:hover{opacity:0.85;}
 .btn-sm{padding:5px 12px;font-size:11.5px;border-radius:6px;}
 
 /* TOAST */
-.toast{position:fixed;bottom:24px;right:24px;padding:12px 20px;border-radius:10px;font-size:13.5px;font-weight:500;background:var(--navy);color:white;z-index:999;opacity:0;transform:translateY(8px);transition:all 0.2s;pointer-events:none;border:1px solid var(--navy);}
+.toast{position:fixed;bottom:24px;right:24px;padding:12px 20px;border-radius:10px;font-size:13.5px;font-weight:500;background:var(--navy);color:var(--branco);z-index:999;opacity:0;transform:translateY(8px);transition:all 0.2s;pointer-events:none;border:1px solid var(--navy);}
 .toast.show{opacity:1;transform:none;}
 .toast.success{background:var(--verde);border-color:var(--verde);}
 .toast.error{background:var(--vermelho);border-color:var(--vermelho);}
@@ -746,8 +746,11 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--texto);min-
 </div>
 
 <!-- MODAL MANUAL -->
-<div id="modal-manual" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:200;align-items:center;justify-content:center;">
-  <div style="background:#fff;border-radius:16px;padding:24px;width:480px;max-width:95vw;border:1px solid var(--borda);">
+<!-- B8 — o véu era rgba(0,0,0,.7): preto puro, mais pesado que o do molde. O `--veu` é o mesmo
+     escurecimento de todas as telas do sistema (a tinta do navy a 45%), e véu que muda de peso
+     de tela em tela é o "quase igual" que o olho percebe sem conseguir nomear. -->
+<div id="modal-manual" style="display:none;position:fixed;inset:0;background:var(--veu);z-index:200;align-items:center;justify-content:center;">
+  <div style="background:var(--card);border-radius:16px;padding:24px;width:480px;max-width:95vw;border:1px solid var(--borda);">
     <h3 style="font-family:'Montserrat',sans-serif;font-size:16px;font-weight:700;margin-bottom:16px;color:var(--texto);">Adicionar Item Manualmente</h3>
     <div class="form-group"><label>Produto *</label><input type="text" id="man-produto" placeholder="Nome completo do produto"></div>
     <div class="form-row">
@@ -917,9 +920,33 @@ function seloVariacao(c){
   const k = String(c.fornecedor)+'||'+String(c.produto||'').replace(/^[\s+>*#]+/,'').toLowerCase();
   const v = _varMap[k];
   if(!v || v.var_pct==null || Number(v.var_pct)===0) return '';
-  const up = Number(v.var_pct)>0, cor = up?'#e0483d':'#16c060';
+  // B8 — o selo é cheio e carrega BRANCO por cima, então o token tem de ser um degrau que passa
+  // em AA com branco. Medido: --vermelho (o 700) 8,25:1 · --verde-700 5,47:1. O verde da MARCA
+  // (--verde-500) NÃO serve aqui — branco sobre ele é 2,04:1, e há assert desta tela barrando
+  // exatamente esse engano.
+  const up = Number(v.var_pct)>0, cor = up ? 'var(--vermelho)' : 'var(--verde-700)';
   const tit = `Preço ${up?'subiu':'caiu'} ${Math.abs(v.var_pct)}% — de ${fmtBRL(v.preco_anterior)} p/ ${fmtBRL(v.preco_atual)} (desde ${fmtDate(String(v.data_anterior).slice(0,10))})`;
   return ` <span class="badge" title="${tit}" style="background:${cor};color:var(--branco);font-weight:700;cursor:help">${up?'↑':'↓'} ${Math.abs(v.var_pct)}%</span>`;
+}
+
+// ── B8 — O SELO DE MKP PASSOU A FALAR PELOS SINAIS DO MOLDE ────────────────────────────────
+// Era `background:${cor}22; color:${cor}` — o truque de grudar "22" de alfa no fim de um hex.
+// Ele SÓ funciona com cor escrita à mão: um `var(--token)` com "22" no fim vira lixo. Ou seja,
+// o truque não era um detalhe do estilo, era o que amarrava este selo fora do molde.
+//
+// >>> E MEDIDO: as três cores antigas REPROVAVAM em AA contra o próprio fundo que elas geravam
+//     (#22c55e 2,29:1 · #f59e0b 2,15:1 · #ef4444 3,76:1 sobre branco). O selo que diz se a
+//     margem é boa ou ruim era ilegível justamente por ser colorido. Os pares
+//     `--sinal-*-fundo` / `--sinal-*-tinta` do molde existem para este ofício e passam.
+//
+// UMA função só, usada pelo render E pelo recálculo ao digitar. Antes eram duas listas idênticas
+// em dois lugares, e o comentário de uma delas pedia por escrito que alguém as mantivesse
+// alinhadas à mão — pedido que só se cumpre até o dia em que não se cumpre.
+function corMkp(margem){
+  if (margem === null) return { fundo:'var(--sinal-normal-fundo)',  tinta:'var(--sinal-normal-tinta)'  };
+  if (margem >= 20)    return { fundo:'var(--sinal-bom-fundo)',     tinta:'var(--sinal-bom-tinta)'     };
+  if (margem >= 10)    return { fundo:'var(--sinal-atencao-fundo)', tinta:'var(--sinal-atencao-tinta)' };
+  return                      { fundo:'var(--sinal-perigo-fundo)',  tinta:'var(--sinal-perigo-tinta)'  };
 }
 // AUTO-REFRESH: a cada 60s puxa o banco em background e re-renderiza a busca ativa (sem atrapalhar).
 async function autoRefreshGiovana(){
@@ -3174,7 +3201,7 @@ function renderItens() {
     let custoRef = false;
     if (isGlobal && !(custo > 0)) { custo = (parseFloat(c._pvv)||0) / 1.25; custoRef = custo > 0; }
     const margem = custo > 0 ? ((precoUnit - custo) / custo * 100) : null;
-    const margemCor = margem === null ? '#888' : margem >= 20 ? '#22c55e' : margem >= 10 ? '#f59e0b' : '#ef4444';  // verde 20%+ / amarelo 10-20% / vermelho abaixo (alinhado c/ setPrecoEdit)
+    const mkp = corMkp(margem);   // verde 20%+ / âmbar 10-20% / vermelho abaixo — a MESMA função do setPrecoEdit
     const margemTxt = margem === null ? '—' : (margem.toFixed(1)+'%'+(custoRef?' (ref.)':''));
     return `
     <div class="item-row">
@@ -3200,7 +3227,7 @@ function renderItens() {
               style="width:80px;padding:3px 6px;border:1px solid var(--verde);border-radius:5px;text-align:right;font-size:12px;font-weight:700;color:var(--verde);background:var(--branco);outline:none;"
               oninput="setPrecoEdit('${c.id}',this.value)">
           </span>
-          ${ehRestrito()?'':`<span id="margem-badge-${c.id}" style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px;background:${margemCor}22;color:${margemCor};">MKP ${margemTxt}</span>`}
+          ${ehRestrito()?'':`<span id="margem-badge-${c.id}" style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px;background:${mkp.fundo};color:${mkp.tinta};">MKP ${margemTxt}</span>`}
           <!-- A TRAVA DO TETO fica COLADA no preço e no MKP, não num rodapé: é aqui que a
                decisão acontece, e aviso longe da decisão é aviso que não muda decisão.
                Vale para TODOS, inclusive o vendedor restrito — o teto é lei, não é intel de
@@ -3360,13 +3387,13 @@ function setPrecoEdit(id, v) {
   let custoRef = false;
   if (isGlobal && !(custo > 0)) { custo = (parseFloat(c._pvv)||0) / 1.25; custoRef = custo > 0; }
   const margem = custo > 0 ? ((novo - custo) / custo * 100) : null;
-  const margemCor = margem === null ? '#888' : margem >= 20 ? '#22c55e' : margem >= 10 ? '#f59e0b' : '#ef4444';
+  const mkp = corMkp(margem);   // a MESMA função do renderItens — uma lista só, não duas
   const margemTxt = margem === null ? '—' : (margem.toFixed(1)+'%'+(custoRef?' (ref.)':''));
   const badge = document.getElementById('margem-badge-'+id);
   if(badge) {
     badge.textContent = 'MKP '+margemTxt;
-    badge.style.color = margemCor;
-    badge.style.background = margemCor+'22';
+    badge.style.color = mkp.tinta;
+    badge.style.background = mkp.fundo;
   }
   // o teto acompanha o preço digitado, tecla a tecla: baixar o preço tem que APAGAR o alerta na
   // hora, senão o vermelho fica na tela depois de resolvido e a pessoa aprende a ignorá-lo.
@@ -4447,7 +4474,7 @@ function addLinhaImport() {
   const tr = document.createElement('tr');
   tr.id = id;
   tr.style.borderBottom = '1px solid var(--borda)';
-  const inp = "width:100%;padding:5px 7px;border:1px solid var(--borda);border-radius:6px;font-size:12px;outline:none;font-family:'Inter',sans-serif;background:#fff;color:var(--texto)";
+  const inp = "width:100%;padding:5px 7px;border:1px solid var(--borda);border-radius:6px;font-size:12px;outline:none;font-family:'Inter',sans-serif;background:var(--card);color:var(--texto)";
   tr.innerHTML = `
     <td style="padding:6px 8px"><input type="text" id="${id}_codigo" placeholder="Cód." style="${inp};max-width:80px"></td>
     <!-- ══ CÓDIGO DE BARRAS (EAN) — item 9 (b) ═══════════════════════════════════════════════

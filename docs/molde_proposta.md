@@ -401,6 +401,9 @@ mutação — e ela está em 39/39 —, não a contagem de asserts verdes.
 |---|---|---|
 | 4 | **Cartões e listas** com a anatomia do molde + as cores dos `style=` inline | depende da moldura estar de pé |
 
+> A **parte de COR** da fatia 4 foi entregue (ver o bloco no fim deste arquivo). A **anatomia**
+> de cartões e listas continua aberta.
+
 ---
 
 ## FATIA 3b — OS DESTINOS DE TEXTO PURO
@@ -509,3 +512,131 @@ a comparação dele só olha as chaves que a cópia inline do Negócios tem.
 inteira pelo formulário de acesso. O que foi medido no navegador é a **resolução real dos tokens**
 no `documentElement` (é de lá que veio o achado da colisão) — mas a comparação **visual** lado a
 lado com o molde fica para quem puder abrir a tela logado.
+
+---
+
+---
+
+## FATIA 4 (parte da COR) — "AO PONTO DA LINHA". **E a varredura estava mentindo.**
+
+`testa_molde_proposta`: **89 → 99 asserts**, **mutação 12 de 12 barradas**. Impressão conferida
+**idêntica** antes e depois, nas três regiões do papel.
+
+### *** O ACHADO: o assert "ZERO cor chumbada" já existia, e dava verde com ONZE cores vivas ***
+
+A seção "FATIA 4" da suíte tinha sido escrita antes desta rodada e estava **verde**. Medido em
+14/08 contra o `fpmed_giovana.html` do commit `70dbb54`:
+
+```
+varredura da suíte (só dentro de style="…")  ->   0 cores
+varredura da linha inteira                    ->  11 cores de TELA
+```
+
+O recorte era a causa: ela lia **dentro** de `style="…"` e de `.style.x = '…'`. **Cor que passa
+por uma variável escapa inteira** — e era assim que as piores viviam:
+
+```js
+const cor = up ? '#e0483d' : '#16c060';                  // selo de variação de preço
+const margemCor = … '#22c55e' … '#f59e0b' … '#ef4444';   // selo de MKP, em DOIS lugares
+style="background:${margemCor}22;color:${margemCor}"     // o hex chega interpolado
+```
+
+> **Assert que passa por acidente compra confiança sem entregar nada** — a mesma lição que a
+> fatia 2 já tinha pago duas vezes nesta suíte. Agora há uma varredura **do corpo inteiro**, e
+> não há como declarar cor em JavaScript sem que ela apareça na linha.
+
+### *** E O RECORTE DO "PAPEL" TINHA UM BURACO GRANDE ***
+
+A suíte isenta o documento impresso da cobrança de cor — ordem do dono. Só que ela abria a isenção
+em `<div class="print-doc"` e **só fechava na primeira linha que começa com `<script`**. O
+documento fecha muito antes disso, e no meio mora **o MODAL MANUAL inteiro**.
+
+> Ou seja: um pedaço de **tela de verdade** estava marcado como papel, e um `background:#fff`
+> plantado ali passava por todos os asserts de cor. **Quem achou foi a mutação, não a leitura.**
+> Agora a isenção fecha por **profundidade de `<div>`**: o documento acaba onde ele acaba.
+
+### O selo de MKP era ilegível — e a cor escrita à mão era o motivo
+
+`background:${cor}22; color:${cor}` — o truque de grudar `22` de alfa no fim de um hex. Ele **só
+funciona com cor escrita à mão**: `var(--token)22` não é cor nenhuma. O truque não era um detalhe
+de estilo; era **o que amarrava este selo fora do design system**.
+
+E o que ele produzia, medido:
+
+| o selo dizia | cor sobre o fundo que ela mesma gerava |
+|---|---|
+| margem boa (≥20%) | `#22c55e` → **2,29:1** |
+| margem apertada (10–20%) | `#f59e0b` → **2,15:1** |
+| margem ruim (<10%) | `#ef4444` → **3,76:1** |
+
+> **O selo que diz se o preço tem margem era o texto menos legível da linha.** Os pares
+> `--sinal-*-fundo` / `--sinal-*-tinta` do molde existem exatamente para este ofício, e passam.
+
+Junto veio uma correção que não é de cor: eram **duas listas idênticas** de faixas (o render e o
+recálculo ao digitar), e o comentário de uma delas pedia **por escrito** que alguém as mantivesse
+alinhadas à mão. Viraram **uma função** — `corMkp(margem)`. Pedido de alinhamento manual se cumpre
+até o dia em que não se cumpre, e aí o selo mostra uma cor ao abrir e outra ao editar o preço.
+
+### O selo de variação: o degrau tinha que aguentar branco por cima
+
+Ele é **cheio** e carrega **branco**. Medido: `--vermelho` (o 700) **8,25:1** · `--verde-700`
+**5,47:1**. O verde da **marca** (`--verde-500`) daria **2,04:1** — e é justamente a cor que um
+assert desta suíte já proibia como fundo de texto. Há assert ancorado **na linha do selo** (a
+primeira versão procurava a string no arquivo inteiro, e ela existe em outros três lugares: trocar
+o verde deste selo passava batido — a mutação pegou).
+
+### O resto da varredura
+
+| o que | virou |
+|---|---|
+| véu do modal manual `rgba(0,0,0,.7)` | `var(--veu)` — véu que muda de peso de tela em tela é o "quase igual" |
+| fundo do modal `#fff` | `var(--card)` |
+| fundo do campo do importador `#fff` | `var(--card)` |
+| `.btn-danger{color:white}` | `var(--branco)` |
+| `.toast{color:white}` | `var(--branco)` |
+
+`white` nu também é cor escrita à mão. As **duas** exceções que ficam são do **papel**: o cabeçalho
+da tabela do documento e o `body{background:white}` do `@media print`.
+
+### O documento impresso: conferido, não prometido
+
+`tools/confere_impressao_proposta.js` compara as **três** regiões do papel (o CSS do `.print-doc`,
+o bloco `@media print` e a marcação) entre duas versões do arquivo. Rodado contra o `70dbb54`:
+
+```
+css         IDENTICO  (2024 chars)
+mediaprint  IDENTICO  ( 351 chars)
+marcacao    IDENTICO  (2627 chars)
+```
+
+> **A primeira versão desta ferramenta acusou "MUDOU" — e estava errada**, pelo motivo que este
+> próprio arquivo descreve na fatia 2: o regex `@media print\{[\s\S]*?\}` casa com o **primeiro**
+> `@media print` (o de uma linha, do selo do teto) e corre até a chave errada, engolindo ~200
+> linhas. Ela passou a ler por **chaves balanceadas**, escolhendo o bloco pelo que ele **contém**.
+> O aviso estava escrito aqui e eu caí nele mesmo assim; agora está em código, não só em prosa.
+
+### Três asserts meus falharam contra a própria prosa, e a correção não foi calar a prosa
+
+Os comentários que explicam a correção **contêm o defeito**: "antes era `rgba(0,0,0,.7)`", "antes
+era `${cor}22`". Asserts que varrem o arquivo inteiro batem na **citação**.
+
+> Corrigir caso a caso ("não escreva isso no comentário") seria o pior caminho: obriga a prosa a
+> desviar da ferramenta, e prosa que desvia é prosa que emagrece até não explicar mais nada.
+> Entrou um `CORPO_CODIGO` — o arquivo **sem comentário e sem o `<style>`** — e é ele que esses
+> asserts leem. **Comentário não pinta pixel.**
+
+### A mutação, e por que o primeiro resultado dela era falso
+
+`tools/muta_molde_proposta.js` desfaz uma mudança de cada vez, numa cópia da árvore, e cobra que a
+suíte fique vermelha. **A primeira execução deu "12 de 12 barradas" e não valia nada**: faltava um
+arquivo na cópia, a suíte **crashava**, e crash conta como vermelho — ou seja, toda mutação seria
+"barrada" para sempre. Agora o harness copia tudo que a suíte lê (extraído da própria suíte) e roda
+um **controle sem mutação** que precisa estar verde antes de qualquer conclusão.
+
+Com o controle verde: **12 de 12 barradas**, incluindo a mutação que tokeniza o **papel** — a que
+guarda a ordem do dono.
+
+### O que esta fatia **não** fez
+
+A **anatomia** de cartões e listas (o resto da fatia 4) continua aberta. Esta entrega foi a **cor**,
+que era o que a caixa pediu "ao ponto da linha".

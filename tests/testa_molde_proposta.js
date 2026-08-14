@@ -593,14 +593,42 @@ ok(n + '. a ordem prioriza quem tem ESTOQUE (a frequencia foi medida e reprovada
    >>> O `.print-doc` e os `#print-*` SAEM DA CONTA: sao PAPEL, congelados por ordem do dono.
        Cobrar deles seria cobrar de mim uma correcao que ele proibiu. */
 const COR_CRUA = /#[0-9a-fA-F]{3,8}\b|\brgba?\((?!\s*var\()[^)]+\)/g;
+
+/* ═══ UMA FONTE "SO CODIGO", PORQUE TRES ASSERTS MEUS JA FALHARAM CONTRA A PROSA ═══════════
+   Nesta rodada, TRES asserts desta fatia deram vermelho lendo o COMENTARIO que explica a
+   propria correcao — o texto que diz "antes era rgba(0,0,0,.7)" e "antes era ${cor}22" contem,
+   literalmente, o defeito que o assert procura. A correcao caso a caso ("nao escreva isso no
+   comentario") e a pior possivel: obriga a prosa a desviar da ferramenta, e prosa que desvia
+   e prosa que emagrece ate nao explicar mais nada.
+   >>> Entao a ferramenta e que passa a olhar so o CODIGO. Comentario nao pinta pixel. */
+const CORPO_CODIGO = (() => {
+  const semEstilo = G.replace(/<style>[\s\S]*?<\/style>/g,
+    b => '\n'.repeat((b.match(/\n/g) || []).length));   // apaga o CSS (tem assert proprio), PRESERVA a numeracao
+  return semEstilo.split('\n').map(l => {
+    const t = l.trim();
+    if (t.startsWith('//') || t.startsWith('*') || t.startsWith('>>>') || t.startsWith('/*') || t.startsWith('<!--')) return '';
+    return l.replace(/\/\/.*$/, '').replace(/<!--[\s\S]*?-->/g, '');
+  });
+})();
+
 {
+  /* *** O RECORTE DO PAPEL TINHA UM BURACO, E ELE ERA GRANDE (achado em 14/08 pela mutacao).
+     A regra antiga abria em `<div class="print-doc"` e so fechava na primeira linha que
+     COMECA com `<script`. Só que o documento fecha muito antes disso — e entre um e outro mora
+     o MODAL MANUAL inteiro. Ou seja: a tela dava como "papel" (= isento) um pedaco de tela de
+     verdade, e um `background:#fff` plantado ali passava por todos os asserts de cor.
+     >>> Agora fecha por PROFUNDIDADE DE DIV: o documento acaba onde ele acaba. */
   const ls = G.split('\n');
   const papel = new Set();
-  let d = false;
+  let prof = 0, dentro = false;
   ls.forEach((l, i) => {
-    if (/<div class="print-doc"/.test(l)) d = true;
-    else if (d && /^<script/.test(l.trim())) d = false;
-    if (d || /id="print-|print-obs|doc-itens|doc-footer|doc-empresa/.test(l)) papel.add(i);
+    if (!dentro && /<div class="print-doc"/.test(l)) { dentro = true; prof = 0; }
+    if (dentro) {
+      papel.add(i);
+      prof += (l.match(/<div\b/g) || []).length - (l.match(/<\/div>/g) || []).length;
+      if (prof <= 0) dentro = false;
+    }
+    if (/id="print-|print-obs|doc-itens|doc-footer|doc-empresa/.test(l)) papel.add(i);
   });
   const cruas = [];
   ls.forEach((l, i) => {
@@ -612,6 +640,85 @@ const COR_CRUA = /#[0-9a-fA-F]{3,8}\b|\brgba?\((?!\s*var\()[^)]+\)/g;
   });
   ok(n + '. *** ZERO cor chumbada em style= inline ou escrita por JS ***',
     cruas.length === 0, cruas.slice(0, 6)); n++;
+
+  /* *** ESTA VARREDURA ESTAVA DANDO VERDE POR ACIDENTE, E O NUMERO E ESTE: ela via ZERO
+     enquanto ONZE cores escritas a mao estavam vivas na tela (medido em 14/08 contra o
+     fpmed_giovana.html do commit 70dbb54).
+     O motivo e o recorte: ela so olha DENTRO de `style="..."` e de `.style.x = '...'`. Cor
+     que passa por uma VARIAVEL escapa inteira, e era assim que as seis piores viviam:
+
+         const cor = up ? '#e0483d' : '#16c060';                 <- selo de variacao
+         const margemCor = ... '#22c55e' ... '#f59e0b' ... ;     <- selo de MKP, em DOIS lugares
+         style="background:${margemCor}22"                        <- o hex chega interpolado
+
+     >>> E as tres do MKP REPROVAVAM em AA contra o proprio fundo que geravam (2,29 / 2,15 /
+         3,76 : 1). O assert dizia "sem cor chumbada" sobre um selo ilegivel.
+     A varredura larga le a LINHA INTEIRA do corpo (fora do <style>, que ja tem assert proprio,
+     e fora do papel). Nao ha como declarar cor em JavaScript sem que ela apareca na linha. */
+  const largas = [];
+  CORPO_CODIGO.forEach((l, i) => {
+    if (papel.has(i)) return;
+    for (const c of (l.match(COR_CRUA) || [])) largas.push((i + 1) + ':' + c);
+  });
+  ok(n + '. *** ZERO cor chumbada no CORPO INTEIRO — inclusive a que passa por variavel ***',
+    largas.length === 0, largas.slice(0, 8)); n++;
+}
+
+/* O selo de MKP agora fala pelos SINAIS do molde (fundo + tinta), e nao mais pelo truque do
+   hex com "22" de alfa grudado no fim — que era, ele proprio, o que amarrava o selo fora do
+   design system: `var(--token)22` nao e cor nenhuma. */
+ok(n + '. o selo de MKP usa os pares sinal-*-fundo/tinta do molde',
+  /function corMkp\(margem\)/.test(G)
+  && /sinal-bom-fundo/.test(G) && /sinal-atencao-fundo/.test(G) && /sinal-perigo-fundo/.test(G)); n++;
+/* >>> A MUTACAO DERRUBOU A 1a VERSAO DESTE ASSERT: ele proibia o truque pelo NOME DA VARIAVEL
+       antiga (`${margemCor}22`). Trocar o nome e manter o truque passava — e trocar o nome e
+       exatamente o que esta fatia fez. O que precisa ser proibido e a FORMA: qualquer
+       interpolacao com dois digitos de alfa grudados no fim. */
+ok(n + '. ...e o truque do alfa grudado nao existe mais, com nome de variavel nenhum',
+  !/\$\{[^}]+\}[0-9a-fA-F]{2}\b/.test(CORPO_CODIGO.join('\n'))
+  && !/\+\s*'[0-9a-fA-F]{2}'/.test(CORPO_CODIGO.join('\n'))); n++;
+/* Eram DUAS listas identicas — o render e o recalculo ao digitar — e o comentario de uma delas
+   pedia POR ESCRITO que alguem as mantivesse alinhadas a mao. Pedido assim se cumpre ate o dia
+   em que nao se cumpre, e ai o selo mostra uma cor ao abrir e outra ao editar o preco. */
+ok(n + '. *** uma funcao so decide a cor do MKP, usada pelo render E pelo recalculo ***',
+  (G.match(/corMkp\(margem\)/g) || []).length === 3); n++;
+/* O selo de variacao e CHEIO e carrega BRANCO por cima: o token tem de passar em AA com branco.
+   O --verde-500 (o da MARCA) da 2,04:1 — e o assert de "branco no verde" desta suite ja proibe
+   essa cor como fundo de texto. O degrau que serve e o 700. */
+{
+  /* >>> A MUTACAO DERRUBOU A 1a VERSAO DESTE TAMBEM: eu procurava `'var(--verde-700)'` no
+         ARQUIVO INTEIRO, e essa string existe em outros tres lugares desta tela. Trocar o verde
+         DESTE selo pelo da marca passava batido. O assert tem de ancorar NA LINHA do selo. */
+  const v7 = tokenDoTema('verde-700'), v7br = contraste(v7, tokenDoTema('branco'));
+  const v5 = tokenDoTema('verde-500'), v5br = contraste(v5, tokenDoTema('branco'));
+  ok(n + '. *** o selo de variacao usa --vermelho / --verde-700, os dois que carregam branco ***',
+    /cor = up \? 'var\(--vermelho\)' : 'var\(--verde-700\)'/.test(G)); n++;
+  ok(n + '. ...e o verde escolhido passa em AA com branco por cima',
+    v7br >= 4.5, { medido: v7br.toFixed(2) }); n++;
+  ok(n + '. ...enquanto o verde da MARCA reprovaria — e por isso que ele nao esta ali',
+    v5br < 4.5, { medido: v5br.toFixed(2) }); n++;
+}
+/* O veu do modal era rgba(0,0,0,.7) — preto puro, mais pesado que o do sistema. Veu que muda de
+   peso de tela em tela e o "quase igual" que o olho percebe e ninguem consegue nomear. */
+ok(n + '. o veu do modal manual e o --veu do molde, nao um preto proprio',
+  /id="modal-manual"[^>]*background:var\(--veu\)/.test(CSS1.replace(/\s*\n\s*/g, '')) || /background:var\(--veu\)/.test(G)); n++;
+/* >>> ESTE ASSERT FALHOU CONTRA O PROPRIO COMENTARIO que explica a troca — pela SEGUNDA vez
+       nesta rodada (a outra foi na testa_ean_cadastro). Procurar a string `rgba(0,0,0,.7)` no
+       arquivo inteiro acha a CITACAO dela na prosa. O que precisa ser verdade e sobre o
+       ATRIBUTO: nenhum `style=` da tela carrega um rgba cru. */
+ok(n + '. ...e nenhum style= da tela carrega rgba cru (o veu era o ultimo)',
+  !/style="[^"]*\brgba?\((?!\s*var\()/.test(CORPO_CODIGO.join('\n'))); n++;
+/* O `white` nu tambem e cor escrita a mao — o token e o --branco. As DUAS excecoes que ficam
+   sao do PAPEL: o cabecalho da tabela do documento e o `body{background:white}` do @media
+   print, ambos congelados por ordem do dono. */
+{
+  const brancosNus = [];
+  G.split('\n').forEach((l, i) => {
+    if (/^\.print-doc/.test(l) || /@media print/.test(l) || /background:white;margin:0/.test(l)) return;
+    if (/(?:^|[;:{"'\s])color\s*:\s*white\b/.test(l) || /background\s*:\s*white\b/.test(l)) brancosNus.push((i + 1) + ':' + l.trim().slice(0, 40));
+  });
+  ok(n + '. *** nenhum `white` nu no CSS de tela — o token e o --branco ***',
+    brancosNus.length === 0, brancosNus); n++;
 }
 ok(n + '. e ZERO no CSS de tela (o bloco do papel segue fora, por ordem do dono)',
   (TELA_LIMPA.match(COR_CRUA) || []).length === 0,
