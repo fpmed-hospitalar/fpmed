@@ -574,6 +574,41 @@ body{
   .it-l{grid-template-areas:"n desc desc" ". preco preco" ". teto teto"}
   .it-t{text-align:left}
 }
+/* ── OS ITENS GANHOS (14/08, fatia B5) ──────────────────────────────────────────────────────
+   Ele fica ACIMA da lista do edital e com moldura própria, porque responde outra pergunta:
+   a lista de baixo é "o que está sendo comprado"; esta é "o que eu levei". Sem a moldura, as
+   duas viram uma lista só e o total de baixo pareceria o total de cima.
+   >>> A MARGEM É O ÚNICO NÚMERO COLORIDO da linha. O total é preto porque é fato; a margem é
+       julgamento (cabe/não cabe no teto), e é ela que alguém precisa achar de relance. */
+.gn-cx{border:1px solid var(--verde-300);border-radius:10px;padding:11px 12px;margin-bottom:12px;
+  background:var(--painel2)}
+.gn-topo{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:8px}
+.gn-topo b{font-size:13px;color:var(--verde-700)}
+.gn-tot{margin-left:auto;font-size:13px;font-weight:700;color:var(--texto)}
+.gn-tot i{font-style:normal;font-size:10.5px;font-weight:400;color:var(--muted);display:block;text-align:right}
+.gn-alerta{background:var(--ambar-50);border:1px solid var(--ambar-100);border-left:3px solid var(--ambar-600);
+  border-radius:8px;padding:8px 11px;font-size:12px;color:var(--cinza-800);line-height:1.5;margin-bottom:8px}
+.gn-lista{border:1px solid var(--linha);border-radius:9px;background:var(--painel);max-height:320px;overflow-y:auto}
+.gn-l{display:grid;grid-template-columns:32px minmax(0,1fr) minmax(0,auto);
+  grid-template-areas:"n desc desc" ". total margem";gap:4px 10px;
+  padding:8px 11px;font-size:12.5px;border-bottom:1px solid var(--linha)}
+.gn-l:last-child{border-bottom:0}
+.gn-n{grid-area:n;font-weight:700;color:var(--azul-claro);font-size:11.5px}
+.gn-d{grid-area:desc;color:var(--texto);line-height:1.45;min-width:0}
+.gn-d i{display:block;font-style:normal;font-size:11px;color:var(--muted);margin-top:2px}
+.gn-f{display:block;font-style:normal;font-size:10.5px;color:var(--muted);margin-top:2px}
+.gn-f.ok{color:var(--verde-700)}
+.gn-f.dif{color:var(--ambar-700)}
+.gn-t{grid-area:total;color:var(--texto)}
+.gn-m{grid-area:margem;text-align:right;font-size:11.5px;font-weight:700;min-width:0}
+.gn-m i{display:block;font-style:normal;font-size:10.5px;font-weight:400;color:var(--muted);margin-top:2px}
+.gn-m.boa{color:var(--verde-700)}
+.gn-m.ruim{color:var(--vermelho-700)}
+.gn-m.neutro{color:var(--muted);font-weight:600}
+@media(max-width:520px){
+  .gn-l{grid-template-areas:"n desc desc" ". total total" ". margem margem"}
+  .gn-m{text-align:left}
+}
 /* >>> `.ag-secao` FICOU ÓRFÃ em 13/08 (fatia 4): o "Já passaram" que ela desenhava virou o
        CABEÇALHO do segundo painel da Agenda. O grep está feito e é conclusivo — ela não é usada
        em mais lugar nenhum. Fica pela mesma regra do `.fase-tag` logo acima: seletor órfão não
@@ -1618,7 +1653,10 @@ async function carregar(){
   try{
     const [neg, re] = await Promise.all([
       lerNegociosPaginado(),
-      fetch(`${SB_URL}/rest/v1/empresas?select=id,razao_social&order=id`, {headers:SB_H}),
+      // O `cnpj` entrou em 14/08 (fatia B5): é ele que casa com `licitacao_itens.resultado_cnpj`
+      // e responde, item a item, se fomos NÓS que ganhamos. Sem ele a aba Itens da fase Ata
+      // mostraria como nosso o que outra empresa levou.
+      fetch(`${SB_URL}/rest/v1/empresas?select=id,razao_social,cnpj&order=id`, {headers:SB_H}),
     ]);
     NEG = neg;
     EMPRESAS = re.ok ? await re.json() : [];
@@ -2743,7 +2781,11 @@ function abaFicha(bt, qual){
      >>> UMA VEZ SÓ POR SESSÃO: o índice fica em memória (`IDX_CMED`), então do segundo negócio
          em diante a coluna preenche na hora. E `ITENS_CMED !== null` impede reconferir a mesma
          lista a cada ida e volta entre abas. */
-  if(qual === 'itens' && ABERTO && ITENS_CMED === null && ITENS_EDITAL.length) conferirItensDoEdital(ABERTO);
+  // >>> E O GATILHO CONTA OS GANHOS TAMBÉM (fatia B5): o negócio do Calendário 2025 tem itens
+  //     ganhos e nenhum item de edital. Se a condição olhasse só `ITENS_EDITAL`, a margem
+  //     daqueles itens ficaria "sem teto CMED" para sempre — sem nunca ter perguntado à CMED.
+  if(qual === 'itens' && ABERTO && ITENS_CMED === null
+     && (ITENS_EDITAL.length || (ITENS_GANHOS && ITENS_GANHOS.length))) conferirItensDoEdital(ABERTO);
 }
 
 // ══ LEMBRETES ════════════════════════════════════════════════════════════════════════════
@@ -2960,7 +3002,11 @@ async function carregarItensEdital(id){
     if(ITENS_DE){
       const r = await fetch(`${SB_URL}/rest/v1/licitacao_itens?numero_controle=eq.${encodeURIComponent(ITENS_DE)}`
         + '&select=numero_item,descricao,quantidade,unidade,valor_unitario_ref,situacao'
-        + ',resultado_vencedor,resultado_valor_unit,resultado_situacao&order=id&limit=2000', {headers:SB_H});
+        // O RESULTADO POR ITEM vem junto (contrato A5, seção 5) — é a fonte primária da fatia
+        // B5. O `resultado_cnpj` é o que responde "este item fui EU que ganhei?"; sem ele a
+        // tela mostraria como nosso o item que outra empresa levou.
+        + ',resultado_vencedor,resultado_cnpj,resultado_valor_unit,resultado_quantidade,resultado_situacao'
+        + '&order=id&limit=2000', {headers:SB_H});
       if(!r.ok) throw new Error('o banco respondeu ' + r.status);
       ITENS_EDITAL = await r.json();
     }
@@ -2988,20 +3034,26 @@ function pintaItensEdital(id){
   const cnt = document.getElementById('dw-itens-n');
   if(cnt) cnt.textContent = ITENS_EDITAL.length ? '(' + ITENS_EDITAL.length + ')' : '';
 
+  /* O BLOCO DOS GANHOS VEM PRIMEIRO, e ele existe mesmo quando não há lista de edital nenhuma:
+     os 105 negócios importados do Calendário 2025 têm valor ganho e NÃO têm `numero_controle`.
+     Se ele morasse depois da lista, eles cairiam num dos "não tenho itens" abaixo e o resultado
+     — a única coisa que aqueles negócios TÊM — não apareceria em lugar nenhum desta aba. */
+  const ganhos = blocoDosGanhos(n);
+
   if(ITENS_ERRO){
-    cx.innerHTML = '<div class="salvo" style="color:var(--vermelho-700)">'
+    cx.innerHTML = ganhos + '<div class="salvo" style="color:var(--vermelho-700)">'
       + '<svg class="ic" aria-hidden="true"><use href="#ic-alerta"/></svg> não consegui ler os itens deste edital ('
       + esc(ITENS_ERRO) + '). Isso não quer dizer que ele não tenha itens — quer dizer que eu não sei.</div>';
     return;
   }
   if(!ITENS_DE){
-    cx.innerHTML = '<div class="salvo">Este negócio não está ligado a um edital do PNCP — ele foi '
+    cx.innerHTML = ganhos + '<div class="salvo">Este negócio não está ligado a um edital do PNCP — ele foi '
       + 'incluído à mão ou veio do Calendário 2025, e nos dois casos não há lista de itens oficial pra ler. '
       + 'Os itens que a empresa ganhar entram pelo <b>Gerenciamento de Ata</b>.</div>';
     return;
   }
   if(!ITENS_EDITAL.length){
-    cx.innerHTML = '<div class="salvo">Os itens deste edital ainda não foram lidos do PNCP. '
+    cx.innerHTML = ganhos + '<div class="salvo">Os itens deste edital ainda não foram lidos do PNCP. '
       + 'Eles são buscados sob demanda pela tela <b>Encontrar</b>; assim que ela passar por este edital '
       + '(controle ' + esc(ITENS_DE) + '), eles aparecem aqui — sem precisar refazer nada.</div>';
     return;
@@ -3012,7 +3064,7 @@ function pintaItensEdital(id){
   const q = (ITENS_BUSCA||'').trim().toLowerCase();
   const vis = q ? ITENS_EDITAL.filter(x => (String(x.descricao||'') + ' ' + String(x.numero_item||'')).toLowerCase().includes(q)) : ITENS_EDITAL;
 
-  cx.innerHTML = `
+  cx.innerHTML = ganhos + `
     <div class="salvo">${todos
       ? '<b>Este negócio é o pregão inteiro</b> — ninguém marcou item, e sem marcação vale o edital todo.'
       : '<b>' + meus + '</b> de <b>' + ITENS_EDITAL.length + '</b> itens são os que a empresa disputa. '
@@ -3060,6 +3112,18 @@ async function conferirItensDoEdital(id){
         paraGoverno: true,
       }, idx);
     }
+    /* ── OS ITENS GANHOS TAMBÉM PRECISAM DE TETO (14/08, fatia B5) ────────────────────────────
+       O negócio importado do Calendário 2025 tem itens ganhos e NÃO tem lista de edital: se o
+       teto só saísse de `ITENS_EDITAL`, a margem daqueles itens seria eternamente "sem teto
+       CMED" — e "sem teto" ali seria mentira, porque a CMED conhece o remédio; quem não o
+       conhecia era esta função.
+       >>> O TETO É AVALIADO PELA DESCRIÇÃO DO ITEM GANHO, e não pelo preço fechado: o preço
+           entra depois, em `margemDoGanho`. Aqui só se pergunta "qual é o teto deste item?". */
+    const n = NEG.find(x => x.id === id);
+    ganhosDoNegocio(n || {}).forEach(g => {
+      if(mapa[g.item] || !g.descricao) return;
+      mapa[g.item] = T.avaliar({ descricao: g.descricao, precoUnit: null, unitario: false, paraGoverno: true }, idx);
+    });
     ITENS_CMED = mapa;
   }catch(e){
     // erro de leitura da CMED NÃO vira "sem teto": são coisas diferentes, e a segunda é uma
@@ -3113,6 +3177,157 @@ function tetoDoItem(it){
       <i>teto ${esc(r.tipoTeto || 'CMED')} ${brl(r.teto)}</i>${selo}</span>`;
   return `<span class="it-t"><b class="cabe">cabe no teto</b>
     <i>teto ${esc(r.tipoTeto || 'CMED')} ${brl(r.teto)}${r.folgaPct != null ? ' · folga ' + Number(r.folgaPct).toFixed(1) + '%' : ''}</i>${selo}</span>`;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════════
+   OS ITENS GANHOS, NA MESMA ABA (14/08, fatia B5)
+
+   A fase Ata responde uma pergunta diferente das outras quatro: não é mais "quanto isto vale?",
+   é "o que eu ganhei, por quanto, e sobrou margem?". A aba Itens é onde essa resposta pertence —
+   ela já tem a lista do edital e já tem o teto CMED carregado.
+
+   ── DUAS FONTES, E ELAS NÃO SÃO A MESMA COISA ────────────────────────────────────────────────
+   · `licitacao_itens.resultado_*` — o que o **PNCP publicou** (contrato A5, seção 5). É a fonte
+     PRIMÁRIA porque é oficial e chega sozinha, sem ninguém digitar.
+   · `negocio_itens_ganhos` — o que **nós confirmamos** ter ganho, com marca e com quem
+     confirmou. É o que manda no comercial.
+   >>> QUANDO OS DOIS DISCORDAM, A TELA MOSTRA OS DOIS. O contrato diz que o nosso manda e o do
+       PNCP serve de conferência; escolher um e esconder o outro seria a tela decidindo uma
+       divergência que é de quem confere.
+   >>> E `NULL` NO RESULTADO É "AINDA NÃO SEI", NÃO É "NÃO GANHEI". Sessão não homologada e
+       sessão perdida são estados diferentes. A tela que os tratar igual vai dizer que perdemos
+       o que ainda nem foi julgado — está escrito assim no contrato, e vale aqui.
+
+   ── A MARGEM É CONTRA O TETO, E NÃO CONTRA A REFERÊNCIA ──────────────────────────────────────
+   O que interessa depois de ganhar é: o preço que fechei cabe no teto legal? Margem negativa
+   aqui é grave — é preço homologado acima do teto da CMED, e isso vira glosa.
+   ══════════════════════════════════════════════════════════════════════════════════════════════ */
+const _soNum = s => String(s || '').replace(/\D/g, '');
+
+// Junta as duas fontes por `numero_item`. Devolve linhas já prontas pra tela, cada uma dizendo
+// DE ONDE veio — porque "confirmado por nós" e "publicado pelo PNCP" pesam diferente.
+function ganhosDoNegocio(n){
+  const emp = EMPRESAS.find(e => e.id === (n && n.empresa_id)) || {};
+  const meuCnpj = _soNum(emp.cnpj);
+  const porItem = {};
+
+  // 1. O QUE NÓS CONFIRMAMOS. Vem primeiro porque é o que manda no comercial.
+  (ITENS_GANHOS || []).forEach(g => {
+    const k = String(g.item_n == null ? '' : g.item_n);
+    porItem[k] = { item: k, descricao: g.descricao, marca: g.marca, marca_origem: g.marca_origem,
+      quantidade: g.quantidade, unitario: g.valor_unitario, total: g.total,
+      nosso: true, pncp: null };
+  });
+
+  // 2. O QUE O PNCP PUBLICOU, e só as linhas em que o vencedor somos NÓS. Sem CNPJ da empresa
+  //    cadastrado, não dá pra afirmar que o item é nosso — e a tela diz isso em vez de chutar.
+  (ITENS_EDITAL || []).forEach(it => {
+    if(it.resultado_valor_unit == null && !it.resultado_vencedor) return;   // ainda não sei
+    const doPncp = meuCnpj && _soNum(it.resultado_cnpj) === meuCnpj;
+    const k = String(it.numero_item);
+    const qtd = it.resultado_quantidade != null ? it.resultado_quantidade : it.quantidade;
+    const unit = it.resultado_valor_unit != null ? Number(it.resultado_valor_unit) : null;
+    const linhaPncp = { vencedor: it.resultado_vencedor, cnpj: it.resultado_cnpj,
+      unitario: unit, quantidade: qtd, situacao: it.resultado_situacao,
+      total: (unit != null && qtd != null) ? unit * Number(qtd) : null, meu: !!doPncp };
+    if(porItem[k]) porItem[k].pncp = linhaPncp;
+    else if(doPncp) porItem[k] = { item: k, descricao: it.descricao, marca: null,
+      quantidade: qtd, unitario: unit, total: linhaPncp.total, nosso: false, pncp: linhaPncp };
+  });
+
+  return Object.keys(porItem)
+    .sort((a,b) => String(a).localeCompare(String(b), 'pt-BR', {numeric:true}))
+    .map(k => porItem[k]);
+}
+
+// A margem contra o teto legal. `null` quando não há teto (a CMED não conhece o item) ou quando
+// não há preço — e null NUNCA vira 0%, porque 0% é uma afirmação ("ficou exatamente no teto").
+function margemDoGanho(item, unitario){
+  if(ITENS_CMED === null || ITENS_CMED === 'erro') return null;
+  const r = ITENS_CMED[item];
+  const teto = r && r.situacao !== 'nao_encontrado' ? Number(r.teto) : null;
+  if(!(teto > 0) || unitario == null || !(Number(unitario) > 0)) return null;
+  return { teto, tipo: r.tipoTeto || 'CMED', pct: ((teto - Number(unitario)) / teto) * 100 };
+}
+
+function blocoDosGanhos(n){
+  const linhas = ganhosDoNegocio(n);
+  const ganhou = Number(n.valor_ganho) > 0;
+  const emAta = n.estagio === 'contrato';
+  if(!linhas.length && !ganhou && !emAta) return '';
+
+  if(!linhas.length){
+    /* NADA POR ITEM. Isto acontece em 105 negócios do Calendário 2025: eles guardam o valor
+       total e não a relação de itens. A saída é a extração da ata por IA, que já existe no
+       Gerenciamento de Ata — e é pra LÁ que este bloco aponta, em vez de nascer um segundo
+       botão que gasta o mesmo dinheiro por outro caminho. */
+    return `<div class="gn-cx">
+      <div class="gn-topo"><b>Itens ganhos</b>
+        ${ganhou ? '<span class="gn-tot">' + brl(n.valor_ganho) + ' <i>valor da ficha</i></span>' : ''}</div>
+      <div class="salvo">Não há detalhe por item deste resultado. ${ganhou
+        ? 'O valor total está na ficha, mas a relação de itens não — é o caso dos negócios importados do Calendário 2025.'
+        : 'Este negócio ainda não tem resultado registrado.'}
+        <br>Dois caminhos, nesta ordem: o <b>PNCP</b> publica o resultado por item e ele aparece aqui sozinho
+        quando sai; enquanto não sai, dá para <b>extrair os itens da ata anexada</b> — é o botão
+        do <b>Gerenciamento de Ata</b>, que usa IA e <b>tem custo por leitura</b>.</div>
+      <button class="btn-ed sec" style="margin-top:8px" onclick="abaFicha(document.querySelector('[data-aba=ata]'),'ata')">ir para o Gerenciamento de Ata</button>
+    </div>`;
+  }
+
+  const soma = linhas.reduce((s,x) => s + (Number(x.total) || 0), 0);
+  const dif = Number(n.valor_ganho || 0) - soma;
+  const semTeto = linhas.filter(x => !margemDoGanho(x.item, x.unitario)).length;
+  const acima = linhas.filter(x => { const m = margemDoGanho(x.item, x.unitario); return m && m.pct < 0; }).length;
+
+  const linha = x => {
+    const m = margemDoGanho(x.item, x.unitario);
+    const marg = !m
+      ? '<span class="gn-m neutro">sem teto CMED</span>'
+      : `<span class="gn-m ${m.pct < 0 ? 'ruim' : 'boa'}">${m.pct < 0 ? '' : '+'}${m.pct.toFixed(1)}%
+          <i>teto ${esc(m.tipo)} ${brl(m.teto)}</i></span>`;
+    /* A PROCEDÊNCIA DE CADA LINHA, dita na própria linha. "Nós confirmamos" e "o PNCP publicou"
+       não têm o mesmo peso numa conversa com o órgão, e a diferença some se as duas aparecerem
+       iguais. Quando as duas existem e os preços batem, a linha diz que batem — que é a melhor
+       notícia possível e a que ninguém escreve. */
+    const bate = x.nosso && x.pncp && x.pncp.unitario != null && x.unitario != null
+      && Math.abs(Number(x.pncp.unitario) - Number(x.unitario)) < 0.005;
+    const fonte = x.nosso && x.pncp
+      ? (bate ? '<em class="gn-f ok">confirmado por nós · confere com o PNCP</em>'
+              : '<em class="gn-f dif">confirmado por nós · <b>o PNCP publicou ' + brl(x.pncp.unitario) + '</b></em>')
+      : x.nosso ? '<em class="gn-f">confirmado por nós</em>'
+                : '<em class="gn-f">publicado pelo PNCP</em>';
+    return `<div class="gn-l">
+      <span class="gn-n">${esc(x.item || '—')}</span>
+      <span class="gn-d">${esc(String(x.descricao || '(sem descrição)'))}
+        <i>${x.quantidade != null ? Number(x.quantidade).toLocaleString('pt-BR') : '—'} × ${brl(x.unitario)}${
+          x.marca ? ' · ' + esc(x.marca) : ''}</i>${fonte}</span>
+      <span class="gn-t"><b>${brl(x.total)}</b></span>
+      ${marg}
+    </div>`;
+  };
+
+  return `<div class="gn-cx">
+    <div class="gn-topo"><b>Itens ganhos · ${linhas.length}</b>
+      <span class="gn-tot">${brl(soma)} <i>soma dos itens</i></span></div>
+    ${acima ? `<div class="gn-alerta"><b><svg class="ic" aria-hidden="true"><use href="#ic-alerta"/></svg>
+      ${acima} item(ns) fechados ACIMA do teto legal.</b> Preço homologado acima do teto da CMED
+      é o que vira glosa depois — confira antes de faturar.</div>` : ''}
+    <div class="gn-lista">${linhas.map(linha).join('')}</div>
+    <!-- A DIFERENÇA DE SOMA É CONFESSADA, e no lugar onde os dois números estão juntos.
+         Escondê-la seria a tela escolhendo em qual dos dois acreditar — e essa escolha é de
+         quem confere. -->
+    <div class="salvo">
+      ${Math.abs(dif) >= 0.01
+        ? '<b style="color:var(--ambar-700)"><svg class="ic" aria-hidden="true"><use href="#ic-alerta"/></svg> Conferir:</b> '
+          + 'valor da ficha <b>' + brl(n.valor_ganho) + '</b> · soma dos itens <b>' + brl(soma) + '</b> — '
+          + 'diferença de <b>' + brl(Math.abs(dif)) + '</b>. A tela não escolhe qual está certo.'
+        : (Number(n.valor_ganho) > 0
+            ? 'A soma dos itens bate com o valor da ficha (' + brl(n.valor_ganho) + ').'
+            : 'A ficha ainda não tem valor ganho registrado; a soma acima vem dos itens.')}
+      ${semTeto ? '<br><b>' + semTeto + '</b> item(ns) sem teto na CMED — a margem deles não existe, '
+        + 'e não é zero. Pode ser material (que não tem teto legal) ou nome que não casou.' : ''}
+    </div>
+  </div>`;
 }
 
 function rodapeDosItens(){
@@ -4905,6 +5120,10 @@ async function carregarItensGanhos(id){
       + '&select=*&order=item_n.asc', {headers:SB_H});
     ITENS_GANHOS = r.ok ? await r.json() : [];
     pintaItensGanhos(id);
+    /* A ABA ITENS TAMBÉM MOSTRA O QUE FOI GANHO (14/08, fatia B5), e ela é pintada por outra
+       chamada assíncrona. As duas correm juntas e a ordem de chegada não é garantida: sem esta
+       repintura, quem carregasse mais rápido decidiria se o bloco dos ganhos apareceria. */
+    if(ABERTO === id) pintaItensEdital(id);
   }catch(e){
     // "não sei" e "não tem" outra vez: um erro de leitura mostrando "sem detalhe por item"
     // faria alguém concluir que o resultado nunca foi confirmado — e confirmar de novo.
