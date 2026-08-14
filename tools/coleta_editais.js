@@ -118,7 +118,7 @@ async function umaLicitacao(lic) {
        tela precisa poder dizer "o PNCP não publicou" em vez de "não sei". */
     console.log(`  ${rot}  ○ o PNCP não publicou arquivo nenhum para esta licitação`);
     if (!PREVIA) {
-      await fetch(`${SB}/rest/v1/licitacao_arquivos`, {
+      await fetch(`${SB}/rest/v1/licitacao_arquivos?on_conflict=numero_controle,url_pncp`, {
         method: 'POST', headers: { ...H, Prefer: 'return=minimal,resolution=merge-duplicates' },
         body: JSON.stringify([{
           numero_controle: lic.numero_controle, licitacao_id: lic.id || null,
@@ -189,8 +189,15 @@ async function umaLicitacao(lic) {
   const lote = linhas.map(l => { const o = {}; for (const c of CAMPOS) o[c] = (c in l) ? l[c] : null; return o; });
   /* UPSERT PELA CHAVE (numero_controle, url_pncp): re-rodar a coleta do mesmo edital REESCREVE
      a linha dele, e não cria uma segunda. Isso é "refazer o mesmo", não "apagar o anterior" —
-     a mesma distinção do item 10 da CMED. */
-  const r = await fetch(`${SB}/rest/v1/licitacao_arquivos`, {
+     a mesma distinção do item 10 da CMED.
+     >>> O `?on_conflict=` É OBRIGATÓRIO E ESTAVA FALTANDO. `resolution=merge-duplicates` sozinho
+         resolve conflito contra a CHAVE PRIMÁRIA — e aqui a PK é o `id` bigserial, enquanto a
+         chave de negócio vive num índice único. Sem dizer o alvo, o banco recusa com
+         `23505 duplicate key`. Descobri na fatia A7, onde o mesmo erro estourou barulhento; aqui
+         ele estava DORMINDO, porque cada licitação tinha sido coletada uma única vez — e o meu
+         assert já afirmava "re-rodar REESCREVE, não duplica", uma promessa que ninguém tinha
+         executado. Assert que descreve comportamento não exercitado é documentação, não guarda. */
+  const r = await fetch(`${SB}/rest/v1/licitacao_arquivos?on_conflict=numero_controle,url_pncp`, {
     method: 'POST', headers: { ...H, Prefer: 'return=minimal,resolution=merge-duplicates' },
     body: JSON.stringify(lote),
   });

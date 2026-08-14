@@ -94,12 +94,24 @@ ok(n + '. ...e o motivo esta escrito no DDL',
      duas chamadas tem formatacao diferente e o `body` de uma tem chaves aninhadas, entao um
      regex de bloco casa uma e perde a outra — que foi exatamente o que aconteceu na 1a versao
      deste assert, e ele acusou "1 escrita" quando ha duas. */
-  const alvos = [...CODE.matchAll(/rest\/v1\/licitacao_arquivos`,\s*\{/g)];
-  const escritas = alvos.map(m => CODE.slice(m.index, m.index + 220));
+  /* SÓ AS ESCRITAS. Há também uma LEITURA da mesma tabela (o `?select=` que confere se ela já
+     tem texto), e cobrar `on_conflict` de um GET seria exigir de uma consulta a regra de um
+     insert — assert vermelho por uma linha que está certa. O que separa os dois é o `method`. */
+  const alvos = [...CODE.matchAll(/rest\/v1\/licitacao_arquivos[^`]*`,\s*\{/g)];
+  const escritas = alvos.map(m => CODE.slice(m.index, m.index + 220)).filter(b => /method:\s*'POST'/.test(b));
   const semUpsert = escritas.filter(e => !/resolution=merge-duplicates/.test(e));
-  ok(n + '. *** TODA escrita na licitacao_arquivos e upsert — re-rodar REESCREVE, nao duplica ***',
-    escritas.length >= 2 && semUpsert.length === 0,
-    { escritas: escritas.length, semUpsert: semUpsert.length }); n++;
+  /* ══ E O `on_conflict` É A METADE QUE FALTAVA ═════════════════════════════════════════════
+     `resolution=merge-duplicates` sozinho resolve conflito contra a CHAVE PRIMÁRIA. Aqui a PK
+     é o `id` bigserial e a chave de negócio vive num índice único — sem `?on_conflict=`, o
+     banco recusa com `23505 duplicate key` na SEGUNDA coleta da mesma licitação.
+     >>> O ASSERT ANTERIOR JÁ DIZIA "re-rodar REESCREVE, não duplica" E ISSO ERA FALSO. Ele
+         descrevia um comportamento que ninguém tinha executado — o defeito só apareceu quando
+         a fatia A7 rodou duas vezes e estourou. Assert que descreve sem exercitar é
+         documentação com cara de guarda, e é pior que assert nenhum: ele dá confiança. */
+  const semAlvo = escritas.filter(e => !/on_conflict=numero_controle,url_pncp/.test(e));
+  ok(n + '. *** TODA escrita na licitacao_arquivos e upsert COM alvo de conflito declarado ***',
+    escritas.length >= 2 && semUpsert.length === 0 && semAlvo.length === 0,
+    { escritas: escritas.length, semUpsert: semUpsert.length, semAlvo: semAlvo.length }); n++;
 })();
 ok(n + '. ...e a chave unica que sustenta o upsert existe no DDL',
   /unique index if not exists licitacao_arquivos_chave/.test(DDL)); n++;

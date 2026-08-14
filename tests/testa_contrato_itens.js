@@ -97,10 +97,21 @@ ok(n + '. ...e diz onde os tres moram de verdade (edge function, servidor)',
   /edge function `ler-edital`/.test(DOC) && /usos_ia/.test(DOC)); n++;
 
 // ══════════ 5. O DOCUMENTO NAO PROMETE O QUE NAO EXISTE ══════════
-/* Documento que descreve o futuro como presente e pior que documento nenhum: o outro lado
-   escreve contra uma tabela cheia e recebe vazio. */
-ok(n + '. *** o contrato DIZ que as tabelas estao vazias hoje (A6/A7 e que preenchem) ***',
-  /vazia/.test(DOC) && /A6/.test(DOC) && /A7/.test(DOC)); n++;
+/* ══ REAPONTADO NA FATIA A7 ═══════════════════════════════════════════════════════════════
+   Ele cobrava a palavra "vazia". As tabelas DEIXARAM de estar vazias quando as fatias A6 e A7
+   rodaram — entao o assert passou a exigir que o documento mentisse ao contrario.
+   >>> O QUE ELE PROTEGIA E ATEMPORAL, e e isso que ele cobra agora: o contrato tem que declarar
+       o ESTADO REAL das tabelas, com numero medido. Documento que descreve o futuro como
+       presente e pior que documento nenhum — o outro lado escreve contra uma tabela cheia e
+       recebe vazio. Documento que descreve o passado como presente e o mesmo erro ao contrario.
+   >>> E ELE COBRA O LIMITE JUNTO: as tabelas sao abastecidas SOB DEMANDA, entao elas nunca tem
+       o Brasil inteiro. Quem ler o contrato sem essa frase vai supor cobertura total e
+       concluir "esta licitacao nao existe" quando a verdade e "ninguem pediu ela ainda". */
+ok(n + '. *** o contrato declara o ESTADO REAL das tabelas, com numero medido ***',
+  /195 itens/.test(DOC) && /192/.test(DOC)); n++;
+ok(n + '. *** ...e avisa que o abastecimento e SOB DEMANDA, nunca o Brasil inteiro ***',
+  /sob demanda\*\*, nunca em massa|abastecidas \*\*sob demanda\*\*/.test(DOC)
+  && /e não o Brasil inteiro/.test(DOC)); n++;
 ok(n + '. e ele diz o que JA DA pra usar hoje, item a item',
   /Resumo do que já dá para usar hoje/.test(DOC)); n++;
 

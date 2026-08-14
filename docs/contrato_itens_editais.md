@@ -54,8 +54,13 @@ lista inteira e a contagem de itens dobraria a cada visita.
 > existem. Guardar como inteiro perderia o `"1.1"` e transformaria `"01"` e `"1"` no mesmo item,
 > que é justamente a colisão que a chave única existe para impedir.
 
-**Estado hoje:** a tabela existe e está **vazia**. Quem a preenche é a fatia A6 (abastecimento),
-sob demanda. Até lá, a Encontrar lê os itens ao vivo do PNCP e guarda só em memória.
+**Quem preenche:** `tools/coleta_resultados.js`, **sob demanda** — `--controle <numero_controle>`
+ou `--meus-negocios`. **Não existe modo “varre tudo”**: resultado é uma requisição *por item*, e
+um edital de 500 itens são 500 chamadas ao PNCP.
+
+**Estado em 14/08:** a tabela já tem dado real — 195 itens da licitação
+`01640429000106-1-000117/2026` (Pedra Bonita/MG), 192 deles com resultado publicado. A Encontrar
+continua lendo os itens ao vivo do PNCP para exibir na hora; esta tabela é o que **fica**.
 
 ---
 
@@ -190,7 +195,16 @@ Isso **complementa** `negocio_itens_ganhos`, que já existe e é outra coisa: l�
 confirmamos ter ganho (com marca, origem, quem confirmou); aqui é o que o **PNCP publicou**.
 Quando os dois discordarem, quem manda no comercial é o seu, e este serve de conferência.
 
-**Estado hoje:** as colunas existem e estão vazias. Quem preenche é a fatia A7.
+**Quem preenche:** `tools/coleta_resultados.js` (o mesmo que traz os itens — o resultado é um
+atributo do item, e o PNCP só o entrega se você souber o `numeroItem`).
+
+**Conferido em 14/08** (`tools/prova_resultado_item.js`, 8 de 8): três itens com resultado
+batendo com o PNCP em vencedor, CNPJ, valor unitário e quantidade; três itens sem resultado
+confirmados como `null` **dos dois lados**; e nenhum item com resultado pela metade.
+
+> **Quando o PNCP publica mais de um resultado para o mesmo item** (remanescente, cancelamento,
+> reclassificação), fica o de menor `ordemClassificacaoSrp` **entre os não cancelados**. Pegar o
+> último inserido entregaria um cancelamento como se fosse o vencedor.
 
 ---
 
@@ -200,8 +214,14 @@ Quando os dois discordarem, quem manda no comercial é o seu, e este serve de co
 |---|---|
 | `?adicionar=<numero_controle>&itens=<ids>` | ✅ **a Encontrar já envia** |
 | `LeitorEdital.perguntar(...)` | ✅ existe e funciona; motor intacto |
-| `licitacao_itens` / `licitacao_arquivos` | ✅ **existem no banco**, vazias — A6/A7 preenchem |
-| resultado por item | ✅ colunas existem, vazias |
+| `licitacao_arquivos` | ✅ existe **com dado**: 4 editais/TR extraídos (69k a 173k chars) + 1 caso “sem arquivo” |
+| `licitacao_itens` | ✅ existe **com dado**: 195 itens de uma licitação real |
+| resultado por item | ✅ **192 resultados gravados e conferidos** contra o PNCP |
 
-Nada aqui exige que você espere pela A6 ou A7 para começar: as tabelas e o formato da URL já
-estão de pé, então o código do seu lado pode ser escrito contra eles agora.
+As duas tabelas são abastecidas **sob demanda**, nunca em massa — então elas vão ter as
+licitações que alguém abriu ou que entraram no funil, e não o Brasil inteiro. Se você precisar
+de uma que ainda não está lá, o comando é
+`node tools/coleta_editais.js --controle <n>` / `node tools/coleta_resultados.js --controle <n>`.
+
+Nada aqui exige que você espere por nada: as tabelas, o formato da URL e o motor do leitor estão
+de pé, com dado real dentro.
