@@ -1,6 +1,19 @@
 <!DOCTYPE html>
 <!-- ══════════════════════════════════════════════════════════════════════════════════════════════
      FPMED · GUIA DO USUÁRIO — fatia B11 (14/08/2026, Trabalhador B)
+     ATUALIZADO NA FATIA B18 (14/08/2026): as rodadas 4 e 5 puseram coisa nova na frente de quem
+     usa, e um guia que descreve uma tela que mudou é pior que guia nenhum — ele ensina a procurar
+     onde não está. Entrou aqui o que passou a EXISTIR, conferido um a um no código das telas:
+       · "Meus arquivos" (B15): as seis gavetas, as três procedências e as versões;
+       · o número de controle do PNCP informado à mão (B13), para os negócios do Calendário 2025;
+       · os selos de contexto (B14): registro de preço, modo de disputa, sem valor de referência —
+         e o que era "R$ 0,00" e virou "sem referência";
+       · EAN e registro ANVISA por item na Proposta (B17), inclusive quando faltam;
+       · o aviso de custo, que deixou de valer só para o "Conversar com o edital": os relatórios
+         com IA da aba de Ata cobram do mesmo jeito, e o guia passa a dizer isso onde eles estão.
+     A LISTA DE ABAS DA FICHA FOI CORRIGIDA: o guia da B11 citava uma aba "histórico" que não
+     existe e não citava três que existem. Nome de aba errado num guia manda a pessoa procurar o
+     que não está lá, e ela conclui que é ela quem não sabe usar o sistema.
 
      ── PARA QUEM ESTA PÁGINA FOI ESCRITA ────────────────────────────────────────────────────────
      Para o Natanael e a equipe. Não para quem construiu o sistema. Por isso ela não tem uma
@@ -368,31 +381,84 @@ body{
         <li>
           <span class="bolha">1</span>
           <span class="onde">Abra a ficha do negócio e use as abas.</span>
-          <span class="espera">Cada aba é um assunto: os <b>itens do edital</b> com o teto de preço,
-            as <b>tarefas</b> da fase, os <b>lembretes</b>, os <b>anexos</b> e o <b>histórico</b>.
-            Você não sai da ficha para nenhum deles.</span>
+          <span class="espera">Cada aba é um assunto, e você não sai da ficha para nenhum deles:
+            <b>Informações</b>, <b>Itens</b>, <b>Meus arquivos</b>, <b>Lembretes</b>,
+            <b>Tarefas</b>, <b>Proposta</b>, <b>Gerenciamento de Ata</b>,
+            <b>Credenciamentos</b> e <b>Observações</b>. A aba da etapa em que o negócio está
+            já vem aberta e com um ponto verde — é o “você está aqui”.</span>
         </li>
         <li>
           <span class="bolha">2</span>
+          <span class="onde">Olhe os selos no alto da ficha antes de pensar em preço.</span>
+          <span class="espera">Eles são curtos e mudam a decisão.
+            <span class="bt">Registro de preço</span> quer dizer que a ata vale por até 12 meses:
+            quem vence fornece conforme o órgão for pedindo, e não tudo de uma vez.
+            <span class="bt">Disputa: Aberto</span> (ou o que o portal tiver publicado) é o modo
+            de disputa daquele pregão. E <span class="bt">Sem valor de referência</span> quer
+            dizer que o edital <b>não publicou preço</b> para nenhum item.
+            Selo que não aparece é dado que o portal não deu — nunca invenção nossa.</span>
+        </li>
+        <li>
+          <span class="bolha">3</span>
           <span class="onde">Vá marcando as tarefas conforme fizer.</span>
           <span class="espera">A lista já vem pronta com o kit. As tarefas com prazo mostram a data
             calculada; as demais são lembretes de trabalho.</span>
         </li>
         <li>
-          <span class="bolha">3</span>
+          <span class="bolha">4</span>
           <span class="onde">Pregão adiado ou suspenso: mude a data da sessão na ficha.</span>
           <span class="espera">É a única coisa que precisa ser feita. Os três prazos de lei
             andam junto, e a Agenda se ajusta. <b>Não remarque tarefa por tarefa</b> — se fizer
             isso, uma delas vai ficar com a data velha e alguém aparece no dia errado.</span>
         </li>
         <li>
-          <span class="bolha">4</span>
-          <span class="onde">Anexe tudo que chegar, na aba de anexos.</span>
-          <span class="espera">Edital, proposta enviada, documento de habilitação, ata assinada.
-            Cada anexo fica com data e com quem subiu. Versão nova <b>não apaga</b> a anterior: ela
-            entra como versão nova, e a antiga continua lá para consulta.</span>
+          <span class="bolha">5</span>
+          <span class="onde">Guarde e ache todo o papel do certame na aba <b>Meus arquivos</b>.</span>
+          <span class="espera">Ela junta num lugar só o que estava espalhado, em <b>seis gavetas</b>,
+            nesta ordem: <b>Edital e anexos</b>, <b>Proposta</b>, <b>Habilitação</b>, <b>Ata</b>,
+            <b>Recurso</b> e <b>Outros</b>. Gaveta vazia não aparece.
+            Cada linha diz <b>de onde o arquivo veio</b>, e isso importa numa impugnação:
+            <span class="bt">do PNCP</span> foi baixado do portal do governo e abre no link
+            original dele; <span class="bt">anexado à mão</span> foi alguém desta casa que subiu;
+            <span class="bt">da empresa</span> é certidão do seu cadastro, que vale para todos os
+            certames e mostra até quando vale.</span>
+        </li>
+        <li>
+          <span class="bolha">6</span>
+          <span class="onde">Para anexar: escolha a gaveta e mande o arquivo.</span>
+          <span class="espera">Versão nova <b>não apaga</b> a anterior — ela entra como
+            <span class="bt">v2</span>, a antiga fica marcada como
+            <span class="bt">versão anterior — nada se apaga</span> e as duas continuam na lista.
+            Se o arquivo for de um tipo que não dá para guardar, a tela diz <b>qual tipo ela
+            aceita</b> em vez de só falhar.</span>
+        </li>
+        <li>
+          <span class="bolha">7</span>
+          <span class="onde">Negócio antigo que “não está ligado a um edital”: informe o número
+            de controle.</span>
+          <span class="espera">Os negócios que vieram do Calendário 2025 nasceram sem a chave que
+            o portal do governo entende, e por isso a aba <b>Itens</b> deles vem vazia. Na aba
+            <b>Informações</b>, no quadro <b>Número de controle do PNCP</b>, cole o número que
+            aparece na página do pregão no portal e aperte <span class="bt">Conferir</span>.
+            <b>Conferir não grava nada</b> — ele só pergunta ao portal. A gravação é um segundo
+            clique, e ele <b>só aparece quando o portal disser que pode</b>.</span>
         </li>
       </ol>
+
+      <div class="aviso aviso--cuidado">
+        <b>“Sem referência” não é o mesmo que “R$ 0,00”.</b> Quando o edital não publica o preço
+        de um item, a coluna do meio agora diz <b>sem referência</b> — antes ela escrevia
+        R$ 0,00, que é um preço que ninguém publicou aparecendo como se existisse. E a aba
+        <b>Itens</b> conta quantos são (“9 de 40 itens vieram sem valor de referência”), porque um
+        item sem preço é um caso e o edital inteiro sem preço é outra disputa. Onde não há
+        referência, a régua que sobra é o <b>teto da CMED</b>, na coluna da direita.
+      </div>
+
+      <div class="aviso aviso--info">
+        <b>Se a tela disser que não conseguiu ler uma das listas</b>, ela avisa antes da lista e
+        diz qual falhou. Isso quer dizer <b>não consegui ler</b> — e não “não existe”. O que está
+        escrito na lista está completo; o que faltou está declarado.
+      </div>
     </section>
 
     <!-- ══ 4 ══════════════════════════════════════════════════════════════════════════════════ -->
@@ -419,6 +485,22 @@ body{
         </li>
         <li>
           <span class="bolha">2</span>
+          <span class="onde">Confira a identidade de cada item: marca, código de barras e registro.</span>
+          <span class="espera">Edital de remédio costuma exigir os três na proposta, então eles
+            aparecem embaixo do nome do item: <span class="bt">EAN 7891106000956 · ANVISA
+            1705600230032</span>. Onde falta, a linha <b>diz que falta</b> em vez de ficar quieta:
+            <span class="bt">sem EAN cadastrado</span> ou
+            <span class="bt">sem registro ANVISA</span> — e, para quem cuida do cadastro, aparece
+            um <b>preencher</b> ao lado, que abre a lista dos itens sem código de barras já com
+            este produto na frente. Nenhum número é inventado: o que o cadastro não tem, a tela
+            não escreve. E se o código de barras estiver com um dígito trocado, ela avisa que
+            <b>não fecha</b> em vez de mostrá-lo como se valesse — um dígito errado não dá erro
+            em lugar nenhum, ele casa com <b>outro</b> produto e traz um teto com cara de certo.
+            <br>Esses três campos são para <b>conferir antes de mandar</b>: hoje eles não vão no
+            documento impresso.</span>
+        </li>
+        <li>
+          <span class="bolha">3</span>
           <span class="onde">Olhe o selo de teto ao lado de cada linha.</span>
           <span class="espera">Enquanto o preço cabe, o selo é discreto e mostra
             <span class="bt">teto R$ … · folga …%</span>. Se passar, ele fica vermelho e diz
@@ -426,7 +508,7 @@ body{
             desclassificada. Passe o mouse por cima do selo e ele mostra com o que casou.</span>
         </li>
         <li>
-          <span class="bolha">3</span>
+          <span class="bolha">4</span>
           <span class="onde">Imprima ou salve o documento.</span>
           <span class="espera">O documento sai com o cabeçalho da empresa, os itens, os totais e o
             espaço de assinatura. O selo de teto <b>não</b> vai no papel — ele é ferramenta de
@@ -485,6 +567,20 @@ body{
             escolher sozinha. E resultado <b>em branco</b> quer dizer “ainda não foi julgado”,
             que é diferente de “perdemos”.</span>
         </li>
+        <li>
+          <span class="bolha">5</span>
+          <span class="onde">Os dois relatórios que leem o documento por você — e cobram.</span>
+          <span class="espera">Na aba <b>Gerenciamento de Ata</b> existem
+            <span class="bt">O que eu ganhei</span> e
+            <span class="bt">Mapa de preços da disputa</span>. Eles leem o documento que você
+            anexou e montam a tabela sozinhos. <b>Cada leitura custa dinheiro de verdade</b>, do
+            mesmo jeito que a do item 6 — vale a mesma regra, e a leitura fica registrada no seu
+            nome. Eles <b>só aparecem quando existe o documento que eles leem</b>: sem
+            <b>Itens ganhos</b> ou <b>Ata da sessão</b> anexada, a tela pede o anexo em vez de
+            oferecer um botão que só poderia gastar uma leitura para dizer “não achei”.
+            E quem já confirmou os itens ganhos <b>não paga leitura de novo</b> para ver o que
+            ganhou: isso vem do que ficou guardado.</span>
+        </li>
       </ol>
 
       <div class="aviso aviso--cuidado">
@@ -520,6 +616,9 @@ body{
         <br>O valor mostrado é o <b>teto</b> daquela leitura: o que for cobrado é o que ela
         realmente consumir, e fica registrado. Ele nunca vem <b>maior</b> do que o que foi
         mostrado.
+        <br><b>Esta regra vale em todo lugar do sistema onde houver o selo de custo</b> — inclusive
+        nos dois relatórios da aba de Ata (item 5). Se um dia um botão de leitura não mostrar o
+        preço antes, isso é defeito: avise, não confirme.
       </div>
 
       <ol class="passos">

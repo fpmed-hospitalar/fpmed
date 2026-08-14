@@ -95,8 +95,15 @@ for (const [id, titulo] of SECOES) {
 
 // ── 6. *** O CUSTO DA IA ESTÁ ÀS CLARAS *** ──────────────────────────────────
 // Esta é a única parte do guia em que ficar calado custaria dinheiro do dono.
-ok(n + '. *** o guia diz que CADA leitura custa dinheiro de verdade ***',
-  /[Cc]ada leitura custa dinheiro de verdade/.test(VISIVEL)); n++;
+/* ESTE ASSERT PEDE A CAIXA, E NÃO O ARQUIVO — e a B18 é quem ensinou por quê. Ela repetiu a
+   mesma frase num segundo lugar do guia (os relatórios da aba de Ata, que cobram igual), e com
+   isso um assert que só procurava a frase NO ARQUIVO passou a aceitar a caixa de custo apagada:
+   a cópia nova respondia por ela. A mutação foi quem contou. Frase repetida enfraquece assert
+   que procura frase; assert que nomeia o LUGAR não se deixa cobrir por cópia. */
+const CAIXA_CUSTO = (A.match(/<div class="aviso aviso--custo">([\s\S]*?)<\/div>/) || ['', ''])[1];
+ok(n + '. (harness) a caixa do aviso de custo foi mesmo recortada', CAIXA_CUSTO.length > 200, CAIXA_CUSTO.length); n++;
+ok(n + '. *** o guia diz que CADA leitura custa dinheiro de verdade — na caixa de custo ***',
+  /[Cc]ada leitura custa dinheiro de verdade/.test(CAIXA_CUSTO)); n++;
 ok(n + '. ...e que o valor aparece ANTES de confirmar', /mostra o valor antes de você confirmar/.test(VISIVEL)); n++;
 ok(n + '. ...e que ver o preço e cancelar não custam nada',
   /[Vv]er o preço não custa nada/.test(VISIVEL) && /cancelar depois de ver também não/.test(VISIVEL)); n++;
@@ -144,6 +151,90 @@ ok(n + '. ...e sem config o link fica ESCONDIDO, em vez de levar a 404',
 // ── 10. E A LIMITAÇÃO DECLARADA ──────────────────────────────────────────────
 ok(n + '. *** a página assume que não tem print de tela, e diz por quê ***',
   /não tem print de tela/i.test(A) && /não entra no sistema|não faz login/i.test(A)); n++;
+
+/* ── 11. *** O GUIA CONTINUA VERDADEIRO (fatia B18) *** ────────────────────────────────────────
+   Os asserts daqui para baixo NÃO medem prosa: eles amarram o guia às TELAS. Nome de aba, nome
+   de gaveta, etiqueta de procedência e texto de botão são LIDOS do fpmed_negocios.html e do
+   fpmed_giovana.html e conferidos contra o que o guia escreve.
+
+   >>> POR QUE ISSO, E NÃO MAIS UMA FRASE PROCURADA A DEDO: o guia da B11 citava uma aba
+       "histórico" que não existe em ficha nenhuma, e nenhuma suíte via — porque todas as
+       suítes de prosa perguntam "a frase que eu escrevi está aí?", e ela estava. A pergunta
+       que faltava é a outra: "o que eu escrevi ainda é verdade na tela?". Guia que descreve
+       tela que mudou não é guia desatualizado, é guia que MENTE — e quem procura o que não
+       está lá conclui que é ele quem não sabe usar o sistema, e para de usar.
+   >>> E O CAMINHO É DE MÃO DUPLA: aba nova que a outra fatia acrescentar e o guia não citar
+       também reprova. Este arquivo é o que faz o guia envelhecer em voz alta.                */
+const NEGOC = R('fpmed_negocios.html');
+const PROPO = R('fpmed_giovana.html');
+
+// ── as ABAS da ficha ──────────────────────────────────────────────────────────
+const blocoAbas = (NEGOC.match(/<div class="dw-abas">([\s\S]*?)\.map\(\(\[k,rot,cnt\]\)/) || ['', ''])[1];
+const abasReais = [...blocoAbas.matchAll(/\['[a-z]+','([^']+)','[^']*'\]/g)].map(m => m[1]);
+ok(n + '. (harness) a lista de abas foi mesmo lida da ficha do negócio', abasReais.length >= 8, abasReais.length); n++;
+const passoAbas = (A.match(/use as abas\.<\/span>\s*<span class="espera">([\s\S]*?)<\/span>/) || ['', ''])[1];
+const abasNoGuia = [...passoAbas.matchAll(/<b>([^<]+)<\/b>/g)].map(m => m[1]);
+ok(n + '. *** toda aba que o guia cita EXISTE mesmo na ficha ("histórico" nunca existiu) ***',
+  abasNoGuia.length > 0 && abasNoGuia.every(x => abasReais.indexOf(x) >= 0),
+  abasNoGuia.filter(x => abasReais.indexOf(x) < 0)); n++;
+ok(n + '. ...e nenhuma aba da ficha ficou de fora do guia',
+  abasReais.every(x => abasNoGuia.indexOf(x) >= 0), abasReais.filter(x => abasNoGuia.indexOf(x) < 0)); n++;
+
+// ── "MEUS ARQUIVOS": as seis gavetas, as três procedências, as versões (B15) ──
+const gavBloco = (NEGOC.match(/const ARQ_GAVETAS = \[([\s\S]*?)\];/) || ['', ''])[1];
+const gavetasReais = [...gavBloco.matchAll(/n:'([^']+)'/g)].map(m => m[1]);
+ok(n + '. (harness) as gavetas foram mesmo lidas da tela', gavetasReais.length === 6, gavetasReais); n++;
+ok(n + '. *** as seis gavetas estão no guia com o nome que a tela usa ***',
+  gavetasReais.every(g => VISIVEL.indexOf(g) >= 0), gavetasReais.filter(g => VISIVEL.indexOf(g) < 0)); n++;
+ok(n + '. ...e o guia diz SEIS, que é quantas são', /seis gavetas/i.test(VISIVEL) && gavetasReais.length === 6); n++;
+/* A CONFERÊNCIA DO LADO DO GUIA É PELA AMOSTRA `.bt`, e não por procurar o texto solto: "do
+   PNCP" aparece solto dentro de "Número de controle do PNCP", e um assert que só procurasse o
+   pedaço passaria verde com a etiqueta apagada. Foi assim que a varredura de cor da Proposta
+   passou verde com onze cores na tela — o assert media o lugar errado. */
+for (const et of ['do PNCP', 'anexado à mão', 'da empresa']) {
+  ok(n + '. a procedência "' + et + '" é etiqueta na tela e é MOSTRADA no guia',
+    NEGOC.includes('>' + et + '<') && A.includes('<span class="bt">' + et + '</span>')); n++;
+}
+ok(n + '. *** o guia diz que versão nova não apaga a anterior, com as palavras da tela ***',
+  VISIVEL.includes('versão anterior — nada se apaga') && NEGOC.includes('versão anterior — nada se apaga')); n++;
+
+// ── O NÚMERO DE CONTROLE INFORMADO À MÃO (B13) ────────────────────────────────
+ok(n + '. o quadro tem no guia o nome que tem na ficha',
+  NEGOC.includes('<h4>Número de controle do PNCP</h4>') && VISIVEL.includes('Número de controle do PNCP')); n++;
+ok(n + '. *** o guia ensina que "Conferir" NÃO grava — que é o que a ficha também diz ***',
+  /Conferir não grava nada/.test(VISIVEL) && NEGOC.includes('não grava nada')); n++;
+ok(n + '. ...e que o botão de gravar só nasce quando o servidor deixa',
+  /só aparece quando o portal disser que pode/.test(VISIVEL)); n++;
+
+// ── OS SELOS DE CONTEXTO (B14) ────────────────────────────────────────────────
+for (const s of ['Registro de preço', 'Sem valor de referência']) {
+  ok(n + '. o selo "' + s + '" é desenhado pela tela e explicado no guia',
+    NEGOC.includes("txt:'" + s + "'") && VISIVEL.includes(s)); n++;
+}
+ok(n + '. o selo do modo de disputa idem', NEGOC.includes("txt:'Disputa: '") && /Disputa: /.test(VISIVEL)); n++;
+/* A SEPARAÇÃO É O QUE IMPORTA, e não as duas grafias soltas no arquivo: "sem referência" e
+   "R$ 0,00" podem existir os dois em parágrafos diferentes sem o guia nunca dizer que um NÃO é
+   o outro — que é a única frase que muda a decisão de quem monta preço. */
+ok(n + '. *** e o guia diz que "sem referência" NÃO é o mesmo que "R$ 0,00" ***',
+  /não é o mesmo que .{0,4}R\$ 0,00/.test(VISIVEL)); n++;
+
+// ── EAN E REGISTRO ANVISA NA PROPOSTA (B17) ───────────────────────────────────
+for (const t of ['sem EAN cadastrado', 'sem registro ANVISA']) {
+  ok(n + '. a falta "' + t + '" é dita pela Proposta e explicada no guia',
+    PROPO.includes(t) && VISIVEL.includes(t)); n++;
+}
+ok(n + '. *** o guia avisa que código de barras que não fecha é DENUNCIADO, não exibido ***',
+  /não fecha/.test(VISIVEL) && PROPO.includes('não fecha (dígito verificador)')); n++;
+ok(n + '. ...e diz a verdade sobre o papel: hoje esses campos não vão no documento impresso',
+  /não vão no documento impresso/.test(VISIVEL)); n++;
+
+// ── O CUSTO DA IA NÃO É SÓ DO "CONVERSAR COM O EDITAL" (B15/rodada 4) ─────────
+for (const b of ['O que eu ganhei', 'Mapa de preços da disputa']) {
+  ok(n + '. o relatório "' + b + '" existe na ficha e está no guia',
+    NEGOC.includes(b) && VISIVEL.includes(b)); n++;
+}
+ok(n + '. *** e o guia diz que a regra do custo vale em TODO lugar com selo de custo ***',
+  /regra vale em todo lugar do sistema onde houver o selo de custo/i.test(VISIVEL)); n++;
 
 console.log('\nRESULTADO: ' + p + ' ok, ' + f + ' falha(s)');
 process.exitCode = f ? 1 : 0;
