@@ -128,17 +128,23 @@ ok('ymd() de string ISO longa pega só a data', ymd('2026-08-06T09:00:00-03:00')
 ok('ymd() de Date usa o dia LOCAL', ymd(new Date(2026, 7, 6, 23, 30)) === '2026-08-06', ymd(new Date(2026, 7, 6, 23, 30)));
 
 // ══════════════════════════════════════════════════════════════════════════════════════════
-// 3. AS 15 TAREFAS-MODELO (spec 6.2) — nascem com o negócio
+// 3. O KIT DE TAREFAS-MODELO (spec 6.2) — nasce com o negócio
+// >>> ERAM 15 ATÉ 14/08, E VIRARAM 14 (fatia A14). "Enviar proposta atualizada" saiu do kit em
+//     11/08 porque virou BOTÃO de verdade na fase Habilitação — checkbox que duplica ação real
+//     pode ficar marcado enquanto a proposta ajustada não foi anexada, e aí o checklist afirma
+//     o que não aconteceu. A tela do Negócios já tinha tirado; o semeador foi alinhado agora.
+//     Os 2.555 registros já gravados continuam com 15 e NÃO foram tocados.
 // ══════════════════════════════════════════════════════════════════════════════════════════
 const t = novasTarefas();
-ok('são 15 tarefas', t.length === 15, t.length);
+ok('são 14 tarefas', t.length === 14, t.length);
 ok('todas nascem por fazer', t.every(x => x.feita === false));
 ok('toda tarefa tem seção válida', t.every(x => FASES.includes(x.secao)));
 const porSecao = {}; t.forEach(x => porSecao[x.secao] = (porSecao[x.secao] || 0) + 1);
 ok('3 na Oportunidade', porSecao.oportunidade === 3, porSecao.oportunidade);
 ok('3 na Qualificação', porSecao.qualificacao === 3, porSecao.qualificacao);
 ok('4 na Disputa', porSecao.disputa === 4, porSecao.disputa);
-ok('4 na Classificação', porSecao.classificacao === 4, porSecao.classificacao);
+// 3, e não 4: a quarta era "Enviar proposta atualizada", que virou botão em 11/08.
+ok('3 na Classificação', porSecao.classificacao === 3, porSecao.classificacao);
 ok('1 no Contrato', porSecao.contrato === 1, porSecao.contrato);
 ok('as 5 fases têm ao menos uma tarefa', FASES.every(k => porSecao[k] > 0));
 ok('novasTarefas() devolve objeto novo a cada chamada (senão 2 negócios dividem o checklist)',

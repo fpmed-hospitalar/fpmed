@@ -159,5 +159,37 @@ ok(n + '. trocar a densidade nao repinta a lista (so troca a classe do painel)',
 ok(n + '. a compacta recolhe o objeto de 3 linhas pra 1, e nao so o respiro',
   /\.painel-res\.compacta \.lic \.obj\{-webkit-line-clamp:1/.test(CSS1)); n++;
 
+/* ── 6. A NOTA DE ADERENCIA TEM TRES FAIXAS (bater-o-olho com o molde, fatia A11) ────────────
+   O molde manda a barra em TRES cores (#4E9A06 >=80 · #2CA9E0 >=65 · #94A3B8 abaixo) e a tela
+   pintava TUDO de verde.
+   >>> E ISSO NAO ERA FEIURA, ERA UMA AFIRMACAO ERRADA. Verde e o sinal de "bom" deste sistema
+       inteiro; em 22% de aderencia ele dizia "otimo" sobre um edital que quase nao tem nada
+       nosso — na linha em que se decide montar proposta. O rotulo dizia 22% e a cor dizia
+       vai fundo, e quando os dois discordam quem ganha e a cor. */
+ok(n + '. *** a aderencia tem TRES faixas, e nao uma cor so ***',
+  /function faixaAderencia\(pct\)\{ return pct >= 80 \? 'alta' : pct >= 65 \? 'media' : 'baixa'; \}/.test(LIMPO)); n++;
+ok(n + '. ...e a faixa e aplicada na linha (a classe sai junto do desenho)',
+  /class="aderencia '\+faixaAderencia\(pct\)\+'"/.test(LIMPO)); n++;
+ok(n + '. ...com cor propria pra barra E pro numero em cada faixa',
+  /\.aderencia\.media \.barra i\{background:var\(--azul-600\)\}/.test(CSS1)
+  && /\.aderencia\.media \.pct\{color:var\(--sinal-info-tinta\)\}/.test(CSS1)
+  && /\.aderencia\.baixa \.barra i\{background:var\(--cinza-500\)\}/.test(CSS1)
+  && /\.aderencia\.baixa \.pct\{color:var\(--cinza-600\)\}/.test(CSS1)); n++;
+/* O trilho do molde e o tom de DIVISOR, e a tela usava o de BORDA DE CARTAO — um tom acima.
+   E a altura na linha e 4px (os 5px sao do bloco do drawer, que e outra peca). */
+ok(n + '. o trilho e a altura da barra vieram do molde (divisor, 4px)',
+  /\.aderencia \.barra\{width:52px;height:4px;border-radius:var\(--raio-pilula\);background:var\(--borda-divisor\)/.test(CSS1)); n++;
+/* AS DUAS CORES CLARAS DO MOLDE REPROVARAM na medicao contra o trilho (minimo 3:1 de componente
+   grafico): #2CA9E0 = 2,36:1 e #94A3B8 = 2,56:1. Desceram um degrau na nossa rampa, que e a
+   mesma fuga ja paga no botao primario. O assert cobra que a medicao esteja ESCRITA — regra de
+   AA sem o numero ao lado e a que alguem afrouxa primeiro. */
+ok(n + '. *** e a fuga de AA esta medida e escrita, com os numeros ***',
+  /#2CA9E0 = 2,36:1 REPROVA/.test(L) && /#94A3B8 = 2,56:1 REPROVA/.test(L)
+  && /#4E9A06 = 3,12:1 passa/.test(L)); n++;
+/* Zero hex a mao continua valendo: o molde manda pelo TOKEN, e cor escrita na regra e a que
+   envelhece sozinha quando o tema muda. */
+ok(n + '. nenhuma das faixas escreve hex a mao (so token do tema)',
+  !/\.aderencia\.(media|baixa) [^\n]*#[0-9A-Fa-f]{6}/.test(L)); n++;
+
 console.log('\nRESULTADO: ' + p + ' ok, ' + f + ' falha(s)');
 if (f) process.exit(1);

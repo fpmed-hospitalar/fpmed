@@ -697,12 +697,33 @@ select[disabled],input[disabled],textarea[disabled]{
    >>> ANTES DE CRUZAR NÃO APARECE NADA — nem 0%, nem barra vazia. "0% aderente" é a lição S6 em
        forma de gráfico: quem lê entende "não temos nada disto", quando a verdade é "ainda não
        olhei". O botão de cruzar continua ali, que é a resposta honesta. */
+/* ══ AS TRÊS FAIXAS DA ADERÊNCIA — DIVERGÊNCIA DE MOLDE CORRIGIDA NO BATER-O-OLHO (A11) ═══════
+   Achado ao reler o handoff em 14/08: o molde manda a barra em TRÊS cores por faixa
+   (`#4E9A06` ≥80 · `#2CA9E0` ≥65 · `#94A3B8` abaixo), e esta tela pintava TUDO de verde.
+   >>> ISSO NÃO ERA FEIURA, ERA UMA AFIRMAÇÃO ERRADA. Verde é o sinal de "bom" deste sistema
+       inteiro; usá-lo em 22% de aderência é a tela dizendo "ótimo" sobre um edital que quase
+       não tem nada nosso — e essa é a linha que decide se alguém monta proposta. O rótulo dizia
+       "22%" e a cor dizia "vai fundo".
+   >>> AS DUAS CORES CLARAS DO MOLDE NÃO PASSARAM NA MEDIÇÃO, e por isso desceram um degrau na
+       nossa rampa — a mesma fuga já paga no botão primário, e pelo mesmo motivo. MEDIDO contra
+       o trilho `--borda-divisor` (#EEF1F6), mínimo de 3:1 para componente gráfico:
+         #2CA9E0 = 2,36:1 REPROVA -> --azul-600  (#1576a5) = 4,45:1
+         #94A3B8 = 2,56:1 REPROVA -> --cinza-500 (#6B7787) = 4,02:1
+         #4E9A06 = 3,12:1 passa   -> fica o do molde (--sinal-bom-icone)
+       E o TEXTO da porcentagem acompanha a faixa, medido sobre o fundo do chip (--azul-100):
+         alta 5,39:1 · média 5,21:1 · baixa 4,89:1 — os três em AA.
+   >>> O TRILHO TAMBÉM ESTAVA UM TOM ERRADO: era `--cinza-200` (a borda de cartão) e o molde
+       pede o tom de DIVISOR. Corrigido, com a altura de 4px que o molde mede na linha. */
 .aderencia{display:inline-flex;align-items:center;gap:var(--esp-2);white-space:nowrap}
-.aderencia .barra{width:52px;height:5px;border-radius:var(--raio-pilula);
-  background:var(--cinza-200);overflow:hidden}
+.aderencia .barra{width:52px;height:4px;border-radius:var(--raio-pilula);
+  background:var(--borda-divisor);overflow:hidden}
 .aderencia .barra i{display:block;height:100%;background:var(--sinal-bom-icone)}
 .aderencia .pct{font-size:var(--txt-0);font-weight:var(--peso-forte);color:var(--sinal-bom-tinta);
   font-variant-numeric:tabular-nums}
+.aderencia.media .barra i{background:var(--azul-600)}
+.aderencia.media .pct{color:var(--sinal-info-tinta)}
+.aderencia.baixa .barra i{background:var(--cinza-500)}
+.aderencia.baixa .pct{color:var(--cinza-600)}
 
 /* ══ "⋯ MAIS AÇÕES" (fatia A3) ══════════════════════════════════════════════════════════════
    O "abrir no PNCP" saiu da ação principal e virou opção daqui. Ele não foi apagado: sair do
@@ -1744,6 +1765,10 @@ function aderenciaPct(lic){
   if(!tot) return null;
   return Math.round((Number(r.casados)||0) / tot * 100);
 }
+/* Os cortes são os do molde: 80 e 65. Eles moram numa função e não numa condição solta dentro do
+   `render`, porque a mesma faixa vale no cartão e no detalhe — e duas escadas de corte escritas
+   à mão acabam discordando na terceira tela, que é quando ninguém mais sabe qual é a certa. */
+function faixaAderencia(pct){ return pct >= 80 ? 'alta' : pct >= 65 ? 'media' : 'baixa'; }
 
 /* ══ A URGÊNCIA DA ABERTURA, EM TRÊS DEGRAUS (fatia A3) ═══════════════════════════════════════
    Os três nomes são os do molde — hoje / amanhã / normal — e cada um puxa o PAR FECHADO
@@ -2269,13 +2294,24 @@ async function buscarPorItens(){
    entram na lista, obedecendo os MESMOS filtros de UF e modalidade que a consulta principal
    obedece: trazer uma licitação de outro estado porque o item casou seria desligar um filtro que
    a pessoa ligou de propósito. */
+/* ══ ESTA CONSULTA NÃO PAGINA, E ISSO É PROVADO E NÃO SUPOSTO ═══════════════════════════════
+   A regra da casa é que toda consulta de lista ao banco passe pelo `lerPaginado` — o teto de
+   1000 do PostgREST já mordeu esta obra três vezes, e a pior delas respondeu "não achei
+   albumina" sobre meia base. Esta aqui é a exceção, e ela é de CONSTRUÇÃO, não de sorte:
+     · ela busca por uma LISTA EXPLÍCITA de números de controle;
+     · `numero_controle` é único em `licitacoes` (3.201 de 3.201 distintos, medido na A5);
+     · o lote é de LOTE_CONTROLES, e LOTE_CONTROLES < PAG_BANCO.
+   Ou seja: a resposta tem no máximo LOTE_CONTROLES linhas e não há como o teto cortá-la. O
+   número é constante nomeada — e não 80 escrito no meio do laço — justamente pra que a suíte
+   consiga provar a desigualdade em vez de acreditar neste comentário. */
+const LOTE_CONTROLES = 80;
 async function brutosPorControle(controles, uf, mod){
   const out = [];
-  for(let i = 0; i < controles.length; i += 80){
+  for(let i = 0; i < controles.length; i += LOTE_CONTROLES){
     // as aspas duplas são a sintaxe do `in.()` do PostgREST; o número de controle do PNCP não
     // tem aspas nem vírgula (é CNPJ-seq/ano), e o `replace` existe pra que continue sendo verdade
     // no dia em que a origem mudar de formato.
-    const lote = controles.slice(i, i+80).map(c => '"' + String(c).replace(/["(),]/g,'') + '"').join(',');
+    const lote = controles.slice(i, i+LOTE_CONTROLES).map(c => '"' + String(c).replace(/["(),]/g,'') + '"').join(',');
     let q = `${SB_URL}/rest/v1/licitacoes?select=bruto&numero_controle=in.(${lote})`;
     if (uf)  q += `&uf=eq.${encodeURIComponent(uf)}`;
     if (mod) q += `&modalidade_cod=eq.${encodeURIComponent(mod)}`;
@@ -4253,7 +4289,7 @@ function render(todos, kws, excl, aviso, procedencia, procIcone){
            mundos diferentes, e a contagem crua tratava os dois igual. Quando o total não é
            confiável (leitura truncada), ela cai de volta pra contagem, que continua verdadeira. */
         + (pct != null
-            ? '<span class="etq alvo"><span class="aderencia" title="'+alvo+' de '+((CRUZ.get(chaveLic(l))||{}).itens||[]).length+' itens do edital têm equivalente no nosso estoque">'
+            ? '<span class="etq alvo"><span class="aderencia '+faixaAderencia(pct)+'" title="'+alvo+' de '+((CRUZ.get(chaveLic(l))||{}).itens||[]).length+' itens do edital têm equivalente no nosso estoque">'
               + '<span class="barra"><i style="width:'+pct+'%"></i></span>'
               + '<span class="pct">'+pct+'% aderente</span></span></span>'
             : (alvo ? '<span class="etq alvo">'+ic('alvo')+' '+alvo+' itens no nosso estoque</span>' : ''))

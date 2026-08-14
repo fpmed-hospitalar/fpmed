@@ -973,3 +973,81 @@ o que vem **imediatamente antes** de cada rodapé, que é onde a promessa mora.
 
 Seis asserts alheios reapontados (S8): todos cravavam o emoji dentro do rótulo, e o que
 prometiam — o estado do botão, a condição do aviso, a data no rótulo do jornal — não mudou.
+
+
+---
+
+# BATER-O-OLHO DE 14/08/2026 — a segunda passada (fatia A11)
+
+**O que foi feito:** o zip oficial (`Tela Encontrar FPMED2.zip`, raiz do projeto) foi extraido
+LOCALMENTE (fora do repo, como manda o .gitignore) e os tres screenshots — `01-visao-geral`,
+`02-selecao-e-paleta`, `03-calendario` — foram comparados com a Encontrar **como ela esta hoje**,
+depois das fatias A3, A4 e A9. A medicao profunda de 13/08 (as secoes acima) continua valendo;
+esta passada procura o que MUDOU desde entao e o que a primeira nao pegou.
+
+## Medicao automatica: cada HEX do molde contra o tema
+
+`59 hexes distintos` no README do handoff. **39 estao no `fpmed_tema.css` com o valor exato.**
+Dos 19 ausentes, **18 pertencem a componentes que esta tela nao tem** (avatar da sidebar, gatilho
+de busca global, paleta ⌘K, skeleton, drawer de 460px, barra flutuante de selecao em massa) — e
+token que nao tem dono nao e divergencia, e inventario morto.
+
+E o inverso, que e o que a regra do dono cobra: **ZERO hex escrito a mao** dentro do
+`fpmed_licitacoes.html`. Os quatro que a varredura acusou (`#2CA9E0`, `#1576A5`, `#825616`,
+`#FDF5E8`) estao todos dentro de COMENTARIO, registrando medicao de contraste — nenhum em regra
+de estilo.
+
+## DIVERGENCIA DE TOKEN — corrigida nesta fatia
+
+**A nota de aderencia pintava tudo de verde.** O molde manda tres cores por faixa
+(`#4E9A06` ≥80 · `#2CA9E0` ≥65 · `#94A3B8` abaixo); a tela usava `--sinal-bom-icone` sempre.
+
+> **Isso nao era feiura, era uma afirmacao errada.** Verde e o sinal de "bom" deste sistema
+> inteiro. Em 22% de aderencia, a barra dizia "otimo" sobre um edital que quase nao tem nada
+> nosso — na linha em que se decide montar proposta. O rotulo dizia `22%` e a cor dizia
+> "vai fundo", e quando os dois discordam quem ganha e a cor.
+
+Corrigido junto: o **trilho** era `--cinza-200` (a borda de CARTAO) e o molde pede o tom de
+DIVISOR; e a **altura** era 5px, que e a medida do bloco do drawer — na LINHA o molde mede 4px.
+
+**As duas cores claras do molde reprovaram**, medidas contra o trilho (minimo 3:1 de componente
+grafico), e desceram um degrau na nossa rampa — a mesma fuga ja paga no botao primario:
+
+| faixa | molde | contra o trilho | ficou |
+|---|---|---|---|
+| alta (≥80) | `#4E9A06` | 3,12:1 — passa | `--sinal-bom-icone` (o do molde) |
+| media (≥65) | `#2CA9E0` | **2,36:1 reprova** | `--azul-600` = 4,45:1 |
+| baixa | `#94A3B8` | **2,56:1 reprova** | `--cinza-500` = 4,02:1 |
+
+O TEXTO da porcentagem acompanha a faixa, medido sobre o fundo do chip (`--azul-100`):
+alta 5,39:1 · media 5,21:1 · baixa 4,89:1 — os tres em AA.
+Suite: `tests/testa_painel_resultados.js` (+6 asserts, 27 no total).
+
+## DIVERGENCIAS DE OPINIAO — anotadas, NAO mudadas
+
+Estas nao sao erro de nenhum dos dois lados: sao escolhas que a tela ja fez, com motivo
+registrado. Ficam aqui para o dono decidir, e nao para eu decidir sozinho.
+
+1. **A linha selecionada e MUITO mais azul que a do molde.** Molde: fundo `#F8FBFE` (quase
+   branco) **e a barra de urgencia da esquerda vira `#2CA9E0`**. Nosso: fundo `--azul-50`
+   (`#eaf6fc`) e a barra CONTINUA na cor da urgencia.
+   > Trocar so o fundo pelo do molde deixaria a selecao quase invisivel, porque nao temos a barra
+   > azul que compensa. Sao duas metades do mesmo desenho, e importar meia mecanica e como se
+   > troca acabamento por defeito. **Decisao do dono: manter os dois azuis nossos, ou adotar o
+   > par completo do molde?**
+2. **Cinco indicadores, e nao os quatro do molde** — e com outro conteudo. Os do molde sao
+   agregados da plataforma ("945.699 na base"); os nossos sao medidos da BUSCA em curso. Com
+   3.201 licitacoes no indice, "945.699" nao teria de onde sair.
+3. **O "+ Filtro" do molde (popover dentro da barra) nao existe.** Os filtros moram na coluna da
+   esquerda e os ATIVOS viram chip dentro da barra — decisao da A3, com motivo escrito.
+4. **A coluna direita de 206px virou a linha `.dados`** de quatro campos (valor · municipio ·
+   portal · encerra em).
+5. **Nao existem:** barra flutuante de selecao em massa, paleta ⌘K, atalhos de teclado
+   (J/K/Enter/F/X//), paginacao no rodape, e o drawer lateral de 460px. O detalhe do pregao abre
+   em painel DENTRO da tela (fatia A4), com todos os itens e o teto CMED — que e mais do que o
+   drawer do molde entrega.
+6. **A caixa de selecao e nativa** (`accent-color`) e tem 17px; o molde desenha uma de 16px com
+   borda `#CBD5E1`. A nativa traz teclado e leitor de tela de graca.
+7. **O trilho do molde e `#EDF1F6` e o divisor dele e `#EEF1F6`** — duas tintas a UMA unidade de
+   distancia. O tema tem uma so (`--borda-divisor`). Criar um token para um degrau que o olho
+   nao separa seria aumentar o vocabulario sem aumentar o que ele diz.

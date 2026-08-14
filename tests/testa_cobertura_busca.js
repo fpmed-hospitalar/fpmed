@@ -30,17 +30,42 @@ ok('1. *** nenhuma consulta ao indice usa `limit=1000` ***', !/licitacoes\?selec
        QUARTA fonte, no dia em que ela existir — que e o oposto de precisar ser atualizado a
        cada uma. Um assert que exige ser reescrito a cada crescimento e um assert que, na
        terceira pressa, alguem "conserta" trocando o numero sem ler o que ele guardava. */
+/* ══ REAPONTADO DE NOVO EM 14/08 (fatia A9) — E DESTA VEZ O ASSERT FICOU MAIS DURO, NAO MENOS ══
+   A fatia A9 trouxe uma consulta que NAO pagina: `brutosPorControle`, que busca licitacoes por
+   uma LISTA EXPLICITA de numeros de controle. A tentacao era abrir uma excecao pro nome dela.
+   >>> EXCECAO POR NOME E COMO ESTE ASSERT MORRE: o proximo que nao paginar tambem ganha o
+       dele, e em tres meses a regra vale pra nada. Entao a excecao e por PROVA, e ela custa um
+       assert NOVO (2b): a consulta so escapa da paginacao se buscar por lista explicita de
+       chave unica E se o tamanho do lote for provadamente menor que a pagina do PostgREST.
+       Com isso, a resposta nao pode ser cortada — nao porque alguem tomou cuidado, mas porque
+       nao ha linhas suficientes pra cortar. */
 (function () {
   const consultas = [...L.matchAll(/\$\{SB_URL\}\/rest\/v1\/(licitacoes|licitacoes_acompanhadas)\?select=/g)];
   /* A JANELA OLHA PROS DOIS LADOS, e isso me custou um vermelho: as consultas aparecem nas duas
      formas — `const q = ...` e depois `lerPaginado(q)` (a chamada vem DEPOIS), e
      `lerPaginado(`...`)` com a consulta embutida (a chamada vem ANTES). Olhando so pra frente,
      a segunda forma parecia nao paginar. */
-  const semPaginar = consultas.filter(m =>
-    !/lerPaginado\(/.test(L.slice(Math.max(0, m.index - 300), m.index + 700))).map(m => m[1]);
-  ok('2. *** TODA consulta de lista ao banco passa pela leitura paginada ***',
+  const semPaginar = consultas.filter(m => {
+    const volta = L.slice(Math.max(0, m.index - 300), m.index + 700);
+    if (/lerPaginado\(/.test(volta)) return false;
+    /* DUAS SAIDAS SEM PAGINACAO, e as duas por PROVA e nao por nome:
+       1. lista explicita de chave unica, com lote limitado (o assert 2b cobra o limite);
+       2. leitura de UMA linha: `numero_controle=eq.<x>&limit=1`. Uma linha nao tem como ser
+          cortada por um teto de mil, e chamar isso de "consulta de lista" faria o assert
+          cobrar paginacao de um `select ... limit 1` — que e como um assert vira ritual. */
+    if (/numero_controle=in\.\(\$\{lote\}\)/.test(volta)) return false;
+    return !/numero_controle=eq\.[\s\S]{0,120}?limit=1'/.test(volta);
+  }).map(m => m[1]);
+  ok('2. *** TODA consulta de lista ao banco pagina — ou busca por lista explicita de chave ***',
     consultas.length >= 3 && semPaginar.length === 0,
     { consultas: consultas.length, semPaginar });
+  /* O ASSERT QUE PAGA PELA EXCECAO. Sem ele, "busca por lista explicita" seria so uma frase:
+     alguem poe lote de 5.000 e a consulta volta a ser cortada em 1000, com a bencao do 2. */
+  const mLote = L.match(/const LOTE_CONTROLES = (\d+);/);
+  const mPag = L.match(/const PAG_BANCO = (\d+)/);
+  ok('2b. *** e o lote da busca por lista e PROVADAMENTE menor que a pagina do PostgREST ***',
+    !!mLote && !!mPag && Number(mLote[1]) < Number(mPag[1]),
+    { lote: mLote && mLote[1], pagina: mPag && mPag[1] });
 })();
 ok('3. existe UMA funcao de paginacao (nao duas copias do laco)',
   (L.match(/async function lerPaginado\(/g) || []).length === 1);

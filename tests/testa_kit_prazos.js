@@ -125,22 +125,33 @@ ok('18. *** os 3 dias uteis sao os MESMOS que a tela de Pecas ja conta ***',
 // ══════════════════════════════════════════════════════════════════════════════════════════
 const kit = novasTarefas();
 ok('19. o kit gravado tem ' + KIT_TOTAL + ' tarefas', kit.length === KIT_TOTAL, kit.length);
-// ══ 2b. O NUMERO "15" NAO PODE SER ESCRITO NA TELA ═════════════════════════════════════════
-// *** MEDIDO EM 14/08: a tela tem 14 e o semeador tem 15. *** "Enviar proposta atualizada" saiu
-// do modelo da tela em 11/08 (virou botao de verdade na Habilitacao) e continua no semeador. Os
-// 2.555 registros ja semeados tem 15 gravados; quem nascer nesta tela nasce com 14. Os dois
-// numeros estao certos pro que cada um e — o que seria errado e a TELA carimbar um deles.
-ok('19b. *** a tela e o semeador REALMENTE divergem (14 x 15) — pendencia registrada ***',
-  TAREFAS_MODELO.length === 14 && semeia.TAREFAS_MODELO.length === 15,
+// ══ 2b. AS DUAS LISTAS DO KIT, E O NUMERO QUE NAO PODE SER ESCRITO NA TELA ══════════════════
+// *** MEDIDO EM 14/08 e RESOLVIDO EM 14/08 (fatia A14). *** "Enviar proposta atualizada" saiu do
+// modelo da TELA em 11/08 (virou botao de verdade na Habilitacao) e tinha ficado no SEMEADOR:
+// a tela nascia com 14 e o semeador com 15. A pendencia foi registrada aqui e fechada na A14.
+// >>> O ASSERT MUDOU DE LADO DE PROPOSITO, e isto e o que ele guarda agora: duas listas com o
+//     MESMO nome e conteudo diferente e como um negocio nasce diferente conforme quem o criou.
+//     Enquanto divergiam, o assert cobrava que a divergencia fosse CONHECIDA; agora que foram
+//     alinhadas, ele cobra que continuem alinhadas — que e a promessa mais forte das duas.
+// >>> E OS 2.555 REGISTROS ANTIGOS CONTINUAM COM 15 GRAVADOS. Nada foi reescrito no banco:
+//     apagar item de checklist de negocio fechado seria reescrever o que a pessoa marcou. Por
+//     isso o assert 32b abaixo existe — e por isso a TELA nunca pode carimbar nenhum dos dois.
+ok('19b. *** a tela e o semeador tem O MESMO kit (14 x 14) ***',
+  TAREFAS_MODELO.length === 14 && semeia.TAREFAS_MODELO.length === 14,
   { tela: TAREFAS_MODELO.length, semeador: semeia.TAREFAS_MODELO.length });
-ok('19c. *** por isso nenhum texto da tela escreve "15 tarefas" a mao ***',
-  !/\d+ tarefas, \d+ (delas )?com prazo/.test(src) && !/kit padrão \(15 tarefas\)/i.test(src));
+ok('19c. *** e nenhum texto da tela escreve o numero de tarefas a mao ***',
+  !/\d+ tarefas, \d+ (delas )?com prazo/.test(src) && !/kit padrão \(1[45] tarefas\)/i.test(src));
 ok('19d. ...e o contador do card usa o total GRAVADO, nunca a constante',
   /const t = \(n && Array\.isArray\(n\.tarefas\)\) \? n\.tarefas : \[\];[\s\S]{0,120}total: t\.length/.test(src.replace(/\r/g, '')));
-ok('19e. a diferenca e exatamente a tarefa que virou botao em 11/08',
-  semeia.TAREFAS_MODELO.map(([, t]) => t).filter(t => TAREFAS_MODELO.map(([, x]) => x).indexOf(t) < 0)
-    .join('|') === 'Enviar proposta atualizada',
+/* O assert de identidade compara TEXTO A TEXTO, e nao so o tamanho: duas listas de 14 com um
+   item trocado dariam o mesmo comprimento e negocios diferentes. */
+ok('19e. *** e as duas listas sao identicas, item a item, na mesma ordem ***',
+  semeia.TAREFAS_MODELO.map(([s, t]) => s + '|' + t).join('\n')
+    === TAREFAS_MODELO.map(([s, t]) => s + '|' + t).join('\n'),
   semeia.TAREFAS_MODELO.map(([, t]) => t).filter(t => TAREFAS_MODELO.map(([, x]) => x).indexOf(t) < 0));
+ok('19f. ...e a tarefa que virou botao em 11/08 nao esta em nenhuma das duas',
+  !semeia.TAREFAS_MODELO.some(([, t]) => t === 'Enviar proposta atualizada')
+  && !TAREFAS_MODELO.some(([, t]) => t === 'Enviar proposta atualizada'));
 ok('20. *** e NENHUMA delas carrega `prazo` gravado ***',
   kit.every(t => !('prazo' in t)), kit.filter(t => 'prazo' in t));
 ok('21. o que se grava por tarefa continua sendo secao/texto/feita',
@@ -183,10 +194,18 @@ ok('31. tarefa fora do mapa nao ganha prazo inventado',
 // ══════════════════════════════════════════════════════════════════════════════════════════
 ok('32. kit novo conta 0 de ' + KIT_TOTAL, contaKit(neg).feitas === 0 && contaKit(neg).total === KIT_TOTAL,
   contaKit(neg));
-// E o negocio ANTIGO, semeado com 15, continua contando /15 — porque `contaKit` le o gravado.
+/* E o negocio ANTIGO, semeado com 15, continua contando /15 — porque `contaKit` le o GRAVADO.
+   >>> A LISTA DE 15 E MONTADA AQUI, E NAO TIRADA DO SEMEADOR (14/08, fatia A14). Antes ela vinha
+       de `semeia.novasTarefas()`, e no dia em que o semeador foi alinhado em 14 este assert
+       passou a afirmar "15" sobre uma lista de 14 e ficou vermelho — sem que nada no produto
+       tivesse piorado. O assert media o SEMEADOR quando o assunto dele e o BANCO: os 2.555
+       registros gravados com 15 nao mudam porque uma constante mudou. Fixture proprio, entao. */
+const KIT_ANTIGO = semeia.TAREFAS_MODELO
+  .map(([secao, texto]) => ({ secao, texto, feita: false }))
+  .concat([{ secao: 'classificacao', texto: 'Enviar proposta atualizada', feita: false }]);
 ok('32b. *** negocio antigo (15 gravadas) continua marcando /15, e nao /14 ***',
-  contaKit({ tarefas: semeia.novasTarefas() }).total === 15,
-  contaKit({ tarefas: semeia.novasTarefas() }).total);
+  KIT_ANTIGO.length === 15 && contaKit({ tarefas: KIT_ANTIGO }).total === 15,
+  contaKit({ tarefas: KIT_ANTIGO }).total);
 ok('33. o total e o do que esta GRAVADO, e nao a constante',
   contaKit({ tarefas: [{ feita: true }, { feita: false }] }).total === 2);
 ok('34. negocio sem tarefas conta 0 de 0 (e o card nao mostra medidor)',
