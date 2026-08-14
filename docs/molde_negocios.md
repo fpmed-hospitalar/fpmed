@@ -1,5 +1,64 @@
 # O MOLDE NO NEGÓCIOS — item 7b
 
+---
+
+## ⚠ RECONHECIMENTO PARA B2 E B4 — o alicerce que as duas supõem **não existe** (13/08)
+
+Antes de escrever uma linha da B2, fui ler o kit de tarefas que as duas fatias mandam usar. O
+que achei muda o plano das duas, e registro aqui em vez de construir por cima.
+
+### 1 · As 15 tarefas existem, mas **não têm data nenhuma**
+
+```js
+const TAREFAS_MODELO = [ ['oportunidade','Analisar o edital'], … ];   // [secao, texto]
+```
+
+O modelo é `[seção, texto]` — **não há campo de data**, nem âncora, nem prazo. O que fica gravado
+em `negocios.tarefas` (JSONB) é `{secao, texto, feita}`.
+
+> **B2 manda "RECALCULAR as tarefas do kit ancoradas na abertura".** Não há o que recalcular:
+> nenhuma tarefa tem data hoje. O recálculo só passa a existir **depois** que a B4 criar a
+> ancoragem — ou seja, **a dependência entre as duas está invertida na ordem da caixa**.
+
+### 2 · O checklist foi **removido da tela por decisão registrada do dono**
+
+No próprio arquivo, em 11/08:
+
+> *"O medidor 4/15 saiu do card em 11/08 junto com o checklist fixo (decisão do Lemuel: a equipe
+> não usa). O `tarefas` continua no banco — some da tela, não do dado."*
+
+E a `novasTarefas()` está no arquivo com o comentário *"não é mais chamada"* — ela sobrevive só
+como legenda do JSONB dos 2.555 registros já gravados.
+
+> **B4 manda trazer as 15 tarefas de volta, com datas, para dentro da Agenda, e pôr o contador
+> "0/15" no cartão** — que é exatamente o medidor que o dono mandou tirar há dois dias.
+>
+> **Isto pode estar certo**: com datas e Agenda, o kit deixa de ser um checklist morto e vira
+> prazo — outra coisa. Mas é uma **reversão de decisão registrada do dono**, e a regra desta casa
+> é que reversão precisa do motivo escrito e do aval de quem decidiu. Não reverto sozinho.
+
+### 3 · O que **dá** para fazer sem nada disso
+
+| parte | depende do kit datado? |
+|---|---|
+| B2 — ação "Remarcar abertura" com calendário, sempre disponível e óbvia no SUSPENSO | **não** |
+| B2 — atualizar cartão e Agenda com a data nova | **não** (a Agenda já lê `negocios.abertura`) |
+| B2 — histórico aditivo (data anterior, quando, observação) | **não** |
+| B2 — recalcular tarefas | **sim** — bloqueado |
+| B4 — passos 1 e 3, recebimento da URL, saída dupla | **não** |
+| B4 — passo 2 com kit datado + Agenda + contador 0/15 | **sim** — bloqueado *e* é reversão |
+
+> A B2 é **três quartos executável**; a B4 é **metade**. Nenhuma das duas é bloqueada por
+> inteiro — mas as duas partes bloqueadas são justamente as que a caixa descreve com mais
+> detalhe, e entregá-las pela metade sem dizer seria pior que não entregar.
+
+### 4 · O contrato continua ausente
+
+`docs/contrato_itens_editais.md` **não existe** no repo nesta rodada. B3, B5 e B6 seguem
+pendentes, sem esquema paralelo inventado.
+
+---
+
 > Companheiro do `docs/molde_encontrar.md`, que é **o molde do sistema**. Aqui fica só o que é
 > **desta tela**: o que do molde entrou, o que **não** entrou e por quê, e o que a medição achou.
 >
