@@ -2704,7 +2704,22 @@ function detItensMarcados(){
 }
 function mandarDetalheProFunil(){
   if(!DET) return;
-  const id = DET.lic.numeroControlePNCP || chaveLic(DET.lic);
+  /* A CHAVE É O `numero_controle` DO PNCP, E SÓ ELE — está escrito assim no contrato
+     (docs/contrato_itens_editais.md, seção 0). Medido: 3.201 de 3.201 licitações do índice o
+     têm preenchido e distinto, e ele é a ÚNICA chave que serve às duas fontes desta tela (o
+     nosso índice e o PNCP ao vivo).
+     >>> EU TINHA POSTO UM FALLBACK pro `chaveLic` (cnpj/ano/sequencial) aqui, e ele estava
+         errado: o outro lado resolve por `numero_controle`, então uma chave de outro formato
+         chegaria lá como "não encontrei esta licitação" — sem erro, sem aviso, só um assistente
+         que abre vazio. Sem a chave certa, é melhor DIZER que não dá do que navegar torto. */
+  const id = String(DET.lic.numeroControlePNCP || '').trim();
+  if(!id){
+    const cx = document.getElementById('det-conversa');
+    if(cx) cx.innerHTML = '<div class="aviso err" style="text-align:left;padding:12px 14px">'
+      + 'Esta licitação não trouxe o número de controle do PNCP, que é a chave que o funil usa '
+      + 'para reconhecê-la. Dá para incluí-la à mão pelo Negócios.</div>';
+    return;
+  }
   const itens = detItensMarcados();
   const q = 'adicionar=' + encodeURIComponent(id) + (itens.length ? '&itens=' + encodeURIComponent(itens.join(',')) : '');
   location.href = 'fpmed_negocios.html?' + q;
