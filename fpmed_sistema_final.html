@@ -371,6 +371,8 @@ select.filter{padding:8px 12px;border:1px solid var(--borda);border-radius:9px;f
           <button class="btn btn-primary" onclick="openModal('modal-cotacao')">+ Nova</button>
         </div>
       </div>
+      <!-- B7 — PRODUTOS SEM EAN: a fila de trabalho da equipe, não um alerta decorativo. -->
+      <div id="ean-pendencia" style="display:none;margin-bottom:16px"></div>
       <div class="table-wrap" id="tabela-cotacoes">
         <div class="loading"><div class="spinner"></div> Carregando...</div>
       </div>
@@ -442,6 +444,14 @@ select.filter{padding:8px 12px;border:1px solid var(--borda);border-radius:9px;f
       <div class="form-group"><label>Princípio Ativo</label><input type="text" id="cot-principio" placeholder="Ex: AMOXICILINA"></div>
       <div class="form-group"><label>Marca</label><input type="text" id="cot-marca"></div>
     </div>
+    <!-- B7 — EAN e REGISTRO ANVISA. NUNCA obrigatórios: em branco quer dizer "não sabemos",
+         que é diferente de "não tem". Campo obrigatório aqui forçaria alguém a inventar um
+         código, e EAN inventado é PIOR que EAN ausente — ele casa com o produto errado. -->
+    <div class="form-row">
+      <div class="form-group"><label>EAN (código de barras)</label><input type="text" id="cot-ean" inputmode="numeric" autocomplete="off" placeholder="opcional — deixe vazio se não souber"></div>
+      <div class="form-group"><label>Registro ANVISA</label><input type="text" id="cot-registro" inputmode="numeric" autocomplete="off" placeholder="opcional"></div>
+    </div>
+    <div id="cot-cmed-sug" style="display:none"></div>
     <div class="form-row">
       <div class="form-group"><label>Fornecedor</label>
         <select id="cot-fornecedor"><option value="">FPMED (sem markup)</option></select>
@@ -1758,6 +1768,10 @@ async function autoRefreshEstoque(){
 setInterval(autoRefreshEstoque, 60000);
 document.addEventListener('visibilitychange', () => { if (!document.hidden) autoRefreshEstoque(); });
 function renderCotacoes(lista) {
+  // B7 — o painel de pendência reflete a BASE INTEIRA, nunca o filtro da busca: por isso só é
+  // remontado quando chega a lista completa. Filtrar a tela não pode mudar quantos produtos
+  // estão sem EAN — seria um número que muda de valor conforme quem olha.
+  if (lista === cotacoes) { try { renderEanPendencia(); } catch(e){ console.error('pendência EAN:', e); } }
   const el = document.getElementById('tabela-cotacoes');
   if (!lista.length) { el.innerHTML = '<div class="empty-state"><div class="icon">💰</div><p>Nenhuma cotação cadastrada</p></div>'; return; }
   el.innerHTML = `<table><thead><tr>
@@ -1789,6 +1803,157 @@ function filtrarCotacoes() {
     (!t || c.tipo === t)
   ));
 }
+
+// ═══ B7 — PRODUTOS SEM EAN: A FILA DE TRABALHO DA EQUIPE ═══════════════════════════════════
+// Agrupa por produto+marca: a mesma caneta cotada por quatro fornecedores é UM produto pra
+// completar, não quatro. A contagem sai do que já está na memória (zero consulta); a sugestão
+// da CMED só é buscada quando alguém ABRE a lista, e só para os grupos exibidos.
+var EAN_PEND_PAGINA = 25;
+var _eanPend = [], _eanPendAberto = false, _eanPendMostrar = EAN_PEND_PAGINA, _eanSugCache = {};
+
+function eanGruposSemEan(lista){
+  var g = {}, ordem = [];
+  (lista || []).forEach(function(c){
+    if (_eanDigitos(c.ean)) return;                                   // já tem EAN: não é pendência
+    var prod = String(c.produto || '').trim();
+    if (!prod) return;
+    var marca = String(c.marca || '').trim();
+    var k = prod.toUpperCase() + '|' + marca.toUpperCase();
+    if (!g[k]) { g[k] = { chave:k, produto:prod, marca:marca, principio_ativo:String(c.principio_ativo || '').trim(), ids:[], comRegistro:0 }; ordem.push(k); }
+    g[k].ids.push(c.id);
+    if (_eanDigitos(c.registro_anvisa)) g[k].comRegistro++;
+    if (!g[k].principio_ativo && c.principio_ativo) g[k].principio_ativo = String(c.principio_ativo).trim();
+  });
+  return ordem.map(function(k){ return g[k]; })
+              .sort(function(a,b){ return b.ids.length - a.ids.length || a.produto.localeCompare(b.produto); });
+}
+function _eanTotalProdutos(lista){
+  var s = {};
+  (lista || []).forEach(function(c){
+    var p = String(c.produto || '').trim();
+    if (p) s[p.toUpperCase() + '|' + String(c.marca || '').trim().toUpperCase()] = 1;
+  });
+  return Object.keys(s).length;
+}
+
+function renderEanPendencia(){
+  var box = document.getElementById('ean-pendencia'); if (!box) return;
+  _eanPend = eanGruposSemEan(cotacoes);
+  if (!_eanPend.length) { box.style.display = 'none'; box.innerHTML = ''; return; }
+  var totalProd = _eanTotalProdutos(cotacoes);
+  var linhas = _eanPend.reduce(function(a, g){ return a + g.ids.length; }, 0);
+  box.style.display = 'block';
+  box.innerHTML =
+    '<div style="border:1px solid var(--borda);border-radius:10px;background:var(--branco);padding:14px 16px">'
+    + '<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">'
+    +   '<strong style="font-family:\'Montserrat\',sans-serif;font-size:14px">Produtos sem EAN</strong>'
+    +   '<span class="badge badge-yellow">' + _eanPend.length + ' de ' + totalProd + ' produtos</span>'
+    +   '<span style="font-size:12px;color:var(--muted)">' + linhas + ' linhas de cotação · sem EAN o teto CMED cai no casamento por substância, que é o degrau menos preciso</span>'
+    +   '<button type="button" class="btn btn-outline btn-sm" style="margin-left:auto" onclick="eanPendenciaAlterna()">'
+    +     (_eanPendAberto ? 'Fechar' : 'Ver a lista e as sugestões da CMED') + '</button>'
+    + '</div>'
+    + '<div id="ean-pend-lista" style="margin-top:' + (_eanPendAberto ? '12px' : '0') + '"></div>'
+    + '</div>';
+  if (_eanPendAberto) _eanPendRenderLista();
+}
+function eanPendenciaAlterna(){
+  _eanPendAberto = !_eanPendAberto;
+  if (!_eanPendAberto) _eanPendMostrar = EAN_PEND_PAGINA;
+  renderEanPendencia();
+  if (_eanPendAberto) _eanPendBuscaSugestoes();
+}
+function eanPendenciaMais(){ _eanPendMostrar += EAN_PEND_PAGINA; _eanPendRenderLista(); _eanPendBuscaSugestoes(); }
+
+// Busca a sugestão SÓ dos grupos visíveis, e guarda em cache pra re-render não repetir consulta.
+async function _eanPendBuscaSugestoes(){
+  var vis = _eanPend.slice(0, _eanPendMostrar).filter(function(g){ return !(g.chave in _eanSugCache); });
+  if (!vis.length) return;
+  await Promise.all(vis.map(async function(g){
+    try { _eanSugCache[g.chave] = await sugereEanCmed(g); }
+    catch(e){ _eanSugCache[g.chave] = { ean:'', registro:'', motivo:'falha ao consultar (' + e.message + ')', candidatos:0 }; }
+  }));
+  if (_eanPendAberto) _eanPendRenderLista();
+}
+function _eanPendRenderLista(){
+  var el = document.getElementById('ean-pend-lista'); if (!el) return;
+  var vis = _eanPend.slice(0, _eanPendMostrar);
+  var linhasHtml = vis.map(function(g, i){
+    var s = _eanSugCache[g.chave];
+    var sug = !s ? '<span style="color:var(--muted)">consultando a CMED…</span>'
+      : (s.ean || s.registro)
+        ? (s.ean ? 'EAN <strong>' + _eanEsc(s.ean) + '</strong>' : '<span style="color:var(--muted)">EAN: ' + _eanEsc(s.motivo) + '</span>')
+          + (s.registro ? '<br><span style="color:var(--muted)">Registro ' + _eanEsc(s.registro) + '</span>' : '')
+          + '<br><button type="button" class="btn btn-outline btn-sm" style="margin-top:4px" onclick="eanPendUsarSugestao(' + i + ')">Usar sugestão</button>'
+        : '<span style="color:var(--muted)">' + _eanEsc(s.motivo) + '</span>';
+    return '<tr>'
+      + '<td><strong style="font-size:12px">' + _eanEsc(g.produto) + '</strong>'
+      +   '<div style="font-size:11px;color:var(--muted)">' + _eanEsc(g.principio_ativo || 'sem princípio ativo') + '</div></td>'
+      + '<td style="font-size:12px">' + _eanEsc(g.marca || '—') + '</td>'
+      + '<td style="font-size:12px">' + g.ids.length + '</td>'
+      + '<td style="font-size:11.5px;line-height:1.5;min-width:230px">' + sug + '</td>'
+      + '<td style="min-width:250px">'
+      +   '<input type="text" id="ean-in-' + i + '" inputmode="numeric" autocomplete="off" placeholder="EAN" style="width:130px;padding:6px 8px;border:1px solid var(--borda);border-radius:6px;font-size:12px;font-family:\'Inter\',sans-serif">'
+      +   '<input type="text" id="ean-reg-' + i + '" inputmode="numeric" autocomplete="off" placeholder="Registro" style="width:110px;padding:6px 8px;border:1px solid var(--borda);border-radius:6px;font-size:12px;font-family:\'Inter\',sans-serif;margin-left:4px">'
+      +   '<button type="button" class="btn btn-primary btn-sm" style="margin-left:4px" onclick="eanPendGravar(' + i + ')">Gravar em ' + g.ids.length + '</button>'
+      + '</td></tr>';
+  }).join('');
+  el.innerHTML =
+    '<div class="table-wrap"><table><thead><tr><th>Produto</th><th>Marca</th><th>Linhas</th>'
+    + '<th>Sugestão da CMED (só leitura)</th><th>Completar</th></tr></thead><tbody>'
+    + linhasHtml + '</tbody></table></div>'
+    // >>> NADA DE CORTE SILENCIOSO: se a lista foi limitada, ela DIZ quantos ficaram de fora.
+    + '<div style="margin-top:10px;font-size:12px;color:var(--muted)">'
+    +   'Mostrando ' + vis.length + ' de ' + _eanPend.length + ' produtos (os de mais linhas primeiro).'
+    +   (_eanPend.length > vis.length
+          ? ' <button type="button" class="btn btn-outline btn-sm" onclick="eanPendenciaMais()">Mostrar mais ' + EAN_PEND_PAGINA + '</button>'
+          : '')
+    + '</div>';
+}
+function eanPendUsarSugestao(i){
+  var g = _eanPend[i], s = g && _eanSugCache[g.chave]; if (!s) return;
+  if (s.ean) { var a = document.getElementById('ean-in-' + i); if (a) a.value = s.ean; }
+  if (s.registro) { var b = document.getElementById('ean-reg-' + i); if (b) b.value = s.registro; }
+  toast('Sugestão preenchida — confira e clique em Gravar');
+}
+// A gravação é POR PRODUTO e diz na cara quantas linhas vai tocar. Não existe "aplicar em todos".
+async function _eanPatchIds(ids, body){
+  var lim = ids.map(String).filter(function(x){ return /^\d+$/.test(x); });
+  if (lim.length !== ids.length) throw new Error('id fora do formato — gravação recusada');
+  var r = await fetch(SUPA_URL2 + '/rest/v1/cotacoes?id=in.(' + lim.join(',') + ')', {
+    method: 'PATCH',
+    headers: { 'Content-Type':'application/json', 'apikey': SUPA_KEY2, 'Prefer': 'return=representation' },  // SEM Authorization fixo -> gm-auth injeta o JWT fresco
+    body: JSON.stringify(body)
+  });
+  var data = await r.json();
+  if (!r.ok) { var motivo = _motivoDb(r, data); _marcaDb(false, motivo); throw new Error((data && data.message) || r.statusText); }
+  _marcaDb(true);
+  return Array.isArray(data) ? data : [];
+}
+async function eanPendGravar(i){
+  var g = _eanPend[i]; if (!g) return;
+  var ean = _eanDigitos((document.getElementById('ean-in-' + i) || {}).value);
+  var reg = _eanDigitos((document.getElementById('ean-reg-' + i) || {}).value);
+  if (!ean && !reg) { toast('Digite o EAN ou o registro (ou use a sugestão da CMED)', 'error'); return; }
+  if (ean && !eanDigitoConfere(ean) &&
+      !confirm('⚠️ O EAN ' + ean + ' não passa no dígito verificador.\nUm EAN errado casa com OUTRO produto no teto CMED.\n\nOK = gravar assim mesmo · Cancelar = corrigir')) return;
+  if (!_podeGravar('a gravação do EAN')) return;
+  if (!confirm('Gravar ' + (ean ? 'EAN ' + ean : '') + (ean && reg ? ' e ' : '') + (reg ? 'registro ' + reg : '')
+             + '\nem ' + g.ids.length + ' linha(s) de "' + g.produto + '"?')) return;
+  var body = {};
+  if (ean) body.ean = ean;
+  if (reg) body.registro_anvisa = reg;
+  try {
+    await _eanPatchIds(g.ids, body);
+    // espelha na memória pra tela não mentir até a próxima carga
+    var alvo = {}; g.ids.forEach(function(id){ alvo[id] = 1; });
+    [cotacoes, cotacoesCache].forEach(function(arr){
+      (arr || []).forEach(function(c){ if (alvo[c.id]) { if (ean) c.ean = ean; if (reg) c.registro_anvisa = reg; } });
+    });
+    toast('Gravado em ' + g.ids.length + ' linha(s)');
+    renderEanPendencia();
+  } catch(e) { toast('Erro: ' + e.message, 'error'); }
+}
+
 async function salvarCotacao() {
   const produto = document.getElementById('cot-produto').value.trim();
   const preco = parseFloat(document.getElementById('cot-preco').value);
@@ -1804,6 +1969,13 @@ async function salvarCotacao() {
   }
   // BLINDAGEM (Adicionar Manualmente): preço parece de CAIXA? (mercado por peer OU sanidade absoluta sem peer)
   const _und = document.getElementById('cot-unidade').value;
+  // B7 — EAN torto AVISA, não bloqueia. O dígito verificador pega dígito trocado na hora; mas
+  // barrar o salvamento por causa dele empurraria a pessoa a apagar o EAN pra conseguir gravar,
+  // e aí perderíamos também o que ela sabia. Avisar e deixar decidir é o caminho honesto.
+  const _eanDig = _eanDigitos(document.getElementById('cot-ean').value);
+  if (_eanDig && !eanDigitoConfere(_eanDig)) {
+    if (!confirm(`⚠️ O EAN ${_eanDig} não passa no dígito verificador — ou está incompleto, ou tem um dígito trocado.\nUm EAN errado casa com OUTRO produto no teto CMED.\n\nOK = salvar assim mesmo · Cancelar = corrigir`)) return;
+  }
   if (!_podeGravar('o salvamento desta cotação')) return;
   const _pc = pareceCaixaPeer(produto, _und, document.getElementById('cot-principio').value, preco) || pareceCaixaSanidade(produto, _und, preco);
   if (_pc && !confirm(`🔴 O preço unitário R$${preco.toFixed(4)} PARECE PREÇO DE CAIXA — ÷${_pc.qtd} = R$${_pc.corr} por unidade${_pc.pmin!=null?` (mercado ~R$${_pc.pmin.toFixed(4)})`:` (${_pc.forma})`}.\n\nOK = salvar assim mesmo · Cancelar = corrigir p/ ÷qtd`)) return;
@@ -1835,7 +2007,11 @@ async function salvarCotacao() {
       qtd_orcamento: parseInt(document.getElementById('cot-qtd-cx').value)||1,
       vencimento: document.getElementById('cot-validade').value || null,
       estoque: parseInt(document.getElementById('cot-estoque').value)||0,
-      tipo
+      tipo,
+      // B7 — null (e não '') quando vazio: NULL no banco quer dizer "não sabemos", que é o que
+      // de fato acontece. String vazia parece resposta e some da lista de pendência.
+      ean: _eanDig || null,
+      registro_anvisa: _eanDigitos(document.getElementById('cot-registro').value) || null
     };
     // FASE 3: PA automático via CMED — só se o usuário deixou o campo PA vazio (nunca sobrescreve)
     if (!row.principio_ativo) {
@@ -1849,8 +2025,9 @@ async function salvarCotacao() {
     try { await iacBaixaAuto([{ produto: row.produto, pa: row.principio_ativo, fornecedor: row.fornecedor, preco: row.compra_unit }]); } catch(e){ console.error('baixa auto:', e); }
     toast('Cotação salva no Supabase!');
     closeModal('modal-cotacao');
-    ['cot-produto','cot-principio','cot-marca','cot-preco','cot-qtd-cx','cot-validade','cot-estoque'].forEach(id=>document.getElementById(id).value='');
+    ['cot-produto','cot-principio','cot-marca','cot-ean','cot-registro','cot-preco','cot-qtd-cx','cot-validade','cot-estoque'].forEach(id=>document.getElementById(id).value='');
     document.getElementById('cot-venda-prev').value = '';
+    _cotRenderSugestao(null);   // a sugestão do produto anterior não pode ficar de pé no próximo
   } catch(e) { toast('Erro: ' + e.message, 'error'); }
 }
 async function deletarCotacao(id) {
@@ -2392,6 +2569,167 @@ async function resolvePA(nome){
   }catch(e){ /* silencioso: deixa PA vazio, não bloqueia o salvamento */ }
   return { pa:'', dose };
 }
+
+// ═══ B7 — EAN E REGISTRO ANVISA: A SUGESTÃO DA CMED, QUE NUNCA GRAVA SOZINHA ═══════════════
+//
+// >>> A MEDIÇÃO QUE MUDOU O DESENHO DESTE CASAMENTO (14/08, contra o banco real).
+// O caminho óbvio era casar `cotacoes.marca` com `cmed_regua.marca_norm`. Medido: **10 linhas
+// de 8.832**. O motivo é que os dois campos NÃO falam da mesma coisa — `cotacoes.marca` guarda
+// o LABORATÓRIO ("HIPOLABOR", "EMS", "CRISTALIA") e `marca_norm` é a coluna PRODUTO da planilha
+// da CMED, o nome comercial ("DOPACRIS", "NOVALGINA"). Casar os dois é comparar fabricante com
+// nome de fantasia: quando bate, bate por coincidência.
+// O casamento honesto é SUBSTÂNCIA + DOSE + LABORATÓRIO, e é o que está escrito abaixo.
+//
+// >>> POR QUE A SUGESTÃO NÃO PODE SE GRAVAR SOZINHA. O EAN é o 1º degrau do teto CMED. EAN
+// errado não dá erro: ele casa com OUTRO produto e devolve um teto errado com cara de certo —
+// e teto errado em licitação vira glosa. Por isso: sugestão só quando a CMED é UNÂNIME, e ainda
+// assim quem grava é o clique de uma pessoa. Sem unanimidade o campo fica VAZIO e o produto
+// entra na lista de pendência. Vazio quer dizer "não sabemos"; um chute diria "sabemos", mentindo.
+
+function _eanDigitos(s){ return String(s==null?'':s).replace(/\D/g,''); }
+function _eanEsc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+// Dígito verificador GTIN-8/12/13/14 (mod 10). É a única conferência que dá pra fazer SEM
+// consultar ninguém: pega dígito trocado e digitação torta na hora, antes de virar registro.
+function eanDigitoConfere(ean){
+  var d = _eanDigitos(ean);
+  if ([8,12,13,14].indexOf(d.length) < 0) return false;
+  var soma = 0;
+  for (var i = d.length - 2; i >= 0; i--) soma += (+d[i]) * (((d.length - 1 - i) % 2 === 1) ? 3 : 1);
+  return ((10 - (soma % 10)) % 10) === (+d[d.length - 1]);
+}
+
+// Palavras que aparecem em quase toda razão social e não identificam ninguém. Sem tirar isso,
+// "LABORATORIO TEUTO BRASILEIRO S/A" não casaria com a marca "TEUTO" (o nome não é o começo).
+var _EAN_LAB_RUIDO = /^(LABORATORIO|LABORATORIOS|LAB|INDUSTRIA|INDUSTRIAS|INDUSTRIAL|COMERCIO|COMERCIAL|PRODUTOS|PRODUTO|FARMACEUTICA|FARMACEUTICO|FARMACEUTICOS|FARMACEUTICAS|QUIMICA|QUIMICO|QUIMICOS|QUIMICAS|NACIONAL|BRASIL|BRASILEIRO|BRASILEIRA|LTDA|SA|ME|EPP|EIRELI|CIA|DO|DA|DE|EM|IMPORTACAO|EXPORTACAO|DISTRIBUIDORA|DISTRIBUICAO)$/;
+function _eanLabTokens(s){
+  return _gmNorm(s).replace(/[^A-Z0-9 ]/g, ' ').split(' ')
+    .filter(function(t){ return t && t.length >= 2 && !_EAN_LAB_RUIDO.test(t); });
+}
+// Casa quando TODOS os tokens úteis da marca aparecem no laboratório da CMED.
+// "TEUTO" x "LABORATORIO TEUTO BRASILEIRO S/A" casa. "GLOBO" x qualquer coisa não casa.
+function eanLabCasa(marca, laboratorio){
+  var m = _eanLabTokens(marca), l = _eanLabTokens(laboratorio);
+  if (!m.length || !l.length) return false;
+  return m.every(function(t){ return l.indexOf(t) >= 0; });
+}
+
+// PURA de propósito — a suíte roda ela sem rede, com as linhas da CMED na mão. Recebe a cotação
+// e as candidatas; devolve SÓ o que dá pra afirmar, e o motivo quando não dá.
+function escolheSugestaoCmed(cot, linhas){
+  cot = cot || {};
+  var vazio = function(motivo, cands){
+    return { ean:'', registro:'', apresentacao:'', laboratorio:'', candidatos:(cands||[]).length, motivo:motivo };
+  };
+  var pa = normPA(cot.principio_ativo);
+  if (!pa) return vazio('sem princípio ativo — a CMED só conhece medicamento');
+  var c = (linhas || []).filter(function(r){ return normPA(r.subst_norm) === pa; });
+  if (!c.length) return vazio('a CMED não tem esta substância');
+
+  var dose = doseKey(cot.produto);
+  if (dose) {
+    var cd = c.filter(function(r){ return r.dose_key === dose; });
+    if (!cd.length) return vazio('a CMED tem a substância, mas não nesta dose (' + dose + ')', c);
+    c = cd;
+  }
+  var cl = c.filter(function(r){ return eanLabCasa(cot.marca, r.laboratorio); });
+  if (!cl.length) return vazio('nenhum registro desta substância é do laboratório "' + (cot.marca || '—') + '"', c);
+  c = cl;
+
+  // Refino pela embalagem ESCRITA NO NOME ("100AMP" -> qtd_apres 100). Só desempata; nunca
+  // inventa: se nenhuma candidata tem essa quantidade, o conjunto fica como estava.
+  if (c.length > 1) {
+    var q = _qtdDoNome(_semCalibre(cot.produto || ''));
+    if (q > 1) { var cq = c.filter(function(r){ return +r.qtd_apres === q; }); if (cq.length) c = cq; }
+  }
+  var eans = [...new Set(c.map(function(r){ return _eanDigitos(r.ean1); }).filter(Boolean))];
+  var regs = [...new Set(c.map(function(r){ return _eanDigitos(r.registro); }).filter(Boolean))];
+  return {
+    ean:          eans.length === 1 ? eans[0] : '',
+    registro:     regs.length === 1 ? regs[0] : '',
+    apresentacao: c.length === 1 ? String(c[0].apresentacao || '').trim() : '',
+    laboratorio:  String(c[0].laboratorio || '').trim(),
+    candidatos:   c.length,
+    motivo: eans.length === 1 ? ''
+          : c.length + ' apresentações deste laboratório com a mesma dose — o EAN muda com a embalagem'
+  };
+}
+
+// SÓ LEITURA da cmed_regua. Não filtra a dose no servidor de propósito: com o conjunto inteiro
+// na mão, a função acima consegue dizer "tem a substância, mas não nesta dose" em vez do
+// genérico "não achei" — a diferença entre um motivo e um encolher de ombros.
+async function sugereEanCmed(cot){
+  var pa = normPA(cot && cot.principio_ativo);
+  if (!pa) return escolheSugestaoCmed(cot, []);
+  var url = SUPA_URL2 + '/rest/v1/cmed_regua?select=subst_norm,dose_key,qtd_apres,laboratorio,apresentacao,ean1,registro'
+          + '&subst_norm=ilike.' + encodeURIComponent('*' + pa + '*') + '&limit=600';
+  try {
+    var r = await fetch(url, { headers: SH });
+    var linhas = await r.json();
+    return escolheSugestaoCmed(cot, Array.isArray(linhas) ? linhas : []);
+  } catch(e) {
+    // rede caiu: devolve o estado honesto, nunca uma sugestão inventada
+    return { ean:'', registro:'', apresentacao:'', laboratorio:'', candidatos:0,
+             motivo:'não consegui consultar a CMED agora (' + e.message + ')' };
+  }
+}
+
+// ── A CAIXA DE SUGESTÃO DO CADASTRO ────────────────────────────────────────────────────────
+var _cotSugAtual = null, _cotSugTimer = null;
+function _cotRenderSugestao(s){
+  var box = document.getElementById('cot-cmed-sug');
+  if (!box) return;
+  _cotSugAtual = s;
+  if (!s) { box.style.display = 'none'; box.innerHTML = ''; return; }
+  box.style.display = 'block';
+  if (s.ean || s.registro) {
+    box.innerHTML =
+      '<div style="border:1px solid var(--verde);background:var(--verde-claro);border-radius:8px;padding:10px 12px;margin-bottom:14px;font-size:12px;line-height:1.55">'
+      + '<strong style="color:var(--verde-escuro)">A CMED conhece este produto</strong>'
+      + '<div style="color:var(--texto);margin-top:3px">'
+      +   (s.ean ? 'EAN <strong>' + _eanEsc(s.ean) + '</strong>'
+                 : '<span style="color:var(--muted)">EAN não confirmado — ' + _eanEsc(s.motivo) + '</span>')
+      +   (s.registro ? ' · Registro <strong>' + _eanEsc(s.registro) + '</strong>' : '')
+      + '</div>'
+      + (s.apresentacao ? '<div style="color:var(--muted);margin-top:2px">' + _eanEsc(s.apresentacao) + '</div>' : '')
+      + (s.laboratorio ? '<div style="color:var(--muted)">' + _eanEsc(s.laboratorio) + '</div>' : '')
+      + '<button type="button" class="btn btn-primary btn-sm" style="margin-top:8px" onclick="cotUsarSugestaoCmed()">Usar esta sugestão</button>'
+      + '<span style="color:var(--muted);margin-left:8px">nada é gravado até você clicar</span>'
+      + '</div>';
+  } else {
+    box.innerHTML =
+      '<div style="border:1px solid var(--borda);border-radius:8px;padding:10px 12px;margin-bottom:14px;font-size:12px;color:var(--muted);line-height:1.55">'
+      + '<strong style="color:var(--texto)">Sem EAN confirmado pela CMED</strong> — ' + _eanEsc(s.motivo) + '.<br>'
+      + 'Deixe o campo vazio: o produto entra na lista <em>Produtos sem EAN</em> para a equipe completar. '
+      + 'Um código chutado casaria com o produto errado no teto CMED.'
+      + '</div>';
+  }
+}
+function cotUsarSugestaoCmed(){
+  var s = _cotSugAtual; if (!s) return;
+  if (s.ean) document.getElementById('cot-ean').value = s.ean;
+  if (s.registro) document.getElementById('cot-registro').value = s.registro;
+  toast('Sugestão da CMED preenchida — confira antes de salvar');
+}
+// Dispara ao sair do campo (não a cada tecla): a consulta é de rede e o cadastro não pode travar.
+async function cotConsultaCmed(){
+  var cot = {
+    produto: (document.getElementById('cot-produto') || {}).value || '',
+    marca: (document.getElementById('cot-marca') || {}).value || '',
+    principio_ativo: (document.getElementById('cot-principio') || {}).value || ''
+  };
+  if (!cot.produto.trim() || !cot.marca.trim()) { _cotRenderSugestao(null); return; }
+  if (!cot.principio_ativo.trim()) {
+    try { var rp = await resolvePA(cot.produto); if (rp && rp.pa) cot.principio_ativo = rp.pa; } catch(e){}
+  }
+  _cotRenderSugestao(await sugereEanCmed(cot));
+}
+['cot-produto','cot-marca','cot-principio'].forEach(function(id){
+  var el = document.getElementById(id);
+  if (el) el.addEventListener('blur', function(){
+    clearTimeout(_cotSugTimer); _cotSugTimer = setTimeout(cotConsultaCmed, 120);
+  });
+});
 
 // Label legível do grupo
 function labelGrupo(c) {
