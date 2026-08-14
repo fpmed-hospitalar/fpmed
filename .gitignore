@@ -90,3 +90,7 @@ design_handoff_*/
 Encontrar.dc.html
 Encontrar.html
 *.zip
+
+# correio do arquiteto — nao vai pro repo publico
+caixas/
+relatorios/

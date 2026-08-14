@@ -1,3 +1,34 @@
+========================================
+>>> CAIXA A (arquiteto) — ANDAMENTO. 14/08/2026
+========================================
+  [OK] ARRUMACAO ... caixas/ e relatorios/ no .gitignore; regime no CLAUDE.md e aqui.
+  [OK] A1 .......... RADAR REMOVIDO INTEIRO (commit e8f7587). Painel, atalho, rota #radar,
+                     item de menu, icone, CSS .rd e ~165 linhas de JS. Apagou de uma vez os 8
+                     defeitos do diagnostico de 13/08 e as 5 fatias de conserto que eu tinha
+                     proposto. A tabela `municipios` (5.571 do IBGE) e o carrega_municipios.js
+                     FICAM — apagar tabela e DROP. Suite testa_radar.js apagada.
+  [OK] A2 .......... LEITOR SAI DO MENU, VIRA MOTOR (commit 2cdf33a). Novo
+                     `fpmed_leitor_motor.js` (LeitorEdital.perguntar) chamando A MESMA edge
+                     function — permissao/custo/registro nunca estiveram no menu, moram no
+                     servidor. Provado: edge responde 401 sem token; usos_ia intacta (10
+                     registros, R$ 3,54). Selo "IA" mudou de lugar: foi pro botao que gasta.
+  [OK] CMED 11/08 .. CARREGADA E VERSIONADA (commit 2f90eeb) — feita antes da ordem, ja estava
+                     na fila. As DUAS edicoes guardadas nas duas tabelas; vigente 11/08;
+                     regua 26.001; teto 4.875. **A rotina mensal carregava METADE da base** —
+                     ver o bloco proprio abaixo.
+  [OK] A3+A4 ....... ANATOMIA DO MOLDE + DETALHE DO PREGAO. **UM COMMIT SO, de proposito**:
+                     a acao primaria do cartao passou a ser "abrir o detalhe", e commitar a A3
+                     sozinha deixaria esse botao morto por um commit — exatamente o defeito que
+                     a urgencia de 13/08 cacou.
+  [ ] A5 ........... contrato com o B — **O B ESTA ESPERANDO ISTO**. E O PROXIMO.
+  [ ] A6 ........... abastecimento de editais (o "conversar com o edital" depende dele)
+  [ ] A7 ........... resultado por item
+  [ ] A8 ........... busca nacional em fases
+
+  >>> REGRA NOVA (dono, 14/08): COMMIT SEMPRE POR CAMINHO (`git add <arquivo>`), NUNCA
+      `git add .` — as duas janelas dividem o diretorio e o commit 0fd4978 levou 30 linhas da
+      outra janela junto. Nada se perdeu; registro torto atrapalha auditoria.
+
 ================= REGIME DE EXECUCAO PADRAO — NAO PARAR =================
 Vale para toda caixa do arquiteto, em qualquer sessao, nas duas janelas:
 - Executar as fatias em sequencia SEM parar entre elas; a caixa chega aprovada.

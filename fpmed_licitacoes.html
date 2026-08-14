@@ -650,8 +650,116 @@ select[disabled],input[disabled],textarea[disabled]{
    lista inteira treme. Quem diz "dá pra interagir" é o fundo, como no molde. */
 .lic:hover{background:var(--linha-hover)}
 .lic::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--azul-500)}
-.lic.prazo-urg::before{background:var(--ambar-500)}
-.lic.prazo-fim::before{background:var(--vermelho-500)}
+/* ══ A URGÊNCIA DA ABERTURA (fatia A3, 14/08) — OS PARES FECHADOS DO MOLDE ═══════════════════
+   A barra e a pastilha usavam `--ambar-500` e `--vermelho-500`, que são degraus da RAMPA. O
+   molde traz, para exatamente este uso, PARES MEDIDOS — e o `fpmed_tema.css` diz com todas as
+   letras onde eles valem: *"a urgência da abertura usa três destes pares, e ela é o único lugar
+   do sistema onde a cor carrega URGÊNCIA e não categoria: hoje (perigo), amanhã (atenção),
+   depois (normal)"*.
+   >>> A DIFERENÇA NÃO É DE GOSTO. O par foi desenhado com tinta e fundo escolhidos JUNTOS
+       (perigo 5,92 · atenção 5,51 · normal 5,70 de contraste), e o "normal" NEM EXISTE na rampa
+       — é cinza sobre cinza. Montando com a rampa eu tinha dois tons certos por acaso e um
+       terceiro que não tinha como existir; por isso "depois de amanhã" saía verde, como se
+       prazo longo fosse coisa BOA em vez de coisa SEM PRESSA. Verde é categoria, não urgência.
+   >>> E O RECORTE MUDOU JUNTO: era `dias <= 2` (um balde só para hoje, amanhã e depois de
+       amanhã). Agora são os três degraus que o molde nomeia, porque "abre hoje" e "abre em dois
+       dias" mudam o dia de quem lê de formas diferentes. */
+.lic.urg-hoje::before{background:var(--sinal-perigo-barra)}
+.lic.urg-amanha::before{background:var(--sinal-atencao-barra)}
+.lic.urg-normal::before{background:var(--sinal-normal-barra)}
+.lic.urg-fim::before{background:var(--cinza-300)}
+.urg{display:inline-flex;align-items:center;gap:var(--esp-1);
+  padding:var(--esp-1) var(--esp-3);border-radius:var(--raio-pilula);
+  font-size:var(--txt-0);font-weight:var(--peso-semi);white-space:nowrap}
+.urg--hoje{background:var(--sinal-perigo-fundo);color:var(--sinal-perigo-tinta)}
+.urg--amanha{background:var(--sinal-atencao-fundo);color:var(--sinal-atencao-tinta)}
+.urg--normal{background:var(--sinal-normal-fundo);color:var(--sinal-normal-tinta)}
+.urg--fim{background:var(--sinal-neutro-fundo);color:var(--sinal-neutro-tinta)}
+
+/* ══ A CAIXA DE SELEÇÃO (fatia A3) ══════════════════════════════════════════════════════════
+   Ela mora no TOPO do cartão, alinhada com o selo do órgão, e não flutuando sobre o texto: numa
+   lista longa o olho procura a caixa sempre na mesma coluna, e caixa que muda de lugar conforme
+   o tamanho do objeto faz a pessoa caçar o alvo a cada linha.
+   >>> O CARTÃO SELECIONADO MUDA DE FUNDO, e não ganha borda: borda desloca o conteúdo em 1px e
+       a lista inteira "pula" a cada clique. O fundo diz o mesmo sem mexer em nada de lugar. */
+.lic .sel{flex:0 0 auto;display:grid;place-items:center;padding-top:var(--esp-2)}
+.lic .sel input{width:17px;height:17px;accent-color:var(--azul-600);cursor:pointer;margin:0}
+.lic.escolhida{background:var(--azul-50)}
+.lic.escolhida:hover{background:var(--azul-50)}
+
+/* ══ A NOTA DE ADERÊNCIA (fatia A3) ═════════════════════════════════════════════════════════
+   O molde pede "92% aderente + barra". O número aqui é REAL: sai do cruzamento que a própria
+   tela faz (itens do edital × nosso estoque), e por isso ele SÓ EXISTE DEPOIS DE CRUZAR.
+   >>> ANTES DE CRUZAR NÃO APARECE NADA — nem 0%, nem barra vazia. "0% aderente" é a lição S6 em
+       forma de gráfico: quem lê entende "não temos nada disto", quando a verdade é "ainda não
+       olhei". O botão de cruzar continua ali, que é a resposta honesta. */
+.aderencia{display:inline-flex;align-items:center;gap:var(--esp-2);white-space:nowrap}
+.aderencia .barra{width:52px;height:5px;border-radius:var(--raio-pilula);
+  background:var(--cinza-200);overflow:hidden}
+.aderencia .barra i{display:block;height:100%;background:var(--sinal-bom-icone)}
+.aderencia .pct{font-size:var(--txt-0);font-weight:var(--peso-forte);color:var(--sinal-bom-tinta);
+  font-variant-numeric:tabular-nums}
+
+/* ══ "⋯ MAIS AÇÕES" (fatia A3) ══════════════════════════════════════════════════════════════
+   O "abrir no PNCP" saiu da ação principal e virou opção daqui. Ele não foi apagado: sair do
+   sistema para conferir no portal é trabalho legítimo — só deixou de ser o gesto padrão, porque
+   o gesto padrão agora é abrir o detalhe DENTRO do sistema.
+   >>> O MENU ABRE NO CLIQUE E NÃO NO HOVER: menu que abre passando o mouse dispara sozinho
+       quando alguém só está descendo a lista. */
+.mais{position:relative;display:inline-block}
+.mais .cx{display:none;position:absolute;right:0;top:calc(100% + var(--esp-1));z-index:20;
+  min-width:186px;background:var(--branco);border:1px solid var(--cinza-200);
+  border-radius:var(--raio-botao);box-shadow:var(--sombra-2);padding:var(--esp-1);text-align:left}
+.mais.on .cx{display:block}
+.mais .cx a,.mais .cx button{display:flex;align-items:center;gap:var(--esp-2);width:100%;
+  padding:var(--esp-2) var(--esp-3);border:0;background:none;text-align:left;cursor:pointer;
+  font-size:var(--txt-1);color:var(--cinza-800);border-radius:var(--raio-item);
+  text-decoration:none;font-family:inherit}
+.mais .cx a:hover,.mais .cx button:hover{background:var(--cinza-50)}
+
+/* ══ O PAINEL DE DETALHE DO PREGÃO (fatia A4) ═══════════════════════════════════════════════
+   Mesma caixa dos painéis de Órgãos e Meus Jornais — mesma cor, mesma borda, mesmo raio. Três
+   painéis com três desenhos é o que faz um sistema parecer montado. */
+#detalhe{display:none;background:var(--branco);border:1px solid var(--cinza-200);
+  border-radius:var(--raio-cartao);padding:var(--esp-4);margin-bottom:var(--esp-4);
+  box-shadow:var(--sombra-1);text-align:left}
+#detalhe.open{display:block}
+.det-topo{display:flex;align-items:flex-start;gap:var(--esp-3);margin-bottom:var(--esp-3)}
+.det-tit{font-family:Montserrat,sans-serif;font-size:var(--txt-3);
+  font-weight:var(--peso-semi);color:var(--cinza-800)}
+.det-barra{display:flex;align-items:center;gap:var(--esp-3);margin-bottom:var(--esp-3);flex-wrap:wrap}
+.det-busca{flex:1;min-width:220px;height:34px;border:1px solid var(--cinza-300);
+  border-radius:var(--raio-item);padding:0 var(--esp-3);font-family:inherit;
+  font-size:var(--txt-1);color:var(--cinza-800);background:var(--branco)}
+.det-itens{max-height:520px;overflow:auto;border:1px solid var(--cinza-200);
+  border-radius:var(--raio-botao)}
+/* A SANFONA POR ITEM. Fechada, cada item cabe numa linha e dá pra varrer 200 deles; aberta,
+   ela mostra o teto legal e o que temos. Um edital hospitalar com 500 itens todos abertos é
+   uma parede de texto que ninguém lê. */
+.det-item{border-bottom:1px solid var(--borda-divisor)}
+.det-item:last-child{border-bottom:0}
+.det-item>summary{display:flex;align-items:center;gap:var(--esp-3);padding:var(--esp-2) var(--esp-3);
+  cursor:pointer;list-style:none;font-size:var(--txt-1);color:var(--cinza-800)}
+.det-item>summary::-webkit-details-marker{display:none}
+.det-item>summary:hover{background:var(--cinza-50)}
+.det-item .n{flex:0 0 34px;color:var(--cinza-600);font-variant-numeric:tabular-nums;text-align:right}
+.det-item .d{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.det-item .q{flex:0 0 auto;color:var(--cinza-600);white-space:nowrap}
+.det-item .v{flex:0 0 auto;font-weight:var(--peso-semi);font-variant-numeric:tabular-nums;white-space:nowrap}
+.det-corpo{padding:var(--esp-2) var(--esp-3) var(--esp-4) calc(34px + var(--esp-6));
+  background:var(--cinza-50)}
+/* O SELO "IA" MUDOU DE ENDEREÇO NA FATIA A2: saiu do item de menu e veio pro botão que dispara
+   o gasto. Mesmo desenho de sempre — verde da marca com o navy por cima, o par que já estava
+   medido em 9,04:1 no menu. Aviso longe da decisão não muda decisão. */
+.lm-selo-ia{display:inline-block;margin-left:var(--esp-1);padding:0 var(--esp-1);
+  border-radius:var(--raio-pilula);background:var(--verde-500);color:var(--navy-tinta,var(--cinza-800));
+  font-size:var(--txt-0);font-weight:var(--peso-forte);letter-spacing:.04em}
+
+/* O controle "Ordenar" — mesma régua do alternador de densidade, que já vive no cabeçalho. */
+.ord{display:flex;align-items:center;gap:var(--esp-2);font-size:var(--txt-0);color:var(--cinza-600)}
+.ord select{height:28px;border:1px solid var(--cinza-300);border-radius:var(--raio-item);
+  background:var(--branco);color:var(--cinza-800);font-size:var(--txt-0);
+  font-family:inherit;padding:0 var(--esp-2)}
 
 /* O SELO DO ÓRGÃO. Não é enfeite: ele é a âncora visual que faz o olho achar onde cada cartão
    começa numa lista longa, e é o que dá ao título uma margem esquerda constante pra alinhar o
@@ -665,8 +773,15 @@ select[disabled],input[disabled],textarea[disabled]{
 /* O título é ESCURO e forte, não azul de link. Ele é o nome da coisa; o azul continua no
    hover, que é onde ele precisa dizer "dá pra clicar". Título inteiro em azul numa lista de
    vinte cartões é vinte links gritando — e aí nenhum se destaca (D5: cor é tempero). */
+/* O TÍTULO VIROU <button> NA FATIA A3 (ele abre o detalhe aqui dentro, não navega). O reset é
+   obrigatório e é a mesma armadilha que já mordeu esta tela ao contrário: a `.btn` nasceu pra
+   <button> e a primeira <a class="btn"> saiu sublinhada, porque âncora traz sublinhado de
+   fábrica. Aqui é o inverso — <button> traz fundo, borda, fonte e alinhamento centralizado de
+   fábrica, e sem zerar os quatro o título viraria um botão cinza no meio do cartão. */
 .lic .titulo{font-size:var(--txt-3);font-weight:var(--peso-semi);color:var(--cinza-800);
-  text-decoration:none;display:block;line-height:1.4;letter-spacing:-.01em}
+  text-decoration:none;display:block;line-height:1.4;letter-spacing:-.01em;
+  background:none;border:0;padding:0;margin:0;font-family:inherit;text-align:left;
+  cursor:pointer;width:100%}
 .lic .titulo:hover{color:var(--azul-700);text-decoration:underline}
 .lic .titulo:focus-visible{outline:none;box-shadow:var(--foco);border-radius:var(--raio-botao)}
 /* A linha de apoio: quando é a sessão, e que TIPO de certame é. */
@@ -1216,6 +1331,12 @@ svg.ic.bom{color:var(--verde-700)}
 
   <div id="estoque-status" class="hint" style="min-height:18px;margin:10px 0 2px"></div>
   <div id="status" class="hint" style="min-height:18px;margin-bottom:8px"></div>
+  <!-- ── O DETALHE DO PREGÃO (fatia A4) ──────────────────────────────────────────────────────
+       Ele fica ACIMA da lista, e não dentro do cartão: dentro, abrir o detalhe do 12º resultado
+       empurraria os outros dezoito pra baixo e a pessoa perderia o lugar onde estava. Aqui ele
+       aparece sempre no mesmo ponto, e a lista continua intacta atrás dele.
+       >>> NASCE FECHADO e sem conteúdo — a mesma regra dos outros painéis desta tela. -->
+  <div id="detalhe"></div>
   <div id="lista"><div class="aviso vazio">Ajuste os filtros e clique na lupa para buscar.</div></div>
   <!-- A BUSCA NACIONAL VEM DEPOIS DO ÍNDICE, e essa ordem é a decisão: o índice é nosso, rápido,
        das nossas praças e está sempre disponível; o nacional é do Brasil todo e depende do PNCP
@@ -1591,6 +1712,93 @@ function aderencia(lic){
   const r = CRUZ.get(chaveLic(lic));
   return r ? r.casados : null;
 }
+/* ══ A NOTA DE ADERÊNCIA EM % (fatia A3, 14/08) ═══════════════════════════════════════════════
+   O molde pede "92% aderente". Este número é REAL e não precisou de backend nenhum: ele é a
+   razão entre o que casou e o total de itens do edital, e as duas metades já estavam guardadas
+   no `CRUZ` desde que o cruzamento existe — só ninguém tinha dividido uma pela outra.
+   >>> DEVOLVE `null` ENQUANTO NÃO SE CRUZOU, e isso é a regra inteira: a tela não desenha 0%
+       nem barra vazia antes de olhar. "0% aderente" lê-se como "não temos nada disto", quando a
+       verdade é "ainda não fui ver" — e as duas levam a decisões opostas.
+   >>> E DEVOLVE `null` TAMBÉM QUANDO A LEITURA FOI TRUNCADA: com o edital cortado no teto de
+       páginas, o denominador não é o total de itens, é o total que eu consegui ler. Uma
+       porcentagem calculada sobre denominador errado é pior que porcentagem nenhuma, porque
+       ela tem a mesma cara de uma certa. */
+function aderenciaPct(lic){
+  const r = CRUZ.get(chaveLic(lic));
+  if(!r || r.truncado) return null;
+  /* `r.itens` É UM ARRAY de {it, pares}, e não uma contagem — eu escrevi `Number(r.itens)` na
+     primeira versão desta função e teria dado NaN em toda linha, virando "NaN% aderente" na
+     tela. O nome do campo engana, e é por isso que ele está dito aqui. */
+  const tot = Array.isArray(r.itens) ? r.itens.length : 0;
+  if(!tot) return null;
+  return Math.round((Number(r.casados)||0) / tot * 100);
+}
+
+/* ══ A URGÊNCIA DA ABERTURA, EM TRÊS DEGRAUS (fatia A3) ═══════════════════════════════════════
+   Os três nomes são os do molde — hoje / amanhã / normal — e cada um puxa o PAR FECHADO
+   correspondente (perigo / atenção / normal), nunca um degrau solto da rampa.
+   >>> O QUE ESTA FUNÇÃO OLHA É A ABERTURA, e não o encerramento. O crachá "encerra em Nd" que já
+       existia continua onde estava: são duas perguntas diferentes ("quando é a sessão?" e "até
+       quando dá pra mandar proposta?") e juntá-las numa pastilha só faria uma delas sumir.
+   >>> COMPARA DIA DE CALENDÁRIO, e não "24 horas a partir de agora": uma sessão às 09h de amanhã
+       está a 20 horas, mas quem lê às 13h de hoje precisa ouvir "amanhã", não "hoje". Foi um
+       defeito de fuso desta mesma família que arquivou um negócio sozinho em 06/08. */
+function urgenciaAbertura(dataAbertura, agora){
+  const d = dt(dataAbertura);
+  if(!d) return { classe:'', pastilha:'' };
+  const dia0 = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate());
+  const diff = Math.floor((new Date(d.getFullYear(), d.getMonth(), d.getDate()) - dia0) / 86400000);
+  if(diff < 0)  return { classe:' urg-fim',    pastilha:'<span class="urg urg--fim">sessão já passou</span>' };
+  if(diff === 0) return { classe:' urg-hoje',   pastilha:'<span class="urg urg--hoje">abre hoje</span>' };
+  if(diff === 1) return { classe:' urg-amanha', pastilha:'<span class="urg urg--amanha">abre amanhã</span>' };
+  return { classe:' urg-normal', pastilha:'<span class="urg urg--normal">abre em '+diff+' dias</span>' };
+}
+
+/* ══ ORDENAÇÃO (fatia A3) ═════════════════════════════════════════════════════════════════════
+   O molde tem o controle com três opções. Em 13/08 ele NÃO entrou, e o motivo estava escrito:
+   "um seletor com uma opção só é um controle que ensina a pessoa a clicar à toa". Ele entra
+   agora porque as três opções passaram a EXISTIR de verdade — a aderência virou número real
+   nesta mesma fatia, e o valor estimado sempre esteve na linha.
+   >>> A ORDEM PADRÃO CONTINUA SENDO A ABERTURA, e isso é decisão: a pergunta que abre o dia de
+       um gestor de licitação é "o que abre hoje?". Ordenar por valor por padrão colocaria o
+       contrato grande e distante na frente da sessão que começa em duas horas.
+   >>> QUEM NÃO TEM O CRITÉRIO VAI PRO FIM, sempre — nas três. Licitação sem valor informado
+       aparecendo no topo de "maior valor" seria o zero fingindo de dado outra vez. */
+let ORDEM = 'abertura';
+function poeOrdem(v){ ORDEM = v; rerender(); }
+function ordenaHits(hits){
+  const semData = 8640000000000;
+  if(ORDEM === 'valor')
+    return hits.slice().sort((a,b) => (Number(b.valorTotalEstimado)||-1) - (Number(a.valorTotalEstimado)||-1));
+  if(ORDEM === 'aderencia')
+    return hits.slice().sort((a,b) => (aderenciaPct(b) == null ? -1 : aderenciaPct(b)) - (aderenciaPct(a) == null ? -1 : aderenciaPct(a)));
+  return hits.slice().sort((a,b) => {
+    const da = dt(a.dataAberturaProposta), db = dt(b.dataAberturaProposta);
+    return (da ? da.getTime() : semData) - (db ? db.getTime() : semData);
+  });
+}
+
+/* ══ SELEÇÃO (fatia A3) ═══════════════════════════════════════════════════════════════════════
+   Guarda a CHAVE da licitação, e não o índice da lista: o índice muda quando se troca a
+   ordenação ou se busca de novo, e seleção que muda de dono sozinha é a pior espécie — a pessoa
+   marca três e manda outras três pro funil sem perceber. */
+const ESCOLHIDAS = new Set();
+function alternaEscolha(i, el){
+  const l = (window._hits||[])[i]; if(!l) return;
+  const k = chaveLic(l);
+  if(el.checked) ESCOLHIDAS.add(k); else ESCOLHIDAS.delete(k);
+  const cartao = el.closest('.lic'); if(cartao) cartao.classList.toggle('escolhida', el.checked);
+  pintaEscolhidas();
+}
+function pintaEscolhidas(){
+  const el = document.getElementById('sel-conta'); if(!el) return;
+  const n = ESCOLHIDAS.size;
+  el.textContent = n ? (n === 1 ? '1 selecionada' : n + ' selecionadas') : '';
+}
+function fechaMais(ev){
+  document.querySelectorAll('.mais.on').forEach(m => { if(!ev || !m.contains(ev.target)) m.classList.remove('on'); });
+}
+document.addEventListener('click', fechaMais);
 
 // numeroCompra do PNCP vem em 3 formatos MEDIDOS na consulta de GO: "90", "0262026" e
 // "(20410) | 33-0". Regra do Lemuel: "(6128) | 32-0/2026" -> "32/2026".
@@ -2408,6 +2616,252 @@ function filtrarPorOrgao(nome){
 //     `tools/carrega_municipios.js` ficam. Apagar tabela é DROP, e dado público do IBGE que já
 //     está carregado não incomoda ninguém parado — se um dia entrar "licitações perto de mim"
 //     num mapa, a base já existe. Registrado como pendência para o dono decidir.
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════
+   O DETALHE DO PREGÃO (fatia A4, 14/08) — a licitação inteira, DENTRO do sistema
+
+   Até aqui, clicar num pregão TIRAVA a pessoa do sistema: o título era um link pro PNCP. O
+   fluxo real de quem trabalha com licitação, porém, não termina em "vi o edital" — ele começa
+   ali: quais são os itens, quanto deles eu atendo, qual o teto legal de cada um, e vale a pena
+   levar pro funil. Tudo isso já existia em pedaços espalhados; o detalhe é o lugar onde eles
+   respondem juntos.
+
+   >>> ELE REUSA O MOTOR QUE JÁ EXISTE, e não busca nada por conta própria: `puxarItens()` já
+       lê TODOS os itens do edital (paginado, com teto declarado) e já cruza cada um contra o
+       nosso estoque. Uma segunda leitura aqui seria uma segunda resposta pra "quantos itens
+       tem este edital" — e o cache de 15 minutos deixaria as duas discordando na tela ao
+       mesmo tempo.
+   >>> É PAINEL NA PRÓPRIA TELA, e não tela nova. Tela nova teria que reescrever a busca, o
+       cartão, o cruzamento e o caminho pro funil — quatro cópias envelhecendo em ritmos
+       diferentes. É o mesmo raciocínio que fez o Calendário ser uma visão do Negócios.
+   ══════════════════════════════════════════════════════════════════════════════════════════ */
+let DET = null;                 // { i, lic, dados, busca }
+
+/* ══ QUAIS LICITAÇÕES JÁ ESTÃO NO FUNIL — LEITURA PURA ═══════════════════════════════════════
+   A Encontrar NÃO escreve negócio nenhum; ela só precisa saber quais já estão lá pra não deixar
+   alguém mandar o mesmo pregão duas vezes.
+   >>> `null` É "AINDA NÃO SEI" E NÃO "NÃO ESTÁ", e a diferença aparece na tela: enquanto for
+       null o selo simplesmente não aparece. Um selo ausente por falha de leitura seria lido como
+       "este pregão é novo" — exatamente a conclusão errada, e a mais cara.
+   >>> A CHAVE É `numero`, a mesma que a ponte pro funil já usa pra não duplicar. Duas chaves
+       diferentes pra "é o mesmo pregão?" seria o defeito que este selo existe pra evitar. */
+let _NO_FUNIL = null;
+async function carregarFunil(){
+  if(_NO_FUNIL) return _NO_FUNIL;
+  try{
+    const j = await lerPaginado(`${SB_URL}/rest/v1/negocios?select=numero`);
+    if(j === null) return null;                       // leitura falhou: continua "não sei"
+    _NO_FUNIL = new Set(j.map(x => String(x.numero||'').trim()).filter(Boolean));
+  }catch(_){ return null; }
+  return _NO_FUNIL;
+}
+function jaNoFunil(l){
+  if(!_NO_FUNIL) return false;                        // "não sei" não desenha selo
+  return _NO_FUNIL.has(numCompra(l.numeroCompra, l.anoCompra));
+}
+
+function fecharDetalhe(){
+  DET = null;
+  const el = document.getElementById('detalhe');
+  if(el) el.classList.remove('open');
+}
+
+async function abrirDetalhe(i){
+  const l = (window._hits||[])[i];
+  if(!l) return;
+  DET = { i, lic:l, dados:null, busca:'' };
+  const el = document.getElementById('detalhe');
+  el.classList.add('open');
+  pintaDetalhe('lendo');
+  el.scrollIntoView({ behavior:'smooth', block:'start' });
+  /* A CMED É PEDIDA JUNTO, E NÃO ESPERADA: o índice do teto legal é grande e a lista de itens é
+     o que a pessoa veio ver. Sem isso, a coluna do teto ficaria "—" para sempre em quem nunca
+     tinha aberto o cruzamento nesta sessão — e "—" é indistinguível de "não tem teto". */
+  carregarCMED().then(() => { if(DET && DET.i === i) pintaDetalhe(); });
+  carregarFunil().then(() => { if(DET && DET.i === i) pintaDetalhe(); });
+  try{
+    /* MESMO CAMINHO DO "Cruzar com nosso estoque": se a pessoa já cruzou este edital, o cache
+       responde na hora e o detalhe abre instantâneo. Se não cruzou, cruzar aqui é o que faz a
+       nota de aderência do cartão acender quando ela voltar — um gesto, dois lugares. */
+    DET.dados = await puxarItens(l);
+    pintaDetalhe();
+  }catch(e){
+    DET.erro = e.message;
+    pintaDetalhe('erro');
+  }
+}
+
+/* ══ O CAMINHO PRO FUNIL, COM OS ITENS ESCOLHIDOS (fatia A4) ═══════════════════════════════════
+   O botão NÃO cria o negócio: ele NAVEGA pro Negócios com a licitação e os itens marcados na
+   URL. O assistente que recebe isso é do TRABALHADOR B — e implementar um segundo aqui seria
+   duas telas criando negócio com regras diferentes, que é como o mesmo pregão entra duas vezes
+   no funil e duas pessoas trabalham a mesma coisa sem saber.
+   >>> O CONTRATO DA URL ESTÁ ESCRITO EM docs/contrato_itens_editais.md (fatia A5), porque quem
+       vai ler do outro lado não pode ter que abrir este arquivo pra descobrir o formato. */
+function detItensMarcados(){
+  return [...document.querySelectorAll('#detalhe .det-item input[type=checkbox]:checked')]
+    .map(c => c.getAttribute('data-item')).filter(Boolean);
+}
+function mandarDetalheProFunil(){
+  if(!DET) return;
+  const id = DET.lic.numeroControlePNCP || chaveLic(DET.lic);
+  const itens = detItensMarcados();
+  const q = 'adicionar=' + encodeURIComponent(id) + (itens.length ? '&itens=' + encodeURIComponent(itens.join(',')) : '');
+  location.href = 'fpmed_negocios.html?' + q;
+}
+
+/* ══ "CONVERSAR COM O EDITAL" (fatias A2 + A6) ════════════════════════════════════════════════
+   Chama o motor interno do Leitor (`LeitorEdital.perguntar`), que passa pela MESMA edge function
+   de sempre — permissão, custo e registro inalterados.
+   >>> HOJE ELE AINDA NÃO TEM O TEXTO DO EDITAL, e o botão DIZ ISSO em vez de fingir. O
+       abastecimento (buscar o arquivo no PNCP e extrair o texto) é a fatia A6, e é ela que vai
+       preencher `DET.editalTexto`. Um botão que chama a IA sem documento gastaria dinheiro pra
+       receber "não sei" — e gasto sem resultado é a pior forma de descobrir uma dependência. */
+async function conversarComEdital(){
+  const cx = document.getElementById('det-conversa');
+  if(!cx || !DET) return;
+  if(!DET.editalTexto){
+    cx.innerHTML = '<div class="aviso" style="text-align:left;padding:12px 14px"><span class="hint">'
+      + 'Ainda não tenho o texto do edital deste pregão. O abastecimento automático a partir do '
+      + 'PNCP é a próxima etapa; até lá, o edital pode ser anexado ao negócio no funil.</span></div>';
+    return;
+  }
+  cx.innerHTML = '<div class="aviso">Lendo o edital…</div>';
+  try{
+    const r = await LeitorEdital.perguntar({ texto: DET.editalTexto, tarefa: 'resumo' });
+    cx.innerHTML = '<div class="aviso" style="text-align:left;padding:12px 14px">'+esc(JSON.stringify(r).slice(0,600))+'</div>';
+  }catch(e){
+    cx.innerHTML = '<div class="aviso err" style="text-align:left;padding:12px 14px">'
+      + (e.semPermissao
+          ? 'A leitura de edital com IA não está liberada para o seu usuário. Ela custa por uso, e quem libera é o Lemuel.'
+          : ic('alerta','aviso') + ' ' + esc(e.message))
+      + '</div>';
+  }
+}
+
+function detBusca(v){ if(DET){ DET.busca = v; pintaDetalhe(); } }
+
+/* O TETO CMED DE UM ITEM VEM DE `celTetoCMED`, QUE JÁ EXISTIA — eu tinha começado a escrever
+   uma segunda função aqui, e ela teria sido uma segunda resposta pra "qual o teto legal deste
+   item", com regras próprias. As regras não são pouca coisa: `paraGoverno:true` (com CAP o teto
+   é o PMVG por obrigação legal), o grau de confiança escrito na célula, "não sei" quando a CMED
+   não pôde ser lida — e "sem teto CMED", nunca zero, quando não casa.
+   >>> A MINHA VERSÃO JÁ TINHA DOIS ERROS na primeira escrita: chamava `TetoCMED` (o global é
+       `LimedtecTetoCMED`) e um índice `window._IDX_TETO` que não existe. Ela teria devolvido
+       `null` em 100% dos itens, e a coluna diria "sem teto CMED" para o edital inteiro — uma
+       resposta plausível, uniforme e completamente falsa. Reusar não foi economia: foi a
+       diferença entre um número certo e um erro silencioso. */
+
+function pintaDetalhe(estado){
+  const el = document.getElementById('detalhe');
+  if(!el || !DET) return;
+  const l = DET.lic;
+  const org = (l.orgaoEntidade||{}).razaoSocial || '—';
+  const un = l.unidadeOrgao || {};
+  const titulo = esc(l.modalidadeNome||'') + ' Nº ' + esc(numCompra(l.numeroCompra, l.anoCompra));
+
+  let corpo;
+  if(estado === 'lendo'){
+    corpo = '<div class="aviso">Lendo os itens do edital no PNCP…</div>';
+  }else if(estado === 'erro'){
+    /* O ERRO DIZ O QUE FALHOU E O QUE CONTINUA VALENDO. "Não consegui ler os itens" não é "esta
+       licitação não tem itens" — e sem essa frase as duas leituras se confundem. */
+    corpo = '<div class="aviso err" style="text-align:left;padding:14px 18px">'
+      + ic('alerta','aviso') + ' Não consegui ler os itens deste edital agora ('+esc(DET.erro||'')+').'
+      + ' Isto <b>não</b> quer dizer que o edital não tenha itens — quer dizer que eu não consegui olhar.'
+      + ' O resto do que está aqui em cima veio da busca e continua valendo.</div>';
+  }else{
+    const d = DET.dados || { itens:[], casados:0, truncado:false };
+    const termo = semAcento(String(DET.busca||'').trim());
+    const lista = termo
+      ? d.itens.filter(x => semAcento(String(x.it.descricao||'')).includes(termo))
+      : d.itens;
+    const pct = aderenciaPct(l);
+    corpo =
+      '<div class="det-barra">'
+      + '<input type="search" class="det-busca" placeholder="procurar dentro dos '+d.itens.length+' itens deste edital…" '
+      +   'value="'+esc(DET.busca||'')+'" oninput="detBusca(this.value)">'
+      + '<span class="hint">'+lista.length+' de '+d.itens.length+' '+(d.itens.length===1?'item':'itens')
+      +   (pct != null ? ' · <b>'+pct+'%</b> com equivalente no nosso estoque' : '')
+      + '</span>'
+      + '</div>'
+      /* O TETO TRUNCADO É DITO NA CARA, e no lugar onde ele engana: em cima da LISTA. Escondido
+         no rodapé, alguém leria "40 itens" como o edital inteiro. */
+      + (d.truncado
+          ? '<div class="aviso" style="text-align:left;padding:10px 14px;margin-bottom:10px"><span class="hint">'
+            + 'O PNCP entrega os itens em páginas e eu paro em '+ITENS_TETO_PAG+'. Este edital bateu no teto: '
+            + '<b>a lista abaixo está incompleta</b>, e a nota de aderência não é calculada porque o total não é sabido.'
+            + '</span></div>'
+          : '')
+      + '<div class="det-itens">'
+      + (lista.length ? lista.map((x, k) => {
+          const it = x.it;
+          const casou = x.pares && x.pares.length;
+          return '<details class="det-item">'
+            + '<summary>'
+            /* A CAIXA POR ITEM alimenta o `?itens=` da URL do funil: quem manda um edital de 500
+               itens pro funil raramente disputa os 500. O `stopPropagation` existe porque a
+               caixa vive dentro do <summary>, e sem ele marcar o item abriria a sanfona junto. */
+            +   '<input type="checkbox" data-item="'+esc(String(it.numeroItem != null ? it.numeroItem : (k+1)))+'" '
+            +     'onclick="event.stopPropagation()" aria-label="marcar este item">'
+            +   '<span class="n">'+esc(it.numeroItem != null ? it.numeroItem : (k+1))+'</span>'
+            +   '<span class="d">'+grifa(String(it.descricao||'—'))+'</span>'
+            +   '<span class="q">'+esc(it.quantidade != null ? it.quantidade : '—')+' '+esc(it.unidadeMedida||'')+'</span>'
+            +   '<span class="v">'+(it.valorUnitarioEstimado != null ? brl(it.valorUnitarioEstimado) : '—')+'</span>'
+            +   (casou ? '<span class="bdg v" title="temos item equivalente no estoque">temos</span>'
+                       : '<span class="bdg cinza">sem equivalente</span>')
+            + '</summary>'
+            + '<div class="det-corpo">'
+            +   '<div class="dados">'
+            +     '<div class="dado"><small>Valor de referência (unitário)</small><span>'
+            +       (it.valorUnitarioEstimado != null ? brl(it.valorUnitarioEstimado) : 'não informado')+'</span></div>'
+            +     '<div class="dado"><small>Teto CMED</small><span>'
+            /* AQUI MORA A REGRA MAIS IMPORTANTE DESTA TELA, e ela é do motor, não daqui: não
+               casou NÃO É ZERO — é "sem teto CMED". Material e correlato, que é metade de um
+               edital hospitalar, não tem teto por natureza. */
+            +       celTetoCMED(it, null)+'</span></div>'
+            +     '<div class="dado"><small>Situação no PNCP</small><span>'+esc(it.situacaoCompraItemNome||'—')+'</span></div>'
+            +   '</div>'
+            +   (casou
+                ? '<div class="hint" style="margin-top:8px">No nosso estoque: '
+                  + x.pares.slice(0,3).map(p => esc(String(p.produto||p.nome||'').slice(0,60))).join(' · ') + '</div>'
+                : '')
+            + '</div></details>';
+        }).join('')
+        : '<div class="aviso">'+(termo ? 'Nenhum item deste edital casa com “'+esc(DET.busca)+'”.' : 'O PNCP não devolveu itens para este edital.')+'</div>')
+      + '</div>';
+  }
+
+  el.innerHTML =
+    '<div class="det-topo">'
+    + '<div>'
+    +   '<div class="det-tit">'+titulo+'</div>'
+    +   '<div class="hint">'+esc(org)+(un.municipioNome ? ' · '+esc(un.municipioNome) : '')+(un.ufSigla?' · '+esc(un.ufSigla):'')+'</div>'
+    + '</div>'
+    /* O SELO "DOS MEUS NEGÓCIOS" é LEITURA do que já existe no funil — a Encontrar não escreve
+       negócio nenhum. Ele existe pra impedir o erro mais caro desta tela: mandar pro funil um
+       pregão que já está lá, e duas pessoas trabalharem o mesmo edital sem saber. */
+    + (jaNoFunil(l) ? '<span class="bdg azul" title="esta licitação já está no seu funil">DOS MEUS NEGÓCIOS</span>' : '')
+    + '<span style="flex:1"></span>'
+    + '<button class="btn sec mini" onclick="fecharDetalhe()">fechar</button>'
+    + '</div>'
+    /* AS AÇÕES DO DETALHE. O verde é o único primário: é a ação que move o trabalho adiante. */
+    + '<div class="acoes" style="margin-bottom:14px">'
+    +   '<button class="btn mini" style="background:var(--verde-500);color:var(--cinza-800)" '
+    +     'onclick="mandarDetalheProFunil()">Adicionar aos meus negócios</button>'
+    +   ' <button class="btn sec mini" onclick="conversarComEdital()" '
+    +     'title="usa inteligência artificial e consome crédito por uso">'
+    +     'Conversar com o edital <span class="lm-selo-ia">IA</span></button>'
+    + '</div>'
+    + '<div id="det-conversa"></div>'
+    + '<div class="dados" style="margin:0 0 14px">'
+    +   '<div class="dado"><small>Abertura</small><span>'+fmtDt(l.dataAberturaProposta)+'</span></div>'
+    +   '<div class="dado"><small>Encerra em</small><span>'+fmtDt(l.dataEncerramentoProposta)+'</span></div>'
+    +   '<div class="dado"><small>Valor estimado</small><span>'+brl(l.valorTotalEstimado)+'</span></div>'
+    +   '<div class="dado"><small>Nº controle PNCP</small><span>'+esc(l.numeroControlePNCP||'—')+'</span></div>'
+    + '</div>'
+    + corpo;
+}
 
 // ══ A PONTE ENCONTRAR → NEGÓCIOS (08/08) ══════════════════════════════════════════════════
 // Achar a oportunidade e decidir disputar são o mesmo gesto. Antes, quem achasse algo aqui
@@ -3291,7 +3745,7 @@ function render(todos, kws, excl, aviso, procedencia, procIcone){
     if(!casaRefino(l, r)) return false;
     return !kws.length || kws.some(k=>t.includes(k));
   };
-  const hits = todos.filter(casa);
+  let hits = todos.filter(casa);          // `let`: a fatia A3 reordena a lista antes de desenhar
   const agora = new Date();
   const abertas = hits.filter(l=>{ const d=dt(l.dataEncerramentoProposta); return d && d>agora; });
   const soma = hits.reduce((s,l)=>s+(Number(l.valorTotalEstimado)||0),0);
@@ -3413,7 +3867,21 @@ function render(todos, kws, excl, aviso, procedencia, procIcone){
      +     (todos.length===1?'publicada no período':'publicadas no período')
      +     (abremHoje ? ' · <b>'+abremHoje+'</b> '+(abremHoje===1?'abre hoje':'abrem hoje') : '')
      +   '</span>'
+     +   '<span class="hint" id="sel-conta" style="font-weight:var(--peso-semi)"></span>'
      +   '<span style="flex:1"></span>'
+     /* ══ O CONTROLE "ORDENAR" (fatia A3) ═══════════════════════════════════════════════════
+        Em 13/08 ele ficou de fora com o motivo escrito: das três opções do molde, duas não
+        existiam (a aderência precisava de backend, a de valor era função nova), e "um seletor
+        com uma opção só é um controle que ensina a pessoa a clicar à toa".
+        >>> AS TRÊS EXISTEM AGORA. A aderência virou número real nesta mesma fatia — sem
+            backend, dividindo o que o cruzamento já guardava — e a de valor é uma linha. O que
+            destravou o controle foi o dado, não a vontade. */
+     +   '<div class="ord"><label for="sel-ordem">Ordenar</label>'
+     +     '<select id="sel-ordem" onchange="poeOrdem(this.value)">'
+     +       '<option value="abertura"'+(ORDEM==='abertura'?' selected':'')+'>Abertura mais próxima</option>'
+     +       '<option value="valor"'+(ORDEM==='valor'?' selected':'')+'>Maior valor estimado</option>'
+     +       '<option value="aderencia"'+(ORDEM==='aderencia'?' selected':'')+'>Maior aderência</option>'
+     +     '</select></div>'
      +   '<div class="dens" role="group" aria-label="Densidade da lista">'
      +     '<button type="button" onclick="poeDensidade(\'confortavel\')" aria-pressed="'+(densidade()!=='compacta')+'">Confortável</button>'
      +     '<button type="button" onclick="poeDensidade(\'compacta\')" aria-pressed="'+(densidade()==='compacta')+'">Compacta</button>'
@@ -3429,6 +3897,10 @@ function render(todos, kws, excl, aviso, procedencia, procIcone){
      + '</div>'
      + '<div class="linhas">';          // <- fecha depois do laço; ver o comentário do fio dobrado
 
+  /* A LISTA É ORDENADA AQUI, e o `_hits` guarda a lista JÁ ORDENADA — porque os cartões chamam
+     as funções por ÍNDICE. Ordenar só na hora de desenhar deixaria o índice apontando pra outra
+     licitação, e "Mandar pro funil" mandaria a errada. */
+  hits = ordenaHits(hits);
   window._hits = hits;                       // os cards chamam verItens(i) por índice
   hits.forEach((l, i) => {
     const org = (l.orgaoEntidade||{}).razaoSocial||'—';
@@ -3446,19 +3918,33 @@ function render(todos, kws, excl, aviso, procedencia, procIcone){
                  + ' — ' + esc(org) + ' / ' + esc(un.ufSigla||'');
     /* A barra da esquerda segue o prazo — o mesmo `dias` que já monta o crachá logo abaixo.
        Uma conta só, dois lugares que a mostram: o crachá escreve, a barra acelera. */
-    const classePrazo = dias == null ? '' : (dias < 0 ? ' prazo-fim' : (dias <= 2 ? ' prazo-urg' : ''));
-    h += '<div class="lic'+classePrazo+'">'
+    const urg = urgenciaAbertura(l.dataAberturaProposta, agora);
+    const pct = aderenciaPct(l);
+    const escolhida = ESCOLHIDAS.has(chaveLic(l));
+    h += '<div class="lic'+urg.classe+(escolhida?' escolhida':'')+'">'
       + '<div class="topo">'
+      /* A CAIXA DE SELEÇÃO É A PRIMEIRA COISA DA LINHA, antes do selo do órgão: ela é o único
+         controle do cartão que não abre nada, e o olho tem que achá-la sem procurar. */
+      +   '<div class="sel"><input type="checkbox" onclick="event.stopPropagation();alternaEscolha('+i+',this)"'
+      +     (escolhida?' checked':'')+' aria-label="selecionar esta licitação"></div>'
       /* O selo saiu do <path> escrito à mão e passou a apontar pro sprite compartilhado
          (fpmed_icones.js, 13/08). O desenho daqui já divergia meio pixel do #ic-orgao do
          Negócios — colunas em 5/9.5/14.5/19 contra 5.5/10/14/18.5 — que é exatamente como
          a cópia envelhece: sem ninguém ver e sem ninguém reclamar. */
       +   '<div class="selo" aria-hidden="true"><svg><use href="#ic-orgao"/></svg></div>'
       +   '<div class="cab">'
-      +     (l.linkSistemaOrigem
-            ? '<a class="titulo" href="'+esc(l.linkSistemaOrigem)+'" target="_blank" rel="noopener">'+titulo+' ↗</a>'
-            : '<span class="titulo">'+titulo+'</span>')
+      /* ══ O TÍTULO DEIXOU DE SER O LINK PRO PNCP (fatia A3) ═══════════════════════════════
+         Ele era uma âncora que TIRAVA a pessoa do sistema — e sair do sistema era, portanto, o
+         gesto mais fácil do cartão. Agora ele abre o DETALHE aqui dentro, que é onde estão os
+         itens, o teto CMED e o caminho pro funil. O PNCP continua a um clique, dentro de
+         "⋯ mais ações", porque conferir no portal segue sendo trabalho legítimo — só deixou de
+         ser o padrão.
+         >>> É <button> E NÃO <a>, de propósito: ele não navega para lugar nenhum, ele abre um
+             painel. Âncora que não leva a um endereço quebra o "abrir em nova aba" do meio da
+             pessoa e mente pro leitor de tela sobre o que vai acontecer. */
+      +     '<button type="button" class="titulo" onclick="abrirDetalhe('+i+')">'+titulo+'</button>'
       +     '<div class="sub"><span class="quando">Abertura em '+fmtDt(l.dataAberturaProposta)+'</span>'
+      +       urg.pastilha
       +       (l.modoDisputaNome ? '<span>· '+esc(l.modoDisputaNome)+'</span>' : '')
       +       (_ehSrp(l) ? '<span class="bdg laranja" title="Sistema de Registro de Preços: a ata vale por até 12 meses e a compra é parcelada">SRP</span>' : '')
       +       prazo
@@ -3471,7 +3957,16 @@ function render(todos, kws, excl, aviso, procedencia, procIcone){
       + '<div class="obj">'+grifa(l.objetoCompra||'')+'</div>'
       + '<div class="etiquetas" id="etq-'+i+'">'
         + cats.map(c=>'<span class="etq">'+esc(c)+'</span>').join('')
-        + (alvo ? '<span class="etq alvo">'+ic('alvo')+' '+alvo+' itens no nosso estoque</span>' : '')
+        /* A NOTA DE ADERÊNCIA substituiu a etiqueta "N itens no nosso estoque" quando dá pra
+           calcular a razão. Ela diz a mesma coisa em menos espaço e responde melhor a pergunta
+           real: "quanto DESTE edital eu atendo?" — 40 itens casados em 500 e 40 em 45 são
+           mundos diferentes, e a contagem crua tratava os dois igual. Quando o total não é
+           confiável (leitura truncada), ela cai de volta pra contagem, que continua verdadeira. */
+        + (pct != null
+            ? '<span class="etq alvo"><span class="aderencia" title="'+alvo+' de '+((CRUZ.get(chaveLic(l))||{}).itens||[]).length+' itens do edital têm equivalente no nosso estoque">'
+              + '<span class="barra"><i style="width:'+pct+'%"></i></span>'
+              + '<span class="pct">'+pct+'% aderente</span></span></span>'
+            : (alvo ? '<span class="etq alvo">'+ic('alvo')+' '+alvo+' itens no nosso estoque</span>' : ''))
         // o selo NUNCA vem sem o motivo no title: "DESERTA" sem porquê vira boato dentro da tela
         + (des ? '<span class="etq deserta" title="'+esc(des.motivo)+'">'+ic('alerta')+' '+esc(des.rotulo)+'</span>' : '')
       + '</div>'
@@ -3493,12 +3988,37 @@ function render(todos, kws, excl, aviso, procedencia, procIcone){
       +     esc(l.usuarioNome || l.modalidadeNome || '—')+'</span></div>'
       +   (fim ? '<div class="dado"><small>Encerra em</small><span>'+fmtDt(l.dataEncerramentoProposta)+'</span></div>' : '')
       + '</div>'
-      + '<div class="acoes"><button class="btn sec mini" id="bt-'+i+'" onclick="verItens('+i+')">'
+      /* ══ AS AÇÕES, REORDENADAS PELA FATIA A3 ═════════════════════════════════════════════
+         A PRIMÁRIA é abrir o detalhe aqui dentro. Ela vem primeira e é a única com peso de
+         botão principal, porque é o gesto que o resto do fluxo depende: é lá que estão os
+         itens, o teto CMED e o caminho pro funil.
+         >>> "ABRIR NO PNCP" DESCEU PRA "⋯ MAIS AÇÕES", e não sumiu. A regra que o dono deu é
+             que sair do sistema deixe de ser o caminho de menor resistência — não que ele
+             deixe de existir. Conferir no portal continua a dois cliques.
+         >>> "CRUZAR COM NOSSO ESTOQUE" CONTINUA NO CARTÃO, e não foi pro menu: ele é o que
+             ACENDE a nota de aderência ali em cima. Esconder o gesto que produz o número que
+             a própria linha exibe faria a nota parecer que aparece sozinha em algumas linhas
+             e não em outras. */
+      + '<div class="acoes">'
+      +   '<button class="btn mini" onclick="abrirDetalhe('+i+')">Ver itens e detalhes</button>'
+      +   ' <button class="btn sec mini" id="bt-'+i+'" onclick="verItens('+i+')">'
       +   ic('alvo') + ' Cruzar com nosso estoque</button>'
       // A PONTE ENCONTRAR -> NEGÓCIOS. Achar a oportunidade e decidir disputar são o mesmo
       // gesto; antes disso, quem achasse algo aqui tinha que ir pro funil e digitar de novo.
       +   ' <button class="btn sec mini" id="bf-'+i+'" onclick="mandarProFunil('+i+')" '
-      +     'title="cria o negócio no funil, na fase Oportunidade">＋ Mandar pro funil</button></div>'
+      +     'title="cria o negócio no funil, na fase Oportunidade">＋ Mandar pro funil</button>'
+      +   '<span style="flex:1"></span>'
+      +   '<span class="mais"><button type="button" class="btn sec mini" '
+      +     'onclick="event.stopPropagation();this.parentNode.classList.toggle(\'on\')" '
+      +     'aria-haspopup="true">⋯ mais ações</button>'
+      +     '<span class="cx">'
+      +       (l.linkSistemaOrigem
+        ? '<a href="'+esc(l.linkSistemaOrigem)+'" target="_blank" rel="noopener">'
+          + 'Abrir no PNCP' + ic('sai','sai') + '</a>'
+        : '<button type="button" disabled title="este edital não trouxe link do portal de origem">'
+          + 'Abrir no PNCP (sem link)</button>')
+      +     '</span></span>'
+      + '</div>'
       + '<div class="itens" id="itens-'+i+'" style="display:none"></div>'
       + '</div>';
   });

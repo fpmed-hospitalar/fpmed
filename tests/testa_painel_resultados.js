@@ -58,12 +58,27 @@ ok(n + '. "abrem hoje" so aparece quando ha (0 todo dia ensina a ignorar o cabec
    sessao das 8h de amanha ja e "amanha" as 21h de hoje em UTC. */
 ok(n + '. e ela usa o dia LOCAL, como o indicador do topo',
   /_hoje0 = new Date\(agora\.getFullYear\(\), agora\.getMonth\(\), agora\.getDate\(\)\)/.test(LIMPO)); n++;
-/* O SELETOR DE ORDENACAO DO MOLDE NAO ENTROU: la sao tres opcoes (abertura, aderencia, valor);
-   aqui a ordem e UMA, e das outras duas a aderencia e Parte B e a de valor seria funcao nova.
-   Seletor com uma opcao so e um controle que ensina a pessoa a clicar a toa. */
-ok(n + '. o seletor de ordenacao do molde NAO entrou (a ordem e uma so, e continua ESCRITA)',
-  /ordenadas por quem <b>encerra primeiro<\/b>/.test(LIMPO)
-  && !/Maior aderência/.test(LIMPO) && !/Maior valor/.test(LIMPO)); n++;
+/* ══ ESTE ASSERT MUDOU DE LADO EM 14/08 (fatia A3), E A DECISAO ANTERIOR ESTAVA CERTA ═════════
+   Ele cobrava que o seletor NAO existisse, e o motivo escrito era bom: "das tres opcoes do
+   molde, a aderencia e Parte B (precisa de backend) e a de valor seria funcao nova — e seletor
+   com uma opcao so e um controle que ensina a pessoa a clicar a toa".
+   >>> O QUE MUDOU NAO FOI A OPINIAO, FOI O DADO. A aderencia virou numero real na fatia A3, sem
+       backend nenhum: o cruzamento ja guardava casados E total, e ninguem tinha dividido um
+       pelo outro. Com as tres opcoes existindo de verdade, o controle deixou de ser enfeite.
+   >>> E O QUE ELE PROTEGIA CONTINUA COBRADO, agora do lado certo: as tres opcoes tem que
+       EXISTIR (nao basta desenhar o seletor) e a ordem PADRAO tem que continuar sendo a
+       abertura — ordenar por valor por padrao poria o contrato grande e distante na frente da
+       sessao que comeca em duas horas. */
+ok(n + '. *** o seletor de ordenacao entrou, e as TRES opcoes existem de verdade ***',
+  /id="sel-ordem"/.test(LIMPO) && /Abertura mais próxima/.test(LIMPO)
+  && /Maior valor estimado/.test(LIMPO) && /Maior aderência/.test(LIMPO)
+  && /function ordenaHits/.test(LIMPO)); n++;
+ok(n + '. ...e a ordem PADRAO continua sendo a abertura (a pergunta que abre o dia do gestor)',
+  /let ORDEM = 'abertura'/.test(LIMPO)); n++;
+ok(n + '. *** e quem nao tem o criterio vai pro FIM, nunca pro topo (zero fingindo de dado) ***',
+  /Number\(b\.valorTotalEstimado\)\|\|-1/.test(LIMPO)
+  && /aderenciaPct\(b\) == null \? -1/.test(LIMPO)
+  && /semData = 8640000000000/.test(LIMPO)); n++;
 
 // ── 3. o rodape nao pode fingir paginacao ────────────────────────────────────
 ok(n + '. *** o rodape diz que a lista NAO pagina, em vez de copiar "1-20 de 2.312" ***',
