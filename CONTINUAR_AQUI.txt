@@ -5,7 +5,60 @@
     relatorio. Detalhe no CLAUDE.md, secao ATALHOS DO DONO.
 
 ========================================
->>> CAIXA A (arquiteto) — ANDAMENTO. 14/08/2026
+>>> CAIXA A — RODADA 2, EXECUTADA INTEIRA. 14/08/2026
+========================================
+  [OK] A9 ... A BUSCA POR PRODUTO PASSOU A ACHAR (commit 2a89421). tools/coleta_itens_lote.js.
+             195 -> 34.000 itens; 1 -> 1.703 licitacoes com itens. Termos que davam ZERO no
+             objeto agora respondem pelos ITENS: dipirona 0->18 licitacoes, soro 0->51,
+             caneta 0->58. Os 192 resultados da A7 INTACTOS — as colunas resultado_* ficam
+             FORA do corpo do upsert de proposito (o que nao esta no corpo nao entra no ON
+             CONFLICT DO UPDATE; com null junto, a varredura teria apagado tudo em silencio).
+             A tela ganhou selo de cobertura honesto ("itens carregados de X de Y licitacoes").
+             ACHADO: `negocios.numero_controle` e `licitacao_id` estavam NULOS nas 2.561 linhas
+             — o botao "Mandar pro funil" gravava so o `numero` da compra. Corrigido: agora vao
+             os dois. Sem a chave, nada voltava do negocio pro edital.
+  [OK] A14 .. OS 4 CONSERTOS DA AUDITORIA DO B (commit 86172c2). (1) window.SB_URL na Encontrar
+             MAIS a causa de raiz no motor: ele procurava `LIMEDTEC_CLIENTE.supabase.url` e a
+             chave do cliente.config.js sempre foi `banco` — caminho que nomeia chave inexistente
+             nao estoura, cai calado pro proximo `||`. (2) kit de tarefas alinhado em 14.
+             (3) edge function `buscar-edital` PUBLICADA e medida: 401 sem token, 200 com token
+             (TR de 7 paginas, 9.865 chars em 535 ms), 422 sem numero de controle; freio de
+             20/hora e registro em tabela propria (NAO em usos_ia — nao gasta IA). (4) fila das
+             105 Atas: ZERO tem chave do PNCP, e a juncao na marra deu 2 "unicas" AS DUAS
+             ERRADAS (Palmeiras de Goias casou com Jatai). A ferramenta exige municipio e recusa.
+  [OK] A10 .. MEUS JORNAIS: o icone voltou a ser icone (commit 797003b). Escape DUPLO. E a
+             armadilha era que apagar o `.map(esc)` de fora ABRIA BURACO — `f.uf`, `f.mod` e as
+             datas entravam crus. Conserto de LUGAR: dado escapa na origem, markup nasce markup.
+             Provado por MUTACAO nas duas direcoes.
+  [OK] A11 .. BATER-O-OLHO COM O MOLDE (commit 4557ea9). 59 hexes do molde x tema: 39 exatos, 18
+             de componentes que nao temos, ZERO hex a mao em regra de estilo.
+             DIVERGENCIA DE TOKEN CORRIGIDA: a nota de aderencia pintava TUDO de verde, e o molde
+             manda tres faixas. Verde em 22% de aderencia e a tela dizendo "otimo" sobre um
+             edital que quase nao tem nada nosso. As duas cores claras do molde reprovaram em
+             contraste (2,36:1 e 2,56:1 contra o trilho) e desceram um degrau na nossa rampa.
+             7 divergencias de OPINIAO anotadas em docs/molde_encontrar.md, nao mudadas.
+  [OK] A12 .. CUSTO AS CLARAS (commit 2f2e0d4). O orcamento nasce no SERVIDOR (a edge ganhou
+             `{orcar:true}`), e o motor so PEDE — o contrato proibe segunda conta de custo.
+             O portao e LIGADO POR PADRAO: quem chamar sem passar por ele precisa DIZER
+             `confirmado:true`. A tela do B ganhou o aviso de graca. MEDIDO: orcar nao criou
+             linha em usos_ia nem somou um centavo; cancelar tambem nao. CHARS_POR_TOKEN = 3,00
+             medido nas 7 leituras reais (o "4 chars/token" e do ingles e subestimaria 33%).
+  [OK] A13 .. FASE 2 DAS FONTES — E ELA DEU "NAO", COM NUMERO (commit ed8ca96).
+             licitacoes-e: HTTP 403 ate no /robots.txt (muralha, pulei). Petronect: SAP com
+             sessao, e nao e saude. EBSERH: 17.981 editais dela JA ESTAO NO PNCP — nao e fonte
+             nova. Sistema S: parcial.
+             >>> O QUE SAIU DISSO VALE MAIS: a API de CONSULTA do PNCP continua fora (timeout em
+                 30 s) e o detalhe da compra MUDOU PRA DENTRO DELA (301). Mas o /api/search/ e o
+                 /itens estao no ar. tools/coleta_pncp_busca.js usa a porta aberta: 400 licitacoes
+                 novas, DAS 27 UFs. O indice cobria 7 UFs e passou a cobrir 27. Total 3.601.
+                 So o que esta RECEBENDO PROPOSTA entra (status=todos traria edital de 2023).
+                 A janela de proposta fica NULL — nao inventada — e a varredura normal a preenche
+                 quando o PNCP voltar, pela mesma chave natural.
+
+  Suites ao fim da rodada: 4.293 asserts, 112 suites, 0 falhas.
+
+========================================
+>>> CAIXA A (arquiteto) — RODADA 1. 14/08/2026
 ========================================
   [OK] ARRUMACAO ... caixas/ e relatorios/ no .gitignore; regime no CLAUDE.md e aqui.
   [OK] A1 .......... RADAR REMOVIDO INTEIRO (commit e8f7587). Painel, atalho, rota #radar,
