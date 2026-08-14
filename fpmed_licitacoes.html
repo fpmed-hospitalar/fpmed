@@ -3254,21 +3254,36 @@ function janelaDe(f){
   return {de: f.janela.de||'', ate: f.janela.ate||f.janela.de||''};
 }
 const _MOD_NOME = {'6':'Pregão eletrônico','8':'Dispensa eletrônica','4':'Concorrência eletrônica','9':'Inexigibilidade'};
+/* ══ ESTA FUNÇÃO DEVOLVE **HTML**, E CADA PEDAÇO DE DADO SAI DAQUI JÁ ESCAPADO (fatia A10) ═══
+   O defeito, visto no ar em 13/08 com a tela logada: no painel Meus Jornais o ícone aparecia
+   como TEXTO CRU — `<svg class="ic"...><use href="#ic-calendario"/></svg> hoje (move sozinho)`.
+   A causa era escape DUPLO: aqui dentro já se monta markup (`ic()`) e já se escapava parte do
+   dado (`esc(f.kw)`), e quem chamava fazia `.map(esc)` por cima. O segundo escape transformava
+   a tag do ícone em texto.
+
+   >>> E A ARMADILHA É QUE **NÃO BASTAVA APAGAR O `.map(esc)` DE FORA**. Nem tudo aqui estava
+       escapado: `f.uf`, `f.mod` e as datas do `br()` entravam CRUS, e viviam só porque o
+       escape de fora os cobria por acidente. Tirar o de fora sem escapar estes três trocaria
+       feiura por buraco — o filtro do jornal é dado que veio do banco e volta pra tela.
+       O conserto é este: o DADO se escapa na origem, o MARKUP nasce markup, e o chamador não
+       escapa mais nada. Um lugar só decide o que é texto e o que é tag.
+   >>> `pillsRefino` devolve FRASE (texto puro) com portal, órgão, modo e situação dentro —
+       tudo campo que a pessoa digitou. Por isso ele leva `esc` aqui, e não passa direto. */
 function resumoFiltros(f){
-  const j = janelaDe(f), br = s => s ? s.slice(8,10)+'/'+s.slice(5,7) : '—';
+  const j = janelaDe(f), br = s => s ? esc(s.slice(8,10)+'/'+s.slice(5,7)) : '—';
   const p = [];
   // O RÓTULO DA JANELA MÓVEL DIZ O QUE ELA É HOJE, e não o nome da regra. "último dia útil" era
   // um rótulo que descrevia o cálculo; o operador quer saber a DATA que vai abrir.
   p.push(f.janela && f.janela.tipo === 'fixa'
     ? ic('calendario') + ' janela FIXA ' + br(j.de) + (j.ate!==j.de ? '–'+br(j.ate) : '')
     : ic('calendario') + ' ' + (j.de === j.ate ? 'hoje' : br(j.de)+'–'+br(j.ate)) + ' (move sozinho)');
-  p.push((f.uf||'todas as UF') + ' · ' + (_MOD_NOME[f.mod] || 'modalidade '+(f.mod||'?')));
+  p.push(esc(f.uf||'todas as UF') + ' · ' + esc(_MOD_NOME[f.mod] || 'modalidade '+(f.mod||'?')));
   if(f.kw) p.push(ic('lupa') + ' ' + esc(f.kw));
   if(f.excluir) p.push(ic('bloqueado') + ' ' + esc(f.excluir));
   // reaproveita as MESMAS pills da tela: o resumo do jornal não pode descrever o filtro de um
   // jeito e a lista aplicá-lo de outro.
   const pil = pillsRefino(refinoDe(f));
-  if(pil.length) p.push(pil.join(' · '));
+  if(pil.length) p.push(pil.map(esc).join(' · '));
   return p;
 }
 // aplica um jornal ao formulário. É o mesmo caminho de sempre — o jornal não tem consulta
@@ -3344,7 +3359,10 @@ function pintaJornais(){
       : '<span class="hint">nada novo</span>';
     return '<div class="jor">'
       + '<div><div class="nome">'+esc(j.nome)+'</div>'
-      +   '<div class="sub">'+resumoFiltros(j.filtros||{}).map(esc).join('<br>')+'</div>'
+      /* SEM `.map(esc)` AQUI, e isso é o conserto da fatia A10 — não um descuido. O
+         `resumoFiltros` devolve HTML com o dado JÁ escapado na origem; escapar de novo era o
+         que imprimia a tag do ícone como texto na tela. Ver o comentário longo lá. */
+      +   '<div class="sub">'+resumoFiltros(j.filtros||{}).join('<br>')+'</div>'
       +   '<div class="sub">'+(j.ultima_leitura
             ? 'última leitura em '+fmtDt(j.ultima_leitura)+(j.ultimo_total!=null?' · '+j.ultimo_total+' bateram':'')
             : '<b>nunca aberto</b> — a 1ª leitura só registra o que existe hoje')+'</div></div>'

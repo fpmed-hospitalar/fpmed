@@ -360,6 +360,42 @@ ok('34. on delete cascade: usuario apagado nao deixa jornal orfao', /references 
   ok('74. *** jornal nunca aberto abre marcado como PRIMEIRA leitura ***',
     win._jornalAtivo && win._jornalAtivo.primeira === true);
 
+  /* ══════════ 7i. O ESCAPE DO RESUMO — ICONE RENDERIZA, DADO CONTINUA ESCAPADO (fatia A10) ══
+     O defeito, visto no ar em 13/08 com a tela LOGADA: o painel imprimia o SVG como TEXTO —
+     `<svg class="ic" ...><use href="#ic-calendario"/></svg> hoje (move sozinho)` na cara do
+     operador. Escape DUPLO: o `resumoFiltros` monta markup e o chamador fazia `.map(esc)`.
+     >>> E A ARMADILHA E O MOTIVO DESTE BLOCO TER DUAS METADES. Apagar so o escape de fora
+         conserta o icone E ABRE BURACO: `f.uf`, `f.mod` e as datas entravam CRUS ali dentro, e
+         viviam so porque o escape de fora os cobria por acidente. Um assert que so olhasse o
+         `<svg` ficaria verde sobre a versao insegura — que e o pior resultado possivel aqui,
+         porque e o que autoriza o commit. As duas metades andam juntas ou nao valem. */
+  {
+    const HOSTIL = '<img src=x onerror=alert(1)>';
+    const r = resumoFiltros({ uf: HOSTIL, mod: HOSTIL, kw: HOSTIL, excluir: HOSTIL,
+                              portal: HOSTIL, orgao: HOSTIL,
+                              janela: { tipo: 'fixa', de: '2026-08-01', ate: '2026-08-03' } });
+    const html = r.join('<br>');
+    ok('75. *** o icone do resumo sai como TAG, e nao como texto ***',
+      /<svg/.test(html) && !/&lt;svg/.test(html), html.slice(0, 120));
+    ok('76. *** e NENHUM pedaco de dado sai cru — uf, mod, kw, excluir, portal e orgao ***',
+      !/<img/.test(html) && (html.match(/&lt;img/g) || []).length >= 5,
+      { crus: (html.match(/<img/g) || []).length, escapados: (html.match(/&lt;img/g) || []).length });
+    ok('77. ...e a janela FIXA continua sendo anunciada com as datas',
+      /FIXA/.test(html) && /01\/08/.test(html) && /03\/08/.test(html));
+
+    // e o mesmo, ja pintado na tela: o assert de cima olha a funcao, este olha o que sai nela.
+    REDE.resposta = { ok: true, text: async () => '', json: async () => ([
+      { id: 11, nome: 'Com icone', filtros: { uf: HOSTIL, janela: { tipo: 'movel' } }, vistos: [] }]) };
+    await carregarJornais(); pintaJornais();
+    const pintado = campo('jor-lista').innerHTML;
+    ok('78. *** na tela pintada, o SVG e tag e o dado hostil esta escapado ***',
+      /<svg/.test(pintado) && !/&lt;svg/.test(pintado) && !/<img/.test(pintado) && /&lt;img/.test(pintado),
+      pintado.slice(0, 200));
+    // o nome do jornal vem do banco e continua passando pelo esc() do chamador
+    ok('79. ...e o nome do jornal segue escapado no chamador (ele nao entrou na mudanca)',
+      /esc\(j\.nome\)/.test(src));
+  }
+
   console.log('\nRESULTADO: ' + p + ' ok, ' + f + ' falha(s)');
   if (f) process.exit(1);
 })();
