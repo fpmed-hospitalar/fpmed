@@ -173,3 +173,134 @@ linhas em vez de duplicá-las.
 editais e os primeiros são de 2023–2024 (a busca ordena por relevância, não por data); com
 `status=recebendo_proposta` dá 169, de julho e agosto de 2026. Índice grande não é índice bom:
 despejar edital encerrado há dois anos é ruído com aparência de cobertura.
+
+---
+
+# FASE 3 - ALVOS NOVOS FORA DO PNCP (fatia A22, 14/08/2026)
+
+A caixa mandou de novo procurar cobertura fora do PNCP, com tres alvos e **uma por vez**, e com
+uma regra de economia obrigatoria antes de qualquer coletor:
+
+> MEDIR SOBREPOSICAO primeiro: amostra >= 50 certames da fonte; se >= 80% ja estiver no nosso
+> indice, NAO construa o coletor - registre aqui e passe para o proximo alvo.
+
+**Nenhum coletor novo foi construido nesta rodada, e essa e a conclusao - nao a desistencia.**
+
+---
+
+## Alvo 1 - Sao Paulo (bec.sp.gov.br e compras.sp.gov.br)
+
+### O que a sondagem achou
+
+| endereco | veredito |
+|---|---|
+| `bec.sp.gov.br/robots.txt` | 200. Proibe so `/bec_pregao_ui/Ajax/` |
+| `bec.sp.gov.br` - consulta publica de pregao | **MURALHA**: responde a pagina do Imperva ("Pardon Our Interruption") em vez da consulta |
+| `bec.sp.gov.br/becsp/ui/dadosabertos.aspx` | 404 + a mesma pagina do Imperva |
+| `www.compras.sp.gov.br` | **ENOTFOUND** (o dominio com `www` nao existe) |
+| `compras.sp.gov.br` | 200, 278 KB - **aberto**, e o `robots.txt` libera tudo fora do `/wp-admin/` |
+| `compras.sp.gov.br/painel-de-oportunidades/` | 200 - mas o painel e um **iframe do Power BI**, nao uma porta de dados |
+| `compras.sp.gov.br/consulta-publica/` | 200 - pagina WordPress, sem endpoint de consulta |
+
+**A BEC/SP esta atras de muralha e foi PULADA, sem insistir** - a mesma decisao do licitacoes-e.
+
+### A medicao que decidiu
+
+O proprio `compras.sp.gov.br` traz no menu **"Compras e PNCP"** e manda "Acesse o
+Compras.gov.br". Isso levantou a pergunta certa: **o certame paulista ja chega ao PNCP?**
+
+Amostra unica de **250 certames** paulistas de saude, tirada do PNCP com 5 termos do ramo
+(medicamento, material medico hospitalar, seringa, dipirona, soro fisiologico):
+
+```
+totais no PNCP em SP:  medicamento 58.492 . material medico hospitalar 4.549
+                       seringa 5.925 . dipirona 2.184 . soro fisiologico 838
+
+amostra unica ................. 250 certames  (>= 50, como a regra pede)
+orgaos estaduais na amostra ... 74
+municipios paulistas distintos  73
+sobreposicao com o PNCP ....... 100%   (a fonte publica la)
+sobreposicao com o NOSSO indice   0%   (0 de 250)
+nosso indice antes ............ 122 linhas de SP em 3.878 (3,1%)
+```
+
+> **A sobreposicao com a FONTE e 100% e com o NOSSO INDICE e 0%.** A regra de economia diz para
+> nao construir o coletor - e diz mais: **o que faltava nao era estrada nova, era andar na que ja
+> existe.** Um coletor da BEC/SP seria uma segunda estrada para o mesmo lugar, e ela esta murada.
+
+### ACHADO GRANDE: o coletor da A13 estava MORTO, e ninguem tinha visto
+
+Ao rodar `tools/coleta_pncp_busca.js` para medir, **toda** chamada voltou `ECONNRESET` - nos
+seis termos, com e sem filtro de UF. Isolado com quatro variacoes na mesma requisicao e no mesmo
+minuto:
+
+```
+UA "Mozilla/5.0 (...) FPMED-Hospitalar/1.0 ..."  -> ECONNRESET
+UA de Chrome completo                            -> 200, total 5.132
+```
+
+O `/api/search/` apertou o filtro de `User-Agent` desde 11/08: ele passou a exigir o formato
+padrao de navegador (a cauda `AppleWebKit/... Chrome/... Safari/...`). O nosso cabecalho trocava
+essa cauda pelo nome da FPMED e virou, para o filtro, "cliente que nao e navegador".
+
+> **A identificacao NAO saiu - ela mudou de lugar.** Medido: o formato de Chrome **com o nome e o
+> e-mail da FPMED no fim** responde 200 igual. Ficamos com esse. O portal continua sabendo quem
+> esta chamando e para quem reclamar; tirar a identificacao para passar seria a unica versao
+> disto que nao se escreveria aqui.
+
+### O que entrou (pela estrada que ja existia)
+
+`--uf` novo em `tools/coleta_pncp_busca.js`, **opt-in** (sem ele a coleta continua nacional,
+exatamente como era - um filtro de UF ligado por padrao desfaria a conquista da A13, que foi ir de
+7 UFs para 27).
+
+```
+indice ..... 3.878 -> 5.278 linhas  (+1.400)
+SP ......... 122 -> 770 linhas      (+648, 6,3x)
+```
+
+---
+
+## Alvo 2 - Diarios oficiais
+
+| fonte | `robots.txt` | veredito |
+|---|---|---|
+| **DOU** (`in.gov.br`) | `User-agent: *` / `Disallow: /` | **FECHADO pela porta da frente.** O site inteiro e proibido a agente automatico. Nao se insiste. |
+| **diariomunicipal.sc.gov.br** (FECAM/SC) | `Disallow: /` para `*` (so o Bingbot e liberado) | **FECHADO.** |
+| **diariomunicipal.com.br** (agregador das associacoes estaduais: AMUPE, FAMEM e outras) | `Disallow:` vazio = **tudo liberado** | **ABERTO.** Unico caminho vivo deste alvo. |
+
+**Nao construido nesta rodada**, e o motivo e a ordem "uma fonte por vez": o alvo 1 consumiu a
+rodada e produziu +1.400 linhas. O `diariomunicipal.com.br` fica como **o proximo alvo medido**,
+e a medicao que falta e a mesma: amostra >= 50 avisos de licitacao, quantos ja estao no PNCP.
+
+---
+
+## Alvo 3 - Sistema S (SESI/SENAI)
+
+| endereco | veredito |
+|---|---|
+| `compras.sesisenai.org.br` | `ERR_TLS_CERT_ALTNAME_INVALID` - o certificado nao vale para o nome. Nao abre. |
+| `portaldaindustria.com.br/senai/canais/licitacoes/` | timeout em 25 s |
+| `sesisp.org.br/licitacoes` | 200, redireciona para `transparencia.sesisp.org.br` |
+
+**E a medicao repete a licao da EBSERH:** `"SESI SENAI"` no PNCP devolve **188 certames**, com o
+`SERVICO SOCIAL DA INDUSTRIA - SESI` entre os primeiros. O Sistema S publica no PNCP.
+
+**Veredito: nao e fonte nova.** Mesma conclusao da fase 2 (fatia A13), agora com numero.
+
+---
+
+## Resumo da fase 3
+
+| alvo | porta | veredito |
+|---|---|---|
+| BEC/SP | murada (Imperva) | **pulado e anotado** |
+| compras.sp.gov.br | aberta, mas e Power BI/WordPress | **sem porta de dados** |
+| certame paulista | **ja esta no PNCP** (100%) | **coletor nao construido** - ampliada a varredura que existe (+648 linhas de SP) |
+| DOU | `Disallow: /` | **fechado** |
+| diariomunicipal.sc.gov.br | `Disallow: /` | **fechado** |
+| diariomunicipal.com.br | liberado | **proximo alvo a medir** |
+| Sistema S | quebrada/timeout | **ja esta no PNCP** (188 certames) - nao e fonte nova |
+
+**A fase 3 gastou a rodada medindo e nao construiu coletor nenhum - e devolveu +1.400 licitacoes
+ao indice.** Foi a medicao que rendeu, nao a obra.

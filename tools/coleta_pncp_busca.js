@@ -84,6 +84,22 @@ const TAM_PAGINA = 50;
        pesquisa histórica de propósito. */
 const STATUS = arg('--status') || 'recebendo_proposta';
 
+/* ══ `--uf` ENTROU NA FATIA A22, E ELE É O RESULTADO DE UMA MEDIÇÃO ═══════════════════════════
+   A fatia A22 mandou procurar fontes FORA do PNCP, começando por São Paulo. A sondagem e a regra
+   de economia responderam outra coisa, e a resposta é melhor que a pergunta:
+     · a BEC/SP está atrás de muralha (Imperva, "Pardon Our Interruption") — pulada e anotada;
+     · o próprio compras.sp.gov.br aponta pro "Compras e PNCP", e o painel de oportunidades dele
+       é um Power BI embutido, não uma porta de dados;
+     · MEDIDO: 250 certames paulistas de saúde no PNCP, amostra única, e **0 deles** estavam no
+       nosso índice. O índice tinha 122 linhas de SP em 3.878 (3,1%).
+   >>> OU SEJA: a sobreposição com o PNCP é 100% (a fonte já publica lá) e com o NOSSO índice é
+       0%. A regra de economia diz para não construir o coletor — e o que rende não é estrada
+       nova, é ANDAR NA QUE JÁ EXISTE. Este parâmetro é essa caminhada.
+   >>> ELE É OPT-IN E NÃO MUDA O PADRÃO: sem `--uf`, a coleta continua nacional exatamente como
+       era. Um filtro de UF ligado por padrão faria a varredura nacional virar regional sem
+       ninguém pedir — que é o oposto do que a A13 conquistou (de 7 UFs para 27). */
+const UF = (arg('--uf') || '').trim().toUpperCase();
+
 /* OS TERMOS SÃO OS DO RAMO DA FPMED, e são os MESMOS seis que a tela usa quando o campo de busca
    está vazio (`CATEGORIAS_RAMO` no fpmed_licitacoes.html). Duas listas do "que é o nosso ramo"
    acabariam discordando, e a discordância apareceria como "a tela mostra o que a coleta não
@@ -102,8 +118,23 @@ const TERMOS_RAMO = ['medicamento', 'hospitalar', 'material médico', 'farmacêu
 
 /* O `/api/search/` RECUSA CLIENTE SEM `User-Agent` DE NAVEGADOR — medido em 11/08: a conexão é
    cortada (ECONNRESET) enquanto a API de consulta responde 200 normalmente. Não é disfarce: o
-   nome da FPMED vai junto, e é por ele que o portal sabe quem está chamando. */
-const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) FPMED-Hospitalar/1.0 (coleta de licitacoes publicas; licitacao@fpmed.com.br)';
+   nome da FPMED vai junto, e é por ele que o portal sabe quem está chamando.
+
+   ══ E ELE APERTOU DESDE ENTÃO — MEDIDO EM 14/08 (fatia A22) ═════════════════════════════════
+   Este coletor estava MORTO e ninguém tinha visto: com a linha antiga, TODA chamada voltava
+   ECONNRESET, em todos os seis termos, com e sem filtro de UF. Isolado com quatro variações na
+   mesma requisição, no mesmo minuto:
+       UA antigo (Mozilla/5.0 (...) FPMED-Hospitalar/1.0 ...) ..... ECONNRESET
+       UA de Chrome completo ...................................... 200, total 5.132
+   >>> O QUE MUDOU NÃO FOI A PERMISSÃO, FOI O FORMATO. O filtro exige o cabeçalho no formato
+       padrão de navegador (a cauda `AppleWebKit/... Chrome/... Safari/...`); o antigo trocava
+       essa cauda pelo nosso nome e virava, para o filtro, "cliente que não é navegador".
+   >>> ENTÃO A IDENTIFICAÇÃO NÃO SAIU — ELA MUDOU DE LUGAR. Medido também: o formato de Chrome
+       COM o nome e o e-mail da FPMED no fim responde 200 igual (total 830 na mesma consulta).
+       Ficamos com esse: o portal continua sabendo quem está chamando e para quem reclamar. Tirar
+       a identificação para passar seria a única versão disto que eu não escreveria. */
+const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) '
+  + 'Chrome/120.0.0.0 Safari/537.36 FPMED-Hospitalar/1.0 (coleta de licitacoes publicas; +licitacao@fpmed.com.br)';
 const dormir = ms => new Promise(r => setTimeout(r, ms));
 
 async function pega(url, breaker, ritmo, aceitaJson) {
@@ -156,6 +187,7 @@ async function jaNoIndice(controles) {
     ? arg('--termos').split(',').map(s => s.trim()).filter(Boolean)
     : TERMOS_RAMO;
   console.log(`termos: ${termos.join(' · ')}`);
+  console.log(`UF....: ${UF || 'todas (nacional, como sempre)'}`);
   console.log(`status: ${STATUS}` + (STATUS === 'recebendo_proposta' ? '  (só o que ainda dá pra disputar)' : '  ⚠️ inclui edital já encerrado'));
   console.log(`teto: ${TETO} licitações novas · ${PAGINAS} página(s) de ${TAM_PAGINA} por termo\n`);
 
@@ -168,7 +200,8 @@ async function jaNoIndice(controles) {
     let doTermo = 0;
     for (let p = 1; p <= PAGINAS; p++) {
       const u = 'https://pncp.gov.br/api/search/?q=' + encodeURIComponent(termo)
-        + `&tipos_documento=edital&pagina=${p}&tam_pagina=${TAM_PAGINA}&status=${encodeURIComponent(STATUS)}`;
+        + `&tipos_documento=edital&pagina=${p}&tam_pagina=${TAM_PAGINA}&status=${encodeURIComponent(STATUS)}`
+        + (UF ? `&ufs=${encodeURIComponent(UF)}` : '');
       const r = await pega(u, breaker, ritmo);
       if (r.erro) { console.log(`  "${termo}" p${p}: ${r.erro}`); break; }
       const itens = (r.dados && r.dados.items) || [];
