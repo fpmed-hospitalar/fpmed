@@ -64,7 +64,15 @@
    continuaria montando proposta sem ver que o item nao tem EAN — e continuaria com a fila de
    pendencia respondendo "nao consegui ler a lista" para sempre, que e o defeito que manteve
    8.455 itens com estoque sem codigo de barras desde a B7. */
-const VERSAO = 'limedtec-fpmed-2026-08-13-81';
+/* -82 pela FATIA B18: o Guia (`fpmed_ajuda.html`) ESTA na casca (linha 89), e ele e o unico
+   arquivo dela que foi posto la de proposito para responder OFFLINE — quem esta sem rede e
+   exatamente quem vai abrir a ajuda. Por isso este bump e diferente dos outros: nos demais, o
+   cache velho so aparece quando a rede falha; aqui, servir o cache velho e o comportamento
+   PROJETADO. Sem bump, o offline continuaria lendo o guia da B11 — o que manda procurar uma aba
+   "historico" que nao existe e nao conta que "Meus arquivos", o numero de controle, os selos e
+   os campos de EAN passaram a existir. Guia velho servido com confianca e pior que guia nenhum:
+   quem nao acha o que ele descreve conclui que e ELE quem nao sabe usar o sistema. */
+const VERSAO = 'limedtec-fpmed-2026-08-14-82';
 const CACHE = 'limedtec-shell-' + VERSAO;
 
 // A CASCA DA FPMED. Lista MONTADA A MAO conferindo `git ls-files` (= o que o Pages serve),
