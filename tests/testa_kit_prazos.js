@@ -25,13 +25,21 @@ function bloco(ini, fim) {
 }
 const ctx = (new Function(
   bloco('const esc = s =>', 'const brl =') +
+  /* O MODELO DE TAREFAS DA TELA, e nao o do semeador — eles SAO diferentes, e essa e uma das
+     coisas que esta suite existe pra registrar (ver o bloco 2b). Extrair o do semeador aqui
+     provaria uma lista que nao e a que nasce quando alguem cria um negocio nesta tela. */
+  bloco('const TAREFAS_MODELO =', '/* ══ O KANBAN VIROU A VISÃO DE ABERTURA') +
   bloco('const hojeYMD =', 'async function carregar') +
+  /* `KIT_TOTAL` mora JUNTO do modelo (linha de cima), e nao no bloco dos prazos: posto la, ele
+     virava `ReferenceError` nas duas suites que extraem so o bloco dos prazos — foi exatamente
+     o que aconteceu na primeira versao desta fatia. Constante mora onde esta o dado que ela
+     conta. */
   'return { diasUteisDe, KIT_ANCORAS, KIT_TOTAL, prazoDaTarefa, prazosDoKit, contaKit,' +
-  '         linhaDePrazo, diaDe, hojeYMD };'))();
-const { diasUteisDe, KIT_ANCORAS, KIT_TOTAL, prazoDaTarefa, prazosDoKit, contaKit, linhaDePrazo, diaDe } = ctx;
+  '         linhaDePrazo, diaDe, hojeYMD, TAREFAS_MODELO, novasTarefas };'))();
+const { diasUteisDe, KIT_ANCORAS, KIT_TOTAL, prazoDaTarefa, prazosDoKit, contaKit, linhaDePrazo,
+        diaDe, TAREFAS_MODELO, novasTarefas } = ctx;
 
 const semeia = require(path.join(raiz, 'tools', 'semeia_negocios.js'));
-const { TAREFAS_MODELO, novasTarefas } = semeia;
 
 let p = 0, f = 0;
 const ok = (n, c, got) => { if (c) p++; else { f++; console.log('  FALHA ' + n + (got !== undefined ? ' [' + JSON.stringify(got) + ']' : '')); } };
@@ -117,6 +125,22 @@ ok('18. *** os 3 dias uteis sao os MESMOS que a tela de Pecas ja conta ***',
 // ══════════════════════════════════════════════════════════════════════════════════════════
 const kit = novasTarefas();
 ok('19. o kit gravado tem ' + KIT_TOTAL + ' tarefas', kit.length === KIT_TOTAL, kit.length);
+// ══ 2b. O NUMERO "15" NAO PODE SER ESCRITO NA TELA ═════════════════════════════════════════
+// *** MEDIDO EM 14/08: a tela tem 14 e o semeador tem 15. *** "Enviar proposta atualizada" saiu
+// do modelo da tela em 11/08 (virou botao de verdade na Habilitacao) e continua no semeador. Os
+// 2.555 registros ja semeados tem 15 gravados; quem nascer nesta tela nasce com 14. Os dois
+// numeros estao certos pro que cada um e — o que seria errado e a TELA carimbar um deles.
+ok('19b. *** a tela e o semeador REALMENTE divergem (14 x 15) — pendencia registrada ***',
+  TAREFAS_MODELO.length === 14 && semeia.TAREFAS_MODELO.length === 15,
+  { tela: TAREFAS_MODELO.length, semeador: semeia.TAREFAS_MODELO.length });
+ok('19c. *** por isso nenhum texto da tela escreve "15 tarefas" a mao ***',
+  !/\d+ tarefas, \d+ (delas )?com prazo/.test(src) && !/kit padrão \(15 tarefas\)/i.test(src));
+ok('19d. ...e o contador do card usa o total GRAVADO, nunca a constante',
+  /const t = \(n && Array\.isArray\(n\.tarefas\)\) \? n\.tarefas : \[\];[\s\S]{0,120}total: t\.length/.test(src.replace(/\r/g, '')));
+ok('19e. a diferenca e exatamente a tarefa que virou botao em 11/08',
+  semeia.TAREFAS_MODELO.map(([, t]) => t).filter(t => TAREFAS_MODELO.map(([, x]) => x).indexOf(t) < 0)
+    .join('|') === 'Enviar proposta atualizada',
+  semeia.TAREFAS_MODELO.map(([, t]) => t).filter(t => TAREFAS_MODELO.map(([, x]) => x).indexOf(t) < 0));
 ok('20. *** e NENHUMA delas carrega `prazo` gravado ***',
   kit.every(t => !('prazo' in t)), kit.filter(t => 'prazo' in t));
 ok('21. o que se grava por tarefa continua sendo secao/texto/feita',
@@ -157,7 +181,12 @@ ok('31. tarefa fora do mapa nao ganha prazo inventado',
 // ══════════════════════════════════════════════════════════════════════════════════════════
 // 5. O MEDIDOR 0/15
 // ══════════════════════════════════════════════════════════════════════════════════════════
-ok('32. kit novo conta 0 de 15', contaKit(neg).feitas === 0 && contaKit(neg).total === 15);
+ok('32. kit novo conta 0 de ' + KIT_TOTAL, contaKit(neg).feitas === 0 && contaKit(neg).total === KIT_TOTAL,
+  contaKit(neg));
+// E o negocio ANTIGO, semeado com 15, continua contando /15 — porque `contaKit` le o gravado.
+ok('32b. *** negocio antigo (15 gravadas) continua marcando /15, e nao /14 ***',
+  contaKit({ tarefas: semeia.novasTarefas() }).total === 15,
+  contaKit({ tarefas: semeia.novasTarefas() }).total);
 ok('33. o total e o do que esta GRAVADO, e nao a constante',
   contaKit({ tarefas: [{ feita: true }, { feita: false }] }).total === 2);
 ok('34. negocio sem tarefas conta 0 de 0 (e o card nao mostra medidor)',
@@ -267,6 +296,72 @@ ok('68. remarcar continua sendo a acao SUGERIDA de quem esta suspenso (fatia B2,
 // tambem precisa: numero que parece exato e nao e vale menos que numero com a ressalva ao lado.
 ok('69. *** a tela confessa que FERIADO nao entra na conta, onde a data aparece ***',
   /Feriado do órgão não entra/.test(src) && /Feriado não entra nesta conta/.test(src));
+
+// ══════════════════════════════════════════════════════════════════════════════════════════
+// 10. A FICHA MONTA DE VERDADE — o guarda que faltava
+//
+// *** ESTE BLOCO NASCEU DE UM DEFEITO QUE ESTEVE NO AR ***
+// A fatia B2 de 13/08 escreveu `sit` dentro de `corpoDrawer`, onde `sit` nunca existiu (ele so
+// era declarado no `card`). A funcao estourava ReferenceError na primeira linha do template e o
+// `dw-body` ficava com ZERO caractere: clicar em qualquer negocio abria a gaveta em branco.
+// Ficou assim ate 14/08, quando o navegador contou.
+//
+// >>> POR QUE NENHUMA SUITE PEGOU: `corpoDrawer` monta uma string gigante, e as suites conferem
+//     o CODIGO-FONTE dela por expressao regular. Texto que existe no arquivo passa no teste
+//     mesmo quando a funcao nunca chega a rodar. Ler o fonte prova que a frase foi escrita;
+//     nao prova que ela chega na tela.
+// >>> ENTAO AQUI ELA E EXECUTADA. Num escopo onde todo nome NAO declarado estoura — que e
+//     exatamente o sintoma que passou batido. Se uma fatia futura usar uma variavel que nao
+//     existe, esta suite fica vermelha antes de a gaveta abrir vazia pra alguem.
+const vm = require('vm');
+const corpoFonte = bloco('function corpoDrawer(n, obs, carregando){', '\nfunction abaFicha(');
+
+// Os nomes que a ficha PODE usar. A lista e o contrato: nome que nao esta aqui e nao esta
+// declarado dentro da funcao estoura, e e assim que o defeito aparece.
+const NADA = () => '';
+const daPagina = {
+  esc: s => String(s == null ? '' : s), brl: () => 'R$ 0,00',
+  fmtDtH: iso => (iso ? new Date(iso).toLocaleString('pt-BR') : null),
+  diaDe, hojeYMD: ctx.hojeYMD, horaDe: () => '08:00',
+  ehGestor: () => true, prazosAncorados: NADA,
+  rotuloSituacao: s => String(s), corSituacao: () => 'var(--cinza-500)',
+  nomeFase: k => String(k), corFase: () => 'var(--cinza-500)',
+  FASES: [{ k: 'oportunidade', n: 'Oportunidade', c: 'var(--etapa-1)' }],
+  SITUACOES: [{ k: 'normal', n: 'normal' }, { k: 'suspenso', n: 'suspenso' }],
+  CAMPOS_FICHA: {}, EMPRESAS: [], PRIO_COR: {},
+  focoDa: () => ({ aba: 'info', faz: '' }), pnl: () => 'dw-painel',
+  stepper: NADA, acoesDaFicha: NADA, rodapeFicha: NADA, selaOrigem: NADA,
+  seloConferencia: NADA, medidorKit: NADA, progressoCard: NADA,
+};
+// Os embutidos do JavaScript (Date, Math, Array, Boolean...) passam sem estar na lista: eles nao
+// sao "nomes da pagina", e enumera-los seria manter uma copia da linguagem aqui dentro.
+const ehEmbutido = k => Object.prototype.hasOwnProperty.call(globalThis, k);
+let estourou = null, montado = '';
+try {
+  const sandbox = vm.createContext(new Proxy(daPagina, {
+    has: () => true,
+    get(alvo, k) {
+      if (typeof k === 'symbol') return undefined;
+      if (k in alvo) return alvo[k];
+      if (ehEmbutido(k)) return globalThis[k];
+      throw new ReferenceError(k + ' — nome usado na ficha que nao existe no escopo dela');
+    },
+  }));
+  const neg5 = { id: 5, portal: 'BLL', numero: '31/2026', orgao: 'PREFEITURA', modalidade: 'P.E.',
+    situacao: 'suspenso', abertura: AB, estagio: 'oportunidade', empresa_id: 1, arquivado: false,
+    origem: 'calendario_2025', tarefas: novasTarefas() };
+  // A quebra de linha antes do `)` NAO e enfeite: a extracao termina num comentario `//`, e sem
+  // ela o proprio `)` de fechamento entraria no comentario ("Unexpected end of input").
+  montado = vm.runInContext('(' + corpoFonte + '\n)(' + JSON.stringify(neg5) + ', null, false)', sandbox);
+} catch (e) { estourou = e.message; }
+
+ok('70. *** a ficha do negocio SUSPENSO monta sem estourar (o defeito de 13/08) ***',
+  estourou === null, estourou);
+ok('71. ...e ela produz HTML de verdade, e nao string vazia', montado.length > 500, montado.length);
+ok('72. a faixa que SUGERE remarcar aparece no pregao suspenso',
+  /remarcar-aviso/.test(montado) && /Remarcar abertura/.test(montado), montado.length);
+ok('73. e `sit` e declarado DENTRO da ficha, do mesmo jeito que no card',
+  /function corpoDrawer[\s\S]{0,2000}?const sit = n\.situacao && n\.situacao !== 'normal'/.test(LIMPO));
 
 console.log('\nRESULTADO: ' + p + ' ok, ' + f + ' falha(s)');
 process.exitCode = f ? 1 : 0;

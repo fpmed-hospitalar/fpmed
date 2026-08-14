@@ -476,8 +476,14 @@ body{
    e não cobrava nada. Ele volta medindo o kit COM prazo, e volta com a única coisa que faltava
    pra ele valer alguma coisa no relance: o prazo mais próximo, escrito ao lado. */
 .cd-kit{display:flex;align-items:center;gap:8px;margin:0 0 7px;flex-wrap:wrap}
-.cd-kit .barra{flex:0 0 54px;height:4px;border-radius:3px;background:var(--linha);overflow:hidden}
-.cd-kit .barra i{display:block;height:100%;background:var(--azul-claro)}
+/* >>> ESTA CLASSE SE CHAMAVA `.barra` E ISSO ERA UM DEFEITO VISÍVEL: `.barra` já é a barra de
+       ferramentas do topo desta tela (display:flex, padding, gap). Dentro do card, a regra
+       genérica vencia o que a específica não redeclarava, e o fio de 4px virava um retângulo
+       cinza de 56×22 no meio de cada cartão. Nome curto e genérico é assim: ele já é de alguém.
+       Medido no navegador em 14/08, antes e depois. */
+.cd-kit .kbar{flex:0 0 54px;height:4px;border-radius:3px;background:var(--linha);overflow:hidden;
+  display:block;padding:0;margin:0}
+.cd-kit .kbar i{display:block;height:100%;background:var(--azul-claro)}
 .cd-kit .txt{font-size:10.5px;color:var(--muted);letter-spacing:.2px}
 .cd-kit .pzx{font-size:10.5px;font-weight:700;color:var(--ambar-700)}
 .cd-kit .pzx.venceu{color:var(--vermelho-700)}
@@ -1268,6 +1274,21 @@ const TAREFAS_MODELO = [
 // do que aquele campo significa, para quem for ler o `negocios.tarefas` gravado — sem ela, os
 // 2.555 registros viram um JSONB sem legenda.
 const novasTarefas = () => TAREFAS_MODELO.map(([secao,texto]) => ({secao, texto, feita:false}));
+/* ── QUANTAS SÃO, DE VERDADE: NÃO ESCREVA "15" (14/08, fatia B4) ──────────────────────────────
+   O kit é chamado de "as 15 tarefas" desde a spec 6.2, e eu ia carimbar 15 em três textos da
+   tela. Medido em 14/08, ele NÃO tem 15 aqui: a lista acima tem QUATORZE — "Enviar proposta
+   atualizada" saiu em 11/08 porque virou botão de verdade na fase Habilitação, e a regra
+   registrada naquele dia foi justamente essa (item de checklist que vira função real sai da
+   lista fixa). O comentário logo acima diz isso; o número "15" no título é que ficou velho.
+   >>> E `tools/semeia_negocios.js` CONTINUA COM 15. Os 2.555 registros semeados têm 15 itens
+       gravados; um negócio que nascer hoje nesta tela nasce com 14. Os dois estão certos para o
+       que cada um é — e é por isso que `contaKit` lê o total GRAVADO em cada negócio em vez de
+       usar esta constante: o card de um antigo diz "/15" e o de um novo diz "/14", que é a
+       verdade dos dois. Um "15" fixo faria o card mentir sobre metade do funil.
+   >>> A DIVERGÊNCIA TELA × SEMEADOR É REAL e está anotada como pendência do dono: alinhar os
+       dois é decisão dele, e o semeador não é arquivo desta janela. A suíte
+       `testa_kit_prazos` registra os dois números para que a diferença não vire surpresa. */
+const KIT_TOTAL = TAREFAS_MODELO.length;
 
 /* ══ O KANBAN VIROU A VISÃO DE ABERTURA (12/08, item 5: "kanban protagonista") ═══════════════
    A tela abria na LISTA — 200 cartões empilhados em ordem de data. Lista responde "o que
@@ -1405,7 +1426,7 @@ function notificacoes(lista){
        laço que nunca termina não virar uma tela que nunca abre — e se ele for atingido, a tela
        DIZ, porque 20.000 negócios truncados em silêncio seriam este mesmo bug de novo. */
 const PAG_NEG = 1000, TETO_PAG_NEG = 20;
-/* ══ O KIT DE 15 TAREFAS VOLTOU — MAS AGORA COM PRAZO (14/08, fatia B4) ═══════════════════════
+/* ══ O KIT DE TAREFAS VOLTOU — MAS AGORA COM PRAZO (14/08, fatia B4) ══════════════════════════
    O checklist fixo saiu da tela em 11/08 por ordem do dono, e a razão registrada foi "a equipe
    não usa". Ela estava certa sobre o que existia: quinze caixinhas SEM DATA, iguais em todo
    negócio, são uma lista que ninguém tem motivo pra abrir — não havia dia nenhum em que uma
@@ -1439,7 +1460,6 @@ const KIT_ANCORAS = {
   'Enviar recurso / contrarrazão':
     { dias: 3, lei:'Lei 14.133/2021, art. 165 — 3 dias úteis DEPOIS da sessão' },
 };
-const KIT_TOTAL = 15;
 
 /* Anda `n` dias ÚTEIS a partir de um instante, para trás (n<0) ou para frente (n>0), e devolve
    ISO. Com n=0 devolve o próprio instante — a disputa É a abertura, hora incluída.
@@ -2332,6 +2352,19 @@ document.addEventListener('keydown', e => { if(e.key === 'Escape' && ABERTO) fec
 function corpoDrawer(n, obs, carregando){
   const gestor = ehGestor();
   const dia = diaDe(n.abertura), hoje = hojeYMD();
+  /* ── DEFEITO CORRIGIDO EM 14/08: a ficha inteira estava QUEBRADA ─────────────────────────────
+     A fatia B2 de 13/08 (b45c0ec) trouxe a faixa "Remarcar abertura" e escreveu `sit` aqui
+     dentro — mas `sit` só existia no `card()`, nunca nesta função. `corpoDrawer` estourava
+     `ReferenceError: sit is not defined` na PRIMEIRA linha do template, e o `dw-body` ficava
+     com zero caractere: clicar em QUALQUER negócio abria uma gaveta em branco.
+     >>> NENHUMA SUÍTE PEGAVA, e vale entender por quê: `corpoDrawer` monta uma string gigante e
+         as suítes conferem o CÓDIGO-FONTE dela por expressão regular — texto que existe no
+         arquivo passa no teste mesmo quando a função nunca chega a rodar. Foi o navegador que
+         contou: `dw-body` com 0 caracteres, medido em 14/08.
+     >>> A DECLARAÇÃO É A MESMA DO CARD, palavra por palavra, porque é a mesma pergunta
+         ("a situação é diferente de normal?"). Duas definições diferentes de `sit` na mesma tela
+         seriam dois estados de suspensão que um dia discordam. */
+  const sit = n.situacao && n.situacao !== 'normal' ? n.situacao : null;
 
   const linha = (r, v, cls) => v ? `<dt>${r}</dt><dd class="${cls||''}">${v}</dd>` : '';
 
@@ -2852,7 +2885,7 @@ function pintaKit(id){
     box.innerHTML = '<h4>Kit padrão</h4>'
       + '<div class="salvo">Este negócio não tem o kit de tarefas. Ele nasce junto com o negócio no '
       + 'assistente; os que vieram antes disso podem recebê-lo agora — nada do que já está escrito se perde.</div>'
-      + (editavel ? `<div style="margin-top:8px"><button class="btn-ed" id="kit-bt" onclick="aplicarKit(${id})">Aplicar o kit padrão (15 tarefas)</button>
+      + (editavel ? `<div style="margin-top:8px"><button class="btn-ed" id="kit-bt" onclick="aplicarKit(${id})">Aplicar o kit padrão (${KIT_TOTAL} tarefas)</button>
            <span class="salvo" id="kit-msg"></span></div>` : '');
     return;
   }
@@ -3893,7 +3926,7 @@ function assistPasso2(){
          (sem crase neste comentário: ele mora dentro do template literal) -->
     <div class="fm-c" style="margin-top:12px">
       <label><input type="checkbox" id="a-kit"${assistValor('a-kit', true) === false ? '' : ' checked'} style="accent-color:var(--azul);width:14px;height:14px">
-        Criar com o kit <b>Padrão</b> — as 15 tarefas, três delas com prazo</label>
+        Criar com o kit <b>Padrão</b> — as ${KIT_TOTAL} tarefas, ${Object.keys(KIT_ANCORAS).length} delas com prazo</label>
       <div id="a-prazos" style="margin-top:8px"></div>
     </div>
     <div class="a-rodape"><button class="btn-ed sec" onclick="assistPasso(1)">← Itens</button>
@@ -3938,7 +3971,7 @@ function pintaResumoAssist(){
     + linha('Entra em', esc(nomeFase(f['a-estagio'] || 'oportunidade')))
     + linha('Abertura', ab && !isNaN(ab) ? esc(fmtDtH(ab.toISOString())||'') : '<i>sem data</i>')
     + linha('Itens', ASS.marcados.length ? '<b>' + ASS.marcados.length + '</b> marcados' : 'o pregão inteiro')
-    + linha('Kit de tarefas', kit ? '15 tarefas, 3 com prazo' : '<i>sem kit</i>')
+    + linha('Kit de tarefas', kit ? KIT_TOTAL + ' tarefas, ' + Object.keys(KIT_ANCORAS).length + ' com prazo' : '<i>sem kit</i>')
     + (ASS.nc ? linha('Nº de controle', esc(ASS.nc)) : '')
     + (kit && ab && !isNaN(ab) ? prazosAncorados(fake) : '');
 }
@@ -4384,7 +4417,7 @@ function medidorKit(n){
     sel = `<span class="pzx${venceu?' venceu':''}" title="${esc(prox.texto)}">${esc(q)}</span>`;
   }
   return `<div class="cd-kit" title="${c.feitas} de ${c.total} tarefas do kit concluídas">
-    <span class="barra"><i style="width:${pct}%"></i></span>
+    <span class="kbar"><i style="width:${pct}%"></i></span>
     <span class="txt">${c.feitas}/${c.total} tarefas</span>
     ${sel}
   </div>`;
