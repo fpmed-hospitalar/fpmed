@@ -151,6 +151,66 @@ const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJ
 const SB_H  = { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY };
 const SB_HW = Object.assign({'Content-Type':'application/json'}, SB_H);
 
+/* ══ O COFRE DE ARQUIVOS TEM DUAS TRAVAS, E ESTA TELA ESBARRAVA NAS DUAS ═══════════════════
+   MEDIDO EM 14/08 (fatia B16), no cofre de verdade, com sessão de verdade:
+     crachá anon   + application/pdf   ->  HTTP 400 {"statusCode":"403","new row violates row-level security policy"}
+     crachá sessão + application/json  ->  HTTP 400 {"statusCode":"415","invalid_mime_type"}
+     crachá sessão + application/pdf   ->  HTTP 200
+   >>> TRAVA 1 — O CRACHÁ. O `gm-auth.js` troca o crachá pelo da sessão SÓ nas chamadas de
+       `/rest/v1/`; o envio de arquivo vai para `/storage/v1/`, e ia com a chave `anon`. A policy
+       do cofre (`docs_storage_sobe`) exige `authenticated` + `cargo_gestor()`. Então o envio era
+       recusado ANTES de o tipo sequer ser olhado.
+   >>> TRAVA 2 — O TIPO. É a mesma da B15: o cofre valida o formato pelo `Content-Type`, e o
+       cabeçalho do REST (`application/json`) não é formato de arquivo nenhum.
+   >>> ENTÃO NENHUM "Salvar documento" COM ARQUIVO DESTA TELA FUNCIONAVA — e o "abrir arquivo"
+       também não, porque assinar a URL passa pela mesma porta e pela mesma policy. A prova de
+       que ninguém tinha conseguido é o próprio banco: `documentos` estava com ZERO linhas.
+   >>> POR QUE NENHUMA SUÍTE PEGOU: elas leem o código-fonte, e o código-fonte "manda o arquivo".
+       Quem sabia a verdade era o cofre, e ninguém tinha perguntado a ele. */
+function tokenDaSessao(){
+  // A sessão do gm-auth mora aqui. Ler daqui (em vez de esperar o gmAuth expor o token) mantém
+  // o conserto dentro desta tela — o gm-auth é compartilhado com todo o portal.
+  try{ const s = JSON.parse(localStorage.getItem('gm_session') || 'null'); return (s && s.access_token) || null; }
+  catch(e){ return null; }
+}
+function cabecalhoCofre(tipo){
+  const tk = tokenDaSessao();
+  const h = { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + (tk || SB_KEY) };
+  if(tipo) h['Content-Type'] = tipo;
+  return h;
+}
+/* E O TIPO CONTINUA SENDO DECIDIDO PELO SERVIDOR. Esta tela não guarda uma lista de formatos
+   aceitos: ela manda o tipo certo e TRADUZ a recusa. Uma segunda lista aqui um dia discordaria
+   da do cofre — e a tela recusaria um arquivo que o cofre aceita, ou prometeria um que ele
+   recusa. Mesma decisão da B15, para que as duas telas envelheçam juntas. */
+const MIME_POR_EXT = { pdf:'application/pdf', png:'image/png', jpg:'image/jpeg',
+                       jpeg:'image/jpeg', webp:'image/webp' };
+function tipoDoArquivo(arq){
+  // O navegador quase sempre sabe; quando ele não sabe (extensão que o sistema não conhece), a
+  // extensão do nome é o melhor palpite honesto — e se estiver errado, quem recusa é o cofre.
+  const doNavegador = String((arq && arq.type) || '').trim();
+  if(doNavegador) return doNavegador;
+  const ext = String((arq && arq.name) || '').toLowerCase().split('.').pop();
+  return MIME_POR_EXT[ext] || 'application/octet-stream';
+}
+// A RECUSA DO COFRE TEM QUE DIZER O QUE FAZER. "HTTP 400" manda a pessoa chamar suporte; "o
+// cofre guarda PDF e imagem" manda ela converter o arquivo e seguir sozinha.
+function traduzRecusaDoCofre(status, corpo, tipo){
+  const t = String(corpo || '');
+  if(/invalid_mime_type|415/.test(t))
+    return 'o cofre de arquivos não aceita este formato (' + tipo + ') — ele guarda PDF e imagem '
+         + '(PNG, JPEG, WEBP). Converta para PDF e mande de novo.';
+  if(status === 413 || /exceeded the maximum|413/.test(t))
+    return 'o arquivo passou do tamanho que o cofre aceita (20 MB)';
+  // O 403 do cofre vem NO CORPO, não no status HTTP: ele responde 400 com {"statusCode":"403"}.
+  // Ler só o status fazia a recusa por permissão virar um "HTTP 400" que não ensina nada.
+  if(status === 403 || /row-level security|"403"/.test(t))
+    return 'só gestor pode enviar arquivo — entre com uma conta de diretor ou gerente';
+  if(status === 401 || /JWT|expired/i.test(t))
+    return 'sua sessão expirou — recarregue a página e entre de novo';
+  return 'não consegui enviar o arquivo (HTTP ' + status + ')';
+}
+
 const esc = s => String(s==null?'':s).replace(/[<>&"]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c]));
 const semAcento = s => { let o=''; for(const c of String(s||'').normalize('NFD')){ const k=c.codePointAt(0); if(k>=0x300&&k<=0x36f) continue; o+=c; } return o.toLowerCase(); };
 const brData = s => s ? s.slice(8,10)+'/'+s.slice(5,7)+'/'+s.slice(0,4) : '—';
@@ -246,11 +306,12 @@ async function salvar(){
       const limpo = semAcento(arq.name).replace(/[^a-z0-9._-]+/g,'-');
       path = Date.now() + '-' + limpo;
       msg.textContent = 'enviando o arquivo…';
+      const tipo = tipoDoArquivo(arq);
       const up = await fetch(`${SB_URL}/storage/v1/object/documentos/${encodeURIComponent(path)}`, {
-        method:'POST', headers: Object.assign({}, SB_H), body: arq });
+        method:'POST', headers: cabecalhoCofre(tipo), body: arq });
       if(!up.ok){
-        const t = await up.text();
-        throw new Error(up.status===403 ? 'só gestor pode enviar arquivo' : ('não consegui enviar o arquivo (HTTP '+up.status+') '+t.slice(0,60)));
+        const t = await up.text().catch(() => '');
+        throw new Error(traduzRecusaDoCofre(up.status, t, tipo));
       }
       bytes = arq.size; arqNome = arq.name;
     }
@@ -279,12 +340,15 @@ async function salvar(){
 
 // URL ASSINADA e não pública: o bucket é privado de propósito. O link vale 60 segundos, que é
 // o tempo de abrir — link de certidão que vale para sempre é link que vaza.
+// >>> AQUI O `Content-Type: application/json` ESTÁ CERTO (o corpo é JSON de verdade, não é um
+//     arquivo); o que estava errado era o CRACHÁ: assinar é `/storage/v1/`, que o gm-auth não
+//     toca, e a policy `docs_storage_le` exige sessão. Medido: anon -> 400/403, sessão -> 200.
 async function abrirArquivo(id){
   const d = (DOCS||[]).find(x=>x.id===id); if(!d || !d.arquivo_path) return;
   try{
     const r = await fetch(`${SB_URL}/storage/v1/object/sign/documentos/${encodeURIComponent(d.arquivo_path)}`, {
-      method:'POST', headers:SB_HW, body: JSON.stringify({ expiresIn: 60 }) });
-    if(!r.ok) throw new Error('HTTP '+r.status);
+      method:'POST', headers: cabecalhoCofre('application/json'), body: JSON.stringify({ expiresIn: 60 }) });
+    if(!r.ok) throw new Error(traduzRecusaDoCofre(r.status, await r.text().catch(()=>''), 'application/json'));
     const j = await r.json();
     window.open(SB_URL + '/storage/v1' + j.signedURL, '_blank', 'noopener');
   }catch(e){ alert('Não consegui abrir o arquivo: ' + e.message); }

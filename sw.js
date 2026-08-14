@@ -54,7 +54,12 @@
    os 400 cartoes MUDOS (sem titulo, sem objeto, com "R$ 0" e sem a chave do funil), que e
    exatamente o defeito que esta fatia foi feita pra apagar. O sintoma continuaria identico, e a
    conclusao seria "o conserto nao funcionou". */
-const VERSAO = 'limedtec-fpmed-2026-08-13-79';
+/* -80 pela FATIA B16: o conserto do "Anexar" e do "abrir arquivo" esta no `fpmed_documentos.html`
+   e no `fpmed_negocios.html`, os dois na casca. Sem bump, quem ja instalou continuaria com as
+   telas que mandam o arquivo pro cofre com o cracha `anon` — ou seja, continuaria sem conseguir
+   anexar NADA, com a tela dizendo "salvando..." e o banco recebendo zero linha. E o sintoma seria
+   identico ao de antes do conserto, o que faria qualquer um concluir que o conserto nao pegou. */
+const VERSAO = 'limedtec-fpmed-2026-08-13-80';
 const CACHE = 'limedtec-shell-' + VERSAO;
 
 // A CASCA DA FPMED. Lista MONTADA A MAO conferindo `git ls-files` (= o que o Pages serve),

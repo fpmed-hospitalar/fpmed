@@ -1418,6 +1418,31 @@ textarea.anot:focus{border-color:var(--azul)}
 const SB_URL = 'https://xzdowrksuswekwffoluk.supabase.co';
 const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh6ZG93cmtzdXN3ZWt3ZmZvbHVrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ2NzE2MTMsImV4cCI6MjEwMDI0NzYxM30.Pk-SlV_pZdniESyrajDdfHdHcnmyCwCMtP_TrShh75Y';
 const SB_H = { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY, 'Content-Type': 'application/json' };
+
+/* ══ O CRACHÁ DO COFRE — A SEGUNDA TRAVA, QUE A B15 NÃO TINHA VISTO ════════════════════════
+   A B15 consertou o `Content-Type` do envio e mediu no cofre. Mas mediu com a SERVICE_ROLE, que
+   passa por cima de toda RLS — então ela provou o cofre e NÃO provou o navegador.
+   MEDIDO EM 14/08 (fatia B16), agora com a sessão de um usuário de verdade:
+     crachá anon   + application/pdf   ->  HTTP 400 {"statusCode":"403","new row violates row-level security policy"}
+     crachá sessão + application/json  ->  HTTP 400 {"statusCode":"415","invalid_mime_type"}
+     crachá sessão + application/pdf   ->  HTTP 200
+   O `gm-auth.js` troca o crachá pelo da sessão SÓ nas chamadas de `/rest/v1/`; tudo que fala com
+   `/storage/v1/` ia com a chave `anon`, e as policies do cofre (`docs_storage_sobe`,
+   `docs_storage_le`) exigem `authenticated`. Ou seja: mesmo depois da B15, o "Anexar" ainda
+   morria — só que uma trava adiante. E BAIXAR também: as quatro chamadas que assinam URL
+   passavam pela mesma porta.
+   É a lição da B15 mordendo a própria B15: a prova percorreu o caminho do servidor, mas não com
+   o crachá do navegador. Quando houver servidor NO caminho, pergunte a ele — com o crachá certo. */
+function tokenDaSessao(){
+  try{ const s = JSON.parse(localStorage.getItem('gm_session') || 'null'); return (s && s.access_token) || null; }
+  catch(e){ return null; }
+}
+function cabecalhoCofre(tipo){
+  const tk = tokenDaSessao();
+  const h = { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + (tk || SB_KEY) };
+  if(tipo) h['Content-Type'] = tipo;
+  return h;
+}
 /* ── O MOTOR DO LEITOR PRECISA ACHAR ESTE ENDEREÇO, E `const` NÃO APARECE NO `window` ─────────
    `fpmed_leitor_motor.js` monta a URL da edge function assim (fatia A2 do arquiteto):
        LIMEDTEC_CLIENTE.supabase.url  ||  glob.SB_URL  ||  gmAuth.SB
@@ -3835,7 +3860,7 @@ async function abrirAnexo(path, el){
   const devolve = () => { if(el){ el.textContent = rotulo; el.style.pointerEvents = ''; } };
   try{
     const r = await fetch(`${SB_URL}/storage/v1/object/sign/documentos/${encodeURIComponent(path)}`, {
-      method:'POST', headers: Object.assign({'Content-Type':'application/json'}, SB_H),
+      method:'POST', headers: cabecalhoCofre('application/json'),
       body: JSON.stringify({ expiresIn: 60 }) });
     if(!r.ok) throw new Error('HTTP ' + r.status);
     const j = await r.json();
@@ -3904,7 +3929,7 @@ async function conferirProposta(id){
   msg.textContent = 'baixando o anexo…';
   try{
     const rs = await fetch(`${SB_URL}/storage/v1/object/sign/documentos/${encodeURIComponent(anexo.arquivo_path)}`, {
-      method:'POST', headers: Object.assign({'Content-Type':'application/json'}, SB_H),
+      method:'POST', headers: cabecalhoCofre('application/json'),
       body: JSON.stringify({ expiresIn: 120 }) });
     if(!rs.ok) throw new Error('não consegui abrir o anexo (HTTP ' + rs.status + ')');
     const url = SB_URL + '/storage/v1' + (await rs.json()).signedURL;
@@ -4400,20 +4425,24 @@ async function subirAnexo(negocioId, arq, categoria){
     const limpo = arq.name.normalize('NFD').replace(/\p{M}/gu,'').toLowerCase().replace(/[^a-z0-9._-]+/g,'-');
     const path = 'negocio-' + negocioId + '/' + categoria + '/' + Date.now() + '-' + limpo;
     const up = await fetch(`${SB_URL}/storage/v1/object/documentos/${encodeURIComponent(path)}`, {
-      method:'POST', headers: Object.assign({}, SB_H, {'Content-Type': tipoDoArquivo(arq)}), body: arq });
+      method:'POST', headers: cabecalhoCofre(tipoDoArquivo(arq)), body: arq });
     if(!up.ok){
       // A RECUSA POR TIPO TEM QUE DIZER O QUE FAZER. "HTTP 400" manda a pessoa chamar suporte;
       // "o cofre guarda PDF e imagem" manda ela converter o arquivo e seguir sozinha.
+      // >>> E O 403 VEM COM `statusCode` NO CORPO, NÃO NO STATUS HTTP: o cofre responde 400 com
+      //     {"statusCode":"403",...}. Ler só `up.status` fazia a recusa por RLS cair no genérico
+      //     "o envio respondeu 400" — que não diz a ninguém o que fazer.
+      const t = await up.text().catch(() => '');
       let motivo = 'o envio respondeu ' + up.status;
-      if(up.status === 403) motivo = 'só gestor pode enviar arquivo';
-      else {
-        const t = await up.text().catch(() => '');
-        if(/invalid_mime_type|415/.test(t))
-          motivo = 'o cofre de arquivos não aceita este formato (' + tipoDoArquivo(arq) + ') — '
-                 + 'ele guarda PDF e imagem (PNG, JPEG, WEBP). Converta para PDF e mande de novo.';
-        else if(/exceeded the maximum|413/.test(t) || up.status === 413)
-          motivo = 'o arquivo passou do tamanho que o cofre aceita (20 MB)';
-      }
+      if(/invalid_mime_type|415/.test(t))
+        motivo = 'o cofre de arquivos não aceita este formato (' + tipoDoArquivo(arq) + ') — '
+               + 'ele guarda PDF e imagem (PNG, JPEG, WEBP). Converta para PDF e mande de novo.';
+      else if(/exceeded the maximum|413/.test(t) || up.status === 413)
+        motivo = 'o arquivo passou do tamanho que o cofre aceita (20 MB)';
+      else if(up.status === 403 || /row-level security|"403"/.test(t))
+        motivo = 'só gestor pode enviar arquivo — entre com uma conta de diretor ou gerente';
+      else if(up.status === 401 || /JWT|expired/i.test(t))
+        motivo = 'sua sessão expirou — recarregue a página e entre de novo';
       return { ok:false, erro: motivo };
     }
     const r = await fetch(`${SB_URL}/rest/v1/negocio_anexos`, {method:'POST',
@@ -5890,7 +5919,7 @@ async function usarEditalAnexado(id){
   if(bt){ bt.disabled = true; bt.textContent = 'lendo o PDF…'; }
   try{
     const rs = await fetch(`${SB_URL}/storage/v1/object/sign/documentos/${encodeURIComponent(anexo.arquivo_path)}`, {
-      method:'POST', headers: Object.assign({'Content-Type':'application/json'}, SB_H),
+      method:'POST', headers: cabecalhoCofre('application/json'),
       body: JSON.stringify({ expiresIn: 120 }) });
     if(!rs.ok) throw new Error('não consegui abrir o anexo (HTTP ' + rs.status + ')');
     const buf = await (await fetch(SB_URL + '/storage/v1' + (await rs.json()).signedURL)).arrayBuffer();
@@ -6456,7 +6485,7 @@ async function lerAtaIA(id, tarefa){
   saida.innerHTML = '<div class="salvo">baixando o documento…</div>';
   try{
     const rs = await fetch(`${SB_URL}/storage/v1/object/sign/documentos/${encodeURIComponent(anexo.arquivo_path)}`, {
-      method:'POST', headers: Object.assign({'Content-Type':'application/json'}, SB_H),
+      method:'POST', headers: cabecalhoCofre('application/json'),
       body: JSON.stringify({ expiresIn: 120 }) });
     if(!rs.ok) throw new Error('não consegui abrir o anexo (HTTP ' + rs.status + ')');
     const buf = await (await fetch(SB_URL + '/storage/v1' + (await rs.json()).signedURL)).arrayBuffer();
