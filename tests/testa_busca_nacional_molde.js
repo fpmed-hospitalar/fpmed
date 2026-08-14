@@ -118,8 +118,19 @@ ok(n + '. a ordem por semelhanca continua ESCRITA, com o numero que a justifica'
   /semelhança com o termo/.test(PINTA) && /0 de 20/.test(PINTA)); n++;
 ok(n + '. o caso vazio continua dizendo que zero quer dizer zero',
   /zero quer dizer zero/.test(PINTA)); n++;
-ok(n + '. a acao "abrir no PNCP" continua na linha, e abre fora',
-  /abrir no PNCP/.test(PINTA) && /rel="noopener"/.test(PINTA)); n++;
+/* ══ ESTE ASSERT MUDOU DE LADO NA FATIA A21, POR ORDEM DO DONO ═══════════════════════════════
+   Ele cobrava que "abrir no PNCP" fosse a acao DA LINHA — e era, porque era a UNICA que este
+   painel tinha. O dono abriu a busca e viu exatamente isso: um painel inteiro cuja unica funcao
+   era mandar a pessoa embora do sistema.
+   >>> AGORA A PRIMARIA E "Ver itens e detalhes", que abre o MESMO detalhe do indice, e o PNCP
+       desceu pra "⋯ mais acoes" — como ja estava no painel principal desde a A3. A regra e que
+       sair do sistema deixe de ser o caminho de menor resistencia, nao que ele deixe de existir.
+   >>> ENTAO O ASSERT COBRA AS DUAS COISAS: o link continua existindo e abrindo fora (com
+       `rel="noopener"`), e NAO e mais a acao primaria da linha. */
+ok(n + '. *** "abrir no PNCP" continua existindo, mas desceu de acao primaria pra "mais acoes" ***',
+  /Abrir no PNCP/.test(PINTA) && /rel="noopener"/.test(PINTA)
+  && /mais ações<\/button><span class="cx">/.test(PINTA)
+  && /<button class="btn mini" onclick="abrirDetalheVivo\(/.test(PINTA)); n++;
 
 // ── 5. os tres estados que nao sao resultado ─────────────────────────────────────────────────
 /* A REGRA DURA de 11/08: com termo no campo este bloco pinta SEMPRE. Busca que falha calada

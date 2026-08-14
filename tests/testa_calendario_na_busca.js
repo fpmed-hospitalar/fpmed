@@ -130,8 +130,12 @@ ok(n + '. *** e a nota diz que isto e HISTORICO, nao licitacao aberta ***',
   /histórico da casa<\/b>, não licitação aberta/.test(PINTA)); n++;
 /* A barra e SEMPRE cinza: historico nao tem urgencia, e uma barra azul de "aberta" numa linha
    de 2025 seria a tela sugerindo uma disputa que ja acabou. E a mesma decisao medida do 7d. */
+/* A classe ganhou o `clicavel` na fatia A21 (o cartao inteiro abre o detalhe do historico), e o
+   assert passa a olhar as DUAS coisas que ele sempre guardou: a barra e `prazo-nd`, e nao ha
+   `prazo-urg` nenhum neste painel. Amarrar no texto exato da lista de classes deixaria o proximo
+   acrescimo vermelho sem nada ter piorado. */
 ok(n + '. *** a barra e sempre cinza: historico nao tem prazo correndo ***',
-  /class="lic prazo-nd"/.test(PINTA) && !/prazo-urg/.test(PINTA)); n++;
+  /class="lic clicavel prazo-nd"/.test(PINTA) && !/prazo-urg/.test(PINTA)); n++;
 
 // ── 7. as TRES fontes se identificam do mesmo jeito ──────────────────────────────────────────
 /* A ordem do dono e "marcar a origem de cada resultado". O lugar onde ela vale por trinta

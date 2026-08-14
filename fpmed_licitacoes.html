@@ -2021,9 +2021,20 @@ function celValor(v){
        próprio é o que deixa a tela DIZER que não sabe e oferecer o caminho de conferir. */
 const EST_ABERTA = 'aberta', EST_ENCERRADA = 'encerrada', EST_SEM_PRAZO = 'sem-prazo';
 function estadoLic(l, agora){
+  const ag = agora || new Date();
   const fim = dt(l && l.dataEncerramentoProposta);
-  if(!fim) return EST_SEM_PRAZO;
-  return fim > (agora || new Date()) ? EST_ABERTA : EST_ENCERRADA;
+  if(fim) return fim > ag ? EST_ABERTA : EST_ENCERRADA;
+  /* ══ A VIGÊNCIA SÓ FECHA, NUNCA ABRE — e essa assimetria é de propósito ═══════════════════════
+     A busca do PNCP não devolve a janela de proposta; devolve a VIGÊNCIA do edital, que é outro
+     fato. Vigência VENCIDA é prova suficiente de que não dá mais para disputar, e por isso ela
+     conclui "encerrada". Vigência CORRENDO não prova o contrário: o prazo de proposta costuma
+     fechar semanas antes de a vigência acabar.
+     >>> LER "vigente" COMO "aberta" PORIA O BOTÃO VERDE em cima de um pregão cuja sessão já
+         passou — o botão que funciona e cria um negócio que nasce morto. Por isso o certo aqui
+         é continuar dizendo "não sei", que é o que a tela realmente sabe. */
+  const vig = dt(l && l.dataFimVigencia);
+  if(vig && vig <= ag) return EST_ENCERRADA;
+  return EST_SEM_PRAZO;
 }
 
 /* ══ OS SELOS DE CONTEXTO (fatia A21) ══════════════════════════════════════════════════════════
@@ -3107,31 +3118,116 @@ async function conversarDoCartao(i){
 }
 function abrirReferencia(i){ abrirDetalhe(i, 'resultado'); }
 
-async function abrirDetalhe(i, foco){
-  const l = (window._hits||[])[i];
+/* ══ O PAINEL "AO VIVO · PNCP" GANHOU AS MESMAS AÇÕES (fatia A21) ══════════════════════════════
+   Ele mostra certame que NÃO está no nosso índice — é o ofício dele. E a caixa dá uma ordem que
+   parece pequena e não é: *"ao clicar em qualquer ação, gravar a licitação no índice primeiro,
+   para o negócio nunca nascer sem vínculo"*.
+   >>> A LIÇÃO É A DA A9. Lá, `negocios.numero_controle` estava nulo em 2.561 linhas e nada
+       voltava do negócio pro edital. Aqui o risco é o mesmo um degrau antes: um negócio criado a
+       partir de um certame que o índice não conhece fica sem `licitacao_id` para sempre — e é
+       ele que amarra os itens, o resultado e os arquivos.
+   >>> QUEM GRAVA É UMA EDGE FUNCTION, e não a tela: a `licitacoes` não tem policy de INSERT para
+       `authenticated`, e isso é decisão registrada na DDL ("a tela não coleta"). Abrir a tabela
+       pra escrita do navegador pra economizar uma função seria trocar uma trava por uma pressa. */
+function licDoVivo(k){
+  const i = (window._vivos||[])[k];
+  return i ? normalizaBruto(i) : null;
+}
+function cliqueVivo(ev, k){
+  const alvo = ev && ev.target;
+  if(alvo && alvo.closest && alvo.closest('button,a,input,select,textarea,label,summary,.mais')) return;
+  abrirDetalheVivo(k);
+}
+async function abrirDetalheVivo(k, foco){
+  const l = licDoVivo(k);
   if(!l) return;
-  DET = { i, lic:l, dados:null, busca:'', foco: foco || null };
+  /* GRAVA ANTES DE ABRIR, e sem esperar: a leitura dos itens é o que a pessoa veio ver, e
+     segurá-la atrás de uma escrita faria o painel parecer lento por causa de um efeito que ela
+     nem pediu. Se a gravação falhar, o detalhe continua funcionando — ele lê do PNCP, não do
+     nosso índice. O que se perde é só o vínculo, e o `gravarNoIndice` diz quando isso acontece. */
+  guardarNoIndice(l);
+  return abrirDetalheDe(l, foco, null);
+}
+function gravarNoIndice(k){
+  const l = licDoVivo(k);
+  if(l) guardarNoIndice(l, true);
+}
+/* `avisa=true` só quando a pessoa PEDIU explicitamente ("Guardar no nosso índice"). No caminho
+   automático o silêncio é correto: ela clicou pra ver o edital, não pra receber notícia sobre a
+   nossa base. Falha aí é anotada no console e não vira ruído na tela. */
+const _JA_GUARDADAS = new Set();
+async function guardarNoIndice(l, avisa){
+  const ctrl = String((l && l.numeroControlePNCP) || '').trim();
+  if(!ctrl) return false;
+  if(_JA_GUARDADAS.has(ctrl) && !avisa) return true;
+  const st = document.getElementById('status');
+  try{
+    const r = await fetch(`${SB_URL}/functions/v1/indexar-licitacao`, {
+      method:'POST', headers: Object.assign({'Content-Type':'application/json'}, SB_H),
+      body: JSON.stringify({ numero_controle: ctrl, origem: 'busca_ao_vivo', dados: l }),
+      signal: AbortSignal.timeout(20000),
+    });
+    const j = await r.json().catch(() => ({}));
+    if(!r.ok) throw new Error(j.error || ('a gravação respondeu ' + r.status));
+    _JA_GUARDADAS.add(ctrl);
+    if(avisa && st) st.innerHTML = ic('certo','bom') + ' ' + esc(j.ja
+      ? 'Este certame já estava no nosso índice.'
+      : 'Guardado no nosso índice, com o selo de que veio da busca ao vivo.');
+    return true;
+  }catch(e){
+    if(avisa && st) st.innerHTML = '<span class="conferir">' + ic('alerta','aviso')
+      + ' Não consegui guardar este certame no índice agora (' + esc(e.message) + '). '
+      + 'O detalhe abre do mesmo jeito — o que fica faltando é o vínculo com o nosso índice.</span>';
+    return false;
+  }
+}
+
+/* ══ UM DETALHE SÓ, PARA AS TRÊS FONTES (fatia A21) ═══════════════════════════════════════════
+   O painel abria só a partir do índice, por POSIÇÃO na lista (`_hits[i]`). A caixa manda que o
+   clique abra o detalhe nos TRÊS painéis — e o "ao vivo" não tem posição em `_hits`: ele é outra
+   lista, de outra fonte.
+   >>> ENTÃO O NÚCLEO PASSA A RECEBER A LICITAÇÃO, e não o índice dela. Escrever um segundo
+       painel para o ao vivo seria duas anatomias de detalhe divergindo com o tempo — e a
+       primeira coisa que divergiria é justamente o que a caixa acabou de mandar acrescentar.
+   >>> O `token` SUBSTITUI O `i` NA GUARDA DAS RESPOSTAS ATRASADAS. As quatro leituras (resultado,
+       CMED, funil, edital) voltam fora de ordem; sem guarda, a resposta de um pregão pinta por
+       cima de outro que a pessoa abriu no meio. O `i` só existia no índice — o token existe
+       sempre e é estritamente crescente. */
+let _DET_TOKEN = 0;
+async function abrirDetalheDe(l, foco, i){
+  if(!l) return;
+  const t = ++_DET_TOKEN;
+  DET = { i: (i == null ? null : i), token: t, lic:l, dados:null, busca:'', foco: foco || null };
+  const vale = () => DET && DET.token === t;
   const el = document.getElementById('detalhe');
   el.classList.add('open');
   pintaDetalhe('lendo');
   el.scrollIntoView({ behavior:'smooth', block:'start' });
-  carregarResultado(l).then(() => { if(DET && DET.i === i) pintaDetalhe(); });
+  carregarResultado(l).then(() => { if(vale()) pintaDetalhe(); });
   /* A CMED É PEDIDA JUNTO, E NÃO ESPERADA: o índice do teto legal é grande e a lista de itens é
      o que a pessoa veio ver. Sem isso, a coluna do teto ficaria "—" para sempre em quem nunca
      tinha aberto o cruzamento nesta sessão — e "—" é indistinguível de "não tem teto". */
-  carregarCMED().then(() => { if(DET && DET.i === i) pintaDetalhe(); });
-  carregarFunil().then(() => { if(DET && DET.i === i) pintaDetalhe(); });
-  carregarEdital(l).then(() => { if(DET && DET.i === i) pintaDetalhe(); });
+  carregarCMED().then(() => { if(vale()) pintaDetalhe(); });
+  carregarFunil().then(() => { if(vale()) pintaDetalhe(); });
+  carregarEdital(l).then(() => { if(vale()) pintaDetalhe(); });
   try{
     /* MESMO CAMINHO DO "Cruzar com nosso estoque": se a pessoa já cruzou este edital, o cache
        responde na hora e o detalhe abre instantâneo. Se não cruzou, cruzar aqui é o que faz a
        nota de aderência do cartão acender quando ela voltar — um gesto, dois lugares. */
-    DET.dados = await puxarItens(l);
+    const d = await puxarItens(l);
+    if(!vale()) return;
+    DET.dados = d;
     pintaDetalhe();
   }catch(e){
+    if(!vale()) return;
     DET.erro = e.message;
     pintaDetalhe('erro');
   }
+}
+function abrirDetalhe(i, foco){
+  const l = (window._hits||[])[i];
+  if(!l) return;
+  return abrirDetalheDe(l, foco, i);
 }
 
 /* ══ O CAMINHO PRO FUNIL, COM OS ITENS ESCOLHIDOS (fatia A4) ═══════════════════════════════════
@@ -3659,10 +3755,10 @@ function pintaDetalhe(estado){
 async function recarregarItensDetalhe(){
   if(!DET) return;
   CRUZ.delete(chaveLic(DET.lic));
-  const i = DET.i;
+  const t = DET.token, lic = DET.lic;
   pintaDetalhe('lendo');
-  try{ DET.dados = await puxarItens(DET.lic); if(DET && DET.i===i) pintaDetalhe(); }
-  catch(e){ if(DET && DET.i===i){ DET.erro = e.message; pintaDetalhe('erro'); } }
+  try{ const d = await puxarItens(lic); if(DET && DET.token===t){ DET.dados = d; pintaDetalhe(); } }
+  catch(e){ if(DET && DET.token===t){ DET.erro = e.message; pintaDetalhe('erro'); } }
 }
 
 // ══ A PONTE ENCONTRAR → NEGÓCIOS (08/08) ══════════════════════════════════════════════════
@@ -4371,6 +4467,9 @@ function pintaCalendario(achados, total){
   if(!box) return;
   const fmtD = d => { const x = String(d||'').slice(0,10); return x ? x.split('-').reverse().join('/') : '—'; };
   const mostra = achados.slice(0, CAL_TETO);
+  // guardada pela mesma razão do `_hits` e do `_vivos`: os cartões deste painel passaram a abrir
+  // o detalhe (fatia A21) e chamam por POSIÇÃO na lista desenhada.
+  window._historico = mostra;
   const ganhas = achados.filter(l => Number(l.valor_ganho) > 0).length;
 
   box.style.display = 'block';
@@ -4394,12 +4493,20 @@ function pintaCalendario(achados, total){
         /* A BARRA É SEMPRE CINZA AQUI, e é a mesma decisão medida do 7d levada ao seu limite
            lógico: histórico não tem urgência. Uma barra azul de "aberta" numa linha de 2025
            seria a tela sugerindo uma disputa que já acabou. */
-        return '<div class="lic prazo-nd">'
+        /* ══ O CARTÃO DO HISTÓRICO TAMBÉM ABRE (fatia A21) ═══════════════════════════════════
+           Aqui o detalhe é de OUTRA natureza, e isso é dito na cara: não há edital, não há itens
+           e não há teto CMED — há o que a casa registrou sobre um certame que já aconteceu.
+           >>> E ELE NÃO TENTA ADIVINHAR QUAL LICITAÇÃO DO PNCP É ESTA. O Calendário não guarda
+               número de controle, e casar por número+ano+órgão foi medido na fatia A14: das 105
+               Atas, a junção "na marra" deu 2 únicas e as DUAS eram de município errado. Quem
+               informa o número é gente — o detalhe oferece o caminho, não o palpite. */
+        return '<div class="lic clicavel prazo-nd" onclick="cliqueHistorico(event,'+k+')">'
           + '<div class="topo">'
           +   '<div class="selo" aria-hidden="true"><svg><use href="'
           +     (ganho ? '#ic-trofeu' : '#ic-calendario') + '"/></svg></div>'
           +   '<div class="cab">'
-          +     '<span class="titulo"' + (l.observacao ? ' title="'+esc(l.observacao)+'"' : '') + '>' + tit + '</span>'
+          +     '<button type="button" class="titulo" onclick="abrirHistorico('+k+')"'
+          +       (l.observacao ? ' title="'+esc(l.observacao)+'"' : '') + '>' + tit + '</button>'
           +     '<div class="sub">'
           +       '<span class="quando">Abertura em ' + fmtD(l.abertura) + (l.hora ? ' às ' + esc(l.hora) : '') + '</span>'
           +       (l.portal ? '<span>· ' + esc(l.portal) + '</span>' : '')
@@ -4432,6 +4539,82 @@ function pintaCalendario(achados, total){
         : 'Mostrando <b>' + achados.length + '</b> de <b>' + total + '</b> no seu Calendário 2025')
     +   ', ordenados por <b>abertura mais recente</b>.</span></div>'
     + '</div>';
+}
+
+/* ══ O DETALHE DO HISTÓRICO (fatia A21) ═══════════════════════════════════════════════════════
+   O terceiro painel abre um detalhe de OUTRA natureza, e a tela diz isso na primeira linha: aqui
+   não há edital, não há itens do PNCP e não há teto CMED — há o que a FPMED registrou sobre um
+   certame que já aconteceu. Fingir a mesma anatomia dos outros dois encheria a tela de seções
+   vazias, e seção vazia se lê como "o sistema perdeu o dado".
+   >>> ELE NÃO ADIVINHA A LICITAÇÃO CORRESPONDENTE NO PNCP. O Calendário não guarda número de
+       controle, e a fatia A14 mediu o que dá casar na marra: das 105 Atas, a junção por
+       número+ano+órgão devolveu 2 "únicas" e as DUAS eram de município errado; remedido na A19
+       com o índice maior, as 4 ambíguas continuam todas erradas.
+   >>> O QUE ELE OFERECE É O CAMINHO: joga o número e o órgão na busca desta tela, e QUEM
+       reconhece é a pessoa. É a mesma escada da A19 — a máquina confere, a pessoa informa. */
+function cliqueHistorico(ev, k){
+  const alvo = ev && ev.target;
+  if(alvo && alvo.closest && alvo.closest('button,a,input,select,textarea,label,summary,.mais')) return;
+  abrirHistorico(k);
+}
+function abrirHistorico(k){
+  const h = (window._historico||[])[k];
+  if(!h) return;
+  DET = null;                       // este painel não é o do edital, e não pode herdar o estado dele
+  const el = document.getElementById('detalhe');
+  if(!el) return;
+  const fmtD = d => { const x = String(d||'').slice(0,10); return x ? x.split('-').reverse().join('/') : null; };
+  const ganho = Number(h.valor_ganho) > 0;
+  const tit = esc(h.modalidade || 'Certame') + (h.numero ? ' Nº ' + esc(h.numero) : '');
+  el.classList.add('open');
+  el.innerHTML =
+    '<div class="det-topo">'
+    + '<div style="min-width:0"><div class="det-tit">'+tit+'</div>'
+    +   '<div class="hint">'+esc(h.orgao||'—')+(h.cidade ? ' · '+esc(h.cidade) : '')
+    +     (h.uf ? '/'+esc(h.uf) : '')+'</div></div>'
+    + '<span class="selo-fonte hist">'+ic('calendario')+'do seu Calendário 2025</span>'
+    + '<span style="flex:1"></span>'
+    + '<button class="btn sec mini" onclick="fecharDetalhe()">fechar</button>'
+    + '</div>'
+    + '<div class="det-selos">'
+    +   (ganho ? '<span class="bdg v" title="a FPMED venceu este certame">GANHA</span>' : '')
+    +   (h.status ? '<span class="bdg cinza">'+esc(h.status)+'</span>' : '')
+    + '</div>'
+    + '<div class="nota-fonte" style="border-radius:var(--raio-botao);margin-bottom:var(--esp-3)">'
+    +   'Isto é <b>histórico da casa</b>, não uma licitação aberta. Não há itens do PNCP nem teto '
+    +   'CMED aqui: o Calendário 2025 guarda o que a FPMED acompanhou, e não o edital.</div>'
+    + '<div class="dados" style="margin:0 0 14px">'
+    +   '<div class="dado"><small>Abertura</small><span>'+(fmtD(h.abertura)||'—')
+    +     (h.hora ? ' às '+esc(h.hora) : '')+'</span></div>'
+    +   '<div class="dado"><small>Portal</small><span>'+esc(h.portal||'—')+'</span></div>'
+    +   '<div class="dado"><small>Município</small><span>'+esc(h.cidade||'—')
+    +     (h.uf ? ' · '+esc(h.uf) : '')+'</span></div>'
+    /* O VALOR GANHO SÓ APARECE QUANDO HOUVE GANHO, e sai COM OS CENTAVOS — a mesma regra medida
+       do cartão: perder não é ganhar zero, e dinheiro recebido não se arredonda. */
+    +   (ganho ? '<div class="dado"><small>Valor ganho</small><span>'+brlExato(h.valor_ganho)+'</span></div>' : '')
+    + '</div>'
+    + '<div class="obj" style="margin:0 0 14px">'+grifa(h.objeto||'')+'</div>'
+    + (h.observacao ? '<div class="det-secao"><h4>Observação registrada</h4>'
+        + '<div class="hint">'+esc(h.observacao)+'</div></div>' : '')
+    + '<div class="acoes" style="margin-top:14px">'
+    +   '<button class="btn mini" onclick="procurarNoIndice('+k+')" '
+    +     'title="joga o número e o órgão na busca desta tela — quem reconhece a licitação é você">'
+    +     'Procurar este certame no índice</button>'
+    +   '<span class="hint">o Calendário não guarda o número de controle do PNCP, e casar por '
+    +     'número e órgão erra: medido em 14/08, as 4 junções ambíguas eram todas de município errado.</span>'
+    + '</div>';
+  el.scrollIntoView({ behavior:'smooth', block:'start' });
+}
+function procurarNoIndice(k){
+  const h = (window._historico||[])[k];
+  if(!h) return;
+  const cx = document.getElementById('f-kw');
+  if(!cx) return;
+  /* O QUE VAI PRO CAMPO É O NÚMERO, e não o órgão: o número é o que discrimina. Órgão devolveria
+     todas as compras daquela secretaria, que é o oposto de "achar este certame". */
+  cx.value = String(h.numero || h.orgao || '').trim();
+  fecharDetalhe();
+  buscaNova();
 }
 
 /* O MESMO ESCUDO DO NACIONAL, e pelo mesmo motivo: se esta função estourar de forma síncrona, o
@@ -4490,6 +4673,9 @@ function pintaNacional(termo, uf, r, erro){
     return;
   }
   const itens = r.itens || [];
+  // A LISTA FICA GUARDADA (fatia A21): os cartões deste painel passaram a abrir o detalhe aqui
+  // dentro, e eles chamam por POSIÇÃO — a mesma regra do `_hits` do índice.
+  window._vivos = itens;
   // O QUE JÁ ESTÁ NO NOSSO ÍNDICE é marcado, e não escondido: escondido, o operador não entende
   // por que o total nacional não bate com a lista.
   const nossos = new Set((window._ultimoRender ? (window._ultimoRender.todos || []) : [])
@@ -4562,12 +4748,19 @@ function pintaNacional(termo, uf, r, erro){
             const tit = esc(i.modalidade_licitacao_nome||'Contratação') + ' Nº ' + num
                       + ' — ' + esc(org) + (i.uf ? ' / ' + esc(i.uf) : '');
             const alvo = i.item_url ? 'https://pncp.gov.br/app/editais' + esc(i.item_url) : null;
-            return '<div class="lic'+v.classe+'">'
+            /* ══ O CARTÃO DO AO VIVO TAMBÉM ABRE O DETALHE AQUI DENTRO (fatia A21) ═════════════
+               Este era o painel onde a ordem do dono doía mais: a ÚNICA ação de cada linha era
+               "abrir no PNCP", e o título ERA o link pra fora. Um painel inteiro cuja única
+               função era mandar a pessoa embora do sistema.
+               >>> E ELE ABRE O MESMO DETALHE, com os mesmos itens e o mesmo teto CMED — porque
+                   o `normalizaBruto` já sabe traduzir esta forma (é a mesma resposta da busca
+                   que a fatia A13 gravou no índice). Não há um segundo painel. */
+            return '<div class="lic clicavel'+v.classe+'" onclick="cliqueVivo(event,'+k+')">'
               + '<div class="topo">'
               +   '<div class="selo" aria-hidden="true"><svg><use href="#ic-orgao"/></svg></div>'
               +   '<div class="cab">'
-              +     (alvo ? '<a class="titulo" href="'+alvo+'" target="_blank" rel="noopener" title="'+esc(i.title||'')+'">'+tit+'</a>'
-                          : '<span class="titulo" title="'+esc(i.title||'')+'">'+tit+'</span>')
+              +     '<button type="button" class="titulo" onclick="abrirDetalheVivo('+k+')" '
+              +       'title="'+esc(i.title||'')+'">'+tit+'</button>'
               +     '<div class="sub">'
               +       '<span class="quando">Publicado em '+fmt(i.data_publicacao_pncp)+'</span>'
               +       (i.modalidade_licitacao_nome ? '<span>· '+esc(i.modalidade_licitacao_nome)+'</span>' : '')
@@ -4593,11 +4786,39 @@ function pintaNacional(termo, uf, r, erro){
               +     '<small>Órgão</small><span>'+esc(org.length>38 ? org.slice(0,38)+'…' : org)+'</span></div>'
               +   '<div class="dado"><small>Situação no PNCP</small><span>'+esc(i.situacao_nome||'—')+'</span></div>'
               + '</div>'
+              /* ══ AS AÇÕES DO AO VIVO, PELO MESMO ESTADO DOS OUTROS DOIS PAINÉIS ═════════════
+                 A primária abre o detalhe AQUI DENTRO. "abrir no PNCP" desceu pra "⋯ mais ações",
+                 como no índice — a regra do dono é que sair do sistema deixe de ser o caminho de
+                 menor resistência, não que ele deixe de existir.
+                 >>> O ESTADO VEM DA VIGÊNCIA, e ela SÓ FECHA (ver `estadoLic`): vencida conclui
+                     "encerrada"; correndo não conclui "aberta", porque a busca do PNCP não
+                     devolve a janela de proposta. Por isso o verde não aparece aqui: prometer
+                     disputa sem saber o prazo é o botão que não pode dar certo.
+                 >>> E TODA AÇÃO GRAVA A LICITAÇÃO NO ÍNDICE ANTES (ordem da caixa). O certame do
+                     ao vivo não está no nosso índice; sem esse passo, um negócio criado a partir
+                     daqui nasceria sem vínculo — que é exatamente a lição do `numero_controle`
+                     que a A9 pagou pra aprender. */
+              + '<div class="acoes">'
+              +   '<button class="btn mini" onclick="abrirDetalheVivo('+k+')">Ver itens e detalhes</button>'
+              +   (v.vencida
+                  ? ' <button class="btn sec mini" onclick="abrirDetalheVivo('+k+',\'resultado\')" '
+                    + 'title="mostra o que foi pago por item, ao lado do teto legal da CMED">'
+                    + 'Usar como referência de preço</button>'
+                  : ' <span class="hint">a busca do PNCP não devolve o prazo de proposta — abra o '
+                    + 'detalhe para ver os itens, ou confira no portal</span>')
+              +   '<span style="flex:1"></span>'
+              +   '<span class="mais"><button type="button" class="btn sec mini" '
+              +     'onclick="event.stopPropagation();this.parentNode.classList.toggle(\'on\')" '
+              +     'aria-haspopup="true">⋯ mais ações</button><span class="cx">'
+              +     (ja ? '' : '<button type="button" onclick="gravarNoIndice('+k+')">'
+                            + 'Guardar no nosso índice</button>')
               /* O icone deste botao era markup escrito a mao (item 7d, antes de o helper existir).
                  Passou pelo `ic()` no 7f: um lugar so monta icone, senao nascem variacoes de
                  tamanho e alinhamento que ninguem consegue rastrear depois. */
-              + (alvo ? '<div class="acoes"><a class="btn sec mini" href="'+alvo+'" target="_blank" rel="noopener">'
-                      + 'abrir no PNCP' + ic('sai','sai') + '</a></div>' : '')
+              +     (alvo ? '<a href="'+alvo+'" target="_blank" rel="noopener">'
+                      + 'Abrir no PNCP' + ic('sai','sai') + '</a>' : '')
+              +   '</span></span>'
+              + '</div>'
               + '</div>';
           }).join('')
         : '<div class="lic" style="border-bottom:0"><div class="obj" style="margin-left:0">O PNCP respondeu, e não achou nada para <b>"'
