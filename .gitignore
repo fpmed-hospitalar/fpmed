@@ -94,3 +94,9 @@ Encontrar.html
 # correio do arquiteto — nao vai pro repo publico
 caixas/
 relatorios/
+# atalhos .bat do arquiteto (abrir janela A / janela B). Os dois .bat que JA estao
+# versionados (ABRIR_CLAUDE_TOTAL, ABRIR_FILA) continuam versionados — .gitignore so
+# vale pra arquivo nao rastreado. Os novos ("fpmed A.bat", "fpmed B.bat") sao correio.
+*.bat
+!ABRIR_CLAUDE_TOTAL.bat
+!ABRIR_FILA.bat
