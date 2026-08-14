@@ -178,9 +178,40 @@ Deno.serve(async (req) => {
     /* 404 AQUI É "O ÓRGÃO NÃO ANEXOU NADA" — achado medido na fatia A6, quando eu esperava lista
        vazia. É o caso mais comum do fallback honesto, e ele não é erro. */
     if (r.status === 404) {
+      /* ══ E ESTE FATO PRECISA SER GRAVADO, NÃO SÓ DEVOLVIDO (fatia A23, 14/08) ═══════════════
+         Até aqui esta função respondia `semArquivo: true` e NÃO escrevia nada em
+         `licitacao_arquivos`. A tela mostrava a frase certa — e no F5 seguinte lia a tabela,
+         não achava linha nenhuma e voltava a dizer "ainda não foi buscado". A pessoa clicava de
+         novo, o PNCP respondia 404 de novo, e o ciclo não terminava nunca: a resposta existia e
+         morria na memória da aba.
+         >>> AUSÊNCIA É INDISTINGUÍVEL DE "AINDA NÃO PERGUNTEI", e essa é a regra da fatia A6
+             inteira. O `tools/coleta_editais.js` já gravava esta linha desde então — quem não
+             gravava era ESTA porta, a que as telas usam. Duas portas para o mesmo fato, e só uma
+             registrando: é assim que um estado some sem ninguém notar.
+         >>> MESMA SENTINELA E MESMA FRASE DO COLETOR (`sem-arquivo://pncp` e "o PNCP não
+             publicou arquivo para esta licitação"): o `url_pncp` faz parte da chave única, então
+             uma sentinela diferente criaria DUAS linhas de "não tem arquivo" para a mesma
+             licitação — uma por porta. E a tela procura essa frase literal para distinguir o
+             estado; mudá-la aqui faria a tela deixar de reconhecer o que ela mesma gravou.
+         >>> O "QUANDO" É O `coletado_em`, que a tabela já preenche sozinha. Não inventei coluna
+             de data: a que existe responde exatamente a pergunta ("quando foi conferido?"). */
+      try {
+        await fetch(`${SB_URL}/rest/v1/licitacao_arquivos?on_conflict=numero_controle,url_pncp`, {
+          method: "POST", headers: { ...H_SR, Prefer: "return=minimal,resolution=merge-duplicates" },
+          body: JSON.stringify([{
+            numero_controle: controle, url_pncp: "sem-arquivo://pncp",
+            titulo: null, tipo: null, sequencial: null,
+            extracao_erro: "o PNCP não publicou arquivo para esta licitação",
+          }]),
+        });
+      } catch (_) {
+        /* A GRAVAÇÃO FALHAR NÃO PODE VIRAR ERRO DA BUSCA: a resposta ao usuário continua certa
+           ("o PNCP não publicou"). O que se perde é a memória do fato — e o pior que acontece é
+           voltar ao comportamento de antes desta fatia. */
+      }
       await registra({ usuario_id: user.id, email, numero_controle: controle, negocio_id: negocioId,
                        arquivos: 0, extraidos: 0, chars: 0, ok: true, ms: Date.now() - t0 });
-      return J({ numero_controle: controle, arquivos: 0, extraidos: 0,
+      return J({ numero_controle: controle, arquivos: 0, extraidos: 0, gravouEstado: true,
                  aviso: "edital nao publicado no PNCP — anexe manualmente", semArquivo: true });
     }
     if (!r.ok) throw new Error("o PNCP respondeu " + r.status);
@@ -194,6 +225,32 @@ Deno.serve(async (req) => {
   const editais = (Array.isArray(arqs) ? arqs : [])
     .filter((a) => EH_EDITAL(a.tipoDocumentoNome))
     .slice(0, TETO_ARQUIVOS);
+
+  /* ══ A SEGUNDA PORTA DO MESMO BURACO (fatia A23) ═══════════════════════════════════════════
+     O PNCP pode responder 200 com uma lista que NÃO TEM edital nem termo de referência (ata,
+     aviso, mapa de preços). Aí `editais` fica vazio, `linhas` fica vazia, nada é gravado — e a
+     tela volta a dizer "ainda não foi buscado" no F5, exatamente como no 404.
+     >>> E O ESTADO É OUTRO, com ação oposta: aqui o órgão PUBLICOU arquivos, só nenhum é o
+         edital. Dizer "o PNCP não publicou arquivo" seria mentir sobre uma lista que existe —
+         e mandaria a pessoa anexar à mão quando talvez baste olhar os anexos no portal. */
+  if (Array.isArray(arqs) && arqs.length && !editais.length) {
+    try {
+      await fetch(`${SB_URL}/rest/v1/licitacao_arquivos?on_conflict=numero_controle,url_pncp`, {
+        method: "POST", headers: { ...H_SR, Prefer: "return=minimal,resolution=merge-duplicates" },
+        body: JSON.stringify([{
+          numero_controle: controle, url_pncp: "sem-edital://pncp",
+          titulo: null, tipo: null, sequencial: null,
+          extracao_erro: `o PNCP publicou ${arqs.length} arquivo(s) para esta licitacao, e nenhum `
+            + `deles e edital ou termo de referencia`,
+        }]),
+      });
+    } catch (_) { /* mesma regra do 404: perder a memoria do fato nao pode virar erro da busca */ }
+    await registra({ usuario_id: user.id, email, numero_controle: controle, negocio_id: negocioId,
+                     arquivos: arqs.length, extraidos: 0, chars: 0, ok: true, ms: Date.now() - t0 });
+    return J({ numero_controle: controle, arquivos: arqs.length, extraidos: 0, gravouEstado: true,
+               aviso: "o PNCP tem arquivos desta licitacao, mas nenhum e edital ou termo de referencia",
+               semEdital: true });
+  }
 
   // ── 5. BAIXAR, EXTRAIR, GRAVAR ──────────────────────────────────────────────────────────
   const linhas: any[] = [];

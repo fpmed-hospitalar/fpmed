@@ -3283,8 +3283,10 @@ async function conversarComEdital(){
   }
   if(ed.semArquivo){
     cx.innerHTML = '<div class="aviso" style="text-align:left;padding:12px 14px"><span class="hint">'
-      + '<b>Edital não publicado no PNCP.</b> O órgão não anexou o arquivo — o PNCP respondeu que '
-      + 'não há documento para esta licitação. Dá para anexar o edital à mão no negócio, dentro do funil.'
+      + '<b>Edital não publicado no PNCP</b>'
+      + (ed.quando ? ' — conferido em ' + fmtDt(ed.quando) : '') + '. O órgão não anexou o arquivo — '
+      + 'o PNCP respondeu que não há documento para esta licitação. Dá para anexar o edital à mão '
+      + 'no negócio, dentro do funil.'
       + '</span></div>';
     return;
   }
@@ -3348,7 +3350,9 @@ async function carregarEdital(l){
   if(!ctrl){ if(DET) DET.edital = { semControle:true }; return; }
   try{
     const r = await fetch(`${SB_URL}/rest/v1/licitacao_arquivos`
-      + `?select=titulo,tipo,url_pncp,texto_extraido,texto_chars,texto_paginas,extracao_erro`
+      // `bytes` e `coletado_em` entraram na fatia A21/A23: o primeiro é o tamanho que a seção de
+      // arquivos mostra; o segundo é o QUANDO do "conferido, sem arquivo no PNCP".
+      + `?select=titulo,tipo,url_pncp,bytes,coletado_em,texto_extraido,texto_chars,texto_paginas,extracao_erro`
       + `&numero_controle=eq.${encodeURIComponent(ctrl)}`, {headers:SB_H});
     if(!r.ok) return;                                     // continua "não sei"
     const arqs = await r.json();
@@ -3359,8 +3363,11 @@ async function carregarEdital(l){
        referência, minutas e planilha; mostrar só um faria a pessoa procurar os outros no portal. */
     DET.arquivos = arqs;
     if(!arqs.length){ DET.edital = null; return; }        // nunca coletado
+    /* O "QUANDO" VAI JUNTO (fatia A23). O estado "o PNCP não publicou arquivo" é uma CONFERÊNCIA
+       feita numa data, e não uma verdade eterna: um órgão pode anexar o edital depois. Dizer só
+       "não publicou" faria a pessoa nunca mais mandar conferir. Com a data, ela decide. */
     const semArq = arqs.find(a => /não publicou arquivo/.test(a.extracao_erro||''));
-    if(semArq){ DET.edital = { semArquivo:true }; return; }
+    if(semArq){ DET.edital = { semArquivo:true, quando: semArq.coletado_em || null }; return; }
     const comTexto = arqs.filter(a => (a.texto_chars||0) > 0)
                          .sort((a,b) => (b.texto_chars||0) - (a.texto_chars||0));
     DET.edital = comTexto.length
@@ -3448,9 +3455,18 @@ function secaoDocumentos(){
     corpo = '<div class="hint">Este edital ainda <b>não foi coletado</b>. A coleta de arquivos é '
       + 'sob demanda — ela roda para as licitações que entram nos seus negócios.</div>';
   }else if(arqs.some(a => /não publicou arquivo/.test(a.extracao_erro||''))){
-    corpo = '<div class="hint"><b>O órgão não publicou arquivo no PNCP.</b> Não é falha de coleta: '
-      + 'o PNCP respondeu que não há documento para esta licitação. Dá para anexar o edital à mão '
-      + 'no negócio, dentro do funil.</div>';
+    /* O QUANDO ENTRA NA FRASE (fatia A23): isto é uma CONFERÊNCIA datada, não uma verdade
+       eterna. Um órgão pode anexar o edital depois — e sem a data ninguém saberia se vale a
+       pena mandar conferir de novo. */
+    corpo = '<div class="hint"><b>O órgão não publicou arquivo no PNCP</b>'
+      + (DET.edital && DET.edital.quando ? ' — conferido em ' + fmtDt(DET.edital.quando) : '')
+      + '. Não é falha de coleta: o PNCP respondeu que não há documento para esta licitação. '
+      + 'Dá para anexar o edital à mão no negócio, dentro do funil.</div>';
+  }else if(arqs.some(a => /nenhum\s*\n?\s*deles e edital/.test(a.extracao_erro||'') || /nenhum deles e edital/.test(a.extracao_erro||''))){
+    const m = arqs.find(a => /nenhum deles e edital/.test(a.extracao_erro||''));
+    corpo = '<div class="hint"><b>O PNCP tem arquivos desta licitação, mas nenhum é edital ou '
+      + 'termo de referência</b>' + (m && m.coletado_em ? ' — conferido em ' + fmtDt(m.coletado_em) : '')
+      + '. Vale olhar os anexos no portal: ata, aviso e mapa de preços ficam lá.</div>';
   }else{
     corpo = '<div class="det-docs">' + arqs.map(a => {
       const lido = (a.texto_chars||0) > 0;

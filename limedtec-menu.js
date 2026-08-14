@@ -88,7 +88,12 @@
     pecas: '<path d="M14 4 20 10 9 21H4v-5z"/><path d="m12.5 6.5 5 5"/>',
     declaracoes: '<path d="M6 3h9l4 4v14H6z"/><path d="M9 12h7M9 15.5h7M9 8.5h3"/>',
     sistema: '<rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8M12 17v4"/>',
-    telefone: '<path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2.2 2A16 16 0 0 1 3 6.2 2 2 0 0 1 5 4z"/>'
+    telefone: '<path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2.2 2A16 16 0 0 1 3 6.2 2 2 0 0 1 5 4z"/>',
+    /* A ajuda (fatia A23). Círculo com a interrogação — o desenho que TODO software usa pra
+       isso, e aqui isso é uma vantagem: quem abre o sistema pela primeira vez não precisa
+       aprender um símbolo nosso justamente no item que existe pra ensinar. Mesmo traço de 1.8
+       e mesma caixa de 24 do resto do conjunto. */
+    ajuda: '<circle cx="12" cy="12" r="8.5"/><path d="M9.6 9.4a2.5 2.5 0 1 1 3.2 2.7c-.6.2-.8.7-.8 1.3v.4"/><path d="M12 16.9v.1"/>'
   };
 
   /* O MAPA. Cada módulo diz para onde vai e como se reconhece que já se está nele.
@@ -429,7 +434,24 @@
        >>> DISCRETA NÃO É ESCONDIDA. Ela é um link de verdade, com o mesmo ícone e o mesmo alvo
            de clique dos outros; o que muda é o PESO, e é o peso que diz "isto não é uma parada
            do seu fluxo". Esconder de vez obrigaria a decorar a URL. */
+    /* ══ "COMO USAR" ENTROU NO RODAPÉ (fatia A23, 14/08) ═════════════════════════════════════
+       O TRABALHADOR B publicou o `fpmed_ajuda.html` (o Guia do FPMED, seis etapas) e ele foi
+       para a casca do service worker — mas ficou SEM ENTRADA NO MENU. Uma tela viva que não tem
+       como ser alcançada é pior que uma tela que não existe: ela está no cache de todo mundo,
+       custa deploy, e o único jeito de chegar nela era decorando a URL.
+       >>> NO RODAPÉ, E NÃO NA LISTA DE MÓDULOS, pelo mesmo motivo escrito na CMED crua logo
+           abaixo: a lista de módulos é o FLUXO DE TRABALHO (achar → disputar → propor), e ler o
+           guia não é uma parada dele. Um item "Ajuda" entre "Negócios" e "Documentos" ensinaria
+           que existe uma sétima etapa que não existe.
+       >>> E ELE VEM PRIMEIRO no rodapé, acima da consulta CMED: quem vai clicar em "Como usar" é
+           justamente quem ainda não sabe o que é a tabela CMED. Ordem por quem precisa, e não
+           por ordem de chegada.
+       >>> "Como usar o FPMED" E NÃO "AJUDA": "Ajuda" é o rótulo do lugar onde se vai quando algo
+           quebrou; este guia é para ANTES, e o verbo diz isso. */
     h.push('<div class="lm-rodape">'
+      + '<a class="lm-crua" href="fpmed_ajuda.html" data-modulo="fpmed_ajuda" '
+      +   'title="o guia do FPMED em seis etapas: do achar o edital até entregar a proposta">'
+      +   svg('ajuda') + 'Como usar o FPMED</a>'
       + '<a class="lm-crua" href="fpmed_conferidor.html" '
       +   'title="consulta crua da tabela CMED: cole uma planilha ou um texto e confira preço contra o teto legal">'
       +   svg('conferir') + 'Consultar a tabela CMED</a>'

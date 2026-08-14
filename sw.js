@@ -17,14 +17,14 @@
  */
 'use strict';
 
-/* Duas frentes publicando no mesmo dia usam ESTE arquivo em comum, e a regra combinada Ã©: quem
-   commitar depois SOBE o nÃºmero, nunca volta. O rastro do dia: -41 e -43 do TRABALHADOR B
+/* Duas frentes publicando no mesmo dia usam ESTE arquivo em comum, e a regra combinada é: quem
+   commitar depois SOBE o número, nunca volta. O rastro do dia: -41 e -43 do TRABALHADOR B
    (item 7b), -42 do 7f, -44 e -45 do item 8, e -46 do TRABALHADOR B (item 8b, a Proposta).
-   >>> POR QUE NÃƒO DÃ PRA REAPROVEITAR O NÃšMERO DO OUTRO: quem jÃ¡ instalou a casca no deploy dele
-       nÃ£o refetcharia os meus arquivos â€” o service worker sÃ³ troca quando a VERSÃƒO muda. O
-       usuÃ¡rio ficaria com a versÃ£o de ontem e sem sintoma nenhum, que Ã© a liÃ§Ã£o S13.
-   >>> E O ITEM 8 PRECISA DE BUMP mesmo sem tela nova: ele mexe no `fpmed_teto_cmed.js`, que ESTÃ
-       na casca. Motor velho servido do cache Ã© teto legal calculado pela regra antiga. */
+   >>> POR QUE NÃO DÁ PRA REAPROVEITAR O NÚMERO DO OUTRO: quem já instalou a casca no deploy dele
+       não refetcharia os meus arquivos — o service worker só troca quando a VERSÃO muda. O
+       usuário ficaria com a versão de ontem e sem sintoma nenhum, que é a lição S13.
+   >>> E O ITEM 8 PRECISA DE BUMP mesmo sem tela nova: ele mexe no `fpmed_teto_cmed.js`, que ESTÁ
+       na casca. Motor velho servido do cache é teto legal calculado pela regra antiga. */
 /* -73 pela FATIA A16: a janela de custo entrou no `fpmed_leitor_motor.js`, que ESTÁ na casca.
    Sem bump, quem já instalou continuaria recebendo o motor velho do cache — e o motor velho
    pergunta pelo `confirm()` do navegador. Não quebraria nada; simplesmente a fatia não existiria
@@ -48,7 +48,13 @@
    `fpmed_negocios.html`, que ESTA na casca. Este bump importa mais que os outros: sem ele, quem
    ja instalou continuaria vendo "R$ 0,00 · referencia do edital" em 7.456 itens — um preco que
    ninguem publicou, escrito como se existisse, na tela onde se decide preco. */
-const VERSAO = 'limedtec-fpmed-2026-08-13-78';
+/* -79 pela FATIA A21: o cartao inteiro passou a abrir o detalhe, as acoes passaram a seguir o
+   estado do certame e o `normalizaBruto` entrou — tudo dentro do `fpmed_licitacoes.html`, que
+   ESTA na casca. Este bump e dos que mais importam: sem ele, quem ja instalou continuaria vendo
+   os 400 cartoes MUDOS (sem titulo, sem objeto, com "R$ 0" e sem a chave do funil), que e
+   exatamente o defeito que esta fatia foi feita pra apagar. O sintoma continuaria identico, e a
+   conclusao seria "o conserto nao funcionou". */
+const VERSAO = 'limedtec-fpmed-2026-08-13-79';
 const CACHE = 'limedtec-shell-' + VERSAO;
 
 // A CASCA DA FPMED. Lista MONTADA A MAO conferindo `git ls-files` (= o que o Pages serve),
@@ -62,12 +68,12 @@ const SHELL = [
   './fpmed_viabilidade.html',          // Viabilidade de compra
   './fpmed_painel.html',               // Painel de notas
   './fpmed_licitacoes.html',           // Licitacoes
-  './fpmed_negocios.html',             // Negocios (funil) â€” entrou 06/08 com o item 9
-  './fpmed_documentos.html',           // Documentos (habilitacao) â€” entrou 08/08, 3a aba do portal
-  './fpmed_declaracoes.html',          // Declaracoes â€” 4a aba do portal, modulo 2.10 da spec
-  './fpmed_pecas.html',                // Pecas juridicas â€” 5a aba, modulo 2.9 da spec
-  './fpmed_conferidor.html',           // Conferidor de proposta x teto CMED â€” 6a aba
-  /* GUIA DO USUARIO â€” entrou 14/08 com a fatia B11. Ele e a tela que MAIS precisa funcionar
+  './fpmed_negocios.html',             // Negocios (funil) — entrou 06/08 com o item 9
+  './fpmed_documentos.html',           // Documentos (habilitacao) — entrou 08/08, 3a aba do portal
+  './fpmed_declaracoes.html',          // Declaracoes — 4a aba do portal, modulo 2.10 da spec
+  './fpmed_pecas.html',                // Pecas juridicas — 5a aba, modulo 2.9 da spec
+  './fpmed_conferidor.html',           // Conferidor de proposta x teto CMED — 6a aba
+  /* GUIA DO USUARIO — entrou 14/08 com a fatia B11. Ele e a tela que MAIS precisa funcionar
      offline: quem esta perdido no meio de uma sessao de pregao, num lugar com internet ruim, e
      exatamente quem vai abrir a ajuda. Tela de ajuda que so abre com rede ajuda quem nao precisa. */
   './fpmed_ajuda.html',                // Guia do usuario (passo a passo da jornada)
@@ -76,25 +82,25 @@ const SHELL = [
   './fpmed_competitividade.html',      // aqui ELA ENTRA (na instalacao de origem estava fora por
                                        // ficar no .gitignore; na FPMED e versionada e vai pro ar)
   './dashboard_clientes.html',         // demo 100% ficticio (nao ha dado real dentro)
-  './limedtec-usuarios.html',          // Usuarios e acessos (tela do MOLDE) â€” entrou 06/08
+  './limedtec-usuarios.html',          // Usuarios e acessos (tela do MOLDE) — entrou 06/08
   './reset-senha.html',
   './gm-auth.js',                      // motor de autenticacao compartilhado
   './cliente.config.js',
   './limedtec-config.js',
   './limedtec-tema.js',                // faltava: o red test de 05/08 mostrou 21 itens sem ele,
                                        // e sem ele o tema do cliente nao pinta offline (404).
-  /* â•â• OS DOIS QUE FALTAVAM, E JA ESTAVAM NO AR SEM CASCA (achado em 12/08) â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+  /* ══ OS DOIS QUE FALTAVAM, E JA ESTAVAM NO AR SEM CASCA (achado em 12/08) ══════════════════
      A tela Encontrar foi publicada ONTEM (bd35ff1) dependendo dos dois, e nenhum entrou aqui.
      Offline, ela abriria SEM O TEMA (todo `var(--token)` sem valor: texto invisivel, fundo
-     branco cru) e SEM O MENU â€” ou seja, sem navegacao nenhuma, porque a barra do portal foi
+     branco cru) e SEM O MENU — ou seja, sem navegacao nenhuma, porque a barra do portal foi
      removida no mesmo commit. O sintoma nao apareceu porque com rede o 404 nao acontece.
      >>> A LICAO E DA CASA E ESTA ESCRITA NO PROPRIO REPO: "a casca e lista branca, e tela que
          depende de script fora dela quebra offline". Publiquei uma tela nova sem reler a lista.
      Entram os dois agora, junto com o Negocios, que depende dos mesmos. */
   './fpmed_tema.css',                  // o design system: sem ele, NENHUM token tem valor
-  './limedtec-menu.js',                // a navegacao do modulo â€” sem ele a tela vira beco
+  './limedtec-menu.js',                // a navegacao do modulo — sem ele a tela vira beco
   /* O sprite de icones, fonte unica desde 13/08 (item 7d). Ele entra na casca NO MESMO commit
-     em que a Encontrar passou a depender dele â€” que e exatamente a licao dos dois de cima, que
+     em que a Encontrar passou a depender dele — que e exatamente a licao dos dois de cima, que
      ficaram no ar sem casca por um dia. Offline, sem ele a tela abre sem os icones das linhas. */
   './fpmed_icones.js',
   /* A PORTA INTERNA DO LEITOR (fatia A2, 14/08). Ela entra na casca NO MESMO commit em que
@@ -110,10 +116,10 @@ const SHELL = [
   './manifest.webmanifest',
   './icones/limedtec-192.png',
   './icones/limedtec-512.png',
-  './icones/limedtec-192-maskable.png',   // logo oficial (cruz com o L) â€” 4 arquivos desde 05/08
+  './icones/limedtec-192-maskable.png',   // logo oficial (cruz com o L) — 4 arquivos desde 05/08
   './icones/limedtec-512-maskable.png',
   './logo_fpmed.png',                  // usado nos PDFs e no cabecalho; e casca, nao dado
-  // Ã¢â€â‚¬Ã¢â€â‚¬ FICARAM DE FORA DE PROPOSITO Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+  // ── FICARAM DE FORA DE PROPOSITO ────────────────────────────────────────────────────────────
   // fpmed_template.html ....... referencia de design, nao e tela que alguem abre.
   // *.xlsx / *.xlsm / *.pdf ... DADO COMERCIAL. Nunca. (E nem sobem pro repo: .gitignore.)
   // o xlsx.full.min.js do CDN . outra origem; o SW nem chega a olhar. Offline, a Viabilidade
