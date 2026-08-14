@@ -34,7 +34,10 @@
    desta fatia, então ele não carrega esta tela: quem já tivesse pegado o -73 continuaria com a
    lista na ordem velha, sem selo nenhum, e sem nada que denunciasse isso. Bump por caminho e
    sozinho, para não levar linha da outra janela junto. */
-const VERSAO = 'limedtec-fpmed-2026-08-13-74';
+/* -75 pela FATIA B11: o Guia do usuario (`fpmed_ajuda.html`) ENTROU na casca acima. Arquivo novo
+   na lista sem bump nao e baixado por quem ja instalou — a casca so e remontada quando a versao
+   muda. Seria a ajuda existindo pra quem chega hoje e nao existindo pra quem ja usa o app. */
+const VERSAO = 'limedtec-fpmed-2026-08-13-75';
 const CACHE = 'limedtec-shell-' + VERSAO;
 
 // A CASCA DA FPMED. Lista MONTADA A MAO conferindo `git ls-files` (= o que o Pages serve),
@@ -53,6 +56,10 @@ const SHELL = [
   './fpmed_declaracoes.html',          // Declaracoes â€” 4a aba do portal, modulo 2.10 da spec
   './fpmed_pecas.html',                // Pecas juridicas â€” 5a aba, modulo 2.9 da spec
   './fpmed_conferidor.html',           // Conferidor de proposta x teto CMED â€” 6a aba
+  /* GUIA DO USUARIO â€” entrou 14/08 com a fatia B11. Ele e a tela que MAIS precisa funcionar
+     offline: quem esta perdido no meio de uma sessao de pregao, num lugar com internet ruim, e
+     exatamente quem vai abrir a ajuda. Tela de ajuda que so abre com rede ajuda quem nao precisa. */
+  './fpmed_ajuda.html',                // Guia do usuario (passo a passo da jornada)
   './fpmed_teto_cmed.js',
   './fpmed_alarme_coleta.js',        // o sino do Negocios depende dele              // o motor "meu preco x teto", compartilhado
   './fpmed_competitividade.html',      // aqui ELA ENTRA (na instalacao de origem estava fora por

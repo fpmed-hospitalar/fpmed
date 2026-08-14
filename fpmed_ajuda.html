@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<!-- ══════════════════════════════════════════════════════════════════════════════════════════════
+     FPMED · GUIA DO USUÁRIO — fatia B11 (14/08/2026, Trabalhador B)
+
+     ── PARA QUEM ESTA PÁGINA FOI ESCRITA ────────────────────────────────────────────────────────
+     Para o Natanael e a equipe. Não para quem construiu o sistema. Por isso ela não tem uma
+     palavra de dentro da máquina: quem usa o sistema não precisa saber COMO ele faz, precisa
+     saber ONDE CLICAR e O QUE ESPERAR. Palavra técnica aqui não informa — ela intimida, e quem
+     se sente burro diante de uma tela para de usar a tela.
+
+     ── POR QUE NÃO TEM PRINT DE TELA, e isso é uma limitação declarada ──────────────────────────
+     Quem escreveu esta página não entra no sistema (não faz login). Print inventado, ou print de
+     uma tela montada com dado de mentira, seria pior que desenho nenhum: no dia em que o botão
+     mudasse de lugar, a foto continuaria dizendo com toda a confiança onde ele NÃO está.
+     >>> ENTÃO O QUE ENTROU FORAM DESENHOS DE FLUXO, feitos com caixas e setas do próprio molde.
+         Eles mostram a ORDEM das coisas, que é o que muda pouco; e os nomes dos botões estão
+         escritos por extenso, conferidos um a um no código das telas.
+     >>> PENDÊNCIA HONESTA PARA O DONO: quando alguém percorrer o sistema logado, vale trocar cada
+         desenho pelo print correspondente. O desenho é a versão que dá para provar hoje.
+
+     ── COR ─────────────────────────────────────────────────────────────────────────────────────
+     Zero cor escrita à mão neste arquivo — nem no estilo, nem no ícone, nem em atributo. Tudo sai
+     do fpmed_tema.css. A suíte tests/testa_ajuda.js varre o arquivo INTEIRO (e não só o bloco de
+     estilo, que é onde a varredura da Proposta já passou verde por acidente uma vez).
+
+     ── O MENU NÃO É DAQUI ──────────────────────────────────────────────────────────────────────
+     Esta página só PENDURA o menu (`data-limedtec-menu` + o script do molde), como toda tela do
+     sistema faz. A entrada do menu que aponta para cá é do outro trabalhador e mora no
+     `limedtec-menu.js` — nenhuma linha dele foi tocada aqui. Enquanto ela não existir, a página
+     continua no ar e continua linkável por endereço.
+     ══════════════════════════════════════════════════════════════════════════════════════════════ -->
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LIMEDTEC — FPMED · Guia do usuário</title>
+<link rel="icon" type="image/png" sizes="192x192" href="icones/limedtec-192.png">
+<link rel="apple-touch-icon" href="icones/limedtec-192.png">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="stylesheet" href="fpmed_tema.css">
+<script src="cliente.config.js"></script>
+<script src="limedtec-config.js"></script>
+<script src="limedtec-tema.js"></script>
+<script src="limedtec-licenca.js"></script>
+<script src="gm-auth.js?v=sessao-06ago"></script>
+<style>
+/* ══════════════════════════════════════════════════════════════════════════════════════════════
+   O ESTILO DESTA PÁGINA É CURTO DE PROPÓSITO. Ela é texto: quase tudo que precisa já existe em
+   classe .fp-* do tema. O que está aqui são as três coisas que o tema não tem porque só esta
+   página usa — a moldura de leitura, o desenho de fluxo e a caixa de aviso de custo.
+   NENHUMA regra abaixo escreve uma cor: todas leem token.
+   ══════════════════════════════════════════════════════════════════════════════════════════════ */
+html,body{margin:0;padding:0}
+body{
+  background:var(--cinza-50);
+  color:var(--cinza-800);
+  font-family:var(--fonte);
+  font-size:var(--txt-2);
+  line-height:var(--altura-texto);
+}
+
+/* O menu lateral é fixo e a largura dele mora no token; sem esta margem o conteúdo nasceria por
+   baixo dele. Em telas estreitas o menu vira faixa no topo e a margem sai — mesma regra das
+   outras telas do sistema, e ela mora no mesmo token para não desencontrar. */
+.pg{margin-left:var(--menu-largura);min-height:100vh}
+@media (max-width:900px){ .pg{margin-left:0} }
+
+/* O cabeçalho gruda no topo: num guia longo, quem rolou 4 telas ainda precisa saber onde está e
+   ainda precisa do índice a um clique. */
+.topo{
+  position:sticky;top:0;z-index:5;
+  background:var(--branco);
+  border-bottom:1px solid var(--cinza-200);
+  padding:var(--esp-4) var(--esp-6);
+}
+.topo .sub{margin-top:var(--esp-1)}
+.voltar{
+  display:inline-block;margin-bottom:var(--esp-2);
+  font-size:var(--txt-1);font-weight:var(--peso-semi);
+  color:var(--azul-700);text-decoration:none;cursor:pointer;
+}
+.voltar:hover{text-decoration:underline}
+.voltar:focus-visible{outline:none;box-shadow:var(--foco);border-radius:var(--raio-mini)}
+.corpo{padding:var(--esp-6);max-width:var(--largura-leitura)}
+
+/* ── O ÍNDICE DE CIMA ──────────────────────────────────────────────────────────────────────── */
+.indice{display:flex;flex-wrap:wrap;gap:var(--esp-2);margin-top:var(--esp-3)}
+.indice a{
+  display:inline-flex;align-items:center;gap:var(--esp-2);
+  padding:var(--esp-1) var(--esp-3);
+  border:1px solid var(--borda-controle);
+  border-radius:var(--raio-pilula);
+  background:var(--branco);
+  color:var(--cinza-700);
+  font-size:var(--txt-1);
+  font-weight:var(--peso-semi);
+  text-decoration:none;
+  cursor:pointer;
+  transition:background-color var(--transicao),border-color var(--transicao),color var(--transicao);
+}
+.indice a:hover{background:var(--azul-50);border-color:var(--azul-200);color:var(--azul-700)}
+.indice a:focus-visible{outline:none;box-shadow:var(--foco)}
+.indice .n{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:18px;height:18px;border-radius:var(--raio-pilula);
+  background:var(--cinza-100);color:var(--cinza-700);
+  font-size:var(--txt-0);font-weight:var(--peso-forte);
+}
+
+/* ── SEÇÃO ─────────────────────────────────────────────────────────────────────────────────── */
+.sec{margin-top:var(--esp-8);scroll-margin-top:var(--esp-16)}
+.sec h2{
+  display:flex;align-items:center;gap:var(--esp-3);
+  font-size:var(--txt-4);font-weight:var(--peso-semi);line-height:var(--altura-titulo);
+  color:var(--cinza-800);margin:0 0 var(--esp-2);
+}
+.sec h2 .n{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:26px;height:26px;flex:none;border-radius:var(--raio-pilula);
+  background:var(--azul-600);color:var(--branco);
+  font-size:var(--txt-1);font-weight:var(--peso-forte);
+}
+.sec p{margin:0 0 var(--esp-3)}
+.sec .cartao{margin-top:var(--esp-3)}
+
+/* ── O DESENHO DE FLUXO ────────────────────────────────────────────────────────────────────────
+   Caixa, seta, caixa. Ele não é decoração: é a única coisa desta página que mostra a ORDEM, e
+   ordem é o que mais se perde quando alguém aprende um sistema sozinho.
+   A seta é `aria-hidden` porque quem ouve a página não deve escutar "seta para a direita" quatro
+   vezes seguidas — a ordem já está na sequência das caixas. */
+.fluxo{display:flex;align-items:stretch;flex-wrap:wrap;gap:var(--esp-2);margin:var(--esp-3) 0}
+.fluxo .cx{
+  flex:1 1 150px;min-width:0;
+  border:1px solid var(--cinza-200);
+  border-radius:var(--raio-campo);
+  background:var(--branco);
+  padding:var(--esp-3);
+}
+.fluxo .cx b{display:block;font-size:var(--txt-2);font-weight:var(--peso-semi);color:var(--cinza-800)}
+.fluxo .cx span{display:block;font-size:var(--txt-1);color:var(--cinza-600);margin-top:var(--esp-1)}
+.fluxo .cx.acende{border-color:var(--azul-200);background:var(--azul-50)}
+.fluxo .seta{
+  display:flex;align-items:center;flex:none;
+  color:var(--cinza-400);font-size:var(--txt-4);font-weight:var(--peso-forte);
+}
+@media (max-width:600px){ .fluxo .seta{display:none} }
+
+/* ── ONDE CLICAR / O QUE ESPERAR ───────────────────────────────────────────────────────────── */
+.passos{list-style:none;margin:var(--esp-3) 0 0;padding:0}
+.passos li{
+  display:grid;grid-template-columns:auto 1fr;gap:var(--esp-1) var(--esp-3);
+  padding:var(--esp-3) 0;border-top:1px solid var(--borda-divisor);
+}
+.passos li:first-child{border-top:0}
+.passos .onde{
+  grid-column:2;font-size:var(--txt-2);font-weight:var(--peso-semi);color:var(--cinza-800);
+}
+.passos .espera{grid-column:2;font-size:var(--txt-1);color:var(--cinza-600)}
+.passos .bolha{
+  grid-row:1 / span 2;
+  display:inline-flex;align-items:center;justify-content:center;
+  width:22px;height:22px;flex:none;margin-top:2px;
+  border-radius:var(--raio-pilula);
+  background:var(--cinza-100);color:var(--cinza-700);
+  font-size:var(--txt-1);font-weight:var(--peso-forte);
+}
+/* O botão citado no texto: é uma AMOSTRA do botão, não um botão. Cursor de texto, e por isso
+   `cursor:default` explícito — elemento com cara de clicável e cursor de mão que não faz nada é
+   o defeito que esta casa persegue com nome próprio. */
+.bt{
+  display:inline-block;
+  padding:1px var(--esp-2);
+  border:1px solid var(--borda-controle);
+  border-radius:var(--raio-mini);
+  background:var(--cinza-100);
+  color:var(--cinza-800);
+  font-size:var(--txt-1);font-weight:var(--peso-semi);
+  white-space:nowrap;
+  cursor:default;
+}
+
+/* ── AS CAIXAS DE AVISO — tinta e fundo em par fechado, direto dos sinais do molde ──────────── */
+.aviso{
+  border-radius:var(--raio-campo);
+  padding:var(--esp-3) var(--esp-4);
+  margin-top:var(--esp-3);
+  font-size:var(--txt-2);
+  line-height:var(--altura-texto);
+}
+.aviso b{font-weight:var(--peso-forte)}
+.aviso--custo{background:var(--sinal-atencao-fundo);color:var(--sinal-atencao-tinta);border-left:3px solid var(--sinal-atencao-barra)}
+.aviso--info{background:var(--sinal-info-fundo);color:var(--sinal-info-tinta)}
+.aviso--cuidado{background:var(--sinal-perigo-fundo);color:var(--sinal-perigo-tinta);border-left:3px solid var(--sinal-perigo-barra)}
+
+/* ── RODAPÉ ────────────────────────────────────────────────────────────────────────────────── */
+.rodape{
+  margin-top:var(--esp-12);
+  padding:var(--esp-5) var(--esp-6);
+  border-top:1px solid var(--cinza-200);
+  background:var(--superficie-sutil);
+  font-size:var(--txt-1);
+  color:var(--cinza-600);
+}
+.rodape b{color:var(--cinza-800);font-weight:var(--peso-semi)}
+</style>
+</head>
+<body>
+
+<div data-limedtec-menu></div>
+
+<div class="pg">
+
+  <header class="topo">
+    <!-- ══ O CAMINHO DE VOLTA ═════════════════════════════════════════════════════════════════
+         Quem abre a ajuda está perdido — prender essa pessoa numa tela sem saída é o pior lugar
+         possível para esse defeito. E no aplicativo instalado o botão "voltar" do navegador pode
+         nem existir. Este link é montado pelo script a partir do config do cliente: o nome da
+         tela principal muda de cliente para cliente, e sem `telaPrincipal` no config nada é
+         mostrado — link que leva a 404 é pior que link nenhum.
+         (A suíte tests/testa_caminho_de_volta.js pegou esta página SEM saída na primeira vez que
+         ela rodou. Ela lê a lista de telas do próprio service worker, e é por isso que pegou.) -->
+    <a id="lt-voltar" class="voltar" href="#" style="display:none">← Sistema</a>
+    <h1 class="fp-titulo-tela">Guia do FPMED</h1>
+    <div class="sub fp-apoio">Do achar a licitação até imprimir a proposta e guardar a ata — na ordem em que a coisa acontece.</div>
+    <nav class="indice" aria-label="Índice do guia">
+      <a href="#s1"><span class="n">1</span> Encontrar oportunidades</a>
+      <a href="#s2"><span class="n">2</span> Adicionar aos meus negócios</a>
+      <a href="#s3"><span class="n">3</span> Tocar o negócio</a>
+      <a href="#s4"><span class="n">4</span> Proposta</a>
+      <a href="#s5"><span class="n">5</span> Ata</a>
+      <a href="#s6"><span class="n">6</span> Conversar com o edital</a>
+    </nav>
+  </header>
+
+  <main class="corpo">
+
+    <div class="aviso aviso--info">
+      <b>A regra que vale em todo o sistema:</b> quando ele não sabe de uma coisa, ele diz que não
+      sabe. Campo vazio, aviso em amarelo ou a frase “não consegui ler” querem dizer <b>não
+      sabemos</b> — nunca “está tudo certo”. Se aparecer um desses, o número ao lado não deve ser
+      usado numa decisão até alguém conferir.
+    </div>
+
+    <!-- ══ 1 ══════════════════════════════════════════════════════════════════════════════════ -->
+    <section class="sec" id="s1">
+      <h2><span class="n">1</span> Encontrar oportunidades</h2>
+      <p>É a tela onde você procura pregões. Ela olha em três lugares ao mesmo tempo, e diz em
+         qual deles cada resultado apareceu — porque eles não valem a mesma coisa.</p>
+
+      <div class="fluxo">
+        <div class="cx"><b>Escrever o que procura</b><span>o nome do produto, ou o órgão, ou a cidade</span></div>
+        <div class="seta" aria-hidden="true">→</div>
+        <div class="cx"><b>Apertar os filtros</b><span>estado, modalidade, e só o que ainda está aberto</span></div>
+        <div class="seta" aria-hidden="true">→</div>
+        <div class="cx acende"><b>Abrir o detalhe</b><span>é onde ficam os itens e o teto de preço</span></div>
+      </div>
+
+      <ol class="passos">
+        <li>
+          <span class="bolha">1</span>
+          <span class="onde">Digite na barra de busca e confirme.</span>
+          <span class="espera">Pode escrever o produto (“dipirona”, “seringa”) ou o órgão. A tela
+            procura tanto no assunto do pregão quanto na <b>lista de itens</b> dele, e mostra onde
+            achou — porque um pregão cujo assunto é “material hospitalar” pode ter a sua dipirona
+            escondida no item 47.</span>
+        </li>
+        <li>
+          <span class="bolha">2</span>
+          <span class="onde">Repare no selo de origem de cada resultado.</span>
+          <span class="espera">São três, e a diferença importa:
+            <b>“no nosso índice”</b> é a nossa lista, já baixada, que responde na hora;
+            <b>“do seu Calendário 2025”</b> veio da sua planilha de sempre;
+            <b>“ao vivo”</b> foi buscado no portal do governo neste instante — é o mais atual e o
+            mais lento.</span>
+        </li>
+        <li>
+          <span class="bolha">3</span>
+          <span class="onde">Clique no resultado para abrir o detalhe.</span>
+          <span class="espera">Abre a ficha do pregão com os dados do certame e, quando o órgão
+            publicou a relação, <b>a lista de itens</b>. Ao lado de cada item o sistema compara o
+            preço de referência do edital com o <b>teto da CMED</b> — o preço máximo que a lei
+            permite naquele remédio — e diz <span class="bt">cabe no teto</span> (com a folga) ou
+            <span class="bt">estoura o teto</span> (com quantos por cento passou).</span>
+        </li>
+      </ol>
+
+      <div class="aviso aviso--cuidado">
+        <b>“Sem teto CMED” não quer dizer “pode cobrar o que quiser”.</b> Quer dizer que o sistema
+        não conseguiu casar aquele item com a tabela oficial — pode ser material (luva, seringa,
+        que a CMED não cobre) ou um nome que não bateu. E se a coluna disser
+        <span class="bt">tabela CMED indisponível</span>, é outra coisa ainda: é que ele não
+        conseguiu ler a tabela agora. Nenhum dos dois é aprovação.
+        <br>Quando o casamento não é exato, o sistema escreve ao lado <b>como</b> ele casou
+        (“casou por substância”) — teto encostado num palpite continua sendo palpite, e ele diz
+        isso em vez de esconder.
+      </div>
+    </section>
+
+    <!-- ══ 2 ══════════════════════════════════════════════════════════════════════════════════ -->
+    <section class="sec" id="s2">
+      <h2><span class="n">2</span> Adicionar aos meus negócios</h2>
+      <p>Achou um pregão que interessa? O botão <span class="bt">Adicionar aos meus negócios</span>,
+         no detalhe, abre um assistente de <b>três passos</b>. Ele não grava nada até o fim.</p>
+
+      <div class="fluxo">
+        <div class="cx"><b>Passo 1 — os itens</b><span>marque em quais você vai disputar</span></div>
+        <div class="seta" aria-hidden="true">→</div>
+        <div class="cx"><b>Passo 2 — a empresa e os dados</b><span>qual empresa entra, e a data da sessão</span></div>
+        <div class="seta" aria-hidden="true">→</div>
+        <div class="cx acende"><b>Passo 3 — conferir e criar</b><span>o resumo, e só então o negócio nasce</span></div>
+      </div>
+
+      <ol class="passos">
+        <li>
+          <span class="bolha">1</span>
+          <span class="onde">Passo 1: marque os itens em que você participa.</span>
+          <span class="espera">Se você não marcar nenhum, o sistema entende que você vai
+            <b>no pregão inteiro</b> — que é diferente de “não vou em nada”. Se o órgão ainda não
+            publicou a lista de itens, o passo 1 aparece vazio e <b>avisa por quê</b>: o assistente
+            não trava, é só seguir para o passo 2.</span>
+        </li>
+        <li>
+          <span class="bolha">2</span>
+          <span class="onde">Passo 2: escolha a empresa e confira órgão, número e a data da sessão.</span>
+          <span class="espera">A data da sessão é o campo mais importante da tela, porque é dela
+            que saem todos os prazos. Ainda no passo 2 já aparecem os três prazos calculados, para
+            você ver antes de criar.</span>
+        </li>
+        <li>
+          <span class="bolha">3</span>
+          <span class="onde">Passo 3: confira o resumo e crie o negócio.</span>
+          <span class="espera">Só aqui alguma coisa é gravada. Se esse pregão já tiver um negócio,
+            o assistente avisa em vez de criar um segundo.</span>
+        </li>
+      </ol>
+
+      <div class="aviso aviso--info">
+        <b>O kit de prazos entra sozinho.</b> Junto com o negócio nascem 14 tarefas, distribuídas
+        pelas fases. Três delas têm <b>data com base na lei</b>, contada a partir da sessão:
+        <b>impugnar ou pedir esclarecimento</b> (até 3 dias úteis antes),
+        <b>participar da disputa</b> (o próprio dia e hora) e
+        <b>enviar recurso</b> (3 dias úteis depois). Essas três aparecem na Agenda.
+        <br>E o mais importante: se a sessão for adiada, <b>basta mudar a data da sessão</b> — os
+        três prazos se recalculam sozinhos. Não existe data velha sobrando em outro lugar.
+      </div>
+    </section>
+
+    <!-- ══ 3 ══════════════════════════════════════════════════════════════════════════════════ -->
+    <section class="sec" id="s3">
+      <h2><span class="n">3</span> Tocar o negócio</h2>
+      <p>O negócio caminha por cinco fases. Ele não pula sozinho: quem move é você, e a fase diz a
+         todo mundo em que pé a coisa está.</p>
+
+      <div class="fluxo">
+        <div class="cx"><b>Oportunidade</b><span>ler o edital, separar documento</span></div>
+        <div class="seta" aria-hidden="true">→</div>
+        <div class="cx"><b>Qualificação</b><span>mercado, concorrente, escolher o produto</span></div>
+        <div class="seta" aria-hidden="true">→</div>
+        <div class="cx"><b>Disputa</b><span>montar preço e participar da sessão</span></div>
+        <div class="seta" aria-hidden="true">→</div>
+        <div class="cx"><b>Habilitação</b><span>documento dos outros, recurso</span></div>
+        <div class="seta" aria-hidden="true">→</div>
+        <div class="cx acende"><b>Ata</b><span>o que foi ganho, e o que vai ser entregue</span></div>
+      </div>
+
+      <ol class="passos">
+        <li>
+          <span class="bolha">1</span>
+          <span class="onde">Abra a ficha do negócio e use as abas.</span>
+          <span class="espera">Cada aba é um assunto: os <b>itens do edital</b> com o teto de preço,
+            as <b>tarefas</b> da fase, os <b>lembretes</b>, os <b>anexos</b> e o <b>histórico</b>.
+            Você não sai da ficha para nenhum deles.</span>
+        </li>
+        <li>
+          <span class="bolha">2</span>
+          <span class="onde">Vá marcando as tarefas conforme fizer.</span>
+          <span class="espera">A lista já vem pronta com o kit. As tarefas com prazo mostram a data
+            calculada; as demais são lembretes de trabalho.</span>
+        </li>
+        <li>
+          <span class="bolha">3</span>
+          <span class="onde">Pregão adiado ou suspenso: mude a data da sessão na ficha.</span>
+          <span class="espera">É a única coisa que precisa ser feita. Os três prazos de lei
+            andam junto, e a Agenda se ajusta. <b>Não remarque tarefa por tarefa</b> — se fizer
+            isso, uma delas vai ficar com a data velha e alguém aparece no dia errado.</span>
+        </li>
+        <li>
+          <span class="bolha">4</span>
+          <span class="onde">Anexe tudo que chegar, na aba de anexos.</span>
+          <span class="espera">Edital, proposta enviada, documento de habilitação, ata assinada.
+            Cada anexo fica com data e com quem subiu. Versão nova <b>não apaga</b> a anterior: ela
+            entra como versão nova, e a antiga continua lá para consulta.</span>
+        </li>
+      </ol>
+    </section>
+
+    <!-- ══ 4 ══════════════════════════════════════════════════════════════════════════════════ -->
+    <section class="sec" id="s4">
+      <h2><span class="n">4</span> Proposta</h2>
+      <p>A proposta é montada na tela de Proposta, e a conferência contra o teto legal acontece
+         <b>enquanto você digita o preço</b> — não é um botão que se aperta no fim e que dá para
+         esquecer de apertar.</p>
+
+      <div class="fluxo">
+        <div class="cx"><b>Montar os itens</b><span>produto, quantidade e preço</span></div>
+        <div class="seta" aria-hidden="true">→</div>
+        <div class="cx acende"><b>Olhar o selo de teto</b><span>ele muda a cada preço que você digita</span></div>
+        <div class="seta" aria-hidden="true">→</div>
+        <div class="cx"><b>Imprimir ou salvar</b><span>o documento sai pronto para assinar</span></div>
+      </div>
+
+      <ol class="passos">
+        <li>
+          <span class="bolha">1</span>
+          <span class="onde">Monte a proposta com os itens e os preços.</span>
+          <span class="espera">A margem de cada linha aparece ao lado, colorida: é o único número
+            colorido da linha, de propósito, porque é ele que muda a decisão.</span>
+        </li>
+        <li>
+          <span class="bolha">2</span>
+          <span class="onde">Olhe o selo de teto ao lado de cada linha.</span>
+          <span class="espera">Enquanto o preço cabe, o selo é discreto e mostra
+            <span class="bt">teto R$ … · folga …%</span>. Se passar, ele fica vermelho e diz
+            <span class="bt">ACIMA DO TETO +…%</span> — acima do teto a proposta pode ser
+            desclassificada. Passe o mouse por cima do selo e ele mostra com o que casou.</span>
+        </li>
+        <li>
+          <span class="bolha">3</span>
+          <span class="onde">Imprima ou salve o documento.</span>
+          <span class="espera">O documento sai com o cabeçalho da empresa, os itens, os totais e o
+            espaço de assinatura. O selo de teto <b>não</b> vai no papel — ele é ferramenta de
+            conferência, não parte da proposta.</span>
+        </li>
+      </ol>
+
+      <div class="aviso aviso--cuidado">
+        <b>Linha sem selo nenhum é linha NÃO conferida.</b> É o caso mais fácil de confundir com
+        “está tudo bem”, e não é: quer dizer que o sistema não achou aquele produto na tabela
+        oficial e por isso <b>não afirmou nada</b> sobre ele. Se essa linha for para a proposta,
+        quem está assumindo o risco é a pessoa, não o sistema.
+      </div>
+    </section>
+
+    <!-- ══ 5 ══════════════════════════════════════════════════════════════════════════════════ -->
+    <section class="sec" id="s5">
+      <h2><span class="n">5</span> Ata</h2>
+      <p>Ganhou? A fase <b>Ata</b> guarda o que foi ganho: os itens, com marca, quantidade e preço
+         — para que ninguém precise reabrir o documento toda vez que alguém perguntar.</p>
+
+      <div class="fluxo">
+        <div class="cx"><b>Anexar a ata assinada</b><span>na aba de anexos do negócio</span></div>
+        <div class="seta" aria-hidden="true">→</div>
+        <div class="cx"><b>Confirmar os itens ganhos</b><span>item, marca, quantidade e valor</span></div>
+        <div class="seta" aria-hidden="true">→</div>
+        <div class="cx acende"><b>Conferir a margem</b><span>o preço fechado contra o teto legal</span></div>
+      </div>
+
+      <ol class="passos">
+        <li>
+          <span class="bolha">1</span>
+          <span class="onde">Confirme os itens ganhos.</span>
+          <span class="espera">Depois de confirmados, eles ficam guardados no negócio. Abriu o
+            negócio, está tudo lá: o que ganhou, de qual marca, por quanto.</span>
+        </li>
+        <li>
+          <span class="bolha">2</span>
+          <span class="onde">Confira a soma dos itens contra o valor da ficha.</span>
+          <span class="espera">O sistema mostra os dois lado a lado e a diferença entre eles. Se
+            não houver itens detalhados, ele diz que não há — <b>não</b> mostra diferença zero, que
+            pareceria conferido.</span>
+        </li>
+        <li>
+          <span class="bolha">3</span>
+          <span class="onde">Olhe a margem de cada item ganho.</span>
+          <span class="espera">Aqui a margem é contra o <b>teto legal</b>, e não contra o preço de
+            compra: a pergunta que importa depois de ganhar é “o preço que eu fechei cabe no teto?”.
+            Margem negativa nesta tela é grave.</span>
+        </li>
+        <li>
+          <span class="bolha">4</span>
+          <span class="onde">Se a tela mostrar o resultado do portal ao lado do nosso, e eles não baterem.</span>
+          <span class="espera">Ela mostra os dois de propósito — o nosso é o que manda no comercial,
+            o do portal serve de conferência. Divergência é para alguém olhar, não para a tela
+            escolher sozinha. E resultado <b>em branco</b> quer dizer “ainda não foi julgado”,
+            que é diferente de “perdemos”.</span>
+        </li>
+      </ol>
+
+      <div class="aviso aviso--cuidado">
+        <b>Sobre a glosa:</b> preço homologado acima do teto legal pode ser <b>glosado</b> — o órgão
+        paga menos do que a nota, ou não paga. É por isso que o selo de teto do item 4 tem que ser
+        olhado <b>antes</b> de a proposta sair: depois da ata, o preço já está assinado.
+      </div>
+    </section>
+
+    <!-- ══ 6 ══════════════════════════════════════════════════════════════════════════════════ -->
+    <section class="sec" id="s6">
+      <h2><span class="n">6</span> Conversar com o edital</h2>
+      <p>Dentro da ficha do negócio existe um espaço chamado <b>Conversar com o edital</b>. Você
+         escreve uma pergunta em português — “exige registro na ANVISA?”, “qual o prazo de
+         entrega?”, “aceita marca similar?” —, aperta
+         <span class="bt">Perguntar ao edital</span>, e a resposta vem do texto do edital daquele
+         pregão. A tela diz de qual documento ela leu e o tamanho dele.</p>
+
+      <div class="fluxo">
+        <div class="cx"><b>O edital precisa estar lá</b><span>se não estiver, use “buscar edital agora”</span></div>
+        <div class="seta" aria-hidden="true">→</div>
+        <div class="cx acende"><b>Ver o preço da pergunta</b><span>o valor aparece ANTES de gastar</span></div>
+        <div class="seta" aria-hidden="true">→</div>
+        <div class="cx"><b>Confirmar e ler a resposta</b><span>ou cancelar, sem custo nenhum</span></div>
+      </div>
+
+      <div class="aviso aviso--custo">
+        <b>Cada leitura custa dinheiro de verdade.</b> Não é uma busca comum: é uma leitura do
+        edital inteiro, e ela é cobrada por uso. Por isso o botão vem com o selo
+        <span class="bt">IA · tem custo</span> — e por isso o sistema <b>mostra o valor antes de
+        você confirmar</b>. Ver o preço não custa nada; cancelar depois de ver também não. Só o
+        <b>confirmar</b> gasta.
+        <br>O valor mostrado é o <b>teto</b> daquela leitura: o que for cobrado é o que ela
+        realmente consumir, e fica registrado. Ele nunca vem <b>maior</b> do que o que foi
+        mostrado.
+      </div>
+
+      <ol class="passos">
+        <li>
+          <span class="bolha">1</span>
+          <span class="onde">Quando usar.</span>
+          <span class="espera">Quando a resposta está no edital e procurar à mão levaria tempo:
+            exigência de registro, prazo de entrega, se aceita similar, condição de pagamento,
+            quem pode participar.</span>
+        </li>
+        <li>
+          <span class="bolha">2</span>
+          <span class="onde">Quando <b>não</b> usar.</span>
+          <span class="espera">Para o que já está na tela de graça: data da sessão, órgão, número,
+            lista de itens e teto de preço. Perguntar isso é pagar por informação que já está ali
+            do lado.</span>
+        </li>
+        <li>
+          <span class="bolha">3</span>
+          <span class="onde">Se o sistema disser que ainda não tem o edital deste negócio.</span>
+          <span class="espera">Ele distingue três motivos, e a saída é diferente em cada um:
+            <b>“ainda não coletei”</b> → use o botão <span class="bt">buscar edital agora</span>;
+            <b>“o portal não publicou arquivo”</b> → não adianta insistir, anexe o edital na ficha;
+            <b>“este negócio não veio do portal”</b> (os manuais e os da planilha) → também é o
+            anexo. O botão de buscar <b>não</b> tem selo de custo, porque não é leitura — ele só vai
+            atrás do arquivo, e tem limite de <b>20 buscas por hora</b> para não sobrecarregar o
+            portal do governo.</span>
+        </li>
+        <li>
+          <span class="bolha">4</span>
+          <span class="onde">Uma boa pergunta economiza duas.</span>
+          <span class="espera">Pergunta larga (“me fale sobre o edital”) custa igual e responde
+            pouco. Pergunta direta (“qual o prazo de entrega em dias?”) responde de primeira.</span>
+        </li>
+        <li>
+          <span class="bolha">5</span>
+          <span class="onde">Se aparecer “não está liberado para o seu usuário”.</span>
+          <span class="espera">A leitura por IA está em piloto e é liberada por pessoa. Quem
+            decide isso não é a tela — é o servidor. Fale com quem administra o sistema.</span>
+        </li>
+      </ol>
+
+      <div class="aviso aviso--info">
+        <b>Toda leitura fica registrada</b> — quem pediu, quando, e quanto custou. Não é vigilância:
+        é o que permite fechar o mês sabendo em que o dinheiro foi. Se alguma leitura falhar no meio,
+        ela aparece como falha, e não como resposta pela metade.
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="rodape">
+    <b>Dúvidas → suporte da LIMEDTEC.</b>
+    Se alguma tela mostrar um número que você não entende, ou disser que não conseguiu ler alguma
+    coisa, mande o endereço da página e o que estava fazendo — é o suficiente para achar.
+  </footer>
+
+</div>
+
+<script src="limedtec-menu.js"></script>
+<script src="limedtec-pwa.js" defer></script>
+<script>
+/* O destino do "← Sistema" vem do config do cliente, e não escrito nesta página: ela usa o mesmo
+   molde da tela de Usuários e acessos, e chumbar o nome da tela principal aqui quebraria todo
+   cliente cujo menu se chama outra coisa. Sem config, o link continua escondido. */
+(function () {
+  var destino = window.LIMEDTEC && LIMEDTEC.telaPrincipal && LIMEDTEC.telaPrincipal();
+  if (!destino) return;
+  var a = document.getElementById('lt-voltar');
+  if (!a) return;
+  a.href = destino;
+  a.style.display = 'inline-block';
+})();
+</script>
+</body>
+</html>
