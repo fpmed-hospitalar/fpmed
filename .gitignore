@@ -100,3 +100,10 @@ relatorios/
 *.bat
 !ABRIR_CLAUDE_TOTAL.bat
 !ABRIR_FILA.bat
+# ── E OS DOIS DO WATCHDOG (fatia A18, 14/08) ────────────────────────────────────
+# Eles NAO sao correio: sao ferramenta de operacao, do mesmo naipe do ABRIR_FILA.
+# O WATCHDOG_PNCP.bat roda uma sondagem e sai; o AGENDAR_WATCHDOG.bat liga e
+# desliga a tarefa do Windows num clique. Fora do repo, o dono teria o codigo do
+# watchdog sem o jeito de rodar sozinho — que e a fatia inteira.
+!WATCHDOG_PNCP.bat
+!AGENDAR_WATCHDOG.bat
