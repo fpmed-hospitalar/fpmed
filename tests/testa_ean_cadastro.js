@@ -231,5 +231,61 @@ const CMED = {
     G.eanGruposSemEan([{ id:9, produto:'X', marca:'Y', ean:'' }]).length === 1);
 }
 
+// ══════════ 9. B10 — A FILA COMEÇA POR QUEM ESTÁ EM NEGÓCIO ATIVO ══════════
+// A medição contra o banco real mora em tools/prova_ean_negocio_ativo.js (1.415 produtos
+// marcados, 337 de ruído evitado, +7,3 ms). Aqui ficam as regras que não podem ser afrouxadas
+// sem que alguém veja.
+{
+  const B10 = new Function(
+    bloco('var EAN_NEG_MAX_EDITAIS', 'async function _eanCarregaNegocioAtivo') + '\n' +
+    'return { _eanNormTexto, _eanIndiceItens, _eanEmNegocioAtivo, _eanNegocioAtivoQ,' +
+    '         _EAN_CARA_DE_CONTROLE, liga: function(v){ _eanNegAtivo = v; } };'
+  )();
+  const itens = [
+    { numero_item:'105', descricao:'FUROSEMIDA 10MG/ML – 2ML - SOL. INJETÁVEL IM/IV', controle:'X' },
+    { numero_item:'12',  descricao:'ÁGUA DESTILADA PARA AUTOCLAVE 5L', controle:'X' },
+    { numero_item:'47',  descricao:'DIPIRONA SÓDICA 500MG COMPRIMIDO', controle:'X' }
+  ];
+  B10.liga({ ok:true, indice: B10._eanIndiceItens(itens) });
+
+  ok('74. o acento sai dos DOIS lados — "ÁGUA" do edital casa com "AGUA" do cadastro',
+    !!B10._eanEmNegocioAtivo({ principio_ativo:'AGUA DESTILADA' }));
+  ok('75. o casamento é a FRASE inteira: "DIPIRONA SODICA" casa...',
+    !!B10._eanEmNegocioAtivo({ principio_ativo:'DIPIRONA SODICA' }));
+  ok('76. *** ...e palavras soltas NÃO casam: "SODICA FUROSEMIDA" não existe em item nenhum ***',
+    !B10._eanEmNegocioAtivo({ principio_ativo:'SODICA FUROSEMIDA' }));
+  ok('77. *** produto sem princípio ativo nunca recebe selo (não dá pra casar por substância) ***',
+    !B10._eanEmNegocioAtivo({ principio_ativo:'' }) && !B10._eanEmNegocioAtivo({}));
+  ok('78. o selo devolve O ITEM que casou, e não um "sim" — dá pra conferir contra o edital',
+    (B10._eanEmNegocioAtivo({ principio_ativo:'FUROSEMIDA' }) || {}).numero_item === '105');
+  ok('79. *** índice não carregado NÃO vira "ninguém está em negócio ativo" ***',
+    (function(){ B10.liga(null); const a = B10._eanEmNegocioAtivo({ principio_ativo:'FUROSEMIDA' });
+                 B10.liga({ ok:false, motivo:'HTTP 500' }); const b = B10._eanEmNegocioAtivo({ principio_ativo:'FUROSEMIDA' });
+                 B10.liga({ ok:true, indice: B10._eanIndiceItens(itens) });
+                 return a === null && b === null; })());
+  ok('80. ...e a tela DIZ que não conseguiu ler, em vez de mostrar zero',
+    /[Nn]ão consegui ler os negócios ativos/.test(src) && /não consegui ver os negócios ativos/.test(src));
+  ok('81. negócio arquivado, cancelado ou já em contrato não é negócio ativo',
+    !B10._eanNegocioAtivoQ({ arquivado:true }) &&
+    !B10._eanNegocioAtivoQ({ situacao:'cancelado' }) &&
+    !B10._eanNegocioAtivoQ({ estagio:'contrato' }));
+  ok('82. estágio DESCONHECIDO entra como ativo — some-se em silêncio é que não pode',
+    B10._eanNegocioAtivoQ({ estagio:'homologacao' }) && B10._eanNegocioAtivoQ({}));
+  ok('83. suspenso continua ativo (o pregão volta; cancelado é que não volta)',
+    B10._eanNegocioAtivoQ({ situacao:'suspenso', estagio:'oportunidade' }));
+  ok('84. o número de controle do PNCP é reconhecido pela cara quando a coluna própria é nula',
+    B10._EAN_CARA_DE_CONTROLE.test('11259476000168-1-000097/2026') &&
+    !B10._EAN_CARA_DE_CONTROLE.test('52/2026'));
+  // O cache do normalizador é Object.create(null): com `{}`, a chave "constructor" devolveria a
+  // FUNÇÃO Object em vez do texto, e ela seguiria adiante como se fosse o princípio ativo.
+  ok('85. o normalizador não devolve função para produto chamado "constructor"',
+    B10._eanNormTexto('constructor') === 'CONSTRUCTOR' && B10._eanNormTexto('__proto__') === 'PROTO');
+  ok('86. *** o selo é prioridade de fila, e a tela diz que NÃO é fonte de EAN ***',
+    /nunca fonte de EAN/.test(src) && /quem digita o código continua sendo gente/.test(src));
+  ok('87. a lista diz quantos produtos não podem receber o selo por não terem princípio ativo',
+    /não podem receber o selo/.test(src));
+  ok('88. o corte de editais não é silencioso', /parei nos ' \+ EAN_NEG_MAX_EDITAIS \+ ' primeiros editais/.test(src));
+}
+
 console.log('\nRESULTADO: ' + p + ' ok, ' + f + ' falha(s)');
 process.exitCode = f ? 1 : 0;

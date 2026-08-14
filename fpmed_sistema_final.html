@@ -1824,8 +1824,14 @@ function eanGruposSemEan(lista){
     if (_eanDigitos(c.registro_anvisa)) g[k].comRegistro++;
     if (!g[k].principio_ativo && c.principio_ativo) g[k].principio_ativo = String(c.principio_ativo).trim();
   });
-  return ordem.map(function(k){ return g[k]; })
-              .sort(function(a,b){ return b.ids.length - a.ids.length || a.produto.localeCompare(b.produto); });
+  // B10 — QUEM ESTÁ EM NEGÓCIO ATIVO VEM PRIMEIRO. O marcador é global e pode ainda não ter
+  // respondido (a leitura dos editais é assíncrona) — ou nem existir, quando a suíte lê este
+  // bloco isolado. Nos dois casos a ordem cai na de sempre, e nunca estoura.
+  var _emNeg = (typeof _eanEmNegocioAtivo === 'function') ? _eanEmNegocioAtivo : function(){ return null; };
+  return ordem.map(function(k){ var x = g[k]; x.negAtivo = _emNeg(x); return x; })
+              .sort(function(a,b){ return (b.negAtivo ? 1 : 0) - (a.negAtivo ? 1 : 0)
+                                       || b.ids.length - a.ids.length
+                                       || a.produto.localeCompare(b.produto); });
 }
 function _eanTotalProdutos(lista){
   var s = {};
@@ -1836,18 +1842,207 @@ function _eanTotalProdutos(lista){
   return Object.keys(s).length;
 }
 
+/* ══════════════════════════════════════════════════════════════════════════════════════════════
+   B10 — A FILA COMEÇA POR QUEM ESTÁ EM NEGÓCIO ATIVO
+
+   ── POR QUE ESTA ORDEM, E NÃO A DE ANTES ────────────────────────────────────────────────────
+   A ordem antiga (mais linhas de cotação primeiro) já tinha sido medida e é fraca de propósito:
+   dos 8.342 produtos sem EAN, a maior repetição é 3 linhas. Ela empata quase tudo.
+   O que separa de verdade é: **este produto vai ser proposto num pregão que ainda está de pé?**
+   Se vai, o EAN faltando não é tarefa de arrumação — é o teto CMED daquela proposta caindo no
+   casamento por substância, que é o degrau menos preciso, na semana que vem.
+
+   ── COMO SE SABE QUE UM PRODUTO ESTÁ EM NEGÓCIO ATIVO ───────────────────────────────────────
+   Negócio ativo = não arquivado, situação diferente de "cancelado" e estágio ainda ANTES do
+   resultado (contrato já ganhou: a proposta dele já foi). Do negócio se chega ao edital pelo
+   `numero_controle`; quando ele é nulo (o histórico inteiro é assim), vale o `numero` QUANDO
+   ELE TEM A CARA DE UM NÚMERO DE CONTROLE — foi assim que o botão "Mandar pro funil" gravou
+   antes da correção; e por último o `licitacao_id`. Do edital vêm os itens, e é a descrição
+   deles que se compara com o **princípio ativo** do nosso produto.
+
+   ── O CASAMENTO É POR PRINCÍPIO ATIVO, FRASE INTEIRA, COM FRONTEIRA DE PALAVRA ───────────────
+   *** E ISSO FOI MEDIDO ANTES DE ESCREVER, contra o edital ativo real (600 itens): ***
+     frase inteira com fronteira de palavra ....... 1.412 produtos marcados
+     todas as palavras soltas (sem ser frase) ..... 1.604  (192 a mais, e a mais é ruído)
+     só a primeira palavra do princípio ativo ..... 1.724  (312 a mais — 22% de inflação)
+   A regra frouxa marcaria 1 em cada 5 produtos SEM que o edital os peça, e um selo que erra
+   1 em 5 é pior que selo nenhum: ele seria obedecido do mesmo jeito.
+   >>> ISTO NÃO É, E NÃO PODE VIRAR, FONTE DE EAN. É prioridade de fila — quem escreve o código
+       continua sendo gente. Casar nome com nome para PREENCHER EAN é exatamente o que a lista
+       inteira existe para não fazer.
+   >>> 4.087 dos 8.342 produtos têm princípio ativo; os outros 4.255 (luva, seringa, sonda,
+       cosmético) não podem ser casados por substância e ficam sem selo. A tela DIZ isso, em vez
+       de deixar parecer que eles foram conferidos e reprovados.
+   ══════════════════════════════════════════════════════════════════════════════════════════════ */
+var EAN_NEG_MAX_EDITAIS = 20;      // quantos editais de negócio ativo eu leio numa carga
+var EAN_NEG_MAX_ITENS   = 4000;    // teto de itens por edital
+var _eanNegAtivo = null;           // null = ainda não perguntei · objeto = a resposta (ok ou não)
+var _eanNegAtivoPromessa = null;
+
+// Acento fora, tudo que não é letra/número vira espaço. Os dois lados passam pela MESMA régua —
+// se só um passasse, "ÁGUA" e "AGUA" seriam produtos diferentes e o casamento erraria calado.
+// A faixa de acentos combinantes vai por \u escapado, e não pelo caractere literal: este arquivo
+// já perdeu acento em salvamento antes, e um literal invisível quebrado deixaria o normalizador
+// silenciosamente sem tirar acento nenhum — casando 0 produtos e parecendo "ninguém em negócio".
+var _EAN_ACENTOS = new RegExp('[\\u0300-\\u036f]', 'g');
+var _EAN_NAO_ASCII = /[^\x00-\x7F]/;
+// Object.create(null) e não `{}`: a chave do cache é texto que veio do cadastro, e um produto
+// chamado "constructor" faria `{}` devolver uma FUNÇÃO no lugar do texto normalizado.
+var _eanNormCache = Object.create(null), _eanNormCacheN = 0;
+function _eanNormTexto(s){
+  var bruto = String(s == null ? '' : s);
+  var vista = _eanNormCache[bruto];
+  if (vista !== undefined) return vista;
+  // MEDIDO: `normalize('NFD')` custava 57 ms nos 8.342 produtos — mais da metade do orçamento de
+  // 100 ms da interação, e gasto à toa: quase todo princípio ativo já vem sem acento do cadastro.
+  // Em texto que só tem ASCII o NFD não tem o que fazer, e pular é idêntico, não é aproximação.
+  var r = (_EAN_NAO_ASCII.test(bruto) ? bruto.normalize('NFD').replace(_EAN_ACENTOS, '') : bruto)
+    .toUpperCase().replace(/[^A-Z0-9]+/g, ' ').replace(/\s+/g, ' ').trim();
+  // o mesmo princípio ativo se repete às centenas na lista; o cache tem teto para não virar
+  // vazamento numa sessão que fica aberta o dia inteiro
+  if (_eanNormCacheN > 20000) { _eanNormCache = Object.create(null); _eanNormCacheN = 0; }
+  _eanNormCache[bruto] = r; _eanNormCacheN++;
+  return r;
+}
+
+// Índice palavra -> itens que a contêm. Sem ele, marcar 8.342 produtos contra 600 itens seria
+// 5 milhões de comparações a cada render — e a régua desta casa é 100ms.
+function _eanIndiceItens(itens){
+  var porPalavra = {};
+  (itens || []).forEach(function(it){
+    var d = _eanNormTexto(it.descricao); if (!d) return;
+    var alvo = ' ' + d + ' ', vistas = {};
+    d.split(' ').forEach(function(w){
+      if (w.length < 4 || vistas[w]) return;                 // palavra curta não discrimina nada
+      vistas[w] = 1;
+      (porPalavra[w] = porPalavra[w] || []).push({ alvo: alvo, item: it });
+    });
+  });
+  return porPalavra;
+}
+
+// Devolve O ITEM que casou (não um booleano): o selo precisa poder MOSTRAR contra o quê ele
+// casou. Selo que só diz "sim" pede fé; selo que diz "casou com o item 105 do P.E. 11/2026"
+// pode ser conferido por quem está olhando.
+function _eanEmNegocioAtivo(g){
+  var st = _eanNegAtivo;
+  if (!st || !st.ok || !g) return null;
+  var p = _eanNormTexto(g.principio_ativo);
+  if (p.length < 4) return null;
+  var probe = p.split(' ').filter(function(w){ return w.length >= 4; })[0];
+  if (!probe) return null;
+  var cand = st.indice[probe]; if (!cand) return null;
+  var alvo = ' ' + p + ' ';
+  for (var i = 0; i < cand.length; i++) if (cand[i].alvo.indexOf(alvo) >= 0) return cand[i].item;
+  return null;
+}
+
+function _eanNegocioAtivoQ(n){
+  if (n.arquivado === true) return false;
+  if (String(n.situacao || '').toLowerCase() === 'cancelado') return false;
+  var e = String(n.estagio || '').toLowerCase();
+  // LISTA DE EXCLUSÃO, e não de inclusão: estágio novo que eu não conheço entra como ativo.
+  // Ao contrário, um estágio novo sumiria da conta em silêncio — e ninguém descobre um silêncio.
+  return !(e === 'contrato' || e.indexOf('perdid') >= 0 || e.indexOf('encerrad') >= 0);
+}
+var _EAN_CARA_DE_CONTROLE = /^\d{14}-\d+-\d+\/\d{4}$/;       // 11259476000168-1-000097/2026
+
+async function _eanCarregaNegocioAtivo(){
+  if (_eanNegAtivoPromessa) return _eanNegAtivoPromessa;
+  _eanNegAtivoPromessa = (async function(){
+    try {
+      var rn = await fetch(SUPA_URL2 + '/rest/v1/negocios'
+        + '?select=id,numero,numero_controle,licitacao_id,estagio,situacao,arquivado,orgao'
+        + '&arquivado=is.false&limit=500', { headers: SH });
+      if (!rn.ok) throw new Error('HTTP ' + rn.status);
+      var ativos = (await rn.json()).filter(_eanNegocioAtivoQ);
+
+      // negócio -> numero_controle, pelos três caminhos, nesta ordem de confiança
+      var porControle = {}, faltaId = [];
+      ativos.forEach(function(n){
+        var nc = String(n.numero_controle || '').trim();
+        if (!nc && _EAN_CARA_DE_CONTROLE.test(String(n.numero || '').trim())) nc = String(n.numero).trim();
+        if (nc) { (porControle[nc] = porControle[nc] || []).push(n); }
+        else if (n.licitacao_id) faltaId.push(n);
+      });
+      if (faltaId.length) {
+        var ids = faltaId.map(function(n){ return String(n.licitacao_id); })
+                         .filter(function(x){ return /^\d+$/.test(x); });
+        if (ids.length) {
+          var rl = await fetch(SUPA_URL2 + '/rest/v1/licitacoes?select=id,numero_controle&id=in.('
+            + ids.join(',') + ')', { headers: SH });
+          if (rl.ok) {
+            var mapa = {};
+            (await rl.json()).forEach(function(l){ mapa[String(l.id)] = l.numero_controle; });
+            faltaId.forEach(function(n){
+              var nc = mapa[String(n.licitacao_id)];
+              if (nc) (porControle[nc] = porControle[nc] || []).push(n);
+            });
+          }
+        }
+      }
+
+      var controles = Object.keys(porControle);
+      var cortouEditais = controles.length > EAN_NEG_MAX_EDITAIS;
+      var usados = controles.slice(0, EAN_NEG_MAX_EDITAIS);
+
+      // UMA CHAMADA POR EDITAL, de propósito: `numero_controle` tem barra e traço, e enfiá-lo
+      // num `in.(...)` obriga a citar e a escapar — um erro de aspas aí volta como lista vazia,
+      // que é indistinguível de "nenhum produto está em negócio ativo". Chamada por chave é
+      // burra e é conferível. São poucos negócios ativos; se um dia forem muitos, o teto acima
+      // corta e a tela DIZ que cortou.
+      var lotes = await Promise.all(usados.map(async function(nc){
+        try {
+          var r = await fetch(SUPA_URL2 + '/rest/v1/licitacao_itens?select=numero_item,descricao'
+            + '&numero_controle=eq.' + encodeURIComponent(nc) + '&limit=' + EAN_NEG_MAX_ITENS,
+            { headers: SH });
+          if (!r.ok) return { nc: nc, itens: [], erro: 'HTTP ' + r.status };
+          var arr = await r.json();
+          return { nc: nc, itens: Array.isArray(arr) ? arr : [] };
+        } catch(e){ return { nc: nc, itens: [], erro: e.message }; }
+      }));
+
+      var todos = [], comItens = 0, falhas = 0;
+      lotes.forEach(function(l){
+        if (l.erro) falhas++;
+        if (!l.itens.length) return;
+        comItens++;
+        var neg = (porControle[l.nc] || [])[0] || {};
+        l.itens.forEach(function(it){
+          todos.push({ numero_item: it.numero_item, descricao: it.descricao,
+                       controle: l.nc, orgao: neg.orgao || '', negocio_id: neg.id });
+        });
+      });
+
+      _eanNegAtivo = { ok: true, indice: _eanIndiceItens(todos),
+                       negocios: ativos.length, editais: usados.length,
+                       editaisComItens: comItens, itens: todos.length,
+                       cortouEditais: cortouEditais, falhas: falhas };
+    } catch(e){
+      // FALHA DE LEITURA NÃO É "NINGUÉM ESTÁ EM NEGÓCIO ATIVO". São coisas diferentes, e a tela
+      // mostra a diferença: sem isto, rede caída viraria uma lista sem prioridade nenhuma com
+      // cara de lista conferida.
+      _eanNegAtivo = { ok: false, motivo: e.message };
+    }
+    return _eanNegAtivo;
+  })();
+  return _eanNegAtivoPromessa;
+}
+
 function renderEanPendencia(){
   var box = document.getElementById('ean-pendencia'); if (!box) return;
   _eanPend = eanGruposSemEan(cotacoes);
   if (!_eanPend.length) { box.style.display = 'none'; box.innerHTML = ''; return; }
   var totalProd = _eanTotalProdutos(cotacoes);
   var linhas = _eanPend.reduce(function(a, g){ return a + g.ids.length; }, 0);
+  var emNeg = _eanPend.filter(function(g){ return g.negAtivo; }).length;
   box.style.display = 'block';
   box.innerHTML =
     '<div style="border:1px solid var(--borda);border-radius:10px;background:var(--branco);padding:14px 16px">'
     + '<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">'
     +   '<strong style="font-family:\'Montserrat\',sans-serif;font-size:14px">Produtos sem EAN</strong>'
     +   '<span class="badge badge-yellow">' + _eanPend.length + ' de ' + totalProd + ' produtos</span>'
+    +   _eanSeloTopoNegocio(emNeg)
     +   '<span style="font-size:12px;color:var(--muted)">' + linhas + ' linhas de cotação · sem EAN o teto CMED cai no casamento por substância, que é o degrau menos preciso</span>'
     +   '<button type="button" class="btn btn-outline btn-sm" style="margin-left:auto" onclick="eanPendenciaAlterna()">'
     +     (_eanPendAberto ? 'Fechar' : 'Ver a lista e as sugestões da CMED') + '</button>'
@@ -1855,6 +2050,18 @@ function renderEanPendencia(){
     + '<div id="ean-pend-lista" style="margin-top:' + (_eanPendAberto ? '12px' : '0') + '"></div>'
     + '</div>';
   if (_eanPendAberto) _eanPendRenderLista();
+  // B10 — a leitura dos editais começa aqui e é ASSÍNCRONA: o painel aparece na hora com a ordem
+  // de sempre e se REORDENA quando os itens chegam. Prender o painel na rede seria trocar uma
+  // tela que abre por uma tela que espera — e a espera nem sempre termina.
+  if (!_eanNegAtivo) _eanCarregaNegocioAtivo().then(function(){ renderEanPendencia(); });
+}
+// Três estados, três textos — e "não consegui ler" NUNCA se disfarça de zero.
+function _eanSeloTopoNegocio(emNeg){
+  if (!_eanNegAtivo) return '<span style="font-size:12px;color:var(--muted)">vendo quais estão em negócio ativo…</span>';
+  if (!_eanNegAtivo.ok) return '<span class="badge badge-red" title="' + _eanEsc(_eanNegAtivo.motivo || '') + '">não consegui ver os negócios ativos</span>';
+  if (!emNeg) return '<span style="font-size:12px;color:var(--muted)">nenhum deles está em negócio ativo hoje</span>';
+  return '<span class="badge badge-blue" title="o princípio ativo do produto aparece em item de edital de negócio em andamento">'
+       + emNeg + ' em negócio ativo — no topo</span>';
 }
 function eanPendenciaAlterna(){
   _eanPendAberto = !_eanPendAberto;
@@ -1886,7 +2093,7 @@ function _eanPendRenderLista(){
           + '<br><button type="button" class="btn btn-outline btn-sm" style="margin-top:4px" onclick="eanPendUsarSugestao(' + i + ')">Usar sugestão</button>'
         : '<span style="color:var(--muted)">' + _eanEsc(s.motivo) + '</span>';
     return '<tr>'
-      + '<td><strong style="font-size:12px">' + _eanEsc(g.produto) + '</strong>'
+      + '<td><strong style="font-size:12px">' + _eanEsc(g.produto) + '</strong>' + _eanSeloLinhaNegocio(g)
       +   '<div style="font-size:11px;color:var(--muted)">' + _eanEsc(g.principio_ativo || 'sem princípio ativo') + '</div></td>'
       + '<td style="font-size:12px">' + _eanEsc(g.marca || '—') + '</td>'
       + '<td style="font-size:12px">' + g.ids.length + '</td>'
@@ -1903,11 +2110,38 @@ function _eanPendRenderLista(){
     + linhasHtml + '</tbody></table></div>'
     // >>> NADA DE CORTE SILENCIOSO: se a lista foi limitada, ela DIZ quantos ficaram de fora.
     + '<div style="margin-top:10px;font-size:12px;color:var(--muted)">'
-    +   'Mostrando ' + vis.length + ' de ' + _eanPend.length + ' produtos (os de mais linhas primeiro).'
+    +   'Mostrando ' + vis.length + ' de ' + _eanPend.length + ' produtos (primeiro os que estão em negócio ativo, depois os de mais linhas).'
     +   (_eanPend.length > vis.length
           ? ' <button type="button" class="btn btn-outline btn-sm" onclick="eanPendenciaMais()">Mostrar mais ' + EAN_PEND_PAGINA + '</button>'
           : '')
+    + '</div>'
+    + _eanRodapeNegocio();
+}
+/* O RODAPÉ DIZ ATÉ ONDE A PRIORIDADE ENXERGA. Sem ele, um produto sem selo pareceria "conferido
+   e fora de negócio", quando pode ser só um edital que ninguém leu ainda, ou um produto sem
+   princípio ativo (luva, seringa) que nunca poderia ser casado por substância. */
+function _eanRodapeNegocio(){
+  var st = _eanNegAtivo, m = 'margin-top:6px;font-size:11.5px;color:var(--muted);line-height:1.5';
+  if (!st) return '<div style="' + m + '">Ainda estou lendo os negócios ativos — a ordem pode mudar em instantes.</div>';
+  if (!st.ok) return '<div style="' + m + '">Não consegui ler os negócios ativos (' + _eanEsc(st.motivo || '') + '). '
+    + 'A ordem abaixo é a de sempre — isso <b>não</b> quer dizer que nenhum produto está em negócio ativo.</div>';
+  var semPa = _eanPend.filter(function(g){ return !String(g.principio_ativo || '').trim(); }).length;
+  return '<div style="' + m + '">'
+    + 'O selo <b>em negócio ativo</b> vem de ' + st.editaisComItens + ' de ' + st.editais + ' negócio(s) ativo(s) cujo edital já tem os itens no índice'
+    + ' (' + st.itens + ' itens lidos)'
+    + (st.cortouEditais ? ' — e parei nos ' + EAN_NEG_MAX_EDITAIS + ' primeiros editais' : '')
+    + (st.falhas ? ' · ' + st.falhas + ' edital(is) não respondeu(ram)' : '')
+    + '. O casamento é por <b>princípio ativo</b>, e por isso ' + semPa + ' produto(s) desta lista não podem receber o selo: não têm princípio ativo cadastrado.'
+    + ' <b>O selo é prioridade de fila, nunca fonte de EAN</b> — quem digita o código continua sendo gente.'
     + '</div>';
+}
+// O selo mostra CONTRA O QUÊ casou. "Sim" sozinho pediria fé; o item e o edital podem ser conferidos.
+function _eanSeloLinhaNegocio(g){
+  if (!g || !g.negAtivo) return '';
+  var it = g.negAtivo;
+  var tit = 'casa com o item ' + (it.numero_item || '?') + ' do edital ' + (it.controle || '')
+          + (it.orgao ? ' — ' + it.orgao : '') + ': ' + String(it.descricao || '').slice(0, 160);
+  return ' <span class="badge badge-blue" style="font-size:10px;vertical-align:middle" title="' + _eanEsc(tit) + '">em negócio ativo</span>';
 }
 function eanPendUsarSugestao(i){
   var g = _eanPend[i], s = g && _eanSugCache[g.chave]; if (!s) return;
