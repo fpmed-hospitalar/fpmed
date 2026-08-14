@@ -429,6 +429,28 @@ ok(n + '. *** o selo de situacao e pintado por CLASSE, nao por estilo montado no
 ok(n + '. *** "ja passou" e sinal (vermelho de texto), e nao desbotado ***',
   /\.card \.ab\.passou b\{color:var\(--vermelho-700\)/.test(CSS1)); n++;
 
+// ── 6g. FATIA B2 — REMARCAR E OBVIA QUANDO O PREGAO ESTA SUSPENSO ───────────
+/* Remarcar SEMPRE existiu: a `abertura` e editavel campo a campo desde 08/08, com rastro por
+   gatilho no banco, e a Agenda e o sino ja leem a data nova na hora - os dois DERIVAM de
+   `negocios.abertura`, e nao de uma copia. O que faltava nao era a funcao, era a OBVIEDADE. */
+ok(n + '. *** suspenso/adiado sugere REMARCAR, com botao de verdade ***',
+  /const sugereRemarcar = editavel && sit && \(sit === 'suspenso' \|\| sit === 'adiado'\)/.test(LIMPO)
+  && /onclick="editarCampo\(\$\{n\.id\},'abertura'\)">Remarcar abertura</.test(LIMPO)); n++;
+/* *** E ELE ABRE O MESMO EDITOR, e nao um caminho novo de gravacao. *** Um segundo jeito de
+   escrever a mesma data e como nascem dois rastros que discordam - e rastro que discorda de
+   si mesmo nao prova prazo nenhum, que e justamente pra isso que o gestor o usa. */
+ok(n + '. ...reusando o editor que ja tem rastro (nenhum caminho novo de gravacao)',
+  (LIMPO.match(/editarCampo\(\$\{n\.id\},'abertura'\)/g) || []).length >= 1
+  && !/function remarcarAbertura/.test(LIMPO)); n++;
+/* O texto diz o que esta EM JOGO, e nao so o estado: com a data velha no lugar, o sino avisa
+   pelo dia errado - pior que nao avisar, porque quem confia nele perde a sessao. */
+ok(n + '. e o aviso diz o que esta em jogo (o sino apontando o dia errado)',
+  /o aviso\s*de sessão aponta o dia errado/.test(N.replace(/\s+/g, ' '))); n++;
+ok(n + '. a faixa usa o par fechado do tema (a mesma cor do selo de suspenso)',
+  /\.remarcar-aviso\{[^}]*background:var\(--ambar-50\)/.test(CSS1)
+  && /\.remarcar-aviso\{[^}]*border:1px solid var\(--ambar-300\)/.test(CSS1)
+  && /\.remarcar-aviso\{[^}]*color:var\(--ambar-700\)/.test(CSS1)); n++;
+
 // ── 7. A MEMORIA DO PORQUE (L6) ──────────────────────────────────────────────
 const _corrido = N.replace(/\s+/g, ' ');
 ok(n + '. o arquivo registra por que o cartao vira linha SO dentro do painel',

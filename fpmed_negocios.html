@@ -799,6 +799,16 @@ textarea.anot:focus{border-color:var(--azul)}
    vazio ele some. Sem isto, sete pílulas cinzas em branco apareceriam em todo negócio novo —
    e contador que mostra nada é o mesmo que contador mentindo zero. */
 .dw-abas .cnt:empty{display:none}
+/* ══ A FAIXA QUE SUGERE REMARCAR (13/08, fatia B2) ═══════════════════════════════════════════
+   Par fechado do tema (fundo 50 + tinta 700 + borda 300), o MESMO que o selo de SUSPENSO usa
+   logo acima no cartão — o estado fala com uma cor só em toda a tela. Zero hex à mão. */
+.remarcar-aviso{display:flex;align-items:center;gap:var(--esp-3);flex-wrap:wrap;
+  background:var(--ambar-50);border:1px solid var(--ambar-300);color:var(--ambar-700);
+  border-radius:var(--raio-campo);padding:var(--esp-3);margin-bottom:var(--esp-3);
+  font-size:var(--txt-1);line-height:1.45}
+.remarcar-aviso > div{flex:1;min-width:180px}
+/* o botão aqui é o `.btn-ed` de sempre: mesma peça, mesmo tamanho, mesma cor de ação. Um botão
+   próprio só pra esta faixa seria um sétimo jeito de desenhar "botão" nesta tela. */
 .dw-painel{display:none}
 .dw-painel.on{display:block}
 /* ── LEMBRETES ── */
@@ -2064,7 +2074,27 @@ function corpoDrawer(n, obs, carregando){
         ${editavel ? `<button class="fc-bt" onclick="editarCampo(${n.id},'${k}')"><svg class="ic" aria-hidden="true"><use href="#ic-lapis"/></svg> Alterar</button>` : ''}</div>
       ${extra || ''}
     </div>`;
+  /* ══ REMARCAR ABERTURA — A AÇÃO SUGERIDA DE QUEM ESTÁ SUSPENSO (13/08, fatia B2) ═══════════
+     Remarcar SEMPRE existiu: a `abertura` é editável campo a campo desde 08/08, com rastro por
+     gatilho no banco (data anterior, quem mudou e quando), e a Agenda e o sino já leem a data
+     nova na hora — porque os dois derivam de `negocios.abertura`, e não de uma cópia.
+     >>> O QUE FALTAVA NÃO ERA A FUNÇÃO, ERA A OBVIEDADE. Num pregão SUSPENSO, remarcar é a
+         única coisa que a pessoa foi ali fazer — e ela estava escondida atrás de um "Alterar"
+         que só aparece no hover da linha certa, entre outros seis campos iguais.
+     >>> ENTÃO O ESTADO SUGERE A AÇÃO: suspenso/adiado ganha uma faixa com o motivo e um botão
+         de verdade, que abre exatamente o mesmo editor. Nenhum caminho novo de gravação nasceu
+         aqui — seria um segundo jeito de escrever a mesma data, e é assim que nascem dois
+         rastros que discordam.
+     >>> O TEXTO DIZ O QUE ESTÁ EM JOGO, e não só o estado: enquanto a data velha estiver lá, o
+         sino avisa pelo dia errado — que é pior que não avisar, porque quem confia nele perde a
+         sessão. É a razão de a ficha ter virado editável, escrita onde ela importa. */
+  const sugereRemarcar = editavel && sit && (sit === 'suspenso' || sit === 'adiado');
   const ficha = `<div class="ficha-fc">
+      ${sugereRemarcar ? `<div class="remarcar-aviso">
+        <div><b>${esc(rotuloSituacao(sit))}</b> — enquanto a data antiga continuar aqui, o aviso
+          de sessão aponta o dia errado.</div>
+        <button class="btn-ed" onclick="editarCampo(${n.id},'abertura')">Remarcar abertura</button>
+      </div>` : ''}
       ${campo('abertura', 'Abertura', null, n.abertura && fmtDtH(n.abertura)
           ? esc(fmtDtH(n.abertura)) + (dia===hoje?' <b style="color:var(--ambar)">· é hoje</b>':(dia&&dia<hoje?' <span class="salvo">· já passou</span>':''))
           : '')}
