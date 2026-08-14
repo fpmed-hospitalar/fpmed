@@ -35,6 +35,13 @@
      >>> ELE JÁ ESTAVA NA CASCA DO SERVICE WORKER (`./fpmed_teto_cmed.js` no SHELL), então esta
          linha não muda nada offline: o arquivo já era baixado, só não era usado por ninguém. -->
 <script src="fpmed_teto_cmed.js"></script>
+<!-- A PORTA INTERNA DO LEITOR (fatia A2 do arquiteto), usada pela fatia B6 para conversar com o
+     edital sem sair da ficha. Ela NÃO é o motor: permissão, custo e registro continuam na edge
+     function `ler-edital`, e este arquivo existe justamente para que ninguém escreva uma
+     segunda checagem de permissão nem uma segunda conta de custo do lado da tela.
+     >>> Ele já está na casca do service worker (`./fpmed_leitor_motor.js`), então esta linha não
+         muda nada offline — só faz esta tela finalmente usá-lo. -->
+<script src="fpmed_leitor_motor.js"></script>
 <style>
 /* ══════════════════════════════════════════════════════════════════════════════════════════════
    NEGÓCIOS · TEMA CLARO — item 5 da fila da reforma ("kanban protagonista").
@@ -609,6 +616,27 @@ body{
   .gn-l{grid-template-areas:"n desc desc" ". total total" ". margem margem"}
   .gn-m{text-align:left}
 }
+/* ── CONVERSAR COM O EDITAL (14/08, fatia B6) ───────────────────────────────────────────────
+   O SELO "IA · tem custo" fica no TÍTULO da seção e é âmbar, e as duas coisas são de propósito:
+   ele precisa ser lido ANTES do campo de pergunta (por isso em cima) e precisa parar o olho
+   (por isso a cor de aviso). Selo discreto num botão que gasta dinheiro é decoração. */
+.selo-ia{display:inline-block;margin-left:8px;padding:2px 8px;border-radius:20px;
+  font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;
+  color:var(--ambar-700);background:var(--ambar-50);border:1px solid var(--ambar-100)}
+.cv-novo{margin-top:10px}
+.cv-novo textarea{width:100%;background:var(--painel2);border:1px solid var(--linha);color:var(--texto);
+  border-radius:10px;padding:10px 12px;font-family:inherit;font-size:12.5px;line-height:1.5;
+  outline:none;resize:vertical}
+.cv-novo textarea:focus{border-color:var(--azul)}
+.cv-acoes{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:8px}
+.cv-acoes .salvo{margin-top:0;flex:1;min-width:180px}
+/* A RESPOSTA GANHA MOLDURA porque ela é a única coisa desta seção que CUSTOU dinheiro. Solta
+   no fluxo, ela se confunde com as dicas cinzas em volta — e o que se paga não se confunde. */
+.cv-resp{margin-top:10px;border:1px solid var(--linha);border-left:3px solid var(--azul-claro);
+  border-radius:10px;padding:11px 13px;background:var(--painel2)}
+.cv-resp.erro{border-left-color:var(--ambar-600);font-size:12.5px;color:var(--cinza-800);line-height:1.55}
+.cv-perg{font-size:11.5px;color:var(--muted);font-weight:600;margin-bottom:6px}
+.cv-corpo{font-size:12.5px;color:var(--texto);line-height:1.6;white-space:pre-wrap}
 /* >>> `.ag-secao` FICOU ÓRFÃ em 13/08 (fatia 4): o "Já passaram" que ela desenhava virou o
        CABEÇALHO do segundo painel da Agenda. O grep está feito e é conclusivo — ela não é usada
        em mais lugar nenhum. Fica pela mesma regra do `.fase-tag` logo acima: seletor órfão não
@@ -1303,6 +1331,20 @@ textarea.anot:focus{border-color:var(--azul)}
 const SB_URL = 'https://xzdowrksuswekwffoluk.supabase.co';
 const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh6ZG93cmtzdXN3ZWt3ZmZvbHVrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ2NzE2MTMsImV4cCI6MjEwMDI0NzYxM30.Pk-SlV_pZdniESyrajDdfHdHcnmyCwCMtP_TrShh75Y';
 const SB_H = { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY, 'Content-Type': 'application/json' };
+/* ── O MOTOR DO LEITOR PRECISA ACHAR ESTE ENDEREÇO, E `const` NÃO APARECE NO `window` ─────────
+   `fpmed_leitor_motor.js` monta a URL da edge function assim (fatia A2 do arquiteto):
+       LIMEDTEC_CLIENTE.supabase.url  ||  glob.SB_URL  ||  gmAuth.SB
+   Medido no navegador em 14/08: nesta tela os TRÊS são indefinidos — `LIMEDTEC_CLIENTE` não tem
+   `supabase`, o `gmAuth` não expõe `SB`, e o `SB_URL` acima é `const`, que fica no escopo léxico
+   do script e NÃO vira propriedade de `window`. Resultado: `urlDaEdge()` devolvia `null` e a
+   conversa morreria em "não sei o endereço do serviço de leitura (config não carregada)".
+   >>> ESTA LINHA É O TERCEIRO CAMINHO DO PRÓPRIO CONTRATO, e não um atalho: o motor foi escrito
+       esperando encontrar `SB_URL` no global, e é isso que ela entrega. Nenhum endereço novo é
+       escrito aqui — uma segunda cópia da URL do banco é a doença que aquele arquivo existe
+       pra evitar.
+   >>> A MESMA FALTA EXISTE NA TELA ENCONTRAR (`fpmed_licitacoes.html` também declara `SB_URL`
+       com `const`), e ela não é minha para consertar — está anotada no relatório. */
+window.SB_URL = SB_URL;
 
 /* As 5 fases, na ordem do funil. A bolinha colorida é o que deixa a coluna reconhecível de
    relance no kanban.
@@ -2427,7 +2469,7 @@ async function abrirDrawer(id){
   }
   if(ABERTO === id){ carregarRastro(id); carregarLembretes(id); carregarCredenciamentos(id);
                      carregarProposta(id); carregarAta(id); carregarItensGanhos(id);
-                     carregarEdital(id); carregarItensEdital(id);
+                     carregarEdital(id); carregarItensEdital(id); carregarConversaEdital(id);
                      // O kit NÃO tem `carregar`: ele já veio dentro do negócio (`negocios.tarefas`
                      // vem no mesmo `select=*` da lista). Uma leitura a mais aqui seria uma
                      // chance a mais de a aba abrir vazia por causa da rede.
@@ -2593,6 +2635,21 @@ function corpoDrawer(n, obs, carregando){
           <button class="btn-ed" id="ed-bt" onclick="anexarEdital(${n.id})"><svg class="ic" aria-hidden="true"><use href="#ic-clipe"/></svg> Anexar</button>
         </div>` : '<div class="salvo">só quem grava pode anexar.</div>'}
         <div class="salvo" id="ed-msg"></div>
+      </div>
+      <!-- ══ CONVERSAR COM O EDITAL, SEM SAIR DAQUI (14/08, fatia B6) ═════════════════════════
+           Pergunta de quem está com a ficha aberta: "tem exigência de registro na ANVISA?",
+           "qual o prazo de entrega?", "aceita marca similar?". A resposta está no edital, e o
+           edital em texto já existe no banco (a coleta da outra janela o extrai).
+           >>> ISTO NÃO SUBSTITUI O "Ler edital (IA)" DO RODAPÉ, e a diferença não é de tamanho:
+               aqui se PERGUNTA a um texto que já existe; lá se EXTRAI o texto de um PDF que
+               ainda não foi lido, com partição de 80 páginas e costura das respostas. São dois
+               trabalhos, e o segundo já está testado na tela do Leitor.
+           >>> O SELO "IA · custo" VAI JUNTO DO BOTÃO, por ordem do contrato do A: cada chamada
+               custa dinheiro real, e o selo existe para que ninguém clique sem saber. Ele saiu
+               do menu e foi para o botão que dispara o gasto. -->
+      <div class="dw-sec" id="aba-conversa">
+        <h4>Conversar com o edital <span class="selo-ia">IA · tem custo</span></h4>
+        <div id="cv-cx"><div class="salvo">procurando o edital…</div></div>
       </div>
       <!-- DE ONDE ESTE NEGÓCIO VEIO. Três procedências, e elas não valem a mesma coisa: o do
            PNCP tem número oficial conferível, o do calendário foi importado de uma planilha, e o
@@ -4985,6 +5042,217 @@ function pintaEdital(id){
       </div>`).join('')}</div>`;
   };
   box.innerHTML = bloco('edital', 'Edital') + bloco('anexo_edital', 'Anexos do edital');
+  /* A CONVERSA REPINTA JUNTO (fatia B6): o botão "usar o edital anexado" só pode existir depois
+     que a lista de anexos chegou, e as duas leituras correm em paralelo. Sem esta linha, quem
+     carregasse mais rápido decidiria se o botão apareceria — e no caso mais comum (anexo chega
+     depois) ele nunca apareceria. */
+  if(ABERTO) pintaConversaEdital(ABERTO);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════════
+   CONVERSAR COM O EDITAL, DE DENTRO DA FICHA (14/08, fatia B6)
+
+   ── DE ONDE VEM O TEXTO, NESTA ORDEM ─────────────────────────────────────────────────────────
+   1. `licitacao_arquivos.texto_extraido` — o texto que a coleta da outra janela (fatia A6) já
+      extraiu do PNCP. É de graça, já está pronto e costuma ser o mais completo.
+   2. O PDF do EDITAL ANEXADO neste negócio — extraído aqui com o mesmo pdf.js da conferência de
+      proposta. É o caminho dos negócios que não vieram do PNCP (os manuais e os do Calendário
+      2025), que são a maioria do funil.
+   >>> A ORDEM NÃO É ARBITRÁRIA: o texto do banco não custa nada e já existe; extrair o PDF de
+       novo a cada pergunta gastaria segundos e banda por uma resposta que seria a mesma.
+
+   ── OS QUATRO ESTADOS, E POR QUE ELES PRECISAM SER QUATRO ────────────────────────────────────
+   Esta é a lição que o A escreveu na fatia A6 e que vale inteira aqui: "ainda não coletei" e "o
+   PNCP não publicou edital" têm a MESMA cara se a tela só perguntar "tem texto?" — e as ações
+   são OPOSTAS. Numa vale esperar a coleta; na outra, anexar à mão, porque insistir não traz o
+   que não existe.
+     · tenho texto ......... dá pra conversar
+     · nunca coletei ....... a coleta pega este negócio na próxima passada (ele está no funil)
+     · PNCP sem arquivo .... não adianta esperar: anexe o edital aqui
+     · sem nº de controle .. o negócio não veio do PNCP; o caminho é o anexo
+
+   ── A PERMISSÃO, O CUSTO E O REGISTRO NÃO MORAM AQUI ─────────────────────────────────────────
+   Eles moram na edge function `ler-edital`, e o contrato do A é explícito: *não escreva uma
+   segunda checagem de permissão nem uma segunda conta de custo do seu lado*. O que esta tela
+   faz é chamar `LeitorEdital.perguntar` e traduzir os erros marcados (`semPermissao`,
+   `semSessao`, `semTexto`) em frases de gente — "não está liberado para o seu usuário" nunca
+   pode virar "deu erro".
+   ══════════════════════════════════════════════════════════════════════════════════════════════ */
+let EDITAL_CONVERSA = null;   // {estado, texto, titulo, chars, paginas, de} · null = ainda lendo
+
+async function carregarConversaEdital(id){
+  const n = NEG.find(x => x.id === id); if(!n) return;
+  EDITAL_CONVERSA = null;
+  const ctrl = String(n.numero_controle || '').trim();
+  try{
+    if(ctrl){
+      const r = await fetch(`${SB_URL}/rest/v1/licitacao_arquivos`
+        + '?select=titulo,tipo,url_pncp,texto_extraido,texto_chars,texto_paginas,extracao_erro'
+        + `&numero_controle=eq.${encodeURIComponent(ctrl)}`, {headers:SB_H});
+      if(!r.ok) throw new Error('o banco respondeu ' + r.status);
+      const arqs = await r.json();
+      if(arqs.length){
+        const semArq = arqs.find(a => /não publicou arquivo/.test(a.extracao_erro || ''));
+        if(semArq){ EDITAL_CONVERSA = { estado:'sem_arquivo' }; }
+        else {
+          /* PEGA O MAIOR TEXTO, e não o primeiro. MESMA REGRA da tela Encontrar
+             (`fpmed_licitacoes.html`, fatia A6), pelo mesmo motivo medido lá: um pregão publica
+             edital, termo de referência, minutas e estudo técnico — e num caso real o edital deu
+             71.105 caracteres e o TR deu 173.557. É no TR que costuma estar a tabela de itens,
+             que é sobre o que as pessoas perguntam. "O primeiro que tiver texto" entregaria o
+             menor por acaso de ordenação.
+             >>> A REGRA ESTÁ ESCRITA DUAS VEZES porque as duas telas são dois HTML sem módulo
+                 comum, e não porque cada uma decide a sua. A suíte `testa_conversa_edital`
+                 confere que as DUAS ordenam por `texto_chars` — se uma mudar sozinha, ela
+                 fica vermelha. */
+          const comTexto = arqs.filter(a => (a.texto_chars || 0) > 0)
+                               .sort((a,b) => (b.texto_chars || 0) - (a.texto_chars || 0));
+          EDITAL_CONVERSA = comTexto.length
+            ? { estado:'pronto', de:'pncp', texto: comTexto[0].texto_extraido,
+                titulo: comTexto[0].titulo, tipo: comTexto[0].tipo,
+                chars: comTexto[0].texto_chars, paginas: comTexto[0].texto_paginas,
+                outros: arqs.length - 1 }
+            : { estado:'sem_texto', motivo: (arqs.find(a => a.extracao_erro) || {}).extracao_erro || null };
+        }
+      } else {
+        EDITAL_CONVERSA = { estado:'nao_coletado' };
+      }
+    } else {
+      EDITAL_CONVERSA = { estado:'sem_controle' };
+    }
+  }catch(e){
+    // erro de leitura NÃO vira "não tem edital": a ação de quem não tem é anexar, e mandar
+    // anexar o que já está lá é fazer a pessoa trabalhar por causa de uma falha de rede.
+    EDITAL_CONVERSA = { estado:'erro', motivo: e.message };
+  }
+  if(ABERTO === id) pintaConversaEdital(id);
+}
+
+function pintaConversaEdital(id){
+  const cx = document.getElementById('cv-cx'); if(!cx) return;
+  const c = EDITAL_CONVERSA;
+  const temAnexo = ANEXOS_EDITAL.some(a => a.categoria === 'edital');
+  // O ANEXO É A SEGUNDA FONTE, e ele resolve o caso mais comum do funil: 105 negócios vieram do
+  // Calendário 2025 e nenhum tem número de controle. Sem ele, esta seção seria inútil pra eles.
+  const botaoAnexo = temAnexo
+    ? `<button class="btn-ed sec" id="cv-bt-anexo" onclick="usarEditalAnexado(${id})">usar o edital anexado acima</button>`
+    : '';
+  const pedirAnexo = '<b>Anexe o edital</b> na seção acima — com o PDF aqui, dá pra conversar com ele '
+    + 'e ele fica junto do negócio, sem depender do portal estar no ar.';
+
+  if(!c){ cx.innerHTML = '<div class="salvo">procurando o edital…</div>'; return; }
+
+  if(c.estado === 'pronto'){
+    cx.innerHTML = `<div class="salvo">Edital em texto${c.de === 'anexo' ? ' <b>do arquivo anexado</b>' : ''}:
+        <b>${esc(c.titulo || 'documento do certame')}</b>${c.chars ? ' · ' + Number(c.chars).toLocaleString('pt-BR') + ' caracteres' : ''}${
+          c.paginas ? ' · ' + c.paginas + ' páginas' : ''}${c.outros ? ' · há mais ' + c.outros + ' arquivo(s) deste certame' : ''}.</div>
+      ${conversaCaixa(id)}`;
+    return;
+  }
+  const nota = txt => `<div class="salvo">${txt}</div>` + (botaoAnexo ? '<div style="margin-top:8px">' + botaoAnexo + '</div>' : '');
+  if(c.estado === 'nao_coletado')
+    cx.innerHTML = nota('Este edital <b>ainda não foi buscado no PNCP</b> — e isso é diferente de "não existe". '
+      + 'A coleta roda por fora da tela e passa pelas licitações que estão nos <b>meus negócios</b>, '
+      + 'então este aqui entra na próxima passada. Enquanto isso: ' + pedirAnexo);
+  else if(c.estado === 'sem_arquivo')
+    cx.innerHTML = nota('O <b>PNCP respondeu que não publicou edital</b> para este certame — não adianta esperar a coleta. ' + pedirAnexo);
+  else if(c.estado === 'sem_texto')
+    cx.innerHTML = nota('O arquivo do PNCP existe, mas <b>não deu para extrair o texto</b>'
+      + (c.motivo ? ' (' + esc(c.motivo) + ')' : '') + '. Costuma ser PDF escaneado, que é só imagem. ' + pedirAnexo);
+  else if(c.estado === 'sem_controle')
+    cx.innerHTML = nota('Este negócio não veio do PNCP — ele foi incluído à mão ou importado do Calendário 2025, '
+      + 'e por isso não há edital oficial para buscar. ' + pedirAnexo);
+  else
+    cx.innerHTML = nota('<b style="color:var(--vermelho-700)">Não consegui procurar o edital'
+      + (c.motivo ? ' (' + esc(c.motivo) + ')' : '') + '.</b> Isto <b>não</b> quer dizer que ele não exista.');
+}
+
+function conversaCaixa(id){
+  if(!podeLerEdital()){
+    /* ESCONDER O CAMPO NÃO É A PERMISSÃO — quem barra é a edge function, com 403 conferido
+       contra o JWT. Isto só evita oferecer o que vai ser negado, e DIZ que é assim. */
+    return '<div class="salvo">A leitura por IA está em piloto e não está liberada para o seu usuário. '
+      + 'Quem decide é o servidor, não esta tela.</div>';
+  }
+  return `<div class="cv-novo">
+      <textarea id="cv-p" rows="2" placeholder="ex.: exige registro na ANVISA? qual o prazo de entrega? aceita marca similar?"></textarea>
+      <div class="cv-acoes">
+        <button class="btn-ed" id="cv-bt" onclick="perguntarAoEdital(${id})">Perguntar ao edital</button>
+        <span class="salvo">Cada pergunta é uma leitura paga e fica registrada em <b>usos_ia</b>, com quem perguntou.</span>
+      </div>
+    </div>
+    <div id="cv-resposta"></div>`;
+}
+
+/* Extrai o texto do PDF anexado, com o MESMO `pdfParaTextoNeg` da conferência de proposta.
+   Uma segunda extração aqui seria uma segunda maneira de ler o mesmo PDF — e a que ninguém
+   testa é a que um dia devolve texto embaralhado. */
+async function usarEditalAnexado(id){
+  const bt = document.getElementById('cv-bt-anexo');
+  const cx = document.getElementById('cv-cx');
+  const anexo = ANEXOS_EDITAL.filter(a => a.categoria === 'edital')
+                             .sort((a,b) => (b.versao||0) - (a.versao||0))[0];
+  if(!anexo || !cx) return;
+  if(bt){ bt.disabled = true; bt.textContent = 'lendo o PDF…'; }
+  try{
+    const rs = await fetch(`${SB_URL}/storage/v1/object/sign/documentos/${encodeURIComponent(anexo.arquivo_path)}`, {
+      method:'POST', headers: Object.assign({'Content-Type':'application/json'}, SB_H),
+      body: JSON.stringify({ expiresIn: 120 }) });
+    if(!rs.ok) throw new Error('não consegui abrir o anexo (HTTP ' + rs.status + ')');
+    const buf = await (await fetch(SB_URL + '/storage/v1' + (await rs.json()).signedURL)).arrayBuffer();
+    const texto = await pdfParaTextoNeg(buf);
+    if(!texto || !texto.trim()) throw new Error('não saiu texto nenhum deste PDF — provavelmente ele é escaneado (só imagem)');
+    EDITAL_CONVERSA = { estado:'pronto', de:'anexo', texto,
+      titulo: anexo.arquivo_nome, chars: texto.length, paginas: null, outros: 0 };
+    pintaConversaEdital(id);
+  }catch(e){
+    if(bt){ bt.disabled = false; bt.textContent = 'usar o edital anexado acima'; }
+    const m = document.createElement('div');
+    m.className = 'salvo'; m.style.color = 'var(--vermelho-700)';
+    m.textContent = 'não consegui ler o anexo: ' + e.message;
+    cx.appendChild(m);
+  }
+}
+
+async function perguntarAoEdital(id){
+  const bt = document.getElementById('cv-bt');
+  const alvo = document.getElementById('cv-resposta');
+  const p = ((document.getElementById('cv-p') || {}).value || '').trim();
+  if(!alvo) return;
+  if(!p){ alvo.innerHTML = '<div class="salvo">escreva a pergunta.</div>'; return; }
+  if(!EDITAL_CONVERSA || EDITAL_CONVERSA.estado !== 'pronto'){
+    alvo.innerHTML = '<div class="salvo">não há texto de edital para ler.</div>'; return;
+  }
+  const M = window.LeitorEdital;
+  if(!M || typeof M.perguntar !== 'function'){
+    alvo.innerHTML = '<div class="salvo" style="color:var(--vermelho-700)">o motor de leitura não carregou — recarregue a tela.</div>';
+    return;
+  }
+  if(bt) bt.disabled = true;
+  alvo.innerHTML = '<div class="salvo">lendo o edital… isso leva alguns segundos.</div>';
+  try{
+    const r = await M.perguntar({ texto: EDITAL_CONVERSA.texto, tarefa: 'resumo', pergunta: p });
+    const d = (r && r.dados) || {};
+    const corpo = d.resposta || d.resumo || (typeof r.texto === 'string' ? r.texto : null);
+    alvo.innerHTML = `<div class="cv-resp">
+        <div class="cv-perg">${esc(p)}</div>
+        <div class="cv-corpo">${corpo ? esc(String(corpo)) : '<i>o serviço respondeu, mas sem texto de resposta.</i>'}</div>
+        ${custoDaLeitura(r)}
+        <div class="salvo">Resposta lida de <b>${esc(EDITAL_CONVERSA.titulo || 'documento do certame')}</b>
+          — confira contra o documento antes de decidir preço ou prazo.</div>
+      </div>`;
+  }catch(e){
+    /* OS TRÊS ERROS MARCADOS DO CONTRATO, cada um com a frase que ele merece. "Não está
+       liberado" NUNCA pode virar "deu erro": o primeiro é uma resposta do produto e o segundo
+       faz a pessoa reportar defeito e alguém procurar bug que não existe. */
+    const frase = e.semPermissao
+        ? 'A leitura de edital <b>não está liberada para o seu usuário</b>. Não é falha — é o piloto, e quem decide é o servidor.'
+      : e.semSessao ? 'Sua <b>sessão expirou</b>. Entre de novo e tente outra vez — nada foi cobrado.'
+      : e.semTexto  ? 'Não há texto de edital para ler. Nada foi cobrado.'
+      : 'Não consegui ler: ' + esc(e.message);
+    alvo.innerHTML = '<div class="cv-resp erro">' + frase + '</div>';
+  }
+  if(bt) bt.disabled = false;
 }
 
 async function anexarEdital(id){
