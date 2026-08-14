@@ -1,3 +1,18 @@
+================= REGIME DE EXECUCAO PADRAO — NAO PARAR =================
+Vale para toda caixa do arquiteto, em qualquer sessao, nas duas janelas:
+- Executar as fatias em sequencia SEM parar entre elas; a caixa chega aprovada.
+- Decisao pequena no meio: escolher o caminho mais simples e reversivel,
+  anotar e seguir.
+- Precisa do dono (senha, escolha, teste visual)? NAO travar: anotar em
+  "PENDENCIAS DO DONO", pular e continuar o que nao depende.
+- Fatia inteira bloqueada: pular, anotar o porque, seguir a proxima.
+- So parar quando nao houver mais nada executavel; entao entregar relatorio:
+  feito (com provas medidas) + decisoes tomadas + PENDENCIAS DO DONO numeradas.
+- Seguranca intocavel: nada de DELETE/DROP/TRUNCATE/UPDATE destrutivo
+  (pula e anota), esquema so aditivo, commit+push por fatia, prova medida
+  antes de declarar pronto.
+==========================================================================
+
 ========================================
 FPMED — CONTEXTO DO PROJETO (clone white-label #2)
 ========================================
