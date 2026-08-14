@@ -74,9 +74,17 @@ ok(n + '. *** e um "nao" vira erro MARCADO como cancelamento (nao e falha) ***',
 ok(n + '. *** nao consegui orcar -> NAO gasta (e nao "segue sem avisar") ***',
   /ec\.semOrcamento = true/.test(Mc)
   && /não vou gastar sem te dizer quanto custa/.test(M)); n++;
-/* Portao que se abre sozinho quando nao sabe perguntar nao e portao. */
-ok(n + '. *** sem `confirm` disponivel a resposta padrao e NAO ***',
-  /typeof glob\.confirm === 'function'\) \? !!glob\.confirm\(texto\) : false/.test(Mc)); n++;
+/* Portao que se abre sozinho quando nao sabe perguntar nao e portao.
+   ══ ESTE ASSERT MUDOU DE LETRA EM 14/08 (fatia A16), E NAO DE PROMESSA ═════════════════════
+   Ele cobrava o literal do `confirm()` do navegador: "typeof glob.confirm === 'function' ? ...
+   : false". A A16 trocou o confirm cru pela janela desenhada no molde, e o literal morreu — mas
+   a REGRA que ele guardava e anterior ao confirm e continua inteira: *quando o motor nao tem
+   como perguntar, a resposta e NAO*. So mudou o que significa "nao ter como perguntar": antes
+   era "nao existe confirm", agora e "nao existe DOM" (node, worker, service worker).
+   E a lição S8 de novo — assert preso ao literal so sabe dizer "mudou", nunca "piorou". */
+ok(n + '. *** sem como perguntar (sem DOM), a resposta padrao e NAO ***',
+  /if \(!doc \|\| typeof doc\.createElement !== 'function'/.test(Mc)
+  && /return Promise\.resolve\(false\);/.test(Mc)); n++;
 ok(n + '. ...e o confirmador so aceita funcao (nao da pra desligar o portao por acidente)',
   /set confirmador\(fn\) \{ if \(typeof fn === 'function'\) confirmador = fn; \}/.test(Mc)); n++;
 

@@ -25,7 +25,11 @@
        usuÃ¡rio ficaria com a versÃ£o de ontem e sem sintoma nenhum, que Ã© a liÃ§Ã£o S13.
    >>> E O ITEM 8 PRECISA DE BUMP mesmo sem tela nova: ele mexe no `fpmed_teto_cmed.js`, que ESTÃ
        na casca. Motor velho servido do cache Ã© teto legal calculado pela regra antiga. */
-const VERSAO = 'limedtec-fpmed-2026-08-13-72';
+/* -73 pela FATIA A16: a janela de custo entrou no `fpmed_leitor_motor.js`, que ESTÁ na casca.
+   Sem bump, quem já instalou continuaria recebendo o motor velho do cache — e o motor velho
+   pergunta pelo `confirm()` do navegador. Não quebraria nada; simplesmente a fatia não existiria
+   para quem já usa o app, e sem um sintoma sequer. É a lição S13 de novo. */
+const VERSAO = 'limedtec-fpmed-2026-08-13-73';
 const CACHE = 'limedtec-shell-' + VERSAO;
 
 // A CASCA DA FPMED. Lista MONTADA A MAO conferindo `git ls-files` (= o que o Pages serve),
