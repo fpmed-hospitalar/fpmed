@@ -908,6 +908,13 @@ svg.ic.bom{color:var(--verde-700)}
 .etq.alvo{background:var(--azul-100);color:var(--azul-700)}
 .etq.zero{background:var(--cinza-100);color:var(--cinza-600)}
 .etq.deserta{background:var(--ambar-100);color:var(--ambar-700)}
+/* A ETIQUETA DE "CASOU NO ITEM" (fatia A9) tem cor PRÓPRIA porque ela responde uma pergunta
+   diferente das outras três. Verde = do que é este edital · azul = quanto dele eu tenho em
+   estoque · âmbar = deu ruim antes · ROXO = a palavra que você digitou está lá dentro, na
+   descrição de um item, e não no objeto. Reaproveitar o azul faria "eu tenho no estoque" e
+   "casou na busca" virarem a mesma marca — e elas são justamente o que a pessoa compara.
+   Os dois tokens são do tema, medidos em 13/08: roxo-700 sobre roxo-50 = 8,19:1. */
+.etq.doitem{background:var(--roxo-50);color:var(--roxo-700)}
 
 .sessao{font-size:var(--txt-2);color:var(--cinza-600);margin-bottom:var(--esp-3);line-height:var(--altura-texto)}
 .sessao b{color:var(--cinza-800);font-weight:var(--peso-semi)}
@@ -2186,6 +2193,102 @@ async function buscarNoBancoAmplo(uf, mod){
   return j ? j.map(x => x.bruto).filter(Boolean) : null;
 }
 
+/* ══ A BUSCA TAMBÉM PELOS ITENS DO EDITAL (fatia A9 · 14/08) ═════════════════════════════════
+   A A8 mediu e o número é este: "albumina" aparece 0 vezes nos 3.201 OBJETOS do índice, e 5
+   vezes ("caneta") nos 195 itens de UMA licitação. O objeto do PNCP é genérico — "aquisição de
+   material médico-hospitalar" — e o nome do produto mora na descrição do ITEM.
+   >>> ENTÃO PROCURAR SÓ NO OBJETO É RESPONDER "NÃO ACHEI" SOBRE UM PAÍS QUE ESTÁ COMPRANDO.
+       Esta função pergunta a mesma palavra à tabela `licitacao_itens`, pelo tsvector do banco
+       (`pt_sem_acento`: "farmaceutico" acha "FARMACÊUTICO", "medicamentos" acha "medicamento").
+
+   ══ TRÊS DECISÕES QUE VALE DIZER EM VOZ ALTA ═══════════════════════════════════════════════
+   1. SÓ QUANDO A PESSOA DIGITOU ALGO. Com o campo vazio a tela busca as seis categorias do ramo
+      da FPMED — perguntar "medicamento OU hospitalar OU material médico…" à tabela de itens
+      devolveria dezenas de milhares de linhas em toda busca padrão, pra responder uma pergunta
+      que ninguém fez. O objeto já responde bem a "que tipo de compra é essa?".
+   2. UMA CHAMADA POR TERMO, e não um `or=()` montado à mão. O termo vem de um campo de texto e
+      pode ter vírgula, aspas ou parêntese — e são exatamente esses três caracteres que quebram
+      a sintaxe do `or=()` do PostgREST. Concatenar entrada de gente em sintaxe de consulta é
+      como se escreve um defeito que só aparece com o termo esquisito de alguém.
+   3. O TOTAL VEM DO `content-range`, E NÃO DA CONTAGEM DAS LINHAS LIDAS. O teto de leitura é
+      400 itens; sem o total, um termo com 5.000 itens diria "400" com cara de resposta inteira.
+      É o mesmo erro do `limit=1000` que já mordeu esta obra duas vezes. */
+const TETO_ITENS_BUSCA = 400;
+async function buscarPorItens(){
+  const cru = (document.getElementById('f-kw').value || '').trim();
+  if(!cru) return null;
+  const termos = cru.split(';').map(s=>s.trim()).filter(s=>s.length>=3).slice(0,4);
+  if(!termos.length) return null;
+  const mapa = new Map();
+  let truncou = false, falhou = 0;
+  await Promise.all(termos.map(async t => {
+    try{
+      const u = `${SB_URL}/rest/v1/licitacao_itens?select=numero_controle,numero_item,descricao`
+              + `&busca=wfts(pt_sem_acento).${encodeURIComponent(t)}`;
+      const r = await fetch(u, {
+        headers: Object.assign({ 'Prefer': 'count=exact', 'Range': '0-' + (TETO_ITENS_BUSCA - 1) }, SB_H),
+        signal: AbortSignal.timeout(15000),
+      });
+      if(!r.ok){ falhou++; return; }
+      const total = Number(String(r.headers.get('content-range')||'').split('/')[1]);
+      const linhas = await r.json();
+      if(isFinite(total) && total > linhas.length) truncou = true;
+      for(const it of linhas){
+        const k = String(it.numero_controle||''); if(!k) continue;
+        const v = mapa.get(k) || {n:0, amostra:null};
+        v.n++;
+        // a AMOSTRA é a 1ª descrição que casou: é ela que a etiqueta mostra, e é o que prova
+        // pra quem lê que o casamento foi real e não um acaso de radical.
+        if(!v.amostra) v.amostra = String(it.descricao||'').replace(/\s+/g,' ').trim();
+        mapa.set(k, v);
+      }
+    }catch(e){ falhou++; /* item fora do ar não pode derrubar a busca por objeto */ }
+  }));
+  window._itensTruncou = truncou;
+  window._itensFalhou  = falhou;
+  return mapa.size ? mapa : null;
+}
+
+/* As licitações que casaram PELO ITEM podem estar fora da janela de datas da busca — o item é do
+   edital, não do dia em que ele foi publicado. Então elas são buscadas pelo número de controle e
+   entram na lista, obedecendo os MESMOS filtros de UF e modalidade que a consulta principal
+   obedece: trazer uma licitação de outro estado porque o item casou seria desligar um filtro que
+   a pessoa ligou de propósito. */
+async function brutosPorControle(controles, uf, mod){
+  const out = [];
+  for(let i = 0; i < controles.length; i += 80){
+    // as aspas duplas são a sintaxe do `in.()` do PostgREST; o número de controle do PNCP não
+    // tem aspas nem vírgula (é CNPJ-seq/ano), e o `replace` existe pra que continue sendo verdade
+    // no dia em que a origem mudar de formato.
+    const lote = controles.slice(i, i+80).map(c => '"' + String(c).replace(/["(),]/g,'') + '"').join(',');
+    let q = `${SB_URL}/rest/v1/licitacoes?select=bruto&numero_controle=in.(${lote})`;
+    if (uf)  q += `&uf=eq.${encodeURIComponent(uf)}`;
+    if (mod) q += `&modalidade_cod=eq.${encodeURIComponent(mod)}`;
+    try{
+      const r = await fetch(q, {headers: SB_H, signal: AbortSignal.timeout(20000)});
+      if(!r.ok) continue;
+      for(const x of await r.json()) if(x && x.bruto) out.push(x.bruto);
+    }catch(e){ /* um lote que falha não derruba os outros */ }
+  }
+  return out;
+}
+
+/* ══ O SELO DE COBERTURA — E ELE EXISTE PRA NÃO DEIXAR A BUSCA MENTIR ════════════════════════
+   A carga de itens é progressiva: ela anda licitação por licitação, com ritmo educado contra um
+   serviço público. Enquanto ela anda, "não achei albumina" pode querer dizer duas coisas MUITO
+   diferentes — "ninguém está comprando" ou "eu ainda não li os itens dessas licitações".
+   >>> O SELO DIZ QUAL DAS DUAS. Sem ele, a busca por produto responderia com a mesma cara de
+       certeza sobre 6% e sobre 100% da base — e a primeira é um palpite com aparência de fato. */
+async function coberturaItens(){
+  try{
+    const [comItens, total] = await Promise.all([
+      contar('licitacoes?itens_lidos_em=not.is.null'),
+      contar('licitacoes'),
+    ]);
+    return {comItens, total};
+  }catch(e){ return null; }     // sem a contagem o selo não aparece; ele nunca chuta cobertura
+}
+
 // A FAIXA DISCRETA: o PNCP caiu, mas há resultado na tela. Fica ACIMA da lista, some sozinha do
 // caminho visual e oferece a ação — em vez do painel vermelho que substituía tudo.
 // `emDiaAte` (yyyy-mm-dd) tem prioridade sobre a HORA da última rodada completa: quem lê quer
@@ -3002,6 +3105,27 @@ async function mandarProFunil(i){
         } }
     }
     const o = l.orgaoEntidade||{}, u = l.unidadeOrgao||{};
+    /* ══ A CHAVE DO PNCP VAI JUNTO — E ELA SE PERDIA AQUI (fatia A9, 14/08) ═══════════════════
+       MEDIDO antes do conserto: `negocios.numero_controle` e `negocios.licitacao_id` estavam
+       NULOS nas 2.561 linhas da tabela, inclusive nas criadas por este botão. Ele gravava só o
+       `numero` (o nº da compra, tipo "90033/2026") — que se repete entre órgãos e não serve de
+       chave pra nada.
+       >>> O ESTRAGO NÃO APARECIA AQUI, APARECIA TRÊS TELAS DEPOIS: sem a chave, nada consegue
+           voltar do negócio pro edital. A coleta de itens e a de resultado por item têm a porta
+           `--meus-negocios` e ela encontrava ZERO alvos; o contrato com o Negócios (A5) diz que
+           a ligação é por `numero_controle`, e o campo estava vazio dos dois lados.
+       >>> SÃO OS DOIS, e não um: o `numero_controle` vale sempre (a licitação pode ter vindo ao
+           vivo do PNCP, sem linha no nosso índice); o `licitacao_id` é o atalho que só existe
+           quando ela ESTÁ no índice. Gravar só o id perderia a licitação ao vivo — que é
+           metade do que esta tela mostra. */
+    let licId = null;
+    if(numero && l.numeroControlePNCP){
+      try{
+        const rl = await fetch(`${SB_URL}/rest/v1/licitacoes?select=id&numero_controle=eq.`
+          + encodeURIComponent(l.numeroControlePNCP) + '&limit=1', {headers:SB_H});
+        if(rl.ok){ const jl = await rl.json(); if(Array.isArray(jl) && jl[0]) licId = jl[0].id; }
+      }catch(e){ /* sem o atalho o negócio nasce igual: quem manda é o numero_controle */ }
+    }
     const corpo = {
       empresa_id: emp.id,
       estagio: 'oportunidade', arquivado: false, origem: 'licitacoes',
@@ -3009,6 +3133,8 @@ async function mandarProFunil(i){
       orgao: o.razaoSocial || null, municipio: u.municipioNome || null, uf: u.ufSigla || null,
       portal: l.usuarioNome || 'PNCP', modalidade: l.modalidadeNome || null,
       numero: numero || null, objeto: l.objetoCompra || null,
+      numero_controle: l.numeroControlePNCP || null,
+      licitacao_id: licId,
       abertura: l.dataAberturaProposta || null,
       valor_estimado: (Number(l.valorTotalEstimado) || null),
     };
@@ -3362,6 +3488,29 @@ async function buscar(aoVivo){
     }
   }catch(e){ doBanco = null; }
 
+  /* ══ OS ITENS DO EDITAL ENTRAM NA BUSCA (fatia A9) ═════════════════════════════════════════
+     A pergunta do operador é "alguém está comprando albumina?" — e essa palavra não está no
+     objeto, está na descrição do item. As licitações que casam PELO ITEM entram na lista mesmo
+     que o objeto delas não diga nada parecido; é justamente esse o achado da A8.
+     >>> ELAS ENTRAM MARCADAS. O `_porItem` é lido lá no `render`, em dois lugares: pra que o
+         filtro de palavra não as jogue fora (o objeto não casa, e é esse o ponto) e pra que o
+         cartão MOSTRE a descrição que casou. Uma licitação que aparece numa busca sem dizer por
+         que apareceu é indistinguível de um resultado errado. */
+  let porItem = null, deItens = 0, cobertura = null;
+  if((document.getElementById('f-kw').value||'').trim()){
+    porItem = await buscarPorItens();
+    cobertura = await coberturaItens();
+    if(porItem && porItem.size){
+      const jaTem = new Set((doBanco||[]).map(_numCtrl));
+      const faltam = [...porItem.keys()].filter(c => !jaTem.has(c));
+      if(faltam.length){
+        const extras = await brutosPorControle(faltam, uf, mod);
+        if(extras.length){ doBanco = (doBanco||[]).concat(extras); deItens = extras.length; }
+      }
+    }
+  }
+  window._porItem = porItem;
+
   const carimbo = await carimboColeta();
   /* O selo do header lê O MESMO carimbo — uma leitura, dois lugares. Ele já foi pintado no boot;
      aqui ele se REPINTA, porque uma busca pode demorar e o estado da coleta pode ter mudado
@@ -3375,8 +3524,21 @@ async function buscar(aoVivo){
   // Aviso que fica sempre aceso é aviso que ninguém lê no dia em que a coleta falhar de verdade.
   const emDiaAte = carimbo && carimbo.ultimo_dia_ok ? String(carimbo.ultimo_dia_ok).slice(0,10) : null;
   const dm = s => s ? s.slice(8,10)+'/'+s.slice(5,7) : '';
+  /* O `<b>` que estava aqui saiu, e não por gosto: esta string inteira passa por `esc()` no
+     `render` (e com razão — ela carrega números e datas montados em cinco lugares). O que a tela
+     desenhava era o markup literal, `<b>fora da janela de datas</b>`, no meio da frase. Texto que
+     vai ser escapado se escreve como texto. */
   const procedenciaBanco = `${(doBanco||[]).length} do nosso índice`
-    + (janelaAmpliada ? ' · <b>fora da janela de datas</b> (nada publicado no período escolhido)' : '')
+    + (janelaAmpliada ? ' · FORA DA JANELA DE DATAS (nada publicado no período escolhido)' : '')
+    /* ══ O SELO DE COBERTURA (A9) ═══════════════════════════════════════════════════════════
+       Ele só aparece quando a pessoa digitou um termo — que é quando a busca passa pelos itens
+       e, portanto, quando a cobertura muda o significado do resultado. Numa busca pelo ramo
+       (campo vazio) ele seria um número verdadeiro respondendo pergunta que ninguém fez. */
+    + (deItens ? ` · ${deItens} ${deItens===1?'achada':'achadas'} pela descrição dos itens` : '')
+    + (cobertura ? ` · itens carregados de ${cobertura.comItens.toLocaleString('pt-BR')}`
+                 + ` de ${cobertura.total.toLocaleString('pt-BR')} licitações`
+                 + (cobertura.comItens < cobertura.total ? ' (a carga ainda está andando)' : '') : '')
+    + (window._itensTruncou ? ' · a busca nos itens parou no teto de 400 por termo' : '')
     + (emDiaAte ? ` · completo até ${dm(emDiaAte)}` : '')
     + (quando ? ` · coletados em ${quando.toLocaleDateString('pt-BR')} às ${quando.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}` : '');
 
@@ -3821,6 +3983,9 @@ function render(todos, kws, excl, aviso, procedencia, procIcone){
   const num = window._filtroNumero; window._filtroNumero = null;
   populaPortais(todos);                 // antes do refino(): o select pode zerar um portal ausente
   const r = refino();
+  /* CASOU NO ITEM (A9): o mapa `numero_controle -> {n, amostra}` que a busca montou. Ele é lido
+     aqui e no cartão. */
+  const porItem = window._porItem;
   const casa = l => {
     // "Encontrar por Nº" ignora o refino de propósito: quem digitou um número quer AQUELA
     // licitação, e sumir com ela por um filtro esquecido pareceria "não existe no PNCP".
@@ -3828,7 +3993,14 @@ function render(todos, kws, excl, aviso, procedencia, procIcone){
     const t = semAcento(l.objetoCompra||'');
     if(excl.length && excl.some(x=>t.includes(x))) return false;
     if(!casaRefino(l, r)) return false;
-    return !kws.length || kws.some(k=>t.includes(k));
+    if(!kws.length || kws.some(k=>t.includes(k))) return true;
+    /* ══ E AQUI ESTÁ O CONSERTO QUE A A8 PEDIU ═══════════════════════════════════════════════
+       Sem esta linha, a licitação que casou pela DESCRIÇÃO DO ITEM seria trazida do banco e
+       jogada fora logo em seguida pelo filtro de palavra — porque o objeto dela não diz
+       "albumina", e é exatamente por isso que ela precisava dos itens pra ser encontrada.
+       >>> O `excl` e o refino continuam valendo acima: quem excluiu "veterinário" excluiu, e
+           casar num item não é passe livre pra furar filtro que a pessoa ligou. */
+    return !!(porItem && porItem.has(_numCtrl(l)));
   };
   let hits = todos.filter(casa);          // `let`: a fatia A3 reordena a lista antes de desenhar
   const agora = new Date();
@@ -4054,6 +4226,22 @@ function render(todos, kws, excl, aviso, procedencia, procIcone){
             : (alvo ? '<span class="etq alvo">'+ic('alvo')+' '+alvo+' itens no nosso estoque</span>' : ''))
         // o selo NUNCA vem sem o motivo no title: "DESERTA" sem porquê vira boato dentro da tela
         + (des ? '<span class="etq deserta" title="'+esc(des.motivo)+'">'+ic('alerta')+' '+esc(des.rotulo)+'</span>' : '')
+        /* ══ A ETIQUETA "CASOU NO ITEM" (A9) ═══════════════════════════════════════════════════
+           Ela mostra A DESCRIÇÃO que casou, e não só um selo dizendo que casou. A diferença é o
+           que decide o próximo gesto: "item: ALBUMINA HUMANA 20% FR 50ML" é uma oportunidade;
+           "item: papel toalha branco" com a mesma marca faria a pessoa abrir o edital pra
+           descobrir que o radical bateu por acaso. Um selo mudo obriga a abrir os dois.
+           >>> E O "+N" DIZ O TAMANHO. 1 item casado em 500 e 180 em 195 são oportunidades de
+               tamanhos opostos, e a etiqueta que trata as duas igual esconde justamente isso. */
+        + (function(){
+            const m = porItem && porItem.get(_numCtrl(l));
+            if(!m) return '';
+            const d = String(m.amostra||'');
+            return '<span class="etq doitem" title="'+esc('a sua busca casou na descrição de '
+                 + m.n + (m.n===1?' item':' itens') + ' deste edital · o objeto não menciona o termo')+'">'
+                 + 'item: “' + esc(d.length > 64 ? d.slice(0,64) + '…' : d) + '”'
+                 + (m.n > 1 ? ' +' + (m.n - 1) : '') + '</span>';
+          })()
       + '</div>'
       /* ── OS TRÊS NÚMEROS QUE DECIDEM PARTICIPAÇÃO ────────────────────────────────────────
          O rodapé tinha SETE crachás do mesmo peso e o valor pendurado na ponta direita. Sete
