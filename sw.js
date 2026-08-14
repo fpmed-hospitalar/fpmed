@@ -29,7 +29,12 @@
    Sem bump, quem já instalou continuaria recebendo o motor velho do cache — e o motor velho
    pergunta pelo `confirm()` do navegador. Não quebraria nada; simplesmente a fatia não existiria
    para quem já usa o app, e sem um sintoma sequer. É a lição S13 de novo. */
-const VERSAO = 'limedtec-fpmed-2026-08-13-73';
+/* -74 pela FATIA B10: a ordem da lista "Produtos sem EAN" mudou dentro do
+   `fpmed_sistema_final.html`, que ESTÁ na casca (linha 40). O -73 da A16 foi commitado ANTES
+   desta fatia, então ele não carrega esta tela: quem já tivesse pegado o -73 continuaria com a
+   lista na ordem velha, sem selo nenhum, e sem nada que denunciasse isso. Bump por caminho e
+   sozinho, para não levar linha da outra janela junto. */
+const VERSAO = 'limedtec-fpmed-2026-08-13-74';
 const CACHE = 'limedtec-shell-' + VERSAO;
 
 // A CASCA DA FPMED. Lista MONTADA A MAO conferindo `git ls-files` (= o que o Pages serve),
