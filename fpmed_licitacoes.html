@@ -2918,11 +2918,24 @@ async function conversarComEdital(){
       + '</span></div>';
     return;
   }
+  /* O AVISO DE CUSTO NÃO É PINTADO AQUI (fatia A12): quem pergunta "custa até R$ X, confirmar?"
+     é o PRÓPRIO MOTOR, antes de gastar, e o preço vem do servidor. Esta tela só reage à
+     resposta. Se o aviso morasse aqui, a tela do Negócios precisaria do seu, e no dia em que a
+     tabela de preço mudasse haveria dois anúncios pra uma cobrança só. */
   cx.innerHTML = '<div class="aviso">Lendo o edital ('+ed.paginas+' páginas)…</div>';
   try{
     const r = await LeitorEdital.perguntar({ texto: ed.texto, tarefa: 'resumo', paginas: ed.paginas });
     cx.innerHTML = '<div class="aviso" style="text-align:left;padding:12px 14px">'+esc(JSON.stringify(r).slice(0,600))+'</div>';
   }catch(e){
+    /* CANCELAR NÃO É ERRO, e pintar de vermelho quem clicou em "não" ensina a pessoa a
+       desconfiar do sistema justamente quando ele obedeceu. O aviso é neutro e DIZ que não
+       houve cobrança — que é a única dúvida que sobra depois de cancelar um gasto. */
+    if(e.cancelado){
+      cx.innerHTML = '<div class="aviso" style="text-align:left;padding:12px 14px"><span class="hint">'
+        + 'Leitura cancelada — <b>nada foi cobrado</b>. O botão continua aí quando você quiser.'
+        + '</span></div>';
+      return;
+    }
     cx.innerHTML = '<div class="aviso err" style="text-align:left;padding:12px 14px">'
       + (e.semPermissao
           ? 'A leitura de edital com IA não está liberada para o seu usuário. Ela custa por uso, e quem libera é o Lemuel.'

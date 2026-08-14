@@ -78,6 +78,70 @@
      joga fora uma leitura que JÁ FOI COBRADA — o pior dos dois mundos. */
   var TETO_MS = 600000;
 
+  /* ══ O CUSTO ÀS CLARAS — DECISÃO DO DONO EM 14/08 (fatia A12) ══════════════════════════════
+     "A conversa com o edital FICA, com os clientes cientes do custo." Ou seja: antes de CADA
+     leitura, a pessoa vê quanto vai custar e diz sim.
+
+     >>> O ORÇAMENTO NÃO É CALCULADO AQUI. Ele é PEDIDO ao servidor, que é quem tem a tabela de
+         preço, o modelo e o teto de saída. O contrato deste motor é literal — *não escreva uma
+         segunda conta de custo do seu lado* — e uma estimativa feita no navegador seria
+         exatamente isso: um número que aparece na pergunta e outro que vira fatura. No dia em
+         que o preço da Anthropic mudasse, só um dos dois seria corrigido, e o anúncio ficaria
+         mais barato que a cobrança sem ninguém notar até o fechamento do mês.
+     >>> E O PEDIDO DE ORÇAMENTO NÃO GASTA NADA: ele sai da edge function antes da chamada à IA,
+         e não escreve em `usos_ia`. Cancelar custa zero, e o zero é estrutural. */
+  async function orcar(opcoes) {
+    var o = opcoes || {};
+    var url = urlDaEdge();
+    if (!url) throw new Error('não sei o endereço do serviço de leitura (config não carregada)');
+    var tok = tokenDaSessao();
+    if (!tok) { var es = new Error('sua sessão expirou — entre de novo e tente outra vez'); es.semSessao = true; throw es; }
+    var r = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + tok },
+      body: JSON.stringify({
+        orcar: true,
+        chars: o.chars != null ? Number(o.chars) : String(o.texto || '').length,
+        tarefa: o.tarefa === 'itens' ? 'itens' : (o.tarefa || 'resumo'),
+        partes: o.partes || 1,
+      }),
+      signal: AbortSignal.timeout(20000),
+    });
+    if (r.status === 403) { var e4 = new Error('leitura de edital não liberada para este usuário'); e4.semPermissao = true; throw e4; }
+    if (!r.ok) throw new Error('não consegui orçar a leitura (' + r.status + ')');
+    var j = JSON.parse(await r.text());
+    return j.orcamento || null;
+  }
+
+  /* A FRASE, montada num lugar só. Ela diz "ATÉ", e o "até" é a verdade: o número é o teto, não
+     a média — a saída da IA varia muito (medido: 213 a 8.878 tokens na mesma tarefa) e anunciar
+     a média faria a cobrança passar do anunciado em metade das vezes. */
+  function frasePreco(orc) {
+    if (!orc) return 'não consegui calcular o custo desta leitura';
+    /* VÍRGULA DECIMAL, e isso não é preciosismo de idioma: "R$ 0.26" lido por quem escreve
+       "0,26" a vida inteira passa por vinte e seis, e o aviso de custo é o último lugar do
+       sistema onde alguém pode ler um número errado. */
+    var valor = orc.brl != null
+      ? 'R$ ' + Number(orc.brl).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+      : 'US$ ' + Number(orc.usd).toLocaleString('pt-BR', { minimumFractionDigits: 3, maximumFractionDigits: 3 })
+        + ' (não consegui a cotação do dólar agora)';
+    return 'Esta leitura custa até ' + valor + '.\n\n'
+      + 'São ' + Number(orc.chars).toLocaleString('pt-BR') + ' caracteres de edital'
+      + (orc.partes > 1 ? ', lidos em ' + orc.partes + ' partes' : '')
+      + ' — cerca de ' + Number(orc.tokensEntrada).toLocaleString('pt-BR') + ' tokens de entrada.\n'
+      + 'O valor é o TETO: o que for cobrado sai do consumo real e fica registrado.\n\n'
+      + 'Confirmar a leitura?';
+  }
+
+  /* QUEM PERGUNTA. É trocável de propósito: a tela que tiver um diálogo bonito põe o dela aqui,
+     e o PORTÃO continua sendo deste motor. O padrão é o `confirm` do navegador — feio, porém
+     bloqueante e impossível de não ver, que é exatamente o que um aviso de gasto precisa ser.
+     >>> SEM `confirm` DISPONÍVEL (node, worker), a resposta é NÃO. Um portão que se abre sozinho
+         quando não sabe perguntar não é portão. */
+  var confirmador = function (texto) {
+    return (typeof glob.confirm === 'function') ? !!glob.confirm(texto) : false;
+  };
+
   async function perguntar(opcoes) {
     var o = opcoes || {};
     if (!o.texto || !String(o.texto).trim()) {
@@ -90,6 +154,31 @@
 
     var tok = tokenDaSessao();
     if (!tok) { var es = new Error('sua sessão expirou — entre de novo e tente outra vez'); es.semSessao = true; throw es; }
+
+    /* ══ O PORTÃO DO GASTO ═════════════════════════════════════════════════════════════════════
+       Ele é LIGADO POR PADRÃO, e essa é a decisão que importa: quem chamar sem passar por aqui
+       não gasta calado — precisa DIZER `confirmado: true`, o que aparece na revisão de código.
+       O contrário (portão que a tela liga se lembrar) é o desenho em que a primeira tela nova
+       gasta sem avisar e ninguém descobre até a fatura. */
+    if (o.confirmado !== true) {
+      var orc = null;
+      try {
+        orc = await orcar({ texto: o.texto, chars: String(o.texto).length, tarefa: o.tarefa, partes: o.partes });
+      } catch (eo) {
+        if (eo && (eo.semPermissao || eo.semSessao)) throw eo;
+        /* NÃO SEI QUANTO CUSTA -> NÃO GASTO. A saída fácil seria seguir sem o aviso "pra não
+           travar o usuário", e ela é a errada: o que estaria sendo pulado é justamente a parte
+           que o dono mandou existir. */
+        var ec = new Error('não consegui calcular o custo desta leitura — não vou gastar sem te dizer quanto custa');
+        ec.semOrcamento = true;
+        throw ec;
+      }
+      if (!confirmador(frasePreco(orc))) {
+        var ex = new Error('leitura cancelada por você — nada foi cobrado');
+        ex.cancelado = true;
+        throw ex;
+      }
+    }
 
     var corpo = {
       modo: 'texto',
@@ -118,5 +207,14 @@
     return JSON.parse(txt);
   }
 
-  glob.LeitorEdital = { perguntar: perguntar, urlDaEdge: urlDaEdge, TETO_MS: TETO_MS };
+  glob.LeitorEdital = {
+    perguntar: perguntar,
+    orcar: orcar,                 // "quanto vai custar?" — sem gastar nada
+    frasePreco: frasePreco,       // a frase do aviso, montada num lugar só
+    urlDaEdge: urlDaEdge,
+    TETO_MS: TETO_MS,
+    // a tela que tiver um diálogo próprio troca ESTE campo; o portão continua sendo do motor
+    get confirmador() { return confirmador; },
+    set confirmador(fn) { if (typeof fn === 'function') confirmador = fn; },
+  };
 })(typeof window !== 'undefined' ? window : globalThis);

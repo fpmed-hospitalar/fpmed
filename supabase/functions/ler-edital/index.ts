@@ -74,6 +74,51 @@ function cors(origin: string) {
 
 const H_SR = { apikey: SB_SR, Authorization: "Bearer " + SB_SR, "Content-Type": "application/json" };
 
+/* MEDIDO NAS 7 LEITURAS REAIS DESTA BASE (usos_ia, 14/08): 2,90 · 2,92 · 3,01 · 3,04 · 3,04 ·
+   3,05 · 3,05 chars por token de entrada. Fica 3,00.
+   >>> NÃO É O "4 CHARS POR TOKEN" QUE TODO MUNDO REPETE: aquilo é do inglês. Em português, com
+       este tokenizador, dá 3 — e usar 4 subestimaria a entrada em 33% num aviso de custo, que é
+       a única direção em que um aviso de custo não pode errar. */
+const CHARS_POR_TOKEN = 3.00;
+
+/* O CÂMBIO É BUSCADO AQUI, E NÃO MANDADO PELA TELA, quando o assunto é ORÇAMENTO. Um preço em
+   reais que o próprio navegador calculou com um dólar que ele mesmo escolheu não é um preço:
+   é uma sugestão. Falhou a cotação -> devolve `null` e a tela mostra em dólar, dizendo que é
+   dólar. Inventar 5,00 seria a lição S6 com cifrão. */
+/* ══ DUAS FONTES, E A SEGUNDA NASCEU DE UMA MEDIÇÃO ═══════════════════════════════════════════
+   A `awesomeapi` é a que a tela do Leitor já usava, e ela responde bem DO NAVEGADOR — medido:
+   6 leituras reais gravaram câmbio entre 5,10 e 5,19. Da edge function, na primeira prova desta
+   fatia, ela devolveu NADA e o orçamento saiu em dólar.
+   >>> UMA COTAÇÃO COM UMA FONTE SÓ É UMA COTAÇÃO QUE UM DIA NÃO EXISTE, e aqui o efeito não é
+       um erro: é um preço em dólar aparecendo pra quem paga em real, na hora de decidir gastar.
+   A ordem é deliberada: a brasileira primeiro (é a que a casa já conferiu contra o câmbio do
+   dia), a internacional como rede. E se as duas falharem, devolve `null` — a tela mostra em
+   dólar e DIZ que é dólar. Inventar 5,00 seria a lição S6 com cifrão. */
+let _cotacao: { v: number | null; em: number } = { v: null, em: 0 };
+async function cotacaoUSD(): Promise<number | null> {
+  if (_cotacao.v && Date.now() - _cotacao.em < 3600_000) return _cotacao.v;
+  const fontes: Array<() => Promise<number>> = [
+    async () => {
+      const r = await fetch("https://economia.awesomeapi.com.br/last/USD-BRL", { signal: AbortSignal.timeout(8000) });
+      return parseFloat((await r.json())?.USDBRL?.bid);
+    },
+    async () => {
+      const r = await fetch("https://api.frankfurter.app/latest?from=USD&to=BRL", { signal: AbortSignal.timeout(8000) });
+      return Number((await r.json())?.rates?.BRL);
+    },
+  ];
+  for (const f of fontes) {
+    try {
+      const v = await f();
+      /* A FAIXA DE SANIDADE EXISTE PORQUE COTAÇÃO ERRADA É PIOR QUE COTAÇÃO NENHUMA: uma API que
+         mude de formato e devolva 1 (ou 0,19, a taxa invertida) transformaria um orçamento de
+         R$ 5 em R$ 1 — e o aviso de custo passaria a mentir para menos, que é a direção proibida. */
+      if (isFinite(v) && v > 3 && v < 12) { _cotacao = { v, em: Date.now() }; return v; }
+    } catch { /* tenta a próxima */ }
+  }
+  return null;
+}
+
 const PERGUNTA_RESUMO = `Voce esta lendo o EDITAL de uma licitacao publica brasileira para uma
 distribuidora de medicamentos e material hospitalar. Responda SOMENTE com JSON, sem texto antes
 ou depois, neste formato:
@@ -237,6 +282,46 @@ Deno.serve(async (req) => {
       + `"nao_encontrado" — outra parte pode te-lo, e juntar e trabalho de outra etapa. NAO invente\n`
       + `para preencher.\n\n`
     : "";
+
+  /* ══ ORÇAMENTO: "QUANTO VAI CUSTAR?", RESPONDIDO AQUI E EM MAIS LUGAR NENHUM (fatia A12) ═════
+     O dono decidiu em 14/08 que a conversa com o edital FICA, com o cliente CIENTE DO CUSTO —
+     ou seja, a tela precisa dizer o preço ANTES de gastar. E o contrato desta função é literal:
+     *não escreva uma segunda conta de custo do seu lado*.
+     >>> ENTÃO O ORÇAMENTO NASCE AQUI, e não no navegador. Se a tela estimasse por conta própria,
+         passariam a existir duas respostas para "quanto isto custa" — uma que aparece na
+         pergunta e outra que vira fatura — e no dia em que a tabela de preço da Anthropic mudar,
+         só uma delas seria corrigida. O anúncio ficaria mais barato que a cobrança, e ninguém
+         teria como notar até o fechamento do mês.
+     >>> ELE NÃO GASTA NADA e não registra nada: sai antes da chamada à Anthropic, de propósito.
+         Cancelar tem que custar zero, e "zero" aqui é estrutural — não há o que cancelar.
+
+     ══ OS DOIS NÚMEROS, E DE ONDE SAI CADA UM ═════════════════════════════════════════════════
+     · ENTRADA: `chars / CHARS_POR_TOKEN`, e o divisor é MEDIDO, não a regra de bolso. Sete
+       leituras reais desta base deram 2,90 a 3,05 chars por token (média 3,00) em português.
+       O "4 chars por token" que se repete por aí é do inglês e subestimaria a entrada em 33% —
+       num aviso de custo, errar para menos é o único erro que não se pode cometer.
+     · SAÍDA: o TETO da tarefa (`MAX_SAIDA`), e não a média. A saída custa 5× a entrada e varia
+       muito (medido: `itens` já saiu com 213 e com 8.878 tokens). Anunciar a média faria a
+       cobrança passar do anunciado em metade das vezes. O aviso diz "até", e o "até" é verdade. */
+  if (body.orcar === true) {
+    const chars = Math.max(0, Number(body.chars) || 0);
+    const nPartes = partes;
+    const tokensEntrada = Math.round(chars / CHARS_POR_TOKEN);
+    const tetoSaida = MAX_SAIDA[tarefa] * nPartes;
+    const usd = (tokensEntrada / 1e6) * USD_ENTRADA_MTOK + (tetoSaida / 1e6) * USD_SAIDA_MTOK;
+    const cambio = await cotacaoUSD();
+    return J({
+      orcamento: {
+        modelo: MODELO, tarefa, partes: nPartes, chars,
+        charsPorToken: CHARS_POR_TOKEN,
+        tokensEntrada, tetoSaida,
+        usd: +usd.toFixed(6),
+        cambio,
+        brl: cambio ? +(usd * cambio).toFixed(4) : null,
+        teto: true,   // é um TETO, e a tela precisa dizer "até" e não "cerca de"
+      },
+    });
+  }
 
   const modo = body.modo === "pdf-nativo" ? "pdf-nativo" : "texto";
   let bloco: any;
