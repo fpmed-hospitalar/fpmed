@@ -41,7 +41,10 @@
    casca. Sem bump, quem ja instalou continuaria com a marcacao de tarefa que mente quando a rede
    cai — e esse e justamente o defeito que so aparece com rede ruim, ou seja, exatamente na
    situacao em que o cache velho e servido. */
-const VERSAO = 'limedtec-fpmed-2026-08-13-76';
+/* -77 pela FATIA B13: o campo "Numero de controle do PNCP" entrou no `fpmed_negocios.html`, que
+   ESTA na casca. Sem bump, quem ja instalou continuaria com a ficha sem o campo — e a Ata antiga
+   seguiria sem caminho nenhum pra recuperar os itens, sem nada na tela que denunciasse isso. */
+const VERSAO = 'limedtec-fpmed-2026-08-13-77';
 const CACHE = 'limedtec-shell-' + VERSAO;
 
 // A CASCA DA FPMED. Lista MONTADA A MAO conferindo `git ls-files` (= o que o Pages serve),

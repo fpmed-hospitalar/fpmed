@@ -637,6 +637,38 @@ body{
 .cv-resp.erro{border-left-color:var(--ambar-600);font-size:12.5px;color:var(--cinza-800);line-height:1.55}
 .cv-perg{font-size:11.5px;color:var(--muted);font-weight:600;margin-bottom:6px}
 .cv-corpo{font-size:12.5px;color:var(--texto);line-height:1.6;white-space:pre-wrap}
+
+/* ── O NÚMERO DE CONTROLE INFORMADO À MÃO (14/08, fatia B13) ────────────────────────────────
+   A MENSAGEM DO SERVIDOR VEM COM QUEBRA DE LINHA e é assim que ela foi escrita: a divergência
+   lista "órgão: o PNCP diz X e o negócio diz Y" numa linha por campo. `pre-wrap` preserva isso.
+   Sem ele as duas viram um parágrafo só e o contraste — que é o ponto — se perde.
+   >>> AS TRÊS CORES SÃO TRÊS RESPOSTAS, e nenhuma é "deu erro": verde = confere; âmbar = existe
+       mas o nome não bate (ou o PNCP não respondeu agora); vermelho = o número não serve.
+       "Não consegui perguntar" é ÂMBAR de propósito — ele não acusa o número de ninguém. */
+.nc-tem{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;
+  border:1px solid var(--verde-300);border-radius:10px;padding:9px 12px;background:var(--painel2)}
+.nc-tem b{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12.5px;color:var(--texto)}
+.nc-tem .q{font-size:11.5px;color:var(--muted)}
+.nc-linha{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px}
+.nc-linha input{flex:1;min-width:230px;background:var(--painel2);border:1px solid var(--linha);
+  color:var(--texto);border-radius:8px;padding:8px 10px;font-size:12.5px;font-family:ui-monospace,Menlo,Consolas,monospace;outline:none}
+.nc-linha input:focus{border-color:var(--azul)}
+.nc-msg{margin-top:9px;border:1px solid var(--linha);border-left:3px solid var(--cinza-400);
+  border-radius:10px;padding:10px 12px;background:var(--painel2);
+  font-size:12.5px;color:var(--texto);line-height:1.55;white-space:pre-wrap}
+.nc-msg.ok{border-left-color:var(--verde-500)}
+.nc-msg.aviso{border-left-color:var(--ambar-500)}
+.nc-msg.erro{border-left-color:var(--vermelho-700)}
+.nc-msg .rot{display:block;font-size:10.5px;font-weight:700;letter-spacing:.5px;
+  text-transform:uppercase;margin-bottom:5px;white-space:normal}
+.nc-msg.ok .rot{color:var(--verde-700)}
+.nc-msg.aviso .rot{color:var(--ambar-700)}
+.nc-msg.erro .rot{color:var(--vermelho-700)}
+.nc-div{margin-top:8px;font-size:11.5px;color:var(--muted);white-space:normal}
+.nc-div div{padding:3px 0}
+.nc-div b{color:var(--texto)}
+.nc-acoes{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:9px}
+
 /* >>> `.ag-secao` FICOU ÓRFÃ em 13/08 (fatia 4): o "Já passaram" que ela desenhava virou o
        CABEÇALHO do segundo painel da Agenda. O grep está feito e é conclusivo — ela não é usada
        em mais lugar nenhum. Fica pela mesma regra do `.fase-tag` logo acima: seletor órfão não
@@ -2467,9 +2499,14 @@ async function abrirDrawer(id){
   } else {
     document.getElementById('dw-body').innerHTML = corpoDrawer(n, null, false);
   }
+  // A CAIXA DO NÚMERO DE CONTROLE COMEÇA LIMPA A CADA NEGÓCIO (fatia B13). Sem isto, o veredito
+  // conferido no negócio anterior apareceria embaixo do campo do próximo — e o botão "Gravar"
+  // que ele traz junto gravaria no negócio errado.
+  NC_RESP = null; NC_FALHA = null; NC_AVISO = null; NC_DEPOIS = null; NC_TROCANDO = false;
   if(ABERTO === id){ carregarRastro(id); carregarLembretes(id); carregarCredenciamentos(id);
                      carregarProposta(id); carregarAta(id); carregarItensGanhos(id);
                      carregarEdital(id); carregarItensEdital(id); carregarConversaEdital(id);
+                     pintaControlePNCP(id);
                      // O kit NÃO tem `carregar`: ele já veio dentro do negócio (`negocios.tarefas`
                      // vem no mesmo `select=*` da lista). Uma leitura a mais aqui seria uma
                      // chance a mais de a aba abrir vazia por causa da rede.
@@ -2617,6 +2654,23 @@ function corpoDrawer(n, obs, carregando){
 
     <div class="${pnl(n,"info")}" id="aba-info">
       <div class="dw-sec"><h4>Ficha${editavel?' <span class="salvo" style="font-weight:400">· editável</span>':''}</h4>${ficha}</div>
+      <!-- ══ O NÚMERO DE CONTROLE DO PNCP, INFORMADO POR UMA PESSOA (14/08, fatia B13) ════════
+           A chave que o PNCP entende. 2.555 dos 2.562 negócios vieram do Calendário 2025 — uma
+           planilha — e nenhum deles nasceu com ela; sem chave, este negócio não tem como pedir
+           nada ao portal, e por isso a aba Itens deles diz "não está ligado a um edital".
+           >>> A TELA PERGUNTA, O SERVIDOR DECIDE. Não há aqui nenhuma regra de "esse número é
+               válido": ela vive na edge valida-controle (contrato do A, seção 7) e no
+               tools/valida_controle_pncp.js, com uma suíte comparando os dois. Uma terceira
+               cópia no navegador seria a que discorda no dia em que alguém amarrar um resultado
+               no edital errado — e resultado errado não aparece como defeito, aparece como um
+               preço plausível na tela em que se decide preço.
+           (sem crase neste comentário: ele mora dentro do template literal do drawer) -->
+      <div class="dw-sec" id="aba-controle">
+        <h4>Número de controle do PNCP</h4>
+        <div class="sec-dica">É a chave que o portal entende. Com ela gravada, este negócio passa a
+          enxergar os itens do edital e o resultado por item — sem ninguém digitar mais nada.</div>
+        <div id="nc-cx"><div class="salvo">carregando…</div></div>
+      </div>
       <!-- ══ EDITAL E ANEXOS — em QUALQUER negócio ═══════════════════════════════════════════
            Não só nos incluídos à mão: o que veio do PNCP e o do Calendário também recebem o
            edital. O índice do PNCP guarda o LINK do arquivo no site deles; ter o PDF aqui é
@@ -3090,6 +3144,12 @@ function pintaItensEdital(id){
   const n = NEG.find(x => x.id === id); if(!n) return;
   const cnt = document.getElementById('dw-itens-n');
   if(cnt) cnt.textContent = ITENS_EDITAL.length ? '(' + ITENS_EDITAL.length + ')' : '';
+  /* A CAIXA DO NÚMERO DE CONTROLE CONTA OS MESMOS ITENS (fatia B13), e ela é pintada por outra
+     chamada assíncrona. As duas correm juntas e a ordem de chegada não é garantida: sem esta
+     repintura, quem carregasse mais rápido decidiria se a frase "este negócio enxerga N itens"
+     apareceria — e no caso comum (itens chegam depois) ela diria "nenhum" para sempre. É a mesma
+     linha que a conversa do edital já tem em `pintaEdital`, pelo mesmo motivo. */
+  pintaControlePNCP(id);
 
   /* O BLOCO DOS GANHOS VEM PRIMEIRO, e ele existe mesmo quando não há lista de edital nenhuma:
      os 105 negócios importados do Calendário 2025 têm valor ganho e NÃO têm `numero_controle`.
@@ -5058,6 +5118,236 @@ function pintaEdital(id){
      carregasse mais rápido decidiria se o botão apareceria — e no caso mais comum (anexo chega
      depois) ele nunca apareceria. */
   if(ABERTO) pintaConversaEdital(ABERTO);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════════
+   O NÚMERO DE CONTROLE DO PNCP, INFORMADO POR UMA PESSOA (14/08, fatia B13)
+
+   ── O PROBLEMA, MEDIDO HOJE ──────────────────────────────────────────────────────────────────
+   `negocios` tem 2.562 linhas e **uma** com `numero_controle`. As outras 2.561 são o Calendário
+   2025 (2.555) e os avulsos: vieram de uma planilha que nunca teve a chave do PNCP. Sem chave,
+   não há o que pedir ao portal — ele responde por número de controle e por mais nada.
+
+   E ADIVINHAR NÃO FUNCIONA, e isso foi MEDIDO duas vezes pelo A (contrato, seção 7): casar por
+   UF + ano + número deu 2 correspondências "únicas" e as DUAS eram de cidade errada; refeito com
+   o índice em 3.876 linhas, as 4 ambíguas continuam TODAS de município errado. "P.E. 4/2026"
+   existe em centenas de prefeituras no mesmo ano. Então quem sabe é a PESSOA, e a máquina
+   CONFERE.
+
+   ── O QUE ESTA TELA FAZ, E O QUE ELA NÃO FAZ ─────────────────────────────────────────────────
+   Ela manda o que foi digitado para a edge `valida-controle` e mostra o que voltou. Só isso.
+   >>> NÃO EXISTE AQUI NENHUMA REGRA DE VALIDAÇÃO. Nenhuma expressão do formato, nenhuma
+       comparação de nome de órgão, nenhuma consulta ao PNCP. Essa regra já vive em dois lugares
+       por necessidade (node para o operador, Deno para esta tela) e há uma suíte comparando os
+       dois; uma TERCEIRA cópia no navegador seria a que discorda no dia em que alguém amarrar um
+       resultado no edital errado. A suíte desta fatia reprova se ela aparecer.
+   >>> A MENSAGEM TAMBÉM NÃO É MONTADA AQUI. Ela vem pronta, em português, dizendo o que fazer —
+       inclusive o exemplo do formato. O que a tela escolhe é a COR e se existe botão.
+
+   ── CONFERIR NÃO GRAVA ───────────────────────────────────────────────────────────────────────
+   São dois cliques, e é de propósito: gravar por tabela mudaria a chave de um negócio ganho só
+   porque alguém colou um número pra ver o que dava. O segundo clique só nasce quando o servidor
+   disse `podeGravar`; quando há divergência de nome, ele reenvia com `confirmado: true` — que é
+   o "sim" explícito que a caixa pede.
+
+   ── E "NÃO CONSEGUI PERGUNTAR" NUNCA VIRA "NÃO EXISTE" ───────────────────────────────────────
+   É a distinção mais importante desta fatia. O veredito `nao_sei` sai em ÂMBAR, sem botão e sem
+   acusar o número de ninguém — e nada é apagado. Se a tela tratasse a queda do portal como "seu
+   número está errado", a pessoa apagaria um número CERTO e não teria como saber.
+   ══════════════════════════════════════════════════════════════════════════════════════════════ */
+let NC_RESP = null;        // a última resposta do servidor · null = ninguém conferiu ainda
+let NC_FALHA = null;       // não deu pra falar com o servidor (rede/timeout) — não é veredito
+let NC_TROCANDO = false;   // o negócio já tem chave e alguém pediu pra informar outra
+let NC_DEPOIS = null;      // o que aconteceu depois de gravar, medido na hora
+let NC_AVISO = null;       // recado da TELA (caixa vazia) — nunca um veredito sobre o número
+
+/* ══ A ÚNICA DECISÃO QUE ESTA TELA TOMA SOBRE O NÚMERO ═══════════════════════════════════════
+   Ela não confere nada: recebe o veredito pronto e escolhe COR, BOTÃO e RÓTULO. É pura de
+   propósito — sem DOM, sem rede — para que a suíte possa executá-la de verdade em vez de
+   procurar palavras no código-fonte. Uma tela que "passa no teste" porque o texto existe no
+   arquivo é o defeito que a fatia B2 pagou pra aprender: `corpoDrawer` estourava na primeira
+   linha e nenhuma suíte via, porque todas liam a string em vez de rodar a função. */
+function decideAcaoControle(r){
+  if(!r || !r.veredito) return { tom:'neutro', rot:'', botao:null, confirmar:false };
+  if(r.veredito === 'confere')
+    return { tom:'ok', rot:'confere', botao:'Gravar este número neste negócio', confirmar:false };
+  /* `nao_sei` É ÂMBAR E NÃO VERMELHO, e não tem botão de "gravar assim mesmo": o servidor não
+     conseguiu olhar. Vermelho aqui diria "seu número está errado" sobre um número que ninguém
+     examinou. */
+  if(r.veredito === 'nao_sei')
+    return { tom:'aviso', rot:'não deu para conferir agora', botao:null, confirmar:false };
+  if(r.veredito === 'diverge')
+    return r.podeGravar === true
+      ? { tom:'aviso', rot:'existe, mas o nome não bate', botao:'Gravar assim mesmo', confirmar:true }
+      : { tom:'erro', rot:'esse número é de outro certame', botao:null, confirmar:false };
+  if(r.veredito === 'nao_existe') return { tom:'erro', rot:'o PNCP não conhece esse número', botao:null, confirmar:false };
+  if(r.veredito === 'formato')    return { tom:'erro', rot:'não é um número de controle', botao:null, confirmar:false };
+  // veredito que esta tela não conhece: mostra a mensagem e NÃO oferece gravar. Botão para um
+  // estado desconhecido é a tela apostando que entendeu.
+  return { tom:'aviso', rot:'', botao:null, confirmar:false };
+}
+
+function pintaControlePNCP(id){
+  const box = document.getElementById('nc-cx'); if(!box) return;
+  const n = NEG.find(x => x.id === id); if(!n) return;
+  const editavel = ehGestor() && !n.arquivado;
+  const tem = String(n.numero_controle || '').trim();
+
+  // ── O QUE A CHAVE JÁ ESTÁ RENDENDO, contado do que a aba Itens leu ─────────────────────────
+  // `ITENS_EDITAL` é a mesma lista da aba Itens: contá-la de novo por outra leitura seria uma
+  // segunda contagem do mesmo fato, e duas contagens um dia discordam na frente de quem decide.
+  const comResultado = ITENS_EDITAL.filter(x => x.resultado_situacao || x.resultado_vencedor
+    || x.resultado_valor_unit != null).length;
+  const rende = ITENS_EDITAL.length
+    ? '<span class="q">este negócio enxerga <b>' + ITENS_EDITAL.length + '</b> ' + (ITENS_EDITAL.length===1?'item':'itens')
+      + (comResultado ? ' · <b>' + comResultado + '</b> com resultado publicado' : ' · nenhum com resultado ainda') + '</span>'
+    : '<span class="q">os itens ainda não foram trazidos do PNCP — o coletor passa por este negócio'
+      + ' na próxima rodada e eles aparecem aqui sozinhos</span>';
+
+  const cabeca = tem
+    ? `<div class="nc-tem"><b>${esc(tem)}</b>${rende}</div>`
+      + (editavel && !NC_TROCANDO
+          ? `<div class="nc-acoes"><button class="btn-ed sec" onclick="trocarControle(${id})">informar outro número</button></div>`
+          : '')
+    : '';
+
+  if(tem && !NC_TROCANDO){ box.innerHTML = cabeca + ncMensagem(id); return; }
+
+  if(!editavel){
+    box.innerHTML = cabeca + '<div class="salvo">'
+      + (n.arquivado ? 'Negócio arquivado — desarquive para informar o número.'
+                     : 'Só quem grava pode informar o número de controle.') + '</div>';
+    return;
+  }
+  /* O `placeholder` MOSTRA O FORMATO em vez de descrevê-lo, e é o mesmo exemplo que a mensagem
+     do servidor usa quando recusa por formato. Duas grafias diferentes do mesmo exemplo, em dois
+     lugares que a pessoa lê em sequência, é como se ensina o formato errado. */
+  box.innerHTML = cabeca + `
+    <div class="nc-linha">
+      <input type="text" id="nc-num" value="${esc(NC_RESP && NC_RESP.numero_controle || '')}"
+        placeholder="03659166002156-1-000034/2026" autocomplete="off" spellcheck="false"
+        aria-label="número de controle do PNCP">
+      <button class="btn-ed" id="nc-bt" onclick="conferirControle(${id}, false)">Conferir</button>
+      ${tem ? `<button class="btn-ed sec" onclick="cancelarTrocaControle(${id})">cancelar</button>` : ''}
+    </div>
+    <div class="salvo">Conferir <b>não grava nada</b> — ele só pergunta ao PNCP. A gravação é o
+      segundo clique, e só aparece quando o servidor disser que pode.</div>
+    ${ncMensagem(id)}`;
+}
+
+/* A MENSAGEM É A DO SERVIDOR, PALAVRA POR PALAVRA. O que esta função escolhe é a cor, o rótulo
+   e se existe botão — e o botão sai de `decideAcaoControle`, que a suíte executa. */
+function ncMensagem(id){
+  if(NC_DEPOIS) return `<div class="nc-msg ok"><span class="rot">gravado</span>${NC_DEPOIS}</div>`;
+  if(NC_AVISO)  return `<div class="nc-msg"><span class="rot">falta o número</span>${esc(NC_AVISO)}</div>`;
+  if(NC_FALHA)
+    return '<div class="nc-msg aviso"><span class="rot">não deu para conferir agora</span>'
+      + 'Não consegui falar com o servidor para conferir esse número (' + esc(NC_FALHA) + '). '
+      + '<b>Isso não diz nada sobre o número</b> — diz que eu não consegui perguntar. Tente de novo daqui a pouco. '
+      + 'Nada foi alterado neste negócio.</div>';
+  const r = NC_RESP; if(!r) return '';
+  const a = decideAcaoControle(r);
+  const div = (r.divergencias || []).length
+    ? '<div class="nc-div">' + r.divergencias.map(d =>
+        `<div>${esc(d.campo)}: o PNCP diz <b>${esc(d.informado == null ? '—' : d.informado)}</b>`
+        + ` · este negócio diz <b>${esc(d.negocio == null ? '—' : d.negocio)}</b>`
+        + (d.bloqueia ? ' — <b>isto bloqueia</b>' : '') + '</div>').join('') + '</div>'
+    : '';
+  // JÁ GRAVOU = o botão de gravar não volta. Ele reenviaria a mesma gravação com um rótulo que
+  // promete uma ação que já aconteceu, e quem clicasse de novo não saberia se mudou algo.
+  const bt = (a.botao && r.gravou !== true)
+    ? `<div class="nc-acoes"><button class="btn-ed" id="nc-bt-grava" onclick="conferirControle(${id}, true)">${esc(a.botao)}</button>`
+      + (a.confirmar ? '<span class="salvo">você está confirmando que é o mesmo certame, escrito de outro jeito</span>' : '')
+      + '</div>'
+    : '';
+  return `<div class="nc-msg ${a.tom}">${a.rot ? '<span class="rot">' + esc(a.rot) + '</span>' : ''}`
+    + esc(r.mensagem || '') + div + '</div>' + bt;
+}
+
+function trocarControle(id){ NC_TROCANDO = true; NC_RESP = null; NC_FALHA = null; NC_DEPOIS = null; pintaControlePNCP(id); }
+function cancelarTrocaControle(id){ NC_TROCANDO = false; NC_RESP = null; NC_FALHA = null; pintaControlePNCP(id); }
+
+async function conferirControle(id, gravar){
+  const n = NEG.find(x => x.id === id); if(!n) return;
+  const bt = document.getElementById(gravar ? 'nc-bt-grava' : 'nc-bt');
+  const campo = document.getElementById('nc-num');
+  // Gravar reusa o número que o servidor JÁ conferiu, e não o que está na caixa agora: entre o
+  // "Conferir" e o "Gravar" a pessoa pode ter mexido no texto, e gravar o texto novo seria
+  // gravar um número que ninguém conferiu — pela porta do botão que diz que conferiu.
+  const num = gravar ? String((NC_RESP && NC_RESP.numero_controle) || '')
+                     : String((campo && campo.value) || '').trim();
+  // Caixa vazia não vira pergunta ao PNCP — e o aviso é da TELA, não um veredito sobre número
+  // nenhum. Por isso ele não passa por `NC_RESP`: ali só entra o que o servidor respondeu.
+  if(!num){
+    NC_RESP = null; NC_FALHA = null;
+    NC_AVISO = 'Cole aqui o número de controle que aparece na página do pregão no PNCP.';
+    pintaControlePNCP(id);
+    const c2 = document.getElementById('nc-num'); if(c2) c2.focus();
+    return;
+  }
+  NC_AVISO = null;
+
+  const tok = tokenSessaoNeg();
+  if(!tok){ NC_FALHA = 'sua sessão expirou — entre de novo'; NC_RESP = null; pintaControlePNCP(id); return; }
+
+  if(bt){ bt.disabled = true; bt.textContent = gravar ? 'gravando…' : 'perguntando ao PNCP…'; }
+  NC_DEPOIS = null;
+  const corpo = { numero_controle: num, negocio_id: id };
+  if(gravar){
+    corpo.gravar = true;
+    // `confirmado` só vai quando o servidor disse que HÁ divergência e que ela pode ser
+    // confirmada. Mandar sempre transformaria o "sim" explícito num carimbo automático.
+    if(decideAcaoControle(NC_RESP).confirmar) corpo.confirmado = true;
+  }
+  try{
+    const r = await fetch(`${SB_URL}/functions/v1/valida-controle`, {
+      method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer ' + tok},
+      body: JSON.stringify(corpo), signal: AbortSignal.timeout(45000)});
+    const j = await r.json().catch(() => ({}));
+    /* O CORPO MANDA, E NÃO O HTTP. A edge devolve 409 COM o veredito dentro quando recusa gravar
+       — ler só o status transformaria "existe mas o nome não bate" num erro sem nome. Quando não
+       vem veredito nenhum (401, 500, proxy no meio), aí sim é falha de conversa: e falha de
+       conversa NÃO é um veredito sobre o número. */
+    if(j && j.veredito){
+      NC_RESP = j; NC_FALHA = null;
+      if(j.gravou === true){
+        n.numero_controle = j.numero_controle;
+        if(j.licitacao_id) n.licitacao_id = j.licitacao_id;
+        NC_TROCANDO = false;
+        await depoisDeGravarControle(id);
+      }
+    } else {
+      NC_RESP = null;
+      NC_FALHA = (j && j.error) ? String(j.error) : ('o serviço respondeu ' + r.status);
+    }
+  }catch(e){
+    // timeout/offline: a pessoa não pode sair daqui achando que o número está errado.
+    NC_RESP = null;
+    NC_FALHA = e && e.name === 'TimeoutError' ? 'o servidor demorou demais para responder' : String(e.message || e);
+  }
+  if(ABERTO === id) pintaControlePNCP(id);
+}
+
+/* ══ O QUE MUDA NA HORA, DITO NA HORA ════════════════════════════════════════════════════════
+   A caixa pede: "quando gravar, mostrar isso na hora — agora este negócio tem N itens". Então a
+   tela RELÊ os itens com a chave nova e conta o que voltou, em vez de prometer.
+   >>> E QUANDO VOLTAM ZERO, ELA DIZ ZERO. A chave recém-gravada não traz item nenhum sozinha: o
+       coletor do A é que busca, na próxima rodada. Dizer "agora este negócio tem 0 itens" sem
+       explicar por quê faria a pessoa achar que gravou errado e apagar um número certo. */
+async function depoisDeGravarControle(id){
+  await carregarItensEdital(id);
+  const q = ITENS_EDITAL.length;
+  const comResultado = ITENS_EDITAL.filter(x => x.resultado_situacao || x.resultado_vencedor
+    || x.resultado_valor_unit != null).length;
+  NC_DEPOIS = q
+    ? 'A chave está no negócio. <b>Agora este negócio enxerga ' + q + ' ' + (q===1?'item':'itens')
+      + ' do edital</b>' + (comResultado ? ', ' + comResultado + ' deles com resultado publicado' : '')
+      + ' — está tudo na aba <b>Itens</b>.'
+    : 'A chave está no negócio. Os itens <b>ainda não</b> foram trazidos do PNCP: o coletor passa '
+      + 'por este negócio na próxima rodada e eles aparecem na aba <b>Itens</b> sem você fazer mais nada.';
+  // A conversa com o edital depende da MESMA chave — e quem acabou de gravar não deveria
+  // precisar fechar e abrir a gaveta pra ver o edital aparecer.
+  carregarConversaEdital(id);
 }
 
 /* ══════════════════════════════════════════════════════════════════════════════════════════════
