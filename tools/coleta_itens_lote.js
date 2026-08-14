@@ -67,8 +67,14 @@ const TETO = parseInt(arg('--teto') || '200', 10);
 const PAUSA_BASE = parseInt(arg('--pausa') || '300', 10);
 /* Teto de PÁGINAS por licitação: 6 × 100 = 600 itens. Quando ele morde, a linha DIZ e a licitação
    NÃO ganha carimbo — carimbar leitura truncada como completa é como se perde um edital grande
-   sem ninguém ver. Ela volta na próxima rodada. */
-const TETO_PAGINAS = 6;
+   sem ninguém ver. Ela volta na próxima rodada.
+   >>> `--paginas N` LEVANTA O TETO PARA UMA RODADA (fatia A24). Ele existe porque a varredura do
+       índice terminou com DOZE licitações eternamente truncadas: cada uma tem mais de 600 itens,
+       então elas nunca ganham carimbo e voltam para sempre — uma fila que nunca esvazia e um
+       tráfego que se repete de graça contra um serviço público. Levantar o teto no PADRÃO seria
+       trocar 5.268 leituras rápidas por 5.268 leituras longas para atender 12 casos; levantá-lo
+       SÓ na rodada que vai atrás desses 12 é o gesto do tamanho do problema. */
+const TETO_PAGINAS = parseInt(arg('--paginas') || '6', 10);
 const TAM_PAGINA = 100;
 
 const dormir = ms => new Promise(r => setTimeout(r, ms));
@@ -234,14 +240,41 @@ async function alvosSemPrazo(quantos) {
     + `&itens_lidos_em=is.null&order=data_publicacao.desc`, quantos);
 }
 
+/* ══ AS QUE ENTRARAM PELA PORTA DE BUSCA (alvo da fatia A24) ═══════════════════════════════
+   A A22 trouxe 1.400 licitações pelo `/api/search/`, e essa porta não devolve item nenhum —
+   entraram com objeto, órgão e chave, e mais nada. Sem item, a busca por produto não as acha,
+   os chips de categoria não nascem e o teto CMED não tem o que comparar.
+   >>> POR QUE UM ALVO PRÓPRIO, E NÃO `--inclui-sem-prazo`: elas TAMBÉM são sem prazo (a busca
+       não traz janela), então o alvo genérico as pegaria — MISTURADAS com as 429 antigas, na
+       ordem de `data_publicacao`. Se a rodada for cortada no meio, quem fica de fora deveria
+       ser a licitação velha, não a que acabou de chegar. Ordenar por publicação DESC é chute
+       sobre isso; declarar o alvo é medida.
+   O carimbo `bruto->>_coleta` é posto pela própria `coleta_pncp_busca.js` — é o único jeito
+   honesto de saber a procedência de uma linha depois que ela virou índice. */
+/* ══ O RESTO DO ÍNDICE ═════════════════════════════════════════════════════════════════════
+   Sobram as ENCERRADAS sem itens — 522 depois da A24. Elas não dão mais para disputar, e por
+   isso não são prioridade nenhuma; mas o item delas é PREÇO PRATICADO, e preço praticado é o
+   que faz o teto CMED e a comparação de proposta valerem alguma coisa. Coletar por último é o
+   lugar certo delas: nunca antes de uma licitação viva. */
+async function alvosDoResto(quantos) {
+  return paginado(`licitacoes?select=${CAMPOS}&itens_lidos_em=is.null&order=data_publicacao.desc`, quantos);
+}
+
+async function alvosDaBusca(quantos) {
+  return paginado(`licitacoes?select=${CAMPOS}&bruto->>_coleta=eq.busca`
+    + `&itens_lidos_em=is.null&order=data_publicacao.desc`, quantos);
+}
+
 (async () => {
   console.log('=== ITENS DO EDITAL EM LOTE (fatia A9) ===' + (PREVIA ? '   [PRÉVIA — nada gravado]' : ''));
   const controle = arg('--controle');
   const funil = tem('--funil');
   const vivas = tem('--vivas');
+  const daBusca = tem('--da-busca');
   const semPrazo = tem('--inclui-sem-prazo');
-  if (!controle && !funil && !vivas) {
-    console.error('\nuso:  --funil  |  --vivas [--teto N] [--inclui-sem-prazo]  |  --controle <n>   [--previa] [--pausa ms]');
+  if (!controle && !funil && !vivas && !daBusca && !tem('--resto')) {
+    console.error('\nuso:  --funil  |  --vivas [--teto N] [--inclui-sem-prazo]  |  --da-busca [--teto N]'
+      + '  |  --resto [--teto N]  |  --controle <n>   [--previa] [--pausa ms]');
     process.exit(1);
   }
 
@@ -256,6 +289,12 @@ async function alvosSemPrazo(quantos) {
       if (!f.length) console.log('       (nenhum negócio aberto tem licitacao_id nem numero_controle — ver o comentário do código)');
       alvos = alvos.concat(f);
     }
+    if (daBusca) {
+      const falta = Math.max(0, TETO - alvos.length);
+      const b = falta ? await alvosDaBusca(falta) : [];
+      console.log(`da porta de BUSCA, sem itens lidos: ${b.length} nesta rodada (teto ${TETO})`);
+      alvos = alvos.concat(b);
+    }
     if (vivas) {
       const falta = Math.max(0, TETO - alvos.length);
       const v = falta ? await alvosVivos(falta) : [];
@@ -266,6 +305,11 @@ async function alvosSemPrazo(quantos) {
         console.log(`sem prazo informado:   ${s.length} nesta rodada`);
         alvos = alvos.concat(s);
       }
+    }
+    if (tem('--resto') && alvos.length < TETO) {
+      const s = await alvosDoResto(TETO - alvos.length);
+      console.log(`resto do índice (inclui as já encerradas): ${s.length} nesta rodada`);
+      alvos = alvos.concat(s);
     }
     if (!tem('--refazer')) alvos = alvos.filter(l => !l.itens_lidos_em);
   }
