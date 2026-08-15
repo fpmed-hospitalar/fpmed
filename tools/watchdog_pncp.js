@@ -1,7 +1,25 @@
 /* ══════════════════════════════════════════════════════════════════════════════════════════
    watchdog_pncp.js — A ROTINA QUE ESPERA O PNCP VOLTAR (fatia A18, 14/08/2026)
 
-   ══ O PROBLEMA, MEDIDO E NÃO SUPOSTO ═══════════════════════════════════════════════════════
+   ══ 15/08/2026 (fatia A30): A API DE CONSULTA ESTÁ NO AR — E ERA ESTE ARQUIVO QUE NÃO
+      CONSEGUIA PERCEBER ════════════════════════════════════════════════════════════════════════
+   Tudo o que está escrito logo abaixo sobre "a API de consulta está fora" foi verdade em 14/08 e
+   **deixou de ser**. Medido em 15/08, nesta máquina, com 1,5 s entre as chamadas:
+
+       tamanhoPagina=1  ->  HTTP 400 em 305 ms   ("must be greater than or equal to 10")
+       tamanhoPagina=10 ->  HTTP 200 em 727 ms   (dado de verdade: IBAMA, publicado em 13/08)
+
+   A sonda pedia UM registro; a API exige DEZ no mínimo e recusa o resto. E o watchdog carimbava
+   esse HTTP 400 como "fora do ar" — igualzinho a um timeout de 20 s. Ele teria dito "fora" para
+   sempre, com carimbo de hora e tudo, enquanto o portal respondia em menos de um segundo.
+   Os dois defeitos estão consertados abaixo, cada um explicado no seu lugar:
+     · `TAM_SONDA = 10`, o mínimo que a API aceita;
+     · e a sonda passou a separar "o portal não respondeu" de "eu perguntei errado".
+   >>> O QUE ISSO NÃO DESFAZ: a A13 mediu TimeoutError de 30 s em 14/08, e aquilo era real. A API
+       esteve fora mesmo. O que este arquivo não sabia fazer era perceber a VOLTA — que é a única
+       coisa para a qual ele foi construído.
+
+   ══ O PROBLEMA, MEDIDO E NÃO SUPOSTO (o retrato de 14/08, mantido como registro) ════════════
    A API de CONSULTA do PNCP — a que alimenta a varredura diária — está fora. Medido em 14/08,
    e conferido de novo hoje nesta fatia:
 
@@ -53,10 +71,21 @@ const path = require('path');
 const { execFile } = require('child_process');
 const RAIZ = path.join(__dirname, '..');
 
-/* A URL DA SONDA É A MESMA DA VARREDURA, com tamanhoPagina=1. Sondar um endereço diferente do
-   que a varredura usa seria testar uma porta e abrir outra — e o dia em que só a de consulta
-   caísse, o watchdog diria "no ar" e a varredura falharia em seguida. */
+/* A URL DA SONDA É A MESMA DA VARREDURA. Sondar um endereço diferente do que a varredura usa
+   seria testar uma porta e abrir outra — e o dia em que só a de consulta caísse, o watchdog
+   diria "no ar" e a varredura falharia em seguida. */
 const URL_SONDA = 'https://pncp.gov.br/api/consulta/v1/contratacoes/publicacao';
+
+/* ══ E O TAMANHO DA PÁGINA É O DEFEITO INTEIRO DA A18 (achado na fatia A30) ══════════════════
+   A sonda nasceu com `tamanhoPagina=1` — "uma requisição de UM registro", que era a intenção
+   educada. A API do PNCP RECUSA 1: `must be greater than or equal to 10`, HTTP 400 em 305 ms.
+   >>> E O NÚMERO CERTO JÁ ESTAVA ESCRITO NESTA CASA. O `fpmed_licitacoes.html` tem, desde
+       04/08: *"tamanhoPagina=10: MEDIDO em 04/08. (…) O mínimo aceito pela API é 10."* A
+       informação existia no repositório, medida e comentada, e a fatia A18 escreveu 1 assim
+       mesmo. Não foi falta de medição — foi uma medição que já existia e não foi consultada.
+   >>> 10 CONTINUA SENDO O PEDIDO MAIS BARATO POSSÍVEL: é o mínimo que a API aceita. Não dá
+       para pedir menos, e por isso a educação da sonda não mudou nada. */
+const TAM_SONDA = 10;
 /* 20 s é o MESMO teto do coletor. A sondagem tem que falhar pelo mesmo critério pelo qual a
    varredura falha; um teto mais generoso aqui declararia "no ar" uma API que a varredura não
    consegue usar. */
@@ -75,7 +104,7 @@ async function sonda(dep) {
   const ontem = new Date(dep.agora());
   ontem.setDate(ontem.getDate() - 1);
   const url = URL_SONDA + `?dataInicial=${yyyymmdd(ontem)}&dataFinal=${yyyymmdd(ontem)}`
-    + '&codigoModalidadeContratacao=6&uf=GO&pagina=1&tamanhoPagina=1';
+    + '&codigoModalidadeContratacao=6&uf=GO&pagina=1&tamanhoPagina=' + TAM_SONDA;
   const t0 = Date.now();
   const ac = new AbortController();
   const to = setTimeout(() => ac.abort(), TIMEOUT_MS);
@@ -87,7 +116,25 @@ async function sonda(dep) {
        quanto um 200 cheio. Exigir dado faria um domingo sem licitação parecer queda.
        429 TAMBÉM É RESPOSTA, e das mais claras: só quem está no ar sabe dizer "devagar". */
     const noAr = r.status === 200 || r.status === 204 || r.status === 429;
-    return { no_ar: noAr, http: r.status, ms, erro: noAr ? null : 'HTTP ' + r.status };
+    /* ══ E O 4xx NÃO É "FORA DO AR": É "EU PERGUNTEI ERRADO" (fatia A30) ═══════════════════════
+       Esta é a causa por baixo do `tamanhoPagina=1`. Um HTTP 400 em 305 ms é o servidor VIVO
+       recusando o MEU pedido — e o watchdog o carimbava como queda do portal, exatamente como
+       carimbaria um timeout de 20 s. Duas coisas opostas com o mesmo nome:
+         · timeout / rede ..... o portal não respondeu. Não há o que fazer deste lado; é esperar.
+         · HTTP 4xx ........... o portal respondeu, e disse que a MINHA pergunta está errada.
+                                Há tudo a fazer, e do nosso lado.
+       É a mesma lei da fatia A19, que já custou caro uma vez: *"não consegui perguntar" NUNCA
+       vira "não existe"*. Aqui ela aparece pelo avesso — "perguntei errado" virava "o portal
+       está fora", e o resultado é um vigia que espera para sempre uma queda que já terminou. */
+    const culpaNossa = r.status >= 400 && r.status < 500 && r.status !== 429;
+    let corpo = '';
+    if (culpaNossa) { try { corpo = (await r.text()).slice(0, 160); } catch (e) { corpo = ''; } }
+    return { no_ar: noAr, http: r.status, ms, sondaErrada: culpaNossa,
+      erro: noAr ? null
+        : culpaNossa
+          ? 'A SONDA ESTA ERRADA, e nao o portal: HTTP ' + r.status + ' em ' + ms
+            + 'ms — o PNCP respondeu e recusou o pedido' + (corpo ? ' · ' + corpo : '')
+          : 'HTTP ' + r.status };
   } catch (e) {
     clearTimeout(to);
     return {
@@ -230,7 +277,7 @@ async function roda(dep, opcoes) {
   return { anterior, atual, virada: v, linha, gravada };
 }
 
-module.exports = { sonda, decideVirada, roda, dependenciasReais, URL_SONDA, TIMEOUT_MS, yyyymmdd };
+module.exports = { sonda, decideVirada, roda, dependenciasReais, URL_SONDA, TAM_SONDA, TIMEOUT_MS, yyyymmdd };
 
 if (require.main === module) {
   const tem = n => process.argv.includes(n);

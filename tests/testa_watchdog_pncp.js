@@ -192,8 +192,29 @@ const NOAR = t => ({ no_ar: true, criado_em: t });
     W.URL_SONDA === 'https://pncp.gov.br/api/consulta/v1/contratacoes/publicacao'
     && W.TIMEOUT_MS === 20000
     && /TIMEOUT_MS = 20000/.test(Wc)); n++;
-  ok(n + '. ...com tamanhoPagina=1 (o pedido mais barato que ainda prova que ela responde)',
-    /tamanhoPagina=1/.test(Wc)); n++;
+  /* ══ ESTE ASSERT GUARDAVA O DEFEITO, E NAO A REGRA (corrigido na fatia A30, 15/08/2026) ══════
+     Ele exigia, com todas as letras, `tamanhoPagina=1` — "o pedido mais barato que ainda prova
+     que ela responde". A API do PNCP RECUSA 1: `must be greater than or equal to 10`, HTTP 400.
+     Medido na mesma maquina, 1,5 s entre as chamadas:
+         tamanhoPagina=1  -> HTTP 400 em 305 ms
+         tamanhoPagina=10 -> HTTP 200 em 727 ms, com dado de verdade
+     Ou seja: o watchdog inteiro — tabela propria, log de toda sondagem, disparo automatico na
+     virada, estes 33 asserts — vigiava a volta de uma API perguntando de um jeito que ela
+     SEMPRE recusa. Ele diria "fora do ar" para sempre. E este assert, verde desde 14/08,
+     garantia que continuasse assim: ele era o cadeado do erro.
+     >>> AGORA ELE COBRA A PROMESSA: a sonda pede o MENOR tamanho de pagina que a API ACEITA.
+         Trocar 10 por 20 passa (continua sendo um pedido pequeno); voltar para 1 ou 5 reprova,
+         porque nenhum dos dois existe do lado de la. */
+  ok(n + '. ...pedindo o MENOR tamanho de pagina que a API ACEITA (o minimo dela e 10)',
+    W.TAM_SONDA >= 10 && /tamanhoPagina=' \+ TAM_SONDA/.test(Wc) && /TAM_SONDA = 10/.test(Wc),
+    { TAM_SONDA: W.TAM_SONDA }); n++;
+  /* E O 4xx NAO E QUEDA. Um HTTP 400 em 305 ms e o servidor VIVO recusando o nosso pedido —
+     carimba-lo como "fora do ar" e o mesmo defeito da A19 pelo avesso ("nao consegui perguntar"
+     nunca vira "nao existe"). A sonda passa a separar os dois, e a diferenca tem de aparecer no
+     texto do erro, senao quem le o log continua sem saber de quem e a culpa. */
+  ok(n + '. *** um HTTP 4xx e "eu perguntei errado", e nao "o portal esta fora" ***',
+    /culpaNossa/.test(Wc) && /A SONDA ESTA ERRADA/.test(Wc)
+    && /r\.status >= 400 && r\.status < 500/.test(Wc)); n++;
   /* Reescrever backoff/breaker/rodizio aqui seria um SEGUNDO coletor com um segundo
      comportamento contra o mesmo portal publico. O watchdog so aperta o botao. */
   ok(n + '. *** ele CHAMA a varredura normal, nao reimplementa coletor ***',

@@ -14,8 +14,21 @@
 //         Distancia 1 forca |k| em {|w|-1, |w|, |w|+1}: os tres baldes (1a letra, comprimento)
 //         cobrem todo k possivel.
 //   e o classMatch, que nao depende de w nenhum, entra por um conjunto proprio (COMPLEXO_B).
-// Aqui os dois caminhos rodam LADO A LADO sobre o mesmo banco e a mesma consulta. A verificacao
-// contra o banco REAL (1.569 consultas, zero divergencia) esta em tools/prova_indice.js.
+// Aqui os dois caminhos rodam LADO A LADO sobre o mesmo banco e a mesma consulta.
+//
+// >>> ESTA LINHA CITAVA UM NUMERO QUE NUNCA ACONTECEU AQUI, e a fatia A30 a corrigiu
+//     (15/08/2026). Ela dizia: "a verificacao contra o banco REAL (1.569 consultas, zero
+//     divergencia) esta em tools/prova_indice.js". Aquelas 1.569 consultas foram rodadas na
+//     GLOBAL, contra o banco da Global; a prova veio PORTADA em 04/08 e nunca rodou nesta casa
+//     um dia sequer — ela pedia tools/le_banco.js, motor_busca.js e tests/fixtures/, e nenhum
+//     dos tres existe na FPMED. Numero real, de outro lugar, citado como se fosse desta casa:
+//     e o formato mais caro de mentira, porque tem cara de conta feita e ainda por cima estava
+//     dentro de uma suite VERDE, que roda toda rodada.
+// >>> AGORA E MEDIDO AQUI. A prova foi reescrita (so leitura, recortando o motor deste mesmo
+//     arquivo pelos MESMOS marcadores que esta suite usa) e rodou em 15/08/2026:
+//     **1.737 consultas sobre os 8.832 produtos reais do banco da FPMED, ZERO divergencia**,
+//     visitando 402 candidatos por consulta (4,5% da tabela) e zero desistencias.
+//       node tools/prova_indice.js
 //   node tests/testa_indice.js
 const fs = require('fs'), path = require('path');
 const HTML = fs.readFileSync(path.join(__dirname, '..', 'fpmed_giovana.html'), 'utf8');
