@@ -212,10 +212,25 @@ function medeToque(txt, blocos) {
     while ((m = re.exec(corpo))) {
       const n = Number(m[2]);
       if (n >= ALVO_TOQUE) continue;
-      // acha o seletor da regra: o texto entre o `}` (ou `{` do media) anterior e o `{` desta
-      const antes = corpo.slice(0, m.index);
-      const corte = Math.max(antes.lastIndexOf('}'), antes.lastIndexOf('{'));
-      const sel = antes.slice(corte + 1).split('{')[0].trim().replace(/\s+/g, ' ');
+      // acha o SELETOR da regra: ele é o que vem ANTES do `{` desta regra, e depois do `}` (ou
+      // do `{` do @media) que a fecha por cima.
+      // >>> DEFEITO 8 DESTA RÉGUA, do mesmo bloco: a primeira versão fazia
+      //     `max(lastIndexOf('}'), lastIndexOf('{'))` sobre o texto até o achado — e o `{`
+      //     desta regra é SEMPRE o último, então o que ela chamava de "seletor" eram as
+      //     DECLARAÇÕES da própria regra ("content:"";position:absolute;top:50%…"). Ela dizia
+      //     que havia alvo curto sem dizer de quem, e nenhuma tela tinha bloco de celular pra
+      //     que alguém percebesse. Régua que erra o endereço manda consertar o lugar errado —
+      //     é o defeito 1 desta mesma régua, de novo, no outro eixo.
+      //     >>> E ELA MORA NUM LUGAR SÓ (`seletorDe`, na seção 3.6): a mesma conta nasceu de novo
+      //     no medidor de grade, e duas cópias de uma regra divergem — a que divergir vai ser
+      //     justamente a que ninguém olha (BASE 2.3, uma fonte de verdade por fato).
+      const sel = seletorDe(txt, b.ini + m.index);
+      // >>> DEFEITO 7 DESTA RÉGUA, achado ao aplicar a receita da caixinha de marcar: ela
+      //     contava o `::before` como alvo curto. PSEUDO-ELEMENTO NÃO É ALVO — ele não recebe
+      //     clique nenhum; quem recebe é o elemento pai, e é o pai que tem os 44. A receita do
+      //     molde é exatamente "alvo de 44 transparente + quadradinho de 18 desenhado no
+      //     miolo": uma régua que conta o quadradinho reprova justamente quem obedeceu.
+      if (/::?(before|after)\b/.test(sel)) continue;
       curtos.push({ linha: linhaDe(txt, b.ini + m.index), seletor: sel.slice(0, 60),
                     prop: m[1], valor: n });
     }
@@ -236,6 +251,26 @@ function medeToque(txt, blocos) {
 // >>> DEFEITO 6, do mesmo bloco: ela contava dentro do `document.write()`. Os 4 relatórios da
 //     Negócios abrem em janela própria, com a largura do papel — 4 das 18 "peças fixas" eram o
 //     `max-width` do corpo do documento gerado. Vai para coluna própria, como o resto.
+// >>> DEFEITO 9 DESTA RÉGUA, e é o MESMO defeito dos 5 e 7 pela terceira vez: ela contava a
+//     CURA como se fosse a doença. As "9 grades rígidas" da Negócios eram, uma a uma:
+//       · `repeat(auto-fit,minmax(190px,1fr))` — a grade que se dobra sozinha, que é exatamente
+//         o conserto que o molde manda usar (3 delas);
+//       · `minmax(0,1fr)` — o remédio nomeado do `min-width:auto` (2 delas);
+//       · `.lem-novo` e `.cred-novo`, que JÁ TÊM `grid-template-columns:1fr` num
+//         `@media(max-width:700px)` duas linhas abaixo (2 delas);
+//       · e — o retrato do defeito — a PRÓPRIA linha de conserto `@media(max-width:760px)
+//         {.ficha{grid-template-columns:96px 1fr}}`, contada como grade rígida nova.
+//     A causa comum às três vezes: a régua perguntava *"tem px escrito aqui?"*, e todo conserto
+//     de CSS se escreve com px. A pergunta certa é outra, e é a que a caixa faz:
+//     **"o que está EM VIGOR quando a janela tem 390px?"**
+//
+//     Então esta seção passa a resolver a cascata: para cada propriedade de cada seletor, vale a
+//     ÚLTIMA declaração que se aplica a 390px (fora de @media, ou dentro de um cujo teste passe
+//     em 390). LIMITE DECLARADO: o seletor é comparado como TEXTO. `.ficha` e `.dw .ficha` são
+//     dois seletores para esta régua, mesmo que o segundo vença o primeiro na tela real. O erro
+//     que isso pode causar é sempre para MAIS (relatar peça que já obedece), nunca para menos —
+//     e uma régua que erra para mais me faz olhar; uma que erra para menos me faz publicar
+//     "está limpo".
 function condicoesDeMedia(txt) {
   const zonas = [];
   const re = /@media([^{]*)\{/g;
@@ -243,31 +278,120 @@ function condicoesDeMedia(txt) {
   while ((m = re.exec(txt))) zonas.push([m.index, re.lastIndex]);
   return zonas;
 }
-function medeLargura(txt, blocos, docs) {
-  const fixos = [], docGerado = [];
-  const cond = condicoesDeMedia(txt);
+// A consulta de @media vale numa janela de 390px? `min-width:N` acima de 390 não vale;
+// `max-width:N` abaixo de 390 não vale; `print` não é tela.
+const LARGURA_TESTE = 390;
+function valeEm390(consulta) {
+  if (ehPrint(consulta)) return false;
   let m;
-  const re = /(^|[^\w-])(min-width|width)\s*:\s*([\d.]+)px/gi;
-  while ((m = re.exec(txt))) {
-    const n = Number(m[3]);
+  const reMin = /min-width\s*:\s*([\d.]+)px/gi;
+  while ((m = reMin.exec(consulta))) if (Number(m[1]) > LARGURA_TESTE) return false;
+  const reMax = /max-width\s*:\s*([\d.]+)px/gi;
+  while ((m = reMax.exec(consulta))) if (Number(m[1]) < LARGURA_TESTE) return false;
+  return true;
+}
+const aplicaEm390 = (blocos, pos) =>
+  blocos.filter(b => pos >= b.ini && pos < b.fim).every(b => valeEm390(b.consulta));
+
+// O seletor da regra que contém `pos`: o texto entre o `}` (ou o `{` do @media) anterior e o
+// `{` desta regra. Mesma lógica que o defeito 8 consertou no medidor de toque — e por isso ela
+// mora aqui, num lugar só: duas cópias divergem, e a que divergir será a que ninguém olha.
+// >>> DEFEITO 10, achado no MESMO minuto em que o 9 foi consertado, e é filho dele: entre o `}`
+//     anterior e o `{` da regra mora, quase sempre, o COMENTÁRIO que explica a regra. A régua
+//     estava chamando de seletor `"/* ── LEMBRETES ── */ .lem-novo"`. Com o comentário dentro da
+//     chave, `#notif` da linha 194 e `#notif` do bloco do celular viravam DUAS peças diferentes,
+//     e o conserto não recebia crédito do próprio conserto — a peça consertada continuava sendo
+//     cobrada. Nesta casa o comentário é obrigatório (a lei do "porquê escrito"), então uma
+//     régua que se confunde com comentário cobra mais de quem explica mais.
+function seletorDe(txt, pos) {
+  const antes = txt.slice(0, pos);
+  const abre = antes.lastIndexOf('{');
+  if (abre < 0) return '';
+  const cabeca = antes.slice(0, abre);
+  return cabeca.slice(Math.max(cabeca.lastIndexOf('}'), cabeca.lastIndexOf('{')) + 1)
+               .replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/<!--[\s\S]*?-->/g, ' ')
+               .trim().replace(/\s+/g, ' ');
+}
+
+/* QUANTO MEDE, NO MÍNIMO, CADA TRILHA DE UMA GRADE.
+   `120px` mede 120. `minmax(90px,1fr)` mede 90. `minmax(0,...)` mede 0 — é o remédio. `1fr`,
+   `auto`, `%` e `min-content` dependem do CONTEÚDO: aqui eles valem `null`, e null NÃO vira
+   zero. `1fr` nasce com `min-width:auto`, ou seja, ele não encolhe abaixo do que tem dentro —
+   é a armadilha que o molde nomeia, e ela não tem número no arquivo. Só a tela pintada tem. */
+function pisoDaGrade(valor) {
+  let v = valor.trim().replace(/\s+/g, ' ');
+  // repeat(auto-fit|auto-fill, X) DOBRA SOZINHA: na janela estreita ela vira uma coluna só.
+  v = v.replace(/repeat\(\s*auto-(?:fit|fill)\s*,\s*([^)]*\)?[^)]*)\)/gi, '$1');
+  // repeat(3, X) é literal: vira X X X
+  v = v.replace(/repeat\(\s*(\d+)\s*,\s*([^)]*\)?[^)]*)\)/gi,
+                (t, n, x) => new Array(Number(n)).fill(x.trim()).join(' '));
+  const trilhas = v.match(/minmax\([^)]*\)|[^\s]+/g) || [];
+  let piso = 0, conteudo = 0;
+  for (const t of trilhas) {
+    const mm = /minmax\(\s*([^,]+),/i.exec(t);
+    const alvo = mm ? mm[1].trim() : t;
+    const px = /^([\d.]+)px$/i.exec(alvo);
+    if (px) { piso += Number(px[1]); continue; }
+    if (/^0$/.test(alvo)) continue;                 // minmax(0,…) — encolhe até sumir
+    conteudo++;                                     // 1fr / auto / % — depende do conteúdo
+  }
+  return { piso, conteudo, trilhas: trilhas.length };
+}
+
+function medeLargura(txt, blocos, docs) {
+  const cond = condicoesDeMedia(txt);
+  const emCondicao = pos => cond.some(([a, b]) => pos >= a && pos < b);
+
+  // ── PEÇA DE LARGURA FIXA. Vale a última declaração de `width`/`min-width` daquele seletor
+  //    que esteja em vigor a 390px: `#notif{width:380px}` deixou de ser peça fixa no dia em que
+  //    o bloco do celular passou a dizer `#notif{width:calc(100vw - …)}`, e continuar contando
+  //    o 380 seria mandar consertar o que já foi consertado.
+  const porChave = new Map();
+  let m;
+  const reW = /(^|[^\w-])(min-width|width)\s*:\s*([^;}"'`]+)/gi;
+  while ((m = reW.exec(txt))) {
     const pos = m.index + m[1].length;
-    if (n <= 360) continue;                                  // cabe em 390 com folga de margem
-    if (dentroDe(blocos, pos, ehPrint)) continue;            // papel tem largura de papel
-    if (cond.some(([a, b]) => pos >= a && pos < b)) continue; // condição de @media não é peça
-    const achado = { linha: linhaDe(txt, pos), prop: m[2], valor: n };
-    (emDocGerado(docs, pos) ? docGerado : fixos).push(achado);
+    if (emCondicao(pos)) continue;                  // condição de @media não é peça
+    if (dentroDe(blocos, pos, ehPrint)) continue;   // papel tem largura de papel
+    if (!aplicaEm390(blocos, pos)) continue;        // regra que não vale nesta janela
+    const px = /^\s*([\d.]+)px\s*(!important)?\s*$/i.exec(m[3]);
+    const chave = seletorDe(txt, pos) + ' ‖ ' + m[2].toLowerCase();
+    porChave.set(chave, { linha: linhaDe(txt, pos), prop: m[2],
+                          valor: px ? Number(px[1]) : null, doc: emDocGerado(docs, pos) });
   }
-  const grades = [];
-  const reG = /grid-template-columns\s*:\s*([^;}"']+)/gi;
+  const vigentes = [...porChave.values()].filter(x => x.valor !== null && x.valor > 360);
+  const fixos = vigentes.filter(x => !x.doc);
+  const docGerado = vigentes.filter(x => x.doc);
+
+  // ── GRADE. Mesma cascata, e o julgamento passa a ser por MEDIDA e não por "tem px":
+  //    ESTOURA  = a soma dos pisos fixos já não cabe em 390 com os respiros — é certeza.
+  //    CANDIDATA = tem trilha fixa E trilha de conteúdo (`1fr`/`auto` sem `minmax(0,`), que
+  //    nasce com `min-width:auto`. Isto é CANDIDATA, não veredito: quanto o conteúdo mede só a
+  //    tela pintada responde, e converter isso em número seria o erro que a BASE proíbe.
+  const porGrade = new Map();
+  const reG = /grid-template-columns\s*:\s*([^;}"'`]+)/gi;
   while ((m = reG.exec(txt))) {
-    const v = m[1].trim();
-    // grade de coluna FIXA (px) ou de 3+ colunas sem minmax: item de grade nasce min-width:auto
-    if (/\d+px/.test(v) || (!/minmax|auto-fit|auto-fill/.test(v) && (v.match(/fr/g) || []).length >= 3))
-      grades.push({ linha: linhaDe(txt, m.index), valor: v.slice(0, 60),
-                    doc: emDocGerado(docs, m.index) });
+    if (emCondicao(m.index)) continue;
+    if (dentroDe(blocos, m.index, ehPrint)) continue;
+    if (!aplicaEm390(blocos, m.index)) continue;
+    const p = pisoDaGrade(m[1]);
+    porGrade.set(seletorDe(txt, m.index), {
+      linha: linhaDe(txt, m.index), seletor: seletorDe(txt, m.index).slice(0, 46),
+      valor: m[1].trim().slice(0, 46), piso: p.piso, conteudo: p.conteudo,
+      doc: emDocGerado(docs, m.index) });
   }
-  return { fixos, docGerado, grades: grades.filter(g => !g.doc),
-           gradesDoc: grades.filter(g => g.doc) };
+  const CABE = 360;   // 390 menos os dois respiros da faixa
+  const todas = [...porGrade.values()];
+  const grades = todas.filter(g => !g.doc && g.piso > CABE);
+  //    E `1fr 1fr 1fr` continua candidata mesmo com piso ZERO: é o exemplo que o próprio molde
+  //    escreve ("três campos de data estouram sempre, por mais `fr` que se escreva"), porque o
+  //    item de grade nasce `min-width:auto`. Sem esta linha o conserto do defeito 9 teria
+  //    apagado um defeito verdadeiro junto com os oito falsos — que é exatamente o risco de
+  //    consertar régua: ela emudece tão fácil quanto grita.
+  const candidatas = todas.filter(g => !g.doc && g.piso <= CABE &&
+                                  (g.conteudo >= 3 || (g.piso > 0 && g.conteudo > 0)));
+  return { fixos, docGerado, grades, candidatas,
+           gradesDoc: todas.filter(g => g.doc && g.piso > CABE) };
 }
 
 /* ── 4. O retrato ───────────────────────────────────────────────────────────────────────── */
@@ -308,9 +432,10 @@ function imprime(r) {
               ' · doc gerado: ' + n(r.icones.docGerado) + ']');
   console.log('   TOQUE 44px ...... bloco de celular: ' + (r.toque.temBloco ? r.toque.blocos : 'NENHUM') +
               ' · ' + n(r.toque.curtos) + ' alvos curtos declarados');
-  console.log('   LARGURA FIXA .... ' + n(r.largura.fixos) + ' pecas >360px + ' +
-              n(r.largura.grades) + ' grades rigidas' +
-              '   [doc gerado: ' + (n(r.largura.docGerado) + n(r.largura.gradesDoc)) + ']');
+  console.log('   LARGURA FIXA .... ' + n(r.largura.fixos) + ' pecas >360px em vigor a 390 + ' +
+              n(r.largura.grades) + ' grades que ESTOURAM' +
+              '   [candidatas: ' + n(r.largura.candidatas) +
+              ' · doc gerado: ' + (n(r.largura.docGerado) + n(r.largura.gradesDoc)) + ']');
 }
 
 // só imprime quando é CHAMADA na linha de comando: exigido porque as suítes fazem

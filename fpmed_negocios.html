@@ -171,7 +171,7 @@ body{
   letter-spacing:-.02em;color:var(--cinza-800);margin:0}
 .pagina-topo .sub{font-size:var(--txt-1);color:var(--cinza-600);margin:var(--esp-1) 0 0;
   max-width:var(--largura-leitura)}
-.pagina-topo nav{margin-left:auto;display:flex;gap:2px;padding:2px;
+.pagina-topo nav{margin-left:auto;display:flex;gap:4px;padding:4px;
   background:var(--cinza-100);border-radius:var(--raio-botao)}
 .pagina-topo nav a{color:var(--cinza-600);text-decoration:none;font-size:var(--txt-1);
   padding:var(--esp-1) var(--esp-3);border-radius:var(--raio-item);cursor:pointer;
@@ -190,12 +190,12 @@ body{
 .sino:hover{background:var(--cinza-100);border-color:var(--cinza-300)}
 .sino:focus-visible{outline:none;box-shadow:var(--foco)}
 .sino .cnt{position:absolute;top:-6px;right:-6px;background:var(--ambar-600);color:var(--branco);border-radius:11px;
-  min-width:19px;height:19px;font-size:11px;font-weight:800;font-family:Montserrat;line-height:19px;padding:0 5px}
+  min-width:19px;height:19px;font-size:var(--txt-1);font-weight:800;font-family:Montserrat;line-height:19px;padding:0 4px}
 #notif{display:none;position:absolute;right:0;top:42px;width:380px;max-height:70vh;overflow:auto;z-index:40;
   background:var(--painel);border:1px solid var(--linha);border-radius:13px;box-shadow:var(--sombra-3);padding:8px}
 #notif.open{display:block}
-.nf-sec{font-size:10.5px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);font-weight:700;padding:10px 10px 5px}
-.nf{display:block;padding:9px 11px;border-radius:9px;cursor:pointer;border:1px solid transparent;transition:background .14s,border-color .14s}
+.nf-sec{font-size:var(--txt-1);text-transform:uppercase;letter-spacing:.5px;color:var(--muted);font-weight:700;padding:8px 8px 4px}
+.nf{display:block;padding:8px 12px;border-radius:9px;cursor:pointer;border:1px solid transparent;transition:background .14s,border-color .14s}
 .nf:hover{background:var(--azul-50);border-color:var(--azul-200)}
 /* ══ A AFORDÂNCIA NÃO PODE MENTIR (13/08 — caçada de botão morto) ════════════════════════════
    ACHADO CLICANDO NA TELA: o item de credenciamento SEM negócio de origem é `<a class="nf">`
@@ -213,10 +213,10 @@ body{
 .nf:not([onclick]):not([href]){cursor:default}
 .nf:not([onclick]):not([href]):hover{background:transparent;border-color:transparent}
 .nf .q{font-size:12.5px;color:var(--cinza-800);font-weight:600}
-.nf .s{font-size:11.5px;color:var(--muted);line-height:1.45;margin-top:2px}
+.nf .s{font-size:var(--txt-1);color:var(--muted);line-height:1.45;margin-top:4px}
 .nf.hoje .q{color:var(--ambar-700)}
 .nf-vazio{padding:16px 12px;font-size:12.5px;color:var(--muted);line-height:1.5}
-.nf-nota{padding:10px 12px;margin-top:6px;border-top:1px solid var(--linha);font-size:11px;color:var(--muted);line-height:1.5}
+.nf-nota{padding:8px 12px;margin-top:4px;border-top:1px solid var(--linha);font-size:var(--txt-1);color:var(--muted);line-height:1.5}
 /* 22px era off-grid e, pior, DESALINHAVA: a faixa do header usa --esp-6 (24), e a trilha ficava
    2px à direita do H1. Dois pixels ninguém enxerga isoladamente — mas é exatamente o "quase
    alinhado" que D3 chama de pior que desalinhado, porque o olho sente sem saber o quê. */
@@ -233,7 +233,7 @@ body{
        que muda é o que o olho entende sem ler: onde uma coisa acaba e a outra começa. */
 .barra{display:flex;gap:12px;align-items:center;flex-wrap:wrap;
   background:var(--painel);border:1px solid var(--linha);border-radius:12px;
-  padding:13px 16px;margin-top:18px}
+  padding:12px 16px;margin-top:16px}
 .barra select,.barra input{background:var(--painel2);border:1px solid var(--linha);color:var(--texto);
   border-radius:9px;padding:8px 12px;font-family:inherit;font-size:12.5px;outline:none}
 .barra select:focus,.barra input:focus{border-color:var(--azul)}
@@ -254,7 +254,7 @@ body{
 /* OS CHIPS DE FASE são NAVEGAÇÃO, e não filtro-de-caixinha: eles ganharam ar em volta pra não
    parecerem a segunda fileira da barra. É a diferença entre "mais um controle" e "por onde eu
    entro na lista". */
-.fases{display:flex;gap:9px;flex-wrap:wrap;padding:18px 0 4px}
+.fases{display:flex;gap:8px;flex-wrap:wrap;padding:16px 0 4px}
 .chip{background:var(--painel);border:1px solid var(--linha);color:var(--texto);border-radius:22px;
   padding:8px 16px;font-size:12.5px;cursor:pointer;display:flex;align-items:center;gap:8px;
   transition:border-color .16s,transform .16s,background .16s}
@@ -263,19 +263,19 @@ body{
 .chip.on{background:var(--verde-500);border-color:var(--verde-500);color:var(--verde-900);font-weight:700}
 .chip.on .n{color:var(--verde-900)}
 .chip .bola{width:9px;height:9px;border-radius:50%}
-.sublinks{display:flex;gap:18px;padding:4px 0 10px;font-size:12.5px}
+.sublinks{display:flex;gap:16px;padding:4px 0 8px;font-size:12.5px}
 .sublinks a{color:var(--azul-claro);text-decoration:none;cursor:pointer}
 .sublinks a:hover{text-decoration:underline}
 
 /* ── card do negócio ── */
-.card{background:var(--painel);border:1px solid var(--linha);border-radius:13px;padding:15px 17px;margin-bottom:12px;
+.card{background:var(--painel);border:1px solid var(--linha);border-radius:13px;padding:16px 16px;margin-bottom:12px;
   box-shadow:var(--sombra);position:relative;cursor:pointer;transition:border-color .18s,transform .18s,box-shadow .18s}
 .card:hover{border-color:var(--azul-300);transform:translateY(-1px);box-shadow:var(--sombra-2)}
-.card .fase-tag{position:absolute;top:11px;right:14px;font-size:9px;letter-spacing:1.3px;text-transform:uppercase;
+.card .fase-tag{position:absolute;top:11px;right:14px;font-size:var(--txt-1);letter-spacing:1.3px;text-transform:uppercase;
   font-weight:800;color:var(--verde)}
 /* ── SITUAÇÃO DO CERTAME (08/08) ── etiqueta + esmaecido, mas o cartão CONTINUA no funil ── */
-.card .sit-tag{position:absolute;top:9px;right:14px;font-size:9px;letter-spacing:1.2px;font-weight:800;
-  border:1px solid;border-radius:20px;padding:2px 8px}
+.card .sit-tag{position:absolute;top:9px;right:14px;font-size:var(--txt-1);letter-spacing:1.2px;font-weight:800;
+  border:1px solid;border-radius:20px;padding:4px 8px}
 .card .sit-tag ~ .fase-tag{top:32px}         /* a fase desce pra não colidir com a etiqueta */
 /* >>> `.fase-tag` FICOU SEM USO em 11/08 — a etiqueta de fase do card virou o `.cd-prog`, e no
        kanban a coluna já diz a fase. A regra fica por enquanto porque CSS órfão não quebra nada
@@ -285,13 +285,32 @@ body{
    O :hover devolve a opacidade cheia — cartão que não dá pra ler direito vira cartão ignorado. */
 .card.parado{opacity:.55;filter:saturate(.6)}
 .card.parado:hover{opacity:1;filter:none}
+/* ══ O ÚNICO ESPAÇO FORA DA GRADE QUE SOBROU NESTA TELA — DECLARADO, E NÃO ARREDONDADO ═══════
+   `96px` não é degrau da grade da casa (4·8·12·16·20·24·32·48·64). O aplicador da fatia B19
+   RECUSOU mexer nele por regra própria — "nada anda mais de 8px, porque mudar 96 para 64 não é
+   arredondar, é redesenhar" — e a caixa manda relatar o que não couber em vez de inventar
+   degrau. Este é o relato, no lugar onde quem for mexer vai olhar.
+   >>> O QUE ESTE NÚMERO É: uma RESERVA. O `.sit-tag` ("REMARCADO", "CANCELADO") é
+       `position:absolute;right:14px` no alto do cartão, e elemento absoluto não empurra
+       ninguém. Sem a reserva, o título passa POR BAIXO da etiqueta no caso real do kanban sem
+       kit e sem empresa, onde o título é o primeiro elemento do fluxo.
+   >>> POR QUE NÃO CORTEI PARA 64: eu não sei quanto a etiqueta mede. "REMARCADO" são 9 letras
+       em peso 800 com 1,2px de espaçamento, mais 8+8 de respiro, mais os 14 da direita — a
+       conta de cabeça dá perto de 115, ou seja, a reserva de 96 pode já estar CURTA hoje. É
+       exatamente o defeito que o MOLDE_VISUAL nomeia ("um 310px escrito numa tela virou reserva
+       curta no dia em que o botão do componente cresceu, e ninguém viu"). Encolher para 64 sem
+       medir seria trocar um número fora da grade por um número fora da grade E errado.
+   >>> O QUE FECHA ISTO: a largura da etiqueta medida na TELA PINTADA, e daí a reserva vira o
+       degrau certo — ou a etiqueta publica a própria medida, que é a receita do molde ("quem
+       tem a peça publica a medida"). Nenhuma das duas se faz sem navegador com sessão, e eu
+       não logo. Está na lista de PENDÊNCIAS do relatório da B19. */
 .card .tit{font-family:Montserrat;font-weight:700;font-size:13.5px;color:var(--azul-claro);text-decoration:none;
   display:inline-block;line-height:1.45;padding-right:96px}
 .card:hover .tit{color:var(--azul-800);text-decoration:underline}
 .card .emp{display:inline-block;background:var(--roxo-50);border:1px solid var(--roxo-200);
-  color:var(--roxo);border-radius:20px;padding:2px 9px;font-size:10px;font-weight:700;margin-bottom:7px}
-.card .org{font-size:12.5px;color:var(--cinza-600);margin-top:2px}
-.card .ab{font-size:12px;color:var(--muted);margin-top:6px}
+  color:var(--roxo);border-radius:20px;padding:4px 8px;font-size:var(--txt-1);font-weight:700;margin-bottom:8px}
+.card .org{font-size:12.5px;color:var(--cinza-600);margin-top:4px}
+.card .ab{font-size:12px;color:var(--muted);margin-top:4px}
 .card .ab b{color:var(--cinza-800)}
 .card .ab.hoje b{color:var(--ambar-700)}
 /* ══ "JÁ PASSOU" É SINAL, NÃO É DESBOTADO (13/08, fatia B1) ══════════════════════════════════
@@ -313,18 +332,18 @@ body{
   border-color:var(--ambar-300)}
 .card .sit-tag.cancelado{background:var(--vermelho-50);color:var(--vermelho-700);
   border-color:var(--vermelho-300)}
-.card .etq{display:flex;gap:6px;flex-wrap:wrap;margin-top:9px}
-.etq span{font-size:10px;font-weight:600;border-radius:20px;padding:2px 9px}
+.card .etq{display:flex;gap:4px;flex-wrap:wrap;margin-top:8px}
+.etq span{font-size:var(--txt-1);font-weight:600;border-radius:20px;padding:4px 8px}
 .etq .fonte{background:var(--cinza-100);border:1px solid var(--cinza-200);color:var(--cinza-600)}
 .etq .mod{background:var(--verde-50);border:1px solid var(--verde-200);color:var(--verde-700)}
 .etq .num{background:var(--azul-50);border:1px solid var(--azul-200);color:var(--azul-700)}
 .etq .obs{background:var(--ambar-50);border:1px solid var(--ambar-100);color:var(--ambar-700)}
-.card .prog{font-size:11.5px;color:var(--muted);margin-top:9px;display:flex;align-items:center;gap:8px}
+.card .prog{font-size:var(--txt-1);color:var(--muted);margin-top:8px;display:flex;align-items:center;gap:8px}
 /* AÇÕES só no hover, como no SIGA: elas não podem competir com o conteúdo do card */
-.card .acoes{position:absolute;bottom:11px;right:14px;display:flex;gap:6px;opacity:0;transition:opacity .16s}
+.card .acoes{position:absolute;bottom:11px;right:14px;display:flex;gap:4px;opacity:0;transition:opacity .16s}
 .card:hover .acoes{opacity:1}
 .card .acoes button{background:var(--painel2);border:1px solid var(--linha);color:var(--muted);
-  border-radius:7px;padding:3px 9px;font-size:11px;cursor:pointer;font-family:inherit}
+  border-radius:7px;padding:4px 8px;font-size:var(--txt-1);cursor:pointer;font-family:inherit}
 .card .acoes button:hover{border-color:var(--azul);color:var(--azul-claro)}
 /* O REALCE do "ir pro funil": serve pra ACHAR COM O OLHO depois da rolagem, e some sozinho.
    Pulsa duas vezes em vez de ficar aceso — movimento é o que o olho encontra numa tela cheia
@@ -463,14 +482,14 @@ body{
 .kb .card.arrastando{opacity:.45}
 
 /* ── agenda: o substituto direto do Calendário 2025 ── */
-.ag-dia{display:flex;align-items:baseline;gap:10px;margin:20px 0 9px;padding-bottom:6px;border-bottom:1px solid var(--linha)}
+.ag-dia{display:flex;align-items:baseline;gap:8px;margin:20px 0 8px;padding-bottom:4px;border-bottom:1px solid var(--linha)}
 .ag-dia .d{font-family:Montserrat;font-weight:800;font-size:15px;color:var(--cinza-800)}
 .ag-dia .sem{font-size:12px;color:var(--muted)}
-.ag-dia .q{margin-left:auto;font-size:11.5px;color:var(--muted)}
+.ag-dia .q{margin-left:auto;font-size:var(--txt-1);color:var(--muted)}
 .ag-dia.hoje .d{color:var(--ambar-700)}
 .ag-dia.hoje .sem::after{content:' · HOJE';color:var(--ambar-700);font-weight:700;letter-spacing:.6px}
-.ag-lin{display:flex;gap:14px;align-items:flex-start;margin-bottom:10px}
-.ag-hora{flex:0 0 62px;text-align:right;font-family:Montserrat;font-weight:700;font-size:14px;color:var(--azul-claro);padding-top:15px}
+.ag-lin{display:flex;gap:12px;align-items:flex-start;margin-bottom:8px}
+.ag-hora{flex:0 0 62px;text-align:right;font-family:Montserrat;font-weight:700;font-size:14px;color:var(--azul-claro);padding-top:16px}
 .ag-lin .card{flex:1;margin-bottom:0}
 /* ── A LINHA DE PRAZO DO KIT (14/08, fatia B4) ──────────────────────────────────────────────
    Ela é MENOR que o cartão de sessão de propósito: sessão é o acontecimento, prazo é o que
@@ -478,14 +497,14 @@ body{
    dobro de pregões. O fio da esquerda é o que diz "isto é de outra natureza" sem precisar de
    rótulo — e a cor dele é a mesma escala de estado que o resto da tela usa. */
 .ag-lin.pz{align-items:stretch;margin-bottom:8px;cursor:pointer}
-.ag-lin.pz .ag-hora{font-size:12px;font-weight:700;color:var(--muted);padding-top:10px}
-.pz-cx{flex:1;border-left:2px solid var(--linha);padding:7px 0 7px 12px}
+.ag-lin.pz .ag-hora{font-size:12px;font-weight:700;color:var(--muted);padding-top:8px}
+.pz-cx{flex:1;border-left:2px solid var(--linha);padding:8px 0 8px 12px}
 .ag-lin.pz:hover .pz-cx{border-left-color:var(--azul-claro)}
 .pz-ck{display:flex;align-items:center;gap:8px;cursor:pointer}
 .pz-ck input{width:14px;height:14px;accent-color:var(--azul-claro);cursor:pointer;flex:0 0 auto}
 .pz-t{font-size:12.5px;font-weight:600;color:var(--texto)}
-.pz-n{font-size:11px;color:var(--muted);margin:2px 0 0 22px}
-.pz-l{font-size:10.5px;color:var(--muted);margin:2px 0 0 22px;opacity:.9}
+.pz-n{font-size:var(--txt-1);color:var(--muted);margin:4px 0 0 20px}
+.pz-l{font-size:var(--txt-1);color:var(--muted);margin:4px 0 0 20px;opacity:.9}
 .ag-lin.pz.e-hoje .pz-cx{border-left-color:var(--ambar-600)}
 .ag-lin.pz.e-hoje .pz-l b{color:var(--ambar-700)}
 .ag-lin.pz.venceu .pz-cx{border-left-color:var(--vermelho-300)}
@@ -495,7 +514,7 @@ body{
    O "4/15" saiu do card em 11/08 porque media um checklist sem data — um número que não mudava
    e não cobrava nada. Ele volta medindo o kit COM prazo, e volta com a única coisa que faltava
    pra ele valer alguma coisa no relance: o prazo mais próximo, escrito ao lado. */
-.cd-kit{display:flex;align-items:center;gap:8px;margin:0 0 7px;flex-wrap:wrap}
+.cd-kit{display:flex;align-items:center;gap:8px;margin:0 0 8px;flex-wrap:wrap}
 /* >>> ESTA CLASSE SE CHAMAVA `.barra` E ISSO ERA UM DEFEITO VISÍVEL: `.barra` já é a barra de
        ferramentas do topo desta tela (display:flex, padding, gap). Dentro do card, a regra
        genérica vencia o que a específica não redeclarava, e o fio de 4px virava um retângulo
@@ -504,17 +523,17 @@ body{
 .cd-kit .kbar{flex:0 0 54px;height:4px;border-radius:3px;background:var(--linha);overflow:hidden;
   display:block;padding:0;margin:0}
 .cd-kit .kbar i{display:block;height:100%;background:var(--azul-claro)}
-.cd-kit .txt{font-size:10.5px;color:var(--muted);letter-spacing:.2px}
-.cd-kit .pzx{font-size:10.5px;font-weight:700;color:var(--ambar-700)}
+.cd-kit .txt{font-size:var(--txt-1);color:var(--muted);letter-spacing:.2px}
+.cd-kit .pzx{font-size:var(--txt-1);font-weight:700;color:var(--ambar-700)}
 .cd-kit .pzx.venceu{color:var(--vermelho-700)}
 /* ── O KIT NA FICHA ─────────────────────────────────────────────────────────────────────────
    A linha inteira é o alvo do clique, e não só o quadradinho de 14px: caixinha de checklist
    que exige mira é caixinha que se marca errado. O rótulo <label> já faz isso de graça — o que
    o CSS precisa é dar a ela a área e o retorno de hover que provam que ela é clicável. */
 .kit-cx{border:1px solid var(--linha);border-radius:10px;overflow:hidden}
-.kit-s{background:var(--painel2);padding:5px 12px;font-size:10.5px;font-weight:700;
+.kit-s{background:var(--painel2);padding:4px 12px;font-size:var(--txt-1);font-weight:700;
   letter-spacing:.6px;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--linha)}
-.kit-l{display:flex;align-items:center;gap:9px;padding:7px 12px;font-size:12.5px;
+.kit-l{display:flex;align-items:center;gap:8px;padding:8px 12px;font-size:12.5px;
   border-bottom:1px solid var(--linha);cursor:pointer}
 .kit-l:last-child{border-bottom:0}
 .kit-l:hover{background:var(--linha-hover)}
@@ -522,19 +541,19 @@ body{
 .kit-l input:disabled{cursor:default}
 .kit-t{flex:1;color:var(--texto)}
 .kit-l.feita .kit-t{color:var(--muted);text-decoration:line-through}
-.kit-p{flex:0 0 auto;font-size:11px;font-weight:700;color:var(--azul-claro);white-space:nowrap}
+.kit-p{flex:0 0 auto;font-size:var(--txt-1);font-weight:700;color:var(--azul-claro);white-space:nowrap}
 .kit-p.hoje{color:var(--ambar-700)}
 .kit-p.venceu{color:var(--vermelho-700)}
 .kit-p.sem{color:var(--muted);font-weight:400;font-style:italic}
-@media(max-width:520px){.kit-l{flex-wrap:wrap}.kit-p{margin-left:23px}}
+@media(max-width:520px){.kit-l{flex-wrap:wrap}.kit-p{margin-left:24px}}
 /* ── OS PRAZOS PENDURADOS NA LINHA DA ABERTURA ──────────────────────────────────────────────
    Recuados sob o campo de que dependem: o recuo é o que diz "isto é consequência daquilo".
    Soltos, virariam um terceiro campo da ficha e alguém tentaria editá-los. */
-.pza{margin:2px 0 0 0;padding:9px 12px;background:var(--painel2);border:1px solid var(--linha);
+.pza{margin:4px 0 0 0;padding:8px 12px;background:var(--painel2);border:1px solid var(--linha);
   border-radius:9px}
-.pza-t{font-size:10.5px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--muted)}
-.pza ul{list-style:none;margin:6px 0 0;padding:0}
-.pza li{font-size:12px;color:var(--texto);padding:2px 0}
+.pza-t{font-size:var(--txt-1);font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--muted)}
+.pza ul{list-style:none;margin:4px 0 0;padding:0}
+.pza li{font-size:12px;color:var(--texto);padding:4px 0}
 .pza li b:first-child{display:inline-block;min-width:78px;color:var(--azul-claro)}
 .pza li.hoje b:first-child{color:var(--ambar-700)}
 .pza li.venceu b:first-child,.pza li.venceu b{color:var(--vermelho-700)}
@@ -553,30 +572,30 @@ body{
    >>> "APAGADO" NÃO É "SUMIDO", e a diferença é o ponto: o item que não é meu continua legível
        (opacity, não display:none) porque quem monta preço precisa ver o lote inteiro. Sumir
        diria "não existe"; apagar diz "não é seu". */
-.it-barra{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:10px 0}
+.it-barra{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:8px 0}
 .it-barra input{flex:1;min-width:190px}
 .it-barra .salvo{margin-top:0}
 .it-cx{border:1px solid var(--linha);border-radius:10px;max-height:420px;overflow-y:auto}
 .it-l{display:grid;grid-template-columns:38px minmax(0,1fr) minmax(0,auto);
   grid-template-areas:"n desc desc" ". preco teto";
-  gap:5px 12px;padding:9px 12px;font-size:12.5px;border-bottom:1px solid var(--linha)}
+  gap:4px 12px;padding:8px 12px;font-size:12.5px;border-bottom:1px solid var(--linha)}
 .it-l:last-child{border-bottom:0}
 .it-l.apagado{opacity:.45}
-.it-l.meu{border-left:3px solid var(--azul-claro);padding-left:9px}
-.it-n{grid-area:n;font-weight:700;color:var(--azul-claro);font-size:11.5px;padding-top:1px}
+.it-l.meu{border-left:3px solid var(--azul-claro);padding-left:8px}
+.it-n{grid-area:n;font-weight:700;color:var(--azul-claro);font-size:var(--txt-1);padding-top:4px}
 .it-d{grid-area:desc;color:var(--texto);line-height:1.45;min-width:0}
-.it-d i,.it-p i,.it-t i{display:block;font-style:normal;font-size:11px;color:var(--muted);margin-top:2px}
+.it-d i,.it-p i,.it-t i{display:block;font-style:normal;font-size:var(--txt-1);color:var(--muted);margin-top:4px}
 .it-p{grid-area:preco;color:var(--texto);min-width:0}
 .it-p b.sem{color:var(--muted);font-weight:600}
 .it-t{grid-area:teto;min-width:0;text-align:right}
-.it-t b{display:block;font-size:11.5px}
+.it-t b{display:block;font-size:var(--txt-1)}
 .it-t b.cabe{color:var(--verde-700)}
 .it-t b.estoura{color:var(--vermelho-700)}
 .it-t b.neutro{color:var(--muted);font-weight:600}
 .it-t b.lendo{color:var(--azul-claro);font-weight:600}
 /* O grau de confiança é um sussurro, e é assim que ele tem que ser: ele qualifica o teto sem
    competir com o veredito. Do mesmo tamanho, viraria uma segunda conclusão na mesma linha. */
-.it-t .conf{display:block;font-style:normal;font-size:10px;color:var(--ambar-700);margin-top:2px}
+.it-t .conf{display:block;font-style:normal;font-size:var(--txt-1);color:var(--ambar-700);margin-top:4px}
 @media(max-width:520px){
   .it-l{grid-template-areas:"n desc desc" ". preco preco" ". teto teto"}
   .it-t{text-align:left}
@@ -587,28 +606,28 @@ body{
    duas viram uma lista só e o total de baixo pareceria o total de cima.
    >>> A MARGEM É O ÚNICO NÚMERO COLORIDO da linha. O total é preto porque é fato; a margem é
        julgamento (cabe/não cabe no teto), e é ela que alguém precisa achar de relance. */
-.gn-cx{border:1px solid var(--verde-300);border-radius:10px;padding:11px 12px;margin-bottom:12px;
+.gn-cx{border:1px solid var(--verde-300);border-radius:10px;padding:12px 12px;margin-bottom:12px;
   background:var(--painel2)}
-.gn-topo{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:8px}
+.gn-topo{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:8px}
 .gn-topo b{font-size:13px;color:var(--verde-700)}
 .gn-tot{margin-left:auto;font-size:13px;font-weight:700;color:var(--texto)}
-.gn-tot i{font-style:normal;font-size:10.5px;font-weight:400;color:var(--muted);display:block;text-align:right}
+.gn-tot i{font-style:normal;font-size:var(--txt-1);font-weight:400;color:var(--muted);display:block;text-align:right}
 .gn-alerta{background:var(--ambar-50);border:1px solid var(--ambar-100);border-left:3px solid var(--ambar-600);
-  border-radius:8px;padding:8px 11px;font-size:12px;color:var(--cinza-800);line-height:1.5;margin-bottom:8px}
+  border-radius:8px;padding:8px 12px;font-size:12px;color:var(--cinza-800);line-height:1.5;margin-bottom:8px}
 .gn-lista{border:1px solid var(--linha);border-radius:9px;background:var(--painel);max-height:320px;overflow-y:auto}
 .gn-l{display:grid;grid-template-columns:32px minmax(0,1fr) minmax(0,auto);
-  grid-template-areas:"n desc desc" ". total margem";gap:4px 10px;
-  padding:8px 11px;font-size:12.5px;border-bottom:1px solid var(--linha)}
+  grid-template-areas:"n desc desc" ". total margem";gap:4px 8px;
+  padding:8px 12px;font-size:12.5px;border-bottom:1px solid var(--linha)}
 .gn-l:last-child{border-bottom:0}
-.gn-n{grid-area:n;font-weight:700;color:var(--azul-claro);font-size:11.5px}
+.gn-n{grid-area:n;font-weight:700;color:var(--azul-claro);font-size:var(--txt-1)}
 .gn-d{grid-area:desc;color:var(--texto);line-height:1.45;min-width:0}
-.gn-d i{display:block;font-style:normal;font-size:11px;color:var(--muted);margin-top:2px}
-.gn-f{display:block;font-style:normal;font-size:10.5px;color:var(--muted);margin-top:2px}
+.gn-d i{display:block;font-style:normal;font-size:var(--txt-1);color:var(--muted);margin-top:4px}
+.gn-f{display:block;font-style:normal;font-size:var(--txt-1);color:var(--muted);margin-top:4px}
 .gn-f.ok{color:var(--verde-700)}
 .gn-f.dif{color:var(--ambar-700)}
 .gn-t{grid-area:total;color:var(--texto)}
-.gn-m{grid-area:margem;text-align:right;font-size:11.5px;font-weight:700;min-width:0}
-.gn-m i{display:block;font-style:normal;font-size:10.5px;font-weight:400;color:var(--muted);margin-top:2px}
+.gn-m{grid-area:margem;text-align:right;font-size:var(--txt-1);font-weight:700;min-width:0}
+.gn-m i{display:block;font-style:normal;font-size:var(--txt-1);font-weight:400;color:var(--muted);margin-top:4px}
 .gn-m.boa{color:var(--verde-700)}
 .gn-m.ruim{color:var(--vermelho-700)}
 .gn-m.neutro{color:var(--muted);font-weight:600}
@@ -620,22 +639,22 @@ body{
    O SELO "IA · tem custo" fica no TÍTULO da seção e é âmbar, e as duas coisas são de propósito:
    ele precisa ser lido ANTES do campo de pergunta (por isso em cima) e precisa parar o olho
    (por isso a cor de aviso). Selo discreto num botão que gasta dinheiro é decoração. */
-.selo-ia{display:inline-block;margin-left:8px;padding:2px 8px;border-radius:20px;
-  font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;
+.selo-ia{display:inline-block;margin-left:8px;padding:4px 8px;border-radius:20px;
+  font-size:var(--txt-1);font-weight:700;letter-spacing:.5px;text-transform:uppercase;
   color:var(--ambar-700);background:var(--ambar-50);border:1px solid var(--ambar-100)}
-.cv-novo{margin-top:10px}
+.cv-novo{margin-top:8px}
 .cv-novo textarea{width:100%;background:var(--painel2);border:1px solid var(--linha);color:var(--texto);
-  border-radius:10px;padding:10px 12px;font-family:inherit;font-size:12.5px;line-height:1.5;
+  border-radius:10px;padding:8px 12px;font-family:inherit;font-size:12.5px;line-height:1.5;
   outline:none;resize:vertical}
 .cv-novo textarea:focus{border-color:var(--azul)}
-.cv-acoes{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:8px}
+.cv-acoes{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px}
 .cv-acoes .salvo{margin-top:0;flex:1;min-width:180px}
 /* A RESPOSTA GANHA MOLDURA porque ela é a única coisa desta seção que CUSTOU dinheiro. Solta
    no fluxo, ela se confunde com as dicas cinzas em volta — e o que se paga não se confunde. */
-.cv-resp{margin-top:10px;border:1px solid var(--linha);border-left:3px solid var(--azul-claro);
-  border-radius:10px;padding:11px 13px;background:var(--painel2)}
+.cv-resp{margin-top:8px;border:1px solid var(--linha);border-left:3px solid var(--azul-claro);
+  border-radius:10px;padding:12px 12px;background:var(--painel2)}
 .cv-resp.erro{border-left-color:var(--ambar-600);font-size:12.5px;color:var(--cinza-800);line-height:1.55}
-.cv-perg{font-size:11.5px;color:var(--muted);font-weight:600;margin-bottom:6px}
+.cv-perg{font-size:var(--txt-1);color:var(--muted);font-weight:600;margin-bottom:4px}
 .cv-corpo{font-size:12.5px;color:var(--texto);line-height:1.6;white-space:pre-wrap}
 
 /* ── O NÚMERO DE CONTROLE INFORMADO À MÃO (14/08, fatia B13) ────────────────────────────────
@@ -646,28 +665,28 @@ body{
        mas o nome não bate (ou o PNCP não respondeu agora); vermelho = o número não serve.
        "Não consegui perguntar" é ÂMBAR de propósito — ele não acusa o número de ninguém. */
 .nc-tem{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;
-  border:1px solid var(--verde-300);border-radius:10px;padding:9px 12px;background:var(--painel2)}
+  border:1px solid var(--verde-300);border-radius:10px;padding:8px 12px;background:var(--painel2)}
 .nc-tem b{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12.5px;color:var(--texto)}
-.nc-tem .q{font-size:11.5px;color:var(--muted)}
+.nc-tem .q{font-size:var(--txt-1);color:var(--muted)}
 .nc-linha{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px}
 .nc-linha input{flex:1;min-width:230px;background:var(--painel2);border:1px solid var(--linha);
-  color:var(--texto);border-radius:8px;padding:8px 10px;font-size:12.5px;font-family:ui-monospace,Menlo,Consolas,monospace;outline:none}
+  color:var(--texto);border-radius:8px;padding:8px 8px;font-size:12.5px;font-family:ui-monospace,Menlo,Consolas,monospace;outline:none}
 .nc-linha input:focus{border-color:var(--azul)}
-.nc-msg{margin-top:9px;border:1px solid var(--linha);border-left:3px solid var(--cinza-400);
-  border-radius:10px;padding:10px 12px;background:var(--painel2);
+.nc-msg{margin-top:8px;border:1px solid var(--linha);border-left:3px solid var(--cinza-400);
+  border-radius:10px;padding:8px 12px;background:var(--painel2);
   font-size:12.5px;color:var(--texto);line-height:1.55;white-space:pre-wrap}
 .nc-msg.ok{border-left-color:var(--verde-500)}
 .nc-msg.aviso{border-left-color:var(--ambar-500)}
 .nc-msg.erro{border-left-color:var(--vermelho-700)}
-.nc-msg .rot{display:block;font-size:10.5px;font-weight:700;letter-spacing:.5px;
-  text-transform:uppercase;margin-bottom:5px;white-space:normal}
+.nc-msg .rot{display:block;font-size:var(--txt-1);font-weight:700;letter-spacing:.5px;
+  text-transform:uppercase;margin-bottom:4px;white-space:normal}
 .nc-msg.ok .rot{color:var(--verde-700)}
 .nc-msg.aviso .rot{color:var(--ambar-700)}
 .nc-msg.erro .rot{color:var(--vermelho-700)}
-.nc-div{margin-top:8px;font-size:11.5px;color:var(--muted);white-space:normal}
-.nc-div div{padding:3px 0}
+.nc-div{margin-top:8px;font-size:var(--txt-1);color:var(--muted);white-space:normal}
+.nc-div div{padding:4px 0}
 .nc-div b{color:var(--texto)}
-.nc-acoes{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:9px}
+.nc-acoes{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px}
 
 /* ── OS SELOS DE CONTEXTO DA FICHA (14/08, fatia B14) ───────────────────────────────────────
    Eles são PEQUENOS e ficam ACIMA dos campos, e as duas coisas são a mesma decisão: são o
@@ -676,49 +695,49 @@ body{
    >>> AS CORES SÃO TRÊS PORQUE AS PERGUNTAS SÃO TRÊS: verde = oportunidade (registro de preço
        vale por 12 meses); âmbar = cuidado ao montar preço (não há régua do edital); neutro =
        fato do certame, sem julgamento (o modo de disputa). Cor igual pra tudo seria decoração. */
-.ctx-linha{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
-.ctx-selo{display:inline-flex;align-items:center;gap:5px;padding:2px 9px;border-radius:20px;
-  font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;border:1px solid}
+.ctx-linha{display:flex;gap:4px;flex-wrap:wrap;align-items:center;margin-bottom:8px}
+.ctx-selo{display:inline-flex;align-items:center;gap:4px;padding:4px 8px;border-radius:20px;
+  font-size:var(--txt-1);font-weight:700;letter-spacing:.5px;text-transform:uppercase;border:1px solid}
 .ctx-selo.verde{color:var(--verde-700);background:var(--verde-50);border-color:var(--verde-200)}
 .ctx-selo.ambar{color:var(--ambar-700);background:var(--ambar-50);border-color:var(--ambar-100)}
 .ctx-selo.neutro{color:var(--cinza-700);background:var(--painel2);border-color:var(--linha)}
 .ctx-nota{background:var(--ambar-50);border:1px solid var(--ambar-100);border-left:3px solid var(--ambar-600);
-  border-radius:9px;padding:8px 11px;font-size:12px;color:var(--cinza-800);line-height:1.5;margin-bottom:10px}
+  border-radius:9px;padding:8px 12px;font-size:12px;color:var(--cinza-800);line-height:1.5;margin-bottom:8px}
 /* O "—" do valor estimado não pode ficar com cara de dado que faltou carregar: aqui ele vira
    uma frase que diz POR QUE não há número e QUAL régua vale no lugar. */
 .ctx-semvalor{color:var(--ambar-700);font-weight:600}
-.ctx-semvalor i{display:block;font-style:normal;font-size:11px;font-weight:400;color:var(--muted);margin-top:2px}
+.ctx-semvalor i{display:block;font-style:normal;font-size:var(--txt-1);font-weight:400;color:var(--muted);margin-top:4px}
 
 /* ── MEUS ARQUIVOS (14/08, fatia B15) ───────────────────────────────────────────────────────
    A VERSÃO ANTIGA CONTINUA VISÍVEL, e apagada de propósito: ela precisa estar lá (é a prova do
    que foi enviado em cada rodada) e não pode competir com a mais nova (é a que vale hoje).
    Sumir com ela seria mentir; deixá-la igual seria fazer alguém abrir a errada numa disputa. */
-.arq-g{margin-bottom:14px}
+.arq-g{margin-bottom:12px}
 .arq-g > .cab{display:flex;align-items:baseline;gap:8px;font-family:Montserrat;font-weight:700;
-  font-size:11px;letter-spacing:1.1px;text-transform:uppercase;color:var(--azul-claro);
-  padding-bottom:5px;border-bottom:1px solid var(--linha);margin-bottom:7px}
+  font-size:var(--txt-1);letter-spacing:1.1px;text-transform:uppercase;color:var(--azul-claro);
+  padding-bottom:4px;border-bottom:1px solid var(--linha);margin-bottom:8px}
 .arq-g > .cab i{font-style:normal;font-weight:400;letter-spacing:0;text-transform:none;
-  font-size:11px;color:var(--muted);margin-left:auto}
-.arq-sub{font-size:11px;font-weight:600;color:var(--cinza-700);margin:7px 0 4px}
-.arq-l{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:3px 10px;
+  font-size:var(--txt-1);color:var(--muted);margin-left:auto}
+.arq-sub{font-size:var(--txt-1);font-weight:600;color:var(--cinza-700);margin:8px 0 4px}
+.arq-l{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:4px 8px;
   grid-template-areas:"v nome de" ". meta meta";
-  padding:7px 2px;border-bottom:1px solid var(--linha);font-size:12.5px}
+  padding:8px 4px;border-bottom:1px solid var(--linha);font-size:12.5px}
 .arq-l:last-child{border-bottom:0}
 .arq-l.velha{opacity:.55}
-.arq-v{grid-area:v;font-size:10.5px;font-weight:700;color:var(--azul-claro);
-  border:1px solid var(--linha);border-radius:20px;padding:1px 7px;white-space:nowrap;align-self:start}
+.arq-v{grid-area:v;font-size:var(--txt-1);font-weight:700;color:var(--azul-claro);
+  border:1px solid var(--linha);border-radius:20px;padding:4px 8px;white-space:nowrap;align-self:start}
 .arq-l.velha .arq-v{color:var(--muted)}
 .arq-n{grid-area:nome;color:var(--azul-claro);cursor:pointer;text-decoration:underline;
   text-underline-offset:2px;word-break:break-word;min-width:0}
 .arq-n:hover{color:var(--azul)}
 /* A PROCEDÊNCIA É UMA ETIQUETA, e não uma linha de texto: numa disputa, "veio do PNCP" e "alguém
    anexou" não valem a mesma coisa, e essa diferença tem que ser lida de relance. */
-.arq-de{grid-area:de;font-size:10px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;
-  border:1px solid;border-radius:20px;padding:1px 8px;white-space:nowrap;align-self:start}
+.arq-de{grid-area:de;font-size:var(--txt-1);font-weight:700;letter-spacing:.4px;text-transform:uppercase;
+  border:1px solid;border-radius:20px;padding:4px 8px;white-space:nowrap;align-self:start}
 .arq-de.pncp{color:var(--verde-700);background:var(--verde-50);border-color:var(--verde-200)}
 .arq-de.mao{color:var(--cinza-700);background:var(--painel2);border-color:var(--linha)}
 .arq-de.empresa{color:var(--ambar-700);background:var(--ambar-50);border-color:var(--ambar-100)}
-.arq-meta{grid-area:meta;font-size:11px;color:var(--muted);line-height:1.45}
+.arq-meta{grid-area:meta;font-size:var(--txt-1);color:var(--muted);line-height:1.45}
 @media(max-width:520px){
   .arq-l{grid-template-areas:"v nome nome" ". de de" ". meta meta"}
   .arq-de{justify-self:start}
@@ -729,7 +748,7 @@ body{
        em mais lugar nenhum. Fica pela mesma regra do `.fase-tag` logo acima: seletor órfão não
        quebra nada, e apagar CSS no mesmo commit que muda a marcação é como se descobre, dias
        depois, que ele era usado num terceiro lugar. Sai numa limpeza própria. */
-.ag-secao{margin:34px 0 4px;font-family:Montserrat;font-weight:700;font-size:12px;letter-spacing:1.4px;
+.ag-secao{margin:32px 0 4px;font-family:Montserrat;font-weight:700;font-size:12px;letter-spacing:1.4px;
   text-transform:uppercase;color:var(--muted)}
 
 /* ══ CALENDÁRIO MENSAL — item 6 da fila da reforma ════════════════════════════════════════════
@@ -792,7 +811,7 @@ body{
        justamente no dia mais cheio, que é quando ele importa. 152px dá 8px de folga (uma unidade
        da grade) e continua sendo altura fixa. */
 .cal-grade{display:grid;grid-template-columns:repeat(7,1fr);grid-template-rows:auto repeat(6,152px);
-  gap:1px;margin-top:var(--esp-3);
+  gap:4px;margin-top:var(--esp-3);
   background:var(--cinza-200);border:1px solid var(--cinza-200);border-radius:var(--raio-cartao);
   overflow:hidden}
 .cal-cabdia{background:var(--cinza-100);padding:var(--esp-2) var(--esp-2);font-size:var(--txt-1);
@@ -827,7 +846,7 @@ body{
        "de quem?" — o órgão é o desempate, e por isso é o que se corta quando falta largura. */
 .cal-pil{display:flex;align-items:baseline;gap:var(--esp-1);width:100%;text-align:left;
   border:0;border-left:3px solid var(--cinza-400);border-radius:var(--raio-botao);
-  padding:3px var(--esp-2);font-family:inherit;font-size:var(--txt-1);color:var(--cinza-800);
+  padding:4px var(--esp-2);font-family:inherit;font-size:var(--txt-1);color:var(--cinza-800);
   cursor:pointer;transition:filter .14s,box-shadow .14s}
 .cal-pil:hover{filter:brightness(.96);box-shadow:var(--sombra-1)}
 .cal-pil:focus-visible{outline:none;box-shadow:var(--foco)}
@@ -836,7 +855,7 @@ body{
 /* PARADO (cancelado/suspenso) no calendário segue a mesma regra do card: esmaecido e presente. */
 .cal-pil.parado{opacity:.55}
 .cal-mais{background:none;border:0;font-family:inherit;font-size:var(--txt-1);color:var(--azul-700);
-  cursor:pointer;padding:2px var(--esp-1);text-align:left;align-self:flex-start;border-radius:var(--raio-botao)}
+  cursor:pointer;padding:4px var(--esp-1);text-align:left;align-self:flex-start;border-radius:var(--raio-botao)}
 .cal-mais:hover{background:var(--azul-50);text-decoration:underline}
 .cal-mais:focus-visible{outline:none;box-shadow:var(--foco)}
 
@@ -865,7 +884,7 @@ body{
   .cal-conta{margin-left:0;width:100%;text-align:left}
 }
 
-.vazio{text-align:center;padding:46px 20px;color:var(--muted);font-size:13.5px;
+.vazio{text-align:center;padding:48px 20px;color:var(--muted);font-size:13.5px;
   background:var(--branco);border:1px dashed var(--cinza-300);border-radius:var(--raio-cartao)}
 /* ══ OS INDICADORES GANHARAM A ANATOMIA DO MOLDE (13/08, item 7b fatia 2) ════════════════════
    Eles eram uma FITA de células grudadas, divididas por um fio — cinco caixas dentro de uma
@@ -913,14 +932,14 @@ body{
   border-left:1px solid var(--linha);box-shadow:var(--sombra-3);z-index:41;
   transform:translateX(100%);transition:transform .22s ease;overflow-y:auto}
 #drawer.on{transform:none}
-.dw-top{position:sticky;top:0;background:var(--painel);border-bottom:1px solid var(--linha);padding:15px 20px;z-index:2}
+.dw-top{position:sticky;top:0;background:var(--painel);border-bottom:1px solid var(--linha);padding:16px 20px;z-index:2}
 .dw-top .x{position:absolute;top:13px;right:16px;background:var(--painel2);border:1px solid var(--linha);
   color:var(--muted);border-radius:8px;width:28px;height:28px;cursor:pointer;font-size:15px;line-height:1}
 .dw-top .x:hover{border-color:var(--azul);color:var(--azul-claro)}
-.dw-top h2{margin:0;font-family:Montserrat;font-size:15px;font-weight:700;color:var(--cinza-800);padding-right:40px;line-height:1.45}
-.dw-body{padding:16px 20px 40px}
+.dw-top h2{margin:0;font-family:Montserrat;font-size:15px;font-weight:700;color:var(--cinza-800);padding-right:32px;line-height:1.45}
+.dw-body{padding:16px 20px 32px}
 .dw-sec{margin-top:20px}
-.dw-sec > h4{margin:0 0 4px;font-family:Montserrat;font-size:11px;font-weight:700;letter-spacing:1.3px;
+.dw-sec > h4{margin:0 0 4px;font-family:Montserrat;font-size:var(--txt-1);font-weight:700;letter-spacing:1.3px;
   text-transform:uppercase;color:var(--muted)}
 /* A LINHA QUE EXPLICA A SEÇÃO. O que enchia a tela não era a quantidade de seções — era ter que
    ADIVINHAR o que cada uma faz. Dez palavras transformam "mais um bloco" em "ah, é isso".
@@ -930,69 +949,69 @@ body{
        Tarefas. Exatamente o "muito cheio de coisa" que esta faxina existe pra resolver, criado
        por ela. Sobraram as 2 seções que não tinham explicação nenhuma; nas outras venceu a que já
        estava, porque ela carrega o PORQUÊ e a minha só dizia o QUÊ. */
-.sec-dica{font-size:11.5px;color:var(--muted);margin:0 0 10px;line-height:1.5;opacity:.9}
+.sec-dica{font-size:var(--txt-1);color:var(--muted);margin:0 0 8px;line-height:1.5;opacity:.9}
 /* ══ O STEPPER DE ETAPAS ══ a linha do tempo que substituiu a fileira de botões iguais ══════
    A LINHA que conecta é o ::before do container, atrás das bolas — é ela que transforma cinco
    caixinhas num caminho. Sem ela seriam cinco botões bonitos e a pergunta "quanto falta?"
    continuaria sem resposta visual. */
-.dw-etapas{background:var(--painel2);border:1px solid var(--linha);border-radius:12px;padding:15px 17px 13px}
-.passos-linha{display:flex;align-items:flex-start;gap:2px;position:relative;overflow-x:auto;padding-bottom:2px}
+.dw-etapas{background:var(--painel2);border:1px solid var(--linha);border-radius:12px;padding:16px 16px 12px}
+.passos-linha{display:flex;align-items:flex-start;gap:4px;position:relative;overflow-x:auto;padding-bottom:4px}
 .passos-linha::before{content:'';position:absolute;left:9%;right:9%;top:15px;height:2px;background:var(--linha);z-index:0}
 .passos-linha .pas{flex:1;min-width:74px;background:transparent;border:0;padding:0;cursor:pointer;
-  display:flex;flex-direction:column;align-items:center;gap:6px;position:relative;z-index:1;font-family:inherit}
+  display:flex;flex-direction:column;align-items:center;gap:4px;position:relative;z-index:1;font-family:inherit}
 .passos-linha .bola{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;
   background:var(--painel);border:2px solid var(--linha);color:var(--muted);
   font-size:12.5px;font-weight:700;transition:transform .16s,box-shadow .16s}
-.passos-linha .nm{font-size:11px;color:var(--muted);text-align:center;line-height:1.25;transition:color .16s}
+.passos-linha .nm{font-size:var(--txt-1);color:var(--muted);text-align:center;line-height:1.25;transition:color .16s}
 /* PASSADO: cor cheia, mas discreto — ele já foi, não compete pela atenção. */
 .passos-linha .pas.feito .nm{color:var(--texto)}
 /* PRESENTE: é o único que cresce. O halo faz o olho parar aqui antes de ler qualquer coisa. */
 .passos-linha .pas.agora .bola{width:38px;height:38px;font-size:15px;box-shadow:0 0 0 5px rgba(var(--azul-500-rgb),.16)}
-.passos-linha .pas.agora .nm{color:var(--cinza-800);font-weight:700;font-size:11.5px}
+.passos-linha .pas.agora .nm{color:var(--cinza-800);font-weight:700;font-size:var(--txt-1)}
 /* FUTURO: apagado. Ele existe pra dizer QUANTO FALTA, e não pra ser lido agora. */
 .passos-linha .pas.futuro .bola{opacity:.42}
 .passos-linha .pas.futuro .nm{opacity:.5}
 .passos-linha .pas:hover .bola{transform:scale(1.08)}
 .passos-linha .pas:hover .nm{color:var(--azul-claro)}
-.passos-legenda{margin-top:11px;padding-top:10px;border-top:1px solid var(--linha);font-size:12px;color:var(--muted)}
+.passos-legenda{margin-top:12px;padding-top:8px;border-top:1px solid var(--linha);font-size:12px;color:var(--muted)}
 /* "O QUE FAZER AGORA" — a frase da etapa. Fundo próprio pra ela não virar mais uma linha de
    texto cinza no meio de outras: é a única coisa da ficha que diz o que a pessoa deve FAZER. */
-.agora-faz{margin-top:9px;background:var(--azul-50);border-left:3px solid var(--azul-500);
-  border-radius:0 8px 8px 0;padding:9px 12px;font-size:12.5px;color:var(--cinza-800);line-height:1.5}
+.agora-faz{margin-top:8px;background:var(--azul-50);border-left:3px solid var(--azul-500);
+  border-radius:0 8px 8px 0;padding:8px 12px;font-size:12.5px;color:var(--cinza-800);line-height:1.5}
 /* A ABA DA ETAPA ganha um ponto — o "você está aqui" do segundo nível. Ele existe porque a
    pessoa pode ter navegado pra outra aba e voltado, e aí o `.on` já não é a da etapa. */
 .dw-abas button.foco::after{content:'';display:inline-block;width:6px;height:6px;border-radius:50%;
-  background:var(--verde-500);margin-left:6px;vertical-align:middle}
+  background:var(--verde-500);margin-left:4px;vertical-align:middle}
 /* ── "⋯ MAIS AÇÕES" ── o resto continua a UM clique, no mesmo lugar, sempre ── */
 .mais-cx{position:relative;display:inline-block}
 .mais-menu{display:none;position:absolute;bottom:calc(100% + 6px);left:0;min-width:220px;z-index:5;
-  background:var(--painel);border:1px solid var(--linha);border-radius:10px;padding:5px;
+  background:var(--painel);border:1px solid var(--linha);border-radius:10px;padding:4px;
   box-shadow:var(--sombra-2)}
 .mais-cx.on .mais-menu{display:block}
-.mais-menu a{display:block;padding:8px 11px;border-radius:7px;font-size:12px;color:var(--texto);
+.mais-menu a{display:block;padding:8px 12px;border-radius:7px;font-size:12px;color:var(--texto);
   cursor:pointer;text-decoration:none;white-space:nowrap}
 .mais-menu a:hover{background:var(--painel2);color:var(--azul-claro)}
 /* ── o mini-progresso do card ── */
-.cd-prog{display:flex;align-items:center;gap:8px;margin:2px 0 7px;flex-wrap:wrap}
-.cd-prog .bolas{display:flex;gap:3px}
+.cd-prog{display:flex;align-items:center;gap:8px;margin:4px 0 8px;flex-wrap:wrap}
+.cd-prog .bolas{display:flex;gap:4px}
 .cd-prog .bolas i{width:7px;height:7px;border-radius:50%;border:1px solid var(--linha);display:block}
-.cd-prog .txt{font-size:10.5px;color:var(--muted);letter-spacing:.2px}
-.ficha{display:grid;grid-template-columns:112px 1fr;gap:7px 12px;font-size:12.5px}
+.cd-prog .txt{font-size:var(--txt-1);color:var(--muted);letter-spacing:.2px}
+.ficha{display:grid;grid-template-columns:112px 1fr;gap:8px 12px;font-size:12.5px}
 .ficha dt{color:var(--muted)}
 .ficha dd{margin:0;color:var(--texto);word-break:break-word}
 .ficha dd.ganho{color:var(--verde-700);font-weight:700}
 .dw-obs{background:var(--ambar-50);border:1px solid var(--ambar-100);border-left:3px solid var(--ambar-600);
-  border-radius:9px;padding:11px 13px;font-size:12.5px;color:var(--cinza-800);white-space:pre-wrap;line-height:1.55}
+  border-radius:9px;padding:12px 12px;font-size:12.5px;color:var(--cinza-800);white-space:pre-wrap;line-height:1.55}
 textarea.anot{width:100%;min-height:110px;background:var(--painel2);border:1px solid var(--linha);color:var(--texto);
-  border-radius:10px;padding:11px 13px;font-family:inherit;font-size:12.5px;line-height:1.55;outline:none;resize:vertical}
+  border-radius:10px;padding:12px 12px;font-family:inherit;font-size:12.5px;line-height:1.55;outline:none;resize:vertical}
 textarea.anot:focus{border-color:var(--azul)}
-.salvo{font-size:11px;color:var(--muted);margin-top:5px;min-height:14px}
+.salvo{font-size:var(--txt-1);color:var(--muted);margin-top:4px;min-height:14px}
 /* ── FICHA CAMPO A CAMPO (08/08) ── só um campo aberto por vez; ver o comentário em
    `editarCampo`. O botão "Alterar" é discreto e só aparece no hover da linha: ficha cheia de
    botões azuis compete com o conteúdo, e o conteúdo é o que se veio ler. */
 .ficha-fc .fc{border-bottom:1px solid var(--linha);padding:8px 0}
 .ficha-fc .fc:last-child{border-bottom:0}
-.fc-r{display:flex;align-items:baseline;gap:10px}
+.fc-r{display:flex;align-items:baseline;gap:8px}
 /* ══ RÓTULO APAGADO, VALOR FORTE (13/08, fatia B1) ═══════════════════════════════════════════
    Rótulo e valor tinham pesos parecidos demais: 10px em negrito 700 contra 12,5px normal. O
    rótulo GRITAVA tanto quanto o dado, e numa ficha o dado é a única coisa que se veio ler.
@@ -1000,7 +1019,7 @@ textarea.anot:focus{border-color:var(--azul)}
        → semi) na tinta mais escura do molde. A abertura, o número, o órgão e o objeto passam a
        saltar aos olhos porque são os ÚNICOS elementos pesados da linha.
    >>> NENHUM HEX NOVO: --cinza-500 (rótulo), --cinza-800 (valor). Os dois já eram do molde. */
-.fc-rot{font-size:var(--txt-0);font-weight:var(--peso-semi);color:var(--cinza-500);
+.fc-rot{font-size:var(--txt-1);font-weight:var(--peso-semi);color:var(--cinza-500);
   text-transform:uppercase;letter-spacing:.6px;min-width:120px;flex-shrink:0}
 .fc-val{font-size:var(--txt-2);font-weight:var(--peso-semi);color:var(--cinza-800);
   line-height:1.45;flex:1;word-break:break-word}
@@ -1013,17 +1032,17 @@ textarea.anot:focus{border-color:var(--azul)}
    que mudou é que ele deixou de ser um fantasma: quem não sabe que a ficha é editável nunca
    passa o mouse para descobrir. Agora ele existe apagado e ACENDE no hover da linha. */
 .fc-bt{opacity:.55;background:var(--branco);border:1px solid var(--borda-controle);
-  color:var(--cinza-700);border-radius:var(--raio-item);padding:3px var(--esp-3);
-  font-size:var(--txt-0);font-weight:var(--peso-semi);cursor:pointer;font-family:inherit;
+  color:var(--cinza-700);border-radius:var(--raio-item);padding:4px var(--esp-3);
+  font-size:var(--txt-1);font-weight:var(--peso-semi);cursor:pointer;font-family:inherit;
   transition:opacity 120ms ease,background-color 120ms ease,border-color 120ms ease;flex-shrink:0}
 .fc:hover .fc-bt{opacity:1}
 .fc-bt:hover{background:var(--cinza-100);border-color:var(--cinza-300);color:var(--cinza-800)}
 .fc-bt:focus-visible{opacity:1;outline:none;box-shadow:var(--foco)}
-.fc-edit label{display:block;font-size:10px;font-weight:700;color:var(--muted);margin-bottom:5px;
+.fc-edit label{display:block;font-size:var(--txt-1);font-weight:700;color:var(--muted);margin-bottom:4px;
   text-transform:uppercase;letter-spacing:.6px}
 .fc-in{display:flex;gap:8px}
 .fc-in input,.fc-in select,.fc-in textarea{flex:1;background:var(--painel2);color:var(--texto);
-  border:1px solid rgba(var(--azul-500-rgb),.5);border-radius:8px;padding:8px 10px;font-size:12.5px;font-family:inherit}
+  border:1px solid rgba(var(--azul-500-rgb),.5);border-radius:8px;padding:8px 8px;font-size:12.5px;font-family:inherit}
 .fc-in textarea{resize:vertical;line-height:1.5}
 .fc-acoes{display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap}
 .btn-ed.sec{background:var(--painel2);color:var(--texto);border:1px solid var(--linha)}
@@ -1063,9 +1082,9 @@ textarea.anot:focus{border-color:var(--azul)}
    ruído constante é como se ensina alguém a não olhar a fileira inteira.
    >>> `tabular-nums` porque "3/15" e "10/15" têm larguras diferentes, e número que dança faz a
        aba inteira pular quando uma tarefa é concluída. */
-.dw-abas .cnt{font-size:var(--txt-0);font-weight:var(--peso-forte);font-variant-numeric:tabular-nums;
+.dw-abas .cnt{font-size:var(--txt-1);font-weight:var(--peso-forte);font-variant-numeric:tabular-nums;
   background:var(--cinza-100);color:var(--cinza-700);border-radius:var(--raio-pilula);
-  padding:1px var(--esp-2);line-height:1.6}
+  padding:4px var(--esp-2);line-height:1.6}
 .dw-abas button.on .cnt{background:rgba(var(--azul-500-rgb),.28);color:var(--branco)}
 /* SÓ EXISTE QUANDO HÁ CONTEÚDO: o `<span>` nasce sempre (é o mesmo id que o JS preenche), mas
    vazio ele some. Sem isto, sete pílulas cinzas em branco apareceriam em todo negócio novo —
@@ -1084,65 +1103,65 @@ textarea.anot:focus{border-color:var(--azul)}
 .dw-painel{display:none}
 .dw-painel.on{display:block}
 /* ── LEMBRETES ── */
-.lem-novo{display:grid;grid-template-columns:1fr 190px 96px auto;gap:8px;margin:10px 0 6px}
+.lem-novo{display:grid;grid-template-columns:1fr 190px 96px auto;gap:8px;margin:8px 0 4px}
 @media(max-width:700px){.lem-novo{grid-template-columns:1fr}}
 .lem-novo input,.lem-novo select{background:var(--painel2);color:var(--texto);border:1px solid var(--linha);
-  border-radius:8px;padding:8px 10px;font-size:12.5px;font-family:inherit}
-.lem{display:flex;gap:10px;align-items:flex-start;padding:9px 0;border-bottom:1px solid var(--linha)}
+  border-radius:8px;padding:8px 8px;font-size:12.5px;font-family:inherit}
+.lem{display:flex;gap:8px;align-items:flex-start;padding:8px 0;border-bottom:1px solid var(--linha)}
 .lem .t{font-size:12.5px;color:var(--cinza-800);line-height:1.4}
-.lem .q{font-size:11px;color:var(--muted);margin-top:2px}
-.lem .prio{margin-left:auto;font-size:10px;font-weight:700;border:1px solid;border-radius:20px;padding:1px 8px;white-space:nowrap}
+.lem .q{font-size:var(--txt-1);color:var(--muted);margin-top:4px}
+.lem .prio{margin-left:auto;font-size:var(--txt-1);font-weight:700;border:1px solid;border-radius:20px;padding:4px 8px;white-space:nowrap}
 /* feito continua VISÍVEL, só apagado: some seria perder a prova de que a coisa foi feita */
 .lem.feito .t{text-decoration:line-through;color:var(--muted)}
 .lem.feito{opacity:.6}
-.rastro{font-size:11.5px;color:var(--texto);padding:6px 0;border-bottom:1px solid var(--linha);line-height:1.5}
+.rastro{font-size:var(--txt-1);color:var(--texto);padding:4px 0;border-bottom:1px solid var(--linha);line-height:1.5}
 .rastro b{color:var(--azul-claro)}
-.rastro span{display:block;color:var(--muted);font-size:10.5px}
+.rastro span{display:block;color:var(--muted);font-size:var(--txt-1)}
 .salvo.ok{color:var(--verde)}
 .salvo.erro{color:var(--vermelho)}
-.tf{display:flex;gap:9px;align-items:flex-start;padding:6px 0;font-size:12.5px;cursor:pointer;line-height:1.45}
-.tf input{margin-top:2px;accent-color:var(--verde-600);cursor:pointer}
+.tf{display:flex;gap:8px;align-items:flex-start;padding:4px 0;font-size:12.5px;cursor:pointer;line-height:1.45}
+.tf input{margin-top:4px;accent-color:var(--verde-600);cursor:pointer}
 .tf.feita span{color:var(--muted);text-decoration:line-through}
 /* ── O FORMULÁRIO DE INCLUSÃO ── mesmo desenho dos painéis: ele abre no lugar, não em outra tela */
-#form-manual{background:var(--painel);border:1px solid var(--linha);border-radius:12px;padding:16px 18px;margin:14px 0}
+#form-manual{background:var(--painel);border:1px solid var(--linha);border-radius:12px;padding:16px 16px;margin:12px 0}
 /* ── O ASSISTENTE DE 3 PASSOS (14/08, fatia B4) ─────────────────────────────────────────────
    Ele mora no MESMO painel do formulário manual, e não numa janela por cima. Modal empilhada
    sobre a lista esconde justamente o funil contra o qual a pessoa está conferindo se aquele
    pregão já está lá — e a duplicata é o erro caro deste fluxo.
    >>> A TRILHA DE PASSOS É UM INDICADOR, NÃO UM MENU: ela não é clicável. Pular pro passo 3 sem
        passar pelo 2 criaria negócio com os campos que o índice trouxe e ninguém conferiu. */
-.a-passos{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0 14px}
-.a-p{font-size:11px;font-weight:700;letter-spacing:.4px;padding:4px 11px;border-radius:20px;
+.a-passos{display:flex;gap:4px;flex-wrap:wrap;margin:8px 0 12px}
+.a-p{font-size:var(--txt-1);font-weight:700;letter-spacing:.4px;padding:4px 12px;border-radius:20px;
   border:1px solid var(--linha);color:var(--muted)}
 .a-p.on{border-color:var(--azul-claro);color:var(--azul-claro);background:var(--painel2)}
 .a-p.feito{border-color:var(--verde-300);color:var(--verde-700)}
-.a-barra{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
+.a-barra{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px}
 .a-barra input{flex:1;min-width:190px}
 .a-lista{max-height:320px;overflow:auto;border:1px solid var(--linha);border-radius:10px}
-.a-item{display:flex;gap:10px;align-items:flex-start;padding:8px 12px;font-size:12.5px;
+.a-item{display:flex;gap:8px;align-items:flex-start;padding:8px 12px;font-size:12.5px;
   border-bottom:1px solid var(--linha);cursor:pointer}
 .a-item:last-child{border-bottom:0}
 .a-item:hover{background:var(--linha-hover)}
-.a-item input{width:14px;height:14px;margin-top:2px;accent-color:var(--azul-claro);cursor:pointer;flex:0 0 auto}
-.a-n{flex:0 0 46px;font-weight:700;color:var(--azul-claro);font-size:11.5px;padding-top:1px}
+.a-item input{width:14px;height:14px;margin-top:4px;accent-color:var(--azul-claro);cursor:pointer;flex:0 0 auto}
+.a-n{flex:0 0 46px;font-weight:700;color:var(--azul-claro);font-size:var(--txt-1);padding-top:4px}
 .a-d{flex:1;color:var(--texto)}
-.a-d i{display:block;font-style:normal;font-size:11px;color:var(--muted);margin-top:2px}
-.a-rodape{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:12px}
+.a-d i{display:block;font-style:normal;font-size:var(--txt-1);color:var(--muted);margin-top:4px}
+.a-rodape{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:12px}
 .a-rodape .salvo{margin-top:0}
 .a-alerta{background:var(--ambar-50);border:1px solid var(--ambar-100);border-left:3px solid var(--ambar-600);
-  border-radius:9px;padding:10px 13px;font-size:12.5px;color:var(--cinza-800);line-height:1.55;margin-bottom:10px}
+  border-radius:9px;padding:8px 12px;font-size:12.5px;color:var(--cinza-800);line-height:1.55;margin-bottom:8px}
 .a-ok{background:var(--painel2);border:1px solid var(--verde-300);border-radius:9px;
-  padding:11px 13px;font-size:12.5px;color:var(--texto);line-height:1.55}
-.a-resumo{margin-top:10px;border:1px solid var(--linha);border-radius:10px;overflow:hidden}
-.a-r{display:flex;gap:12px;align-items:baseline;padding:7px 12px;font-size:12.5px;
+  padding:12px 12px;font-size:12.5px;color:var(--texto);line-height:1.55}
+.a-resumo{margin-top:8px;border:1px solid var(--linha);border-radius:10px;overflow:hidden}
+.a-r{display:flex;gap:12px;align-items:baseline;padding:8px 12px;font-size:12.5px;
   border-bottom:1px solid var(--linha)}
-.a-r span{flex:0 0 118px;color:var(--muted);font-size:11.5px}
+.a-r span{flex:0 0 118px;color:var(--muted);font-size:var(--txt-1)}
 .a-r b{color:var(--texto);font-weight:600}
 .a-resumo .pza{border:0;border-radius:0;margin:0}
-.fm-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:11px;margin-top:10px}
-.fm-c label{display:block;font-size:10.5px;font-weight:600;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:.3px}
+.fm-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;margin-top:8px}
+.fm-c label{display:block;font-size:var(--txt-1);font-weight:600;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:.3px}
 .fm-c input,.fm-c select,.fm-c textarea{width:100%;background:var(--painel2);color:var(--texto);
-  border:1px solid var(--linha);border-radius:8px;padding:8px 10px;font-size:12.5px;font-family:inherit}
+  border:1px solid var(--linha);border-radius:8px;padding:8px 8px;font-size:12.5px;font-family:inherit}
 .fm-c textarea{resize:vertical}
 .fm-c input:focus,.fm-c select:focus,.fm-c textarea:focus{outline:none;border-color:var(--azul)}
 /* ── AS CAIXINHAS COMO BOTÃO ── cartão que é botão precisa PARECER botão, senão a função existe
@@ -1160,53 +1179,53 @@ textarea.anot:focus{border-color:var(--azul)}
   color:var(--cinza-400);font-size:var(--txt-3);line-height:1}
 .kpi{position:relative}
 /* ── O PAINEL DAS CAIXINHAS ── */
-#painel-kpi{background:var(--painel);border:1px solid var(--linha);border-radius:12px;padding:16px 18px;margin:14px 0}
-.pk-topo{display:flex;align-items:center;gap:12px;margin-bottom:10px;flex-wrap:wrap;font-size:14px;color:var(--cinza-800)}
-.pk-conta{background:var(--painel2);border:1px solid var(--linha);border-radius:9px;padding:11px 13px;font-size:13px;color:var(--cinza-800);margin-bottom:8px}
+#painel-kpi{background:var(--painel);border:1px solid var(--linha);border-radius:12px;padding:16px 16px;margin:12px 0}
+.pk-topo{display:flex;align-items:center;gap:12px;margin-bottom:8px;flex-wrap:wrap;font-size:14px;color:var(--cinza-800)}
+.pk-conta{background:var(--painel2);border:1px solid var(--linha);border-radius:9px;padding:12px 12px;font-size:13px;color:var(--cinza-800);margin-bottom:8px}
 .pk-tab{width:100%;border-collapse:collapse;font-size:12.5px}
-.pk-tab th{text-align:left;padding:7px;border-bottom:1px solid var(--linha);color:var(--muted);font-size:10.5px;text-transform:uppercase}
-.pk-tab td{padding:7px;border-bottom:1px solid var(--cinza-100)}
+.pk-tab th{text-align:left;padding:8px;border-bottom:1px solid var(--linha);color:var(--muted);font-size:var(--txt-1);text-transform:uppercase}
+.pk-tab td{padding:8px;border-bottom:1px solid var(--cinza-100)}
 .pk-tab tbody tr{cursor:pointer}
 .pk-tab tbody tr:hover{background:var(--painel2)}
-.pk-tab tfoot td{border-top:2px solid var(--cinza-300);border-bottom:0;padding-top:9px;color:var(--cinza-800)}
-.pk-dif{font-size:10.5px;color:var(--ambar-700);margin-top:2px}
+.pk-tab tfoot td{border-top:2px solid var(--cinza-300);border-bottom:0;padding-top:8px;color:var(--cinza-800)}
+.pk-dif{font-size:var(--txt-1);color:var(--ambar-700);margin-top:4px}
 /* ── PROPOSTA ANEXADA ── */
-.prop-novo{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:12px 0 6px}
+.prop-novo{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:12px 0 4px}
 .prop-novo input[type=file]{background:var(--painel2);color:var(--texto);border:1px solid var(--linha);
-  border-radius:8px;padding:7px 9px;font-size:12px;font-family:inherit;flex:1;min-width:180px}
-.anx{display:flex;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--linha);font-size:12.5px}
-.anx .v{font-size:10px;font-weight:700;color:var(--azul-claro);border:1px solid var(--azul-claro);
-  border-radius:20px;padding:1px 8px;white-space:nowrap}
+  border-radius:8px;padding:8px 8px;font-size:12px;font-family:inherit;flex:1;min-width:180px}
+.anx{display:flex;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid var(--linha);font-size:12.5px}
+.anx .v{font-size:var(--txt-1);font-weight:700;color:var(--azul-claro);border:1px solid var(--azul-claro);
+  border-radius:20px;padding:4px 8px;white-space:nowrap}
 .anx .n{color:var(--cinza-800);flex:1;cursor:pointer;text-decoration:underline;text-decoration-color:var(--linha)}
-.anx .q{color:var(--muted);font-size:11px;white-space:nowrap}
+.anx .q{color:var(--muted);font-size:var(--txt-1);white-space:nowrap}
 /* O placar da conferência: mesmo desenho do Conferidor, de propósito — é o mesmo resultado. */
-.pl-conf{display:grid;grid-template-columns:repeat(auto-fit,minmax(96px,1fr));gap:8px;margin:10px 0}
-.pl-conf div{background:var(--painel2);border:1px solid var(--linha);border-radius:9px;padding:9px 10px;text-align:center}
+.pl-conf{display:grid;grid-template-columns:repeat(auto-fit,minmax(96px,1fr));gap:8px;margin:8px 0}
+.pl-conf div{background:var(--painel2);border:1px solid var(--linha);border-radius:9px;padding:8px 8px;text-align:center}
 .pl-conf b{display:block;font-family:Montserrat,sans-serif;font-size:19px;color:var(--cinza-800)}
-.pl-conf span{font-size:10.5px;color:var(--muted)}
+.pl-conf span{font-size:var(--txt-1);color:var(--muted)}
 .pl-conf .acima b{color:var(--vermelho-700)} .pl-conf .acima{border-color:var(--vermelho-300)}
 .pl-conf .ok b{color:var(--verde-700)}
 /* ── CREDENCIAMENTOS ── */
-.cred-novo{display:grid;grid-template-columns:1fr 170px auto;gap:8px;margin:12px 0 6px}
+.cred-novo{display:grid;grid-template-columns:1fr 170px auto;gap:8px;margin:12px 0 4px}
 @media(max-width:700px){.cred-novo{grid-template-columns:1fr}}
 .cred-novo input,.cred-novo select{background:var(--painel2);color:var(--texto);border:1px solid var(--linha);
-  border-radius:8px;padding:8px 10px;font-size:12.5px;font-family:inherit}
-.cred{border:1px solid var(--linha);border-radius:10px;padding:10px 12px;margin-bottom:8px;background:var(--painel2)}
-.cred .topo{display:flex;gap:9px;align-items:center;flex-wrap:wrap}
+  border-radius:8px;padding:8px 8px;font-size:12.5px;font-family:inherit}
+.cred{border:1px solid var(--linha);border-radius:10px;padding:8px 12px;margin-bottom:8px;background:var(--painel2)}
+.cred .topo{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .cred .nome{font-size:13px;font-weight:600;color:var(--cinza-800)}
-.cred .selo{font-size:10px;font-weight:700;border:1px solid;border-radius:20px;padding:1px 9px;white-space:nowrap}
-.cred .meta{font-size:11px;color:var(--muted);margin-top:5px;line-height:1.6}
+.cred .selo{font-size:var(--txt-1);font-weight:700;border:1px solid;border-radius:20px;padding:4px 8px;white-space:nowrap}
+.cred .meta{font-size:var(--txt-1);color:var(--muted);margin-top:4px;line-height:1.6}
 /* PARADO É AVISO, e por isso ele muda a BORDA do cartão e não só um texto no meio da linha:
    pedido esquecido é o defeito que esta seção existe pra pegar, e ele tem que saltar da lista. */
 .cred.parado{border-color:var(--ambar-300)}
-.cred .passos{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.cred .passos{display:flex;gap:4px;flex-wrap:wrap;margin-top:8px}
 .cred .passos button{background:transparent;border:1px solid var(--linha);color:var(--muted);border-radius:8px;
-  padding:5px 10px;font-size:11.5px;font-family:inherit;cursor:pointer}
+  padding:4px 8px;font-size:var(--txt-1);font-family:inherit;cursor:pointer}
 .cred .passos button:hover{border-color:var(--azul);color:var(--azul-claro)}
-.cred .trilha{margin-top:8px;padding-top:8px;border-top:1px solid var(--linha);font-size:11px;color:var(--muted);line-height:1.7}
+.cred .trilha{margin-top:8px;padding-top:8px;border-top:1px solid var(--linha);font-size:var(--txt-1);color:var(--muted);line-height:1.7}
 .dw-acoes{display:flex;gap:8px;flex-wrap:wrap;margin-top:24px;padding-top:16px;border-top:1px solid var(--linha)}
 .dw-acoes button{background:var(--painel2);border:1px solid var(--linha);color:var(--texto);border-radius:9px;
-  padding:8px 14px;font-size:12px;font-family:inherit;cursor:pointer}
+  padding:8px 12px;font-size:12px;font-family:inherit;cursor:pointer}
 .dw-acoes button:hover{border-color:var(--azul);color:var(--azul-claro)}
 @media(max-width:760px){.col{flex:0 0 84vw}.ag-hora{flex:0 0 48px;font-size:12.5px}.ficha{grid-template-columns:96px 1fr}}
 
@@ -1234,34 +1253,104 @@ textarea.anot:focus{border-color:var(--azul)}
   .pagina-topo nav{order:3;width:100%;margin-left:0;overflow-x:auto;scrollbar-width:thin}
   .pagina-topo nav a{white-space:nowrap}
 }
+
+/* ══ O DEDO (14/08, fatia B19) ═══════════════════════════════════════════════════════════════
+   ESTA TELA NÃO TINHA UM SÓ BLOCO `@media(max-width:480px)`. Ela tem três pontos de quebra
+   (900, 760, 700) — todos de LAYOUT, nenhum de MÃO. Ou seja: no celular ela reorganizava as
+   peças e entregava os mesmos alvos de 28 e 30px, que é o tamanho certo pra um ponteiro e
+   pequeno demais pra um polegar.
+   >>> POR QUE 480 E NÃO OS 900 QUE JÁ EXISTEM: engordar alvo em 900px estraga a densidade da
+       tela onde o gestor compara centenas de itens com o mouse (BASE, PARTE 2.6 — "no monitor
+       o alvo é o ponteiro"). O ponto de quebra do DEDO é outro assunto que o do LAYOUT, e por
+       isso ganha bloco próprio em vez de carona num deles.
+   >>> 44 vem do Apple HIG; o mínimo do WCAG 2.2 é 24. Ficamos no 44 porque a mão que usa isto
+       está segurando outra coisa. */
+@media(max-width:480px){
+
+  /* 1. BOTÃO. Todo botão desta tela ganha altura de dedo. Texto dá largura de graça — por isso
+        aqui basta a altura; os três que NÃO têm texto estão logo abaixo, e são o caso perigoso. */
+  button, .btn-ed, .chip{min-height:44px}
+
+  /* 2. OS TRÊS BOTÕES SÓ DE ÍCONE — contados no arquivo, um por um (o sino, o X do drawer, as
+        duas setas do calendário e o X do painel do dia). Sem `min-width` eles viram tira alta e
+        estreita: o dedo continua errando na horizontal e a régua diz que está tudo certo.
+        O `width`/`height` fixo de 28 e 30px que eles têm no desktop é vencido aqui porque
+        `min-width`/`min-height` ganham de `width`/`height` — não é sorte, é a regra do CSS. */
+  .sino, .dw-top .x, .cal-nav button, .cal-dia-painel .cab .x{
+    min-width:44px;min-height:44px;display:inline-flex;align-items:center;justify-content:center}
+
+  /* 3. `<a>` QUE É BOTÃO. `min-height` em elemento inline não faz NADA — é a armadilha que o
+        molde nomeia. Por isso vira `inline-flex` antes de receber altura. Só entram os links
+        que são ALVO (a fita de visões e a fileira de atalhos); link dentro de frase corrida
+        continua do tamanho da letra, que é a exceção "inline" do próprio WCAG 2.5.8 —
+        engordá-lo quebraria a linha do texto sem dar alvo nenhum a ninguém. */
+  .pagina-topo nav a, .sublinks a, .barra .lnk{
+    display:inline-flex;align-items:center;min-height:44px}
+
+  /* 4. CAIXINHA DE MARCAR — a receita do molde, e o ponto mais perigoso da tela (são SETE, em
+        item, tarefa, lembrete e seleção). Ela NÃO engorda: o alvo vira 44×44 transparente e o
+        quadradinho de ~18px é redesenhado no miolo. O dedo ganha a área; o olho vê o que via.
+        >>> A centralização é por `transform`, e não por margem negativa de 9px: margem é
+            ESPAÇO, e espaço fora da grade de 8 é justamente o que a régua reprova. Centrar com
+            a régua quebrada seria trocar um defeito por outro. */
+  input[type="checkbox"]{
+    -webkit-appearance:none;appearance:none;
+    width:44px;height:44px;min-width:44px;min-height:44px;flex:0 0 44px;
+    margin:0;padding:0;border:0;background:none;position:relative;cursor:pointer;align-self:center}
+  input[type="checkbox"]::before{content:"";position:absolute;top:50%;left:50%;
+    transform:translate(-50%,-50%);width:18px;height:18px;box-sizing:border-box;
+    border:1px solid var(--cinza-400);border-radius:var(--raio-mini);background:var(--branco)}
+  input[type="checkbox"]:checked::before{background:var(--azul);border-color:var(--azul)}
+  input[type="checkbox"]:checked::after{content:"";position:absolute;top:50%;left:50%;
+    transform:translate(-50%,-65%) rotate(-45deg);width:10px;height:5px;
+    border:2px solid var(--branco);border-top:0;border-right:0}
+  input[type="checkbox"]:disabled{cursor:default;opacity:.5}
+  /* o anel de foco vai no quadradinho DESENHADO, não no alvo transparente: um anel de 44px
+     boiando ao redor de um quadrado de 18 não diz onde o teclado está. */
+  input[type="checkbox"]:focus-visible{outline:none}
+  input[type="checkbox"]:focus-visible::before{box-shadow:var(--foco)}
+
+  /* 5. CAMPO DE DIGITAR também é alvo: é onde o dedo tem que acertar pra o teclado subir. */
+  input[type="text"], input[type="date"], input[type="number"], input[type="search"],
+  select, textarea{min-height:44px}
+
+  /* 6. LINHA DE TABELA CLICÁVEL (a lista de pacotes abre o item no clique da linha). */
+  .pk-tab tbody tr{height:44px}
+
+  /* 7. VAZAMENTO — a ÚNICA peça de largura fixa acima de 360px que sobrou nesta tela depois de
+        a régua parar de contar `max-width` como peça fixa (defeito 5 dela, consertado hoje):
+        o painel de avisos, cravado em 380px. Ele é `position:absolute;right:0` ancorado no
+        sino, então ele não empurra a barra de rolagem — ele SAI PELA ESQUERDA e o aviso mais
+        antigo fica cortado fora da tela, que é pior, porque não deixa rastro nenhum.
+        380 - (390 - 24 de respiro) = fica faltando. Aqui ele passa a caber por conta: a largura
+        é a da janela menos os dois respiros da faixa. */
+  #notif{width:calc(100vw - var(--esp-8));max-width:380px}
+}
 </style>
 </head>
 <body>
 <!-- ══ O DICIONÁRIO DE ÍCONES ══ Lucide (MIT), copiado pro repo, sem CDN. Cada desenho existe
-     UMA vez aqui e é referenciado por <use href="#ic-..."> onde for preciso. `aria-hidden` no
+     UMA vez e é referenciado por <use href="#ic-..."> onde for preciso. `aria-hidden` no
      sprite inteiro: quem lê em voz alta pula tudo isto e vai direto ao texto — o ícone SEMPRE
-     acompanha uma palavra nesta tela, então ele nunca é a única portadora do sentido. -->
-<svg id="ic-sprite" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg"><defs>
-  <symbol id="ic-alerta" viewBox="0 0 24 24"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></symbol>
-  <symbol id="ic-bloqueado" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m5.6 5.6 12.8 12.8"/></symbol>
-  <symbol id="ic-impressora" viewBox="0 0 24 24"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v8H6z"/></symbol>
-  <symbol id="ic-baixar" viewBox="0 0 24 24"><path d="M12 3v12"/><path d="m7 11 5 5 5-5"/><path d="M4 20h16"/></symbol>
-  <symbol id="ic-clipe" viewBox="0 0 24 24"><path d="M13.2 20.5 21 12.7a4.5 4.5 0 0 0-6.4-6.4L5.6 15.4a2.5 2.5 0 0 0 3.5 3.5l8.1-8.1"/></symbol>
-  <symbol id="ic-balanca" viewBox="0 0 24 24"><path d="M12 3v18"/><path d="M7 21h10"/><path d="M5 7h14"/><path d="m5 7-3 6h6z"/><path d="m19 7-3 6h6z"/></symbol>
-  <symbol id="ic-trofeu" viewBox="0 0 24 24"><path d="M6 4h12v6a6 6 0 0 1-12 0z"/><path d="M6 6H4a2 2 0 0 0 2 4"/><path d="M18 6h2a2 2 0 0 1-2 4"/><path d="M10 16h4v4h-4z"/><path d="M8 20h8"/></symbol>
-  <symbol id="ic-telefone" viewBox="0 0 24 24"><rect x="6" y="2" width="12" height="20" rx="2"/><path d="M11 18.5h2"/></symbol>
-  <symbol id="ic-nota" viewBox="0 0 24 24"><path d="M5 3h8l5 5v13H5z"/><path d="M13 3v5h5"/><path d="M9 13h5M9 16.5h4"/></symbol>
-  <symbol id="ic-documento" viewBox="0 0 24 24"><path d="M5 3h8l5 5v13H5z"/><path d="M13 3v5h5"/></symbol>
-  <symbol id="ic-calendario" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/></symbol>
-  <symbol id="ic-sino" viewBox="0 0 24 24"><path d="M18 9a6 6 0 1 0-12 0c0 5-2 6-2 6h16s-2-1-2-6"/><path d="M10.5 20a2 2 0 0 0 3 0"/></symbol>
-  <symbol id="ic-relogio" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
-  <symbol id="ic-orgao" viewBox="0 0 24 24"><path d="M3 21h18"/><path d="M5.5 21V10M10 21V10M14 21V10M18.5 21V10"/><path d="m12 3 9 5H3z"/></symbol>
-  <symbol id="ic-queda" viewBox="0 0 24 24"><path d="M22 17 13.5 8.5 9 13 2 6"/><path d="M16 17h6v-6"/></symbol>
-  <symbol id="ic-lapis" viewBox="0 0 24 24"><path d="M17 3.5a2.1 2.1 0 0 1 3 3L7.5 19 3 20.5 4.5 16z"/></symbol>
-  <symbol id="ic-industria" viewBox="0 0 24 24"><path d="M3 21V9l6 4V9l6 4V4h6v17z"/><path d="M7.5 21v-3M12 21v-3M16.5 21v-3"/></symbol>
-  <symbol id="ic-entrada" viewBox="0 0 24 24"><path d="M3 12h5l2 3h4l2-3h5"/><path d="M4.5 6h15L21 12v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-6z"/></symbol>
-  <symbol id="ic-seta" viewBox="0 0 24 24"><path d="M4 12h14"/><path d="m13 6 6 6-6 6"/></symbol>
-</defs></svg>
+     acompanha uma palavra nesta tela, então ele nunca é a única portadora do sentido.
+
+     ══ 14/08, FATIA B19 — O SPRITE INLINE MORREU AQUI, E ESSE PASSO ESTAVA ESCRITO HÁ UM DIA ══
+     O fpmed_icones.js nasceu em 13/08 justamente porque o mesmo desenho existia em DOIS lugares
+     e já tinha começado a divergir (o selo do órgão tinha meio pixel de diferença entre as duas
+     telas). Ele deixou anotado, no próprio cabeçalho, o passo que fecharia a história:
+     "trocar o <svg id='ic-sprite'> do Negócios por <script src='fpmed_icones.js'>". Não foi
+     feito na hora porque esta tela estava aberta em outra frente, e escrever por cima de quem
+     está com o arquivo aberto é o jeito de perder trabalho.
+     >>> AGORA A FONTE É UMA SÓ. Os 19 símbolos que moravam aqui são idênticos aos do módulo (a
+         tests/testa_busca_nacional_molde.js comparava símbolo a símbolo e está verde), e o
+         módulo traz 15 a mais — entre eles o #ic-certo, o #ic-x e o #ic-mais, que são os que
+         esta fatia precisou para tirar os 12 pictogramas de texto da tela.
+     >>> ELE VEM AQUI, e não no <head>: a injeção é `insertAdjacentHTML('afterend')` no próprio
+         <script>, então o sprite já está no documento quando o navegador encontra o primeiro
+         <use>. Injetar depois (no DOMContentLoaded) faz o <use> apontar pra um alvo que ainda
+         não existe, e o sintoma é ícone invisível de vez em quando. -->
+<script src="fpmed_icones.js"></script>
+
 <div data-limedtec-menu></div>
 
 <!-- ══ O HEADER STICKY (13/08, item 7b) — a MESMA moldura da Encontrar ═════════════════════════
@@ -1350,7 +1439,7 @@ textarea.anot:focus{border-color:var(--azul)}
     <a class="lnk" onclick="abrirFormManual()" id="lk-manual" title="a licitação existe mas não está no PNCP (BLL, convite, e-mail do órgão)">+ Incluir licitação</a>
     <input type="text" id="f-busca" placeholder="órgão, objeto, nº…" style="display:none;min-width:230px" oninput="pinta()">
     <div class="dir">
-      <label style="font-size:12.5px;color:var(--muted);display:flex;align-items:center;gap:6px;cursor:pointer">
+      <label style="font-size:12.5px;color:var(--muted);display:flex;align-items:center;gap:4px;cursor:pointer">
         <input type="checkbox" id="f-arquivados" onchange="pinta()" style="accent-color:var(--azul)"> ver arquivados
       </label>
       <!-- ══ O SEGUNDO SELETOR DE VISÃO MORREU AQUI (12/08, achado no laço visual) ═══════════
@@ -1410,7 +1499,7 @@ textarea.anot:focus{border-color:var(--azul)}
 
 <div id="velcro" onclick="fecharDrawer()"></div>
 <aside id="drawer" aria-hidden="true">
-  <div class="dw-top"><button class="x" onclick="fecharDrawer()" title="fechar">✕</button><h2 id="dw-titulo">—</h2></div>
+  <div class="dw-top"><button class="x" onclick="fecharDrawer()" title="fechar" aria-label="fechar"><svg class="ic" aria-hidden="true"><use href="#ic-x"/></svg></button><h2 id="dw-titulo">—</h2></div>
   <div class="dw-body" id="dw-body"></div>
 </aside>
 
@@ -1571,6 +1660,16 @@ let CRED_SINO = null;
 // `'erro'` = nao consegui ler. Lista vazia diria "esta tudo em dia", e nao e isso que houve.
 let COLETA_SINO = null;
 const esc = s => String(s==null?'':s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+/* ══ O CERTINHO SAIU DO TECLADO E FOI PRO SPRITE (14/08, fatia B19) ═══════════════════════════
+   Sete lugares desta tela desenhavam "confirmado" com o caractere ✓ (U+2713) e um com ✔
+   (U+2714) — que já são DOIS desenhos diferentes para a mesma ideia, dentro do mesmo arquivo.
+   Caractere não é ícone: ele muda de traço conforme a fonte instalada na máquina de quem abre,
+   e não aceita a cor da marca (o ✔ vem colorido de fábrica em vários sistemas). Aqui ele é uma
+   constante só, apontando pro #ic-certo do sprite — o mesmo desenho que o resto do sistema usa.
+   >>> Os dois usos em `textContent` VIRARAM `innerHTML` de propósito, e é seguro: o texto é
+       literal escrito aqui, sem nada vindo de fora. Onde entra dado de fora (o `brl(valor)`),
+       ele continua passando pelo caminho de sempre. */
+const ICONE_CERTO = '<svg class="ic" aria-hidden="true"><use href="#ic-certo"/></svg>';
 const brl = n => n==null ? '—' : 'R$ ' + Number(n).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
 // GESTOR: a tabela inteira já é de gestor pela RLS (ddl/negocios.sql). O gate de tela aqui é a
 // segunda camada — `valor_ganho` é resultado comercial, e tela não deve mostrar o que o banco
@@ -1900,7 +1999,7 @@ function pinta(){
     const n = base.filter(x => x.estagio === f.k).length;
     return `<div class="chip${FASE_SEL===f.k?' on':''}" onclick="selFase('${f.k}')">
       <span class="bola" style="background:${f.c}"></span>${f.n} <span class="n">(${n})</span></div>`;
-  }).join('') + (FASE_SEL ? `<div class="chip" onclick="selFase(null)">✕ limpar fase</div>` : '');
+  }).join('') + (FASE_SEL ? `<div class="chip" onclick="selFase(null)"><svg class="ic" aria-hidden="true"><use href="#ic-x"/></svg> limpar fase</div>` : '');
 
   const gestor = ehGestor();
   const k = numerosDoTopo();
@@ -2446,7 +2545,7 @@ function painelDoDia(mapa){
   const doDia = mapa[CAL_DIA] || [], r = rotuloDia(CAL_DIA);
   return `<div class="cal-dia-painel">
     <div class="cab"><span class="d">${r.data}</span><span class="sem">${M1(r.semana)}</span>
-      <button type="button" class="x" onclick="calFecharDia()" title="fechar o dia">✕ fechar</button></div>
+      <button type="button" class="x" onclick="calFecharDia()" title="fechar o dia"><svg class="ic" aria-hidden="true"><use href="#ic-x"/></svg> fechar</button></div>
     ${doDia.length ? doDia.map(n => card(n)).join('')
       : '<div class="fp-apoio">Nenhuma sessão neste dia. Os dias vizinhos continuam na grade acima.</div>'}
   </div>`;
@@ -2845,7 +2944,7 @@ function corpoDrawer(n, obs, carregando){
           seguinte, e a anterior continua aqui, marcada como antiga.</div>
         <div id="arq-lista"><div class="salvo">carregando…</div></div>
         ${editavel ? `<div class="prop-novo">
-          <select id="arq-cat" style="background:var(--painel2);color:var(--texto);border:1px solid var(--linha);border-radius:8px;padding:8px 10px;font-size:12.5px;font-family:inherit"></select>
+          <select id="arq-cat" style="background:var(--painel2);color:var(--texto);border:1px solid var(--linha);border-radius:8px;padding:8px 8px;font-size:12.5px;font-family:inherit"></select>
           <input type="file" id="arq-arq" multiple>
           <button class="btn-ed" id="arq-bt" onclick="anexarEmMeusArquivos(${n.id})"><svg class="ic" aria-hidden="true"><use href="#ic-clipe"/></svg> Anexar</button>
         </div><div class="salvo" id="arq-msg"></div>`
@@ -2862,7 +2961,7 @@ function corpoDrawer(n, obs, carregando){
           <input type="text" id="lem-titulo" placeholder="ex.: ligar pro fornecedor antes da sessão">
           <input type="datetime-local" id="lem-quando">
           <select id="lem-prio"><option value="alta">alta</option><option value="media" selected>média</option><option value="baixa">baixa</option></select>
-          <button class="btn-ed" onclick="criarLembrete(${n.id})" id="lem-bt">＋ Agendar</button>
+          <button class="btn-ed" onclick="criarLembrete(${n.id})" id="lem-bt"><svg class="ic" aria-hidden="true"><use href="#ic-mais"/></svg> Agendar</button>
         </div><div class="salvo" id="lem-msg"></div>` : '<div class="salvo">só quem grava pode agendar lembrete.</div>'}
         <div id="lem-lista"><div class="salvo">carregando…</div></div>
       </div>
@@ -2876,7 +2975,7 @@ function corpoDrawer(n, obs, carregando){
       <div class="dw-sec" id="kit-sec"><div id="kit-lista"></div></div>
       <div class="dw-sec">
         <h4>Tarefas deste negócio</h4>
-        <div class="dica" style="font-size:11.5px;color:var(--muted);margin-bottom:8px">
+        <div class="dica" style="font-size:var(--txt-1);color:var(--muted);margin-bottom:8px">
           Tarefa com data e hora <b>entra no sino</b> e no aviso da manhã. Sem data, fica só na lista.
         </div>
         <div id="tar-lista"></div>
@@ -2903,7 +3002,7 @@ function corpoDrawer(n, obs, carregando){
     <div class="${pnl(n,"prop")}" id="aba-prop">
       <div class="dw-sec">
         <h4>Proposta enviada</h4>
-        <div class="dica" style="font-size:11.5px;color:var(--muted);margin-bottom:8px">
+        <div class="dica" style="font-size:var(--txt-1);color:var(--muted);margin-bottom:8px">
           Anexe o PDF da proposta. <b>As versões empilham</b> — mandar de novo não apaga a
           anterior, e é assim que fica registrado o que foi enviado em cada rodada.
         </div>
@@ -2916,7 +3015,7 @@ function corpoDrawer(n, obs, carregando){
       </div>
       <div class="dw-sec">
         <h4>Conferência contra o teto CMED</h4>
-        <div class="dica" style="font-size:11.5px;color:var(--muted);margin-bottom:8px">
+        <div class="dica" style="font-size:var(--txt-1);color:var(--muted);margin-bottom:8px">
           Lê os itens da proposta anexada e compara cada preço com o teto legal (PMVG para venda
           ao governo). É o <b>mesmo motor</b> do Conferidor — não uma segunda conta.
         </div>
@@ -2934,13 +3033,13 @@ function corpoDrawer(n, obs, carregando){
     <div class="${pnl(n,"ata")}" id="aba-ata">
       <div class="dw-sec">
         <h4>Documentos da ata</h4>
-        <div class="dica" style="font-size:11.5px;color:var(--muted);margin-bottom:8px">
+        <div class="dica" style="font-size:var(--txt-1);color:var(--muted);margin-bottom:8px">
           Cada anexo tem uma <b>categoria</b>, e as versões empilham dentro dela. Nada se
           sobrescreve e nada se apaga.
         </div>
         <div id="ata-lista"><div class="salvo">carregando…</div></div>
         ${editavel ? `<div class="prop-novo">
-          <select id="ata-cat" style="background:var(--painel2);color:var(--texto);border:1px solid var(--linha);border-radius:8px;padding:8px 10px;font-size:12.5px;font-family:inherit">
+          <select id="ata-cat" style="background:var(--painel2);color:var(--texto);border:1px solid var(--linha);border-radius:8px;padding:8px 8px;font-size:12.5px;font-family:inherit">
             <option value="ata">Ata de registro de preços</option>
             <option value="contrato">Contrato</option>
             <option value="proposta_final">Proposta final</option>
@@ -2970,7 +3069,7 @@ function corpoDrawer(n, obs, carregando){
     <div class="${pnl(n,"cred")}" id="aba-cred">
       <div class="dw-sec">
         <h4>Credenciamentos junto à indústria</h4>
-        <div class="dica" style="font-size:11.5px;color:var(--muted);margin-bottom:8px">
+        <div class="dica" style="font-size:var(--txt-1);color:var(--muted);margin-bottom:8px">
           O credenciamento é da <b>empresa com a indústria</b> — vale pra todos os pregões daquela
           marca, não só pra este. Os que nasceram deste negócio aparecem marcados.
           <b>Nada aqui se apaga:</b> pedido negado que se refaz volta pro começo na mesma linha, e
@@ -2985,7 +3084,7 @@ function corpoDrawer(n, obs, carregando){
             <option value="representante">representante</option><option value="telefone">telefone</option>
             <option value="outro">outro</option>
           </select>
-          <button class="btn-ed" id="cred-bt" onclick="criarCredenciamento(${n.id})">＋ Registrar pedido</button>
+          <button class="btn-ed" id="cred-bt" onclick="criarCredenciamento(${n.id})"><svg class="ic" aria-hidden="true"><use href="#ic-mais"/></svg> Registrar pedido</button>
         </div><div class="salvo" id="cred-msg"></div>`
         : '<div class="salvo">só quem grava pode registrar credenciamento.</div>'}
       </div>
@@ -3088,7 +3187,7 @@ function pintaLembretes(id){
           ${auto.urgencia==='hoje' ? '<b style="color:var(--ambar)"> · É HOJE</b>'
             : auto.urgencia==='amanha' ? '<b style="color:var(--ambar)"> · é amanhã</b>' : ''}</div>
         <div class="q">${esc(auto.quandoTxt)} · <i>automático — abertura da sessão</i></div>
-        <div style="margin-top:6px"><button class="btn sec mini" onclick="event.stopPropagation();avisarNoZap(${id})"
+        <div style="margin-top:4px"><button class="btn sec mini" onclick="event.stopPropagation();avisarNoZap(${id})"
           title="abre o WhatsApp com a mensagem pronta — você só escolhe o contato"><svg class="ic" aria-hidden="true"><use href="#ic-telefone"/></svg> avisar no zap</button></div>
       </div>
       <span class="prio" style="color:var(--azul-claro);border-color:var(--azul-claro)">sessão</span>
@@ -3328,7 +3427,7 @@ function pintaItensEdital(id){
       <input type="text" id="it-busca" placeholder="buscar por descrição ou nº do item" value="${esc(ITENS_BUSCA)}" oninput="filtraItens(${id})">
       <span class="salvo" id="it-cmed-msg">${ITENS_CMED === null ? 'conferindo contra a tabela CMED…' : ''}</span>
     </div>
-    <div class="it-cx">${vis.map(x => linhaDeItem(n, x)).join('') || '<div class="salvo" style="padding:10px 12px">Nenhum item bate com essa busca.</div>'}</div>
+    <div class="it-cx">${vis.map(x => linhaDeItem(n, x)).join('') || '<div class="salvo" style="padding:8px 12px">Nenhum item bate com essa busca.</div>'}</div>
     <div class="salvo">${rodapeDosItens()}</div>`;
 }
 
@@ -3338,7 +3437,7 @@ function filtraItens(id){
   const q = ITENS_BUSCA.trim().toLowerCase();
   const vis = q ? ITENS_EDITAL.filter(x => (String(x.descricao||'') + ' ' + String(x.numero_item||'')).toLowerCase().includes(q)) : ITENS_EDITAL;
   const cx = document.querySelector('#itens-cx .it-cx');
-  if(cx) cx.innerHTML = vis.map(x => linhaDeItem(n, x)).join('') || '<div class="salvo" style="padding:10px 12px">Nenhum item bate com essa busca.</div>';
+  if(cx) cx.innerHTML = vis.map(x => linhaDeItem(n, x)).join('') || '<div class="salvo" style="padding:8px 12px">Nenhum item bate com essa busca.</div>';
 }
 
 /* A COMPARAÇÃO CONTRA O TETO, EMBUTIDA. Roda ao abrir a aba, e não num botão: um botão faria a
@@ -3839,7 +3938,7 @@ function pintaProposta(id){
         <span class="n" onclick="abrirAnexo('${esc(a.arquivo_path)}', this)" title="abrir">${esc(a.arquivo_nome)}</span>
         <span class="q">${esc(new Date(a.enviado_em).toLocaleDateString('pt-BR'))}${a.enviado_por?' · '+esc(String(a.enviado_por).split('@')[0]):''}${a.bytes?' · '+(a.bytes/1024).toFixed(0)+' KB':''}</span>
       </div>`).join('')
-      + `<div style="margin-top:10px"><button class="btn-ed" onclick="conferirProposta(${id})" id="conf-bt"><svg class="ic" aria-hidden="true"><use href="#ic-balanca"/></svg> Conferir a v${ANEXOS[0].versao} contra o teto CMED</button></div>`
+      + `<div style="margin-top:8px"><button class="btn-ed" onclick="conferirProposta(${id})" id="conf-bt"><svg class="ic" aria-hidden="true"><use href="#ic-balanca"/></svg> Conferir a v${ANEXOS[0].versao} contra o teto CMED</button></div>`
     : '<div class="salvo">Nenhuma proposta anexada ainda.</div>';
 
   pintaConferencias(id);
@@ -4043,22 +4142,22 @@ function pintaConferencia(id){
     //     os dois daria um verde que não existe. Item que a CMED não conhece pode ser material
     //     (que não tem teto) ou pode ser um medicamento que a leitura não casou — e a diferença
     //     entre os dois é quem confere, não a tela.
-    + `<div class="dica" style="font-size:11.5px;color:var(--muted);margin-bottom:8px">
+    + `<div class="dica" style="font-size:var(--txt-1);color:var(--muted);margin-bottom:8px">
         <b>Não encontrado na CMED não quer dizer dentro do teto.</b> Pode ser material (que não tem
         teto legal) ou um medicamento que a leitura não casou — confira os que interessam.
        </div>`
     + `<div style="max-height:340px;overflow:auto"><table style="width:100%;border-collapse:collapse;font-size:12px">
         <thead><tr>
-          <th style="text-align:left;padding:6px;border-bottom:1px solid var(--linha);color:var(--muted);font-size:10.5px">ITEM</th>
-          <th style="text-align:right;padding:6px;border-bottom:1px solid var(--linha);color:var(--muted);font-size:10.5px">MEU PREÇO</th>
-          <th style="text-align:right;padding:6px;border-bottom:1px solid var(--linha);color:var(--muted);font-size:10.5px">TETO</th>
-          <th style="text-align:left;padding:6px;border-bottom:1px solid var(--linha);color:var(--muted);font-size:10.5px">SITUAÇÃO</th>
+          <th style="text-align:left;padding:4px;border-bottom:1px solid var(--linha);color:var(--muted);font-size:var(--txt-1)">ITEM</th>
+          <th style="text-align:right;padding:4px;border-bottom:1px solid var(--linha);color:var(--muted);font-size:var(--txt-1)">MEU PREÇO</th>
+          <th style="text-align:right;padding:4px;border-bottom:1px solid var(--linha);color:var(--muted);font-size:var(--txt-1)">TETO</th>
+          <th style="text-align:left;padding:4px;border-bottom:1px solid var(--linha);color:var(--muted);font-size:var(--txt-1)">SITUAÇÃO</th>
         </tr></thead><tbody>`
     + linhas.map(r => `<tr>
-        <td style="padding:6px;border-bottom:1px solid var(--borda-divisor)">${esc(String(r.descricao).slice(0,90))}</td>
-        <td style="padding:6px;text-align:right;border-bottom:1px solid var(--borda-divisor)">${brl(r.precoUnit)}</td>
-        <td style="padding:6px;text-align:right;border-bottom:1px solid var(--borda-divisor)">${brl(r.teto)}</td>
-        <td style="padding:6px;border-bottom:1px solid var(--borda-divisor);color:${r.situacao==='acima'?'var(--vermelho-700)':r.situacao==='abaixo'?'var(--verde)':'var(--muted)'}">
+        <td style="padding:4px;border-bottom:1px solid var(--borda-divisor)">${esc(String(r.descricao).slice(0,90))}</td>
+        <td style="padding:4px;text-align:right;border-bottom:1px solid var(--borda-divisor)">${brl(r.precoUnit)}</td>
+        <td style="padding:4px;text-align:right;border-bottom:1px solid var(--borda-divisor)">${brl(r.teto)}</td>
+        <td style="padding:4px;border-bottom:1px solid var(--borda-divisor);color:${r.situacao==='acima'?'var(--vermelho-700)':r.situacao==='abaixo'?'var(--verde)':'var(--muted)'}">
           ${esc(rot[r.situacao]||r.situacao)}${r.situacao==='acima'?` <b>+${r.pctAcima}%</b>`:''}</td>
       </tr>`).join('')
     + `</tbody></table></div>
@@ -4072,7 +4171,7 @@ function pintaConferencias(id){
   // O HISTÓRICO fica embaixo da lista de anexos: ele responde "a gente já tinha conferido antes
   // de mandar?", que é a pergunta que aparece depois que dá errado.
   const box = document.getElementById('prop-lista'); if(!box || !CONFERENCIAS.length) return;
-  box.innerHTML += '<div class="salvo" style="margin-top:10px"><b>Conferências anteriores</b></div>'
+  box.innerHTML += '<div class="salvo" style="margin-top:8px"><b>Conferências anteriores</b></div>'
     + CONFERENCIAS.map(c => `<div class="anx">
         <span class="q">${esc(new Date(c.quando).toLocaleDateString('pt-BR'))}</span>
         <span class="n" style="cursor:default;text-decoration:none">${c.itens} itens · <b style="color:${c.acima?'var(--vermelho-700)':'var(--verde)'}">${c.acima} acima</b> · ${c.nao_encontrados} não achados</span>
@@ -4271,9 +4370,9 @@ function abrirFormManual(){
       ${camp('m-empresa', 'Empresa', `<select id="m-empresa">${EMPRESAS.map(e =>
         `<option value="${e.id}">${esc(e.razao_social)}</option>`).join('')}</select>`)}
     </div>
-    <div class="fm-c" style="margin-top:10px"><label>Objeto</label>
+    <div class="fm-c" style="margin-top:8px"><label>Objeto</label>
       <textarea id="m-objeto" rows="2" placeholder="o que está sendo comprado"></textarea></div>
-    <div class="fm-c" style="margin-top:10px"><label>Observação</label>
+    <div class="fm-c" style="margin-top:8px"><label>Observação</label>
       <textarea id="m-obs" rows="2" placeholder="o que o edital disse, o que você reparou, o que precisa lembrar"></textarea>
       <div class="salvo" style="margin-top:4px">Vai para as <b>Anotações</b> da ficha — o mesmo campo
         que antes era a coluna OBSERVAÇÃO da planilha.</div></div>
@@ -4281,7 +4380,7 @@ function abrirFormManual(){
          Quem inclui à mão está com o edital aberto na frente — é o momento em que ele existe no
          computador da pessoa. Pedir pra anexar depois é pedir pra ela procurar de novo, e é
          assim que negócio fica sem edital. -->
-    <div class="fm-c" style="margin-top:10px"><label><svg class="ic" aria-hidden="true"><use href="#ic-clipe"/></svg> Edital e anexos</label>
+    <div class="fm-c" style="margin-top:8px"><label><svg class="ic" aria-hidden="true"><use href="#ic-clipe"/></svg> Edital e anexos</label>
       <input type="file" id="m-arqs" multiple accept="application/pdf,.pdf,.xlsx,.xls,.doc,.docx">
       <div class="salvo" style="margin-top:4px">O <b>primeiro</b> arquivo entra como <b>edital</b>;
         os demais como <b>anexo do edital</b> (TR, relação de itens, planilhas). Dá pra trocar depois na ficha.</div></div>
@@ -4660,7 +4759,7 @@ function pintaAssist(){
       <span class="salvo">${ASS.nc ? 'edital ' + esc(ASS.nc) : 'sem edital de origem — inclusão à mão'}</span>
       <button class="btn-ed sec" style="margin-left:auto" onclick="fecharAssistente()">fechar</button></div>
     <div class="a-passos">${[[1,'Itens'],[2,'O negócio'],[3,'Enviar']].map(([k,r]) =>
-      `<span class="a-p${ASS.passo===k?' on':(ASS.passo>k?' feito':'')}">${ASS.passo>k?'✓':k} ${r}</span>`).join('')}</div>`;
+      `<span class="a-p${ASS.passo===k?' on':(ASS.passo>k?' feito':'')}">${ASS.passo>k?ICONE_CERTO:k} ${r}</span>`).join('')}</div>`;
   el.innerHTML = topo + (ASS.passo === 1 ? assistPasso1() : ASS.passo === 2 ? assistPasso2() : assistPasso3());
   // Os dois pedaços que dependem do DOM recém-criado moram aqui, e num lugar só: quem repinta
   // não precisa lembrar de chamá-los. Foi assim que o resumo apareceu vazio na primeira versão.
@@ -4752,7 +4851,7 @@ function assistPasso2(){
         `<option value="${f.k}"${(assistValor('a-estagio','oportunidade')===f.k)?' selected':''}>${esc(f.n)}</option>`).join('')}</select>`)}
       ${camp('a-valor','Valor estimado (opcional)', `<input id="a-valor" type="number" step="0.01" min="0" value="${esc(assistValor('a-valor', l.valor_estimado))}">`)}
     </div>
-    <div class="fm-c" style="margin-top:10px"><label>Objeto</label>
+    <div class="fm-c" style="margin-top:8px"><label>Objeto</label>
       <textarea id="a-objeto" rows="2">${esc(assistValor('a-objeto', l.objeto))}</textarea></div>
 
     <!-- ══ O KIT, COM AS DATAS NA CARA ══════════════════════════════════════════════════════
@@ -4957,7 +5056,7 @@ function pintaPainelGanhas(qual){
   //     decididas" é uma frase que qualquer um refaz na calculadora.
   const contexto = qual === 'taxa'
     ? `<div class="pk-conta"><b>${k.ganhos.length} ganhas</b> de <b>${k.decididas} decididas</b> = <b>${k.taxaTxt}</b>
-        <div class="salvo" style="margin-top:6px">
+        <div class="salvo" style="margin-top:4px">
           <b>Decididas</b> = as que a empresa ganhou (${k.ganhos.length}) + as que chegaram à Habilitação e o
           processo já terminou (${k.perdidas.length}). Quem parou antes da Habilitação (triagem, qualificação)
           <b>não entra</b>: desistir na triagem não é perder uma disputa.
@@ -5200,7 +5299,7 @@ function stepper(n){
   const atual = i < 0 ? 0 : i;
   const passos = FASES.map((f, k) => {
     const st = k < atual ? 'feito' : k === atual ? 'agora' : 'futuro';
-    const marca = k < atual ? '✓' : (k + 1);
+    const marca = k < atual ? ICONE_CERTO : (k + 1);
     return `<button class="pas ${st}" onclick="mudaFase(${n.id},'${f.k}')"
         title="${k === atual ? 'está aqui' : 'mover para ' + esc(f.n)}">
       <span class="bola" style="${k <= atual ? 'background:' + f.c + ';border-color:' + f.c + ';color:var(--cinza-900)' : ''}">${marca}</span>
@@ -5218,7 +5317,7 @@ function stepper(n){
       <!-- O QUE FAZER AGORA — uma frase, e não uma lista de tarefas. Lista vira checklist, e o
            checklist fixo já saiu desta tela em 11/08 porque ninguém usava. Uma frase se lê. -->
       <div class="agora-faz"><svg class="ic" aria-hidden="true"><use href="#ic-seta"/></svg> ${esc(focoDa(n.estagio).faz)}</div>
-      <span class="salvo" style="display:block;margin-top:6px">clique numa etapa para mover o negócio — fica no histórico</span>
+      <span class="salvo" style="display:block;margin-top:4px">clique numa etapa para mover o negócio — fica no histórico</span>
     </div>
   </div>`;
 }
@@ -5300,7 +5399,7 @@ function pintaEdital(id){
   const grupo = k => ANEXOS_EDITAL.filter(a => a.categoria === k);
   const bloco = (k, rot) => {
     const l = grupo(k); if(!l.length) return '';
-    return `<div style="margin-bottom:10px">
+    return `<div style="margin-bottom:8px">
       <div class="salvo" style="color:var(--azul-claro);font-weight:600">${rot} (${l.length})</div>
       ${l.map(a => `<div class="anx">
         <span class="v">v${a.versao}</span>
@@ -6062,7 +6161,7 @@ function pintaAta(id){
   for(const a of ANEXOS_ATA) (porCat[a.categoria] ||= []).push(a);
   const cheias = ATA_CATS.filter(c => porCat[c.k]);
   box.innerHTML = cheias.length
-    ? cheias.map(c => `<div style="margin-bottom:10px">
+    ? cheias.map(c => `<div style="margin-bottom:8px">
         <div class="salvo" style="color:var(--azul-claro);font-weight:600">${esc(c.n)} (${porCat[c.k].length})</div>
         ${porCat[c.k].map(a => `<div class="anx">
           <span class="v">v${a.versao}</span>
@@ -6088,7 +6187,7 @@ function pintaBotoesAta(id, porCat){
   const temGanhos = porCat['itens_ganhos'] || porCat['ata_sessao'];
   const temMapa   = porCat['ata_sessao'] || porCat['retorno_precos'];
   box.innerHTML = '<h4>Relatórios com IA</h4>'
-    + '<div class="dica" style="font-size:11.5px;color:var(--muted);margin-bottom:8px">'
+    + '<div class="dica" style="font-size:var(--txt-1);color:var(--muted);margin-bottom:8px">'
     +   'Cada leitura <b>custa dinheiro e fica registrada</b> no seu nome. Leitura cortada é '
     +   'bloqueada — nunca entregue pela metade.</div>'
     + '<div style="display:flex;gap:8px;flex-wrap:wrap">'
@@ -6144,7 +6243,7 @@ function pintaItensGanhos(id){
     box.innerHTML = '<h4>Resultado</h4>'
       + '<div class="pk-conta" style="border-color:var(--verde-300)">'
       +   '<b style="color:var(--verde)">Ganho · ' + brl(n.valor_ganho) + '</b>'
-      +   '<div class="salvo" style="margin-top:6px">Resultado <b>importado do histórico</b> — '
+      +   '<div class="salvo" style="margin-top:4px">Resultado <b>importado do histórico</b> — '
       +   'sem detalhe por item. Os negócios do Calendário guardam o valor total, e não a relação '
       +   'de itens; para ter o detalhe, anexe o documento de resultado e use o relatório abaixo.</div>'
       + '</div>';
@@ -6159,14 +6258,14 @@ function pintaItensGanhos(id){
   box.innerHTML = '<h4>Resultado</h4>'
     + '<div class="pk-conta" style="border-color:var(--verde-300)">'
     +   '<b style="color:var(--verde)">Ganhou ' + ITENS_GANHOS.length + ' item(ns) · ' + brl(soma) + '</b>'
-    +   '<div class="salvo" style="margin-top:6px">'
+    +   '<div class="salvo" style="margin-top:4px">'
     +     'confirmado' + (quando ? ' em ' + esc(quando.toLocaleDateString('pt-BR')) : '')
     +     (ITENS_GANHOS[0] && ITENS_GANHOS[0].confirmado_por ? ' por ' + esc(String(ITENS_GANHOS[0].confirmado_por).split('@')[0]) : '')
     +     (ITENS_GANHOS[0] && ITENS_GANHOS[0].confirmacao > 1 ? ' · <b>' + ITENS_GANHOS[0].confirmacao + 'ª confirmação</b> (as anteriores ficam no rastro)' : '')
     +   '</div>'
     // A DIFERENÇA, quando existe, aparece aqui — no lugar onde os dois números estão juntos.
     +   (Math.abs(dif) >= 0.01
-        ? '<div class="salvo" style="margin-top:6px;color:var(--ambar-700)"><b><svg class="ic" aria-hidden="true"><use href="#ic-alerta"/></svg> Conferir:</b> valor da ficha '
+        ? '<div class="salvo" style="margin-top:4px;color:var(--ambar-700)"><b><svg class="ic" aria-hidden="true"><use href="#ic-alerta"/></svg> Conferir:</b> valor da ficha '
           + brl(n.valor_ganho) + ' · soma dos itens ' + brl(soma) + ' — diferença de ' + brl(Math.abs(dif)) + '.</div>'
         : '')
     + '</div>'
@@ -6183,7 +6282,7 @@ function pintaItensGanhos(id){
       </tr>`).join('')
     + '</tbody><tfoot><tr><td colspan="5" style="text-align:right"><b>total</b></td>'
     +   '<td style="text-align:right"><b>' + brl(soma) + '</b></td></tr></tfoot></table></div>'
-    + (semMarca ? '<div class="salvo" style="margin-top:6px">' + semMarca + ' item(ns) sem marca: o documento '
+    + (semMarca ? '<div class="salvo" style="margin-top:4px">' + semMarca + ' item(ns) sem marca: o documento '
         + 'não trouxe. <b>Marca em branco é marca não sabida</b> — nunca preenchida por dedução.</div>' : '');
 }
 
@@ -6535,7 +6634,7 @@ async function cambioNeg(){
   }catch(e){ return null; }
 }
 function custoDaLeitura(j){
-  return '<div class="salvo" style="margin-top:10px">'
+  return '<div class="salvo" style="margin-top:8px">'
     + 'custo desta leitura: <b>' + (j.brl != null ? 'R$ ' + Number(j.brl).toFixed(2) : 'US$ ' + Number(j.usd||0).toFixed(4)) + '</b>'
     + (j.registrado === false
         ? ' · <b style="color:var(--vermelho-700)"><svg class="ic" aria-hidden="true"><use href="#ic-alerta"/></svg> NÃO entrou no contador</b>' + (j.regErro ? ' (' + esc(j.regErro) + ')' : '')
@@ -6574,33 +6673,33 @@ function pintaGanhos(id){
     +   (d.empresa ? '<br>lido como: ' + esc(d.empresa) : '')
     + '</div>'
     + (g.length ? '<div style="max-height:280px;overflow:auto"><table style="width:100%;border-collapse:collapse;font-size:12px">'
-        + '<thead><tr><th style="text-align:left;padding:5px;color:var(--muted);font-size:10.5px;border-bottom:1px solid var(--linha)">Nº</th>'
-        + '<th style="text-align:left;padding:5px;color:var(--muted);font-size:10.5px;border-bottom:1px solid var(--linha)">ITEM</th>'
-        + '<th style="text-align:right;padding:5px;color:var(--muted);font-size:10.5px;border-bottom:1px solid var(--linha)">QTD</th>'
-        + '<th style="text-align:right;padding:5px;color:var(--muted);font-size:10.5px;border-bottom:1px solid var(--linha)">UNIT.</th>'
-        + '<th style="text-align:right;padding:5px;color:var(--muted);font-size:10.5px;border-bottom:1px solid var(--linha)">TOTAL</th></tr></thead><tbody>'
+        + '<thead><tr><th style="text-align:left;padding:4px;color:var(--muted);font-size:var(--txt-1);border-bottom:1px solid var(--linha)">Nº</th>'
+        + '<th style="text-align:left;padding:4px;color:var(--muted);font-size:var(--txt-1);border-bottom:1px solid var(--linha)">ITEM</th>'
+        + '<th style="text-align:right;padding:4px;color:var(--muted);font-size:var(--txt-1);border-bottom:1px solid var(--linha)">QTD</th>'
+        + '<th style="text-align:right;padding:4px;color:var(--muted);font-size:var(--txt-1);border-bottom:1px solid var(--linha)">UNIT.</th>'
+        + '<th style="text-align:right;padding:4px;color:var(--muted);font-size:var(--txt-1);border-bottom:1px solid var(--linha)">TOTAL</th></tr></thead><tbody>'
         + g.map(x => `<tr>
-            <td style="padding:5px;border-bottom:1px solid var(--borda-divisor)">${esc(x.n)}</td>
-            <td style="padding:5px;border-bottom:1px solid var(--borda-divisor)">${esc(String(x.descricao||'').slice(0,70))}</td>
-            <td style="padding:5px;text-align:right;border-bottom:1px solid var(--borda-divisor)">${num(x.quantidade)!=null?Number(x.quantidade).toLocaleString('pt-BR'):'—'}</td>
-            <td style="padding:5px;text-align:right;border-bottom:1px solid var(--borda-divisor)">${brl(num(x.valor_unitario))}</td>
-            <td style="padding:5px;text-align:right;border-bottom:1px solid var(--borda-divisor)">${brl(num(x.total)!=null?num(x.total):(num(x.quantidade)!=null&&num(x.valor_unitario)!=null?num(x.quantidade)*num(x.valor_unitario):null))}</td>
+            <td style="padding:4px;border-bottom:1px solid var(--borda-divisor)">${esc(x.n)}</td>
+            <td style="padding:4px;border-bottom:1px solid var(--borda-divisor)">${esc(String(x.descricao||'').slice(0,70))}</td>
+            <td style="padding:4px;text-align:right;border-bottom:1px solid var(--borda-divisor)">${num(x.quantidade)!=null?Number(x.quantidade).toLocaleString('pt-BR'):'—'}</td>
+            <td style="padding:4px;text-align:right;border-bottom:1px solid var(--borda-divisor)">${brl(num(x.valor_unitario))}</td>
+            <td style="padding:4px;text-align:right;border-bottom:1px solid var(--borda-divisor)">${brl(num(x.total)!=null?num(x.total):(num(x.quantidade)!=null&&num(x.valor_unitario)!=null?num(x.quantidade)*num(x.valor_unitario):null))}</td>
           </tr>`).join('') + '</tbody></table></div>' : '')
     + ((d.nao_consegui_ler||[]).length
         ? '<div class="salvo" style="margin-top:8px;color:var(--ambar-700)"><b>O que a leitura NÃO conseguiu ler ('+d.nao_consegui_ler.length+'):</b><br>'
           + d.nao_consegui_ler.map(esc).join('<br>') + '</div>' : '')
     // ── A SUGESTÃO, COM CONFIRMAÇÃO DE GENTE ──────────────────────────────────────────────
     + (comTotal.length && ehGestor()
-        ? `<div class="aviso-err salvo" style="margin-top:12px;padding:10px 12px;border:1px solid var(--verde-300);border-radius:9px">
+        ? `<div class="aviso-err salvo" style="margin-top:12px;padding:8px 12px;border:1px solid var(--verde-300);border-radius:9px">
             <b>Sugestão para o valor ganho: ${brl(total)}</b>
-            <div style="margin:6px 0;color:var(--muted);font-size:11.5px">
+            <div style="margin:4px 0;color:var(--muted);font-size:var(--txt-1)">
               Este número <b>não foi gravado</b>. Ele alimenta a taxa de vitória, e a IA não escreve
               sozinha num campo que a empresa usa pra decidir onde disputar. Confira a tabela acima
               e confirme — a confirmação fica no histórico com a marca de que veio de leitura.
             </div>
-            <button class="btn-ed" id="ata-conf-bt" onclick="confirmarValorGanho(${id}, ${total.toFixed(2)})">✓ Confirmar ${brl(total)} e gravar os ${g.length} itens</button>
+            <button class="btn-ed" id="ata-conf-bt" onclick="confirmarValorGanho(${id}, ${total.toFixed(2)})">${ICONE_CERTO} Confirmar ${brl(total)} e gravar os ${g.length} itens</button>
           </div>`
-        : (comTotal.length ? '<div class="salvo" style="margin-top:10px">O valor ganho é campo de gestor.</div>' : ''))
+        : (comTotal.length ? '<div class="salvo" style="margin-top:8px">O valor ganho é campo de gestor.</div>' : ''))
     + custoDaLeitura(RELATORIO_ATA.custo);
 }
 
@@ -6671,11 +6770,11 @@ async function confirmarValorGanho(id, valor){
           : ' · <b style="color:var(--vermelho-700)">os itens NÃO foram gravados (HTTP ' + ri.status + ')</b> — o valor sim';
       }catch(e){ msgItens = ' · <b style="color:var(--vermelho-700)">os itens não foram gravados: ' + esc(e.message) + '</b>'; }
     }
-    saida.innerHTML += '<div class="salvo ok" style="margin-top:8px">✓ valor ganho gravado como ' + brl(valor)
+    saida.innerHTML += '<div class="salvo ok" style="margin-top:8px">' + ICONE_CERTO + ' valor ganho gravado como ' + brl(valor)
       + msgItens + ' — a confirmação está no histórico.</div>';
     carregarRastro(id); carregarItensGanhos(id); pinta();
     // gravou: o botão NÃO volta a ser clicável — confirmar duas vezes o mesmo valor é o defeito
-    if(btConf) btConf.textContent = '✓ confirmado';
+    if(btConf) btConf.innerHTML = ICONE_CERTO + ' confirmado';
   }catch(e){
     saida.innerHTML += '<div class="salvo erro" style="margin-top:8px">não consegui gravar: ' + esc(e.message) + '</div>';
     // falhou: aí sim volta, porque tentar de novo é o certo
@@ -6724,15 +6823,15 @@ function pintaMapa(id){
     + '<div style="max-height:320px;overflow:auto"><table style="width:100%;border-collapse:collapse;font-size:12px">'
     + '<thead><tr>'
     +   ['Nº','ITEM','NOSSO','VENCEDOR','PREÇO DELE','DIFERENÇA'].map(h =>
-          '<th style="text-align:left;padding:5px;color:var(--muted);font-size:10.5px;border-bottom:1px solid var(--linha)">'+h+'</th>').join('')
+          '<th style="text-align:left;padding:4px;color:var(--muted);font-size:var(--txt-1);border-bottom:1px solid var(--linha)">'+h+'</th>').join('')
     + '</tr></thead><tbody>'
     + linhas.map(l => `<tr>
-        <td style="padding:5px;border-bottom:1px solid var(--borda-divisor)">${esc(l.n)}</td>
-        <td style="padding:5px;border-bottom:1px solid var(--borda-divisor)">${esc(String(l.descricao||'').slice(0,52))}</td>
-        <td style="padding:5px;text-align:right;border-bottom:1px solid var(--borda-divisor)">${brl(l._nosso)}</td>
-        <td style="padding:5px;border-bottom:1px solid var(--borda-divisor)">${esc(String(l.vencedor||'—').slice(0,26))}</td>
-        <td style="padding:5px;text-align:right;border-bottom:1px solid var(--borda-divisor)">${brl(l._venc)}</td>
-        <td style="padding:5px;text-align:right;border-bottom:1px solid var(--borda-divisor);color:${l.difRS>0?'var(--vermelho-700)':l.difRS<0?'var(--verde)':'var(--muted)'}">
+        <td style="padding:4px;border-bottom:1px solid var(--borda-divisor)">${esc(l.n)}</td>
+        <td style="padding:4px;border-bottom:1px solid var(--borda-divisor)">${esc(String(l.descricao||'').slice(0,52))}</td>
+        <td style="padding:4px;text-align:right;border-bottom:1px solid var(--borda-divisor)">${brl(l._nosso)}</td>
+        <td style="padding:4px;border-bottom:1px solid var(--borda-divisor)">${esc(String(l.vencedor||'—').slice(0,26))}</td>
+        <td style="padding:4px;text-align:right;border-bottom:1px solid var(--borda-divisor)">${brl(l._venc)}</td>
+        <td style="padding:4px;text-align:right;border-bottom:1px solid var(--borda-divisor);color:${l.difRS>0?'var(--vermelho-700)':l.difRS<0?'var(--verde)':'var(--muted)'}">
           ${l.difRS==null?'—':(l.difRS>0?'+':'') + brl(l.difRS) + (l.difPct!=null?' ('+(l.difPct>0?'+':'')+l.difPct+'%)':'')}</td>
       </tr>`).join('')
     + '</tbody></table></div>'
@@ -7252,7 +7351,7 @@ async function salvaAnot(id, txt){
   try{
     await gravar(id, { anotacoes: v.trim() ? v : null });
     n.anotacoes = v.trim() ? v : null;
-    if(msg){ msg.className='salvo ok'; msg.textContent='✓ anotação salva'; }
+    if(msg){ msg.className='salvo ok'; msg.innerHTML=ICONE_CERTO + ' anotação salva'; }
     pinta();
   }catch(e){
     if(msg){ msg.className='salvo erro'; msg.textContent='não salvou: ' + e.message + ' — copie o texto antes de sair'; }
@@ -7348,7 +7447,7 @@ function pintaNotif(){
           // coisas diferentes de quem lê, e um rótulo só faria as duas parecerem a mesma.
           const eTarefa = l.tipo === 'tarefa';
           return `<a class="nf ${atrasado?'hoje':''}" onclick="irPara(${l.negocio_id})">
-            <div class="q">${atrasado?'<svg class="ic" aria-hidden="true"><use href="#ic-relogio"/></svg>':(eTarefa?'✔':'<svg class="ic ic-g" aria-hidden="true"><use href="#ic-sino"/></svg>')} ${esc(l.titulo)}</div>
+            <div class="q">${atrasado?'<svg class="ic" aria-hidden="true"><use href="#ic-relogio"/></svg>':(eTarefa?'<svg class="ic ic-g" aria-hidden="true"><use href="#ic-certo"/></svg>':'<svg class="ic ic-g" aria-hidden="true"><use href="#ic-sino"/></svg>')} ${esc(l.titulo)}</div>
             <div class="s">${eTarefa?'tarefa · ':''}${q.toLocaleString('pt-BR')}${atrasado?' · atrasad'+(eTarefa?'a':'o'):''} · prioridade ${esc(l.prioridade)}</div></a>`;
         }).join('');
   }
@@ -7468,7 +7567,7 @@ function avisoFunil(txt, erro){
   if(!c) return;
   const d = document.createElement('div');
   d.className = 'vazio';
-  d.style.cssText = 'margin-bottom:12px;padding:10px 14px;text-align:left;font-size:12.5px'
+  d.style.cssText = 'margin-bottom:12px;padding:8px 12px;text-align:left;font-size:12.5px'
     + (erro ? ';border-color:var(--vermelho-300);background:var(--vermelho-50);color:var(--vermelho-800)' : '');
   d.textContent = txt;
   c.insertBefore(d, c.firstChild);

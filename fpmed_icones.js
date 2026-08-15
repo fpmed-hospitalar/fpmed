@@ -84,6 +84,11 @@
     'ic-alvo':       '<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3.4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>',
     'ic-certo':      '<path d="m4 12.5 5 5L20 6.5"/>',
     'ic-x':          '<path d="M6 6l12 12M18 6 6 18"/>',
+    /* ic-mais entrou na fatia B19 (14/08), e ele é ADITIVO: nenhum desenho existente mudou,
+       então nenhuma tela que já usava o sprite muda de aparência. Ele existe porque a Negócios
+       escrevia "＋ Agendar" com o caractere U+FF0B (o "mais" de largura inteira), e caractere
+       não é ícone: ele muda de desenho por fonte instalada e não aceita a cor da marca. */
+    'ic-mais':       '<path d="M12 5v14M5 12h14"/>',
     'ic-lupa':       '<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>',
     'ic-envelope':   '<rect x="2.5" y="5" width="19" height="14" rx="2"/><path d="m3 7 9 6 9-6"/>',
     'ic-caixa':      '<path d="M3 8.5 12 4l9 4.5v7L12 20l-9-4.5z"/><path d="m3 8.5 9 4.5 9-4.5"/><path d="M12 13v7"/>',
