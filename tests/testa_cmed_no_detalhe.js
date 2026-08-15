@@ -100,8 +100,19 @@ ok(n + '. *** leitura falha vira "nao sei", e nao "este item nao tem teto" ***',
    responder "nao encontrado" pra tudo — afirmacao sobre a CMED, feita por causa da nossa rede. */
 ok(n + '. *** e o indice NAO e montado sobre leitura que falhou ***',
   /if\(teto === null \|\| dic === null\) throw/.test(CARREGA)); n++;
+/* >>> ESTE ASSERT ESTAVA PRESO AO LITERAL DA CHAMADA, e a fatia A28 o pegou (15/08/2026).
+       Ele exigia exatamente `Promise.all([ puxarItens(l), carregarCMED() ])`. Quando o
+       `puxarItens` ganhou um SEGUNDO parametro — o retorno de chamada que anuncia "li 100 itens
+       · pagina 2 de ate 5", para a espera deixar de ser rodinha muda — ele ficou vermelho sem
+       NADA ter piorado: a CMED continuava carregando em paralelo e continuava sem derrubar o
+       cruzamento. Assert preso a um literal guarda a DECORACAO da regra, e so sabe dizer
+       "mudou", nunca "piorou". E a licao S8, e ela ja apareceu varias vezes nesta obra.
+   >>> AGORA ELE COBRA A PROMESSA, que e o que a regra sempre quis dizer: as duas leituras
+       partem JUNTAS, dentro do mesmo `Promise.all`, e a CMED engole a propria falha. Trocar a
+       assinatura passa; serializar as duas ou deixar a CMED derrubar o cruzamento, nao. */
 ok(n + '. a CMED nao derruba o cruzamento (ela e o acrescimo; o cruzamento e o pedido)',
-  /catch\(e\)\{ _cmedErro =/.test(CARREGA) && /Promise\.all\(\[ puxarItens\(l\), carregarCMED\(\) \]\)/.test(VER)); n++;
+  /catch\(e\)\{ _cmedErro =/.test(CARREGA)
+  && /Promise\.all\(\s*\[\s*puxarItens\([^)]*\)\s*,\s*carregarCMED\(\s*\)\s*\]\s*\)/.test(VER)); n++;
 
 // ── 4. o carregamento e o mesmo do Conferidor, e e paginado ──────────────────────────────────
 ok(n + '. *** paginado: 4.875 e 6.283 passam de 1000, e o PostgREST corta em 1000 (S1) ***',

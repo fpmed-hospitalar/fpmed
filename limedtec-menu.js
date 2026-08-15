@@ -259,8 +259,25 @@
     '#limedtec-menu .lm-marca{display:flex;align-items:center;gap:var(--esp-2);',
     '  padding:var(--esp-3) var(--esp-3);min-height:52px;box-sizing:border-box;',
     '  border-bottom:1px solid var(--navy-borda);margin-bottom:var(--esp-3)}',
+    /* ══ O AZUL DO QUADRADO SUBIU UM DEGRAU (fatia A28, 15/08/2026) ═══════════════════════════
+       A catraca `testa_contraste` mediu o par que ESTE arquivo monta — branco sobre
+       `--azul-500` — e deu **2,67:1**. O quadrado da marca tinha a cruz mais difícil de ler do
+       sistema inteiro, e ninguém tinha visto porque ninguém tinha medido o USO (a `testa_tema`
+       mede a paleta, e a paleta nunca prometeu esse par).
+       >>> O PRÓPRIO TEMA JÁ DIZIA: o comentário do `--azul-500` escreve, com todas as letras,
+           "preenchimento da marca (barra, etiqueta cheia) — **NÃO carrega texto branco**", e
+           nomeia o `--azul-600` como "A COR DA AÇÃO: fundo do botão principal, com texto branco
+           por cima". O token certo já existia e estava a um degrau de distância: **5,04:1**.
+       >>> A MARCA NÃO MUDOU. #2CA9E0 continua sendo o azul da FPMED em todo lugar onde ele é
+           preenchimento sem letra em cima. O que mudou foi o único lugar onde ele estava
+           segurando um símbolo branco.
+       >>> E ISTO É UMA ESCOLHA DE MARCA, não só de engenharia — está anotado como PENDÊNCIA DO
+           DONO no relatório da fatia. As duas saídas medidas eram: fundo `--azul-600` com a cruz
+           branca (o que entrou, 5,04:1) ou manter o #2CA9E0 e escurecer a cruz para
+           `--cinza-800` (6,41:1). A primeira preserva o desenho branco-sobre-azul que ele vê
+           hoje; a segunda preserva o hex exato. Escolha dele; o código fica certo enquanto isso. */
     '#limedtec-menu .lm-cruz{width:26px;height:26px;flex:0 0 auto;border-radius:var(--raio-botao);',
-    '  background:var(--azul-500);color:var(--branco);display:grid;place-items:center;',
+    '  background:var(--azul-600);color:var(--branco);display:grid;place-items:center;',
     '  font-weight:var(--peso-forte);font-size:var(--txt-3);line-height:1}',
     '#limedtec-menu .lm-marca b{display:block;font-size:var(--txt-2);font-weight:var(--peso-forte);',
     '  color:var(--branco);line-height:1.15}',
@@ -318,7 +335,7 @@
     '#limedtec-menu .lm-off{color:var(--navy-rotulo);cursor:default}',
     /* "em breve" é ETIQUETA contornada: um texto solto na ponta da linha lê como parte
        do nome do módulo ("Calendário em breve"); dentro de uma borda, lê como estado. */
-    '#limedtec-menu .lm-breve{margin-left:auto;font-size:var(--txt-0);letter-spacing:.06em;',
+    '#limedtec-menu .lm-breve{margin-left:auto;font-size:var(--txt-1);letter-spacing:.06em;',
     '  text-transform:uppercase;color:var(--navy-rotulo);font-weight:var(--peso-semi);',
     '  border:1px solid var(--navy-borda);border-radius:var(--raio-pilula);padding:0 var(--esp-1)}',
 
@@ -336,13 +353,13 @@
     /* O SELO é o mesmo formato do contador — mesma altura, mesmo raio, mesmo degrau de
        texto — porque os dois ocupam a mesma ponta da linha. Cor: o verde da marca, com o
        navy por cima (9,04:1). O que muda entre eles é o ofício: número x rótulo. */
-    '#limedtec-menu .lm-selo{margin-left:auto;font-size:var(--txt-0);font-weight:var(--peso-forte);',
+    '#limedtec-menu .lm-selo{margin-left:auto;font-size:var(--txt-1);font-weight:var(--peso-forte);',
     '  letter-spacing:.06em;background:var(--verde-500);color:var(--navy);',
     '  border-radius:var(--raio-selo);padding:0 var(--esp-1);line-height:1.6}',
     /* Com selo E contador na mesma linha, o `margin-left:auto` do contador o empurraria pra
        longe do selo. Aqui só o PRIMEIRO da dupla empurra; o segundo cola no primeiro. */
     '#limedtec-menu .lm-selo + .lm-num{margin-left:var(--esp-1)}',
-    '#limedtec-menu .lm-num{margin-left:auto;font-size:var(--txt-0);font-weight:var(--peso-semi);',
+    '#limedtec-menu .lm-num{margin-left:auto;font-size:var(--txt-1);font-weight:var(--peso-semi);',
     '  font-variant-numeric:tabular-nums;background:var(--navy-selo);color:var(--navy-selo-tinta);',
     '  border-radius:var(--raio-selo);padding:0 var(--esp-1);line-height:1.6}',
     '#limedtec-menu .lm-num[hidden]{display:none}',
@@ -352,7 +369,7 @@
     '  stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}',
 
     '#limedtec-menu .lm-rodape{margin-top:auto;padding:var(--esp-3) var(--esp-3) 0;',
-    '  border-top:1px solid var(--navy-borda);font-size:var(--txt-0);color:var(--navy-apoio);',
+    '  border-top:1px solid var(--navy-borda);font-size:var(--txt-1);color:var(--navy-apoio);',
     '  line-height:1.7}',
     '#limedtec-menu .lm-rodape span{display:flex;align-items:center;gap:var(--esp-2)}',
     /* A busca crua: mesmo alvo de clique dos itens de cima, peso menor. O `--navy-apoio` é o

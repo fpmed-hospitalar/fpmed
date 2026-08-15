@@ -484,8 +484,19 @@ select[disabled],input[disabled],textarea[disabled]{
 @media(max-width:900px){#painel-busca.com-filtros{grid-template-columns:1fr}}
 .barra-filtros{display:flex;align-items:center;gap:var(--esp-3);flex-wrap:wrap;
   margin-bottom:var(--esp-3)}
+/* ══ O PISO DE 12px, APLICADO EM 14 LUGARES DESTA TELA (fatia A28, 15/08/2026) ═══════════════
+   O `--txt-0` vale 10px e o `fpmed_tema.css` declara o ofício dele em uma linha: "rótulo de
+   GRUPO, caixa alta e espaçado — nada mais". Esta tela o estava usando em CONTADOR, PASTILHA
+   DE PRAZO, PORCENTAGEM DE ADERÊNCIA, CABEÇALHO DE TABELA, SELETOR DE ORDENAÇÃO e RÓTULO DE
+   FICHA — nenhum deles é rótulo de grupo, e a metade deles carrega NÚMERO.
+   >>> POR QUE NÚMERO EM 10px É O PIOR CASO, e é a razão medida do piso (BASE_VISUAL 2.1): cor
+       errada se percebe, número lido errado não. "12" e "72" a 10px numa pastilha de prazo são
+       a diferença entre ir à sessão e perder o certame.
+   >>> E O QUE NÃO MUDOU: `.periodo label` continua no --txt-0 — ele é caixa alta com 0,12em de
+       espaçamento, que é exatamente o ofício declarado. A régua separa os dois pelo espaçamento
+       da letra, não pela minha opinião sobre cada um. */
 .barra-filtros .conta{background:var(--azul-600);color:var(--branco);border-radius:var(--raio-pilula);
-  padding:0 var(--esp-2);font-size:var(--txt-0);font-weight:var(--peso-forte);
+  padding:0 var(--esp-2);font-size:var(--txt-1);font-weight:var(--peso-forte);
   font-variant-numeric:tabular-nums;margin-left:var(--esp-1)}
 #avancada{display:none;background:var(--branco);border:1px solid var(--cinza-200);
   border-radius:var(--raio-cartao);box-shadow:var(--sombra-1);
@@ -542,7 +553,7 @@ select[disabled],input[disabled],textarea[disabled]{
   border-radius:var(--raio-cartao);border:1px solid var(--cinza-200);
   background:var(--cinza-50);margin-bottom:var(--esp-2)}
 .jor .nome{font-size:var(--txt-2);color:var(--cinza-800);font-weight:var(--peso-semi);line-height:1.35}
-.jor .sub{font-size:var(--txt-1);color:var(--cinza-600);margin-top:3px;line-height:var(--altura-texto)}
+.jor .sub{font-size:var(--txt-1);color:var(--cinza-600);margin-top:var(--esp-1);line-height:var(--altura-texto)}
 .jor .acao{margin-left:auto;display:flex;gap:var(--esp-2);align-items:center;white-space:nowrap}
 
 /* o contador de novidade só existe quando HÁ novidade: "0 novas" em destaque
@@ -641,7 +652,10 @@ select[disabled],input[disabled],textarea[disabled]{
    >>> POR QUE ELE VALE NUMA LISTA LONGA: quem está varrendo 40 resultados atrás de um item quer
        ver mais linhas de uma vez; quem parou pra ler um edital quer o texto respirando. São dois
        usos da MESMA tela, e nenhum dos dois é "o certo". */
-.dens{display:flex;gap:2px;padding:2px;background:var(--cinza-100);border-radius:var(--raio-botao)}
+/* O trilho do alternador ganhou `--esp-1` no lugar dos 2px à mão (fatia A28). Dois pixels não
+   são um degrau da grade — são o valor que coube. Com 4 o botão aceso se descola do trilho o
+   suficiente para o olho ver que ele está POR CIMA, que é o que o alternador quer dizer. */
+.dens{display:flex;gap:var(--esp-1);padding:var(--esp-1);background:var(--cinza-100);border-radius:var(--raio-botao)}
 .dens button{border:0;background:none;cursor:pointer;font-family:var(--fonte);
   font-size:var(--txt-1);color:var(--cinza-600);padding:var(--esp-1) var(--esp-3);
   border-radius:var(--raio-item);transition:background-color var(--transicao),color var(--transicao)}
@@ -698,7 +712,7 @@ select[disabled],input[disabled],textarea[disabled]{
 .lic.urg-fim::before{background:var(--cinza-300)}
 .urg{display:inline-flex;align-items:center;gap:var(--esp-1);
   padding:var(--esp-1) var(--esp-3);border-radius:var(--raio-pilula);
-  font-size:var(--txt-0);font-weight:var(--peso-semi);white-space:nowrap}
+  font-size:var(--txt-1);font-weight:var(--peso-semi);white-space:nowrap}
 .urg--hoje{background:var(--sinal-perigo-fundo);color:var(--sinal-perigo-tinta)}
 .urg--amanha{background:var(--sinal-atencao-fundo);color:var(--sinal-atencao-tinta)}
 .urg--normal{background:var(--sinal-normal-fundo);color:var(--sinal-normal-tinta)}
@@ -767,7 +781,7 @@ select[disabled],input[disabled],textarea[disabled]{
 .aderencia .barra{width:52px;height:4px;border-radius:var(--raio-pilula);
   background:var(--borda-divisor);overflow:hidden}
 .aderencia .barra i{display:block;height:100%;background:var(--sinal-bom-icone)}
-.aderencia .pct{font-size:var(--txt-0);font-weight:var(--peso-forte);color:var(--sinal-bom-tinta);
+.aderencia .pct{font-size:var(--txt-1);font-weight:var(--peso-forte);color:var(--sinal-bom-tinta);
   font-variant-numeric:tabular-nums}
 .aderencia.media .barra i{background:var(--azul-600)}
 .aderencia.media .pct{color:var(--sinal-info-tinta)}
@@ -840,7 +854,7 @@ body.det-aberto{overflow:hidden}
    escrito ao lado dele, não escondido atrás do clique. */
 .btn.bt-ia{background:var(--azul-50);border-color:var(--azul-100);color:var(--azul-700)}
 .btn.bt-ia:hover:not([disabled]){background:var(--azul-100)}
-.det-custo{font-size:var(--txt-0);color:var(--cinza-500);margin-left:var(--esp-1)}
+.det-custo{font-size:var(--txt-1);color:var(--cinza-500);margin-left:var(--esp-1)}
 
 /* ── FICHA EM GRADE: rótulo pequeno EM CIMA, valor forte EMBAIXO ─────────────────────────────
    É o defeito nº 1 do print do dono: "Publicação13/08/2026 às 09:16", "Valor estimadoR$ ...",
@@ -851,7 +865,7 @@ body.det-aberto{overflow:hidden}
 .det-ficha{flex:none;display:grid;grid-template-columns:repeat(auto-fit,minmax(168px,1fr));
   gap:var(--esp-3) var(--esp-6);padding:var(--esp-4) var(--esp-5);
   border-bottom:1px solid var(--cinza-200);background:var(--cinza-50)}
-.det-ficha .f-rot{display:block;font-size:var(--txt-0);font-weight:var(--peso-semi);
+.det-ficha .f-rot{display:block;font-size:var(--txt-1);font-weight:var(--peso-semi);
   letter-spacing:.06em;text-transform:uppercase;color:var(--cinza-500);margin-bottom:var(--esp-1)}
 .det-ficha .f-val{display:block;font-size:var(--txt-2);font-weight:var(--peso-semi);
   color:var(--cinza-800);font-variant-numeric:tabular-nums;line-height:var(--altura-texto);
@@ -875,7 +889,7 @@ body.det-aberto{overflow:hidden}
 .det-aba:hover{background:var(--cinza-100)}
 .det-aba:focus-visible{outline:none;box-shadow:var(--foco)}
 .det-aba[aria-selected="true"]{background:var(--azul-600);border-color:var(--azul-600);color:var(--branco)}
-.det-aba .n{font-size:var(--txt-0);background:var(--cinza-100);color:var(--cinza-600);
+.det-aba .n{font-size:var(--txt-1);background:var(--cinza-100);color:var(--cinza-600);
   border-radius:var(--raio-pilula);padding:0 var(--esp-2);font-variant-numeric:tabular-nums}
 .det-aba[aria-selected="true"] .n{background:var(--azul-700);color:var(--branco)}
 
@@ -916,7 +930,7 @@ body.det-aberto{overflow:hidden}
 .det-tab2{width:100%;border-collapse:separate;border-spacing:0}
 .det-tab2 thead th{position:sticky;top:0;z-index:2;background:var(--branco);
   border-bottom:1px solid var(--cinza-300);text-align:left;
-  font-size:var(--txt-0);font-weight:var(--peso-forte);letter-spacing:.06em;text-transform:uppercase;
+  font-size:var(--txt-1);font-weight:var(--peso-forte);letter-spacing:.06em;text-transform:uppercase;
   color:var(--cinza-500);padding:var(--esp-2) var(--esp-3);white-space:nowrap}
 .det-tab2 thead th.num{text-align:right}
 .det-tab2 tbody td{border-bottom:1px solid var(--cinza-200);padding:var(--esp-2) var(--esp-3);
@@ -953,7 +967,7 @@ body.det-aberto{overflow:hidden}
    delas faria toda proposta parecer acima do teto legal. */
 .det-tab2 .vazio{color:var(--cinza-500);font-weight:var(--peso-normal);
   font-variant-numeric:normal;white-space:nowrap}
-.det-selo{display:inline-block;font-size:var(--txt-0);font-weight:var(--peso-semi);
+.det-selo{display:inline-block;font-size:var(--txt-1);font-weight:var(--peso-semi);
   padding:0 var(--esp-2);border-radius:var(--raio-pilula);white-space:nowrap;
   line-height:calc(var(--txt-2) + var(--esp-1))}
 .det-selo.cabe{background:var(--verde-50);color:var(--verde-700)}
@@ -986,8 +1000,21 @@ body.det-aberto{overflow:hidden}
    fora — que é exatamente o que o dono viu. Rola a tabela, nunca a página. */
 .det-tab-caixa{overflow-x:auto;max-width:100%}
 .det-tab{width:100%;border-collapse:collapse;font-size:var(--txt-1)}
-.det-tab th{text-align:left;color:var(--cinza-600);font-weight:var(--peso-semi);font-size:var(--txt-0);
+/* ══ O CABEÇALHO FICA (fatia A28) ═══════════════════════════════════════════════════════════
+   Esta tela tinha TRÊS tabelas e só a `.det-tab2` (a dos 500 itens) tinha cabeçalho fixo. A
+   catraca `testa_tabela_densa` nasceu perguntando "alguma tabela tem sticky?" e ficava verde
+   — foi a MUTAÇÃO que expôs isso, e a régua passou a perguntar POR TABELA. As outras duas
+   estavam aprovadas de carona.
+   >>> E ELAS PRECISAM: a `.det-tab` é o resultado do certame (quem ganhou cada item, com sete
+       colunas) e a `.itens` é o cruzamento item a item de um edital inteiro. Rolar trinta
+       linhas e perder a legenda de qual coluna é "nosso unitário" e qual é o "teto CMED", numa
+       tela onde se decide preço, é o erro caro.
+   >>> `background` JUNTO É OBRIGATÓRIO: `th` é transparente por padrão, e cabeçalho sticky sem
+       fundo deixa as linhas passarem POR TRÁS do texto dele. Fica ilegível exatamente enquanto
+       está sendo usado — o mesmo formato de defeito da linha selecionada da A17. */
+.det-tab th{text-align:left;color:var(--cinza-600);font-weight:var(--peso-semi);font-size:var(--txt-1);
   text-transform:uppercase;letter-spacing:.04em;padding:var(--esp-2);
+  position:sticky;top:0;z-index:2;background:var(--branco);
   border-bottom:1px solid var(--cinza-200);white-space:nowrap}
 .det-tab td{padding:var(--esp-2);border-bottom:1px solid var(--cinza-100);vertical-align:top;
   color:var(--cinza-700);line-height:var(--altura-texto)}
@@ -997,18 +1024,26 @@ body.det-aberto{overflow:hidden}
    medido em 9,04:1 no menu. Aviso longe da decisão não muda decisão. */
 .lm-selo-ia{display:inline-block;margin-left:var(--esp-1);padding:0 var(--esp-1);
   border-radius:var(--raio-pilula);background:var(--verde-500);color:var(--navy-tinta,var(--cinza-800));
-  font-size:var(--txt-0);font-weight:var(--peso-forte);letter-spacing:.04em}
+  font-size:var(--txt-1);font-weight:var(--peso-forte);letter-spacing:.04em}
 
 /* O controle "Ordenar" — mesma régua do alternador de densidade, que já vive no cabeçalho. */
-.ord{display:flex;align-items:center;gap:var(--esp-2);font-size:var(--txt-0);color:var(--cinza-600)}
+.ord{display:flex;align-items:center;gap:var(--esp-2);font-size:var(--txt-1);color:var(--cinza-600)}
 .ord select{height:28px;border:1px solid var(--cinza-300);border-radius:var(--raio-item);
-  background:var(--branco);color:var(--cinza-800);font-size:var(--txt-0);
+  background:var(--branco);color:var(--cinza-800);font-size:var(--txt-1);
   font-family:inherit;padding:0 var(--esp-2)}
 
 /* O SELO DO ÓRGÃO. Não é enfeite: ele é a âncora visual que faz o olho achar onde cada cartão
    começa numa lista longa, e é o que dá ao título uma margem esquerda constante pra alinhar o
    objeto e o rodapé embaixo dele. Um ícone só, do mesmo conjunto do resto do sistema. */
-.lic .selo{width:44px;height:44px;flex:0 0 auto;border-radius:var(--raio-botao);
+/* ══ A MEDIDA DO SELO É PUBLICADA PELO SELO (fatia A28) ══════════════════════════════════════
+   O objeto e o rodapé do cartão recuam para alinhar sob o título, e o número desse recuo era
+   `56px` escrito à mão em dois lugares, com o comentário explicando a conta ("selo 44 + gap
+   12"). É exatamente a dívida que o MOLDE_VISUAL §3 nomeia: *"quem tem a peça publica a
+   medida; a tela pede"*. Comentário não impede o esquecimento — no dia em que o selo mudar de
+   tamanho, os dois 56 continuam 56 e o texto desalinha sem sintoma nenhum.
+   Agora o selo publica `--selo-lic` e os dois recuos são CONTA, não número copiado. */
+.lic{--selo-lic:44px}
+.lic .selo{width:var(--selo-lic);height:var(--selo-lic);flex:0 0 auto;border-radius:var(--raio-botao);
   background:var(--azul-50);display:grid;place-items:center;color:var(--azul-700)}
 .lic .selo svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.7;
   stroke-linecap:round;stroke-linejoin:round}
@@ -1042,25 +1077,26 @@ body.det-aberto{overflow:hidden}
 .lic .sub{display:flex;align-items:center;gap:var(--esp-2);flex-wrap:wrap;
   margin-top:var(--esp-1);font-size:var(--txt-1);color:var(--cinza-600)}
 .lic .sub .quando{color:var(--cinza-700);font-weight:var(--peso-semi)}
-/* O objeto alinha sob o título (56px = selo 44 + gap 12), como na amostra: sem isso ele volta
-   pra margem do cartão e o bloco de texto "escapa" do cabeçalho. */
-.lic .obj{margin:var(--esp-4) 0 0 56px;font-size:var(--txt-2);
+/* O objeto alinha sob o título (selo + gap), como na amostra: sem isso ele volta pra margem do
+   cartão e o bloco de texto "escapa" do cabeçalho. O gap é o mesmo `--esp-3` do `.lic .topo`. */
+.lic .obj{margin:var(--esp-4) 0 0 calc(var(--selo-lic) + var(--esp-3));font-size:var(--txt-2);
   line-height:var(--altura-texto);color:var(--cinza-600);
   display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
 /* ── O GRIFO DO TERMO BUSCADO ────────────────────────────────────────────────────────────────
    Amarelo suave, texto no cinza escuro: medido, dá 12,76:1. O grifo NÃO pode ser a única
    diferença — ele ganha peso junto, senão quem não vê a cor não vê o grifo. */
 .lic mark{background:var(--ambar-100);color:var(--cinza-800);border-radius:var(--esp-1);
-  padding:0 3px;font-weight:var(--peso-semi)}
+  padding:0 var(--esp-1);font-weight:var(--peso-semi)}
 /* ── O RODAPÉ: rótulo pequeno e fraco em cima, valor forte embaixo (D9) ────────────────────── */
 .lic .dados{display:flex;align-items:flex-end;gap:var(--esp-8);flex-wrap:wrap;
-  margin:var(--esp-4) 0 0 56px;padding-top:var(--esp-4);border-top:1px solid var(--cinza-100)}
+  margin:var(--esp-4) 0 0 calc(var(--selo-lic) + var(--esp-3));padding-top:var(--esp-4);
+  border-top:1px solid var(--cinza-100)}
 /* O rótulo também subiu para --cinza-600 na A17, pelo mesmo motivo do `.sub` — e aqui havia um
    agravante: ele é 10px em CAIXA ALTA com espaçamento, o texto menor da linha inteira. Era o
    candidato mais frágil a perder legibilidade sobre a seleção, e era o que estava no tom mais
    claro. O --cinza-600 é, aliás, o token que o tema já chama de "RÓTULO / meta". */
-.lic .dado small{display:block;font-size:var(--txt-0);font-weight:var(--peso-forte);
-  letter-spacing:.08em;text-transform:uppercase;color:var(--cinza-600);margin-bottom:2px}
+.lic .dado small{display:block;font-size:var(--txt-1);font-weight:var(--peso-forte);
+  letter-spacing:.08em;text-transform:uppercase;color:var(--cinza-600);margin-bottom:var(--esp-1)}
 .lic .dado span{font-size:var(--txt-2);font-weight:var(--peso-semi);color:var(--cinza-800);
   font-variant-numeric:tabular-nums}
 
@@ -1102,7 +1138,11 @@ body.det-aberto{overflow:hidden}
   padding:var(--esp-3) var(--esp-4);background:var(--branco);
   border:1px solid var(--cinza-200);border-radius:var(--raio-cartao);box-shadow:var(--sombra-1);
   font-size:var(--txt-1);line-height:var(--altura-texto);color:var(--cinza-600)}
-.faixa-nacional svg{width:16px;height:16px;flex:0 0 auto;margin-top:1px;
+/* O `margin-top:1px` daqui era ALINHAMENTO ÓPTICO, não espaço — e é por isso que ele saiu em
+   vez de subir para 4px: 4px de margem empurrariam o ícone para o meio da segunda palavra.
+   Quem centra o ícone na primeira linha do texto é o `line-height`, e ele já faz isso: a caixa
+   do svg tem 16px e a linha tem 1,5 × 12px = 18px, então sobra 1px de cada lado sozinho. */
+.faixa-nacional svg{width:16px;height:16px;flex:0 0 auto;align-self:flex-start;
   stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;
   color:var(--cinza-400)}
 .faixa-nacional b{color:var(--cinza-800);font-weight:var(--peso-semi)}
@@ -1114,9 +1154,9 @@ body.det-aberto{overflow:hidden}
 /* O selo da FONTE, no cabeçalho do painel — não na linha. A procedência é da LISTA inteira, e
    repeti-la em cada uma das trinta linhas seria gastar trinta vezes o mesmo recado. */
 .selo-fonte{display:inline-flex;align-items:center;gap:var(--esp-1);
-  padding:2px var(--esp-2);border-radius:var(--raio-pilula);
+  padding:var(--esp-1) var(--esp-2);border-radius:var(--raio-pilula);
   background:var(--azul-50);color:var(--azul-700);
-  font-size:var(--txt-0);font-weight:var(--peso-forte);letter-spacing:.06em;text-transform:uppercase}
+  font-size:var(--txt-1);font-weight:var(--peso-forte);letter-spacing:.06em;text-transform:uppercase}
 .selo-fonte svg{width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:1.9;
   stroke-linecap:round;stroke-linejoin:round}
 /* A VARIANTE DO HISTÓRICO (item 7e). Âmbar e não azul porque ela não é uma terceira fonte da
@@ -1228,6 +1268,7 @@ svg.ic.bom{color:var(--verde-700)}
 .itens table{width:100%;border-collapse:collapse;font-size:var(--txt-2);min-width:640px}
 .itens th{text-align:left;color:var(--cinza-600);font-weight:var(--peso-semi);font-size:var(--txt-1);
   text-transform:uppercase;letter-spacing:.04em;padding:var(--esp-2);
+  position:sticky;top:0;z-index:2;background:var(--branco);
   border-bottom:1px solid var(--cinza-200);white-space:nowrap}
 .itens td{padding:var(--esp-2);border-bottom:1px solid var(--cinza-100);vertical-align:top;
   color:var(--cinza-700);line-height:var(--altura-texto)}
@@ -1307,6 +1348,84 @@ svg.ic.bom{color:var(--verde-700)}
   .periodo input,.periodo select{min-width:0;width:100%}
   .lic{padding:var(--esp-4)}
   .valor{margin-left:0;width:100%;margin-top:var(--esp-2)}
+}
+
+/* ════════════════════════════════════════════════════════════════════════════════════════════
+   O CELULAR — ALVO DE 44×44 (fatia A28, 15/08/2026)
+
+   ══ POR QUE O BLOCO INTEIRO NÃO EXISTIA, E POR QUE ISSO PASSOU ══════════════════════════════
+   Esta tela tinha UMA linha de @media(max-width:480px) — a grade dos indicadores virando uma
+   coluna — e mais nada. A régua da fatia acusou "0 alvos curtos", que é o número mais perigoso
+   que uma medição pode devolver: ele estava certo e era inútil. Não havia alvo curto porque
+   não havia alvo NENHUM declarado no celular; a conta media um bloco vazio e devolvia saúde.
+   >>> É a lição da PARTE 4 da BASE_VISUAL na versão mais barata dela: "tela com portão de login
+       medida sem sessão mede a moldura". Aqui era pior — a régua media um cômodo que não tinha
+       sido construído. Por isso a catraca `testa_toque_celular` foi escrita para EXIGIR que os
+       alvos existam, e não só para reprovar os curtos: ausência não pode ser aprovação.
+
+   ══ 44 E NÃO 48, E SÓ AQUI ═════════════════════════════════════════════════════════════════
+   44 vem da Apple HIG; o Material usa 48dp; o mínimo absoluto do WCAG 2.2 é 24. A casa fica em
+   44 porque a mão que usa isto está segurando outra coisa (BASE_VISUAL 2.6). E SÓ dentro deste
+   bloco: no monitor o alvo é o ponteiro, e engordar tudo lá estragaria a densidade que é o
+   ponto do produto — esta tela existe para comparar 500 itens.
+
+   ══ OS DOIS CASOS PERIGOSOS, QUE O MOLDE NOMEIA E QUE ESTÃO AQUI ════════════════════════════
+   1. BOTÃO SÓ DE ÍCONE. `.det-fechar` (32×32) e o `×` do chip de filtro (15×15) não têm texto
+      para lhes dar largura: com só `min-height` eles viram uma tira alta e estreita. Os dois
+      levam largura E altura.
+   2. CAIXINHA DE MARCAR. Ela NÃO engorda: engordada, vira um bloco e deixa de parecer caixinha.
+      A receita do molde é o alvo de 44×44 TRANSPARENTE e o quadradinho de ~18px redesenhado no
+      miolo com `::before`. O dedo ganha a área; o olho vê o que via.
+   ════════════════════════════════════════════════════════════════════════════════════════════ */
+@media(max-width:480px){
+  /* Os botões são `inline-flex` desde o item 7d, e é isso que faz `min-height` valer: em
+     elemento inline o navegador ignora altura, e o CSS ficaria PROMETENDO um alvo que não
+     existe. A catraca reprova essa promessa vazia separadamente. */
+  .btn,.btn.mini{min-height:44px;padding-left:var(--esp-4);padding-right:var(--esp-4)}
+  .lic .titulo{min-height:44px;display:flex;align-items:center}
+  .det-aba{height:44px}
+  .ord select,.periodo select,.periodo input[type=date],
+  select,input[type=date],input[type=text],input[type=number]{min-height:44px}
+  .dens button{min-height:44px;padding-left:var(--esp-4);padding-right:var(--esp-4)}
+  .mais .cx a,.mais .cx button{min-height:44px}
+
+  /* ── OS DOIS SÓ DE ÍCONE: largura E altura ──────────────────────────────────────────────── */
+  .det-fechar{width:44px;height:44px}
+  .chip-f button{width:44px;height:44px;border-radius:var(--raio-botao)}
+  /* e o desenho dentro dele continua do tamanho que era — quem cresceu foi a área do dedo */
+  .chip-f button svg{width:15px;height:15px}
+
+  /* ── A CAIXINHA DE MARCAR, PELA RECEITA DO MOLDE ────────────────────────────────────────── */
+  .det-tab2 input[type=checkbox]{
+    -webkit-appearance:none;appearance:none;
+    width:44px;height:44px;margin:0;position:relative;
+    background:none;border:0;cursor:pointer}
+  .det-tab2 input[type=checkbox]::before{
+    content:"";position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+    width:18px;height:18px;box-sizing:border-box;
+    border:1px solid var(--cinza-400);border-radius:var(--raio-mini);background:var(--branco)}
+  .det-tab2 input[type=checkbox]:checked::before{
+    background:var(--azul-600);border-color:var(--azul-600)}
+  /* O "visto" é desenhado com duas bordas giradas — sem imagem e sem fonte, então ele não
+     depende de nada externo e herda a cor do tema. */
+  .det-tab2 input[type=checkbox]:checked::after{
+    content:"";position:absolute;top:50%;left:50%;
+    transform:translate(-50%,-60%) rotate(45deg);
+    width:5px;height:10px;box-sizing:border-box;
+    border:solid var(--branco);border-width:0 2px 2px 0}
+  .det-tab2 input[type=checkbox]:focus-visible{outline:none}
+  .det-tab2 input[type=checkbox]:focus-visible::before{box-shadow:var(--foco)}
+  /* A célula da caixinha encolhe para o alvo não empurrar a tabela para fora da tela. */
+  .det-tab2 td:first-child,.det-tab2 th:first-child{width:44px;padding:0}
+
+  /* ── E O QUE NÃO PODE VAZAR A 390px ─────────────────────────────────────────────────────── */
+  /* A fita de abas ROLA em vez de empilhar (regra 3 do molde): três abas empilhadas empurram a
+     tabela para baixo da dobra num aparelho em que a dobra já é curta. */
+  .det-abas{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .det-aba{flex:0 0 auto}
+  /* O painel de detalhe ocupa a tela inteira: 96vw num aparelho de 390px deixa uma tira de
+     16px do lado que não serve para nada e faz o conteúdo apertar. */
+  #detalhe{width:100vw}
 }
 @media (prefers-reduced-motion: reduce){
   .skel div{animation:none}
@@ -1478,7 +1597,7 @@ svg.ic.bom{color:var(--verde-700)}
     <!-- A LINHA QUE EXPLICA O VAZIO. Ela troca de texto conforme o campo, porque o que o vazio
          faz e o que um termo faz são coisas diferentes — e quem está lendo precisa da que vale
          agora, não das duas. -->
-    <div class="hint" id="dica-kw" style="margin-top:9px"></div>
+    <div class="hint" id="dica-kw" style="margin-top:var(--esp-2)"></div>
     <div class="links">
       <!-- "Pesquisa avançada" saiu daqui: os filtros agora são a coluna da esquerda, sempre
            visível. Um link pra abrir o que já está aberto seria um link que não faz nada. -->
@@ -1517,7 +1636,7 @@ svg.ic.bom{color:var(--verde-700)}
          depois da última vez que EU olhei". Por isso cada jornal guarda no banco os números de
          controle que já mostrou (ver ddl/jornais.sql). -->
     <div id="jornais">
-      <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:6px">
+      <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:var(--esp-2)">
         <b style="font-family:Montserrat;font-size:var(--txt-3);color:var(--cinza-800)">Meus Jornais</b>
         <span class="hint" id="jor-resumo">carregando…</span>
         <!-- O "Salvar a busca atual" SAIU DAQUI e subiu pro cabeçalho da página (13/08, passo 3).
@@ -1526,7 +1645,7 @@ svg.ic.bom{color:var(--verde-700)}
              ele sempre foi. Dois botões pra mesma ação é o começo de dois comportamentos. -->
         <button class="btn sec mini" onclick="document.getElementById('jornais').classList.remove('open')">fechar</button>
       </div>
-      <div class="hint" style="margin-bottom:10px">
+      <div class="hint" style="margin-bottom:var(--esp-3)">
         o jornal roda quando você abre e compara com a sua última leitura · a leitura sai do
         <b>nosso banco</b>, que a coleta abastece 3× por dia — não depende do PNCP estar no ar.
         <br>marque <b>e-mail</b> num jornal para receber o boletim de madrugada, com o dia
@@ -1554,7 +1673,7 @@ svg.ic.bom{color:var(--verde-700)}
   <div id="painel-busca">
     <div id="avancada">
       <h5>Filtros</h5>
-      <div class="hint" style="margin:-6px 0 12px">O que estiver preenchido aqui vale na busca.
+      <div class="hint" style="margin:calc(var(--esp-2) * -1) 0 var(--esp-3)">O que estiver preenchido aqui vale na busca.
            Em branco = sem filtro.</div>
       <div class="grid3">
         <div><label>UF</label><select id="f-uf">
@@ -1602,7 +1721,7 @@ svg.ic.bom{color:var(--verde-700)}
           </div>
           <div class="hint" style="margin-top:4px">licitação sem valor estimado entra sempre</div></div>
       </div>
-      <div style="margin-top:14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+      <div style="margin-top:var(--esp-4);display:flex;gap:var(--esp-3);align-items:center;flex-wrap:wrap">
         <span class="hint">o refino filtra o que já está na tela — não custa nova consulta ao PNCP</span>
         <button class="btn sec" style="margin-left:auto" onclick="limparRefino()">Limpar refino</button>
         <button class="btn" onclick="buscaNova()">Aplicar e buscar</button>
@@ -1620,7 +1739,7 @@ svg.ic.bom{color:var(--verde-700)}
     <div class="kpi"><b id="k-aderencia">—</b><span>com aderência ao nosso estoque</span></div>
   </div>
 
-  <div id="estoque-status" class="hint" style="min-height:18px;margin:10px 0 2px"></div>
+  <div id="estoque-status" class="hint" style="min-height:18px;margin:var(--esp-3) 0 var(--esp-1)"></div>
   <div id="status" class="hint" style="min-height:18px;margin-bottom:8px"></div>
   <!-- O DETALHE SAIU DAQUI NA FATIA A27 e virou painel lateral (drawer), no fim do documento.
        Ele ficava neste ponto, ACIMA da lista, e abrir um edital de 600 itens empurrava os
@@ -1687,8 +1806,13 @@ svg.ic.bom{color:var(--verde-700)}
 // Errar calado aqui vale mais caro que não abrir.
 if(!window.LimedtecTetoCMED){
   document.body.insertAdjacentHTML('afterbegin',
-    '<div style="margin:12px;padding:14px 16px;border:1px solid var(--vermelho-100);border-radius:10px;' +
-    'background:var(--vermelho-50);color:var(--vermelho-800);font:14px/1.5 system-ui,sans-serif">' +
+    /* ESTE AVISO REUSA A CLASSE `.aviso err mini` (fatia A28) em vez de repintar-se à mão. Ele
+       tinha margem de 12, respiro de 14x16, raio de 10 e uma FONTE PRÓPRIA (`system-ui`)
+       escritos direto no atributo — quatro números fora da grade e uma segunda tipografia num
+       sistema de uma família só. A classe já existe no <style> desta página, e o <style> é
+       carregado antes deste script: se ela falhasse, a mensagem sairia sem moldura, que é
+       infinitamente melhor que a tela não dizer nada. */
+    '<div class="aviso err mini" style="margin:var(--esp-3)">' +
     '<b>Não consegui carregar o motor de comparação</b> (fpmed_teto_cmed.js).<br>' +
     'A tela não abre sem ele — o cruzamento com o nosso estoque depende desse arquivo. ' +
     'Recarregue a página; se continuar, feche e abra o aplicativo por completo.</div>');
@@ -2452,7 +2576,19 @@ else document.addEventListener('gm-auth-ready', _aoAutenticar, { once:true });
 // ~200 ms, mas o DEFAULT é 10 — sem paginar, a licitação de 65 itens entregava só os 10
 // primeiros e o cruzamento mentiria por omissão. Teto de 5 páginas (500 itens) com aviso.
 const ITENS_TAM = 100, ITENS_TETO_PAG = 5;
-async function puxarItens(lic){
+/* ══ A ESPERA TEM DE DIZER UM NÚMERO (fatia A28, estado 2 dos 4) ═════════════════════════════
+   "A pessoa aceita esperar; não aceita não saber" (BASE_VISUAL 2.7). Ler os itens de um edital
+   grande são até 5 requisições ao PNCP, e a tela dizia "buscando os itens do edital no PNCP…" o
+   tempo inteiro — que é uma rodinha muda escrita por extenso.
+   >>> E O NÚMERO É O QUE EU SEI, NÃO O QUE FICARIA BONITO. A frase é "li 100 itens · página 2
+       de até 5", e não "100 de 340": **o PNCP não diz quantos itens a compra tem**. É a mesma
+       recusa da divergência D11 da fatia A27, aplicada agora à espera — "de até 5" é o teto que
+       EU imponho e portanto sei; o total do edital eu não sei, e inventá-lo aqui seria uma
+       barra de progresso mentindo enquanto a pessoa espera.
+   >>> QUEM PINTA É QUEM CHAMOU. Esta função é o motor e não conhece a tela (o detalhe e a
+       sanfona do cartão a chamam de lugares diferentes, e o menu-lateral pode chamá-la amanhã).
+       Ela ANUNCIA o progresso por um retorno de chamada opcional; sem ele, nada muda. */
+async function puxarItens(lic, anuncia){
   const k = chaveLic(lic);
   const antes = CRUZ.get(k);
   if(antes && (Date.now()-antes.quando) < CACHE_MIN*60000) return antes;   // cache de 15 min por licitação
@@ -2461,6 +2597,7 @@ async function puxarItens(lic){
   const base = 'https://pncp.gov.br/api/pncp/v1/orgaos/'+cnpj+'/compras/'+lic.anoCompra+'/'+lic.sequencialCompra+'/itens';
   let itens = [], truncado = false;
   for(let p=1; p<=ITENS_TETO_PAG; p++){
+    if(typeof anuncia === 'function') anuncia({ pagina:p, teto:ITENS_TETO_PAG, lidos:itens.length });
     const ctrl = new AbortController();
     const t = setTimeout(()=>ctrl.abort(), TIMEOUT_MS);
     let lote;
@@ -3202,7 +3339,7 @@ function pintaOrgaos(){
     +       ' · CNPJ '+esc(o.cnpj||'')+(o.unidades>1?' · '+o.unidades+' unidades':'')+'</div></div>'
     +   '<div class="n"><b>'+o.licitacoes+'</b><div class="sub">'+brl(o.valor_estimado)+'</div></div>'
     + '</div>').join('')
-    + (vis.length>300 ? '<div class="hint" style="padding:10px">mostrando 300 de '+vis.length+' — refine a busca acima.</div>' : '');
+    + (vis.length>300 ? '<div class="hint" style="padding:var(--esp-3)">mostrando 300 de '+vis.length+' — refine a busca acima.</div>' : '');
 }
 function filtrarPorOrgao(nome){
   const e = document.getElementById('f-orgao'); if(e) e.value = nome;
@@ -3461,8 +3598,13 @@ async function abrirDetalheDe(l, foco, i){
     /* MESMO CAMINHO DO "Cruzar com nosso estoque": se a pessoa já cruzou este edital, o cache
        responde na hora e o detalhe abre instantâneo. Se não cruzou, cruzar aqui é o que faz a
        nota de aderência do cartão acender quando ela voltar — um gesto, dois lugares. */
-    const d = await puxarItens(l);
+    /* A ESPERA COM NÚMERO (fatia A28). É a abertura do painel — a espera que a pessoa mais vê,
+       porque ela acabou de clicar e está olhando. `vale()` guarda contra a corrida de quem
+       abriu outro edital no meio: progresso de um pregão pintado no painel de outro seria
+       número certo no lugar errado, que é uma mentira mais difícil de perceber que um erro. */
+    const d = await puxarItens(l, e => { if(vale()){ DET.lendo = e; pintaDetalhe('lendo'); } });
     if(!vale()) return;
+    DET.lendo = null;
     DET.dados = d;
     pintaDetalhe();
   }catch(e){
@@ -3524,7 +3666,7 @@ function mandarDetalheProFunil(){
      ninguém perceber. */
   if(irProNegocios(DET.lic, detItensMarcados())) return;
   const cx = document.getElementById('det-conversa');
-  if(cx) cx.innerHTML = '<div class="aviso err" style="text-align:left;padding:12px 14px">'
+  if(cx) cx.innerHTML = '<div class="aviso err mini">'
     + 'Esta licitação não trouxe o número de controle do PNCP, que é a chave que o funil usa '
     + 'para reconhecê-la. Dá para incluí-la à mão pelo Negócios.</div>';
 }
@@ -3544,13 +3686,13 @@ async function conversarComEdital(){
      vale mandar coletar, na outra vale anexar à mão, na terceira precisa de leitura por imagem.
      Um "não foi possível" genérico faria as três parecerem a mesma falha nossa. */
   if(!ed){
-    cx.innerHTML = '<div class="aviso" style="text-align:left;padding:12px 14px"><span class="hint">'
+    cx.innerHTML = '<div class="aviso mini"><span class="hint">'
       + 'Ainda não busquei o edital deste pregão no PNCP. A coleta é sob demanda — ela roda para '
       + 'as licitações que entram nos seus negócios.</span></div>';
     return;
   }
   if(ed.semArquivo){
-    cx.innerHTML = '<div class="aviso" style="text-align:left;padding:12px 14px"><span class="hint">'
+    cx.innerHTML = '<div class="aviso mini"><span class="hint">'
       + '<b>Edital não publicado no PNCP</b>'
       + (ed.quando ? ' — conferido em ' + fmtDt(ed.quando) : '') + '. O órgão não anexou o arquivo — '
       + 'o PNCP respondeu que não há documento para esta licitação. Dá para anexar o edital à mão '
@@ -3559,7 +3701,7 @@ async function conversarComEdital(){
     return;
   }
   if(ed.semControle || ed.semTexto){
-    cx.innerHTML = '<div class="aviso" style="text-align:left;padding:12px 14px"><span class="hint">'
+    cx.innerHTML = '<div class="aviso mini"><span class="hint">'
       + (ed.motivo ? 'O edital foi baixado, mas não deu para extrair o texto: ' + esc(ed.motivo)
                    : 'Encontrei o arquivo do edital, mas ainda sem texto extraído.')
       + '</span></div>';
@@ -3577,18 +3719,18 @@ async function conversarComEdital(){
        que vai ser lido é o "Termo de Referência" de 173.557 caracteres, e não "um documento". */
     const r = await LeitorEdital.perguntar({ texto: ed.texto, tarefa: 'resumo', paginas: ed.paginas,
       documento: { nome: ed.titulo || ed.tipo || null, chars: ed.chars, paginas: ed.paginas } });
-    cx.innerHTML = '<div class="aviso" style="text-align:left;padding:12px 14px">'+esc(JSON.stringify(r).slice(0,600))+'</div>';
+    cx.innerHTML = '<div class="aviso mini">'+esc(JSON.stringify(r).slice(0,600))+'</div>';
   }catch(e){
     /* CANCELAR NÃO É ERRO, e pintar de vermelho quem clicou em "não" ensina a pessoa a
        desconfiar do sistema justamente quando ele obedeceu. O aviso é neutro e DIZ que não
        houve cobrança — que é a única dúvida que sobra depois de cancelar um gasto. */
     if(e.cancelado){
-      cx.innerHTML = '<div class="aviso" style="text-align:left;padding:12px 14px"><span class="hint">'
+      cx.innerHTML = '<div class="aviso mini"><span class="hint">'
         + 'Leitura cancelada — <b>nada foi cobrado</b>. O botão continua aí quando você quiser.'
         + '</span></div>';
       return;
     }
-    cx.innerHTML = '<div class="aviso err" style="text-align:left;padding:12px 14px">'
+    cx.innerHTML = '<div class="aviso err mini">'
       + (e.semPermissao
           ? 'A leitura de edital com IA não está liberada para o seu usuário. Ela custa por uso, e quem libera é o Lemuel.'
           : ic('alerta','aviso') + ' ' + esc(e.message))
@@ -3903,8 +4045,16 @@ function pintaDetalhe(estado){
      ══════════════════════════════════════════════════════════════════════════════════════════ */
   let corpo;
   if(estado === 'lendo'){
+    /* A ESPERA COM NÚMERO (fatia A28, estado 2 dos 4). `DET.lendo` é preenchido pelo
+       `puxarItens` a cada página; enquanto ele não existe, a frase é a de partida — e ela não
+       finge saber nada. */
+    const pr = DET && DET.lendo;
     corpo = '<div class="det-rolo"><div class="det-secao-corpo"><span class="hint">'
-      + 'Lendo os itens do edital no PNCP…</span></div></div>';
+      + (pr
+          ? 'Lendo os itens no PNCP… <b>' + pr.lidos + '</b> ' + (pr.lidos === 1 ? 'item' : 'itens')
+            + ' até aqui · página <b>' + pr.pagina + '</b> de até ' + pr.teto
+          : 'Lendo os itens do edital no PNCP…')
+      + '</span></div></div>';
   }else if(estado === 'erro'){
     /* O ERRO DIZ O QUE FALHOU E O QUE CONTINUA VALENDO. "Não consegui ler os itens" não é "esta
        licitação não tem itens" — e sem essa frase as duas leituras se confundem. */
@@ -4026,7 +4176,7 @@ function pintaDetalhe(estado){
   const acoes = '<div class="acoes">'
     + (est === EST_ABERTA
         ? '<button class="btn mini bt-verde" onclick="mandarDetalheProFunil()">'
-          + '＋ Adicionar aos meus negócios</button>'
+          + ic('mais') + ' Adicionar aos meus negócios</button>'
         : est === EST_ENCERRADA
           ? '<span class="hint"><b>Certame encerrado.</b> Não dá para disputar, e por isso não '
             + 'ofereço "adicionar aos negócios" — o que este edital ainda vale é o <b>preço '
@@ -4035,7 +4185,7 @@ function pintaDetalhe(estado){
             + 'está aberto — confira no PNCP antes de decidir.</span>')
     + '<button class="btn sec mini bt-ia" onclick="conversarComEdital()" '
     +   'title="usa inteligência artificial e consome crédito por uso — o preço aparece antes de gastar">'
-    +   '✦ Conversar com o edital<span class="det-custo">custa por leitura</span></button>'
+    +   ic('robo') + ' Conversar com o edital<span class="det-custo">custa por leitura</span></button>'
     + '<button class="btn sec mini" onclick="detAba(\'documentos\')">Arquivos do edital'
     +   (nArq ? '<span class="det-custo">'+nArq+'</span>' : '') + '</button>'
     /* "MAIS AÇÕES" usa o mesmo `.mais` que o cartão da lista já usa, e o `fechaMais` global
@@ -4076,7 +4226,7 @@ function pintaDetalhe(estado){
       + '<span style="flex:1"></span>'
       + (est === EST_ABERTA
           ? '<button class="btn mini bt-verde" onclick="mandarDetalheProFunil()">'
-            + '＋ Adicionar aos meus negócios com estes itens</button>' : '')
+            + ic('mais') + ' Adicionar aos meus negócios com estes itens</button>' : '')
       + '<button class="btn sec mini" onclick="detLimpaSelecao()">Limpar seleção</button>'
       + '</footer>'
     : '';
@@ -4092,9 +4242,19 @@ function pintaDetalhe(estado){
     +     '<p class="det-org">'+esc(org)
     +       (un.nomeUnidade && un.nomeUnidade !== org ? ' · '+esc(un.nomeUnidade) : '')
     +       (un.municipioNome ? ' · '+esc(un.municipioNome) : '')+(un.ufSigla?'/'+esc(un.ufSigla):'')
-    +       (un.codigoUnidade ? ' · unidade '+esc(un.codigoUnidade) : '')+'</p>'
+    /* O CÓDIGO DA UNIDADE SEM DIZER O QUE ELE É NÃO SERVE PARA NADA (fatia A28). A A21 o trouxe
+       do `bruto` para a tela COM a explicação ("é a UASG no Comprasnet"); a A27 mudou a ficha de
+       lugar e a explicação ficou pelo caminho — sobrou "unidade 926119", um número sem ofício.
+       É a UASG que o operador digita no Comprasnet para achar o mesmo pregão do outro lado. */
+    +       (un.codigoUnidade ? ' · <span title="código da unidade compradora — é a UASG no '
+              + 'Comprasnet, o mesmo número que identifica este pregão lá">unidade '
+              + esc(un.codigoUnidade) + '</span>' : '')+'</p>'
     +   '</div>'
-    +   '<button class="det-fechar" onclick="fecharDetalhe()" title="Fechar (Esc)" aria-label="Fechar o detalhe">✕</button>'
+    /* O ✕ que morava aqui era um GLIFO fazendo trabalho de ícone — o mesmo defeito que o 7f
+       tirou da tela em 36 lugares e que a A27 reintroduziu sem querer no painel novo. A
+       fronteira declarada do projeto é: seta dentro de texto corrido fica; desenho dentro de
+       botão vem do sprite. O `aria-label` continua no botão, porque o ícone é mudo. */
+    +   '<button class="det-fechar" onclick="fecharDetalhe()" title="Fechar (Esc)" aria-label="Fechar o detalhe">'+ic('x')+'</button>'
     + '</div>'
     /* ══ A FILA DE CHIPS DE ESTADO (fatia A21, redesenhada na A27) ══════════════════════════
        Situação apurada por DATA + situação declarada + registro de preço + modo de disputa +
@@ -4170,8 +4330,9 @@ async function recarregarItensDetalhe(){
   CRUZ.delete(chaveLic(DET.lic));
   const t = DET.token, lic = DET.lic;
   pintaDetalhe('lendo');
-  try{ const d = await puxarItens(lic); if(DET && DET.token===t){ DET.dados = d; pintaDetalhe(); } }
-  catch(e){ if(DET && DET.token===t){ DET.erro = e.message; pintaDetalhe('erro'); } }
+  const conta = e => { if(DET && DET.token===t){ DET.lendo = e; pintaDetalhe('lendo'); } };
+  try{ const d = await puxarItens(lic, conta); if(DET && DET.token===t){ DET.lendo = null; DET.dados = d; pintaDetalhe(); } }
+  catch(e){ if(DET && DET.token===t){ DET.lendo = null; DET.erro = e.message; pintaDetalhe('erro'); } }
 }
 
 // ══ A PONTE ENCONTRAR → NEGÓCIOS (08/08) ══════════════════════════════════════════════════
@@ -4274,7 +4435,13 @@ async function mandarProFunil(i){
             bt.disabled = false;
             bt.onclick = () => location.href='fpmed_negocios.html'; }
   }catch(e){
-    if(bt){ bt.disabled = false; bt.textContent = '＋ Mandar pro funil'; }
+    /* `innerHTML` e não `textContent` (fatia A28): o `＋` que estava aqui era o U+FF0B, o "mais"
+       de largura inteira — caractere, não ícone. Caractere muda de desenho por fonte instalada
+       e não aceita a cor da marca, e este aqui é o SINAL DE VOLTA do botão depois de um erro:
+       ele tem de sair idêntico ao estado inicial, senão a pessoa não reconhece que voltou. Com
+       `textContent` o SVG viraria texto na tela; a troca para `innerHTML` é obrigatória, e o
+       que entra é gerado por `ic()`, não digitado. */
+    if(bt){ bt.disabled = false; bt.innerHTML = ic('mais') + ' Mandar pro funil'; }
     alert('Não consegui mandar pro funil: ' + e.message);
   }
 }
@@ -4727,8 +4894,8 @@ async function buscar(aoVivo){
     }
     // Aqui sim: nem banco, nem cache, nem PNCP. E a mensagem separa as duas causas, porque a
     // ação é diferente — "espera o portal voltar" não é "procura outro termo".
-    lista.innerHTML = '<div class="aviso err" style="text-align:left;padding:18px"><b>' + ic('alerta','aviso') + ' Sem resultado por dois motivos ao mesmo tempo</b>'
-      + '<div class="hint" style="margin-top:10px;line-height:1.7">'
+    lista.innerHTML = '<div class="aviso err" style="text-align:left;padding:var(--esp-5)"><b>' + ic('alerta','aviso') + ' Sem resultado por dois motivos ao mesmo tempo</b>'
+      + '<div class="hint" style="margin-top:var(--esp-3);line-height:1.7">'
       + '<b>1.</b> O portal do governo (PNCP) não respondeu: ' + esc(e.message) + '.<br>'
       + '<b>2.</b> E o nosso índice não tem nada' + (kws.length ? ' para <b>' + esc(kws.join(' / ')) + '</b>' : ' no período escolhido')
       // "a coleta nunca rodou" é uma acusação séria — só cabe quando NENHUM dia foi fechado E
@@ -4738,7 +4905,7 @@ async function buscar(aoVivo){
          : quando ? ' (última coleta em ' + quando.toLocaleDateString('pt-BR') + ')'
          : ' — <b>a coleta nunca rodou com sucesso</b>')
       + '.</div>'
-      + '<button class="btn" style="margin-top:14px" onclick="buscar()">Tentar de novo</button></div>';
+      + '<button class="btn" style="margin-top:var(--esp-4)" onclick="buscar()">Tentar de novo</button></div>';
     document.getElementById('kpis').style.display='none';
     return;
   }
@@ -4996,7 +5163,7 @@ function abrirHistorico(k){
     + '<div class="nota-fonte" style="border-radius:var(--raio-botao);margin-bottom:var(--esp-3)">'
     +   'Isto é <b>histórico da casa</b>, não uma licitação aberta. Não há itens do PNCP nem teto '
     +   'CMED aqui: o Calendário 2025 guarda o que a FPMED acompanhou, e não o edital.</div>'
-    + '<div class="dados" style="margin:0 0 14px">'
+    + '<div class="dados" style="margin:0 0 var(--esp-4)">'
     +   '<div class="dado"><small>Abertura</small><span>'+(fmtD(h.abertura)||'—')
     +     (h.hora ? ' às '+esc(h.hora) : '')+'</span></div>'
     +   '<div class="dado"><small>Portal</small><span>'+esc(h.portal||'—')+'</span></div>'
@@ -5006,10 +5173,10 @@ function abrirHistorico(k){
        do cartão: perder não é ganhar zero, e dinheiro recebido não se arredonda. */
     +   (ganho ? '<div class="dado"><small>Valor ganho</small><span>'+brlExato(h.valor_ganho)+'</span></div>' : '')
     + '</div>'
-    + '<div class="obj" style="margin:0 0 14px">'+grifa(h.objeto||'')+'</div>'
+    + '<div class="obj" style="margin:0 0 var(--esp-4)">'+grifa(h.objeto||'')+'</div>'
     + (h.observacao ? '<div class="det-secao"><h4>Observação registrada</h4>'
         + '<div class="hint">'+esc(h.observacao)+'</div></div>' : '')
-    + '<div class="acoes" style="margin-top:14px">'
+    + '<div class="acoes" style="margin-top:var(--esp-4)">'
     +   '<button class="btn mini" onclick="procurarNoIndice('+k+')" '
     +     'title="joga o número e o órgão na busca desta tela — quem reconhece a licitação é você">'
     +     'Procurar este certame no índice</button>'
@@ -5306,7 +5473,7 @@ function render(todos, kws, excl, aviso, procedencia, procIcone){
   document.getElementById('k-aderencia').textContent = comAlvo || '—';
 
   const lista = document.getElementById('lista');
-  let h = aviso ? '<div class="aviso err" style="margin-bottom:14px;text-align:left;padding:14px 18px">' + ic('alerta','aviso') + ' '+esc(aviso)+'</div>' : '';
+  let h = aviso ? '<div class="aviso err" style="margin-bottom:var(--esp-4);text-align:left;padding:var(--esp-4) var(--esp-5)">' + ic('alerta','aviso') + ' '+esc(aviso)+'</div>' : '';
   // PROCEDÊNCIA: de onde veio o que está na tela, e de quando. Sem isso o operador não tem
   // como saber se está olhando dado de agora ou de ontem — e é justamente essa dúvida que o
   // índice próprio cria ao deixar de consultar o PNCP a cada busca.
@@ -5319,7 +5486,7 @@ function render(todos, kws, excl, aviso, procedencia, procIcone){
            números e datas montados em vários lugares, e um dia carregaria algo vindo do banco;
            afrouxar a escapada pra caber um ícone é trocar uma proteção por um desenho. O ícone
            virou PARÂMETRO, e o texto continua sendo tratado como texto. */
-    h += '<div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:14px;padding:10px 14px;'
+    h += '<div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:var(--esp-4);padding:var(--esp-3) var(--esp-4);'
        + 'background:var(--painel);border:1px solid var(--linha);border-radius:10px;font-size:12.5px;color:var(--muted)">'
        + '<span>' + (procIcone ? ic(procIcone) + ' ' : '') + esc(procedencia)+'</span>'
        + '<button class="btn sec mini" style="margin-left:auto" onclick="atualizarAgora()">↻ Atualizar agora</button>'
@@ -5347,7 +5514,7 @@ function render(todos, kws, excl, aviso, procedencia, procIcone){
   calendarioProtegido(kws, excl);
 
   if(!hits.length){
-    h += '<div class="aviso">Nenhuma licitação bate na busca.<div class="hint" style="margin-top:6px">'
+    h += '<div class="aviso">Nenhuma licitação bate na busca.<div class="hint" style="margin-top:var(--esp-2)">'
        + todos.length+' publicada(s) no período com esses filtros.'
        + (pills.length ? ' <b>Há refino ligado</b> — talvez seja ele, e não a busca.' : ' Tente limpar as palavras-chave.')
        + (r.desertas ? '<br>A marca de <b>deserta por item</b> só existe depois de ler os itens daquela licitação'
@@ -5367,7 +5534,7 @@ function render(todos, kws, excl, aviso, procedencia, procIcone){
   const ehNova = l => !!(jor && !jor.primeira && !jor.vistos.has(_numCtrl(l)));
   if(jor){
     const qtd = hits.filter(ehNova).length;
-    h += '<div class="refino" style="margin-top:2px"><span class="pill">'+ic('jornal')+' '+esc(jor.nome)+'</span>'
+    h += '<div class="refino" style="margin-top:var(--esp-1)"><span class="pill">'+ic('jornal')+' '+esc(jor.nome)+'</span>'
        + (jor.primeira
           ? '<span class="hint">primeira leitura deste jornal — a partir da próxima eu marco só o que chegou depois</span>'
           : qtd ? '<span class="novas">'+qtd+(qtd===1?' nova desde a sua última leitura':' novas desde a sua última leitura')+'</span>'
@@ -5613,7 +5780,7 @@ function render(todos, kws, excl, aviso, procedencia, procIcone){
           // gesto; antes disso, quem achasse algo aqui tinha que ir pro funil e digitar de novo.
           ? ' <button class="btn mini bt-verde" onclick="adicionarAosNegocios('+i+')" '
             + 'title="abre o assistente do Negócios já com esta licitação e os itens escolhidos">'
-            + '＋ Adicionar aos meus negócios</button>'
+            + ic('mais') + ' Adicionar aos meus negócios</button>'
             + ' <button class="btn sec mini" onclick="conversarDoCartao('+i+')" '
             + 'title="usa inteligência artificial e consome crédito por uso — o preço aparece antes de gastar">'
             + 'Conversar com o edital <span class="lm-selo-ia">IA</span></button>'
@@ -5727,7 +5894,7 @@ function celMatch(par, uEdital){
             ? 'a dose/medida do edital bate com a do nosso produto'
             : 'mesma família, mas a dose/medida não foi confirmada — confira antes de usar o preço')
        + '">'+(par.conf==='alta'?'dose confere':'aproximado')+'</span>'
-       + '<div class="hint" style="margin-top:3px">nosso unitário: '+celPreco(un)
+       + '<div class="hint" style="margin-top:var(--esp-1)">nosso unitário: '+celPreco(un)
        + (c.estoque!=null ? ' · saldo '+esc(c.estoque) : '')
        + (c.marca ? ' · '+esc(c.marca) : '') + delta + '</div></div>';
 }
@@ -5911,17 +6078,23 @@ async function verItens(i, forcar){
   box.style.display='block'; box.dataset.aberto='1';
   bt.innerHTML='ocultar itens';
   if(!box.innerHTML || forcar) box.innerHTML='<div class="progresso">buscando os itens do edital no PNCP…</div>';
+  /* A ESPERA COM NÚMERO (fatia A28). Ele conta o que EU sei — páginas lidas e itens já em mão —
+     e nunca um total do edital, que o PNCP não informa. */
+  const conta = e => { if(box.dataset.aberto === '1')
+    box.innerHTML = '<div class="progresso">lendo os itens no PNCP… <b>' + e.lidos + '</b> '
+      + (e.lidos === 1 ? 'item' : 'itens') + ' até aqui · página <b>' + e.pagina
+      + '</b> de até ' + e.teto + '</div>'; };
   try{
     /* A CMED CARREGA EM PARALELO COM OS ITENS, e a ordem importa: se ela carregasse depois, a
        tabela pintaria com a coluna do teto vazia e só. E o `Promise.all` NÃO deixa a CMED
        derrubar o cruzamento — `carregarCMED` engole a própria falha e devolve null, porque o
        cruzamento com o nosso estoque é o que a pessoa pediu; o teto é o acréscimo. */
-    const [itens] = await Promise.all([ puxarItens(l), carregarCMED() ]);
+    const [itens] = await Promise.all([ puxarItens(l, conta), carregarCMED() ]);
     box.innerHTML = tabelaItens(itens, i);
     atualizaBadge(i);
   }catch(e){
     box.innerHTML = '<div class="aviso err mini">'+ic('alerta','aviso')+' '+esc(e.message)
-      + ' <button class="btn mini" style="margin-left:10px" onclick="verItens('+i+',1)">Tentar de novo</button></div>';
+      + ' <button class="btn mini" style="margin-left:var(--esp-3)" onclick="verItens('+i+',1)">Tentar de novo</button></div>';
   }
 }
 

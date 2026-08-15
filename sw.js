@@ -72,7 +72,13 @@
    "historico" que nao existe e nao conta que "Meus arquivos", o numero de controle, os selos e
    os campos de EAN passaram a existir. Guia velho servido com confianca e pior que guia nenhum:
    quem nao acha o que ele descreve conclui que e ELE quem nao sabe usar o sistema. */
-const VERSAO = 'limedtec-fpmed-2026-08-14-83';
+/* ══ -84 (fatia A28, 15/08/2026) ═════════════════════════════════════════════════════════════
+   Mudaram a `fpmed_licitacoes.html` e o `limedtec-menu.js`, e os dois são SERVIDOS. Sem bump,
+   quem já instalou o aplicativo continua com o de ontem quando estiver offline — e o de ontem
+   tem contador de filtro e pastilha de prazo em 10px, botão de fechar de 32px no celular e
+   cabeçalho de tabela que some ao rolar. O bump aqui é a diferença entre "consertei" e
+   "consertei para quem abrir amanhã". */
+const VERSAO = 'limedtec-fpmed-2026-08-15-84';
 const CACHE = 'limedtec-shell-' + VERSAO;
 
 // A CASCA DA FPMED. Lista MONTADA A MAO conferindo `git ls-files` (= o que o Pages serve),
