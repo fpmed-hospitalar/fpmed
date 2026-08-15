@@ -32,6 +32,30 @@ tools/_previa_*.html
 # segredos.local.txt em runtime), mas a regra agora e larga de proposito.
 tools/_*
 
+# ── E A MESMA REGRA NA RAIZ (fatia A30, 15/08/2026) ─────────────────────────────────────────
+# A regra acima cobre `tools/_*` e a RAIZ ficou de fora. Medido hoje: 15 arquivos `_*` na raiz,
+# e `git check-ignore` confirmou que 11 deles NAO estavam ignorados. Entre eles o
+# `_a25_amupe.json` (22 KB) e o `_a25_amupe_recasado.json` (25 KB) — recortes do Diario Oficial
+# dos Municipios de PE colhidos na fatia A25 —, o `_dm_busca.html` (54 KB, uma pagina inteira de
+# portal de terceiro) e 160 KB de log de coleta com nome de orgao e municipio.
+# >>> ELES ESTAVAM A UM `git add -A` DE ENTRAR NUM REPOSITORIO PUBLICO. E este .gitignore ja
+#     conta a mesma historia duas vezes, com outras roupas: o "Calendario 2025.xlsm" (49,7 MB
+#     com valor ganho) e a pasta dados_cmed/. As duas linhas de licao estao escritas ali em
+#     cima e valem aqui: *a regra cobria o que alguem lembrou de listar*, e extensao nao cobre
+#     pasta. Aqui, o prefixo cobria uma pasta e nao cobria a raiz.
+# >>> A BARRA NO COMECO IMPORTA: `/_*` vale SO na raiz. Sem ela, a regra desceria para dentro de
+#     qualquer pasta do projeto e um dia esconderia um arquivo de codigo legitimo.
+# >>> Nenhum arquivo RASTREADO comeca com `_` (conferido: `git ls-files` nao devolve nenhum),
+#     entao esta regra nao esconde nada que ja esteja versionado.
+/_*
+
+# ── logs/ — saida de execucao, nao fonte (fatia A30) ────────────────────────────────────────
+# A pasta guarda o indice de ciclos dos dois motores, o detalhe de cada ciclo e os retratos das
+# coletas. E RUIDO que cresce sozinho e muda a cada rodada: versiona-la faria todo `git status`
+# aparecer sujo e todo diff vir cheio de carimbo de hora. O que precisa sobreviver a uma coleta
+# nao mora em log — mora no banco, e a ferramenta que o le esta em tools/.
+logs/
+
 # scripts gerados com chave embutida
 restore_*.js
 apply_*.js
