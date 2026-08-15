@@ -189,7 +189,15 @@ body{
   transition:background-color var(--transicao),border-color var(--transicao)}
 .sino:hover{background:var(--cinza-100);border-color:var(--cinza-300)}
 .sino:focus-visible{outline:none;box-shadow:var(--foco)}
-.sino .cnt{position:absolute;top:-6px;right:-6px;background:var(--ambar-600);color:var(--branco);border-radius:11px;
+/* ══ O CONTADOR DE AVISOS REPROVAVA EM AA, E QUEM ACHOU FOI A CATRACA DO A ═══════════════════
+   Branco sobre `--ambar-600` mede 4,20:1 — abaixo dos 4,5 de texto normal. E o texto aqui é o
+   NÚMERO de avisos: a bolinha que diz quantas coisas estão esperando por você.
+   >>> DESCEU UM DEGRAU NA PRÓPRIA RAMPA, que é o que a BASE manda ("fuga só existe medida e
+       declarada, e desce um degrau na própria rampa — nunca inventa cor nova"): `--ambar-700`
+       mede 6,38:1 contra o branco. Nenhum hex novo entrou, e o âmbar continua âmbar.
+   >>> POR QUE NÃO ESCURECI O TEXTO EM VEZ DA BOLA: a bola é o alerta, e alerta com tinta fraca
+       vira decoração. Escurecer o fundo mantém a bola gritando e devolve a leitura do número. */
+.sino .cnt{position:absolute;top:-6px;right:-6px;background:var(--ambar-700);color:var(--branco);border-radius:11px;
   min-width:19px;height:19px;font-size:var(--txt-1);font-weight:800;font-family:Montserrat;line-height:19px;padding:0 4px}
 #notif{display:none;position:absolute;right:0;top:42px;width:380px;max-height:70vh;overflow:auto;z-index:40;
   background:var(--painel);border:1px solid var(--linha);border-radius:13px;box-shadow:var(--sombra-3);padding:8px}
@@ -1183,7 +1191,15 @@ textarea.anot:focus{border-color:var(--azul)}
 .pk-topo{display:flex;align-items:center;gap:12px;margin-bottom:8px;flex-wrap:wrap;font-size:14px;color:var(--cinza-800)}
 .pk-conta{background:var(--painel2);border:1px solid var(--linha);border-radius:9px;padding:12px 12px;font-size:13px;color:var(--cinza-800);margin-bottom:8px}
 .pk-tab{width:100%;border-collapse:collapse;font-size:12.5px}
-.pk-tab th{text-align:left;padding:8px;border-bottom:1px solid var(--linha);color:var(--muted);font-size:var(--txt-1);text-transform:uppercase}
+/* ══ O CABEÇALHO PASSA A FICAR ══════════════════════════════════════════════════════════════
+   Apontado pela catraca `testa_tabela_densa` do A: esta tabela mora dentro de um `<div>` com
+   `max-height:430px;overflow:auto` (e outra, de 300px) — ou seja, ela ROLA de verdade. Sem
+   `sticky`, quem desce trinta linhas perde a legenda de qual coluna é qual, e nesta tela as
+   colunas são números que se parecem. É a regra da BASE 2.5, e o defeito era real, não formal.
+   >>> O `background` NÃO É ENFEITE: cabeçalho `sticky` sem fundo próprio é transparente, e as
+       linhas passam POR BAIXO das letras enquanto rolam. O fundo é o do painel que o contém,
+       pelo token — sem cor nova. E o `z-index:1` é o que o põe acima das linhas em rolagem. */
+.pk-tab th{position:sticky;top:0;z-index:1;background:var(--painel);text-align:left;padding:8px;border-bottom:1px solid var(--linha);color:var(--muted);font-size:var(--txt-1);text-transform:uppercase}
 .pk-tab td{padding:8px;border-bottom:1px solid var(--cinza-100)}
 .pk-tab tbody tr{cursor:pointer}
 .pk-tab tbody tr:hover{background:var(--painel2)}
@@ -1275,8 +1291,16 @@ textarea.anot:focus{border-color:var(--azul)}
         duas setas do calendário e o X do painel do dia). Sem `min-width` eles viram tira alta e
         estreita: o dedo continua errando na horizontal e a régua diz que está tudo certo.
         O `width`/`height` fixo de 28 e 30px que eles têm no desktop é vencido aqui porque
-        `min-width`/`min-height` ganham de `width`/`height` — não é sorte, é a regra do CSS. */
-  .sino, .dw-top .x, .cal-nav button, .cal-dia-painel .cab .x{
+        `min-width`/`min-height` ganham de `width`/`height` — não é sorte, é a regra do CSS.
+        >>> A CLASSE `btn-ic` ENTROU DEPOIS, E POR UM ACHADO DA PRÓPRIA RÉGUA. Esta tela resolveu
+        os botões só de ícone por SELETOR CONCRETO; uma tela adiante, a Proposta resolveu por
+        CLASSE. Duas soluções para o mesmo fato é o que a BASE 2.3 proíbe, e quem denunciou foi a
+        conta nova da régua ("botão só de ícone: 3, dos quais 3 SEM alvo") — ela estava certa
+        sobre a incoerência e errada sobre o risco: os três JÁ tinham alvo, pelos seletores
+        abaixo. Em vez de ensinar a régua a conhecer lista de seletor de cada tela, a convenção
+        virou uma só, e é a que se procura com um grep. Os seletores concretos FICAM: eles não
+        atrapalham e são o que segura a tela se alguém apagar a classe sem querer. */
+  .sino, .dw-top .x, .cal-nav button, .cal-dia-painel .cab .x, .btn-ic{
     min-width:44px;min-height:44px;display:inline-flex;align-items:center;justify-content:center}
 
   /* 3. `<a>` QUE É BOTÃO. `min-height` em elemento inline não faz NADA — é a armadilha que o
@@ -1499,7 +1523,7 @@ textarea.anot:focus{border-color:var(--azul)}
 
 <div id="velcro" onclick="fecharDrawer()"></div>
 <aside id="drawer" aria-hidden="true">
-  <div class="dw-top"><button class="x" onclick="fecharDrawer()" title="fechar" aria-label="fechar"><svg class="ic" aria-hidden="true"><use href="#ic-x"/></svg></button><h2 id="dw-titulo">—</h2></div>
+  <div class="dw-top"><button class="x btn-ic" onclick="fecharDrawer()" title="fechar" aria-label="fechar"><svg class="ic" aria-hidden="true"><use href="#ic-x"/></svg></button><h2 id="dw-titulo">—</h2></div>
   <div class="dw-body" id="dw-body"></div>
 </aside>
 
@@ -2446,8 +2470,8 @@ function calendario(l){
            de traço 1.8 aparece como o único desenho que não é do conjunto. A da esquerda é a
            mesma, virada — desenhar uma segunda seta seria duas fontes de verdade pra uma flecha. -->
       <div class="cal-nav">
-        <button type="button" onclick="calNav(-1)" title="mês anterior" aria-label="Mês anterior"><svg class="ic ic-volta" aria-hidden="true"><use href="#ic-seta"/></svg></button>
-        <button type="button" onclick="calNav(1)" title="próximo mês" aria-label="Próximo mês"><svg class="ic" aria-hidden="true"><use href="#ic-seta"/></svg></button>
+        <button type="button" class="btn-ic" onclick="calNav(-1)" title="mês anterior" aria-label="Mês anterior"><svg class="ic ic-volta" aria-hidden="true"><use href="#ic-seta"/></svg></button>
+        <button type="button" class="btn-ic" onclick="calNav(1)" title="próximo mês" aria-label="Próximo mês"><svg class="ic" aria-hidden="true"><use href="#ic-seta"/></svg></button>
       </div>
       <div class="cal-mes">${esc(calNomeMes(CAL_A, CAL_M))}</div>
       <button type="button" class="cal-hoje" onclick="calHoje()">Hoje</button>
@@ -2961,7 +2985,10 @@ function corpoDrawer(n, obs, carregando){
           <input type="text" id="lem-titulo" placeholder="ex.: ligar pro fornecedor antes da sessão">
           <input type="datetime-local" id="lem-quando">
           <select id="lem-prio"><option value="alta">alta</option><option value="media" selected>média</option><option value="baixa">baixa</option></select>
-          <button class="btn-ed" onclick="criarLembrete(${n.id})" id="lem-bt"><svg class="ic" aria-hidden="true"><use href="#ic-mais"/></svg> Agendar</button>
+          <!-- o "+" continua TEXTO (virou o ASCII, no lugar do U+FF0B de largura inteira). A
+               casa ja tinha decidido isso na Proposta, com assert dos dois lados: sinal de mais
+               em rotulo de botao e tipografia, e desenhar SVG pra ele deixa a tela pior. -->
+          <button class="btn-ed" onclick="criarLembrete(${n.id})" id="lem-bt">+ Agendar</button>
         </div><div class="salvo" id="lem-msg"></div>` : '<div class="salvo">só quem grava pode agendar lembrete.</div>'}
         <div id="lem-lista"><div class="salvo">carregando…</div></div>
       </div>
@@ -3084,7 +3111,7 @@ function corpoDrawer(n, obs, carregando){
             <option value="representante">representante</option><option value="telefone">telefone</option>
             <option value="outro">outro</option>
           </select>
-          <button class="btn-ed" id="cred-bt" onclick="criarCredenciamento(${n.id})"><svg class="ic" aria-hidden="true"><use href="#ic-mais"/></svg> Registrar pedido</button>
+          <button class="btn-ed" id="cred-bt" onclick="criarCredenciamento(${n.id})">+ Registrar pedido</button>
         </div><div class="salvo" id="cred-msg"></div>`
         : '<div class="salvo">só quem grava pode registrar credenciamento.</div>'}
       </div>
@@ -3548,8 +3575,14 @@ function tetoDoItem(it){
     return '<span class="it-t"><b class="neutro">sem preço comparável</b></span>';
   const selo = r.confianca && r.confianca !== 'exata'
     ? '<em class="conf">casou por ' + esc(r.confianca === 'alta' ? 'substância (dicionário CMED)' : 'substância (palpite do nome)') + '</em>' : '';
+  // >>> O `pctAcima||0` VIRAVA "estoura o teto · +0.0%", QUE É UMA FRASE QUE SE CONTRADIZ:
+  //     "estoura" e "+0,0%" não podem ser verdade juntos. Achado pela catraca testa_numero_honesto
+  //     que o A trouxe nesta rodada, e o conserto é copiar o irmão de duas linhas abaixo, que já
+  //     fazia certo com a folga: percentual que não se sabe NÃO SAI, e a frase continua verdadeira
+  //     sem ele. Zero não é "não sei" — e num selo de teto de medicamento essa diferença é a que
+  //     decide se alguém baixa o preço.
   if(r.situacao === 'acima')
-    return `<span class="it-t"><b class="estoura">estoura o teto · +${Number(r.pctAcima||0).toFixed(1)}%</b>
+    return `<span class="it-t"><b class="estoura">estoura o teto${r.pctAcima != null && isFinite(r.pctAcima) ? ' · +' + Number(r.pctAcima).toFixed(1) + '%' : ''}</b>
       <i>teto ${esc(r.tipoTeto || 'CMED')} ${brl(r.teto)}</i>${selo}</span>`;
   return `<span class="it-t"><b class="cabe">cabe no teto</b>
     <i>teto ${esc(r.tipoTeto || 'CMED')} ${brl(r.teto)}${r.folgaPct != null ? ' · folga ' + Number(r.folgaPct).toFixed(1) + '%' : ''}</i>${selo}</span>`;
@@ -6635,7 +6668,13 @@ async function cambioNeg(){
 }
 function custoDaLeitura(j){
   return '<div class="salvo" style="margin-top:8px">'
-    + 'custo desta leitura: <b>' + (j.brl != null ? 'R$ ' + Number(j.brl).toFixed(2) : 'US$ ' + Number(j.usd||0).toFixed(4)) + '</b>'
+    // >>> `j.usd||0` DIZIA "US$ 0.0000" QUANDO NINGUÉM SABIA O CUSTO — ou seja, dizia que a
+    //     leitura foi de graça. Este texto existe justamente porque a leitura CUSTA dinheiro de
+    //     verdade, e o dono pediu que o custo aparecesse antes. Custo desconhecido escrito como
+    //     zero é a mentira mais cara desta tela: ela desliga o aviso que ela mesma foi criada
+    //     para dar. Agora, sem número, a frase diz que não sabe — e continua avisando.
+    + 'custo desta leitura: <b>' + (j.brl != null ? 'R$ ' + Number(j.brl).toFixed(2)
+        : (j.usd != null && isFinite(j.usd) ? 'US$ ' + Number(j.usd).toFixed(4) : 'não informado')) + '</b>'
     + (j.registrado === false
         ? ' · <b style="color:var(--vermelho-700)"><svg class="ic" aria-hidden="true"><use href="#ic-alerta"/></svg> NÃO entrou no contador</b>' + (j.regErro ? ' (' + esc(j.regErro) + ')' : '')
         : (j.leituraId ? ' · registrada com o nº ' + j.leituraId : ''))

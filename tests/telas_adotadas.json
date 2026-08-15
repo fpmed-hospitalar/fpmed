@@ -1,0 +1,72 @@
+{
+  "_porque": [
+    "A LISTA DE QUEM JA PASSOU PELA FATIA. As 8 catracas (tests/testa_cor_token.js e as outras",
+    "sete) reprovam SO o que esta em `adotadas`. Nao e tolerancia: e o unico jeito de o vermelho",
+    "continuar querendo dizer alguma coisa. Catraca que nasce vermelha em doze telas ensina a",
+    "equipe inteira a ignorar vermelho — foi o arquiteto quem escreveu isso, na resposta 5 da",
+    "CAIXA_A da rodada 6.",
+    "",
+    "A DIVIDA NAO SOME: toda catraca imprime a lista `pendentes` com o numero MEDIDO de cada",
+    "tela, a cada rodada. Divida escondida e mentira; divida contada em voz alta e fila.",
+    "",
+    "COMO UMA TELA ENTRA: no dia da fatia dela, quando o dono do territorio conserta a causa e a",
+    "catraca fica verde. Mover uma linha de `pendentes` para `adotadas` sem consertar deixa a",
+    "suite vermelha na hora — a lista nao tem como mentir sobre si mesma.",
+    "",
+    "TERRITORIO: o A e dono de fpmed_licitacoes.html, limedtec-menu.js, fpmed_tema.css e do",
+    "sprite. O B e dono de fpmed_negocios.html, fpmed_giovana.html, fpmed_ajuda.html e",
+    "fpmed_documentos.html — ele move as telas dele quando a fatia dele fechar."
+  ],
+
+  "adotadas": [
+    "fpmed_tema.css",
+    "fpmed_licitacoes.html",
+    "limedtec-menu.js"
+  ],
+
+  "_pendencia_do_B": [
+    "ESCRITO PELO B EM 14/08, NA FATIA B19, E COM O NUMERO MEDIDO — porque divida contada em voz",
+    "alta e fila, e divida escondida e mentira (a regra e desta mesma lista, tres paragrafos",
+    "acima). Eu MOVI as minhas duas telas para `adotadas`, rodei a suite, e ela ficou vermelha em",
+    "12 asserts de 7 catracas. Consertei 7 desses 12 e desmovi as telas. O que sobrou:",
+    "",
+    "fpmed_giovana.html — 5 falhas, e TODAS as cinco sao o PAPEL CONGELADO, nao a tela:",
+    "  18 hex + 7 espacos fora da grade + 11 tamanhos abaixo de 12px, todos dentro do `.print-doc`",
+    "  (a propria catraca imprime o seletor `.print-doc` no recado dela), mais o simbolo de aviso",
+    "  do texto legal que sai IMPRESSO na proposta. O papel esta congelado por ordem da caixa desde",
+    "  a B8 e a tools/prova_papel_congelado.js compara tres regioes byte a byte.",
+    "  A CAUSA E CONHECIDA E TEM NOME: a tools/regua_visual.js entende por `papel` so o que esta",
+    "  dentro de `@media print`. Nesta tela a folha e a `.print-doc`, que fica `display:none` na",
+    "  tela e `display:block` na impressao — logo o CSS dela mora FORA do `@media print`. Foi o",
+    "  defeito 11 da minha propria regua nesta mesma fatia; la eu consertei ancorando nas TRES",
+    "  regioes da prova. Aqui eu NAO consertei: a tools/regua_visual.js e a ferramenta compartilhada",
+    "  do A, e a lei desta casa e que eu nao escrevo em arquivo de outro dono. Fica para quem e.",
+    "",
+    "fpmed_negocios.html — 1 falha: `.card .tit{padding-right:96px}`, que nao e degrau da grade.",
+    "  Ele e a RESERVA que impede o titulo de passar por baixo do selo `.sit-tag`, que e",
+    "  `position:absolute` e nao empurra ninguem. Nao arredondei porque nao sei quanto o selo mede:",
+    "  a conta de cabeca de `REMARCADO` (9 letras, peso 800, espacamento 1,2px, respiro 8+8, borda",
+    "  2, direita 14) da perto de 120px, ou seja a reserva de 96 provavelmente JA ESTA CURTA hoje.",
+    "  Cortar para 64 sem medir seria trocar um numero fora da grade por um fora da grade E errado.",
+    "  Falta a largura do selo medida na tela pintada — e eu nao logo.",
+    "",
+    "fpmed_ajuda.html e fpmed_documentos.html: fatia feita nesta mesma rodada, numeros no",
+    "RELATORIO_B.md. Elas entram quando estes dois impedimentos sairem do caminho."
+  ],
+
+  "pendentes": [
+    "fpmed_negocios.html",
+    "fpmed_giovana.html",
+    "fpmed_ajuda.html",
+    "fpmed_documentos.html",
+    "index.html",
+    "fpmed_edital_ia.html",
+    "fpmed_declaracoes.html"
+  ],
+
+  "_sobre_o_tema": [
+    "O fpmed_tema.css esta em `adotadas` com um oficio diferente das telas: ele E a fonte dos",
+    "tokens, entao ele e o UNICO arquivo onde hex e legitimo. A catraca testa_cor_token o trata",
+    "assim de proposito e diz isso em voz alta — as outras sete o medem como qualquer arquivo."
+  ]
+}

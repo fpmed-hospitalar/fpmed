@@ -43,9 +43,24 @@ function degrau(v) {
   return { ok: true, valor: melhor };
 }
 
-// as mesmas fronteiras da régua: papel e documento gerado não entram no conserto de tela
+/* AS MESMAS FRONTEIRAS DA RÉGUA: papel e documento gerado não entram no conserto de tela.
+   >>> E "PAPEL" NÃO É SÓ `@media print` — foi o defeito 11 da régua, achado antes de este
+   aplicador rodar na Proposta, e por pouco. A folha que vai para o hospital é a `.print-doc`:
+   ela fica `display:none` na tela, então o CSS dela mora FORA do `@media print`. Este aplicador
+   teria reescrito 18 hex e 10 tamanhos de letra do documento CONGELADO desde a B8, e a
+   `tools/prova_papel_congelado.js` teria ficado vermelha — depois de o estrago estar no disco.
+   As âncoras são copiadas da prova de propósito: uma fronteira, três leitores. */
+const ANCORAS_DO_PAPEL = [
+  /<div class="print-doc" id="print-doc">[\s\S]*?\n<!-- MODAL MANUAL -->/,
+  /\/\* PRINT \*\/[\s\S]*?<\/style>/,
+  /function gerarPDF\(\)[\s\S]*?\n\}/,
+];
 function regioesFora(txt) {
   const fora = [];
+  for (const re of ANCORAS_DO_PAPEL) {
+    const m = re.exec(txt);
+    if (m) fora.push([m.index, m.index + m[0].length]);
+  }
   const reM = /@media([^{]*)\{/g;
   let m;
   while ((m = reM.exec(txt))) {

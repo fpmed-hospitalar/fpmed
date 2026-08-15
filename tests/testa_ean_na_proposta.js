@@ -150,7 +150,15 @@ const ITEM_SEM = { produto: 'DIPIRONA 500MG', marca: 'HIPOLABOR', ean: null, reg
 /* Congelado desde a B8. A prova byte a byte e o tools/prova_papel_congelado.js;
    aqui ficam os asserts estruturais, que rodam sem git e sem rede. */
 {
-  const linhaNova = pega(/<div class="item-det no-print" style="margin-top:3px">\$\{identidadeHTML\(c\)\}<\/div>/);
+  /* >>> ESTE ASSERT PRENDIA O PIXEL, E A FATIA B19 O DERRUBOU SEM NADA TER PIORADO. Ele exigia
+     `style="margin-top:3px"` — e a B19 pos os espacos desta tela na grade de 8, entao o 3 virou
+     4 e a ancora quebrou. A pergunta do assert nunca foi "quantos pixels tem a margem": e "a
+     linha da identidade vive na TELA e nao no PAPEL?". Um assert que reprova a arrumacao do
+     espaco em nome do `no-print` protege a coisa errada e atrapalha a certa - e o pior e que
+     ele reprova em VERMELHO, que e o sinal reservado pro defeito de verdade.
+     Agora ele olha o que importa (a classe `no-print` e a chamada da identidade) e deixa o
+     espaco em paz. O margin continua conferido, mas por quem e dono desse assunto: a regua. */
+  const linhaNova = pega(/<div class="item-det no-print"[^>]*>\$\{identidadeHTML\(c\)\}<\/div>/);
   ok(n + '. *** a linha da identidade e `no-print` — ela vive na tela, nao no papel ***',
     !!linhaNova, linhaNova); n++;
   const papel = pega(/<div class="print-doc" id="print-doc">[\s\S]*?\n<!-- MODAL MANUAL -->/);

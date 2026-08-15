@@ -195,39 +195,39 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--texto);min-
 .card h3{font-family:'Montserrat',sans-serif;font-size:15px;font-weight:700;margin-bottom:16px;color:var(--navy);}
 
 /* FORM */
-.form-group{display:flex;flex-direction:column;gap:5px;margin-bottom:13px;}
-.form-group label{font-size:10.5px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;}
-.form-group input,.form-group select,.form-group textarea{padding:9px 12px;border:1px solid var(--borda);border-radius:8px;font-size:13.5px;font-family:'Inter',sans-serif;color:var(--texto);outline:none;transition:border 0.15s;background:var(--branco);}
+.form-group{display:flex;flex-direction:column;gap:4px;margin-bottom:12px;}
+.form-group label{font-size:var(--txt-1);font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;}
+.form-group input,.form-group select,.form-group textarea{padding:8px 12px;border:1px solid var(--borda);border-radius:8px;font-size:13.5px;font-family:'Inter',sans-serif;color:var(--texto);outline:none;transition:border 0.15s;background:var(--branco);}
 .form-group input:focus,.form-group select:focus{border-color:var(--verde);}
 .form-group input::placeholder{color:var(--cinza-500);}
-.form-row{display:grid;grid-template-columns:1fr 1fr;gap:13px;}
-.form-row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:13px;}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.form-row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;}
 
 /* BUSCA */
-.busca-wrap{display:flex;gap:10px;margin-bottom:10px;}
-.busca-wrap input{flex:1;padding:10px 14px;border:1px solid var(--borda);border-radius:8px;font-size:13.5px;font-family:'Inter',sans-serif;outline:none;background:var(--branco);color:var(--texto);}
+.busca-wrap{display:flex;gap:8px;margin-bottom:8px;}
+.busca-wrap input{flex:1;padding:8px 12px;border:1px solid var(--borda);border-radius:8px;font-size:13.5px;font-family:'Inter',sans-serif;outline:none;background:var(--branco);color:var(--texto);}
 .busca-wrap input::placeholder{color:var(--cinza-500);}
 .busca-wrap input:focus{border-color:var(--verde);}
 
 /* RESULTADO BUSCA */
-.resultado-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--borda);border-radius:8px;margin-bottom:7px;background:var(--branco);}
+.resultado-item{display:flex;align-items:center;gap:8px;padding:8px 12px;border:1px solid var(--borda);border-radius:8px;margin-bottom:8px;background:var(--branco);}
 .resultado-item .info{flex:1;}
 .resultado-item .nome{font-size:13px;font-weight:500;color:var(--texto);}
-.resultado-item .detalhe{font-size:11px;color:var(--muted);margin-top:2px;}
+.resultado-item .detalhe{font-size:var(--txt-1);color:var(--muted);margin-top:4px;}
 
 /* LISTA ITENS */
-.item-row{background:var(--bg);border:1px solid var(--borda);border-radius:10px;padding:11px 13px;margin-bottom:8px;display:flex;align-items:center;gap:10px;}
+.item-row{background:var(--bg);border:1px solid var(--borda);border-radius:10px;padding:12px 12px;margin-bottom:8px;display:flex;align-items:center;gap:8px;}
 .item-row .item-info{flex:1;}
 .item-row .item-nome{font-size:13px;font-weight:500;line-height:1.3;color:var(--texto);}
-.item-row .item-det{font-size:11px;color:var(--muted);margin-top:2px;}
-.item-row input[type=number]{width:62px;padding:6px 8px;border:1px solid var(--borda);border-radius:7px;text-align:center;font-size:13px;outline:none;background:var(--branco);color:var(--texto);}
+.item-row .item-det{font-size:var(--txt-1);color:var(--muted);margin-top:4px;}
+.item-row input[type=number]{width:62px;padding:4px 8px;border:1px solid var(--borda);border-radius:7px;text-align:center;font-size:13px;outline:none;background:var(--branco);color:var(--texto);}
 .item-row .item-preco{font-family:'Montserrat',sans-serif;font-weight:700;font-size:14px;color:var(--navy);min-width:85px;text-align:right;}
-.item-preco-info{font-size:10px;color:var(--muted);text-align:right;margin-top:2px;}
+.item-preco-info{font-size:var(--txt-1);color:var(--muted);text-align:right;margin-top:4px;}
 /* ── TETO CMED ── o selo fica ao lado do preço, onde a decisão acontece.
    `acima` usa a mesma linguagem visual dos outros alertas desta tela (âmbar/vermelho com fundo
    fraco), e o `ok` é DISCRETO de propósito: quem está dentro do teto não precisa de festa —
    precisa saber o número. Alerta que grita quando está tudo bem vira alerta ignorado. */
-.teto-badge{font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px;white-space:nowrap;cursor:help}
+.teto-badge{font-size:var(--txt-1);font-weight:700;padding:4px 8px;border-radius:10px;white-space:nowrap;cursor:help}
 /* O "acima" media 3,21:1 — o alerta mais importante da tela era o texto menos legível dela.
    O par fechado do tema (tinta 700 sobre fundo 50) dá 6,83:1 e é o MESMO par que o Conferidor e
    o Licitações usam para dizer "acima do teto": um alerta, uma cor, em todo o sistema. */
@@ -238,15 +238,15 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--texto);min-
 @media print{ .teto-badge{display:none !important} }
 
 /* ITENS NAO ENCONTRADOS */
-.nao-encontrado-row{background:var(--vermelho-50);border:1px dashed var(--vermelho-300);border-radius:8px;padding:9px 12px;margin-bottom:7px;display:flex;align-items:center;gap:8px;}
+.nao-encontrado-row{background:var(--vermelho-50);border:1px dashed var(--vermelho-300);border-radius:8px;padding:8px 12px;margin-bottom:8px;display:flex;align-items:center;gap:8px;}
 
 /* DESCONTO */
 .desc-control{display:flex;align-items:center;gap:8px;flex:1;}
-.desc-control input{width:55px;padding:5px 8px;border:1px solid var(--borda);border-radius:6px;text-align:center;font-size:12px;outline:none;background:var(--branco);color:var(--texto);}
-.desc-control span{font-size:11px;color:var(--muted);}
+.desc-control input{width:55px;padding:4px 8px;border:1px solid var(--borda);border-radius:6px;text-align:center;font-size:12px;outline:none;background:var(--branco);color:var(--texto);}
+.desc-control span{font-size:var(--txt-1);color:var(--muted);}
 
 /* BADGE */
-.badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10.5px;font-weight:600;}
+.badge{display:inline-block;padding:4px 8px;border-radius:20px;font-size:var(--txt-1);font-weight:600;}
 .badge-green{background:var(--verde-claro);color:var(--verde-escuro);}
 .badge-blue{background:var(--verde-claro);color:var(--verde-escuro);}
 .badge-yellow{background:var(--ambar-50);color:var(--ambar-700);}
@@ -257,14 +257,14 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--texto);min-
 .total-final{font-family:'Montserrat',sans-serif;font-weight:800;font-size:22px;color:var(--navy);}
 
 /* BUTTONS */
-.btn{padding:9px 18px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:none;transition:all 0.15s;font-family:'Inter',sans-serif;display:inline-flex;align-items:center;gap:6px;}
-.btn-primary{background:var(--verde);color:var(--branco);width:100%;padding:14px;font-size:15px;justify-content:center;font-weight:700;}
+.btn{padding:8px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:none;transition:all 0.15s;font-family:'Inter',sans-serif;display:inline-flex;align-items:center;gap:4px;}
+.btn-primary{background:var(--verde);color:var(--branco);width:100%;padding:12px;font-size:15px;justify-content:center;font-weight:700;}
 .btn-primary:hover{background:var(--verde-escuro);color:var(--branco);}
 .btn-outline{background:var(--branco);color:var(--texto);border:1px solid var(--borda);}
 .btn-outline:hover{border-color:var(--verde);color:var(--verde);}
 .btn-danger{background:var(--vermelho);color:var(--branco);}
 .btn-danger:hover{opacity:0.85;}
-.btn-sm{padding:5px 12px;font-size:11.5px;border-radius:6px;}
+.btn-sm{padding:4px 12px;font-size:var(--txt-1);border-radius:6px;}
 
 /* TOAST */
 .toast{position:fixed;bottom:24px;right:24px;padding:12px 20px;border-radius:10px;font-size:13.5px;font-weight:500;background:var(--navy);color:var(--branco);z-index:999;opacity:0;transform:translateY(8px);transition:all 0.2s;pointer-events:none;border:1px solid var(--navy);}
@@ -273,16 +273,62 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--texto);min-
 .toast.error{background:var(--vermelho);border-color:var(--vermelho);}
 
 /* LOADING */
-.loading{display:flex;align-items:center;justify-content:center;padding:24px;gap:10px;color:var(--muted);font-size:13px;}
+.loading{display:flex;align-items:center;justify-content:center;padding:24px;gap:8px;color:var(--muted);font-size:13px;}
 .spinner{width:18px;height:18px;border:2px solid var(--borda);border-top-color:var(--verde);border-radius:50%;animation:spin 0.7s linear infinite;}
 @keyframes spin{to{transform:rotate(360deg);}}
 
 /* EMPTY */
-.empty-state{padding:30px;text-align:center;color:var(--muted);}
+.empty-state{padding:32px;text-align:center;color:var(--muted);}
 .empty-state .icon{font-size:30px;margin-bottom:8px;}
 
 /* DIVIDER */
-.divider{height:1px;background:var(--borda);margin:14px 0;}
+.divider{height:1px;background:var(--borda);margin:12px 0;}
+
+/* ══ O DEDO (14/08, fatia B19) ═══════════════════════════════════════════════════════════════
+   Como a Negócios, esta tela também não tinha UM bloco `@media(max-width:480px)`: os dois que
+   ela tem (900 e 901) são de LAYOUT, e o de 901 é o do menu. No celular ela reorganizava as
+   peças e entregava os mesmos alvos de altura de ponteiro.
+   >>> ELE ENTRA AQUI, ANTES DO MARCADOR `PRINT`, E ISSO NÃO É ARRUMAÇÃO: dali para baixo começa
+       a região CONGELADA da folha que vai para o hospital, e a `tools/prova_papel_congelado.js`
+       compara o recorte byte a byte. Uma regra de tela escrita depois do marcador derrubaria a
+       prova sem ter nada a ver com o papel. Foi a régua desta fatia que me ensinou onde é a
+       fronteira — antes dela eu não sabia que existia.
+   >>> ESTA TELA NÃO TEM NENHUMA CAIXINHA DE MARCAR (contadas: zero `type="checkbox"`), então o
+       ponto mais perigoso do molde não se aplica aqui. O que ela tem, e é o outro caso
+       perigoso, são CINCO botões só de ícone. */
+@media(max-width:480px){
+
+  /* 1. BOTÃO COM TEXTO: só altura. O texto dá a largura de graça. */
+  .btn{min-height:44px}
+
+  /* 2. OS CINCO BOTÕES SÓ DE ÍCONE — todos são um `<use href="#ic-x">` sozinho, e sem largura
+        eles viram tira alta e estreita: o dedo continua errando na horizontal e a régua diz que
+        está tudo certo. Eles carregam a classe `btn-ic`, escrita à mão nos cinco.
+        >>> POR QUE UMA CLASSE E NÃO `button:has(> svg:only-child)`, que pegaria os futuros
+            sozinho: `:has()` não existe em NENHUM arquivo deste projeto, e onde ele não for
+            entendido a regra simplesmente não vale — o alvo some sem avisar ninguém. Alvo que
+            falha calado é o mesmo defeito do botão que promete e não cumpre. A classe é
+            grepável, e a régua desta fatia passou a contar botão só de ícone SEM ela: o sexto
+            que nascer sem alvo aparece no retrato em vez de sumir. */
+  .btn-ic{min-width:44px;min-height:44px;display:inline-flex;align-items:center;justify-content:center}
+
+  /* 3. CAMPO DE DIGITAR é alvo: é onde o dedo acerta para o teclado subir. Os dois campos
+        estreitos desta tela (quantidade, 62px, e desconto, 55px) já passam dos 44 na largura —
+        conferidos no arquivo, não supostos —, então aqui basta a altura. */
+  .form-group input,.form-group select,.form-group textarea,
+  .busca-wrap input,.item-row input[type=number],.desc-control input{min-height:44px}
+
+  /* 4. VAZAMENTO — grade de coluna fixa vira UMA coluna. A `.form-row-3` é o exemplo que o
+        próprio molde escreve: item de grade nasce `min-width:auto` e não encolhe abaixo do
+        conteúdo, então três campos lado a lado estouram sempre, por mais `fr` que se escreva. */
+  .form-row,.form-row-3{grid-template-columns:1fr}
+
+  /* 5. E A LINHA `flex` QUE NÃO PODE QUEBRAR — a outra causa que o molde nomeia. `min-width:0`
+        no filho que estica, senão ele se recusa a encolher abaixo do texto que tem dentro e
+        empurra a linha inteira para fora da tela. */
+  .busca-wrap,.item-row,.resultado-item,.nao-encontrado-row,.trilha{flex-wrap:wrap}
+  .busca-wrap input,.item-row .item-info,.resultado-item .info,.desc-control{min-width:0}
+}
 
 /* PRINT */
 /* ══ A REGRA MAIS PERIGOSA DESTA FATIA, E ELA É POR OMISSÃO ══════════════════════════════════
@@ -413,9 +459,9 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--texto);min-
       <label><svg class="ic" aria-hidden="true"><use href="#ic-lupa"/></svg> Buscar cliente (nome, CNPJ ou cód. ERP)</label>
       <input type="text" id="busca-cliente" placeholder="Digite nome, CNPJ ou código ERP do cliente cadastrado..." autocomplete="off"
         oninput="buscarCliente(this.value)" onkeydown="if(event.key==='Enter'){event.preventDefault();buscarCliente(this.value,true);}">
-      <div id="resultado-cliente" style="position:absolute;z-index:60;left:0;right:0;background:var(--branco);border:1px solid var(--borda);border-radius:8px;margin-top:2px;max-height:280px;overflow:auto;display:none"></div>
+      <div id="resultado-cliente" style="position:absolute;z-index:60;left:0;right:0;background:var(--branco);border:1px solid var(--borda);border-radius:8px;margin-top:4px;max-height:280px;overflow:auto;display:none"></div>
     </div>
-    <div id="cliente-selecionado" style="display:none;font-size:12px;color:var(--verde-700);margin:-2px 0 8px;font-weight:600"></div>
+    <div id="cliente-selecionado" style="display:none;font-size:12px;color:var(--verde-700);margin:-4px 0 8px;font-weight:600"></div>
     <div class="form-row">
       <div class="form-group"><label>Cliente / Hospital</label><input type="text" id="cliente" placeholder="Nome do cliente ou hospital"></div>
       <div class="form-group"><label>CNPJ do Cliente</label><input type="text" id="cnpj-cliente" placeholder="00.000.000/0001-00"></div>
@@ -423,7 +469,17 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--texto);min-
     <div class="form-row">
       <div class="form-group"><label>Cód. Cliente (ERP)</label><input type="text" id="cod-cliente-erp" placeholder="ex: 8"></div>
       <div class="form-group" style="display:flex;align-items:flex-end">
-        <button class="btn btn-outline btn-sm no-print" type="button" onclick="cadastrarClienteFluxo()" style="width:auto">＋ Cadastrar novo cliente</button>
+        <!-- ══ O "+" AQUI NAO E ICONE, E ISSO E DECISAO DA CASA, NAO DESCUIDO ══════════════
+             Ele era o U+FF0B, o "mais de largura INTEIRA" — um caractere de largura CJK que
+             muda de desenho conforme a fonte instalada. Virou o "+" ASCII, e nao um SVG.
+             >>> EU TINHA POSTO UM SVG AQUI, E A SUITE ME DERRUBOU — com razao. O assert 62 da
+                 tests/testa_molde_proposta.js guarda os DOIS lados desta fronteira ("o emoji
+                 sumiu E ninguem inventou um icone"), e a razao escrita nele e melhor que a
+                 minha: sinal de mais dentro de um rotulo de botao e TEXTO, mesma fronteira das
+                 setas, e desenhar um SVG pra ele e zelo que deixa a tela pior. A ordem da fatia
+                 B19 e "zero emoji, zero PNG" — e o U+FF0B nao e emoji, e tipografia torta.
+                 Onde a base e o molde da casa discordam, o MOLDE DA CASA MANDA. -->
+        <button class="btn btn-outline btn-sm no-print" type="button" onclick="cadastrarClienteFluxo()" style="width:auto">+ Cadastrar novo cliente</button>
       </div>
     </div>
     <input type="hidden" id="cliente-codigo"><input type="hidden" id="cliente-id">
@@ -438,15 +494,15 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--texto);min-
       </div>
     </div>
     <!-- OBSERVAÇÕES DO PDF (porte da Global, 05/08) -->
-    <div class="form-group no-print" style="margin-top:2px">
+    <div class="form-group no-print" style="margin-top:4px">
       <label><svg class="ic" aria-hidden="true"><use href="#ic-lapis"/></svg> Observações do documento</label>
-      <div style="font-size:11.5px;color:var(--ambar-700);background:var(--ambar-50);border:1px solid var(--ambar-300);border-radius:8px;padding:8px 10px;line-height:1.45">
+      <div style="font-size:var(--txt-1);color:var(--ambar-700);background:var(--ambar-50);border:1px solid var(--ambar-300);border-radius:8px;padding:8px 8px;line-height:1.45">
         <span style="font-weight:700">Sai em toda proposta, não dá pra remover:</span>
         <span id="obs-padrao-texto"></span>
       </div>
       <textarea id="obs-pedido" rows="3" oninput="_pintaObsPedido()"
         placeholder="Observação ADICIONAL desta proposta (opcional) — sai no PDF logo abaixo da mensagem acima."
-        style="width:100%;margin-top:6px;padding:8px 10px;border:1px solid var(--borda);border-radius:8px;font-family:'Inter',sans-serif;font-size:12.5px;resize:vertical;box-sizing:border-box"></textarea>
+        style="width:100%;margin-top:4px;padding:8px 8px;border:1px solid var(--borda);border-radius:8px;font-family:'Inter',sans-serif;font-size:12.5px;resize:vertical;box-sizing:border-box"></textarea>
     </div>
   </div>
 
@@ -455,11 +511,11 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--texto);min-
     <h3><svg class="ic" aria-hidden="true"><use href="#ic-lupa"/></svg> Buscar e Adicionar Produtos</h3>
 
     <!-- TABS -->
-    <div style="display:flex;gap:0;margin-bottom:14px;border-bottom:1px solid var(--borda)">
-      <button id="tab-busca-btn" onclick="gTab('busca')" style="padding:7px 18px;border:none;background:none;font-family:'Inter',sans-serif;font-size:13px;font-weight:600;color:var(--verde);border-bottom:2px solid var(--verde);margin-bottom:-1px;cursor:pointer"><svg class="ic" aria-hidden="true"><use href="#ic-lupa"/></svg> Busca individual</button>
-      <button id="tab-lista-btn" onclick="gTab('lista')" style="padding:7px 18px;border:none;background:none;font-family:'Inter',sans-serif;font-size:13px;font-weight:500;color:var(--muted);cursor:pointer"><svg class="ic" aria-hidden="true"><use href="#ic-nota"/></svg> Importar lista</button>
-      <button id="tab-ia-btn" onclick="gTab('ia')" style="padding:7px 18px;border:none;background:none;font-family:'Inter',sans-serif;font-size:13px;font-weight:500;color:var(--muted);cursor:pointer"><svg class="ic" aria-hidden="true"><use href="#ic-robo"/></svg> IA — Ler Pedido</button>
-      <button id="tab-impcot-btn" onclick="gTab('impcot')" style="display:none;padding:7px 18px;border:none;background:none;font-family:'Inter',sans-serif;font-size:13px;font-weight:500;color:var(--muted);cursor:pointer"><svg class="ic" aria-hidden="true"><use href="#ic-baixar"/></svg> Importar Cotação</button>
+    <div style="display:flex;gap:0;margin-bottom:12px;border-bottom:1px solid var(--borda)">
+      <button id="tab-busca-btn" onclick="gTab('busca')" style="padding:8px 16px;border:none;background:none;font-family:'Inter',sans-serif;font-size:13px;font-weight:600;color:var(--verde);border-bottom:2px solid var(--verde);margin-bottom:-4px;cursor:pointer"><svg class="ic" aria-hidden="true"><use href="#ic-lupa"/></svg> Busca individual</button>
+      <button id="tab-lista-btn" onclick="gTab('lista')" style="padding:8px 16px;border:none;background:none;font-family:'Inter',sans-serif;font-size:13px;font-weight:500;color:var(--muted);cursor:pointer"><svg class="ic" aria-hidden="true"><use href="#ic-nota"/></svg> Importar lista</button>
+      <button id="tab-ia-btn" onclick="gTab('ia')" style="padding:8px 16px;border:none;background:none;font-family:'Inter',sans-serif;font-size:13px;font-weight:500;color:var(--muted);cursor:pointer"><svg class="ic" aria-hidden="true"><use href="#ic-robo"/></svg> IA — Ler Pedido</button>
+      <button id="tab-impcot-btn" onclick="gTab('impcot')" style="display:none;padding:8px 16px;border:none;background:none;font-family:'Inter',sans-serif;font-size:13px;font-weight:500;color:var(--muted);cursor:pointer"><svg class="ic" aria-hidden="true"><use href="#ic-baixar"/></svg> Importar Cotação</button>
     </div>
 
     <!-- ABA BUSCA -->
@@ -471,17 +527,17 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--texto);min-
       <div id="resultado-busca"></div>
       <div class="divider"></div>
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-        <span style="font-size:11.5px;color:var(--muted);font-weight:500;">Adicionar item não encontrado:</span>
+        <span style="font-size:var(--txt-1);color:var(--muted);font-weight:500;">Adicionar item não encontrado:</span>
         <button class="btn btn-outline btn-sm no-print" onclick="adicionarManual()">+ Adicionar Manualmente</button>
       </div>
     </div>
 
     <!-- ABA LISTA -->
     <div id="tab-lista" style="display:none">
-      <p style="font-size:12px;color:var(--muted);margin-bottom:10px">Cole a lista do cliente — um produto por linha. O sistema busca o menor preço de cada um automaticamente.</p>
+      <p style="font-size:12px;color:var(--muted);margin-bottom:8px">Cole a lista do cliente — um produto por linha. O sistema busca o menor preço de cada um automaticamente.</p>
       <textarea id="lista-rapida" rows="8" placeholder="CIPROFLOXACINO 200MG&#10;HIDROCORTISONA 500MG&#10;DEXAMETASONA 4MG&#10;MEROPENEM 1G&#10;..."
-        style="width:100%;padding:10px 12px;border:1px solid var(--borda);border-radius:8px;font-size:13px;font-family:'Inter',sans-serif;outline:none;resize:vertical;line-height:1.8;background:var(--branco);color:var(--texto)"></textarea>
-      <div style="display:flex;gap:10px;margin-top:10px;align-items:center">
+        style="width:100%;padding:8px 12px;border:1px solid var(--borda);border-radius:8px;font-size:13px;font-family:'Inter',sans-serif;outline:none;resize:vertical;line-height:1.8;background:var(--branco);color:var(--texto)"></textarea>
+      <div style="display:flex;gap:8px;margin-top:8px;align-items:center">
         <button class="btn btn-primary" onclick="importarLista()"><svg class="ic" aria-hidden="true"><use href="#ic-foguete"/></svg> Buscar e Adicionar Tudo</button>
         <span id="lista-status" style="font-size:12px;color:var(--muted)"></span>
       </div>
@@ -498,18 +554,18 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--texto);min-
       <p style="font-size:12px;color:var(--muted);margin-bottom:12px">Envie uma foto, imagem ou PDF do pedido do cliente. A IA lê e monta a lista automaticamente.</p>
 
       <div id="ia-drop-zone" onclick="document.getElementById('ia-file-input').click()"
-        style="border:2px dashed var(--verde);border-radius:12px;padding:28px;text-align:center;cursor:pointer;transition:background 0.2s;margin-bottom:12px"
+        style="border:2px dashed var(--verde);border-radius:12px;padding:24px;text-align:center;cursor:pointer;transition:background 0.2s;margin-bottom:12px"
         ondragover="event.preventDefault();this.style.background='var(--azul-50)'"
         ondragleave="this.style.background=''"
         ondrop="event.preventDefault();this.style.background='';handleIAFile(event.dataTransfer.files[0])">
         <div style="font-size:28px;margin-bottom:8px;color:var(--muted)"><svg class="ic" aria-hidden="true"><use href="#ic-clipe"/></svg></div>
         <div style="font-size:13px;color:var(--verde);font-weight:600">Clique ou arraste o arquivo aqui</div>
-        <div style="font-size:11px;color:var(--muted);margin-top:4px">JPG, PNG, PDF — foto do pedido, lista escaneada, etc.</div>
+        <div style="font-size:var(--txt-1);color:var(--muted);margin-top:4px">JPG, PNG, PDF — foto do pedido, lista escaneada, etc.</div>
         <input type="file" id="ia-file-input" accept="image/*,application/pdf" style="display:none" onchange="handleIAFile(this.files[0])">
       </div>
 
       <div id="ia-preview" style="display:none;margin-bottom:12px">
-        <div style="display:flex;align-items:center;gap:10px;background:var(--azul-50);border:1px solid var(--borda);border-radius:8px;padding:10px 14px">
+        <div style="display:flex;align-items:center;gap:8px;background:var(--azul-50);border:1px solid var(--borda);border-radius:8px;padding:8px 12px">
           <!-- O tipo do arquivo anexado vira PALAVRA, e não desenho. O emoji aqui era entregue por
      `textContent` (não aceita SVG), e o sprite não tem — nem deve ter — um ícone de "imagem"
      inventado às pressas. "PDF" e "Imagem" dizem exatamente o que o glifo tentava dizer, e
@@ -517,24 +573,24 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--texto);min-
 <span style="font-size:var(--txt-1);font-weight:600;color:var(--muted);letter-spacing:.4px" id="ia-preview-icon">PDF</span>
           <div style="flex:1">
             <div style="font-size:13px;color:var(--texto);font-weight:500" id="ia-preview-nome">arquivo.pdf</div>
-            <div style="font-size:11px;color:var(--muted)" id="ia-preview-tipo">PDF</div>
+            <div style="font-size:var(--txt-1);color:var(--muted)" id="ia-preview-tipo">PDF</div>
           </div>
-          <button onclick="limparIAArquivo()" style="background:none;border:none;color:var(--vermelho-700);cursor:pointer;font-size:18px" title="remover o arquivo" aria-label="remover o arquivo"><svg class="ic" aria-hidden="true"><use href="#ic-x"/></svg></button>
+          <button class="btn-ic" onclick="limparIAArquivo()" style="background:none;border:none;color:var(--vermelho-700);cursor:pointer;font-size:18px" title="remover o arquivo" aria-label="remover o arquivo"><svg class="ic" aria-hidden="true"><use href="#ic-x"/></svg></button>
         </div>
       </div>
 
-      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
         <button class="btn btn-primary" onclick="processarComIA()" id="ia-btn-processar" disabled style="opacity:0.5">
           <svg class="ic" aria-hidden="true"><use href="#ic-robo"/></svg> Ler com IA e Montar Lista
         </button>
         <span id="ia-status" style="font-size:12px;color:var(--muted)"></span>
       </div>
 
-      <div id="ia-resultado" style="display:none;margin-top:14px">
-        <div style="font-size:12px;color:var(--muted);margin-bottom:6px;font-weight:500">Lista extraída pela IA — revise se necessário:</div>
+      <div id="ia-resultado" style="display:none;margin-top:12px">
+        <div style="font-size:12px;color:var(--muted);margin-bottom:4px;font-weight:500">Lista extraída pela IA — revise se necessário:</div>
         <textarea id="ia-lista-extraida" rows="8"
-          style="width:100%;padding:10px 12px;border:1px solid var(--borda);border-radius:8px;font-size:13px;font-family:Inter,sans-serif;outline:none;resize:vertical;line-height:1.8;background:var(--branco);color:var(--texto)"></textarea>
-        <div style="display:flex;gap:10px;margin-top:10px">
+          style="width:100%;padding:8px 12px;border:1px solid var(--borda);border-radius:8px;font-size:13px;font-family:Inter,sans-serif;outline:none;resize:vertical;line-height:1.8;background:var(--branco);color:var(--texto)"></textarea>
+        <div style="display:flex;gap:8px;margin-top:8px">
           <button class="btn btn-primary" onclick="importarListaIA()"><svg class="ic" aria-hidden="true"><use href="#ic-foguete"/></svg> Buscar e Adicionar Tudo</button>
           <button class="btn btn-outline" onclick="copiarParaLista()"><svg class="ic" aria-hidden="true"><use href="#ic-nota"/></svg> Editar na aba Lista</button>
         </div>
@@ -547,22 +603,22 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--texto);min-
 
       <!-- LEITOR POR IA (FOTO/PDF) -->
       <div class="table-wrap" style="padding:20px;margin-bottom:16px;background:var(--branco);border:1px solid var(--borda);border-radius:12px">
-        <h3 style="font-family:'Montserrat',sans-serif;font-size:15px;font-weight:700;margin-bottom:6px;color:var(--texto)"><svg class="ic" aria-hidden="true"><use href="#ic-robo"/></svg> Ler orçamento automaticamente</h3>
-        <p style="font-size:12px;color:var(--muted);margin-bottom:14px">Selecione a <strong>foto</strong> ou o <strong>PDF</strong> do orçamento do fornecedor. A IA lê e preenche a tabela abaixo — você só confere e clica em Importar.</p>
+        <h3 style="font-family:'Montserrat',sans-serif;font-size:15px;font-weight:700;margin-bottom:4px;color:var(--texto)"><svg class="ic" aria-hidden="true"><use href="#ic-robo"/></svg> Ler orçamento automaticamente</h3>
+        <p style="font-size:12px;color:var(--muted);margin-bottom:12px">Selecione a <strong>foto</strong> ou o <strong>PDF</strong> do orçamento do fornecedor. A IA lê e preenche a tabela abaixo — você só confere e clica em Importar.</p>
         <div id="imp-ia-drop" onclick="document.getElementById('imp-ia-file').click()"
-          style="border:2px dashed var(--borda);border-radius:10px;padding:22px;text-align:center;cursor:pointer;color:var(--muted);font-size:13px;transition:.2s">
+          style="border:2px dashed var(--borda);border-radius:10px;padding:20px;text-align:center;cursor:pointer;color:var(--muted);font-size:13px;transition:.2s">
           <svg class="ic" aria-hidden="true"><use href="#ic-baixar"/></svg> Clique aqui para selecionar foto ou PDF do orçamento
           <input type="file" id="imp-ia-file" accept="image/*,application/pdf" style="display:none" onchange="impHandleIAFile(this.files[0])">
         </div>
-        <div id="imp-ia-preview" style="display:none;align-items:center;gap:10px;margin-top:12px;padding:10px 14px;background:var(--bg);border:1px solid var(--borda);border-radius:8px">
+        <div id="imp-ia-preview" style="display:none;align-items:center;gap:8px;margin-top:12px;padding:8px 12px;background:var(--bg);border:1px solid var(--borda);border-radius:8px">
           <span id="imp-ia-icon" style="font-size:var(--txt-1);font-weight:600;color:var(--muted);letter-spacing:.4px">PDF</span>
           <div style="flex:1">
             <div id="imp-ia-nome" style="font-size:13px;font-weight:600;color:var(--texto)">arquivo</div>
-            <div id="imp-ia-tipo" style="font-size:11px;color:var(--muted)">—</div>
+            <div id="imp-ia-tipo" style="font-size:var(--txt-1);color:var(--muted)">—</div>
           </div>
-          <button onclick="impLimparIA()" style="background:none;border:none;color:var(--vermelho);cursor:pointer;font-size:18px" title="remover o arquivo" aria-label="remover o arquivo"><svg class="ic" aria-hidden="true"><use href="#ic-x"/></svg></button>
+          <button class="btn-ic" onclick="impLimparIA()" style="background:none;border:none;color:var(--vermelho);cursor:pointer;font-size:18px" title="remover o arquivo" aria-label="remover o arquivo"><svg class="ic" aria-hidden="true"><use href="#ic-x"/></svg></button>
         </div>
-        <div style="display:flex;gap:12px;align-items:center;margin-top:14px">
+        <div style="display:flex;gap:12px;align-items:center;margin-top:12px">
           <button class="btn btn-primary" id="imp-ia-btn" onclick="impLerOrcamentoIA()" disabled style="width:auto;opacity:.5"><svg class="ic" aria-hidden="true"><use href="#ic-robo"/></svg> Ler com IA e preencher tabela</button>
           <span id="imp-ia-status" style="font-size:13px"></span>
         </div>
@@ -599,16 +655,16 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--texto);min-
           <table style="width:100%;border-collapse:collapse;font-size:13px" id="imp-tabela">
             <thead>
               <tr style="background:var(--bg)">
-                <th style="padding:9px 10px;text-align:left;font-size:11px;color:var(--muted);font-weight:600;border-bottom:1px solid var(--borda);min-width:90px">Código</th>
-                <th style="padding:9px 10px;text-align:left;font-size:11px;color:var(--muted);font-weight:600;border-bottom:1px solid var(--borda);min-width:140px" title="Código de barras. Opcional — quando preenchido, o sistema busca o produto na tabela da CMED e preenche o resto.">EAN</th>
-                <th style="padding:9px 10px;text-align:left;font-size:11px;color:var(--muted);font-weight:600;border-bottom:1px solid var(--borda);min-width:220px">Produto *</th>
-                <th style="padding:9px 10px;text-align:left;font-size:11px;color:var(--muted);font-weight:600;border-bottom:1px solid var(--borda);min-width:140px">Marca</th>
-                <th style="padding:9px 10px;text-align:left;font-size:11px;color:var(--muted);font-weight:600;border-bottom:1px solid var(--borda);min-width:80px">Unid.</th>
-                <th style="padding:9px 10px;text-align:left;font-size:11px;color:var(--muted);font-weight:600;border-bottom:1px solid var(--borda);min-width:60px">Qtd</th>
-                <th style="padding:9px 10px;text-align:left;font-size:11px;color:var(--muted);font-weight:600;border-bottom:1px solid var(--borda);min-width:100px">Vlr Unit (R$)</th>
-                <th style="padding:9px 10px;text-align:left;font-size:11px;color:var(--muted);font-weight:600;border-bottom:1px solid var(--borda);min-width:90px">Vencimento</th>
-                <th style="padding:9px 10px;text-align:left;font-size:11px;color:var(--muted);font-weight:600;border-bottom:1px solid var(--borda);min-width:80px" title="Quantas unidades vem na caixa (ampolas/frascos). Preenchido automatico, corrija se vier errado.">Emb. (un/cx)</th>
-                <th style="padding:9px 10px;border-bottom:1px solid var(--borda);width:36px"></th>
+                <th style="padding:8px 8px;text-align:left;font-size:var(--txt-1);color:var(--muted);font-weight:600;border-bottom:1px solid var(--borda);min-width:90px">Código</th>
+                <th style="padding:8px 8px;text-align:left;font-size:var(--txt-1);color:var(--muted);font-weight:600;border-bottom:1px solid var(--borda);min-width:140px" title="Código de barras. Opcional — quando preenchido, o sistema busca o produto na tabela da CMED e preenche o resto.">EAN</th>
+                <th style="padding:8px 8px;text-align:left;font-size:var(--txt-1);color:var(--muted);font-weight:600;border-bottom:1px solid var(--borda);min-width:220px">Produto *</th>
+                <th style="padding:8px 8px;text-align:left;font-size:var(--txt-1);color:var(--muted);font-weight:600;border-bottom:1px solid var(--borda);min-width:140px">Marca</th>
+                <th style="padding:8px 8px;text-align:left;font-size:var(--txt-1);color:var(--muted);font-weight:600;border-bottom:1px solid var(--borda);min-width:80px">Unid.</th>
+                <th style="padding:8px 8px;text-align:left;font-size:var(--txt-1);color:var(--muted);font-weight:600;border-bottom:1px solid var(--borda);min-width:60px">Qtd</th>
+                <th style="padding:8px 8px;text-align:left;font-size:var(--txt-1);color:var(--muted);font-weight:600;border-bottom:1px solid var(--borda);min-width:100px">Vlr Unit (R$)</th>
+                <th style="padding:8px 8px;text-align:left;font-size:var(--txt-1);color:var(--muted);font-weight:600;border-bottom:1px solid var(--borda);min-width:90px">Vencimento</th>
+                <th style="padding:8px 8px;text-align:left;font-size:var(--txt-1);color:var(--muted);font-weight:600;border-bottom:1px solid var(--borda);min-width:80px" title="Quantas unidades vem na caixa (ampolas/frascos). Preenchido automatico, corrija se vier errado.">Emb. (un/cx)</th>
+                <th style="padding:8px 8px;border-bottom:1px solid var(--borda);width:36px"></th>
               </tr>
             </thead>
             <tbody id="imp-linhas"></tbody>
@@ -645,8 +701,8 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--texto);min-
     <div id="lista-itens"></div>
 
     <!-- ITENS NÃO ENCONTRADOS -->
-    <div id="nao-encontrados-section" style="display:none;margin-top:14px;">
-      <div style="font-size:11.5px;font-weight:600;color:var(--vermelho);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px;"><svg class="ic" aria-hidden="true"><use href="#ic-x"/></svg> Itens Não Encontrados</div>
+    <div id="nao-encontrados-section" style="display:none;margin-top:12px;">
+      <div style="font-size:var(--txt-1);font-weight:600;color:var(--vermelho);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px;"><svg class="ic" aria-hidden="true"><use href="#ic-x"/></svg> Itens Não Encontrados</div>
       <div id="lista-nao-encontrados"></div>
     </div>
   </div>
@@ -658,26 +714,26 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--texto);min-
       <div class="total-row"><span>Subtotal</span><span id="val-subtotal">R$ 0,00</span></div>
       <div class="total-row"><span>Desconto Geral (%)</span>
         <div style="display:flex;align-items:center;gap:8px">
-          <input type="number" id="desc-geral" value="0" min="0" max="8" step="0.5" style="width:55px;padding:5px 8px;border:1px solid var(--borda);border-radius:6px;text-align:center;font-size:12px;outline:none;" oninput="calcTotal()">
+          <input type="number" id="desc-geral" value="0" min="0" max="8" step="0.5" style="width:55px;padding:4px 8px;border:1px solid var(--borda);border-radius:6px;text-align:center;font-size:12px;outline:none;" oninput="calcTotal()">
           <span style="font-size:12px;color:var(--muted)">% (máx 8%)</span>
         </div>
       </div>
       <div class="total-row"><span style="color:var(--vermelho)">- Desconto</span><span id="val-desconto" style="color:var(--vermelho)">R$ 0,00</span></div>
-      <div class="divider" style="margin:10px 0"></div>
+      <div class="divider" style="margin:8px 0"></div>
       <div class="total-row"><span style="font-size:15px;font-weight:600">TOTAL GERAL</span><span class="total-final" id="val-total">R$ 0,00</span></div>
-      <div style="font-size:11px;color:var(--muted);margin-top:6px">Condição: <strong id="cond-display">À VISTA</strong> · Validade: <strong id="valid-display">7 dias</strong></div>
+      <div style="font-size:var(--txt-1);color:var(--muted);margin-top:4px">Condição: <strong id="cond-display">À VISTA</strong> · Validade: <strong id="valid-display">7 dias</strong></div>
     </div>
   </div>
 
   <!-- AÇÕES -->
   <div class="card no-print" id="card-acoes" style="display:none">
-    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
       <button class="btn btn-primary" style="flex:1;min-width:200px" onclick="gerarPDF()"><svg class="ic" aria-hidden="true"><use href="#ic-impressora"/></svg> Gerar PDF / Imprimir</button>
       <button class="btn btn-outline" style="flex:1;min-width:200px;border-color:var(--fverde);color:var(--verde-700)" onclick="enviarParaCompras()" id="btn-enviar-compras"><svg class="ic" aria-hidden="true"><use href="#ic-sai"/></svg> Enviar para Compras</button>
       <button class="btn btn-outline" style="flex:1;min-width:200px;border-color:var(--vermelho-600);color:var(--vermelho-700);opacity:0.5" onclick="pedidoFechado()" id="btn-pedido-fechado" title="Selecione o cliente para fechar o pedido"><svg class="ic" aria-hidden="true"><use href="#ic-marcador"/></svg> Pedido Fechado</button>
       <button class="btn btn-outline btn-sm" onclick="limparTudo()"><svg class="ic" aria-hidden="true"><use href="#ic-lixeira"/></svg> Limpar Tudo</button>
     </div>
-    <p style="font-size:11px;color:var(--muted);margin-top:10px;text-align:center">O PDF seguirá o padrão oficial FPMED com logo, CNPJ e formatação de tabela</p>
+    <p style="font-size:var(--txt-1);color:var(--muted);margin-top:8px;text-align:center">O PDF seguirá o padrão oficial FPMED com logo, CNPJ e formatação de tabela</p>
   </div>
 
 </div>
@@ -761,7 +817,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--texto);min-
       <div class="form-group"><label>Preço Unitário (venda) *</label><input type="number" id="man-preco" step="0.01" placeholder="0.00"></div>
       <div class="form-group"><label>Vencimento</label><input type="date" id="man-vencimento"></div>
     </div>
-    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:14px;">
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px;">
       <button class="btn btn-outline btn-sm" onclick="fecharManual()">Cancelar</button>
       <button class="btn btn-primary btn-sm" style="width:auto" onclick="salvarManual()">Adicionar</button>
     </div>
@@ -1024,7 +1080,24 @@ function toast(msg,type='success') {
   t.textContent=msg;t.className='toast '+type+' show';
   setTimeout(()=>t.className='toast',3000);
 }
-function fmtBRL(v) { return 'R$\u00a0'+parseFloat(v||0).toFixed(2).replace('.',',').replace(/\B(?=(\d{3})+(?!\d))/g,'.'); }
+/* \u2550\u2550 "N\u00c3O SEI" DEIXOU DE SAIR COMO "R$ 0,00" \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
+   Este \u00e9 o formatador de TODO o dinheiro desta tela \u2014 inclusive o das quatro chamadas dentro do
+   `gerarPDF`, ou seja, o dinheiro que sai IMPRESSO na proposta que vai para o hospital.
+   Ele fazia `parseFloat(v||0)`: pre\u00e7o ausente, campo nulo e conta que deu `NaN` viravam todos
+   **R$ 0,00**. E "R$ 0,00" numa proposta comercial n\u00e3o \u00e9 um espa\u00e7o em branco \u2014 \u00e9 uma AFIRMA\u00c7\u00c3O,
+   e das caras: diz que aquele item \u00e9 de gra\u00e7a. Foi a catraca `testa_numero_honesto` (que o A
+   trouxe nesta rodada) que apontou o `(v||0).toFixed(`, e a BASE j\u00e1 dizia a regra por escrito:
+   *zero n\u00e3o \u00e9 pre\u00e7o; aus\u00eancia n\u00e3o \u00e9 zero; "n\u00e3o sei" nunca vira 0,00.*
+   >>> O ZERO DE VERDADE CONTINUA SAINDO COMO R$ 0,00 \u2014 quem escreveu zero quis dizer zero. O que
+       muda \u00e9 s\u00f3 o caso em que ningu\u00e9m sabe, e nesse caso sai o travess\u00e3o que esta tela j\u00e1 usa
+       para "n\u00e3o tenho" (a `fmtDate` e a marca do produto fazem igual).
+   >>> E O `fmtBRLUnit` N\u00c3O MUDA DE COMPORTAMENTO: ele chama `fmtBRL(0)` com o zero expl\u00edcito na
+       linha logo abaixo, ent\u00e3o a coluna de pre\u00e7o unit\u00e1rio continua exatamente como estava. */
+function fmtBRL(v) {
+  const n = parseFloat(v);
+  if (v === null || v === undefined || v === '' || !isFinite(n)) return '\u2014';
+  return 'R$\u00a0'+n.toFixed(2).replace('.',',').replace(/\B(?=(\d{3})+(?!\d))/g,'.');
+}
 // PRE\u00c7O UNIT\u00c1RIO no PDF do cliente. Existe separado do fmtBRL por um motivo s\u00f3: unit\u00e1rio de
 // item que vem em caixa grande \u00e9 sub-centavo de verdade (agulha a R$ 0,0056), e arredondar
 // pra 2 casas mostraria "R$ 0,00" numa proposta comercial \u2014 pior que o n\u00famero cru, porque
@@ -2860,7 +2933,7 @@ function importarLista() {
     stEl.innerHTML += `<div style="margin-top:8px;padding:8px;background:var(--vermelho-50);border-radius:8px;font-size:12px">
       <strong><svg class="ic" aria-hidden="true"><use href="#ic-x"/></svg> Não encontrados:</strong>
       <button class="btn btn-outline btn-sm no-print" style="margin-left:8px" onclick="iacAddTodos(${JSON.stringify(naoEncontradosList).replace(/"/g,'&quot;')}, this)">+ Adicionar os ${naoEncontradosList.length} à fila de cotação</button>
-      ${naoEncontradosList.map(p=>`<div style="color:var(--vermelho-700);padding:3px 0;display:flex;align-items:center;gap:8px">
+      ${naoEncontradosList.map(p=>`<div style="color:var(--vermelho-700);padding:4px 0;display:flex;align-items:center;gap:8px">
         <span style="flex:1">${p}</span>
         <button class="btn btn-outline btn-sm no-print" onclick="iacAddUm(${JSON.stringify(p).replace(/"/g,'&quot;')}, this)">+ Add à fila</button>
       </div>`).join('')}
@@ -2910,7 +2983,7 @@ function pintaPedidoEdital(){
   const daIA = l.origem === 'ia';
   el.style.display='block';
   el.innerHTML = `<div class="card" style="border-left:4px solid ${daIA?'var(--ambar-700)':'var(--verde)'};background:${daIA?'var(--ambar-50)':'var(--verde-50)'}">
-    <h3 style="margin-bottom:6px"><svg class="ic" aria-hidden="true"><use href="#ic-documento"/></svg> Chegaram ${p.itens.length} itens de um edital</h3>
+    <h3 style="margin-bottom:4px"><svg class="ic" aria-hidden="true"><use href="#ic-documento"/></svg> Chegaram ${p.itens.length} itens de um edital</h3>
     <div style="font-size:13px;color:var(--muted);line-height:1.6">
       <strong>${_escEd(l.titulo||'Licitação')}</strong>${l.orgao?' · '+_escEd(l.orgao):''}
       ${l.municipio?' · '+_escEd(l.municipio)+(l.uf?'/'+_escEd(l.uf):''):''}
@@ -2922,11 +2995,11 @@ function pintaPedidoEdital(){
         : `${p.itens.filter(i=>i.casouAqui).length} deles já tinham equivalente no nosso estoque no
            cruzamento do Licitações`}${l.truncado?' · <strong style="color:var(--vermelho-700)">a leitura do edital foi truncada: pode haver mais itens</strong>':''}
     </div>
-    <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
+    <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
       <button class="btn btn-primary btn-sm" onclick="importarPedidoEdital()">+ Importar os ${p.itens.length} itens</button>
       <button class="btn btn-outline btn-sm" onclick="descartarPedidoEdital()">Descartar</button>
     </div>
-    <div style="margin-top:8px;font-size:11.5px;color:var(--muted)">
+    <div style="margin-top:8px;font-size:var(--txt-1);color:var(--muted)">
       A quantidade de cada item é convertida do edital para a NOSSA embalagem. Onde a embalagem
       de algum dos dois lados não for sabida, o item entra com <strong>1</strong> e etiqueta de
       conferir — nunca com um número chutado.
@@ -2975,16 +3048,16 @@ function importarPedidoEdital(){
 
   const el = document.getElementById('pedido-edital');
   el.innerHTML = `<div class="card" style="border-left:4px solid var(--verde)">
-    <h3 style="margin-bottom:6px"><svg class="ic" aria-hidden="true"><use href="#ic-documento"/></svg> ${add} item(ns) do edital entraram na proposta</h3>
+    <h3 style="margin-bottom:4px"><svg class="ic" aria-hidden="true"><use href="#ic-documento"/></svg> ${add} item(ns) do edital entraram na proposta</h3>
     <div style="font-size:13px;color:var(--muted);line-height:1.6">
       ${_escEd((p.lic||{}).titulo||'Licitação')}${somados?` · ${somados} item(ns) repetido(s) tiveram a quantidade somada`:''}
       ${naoAchados.length?` · <strong style="color:var(--vermelho-700)">${naoAchados.length} sem equivalente no estoque</strong> — foram pra lista de não encontrados, e de lá pra fila de cotação`:''}
     </div>
-    ${conferirQtd.length ? `<div style="margin-top:10px;padding:9px 11px;background:var(--ambar-50);border:1px solid var(--ambar-300);border-radius:8px;font-size:12px">
+    ${conferirQtd.length ? `<div style="margin-top:8px;padding:8px 12px;background:var(--ambar-50);border:1px solid var(--ambar-300);border-radius:8px;font-size:12px">
       <strong><svg class="ic" aria-hidden="true"><use href="#ic-alerta"/></svg> ${conferirQtd.length} item(ns) entraram com quantidade 1 — confira antes de mandar:</strong>
-      ${conferirQtd.map(c=>`<div style="padding:3px 0">Item ${_escEd(c.n)} · ${_escEd(c.produto)} — ${_escEd(c.motivo)}</div>`).join('')}
+      ${conferirQtd.map(c=>`<div style="padding:4px 0">Item ${_escEd(c.n)} · ${_escEd(c.produto)} — ${_escEd(c.motivo)}</div>`).join('')}
     </div>` : ''}
-    <div style="margin-top:8px;font-size:11.5px;color:var(--muted)">Confira o preço de cada linha: a proposta nasce com o preço de tabela, não com o preço do edital.</div>
+    <div style="margin-top:8px;font-size:var(--txt-1);color:var(--muted)">Confira o preço de cada linha: a proposta nasce com o preço de tabela, não com o preço do edital.</div>
   </div>`;
   renderItens();
   if(typeof renderNaoEncontrados === 'function') renderNaoEncontrados();
@@ -3162,7 +3235,7 @@ function buscarProduto(q, imediato=false) {
               &nbsp;· CX/${qtdEmbalagem(melhor.und,melhor.produto)} · <strong style="color:var(--verde-escuro)">${fmtBRL(melhor._pvv)}/un</strong> · ${fmtBRL(melhor._pvv*qtdEmbalagem(melhor.und,melhor.produto))}/cx${qtdEmbDiv(melhor.und,melhor.produto)?` <span title="${qtdEmbDiv(melhor.und,melhor.produto)}" style="cursor:help"><svg class="ic" aria-hidden="true"><use href="#ic-alerta"/></svg> </span>`:''}${seloVariacao(melhor)}
               ${melhor.estoque>0?` · <span style="color:var(--verde-escuro)"><svg class="ic" aria-hidden="true"><use href="#ic-certo"/></svg> ${melhor.estoque} em estoque</span>`:''}
               ${melhor.validade?` · Venc: ${fmtDate(melhor.validade)}`:''}
-              ${alt.length?`<br><span style="font-size:10px;color:var(--muted)">+${alt.length} opção(ões) alternativa(s): ${alt.map(a=>`${ehRestrito()?'':nomeForn(a.fornecedor)+' · '}${a.marca||''} ${fmtBRL(a._pvv)}/un`).join(' | ')}</span>`:''}
+              ${alt.length?`<br><span style="font-size:var(--txt-1);color:var(--muted)">+${alt.length} opção(ões) alternativa(s): ${alt.map(a=>`${ehRestrito()?'':nomeForn(a.fornecedor)+' · '}${a.marca||''} ${fmtBRL(a._pvv)}/un`).join(' | ')}</span>`:''}
             </div>
           </div>
           <button class="btn btn-primary btn-sm" onclick='addItem(${JSON.stringify(melhor).replace(/'/g,"&#39;")})'>+ Add</button>
@@ -3294,7 +3367,7 @@ function renderItens() {
     const margemTxt = margem === null ? '—' : (margem.toFixed(1)+'%'+(custoRef?' (ref.)':''));
     return `
     <div class="item-row">
-      <span style="font-size:11px;color:var(--muted);min-width:28px;font-weight:600">${String(i+1).padStart(3,'0')}</span>
+      <span style="font-size:var(--txt-1);color:var(--muted);min-width:28px;font-weight:600">${String(i+1).padStart(3,'0')}</span>
       <div class="item-info">
         <div class="item-nome">${c.produto}</div>
         <div class="item-det">
@@ -3306,32 +3379,32 @@ function renderItens() {
              O documento impresso está CONGELADO (ordem da caixa desde a B8). Esta linha vive na
              tela, que é onde a proposta é MONTADA e onde ainda dá tempo de consertar. Ver a
              fatia B17 no relatório para o caminho que NÃO foi tomado no papel, e o porquê. -->
-        <div class="item-det no-print" style="margin-top:3px">${identidadeHTML(c)}</div>
-        ${(c._bpAlerta && !ehRestrito())?`<div class="no-print" style="margin-top:4px;font-size:11px;color:var(--ambar-700);background:var(--ambar-50);border:1px solid var(--ambar-300);border-radius:6px;padding:4px 8px"><svg class="ic" aria-hidden="true"><use href="#ic-alerta"/></svg> conferir preço: ${c._bpAlerta.msg}</div>`:''}
-        ${c._qtdAlerta?`<div class="no-print" style="margin-top:4px;font-size:11px;color:var(--ambar-700);background:var(--ambar-50);border:1px solid var(--ambar-300);border-radius:6px;padding:4px 8px"><svg class="ic" aria-hidden="true"><use href="#ic-alerta"/></svg> <strong>quantidade não convertida</strong> (entrou 1): ${c._qtdAlerta}</div>`:''}
-        ${(c._conf && c._conf.nivel!=='alta' && !c._confOK)?`<div class="no-print" style="margin-top:4px;font-size:11px;color:${c._conf.nivel==='baixa'?'var(--vermelho-700)':'var(--ambar-700)'};background:${c._conf.nivel==='baixa'?'var(--vermelho-50)':'var(--ambar-50)'};border:1px solid ${c._conf.nivel==='baixa'?'var(--vermelho-300)':'var(--ambar-300)'};border-radius:6px;padding:5px 8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <div class="item-det no-print" style="margin-top:4px">${identidadeHTML(c)}</div>
+        ${(c._bpAlerta && !ehRestrito())?`<div class="no-print" style="margin-top:4px;font-size:var(--txt-1);color:var(--ambar-700);background:var(--ambar-50);border:1px solid var(--ambar-300);border-radius:6px;padding:4px 8px"><svg class="ic" aria-hidden="true"><use href="#ic-alerta"/></svg> conferir preço: ${c._bpAlerta.msg}</div>`:''}
+        ${c._qtdAlerta?`<div class="no-print" style="margin-top:4px;font-size:var(--txt-1);color:var(--ambar-700);background:var(--ambar-50);border:1px solid var(--ambar-300);border-radius:6px;padding:4px 8px"><svg class="ic" aria-hidden="true"><use href="#ic-alerta"/></svg> <strong>quantidade não convertida</strong> (entrou 1): ${c._qtdAlerta}</div>`:''}
+        ${(c._conf && c._conf.nivel!=='alta' && !c._confOK)?`<div class="no-print" style="margin-top:4px;font-size:var(--txt-1);color:${c._conf.nivel==='baixa'?'var(--vermelho-700)':'var(--ambar-700)'};background:${c._conf.nivel==='baixa'?'var(--vermelho-50)':'var(--ambar-50)'};border:1px solid ${c._conf.nivel==='baixa'?'var(--vermelho-300)':'var(--ambar-300)'};border-radius:6px;padding:4px 8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
           <span style="flex:1"><svg class="ic" aria-hidden="true"><use href="#ic-alerta"/></svg> <strong>CONFERIR</strong> (confiança ${c._conf.nivel}): ${c._conf.motivos.join(' · ')||'match automático'} — confira se é o produto certo</span>
-          <button class="btn btn-outline btn-sm" style="padding:2px 10px" onclick="confirmarMatch('${c.id}')"><svg class="ic" aria-hidden="true"><use href="#ic-certo"/></svg> Confirmar match</button>
+          <button class="btn btn-outline btn-sm" style="padding:4px 8px" onclick="confirmarMatch('${c.id}')"><svg class="ic" aria-hidden="true"><use href="#ic-certo"/></svg> Confirmar match</button>
         </div>`:''}
-        ${(c._conf && c._conf.nivel!=='alta' && c._confOK)?`<div class="no-print" style="margin-top:4px;font-size:10px;color:var(--verde-700)"><svg class="ic" aria-hidden="true"><use href="#ic-certo"/></svg> match conferido</div>`:''}
-        <div class="item-det no-print" style="margin-top:6px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-          ${ehRestrito()?'':`<span style="font-size:11px;color:var(--muted)">Custo: <strong style="${custoRef?'color:var(--muted);font-style:italic':'color:var(--texto)'}">${custo>0?fmtBRL(custo):'—'}</strong>${custoRef?' <span style="font-size:9px;color:var(--muted)">(ref. venda÷1,25)</span>':''}</span>`}
-          <span style="font-size:11px;color:var(--muted)">Preço UN:
+        ${(c._conf && c._conf.nivel!=='alta' && c._confOK)?`<div class="no-print" style="margin-top:4px;font-size:var(--txt-1);color:var(--verde-700)"><svg class="ic" aria-hidden="true"><use href="#ic-certo"/></svg> match conferido</div>`:''}
+        <div class="item-det no-print" style="margin-top:4px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          ${ehRestrito()?'':`<span style="font-size:var(--txt-1);color:var(--muted)">Custo: <strong style="${custoRef?'color:var(--muted);font-style:italic':'color:var(--texto)'}">${custo>0?fmtBRL(custo):'—'}</strong>${custoRef?' <span style="font-size:var(--txt-1);color:var(--muted)">(ref. venda÷1,25)</span>':''}</span>`}
+          <span style="font-size:var(--txt-1);color:var(--muted)">Preço UN:
             <input type="number" id="pvv-edit-${c.id}" value="${precoUnit.toFixed(4)}" min="0" step="0.01"
-              style="width:80px;padding:3px 6px;border:1px solid var(--verde);border-radius:5px;text-align:right;font-size:12px;font-weight:700;color:var(--verde);background:var(--branco);outline:none;"
+              style="width:80px;padding:4px 4px;border:1px solid var(--verde);border-radius:5px;text-align:right;font-size:12px;font-weight:700;color:var(--verde);background:var(--branco);outline:none;"
               oninput="setPrecoEdit('${c.id}',this.value)">
           </span>
-          ${ehRestrito()?'':`<span id="margem-badge-${c.id}" style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px;background:${mkp.fundo};color:${mkp.tinta};">MKP ${margemTxt}</span>`}
+          ${ehRestrito()?'':`<span id="margem-badge-${c.id}" style="font-size:var(--txt-1);font-weight:700;padding:4px 8px;border-radius:10px;background:${mkp.fundo};color:${mkp.tinta};">MKP ${margemTxt}</span>`}
           <!-- A TRAVA DO TETO fica COLADA no preço e no MKP, não num rodapé: é aqui que a
                decisão acontece, e aviso longe da decisão é aviso que não muda decisão.
                Vale para TODOS, inclusive o vendedor restrito — o teto é lei, não é intel de
                custo, e esconder dele faria justamente quem monta a proposta não saber. -->
           <span id="teto-badge-${c.id}">${tetoBadgeHTML(avaliarTeto(c, precoUnit))}</span>
-          <span style="font-size:10px;color:var(--muted)">Orig: ${fmtBRL(c._pvv)}</span>
+          <span style="font-size:var(--txt-1);color:var(--muted)">Orig: ${fmtBRL(c._pvv)}</span>
         </div>
       </div>
       <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
-        <span style="font-size:10px;color:var(--muted)">Qtd</span>
+        <span style="font-size:var(--txt-1);color:var(--muted)">Qtd</span>
         <input type="number" value="${c.qtd}" min="1" oninput="setQtd('${c.id}',this.value)">
       </div>
       <div>
@@ -3339,9 +3412,9 @@ function renderItens() {
         <div class="item-preco-info">CX/${qtd_caixa} · ${fmtBRL(precoUnit)}/un · ${fmtBRL(precoCx)}/cx${qtdEmbDiv(c.und,c.produto)?` <span title="${qtdEmbDiv(c.und,c.produto)} — corrija o cadastro" style="cursor:help"><svg class="ic" aria-hidden="true"><use href="#ic-alerta"/></svg> </span>`:''}</div>
       </div>
       <div class="no-print" style="display:flex;flex-direction:column;gap:4px;align-items:stretch">
-        <button class="btn btn-danger btn-sm" onclick="remItem('${c.id}')"><svg class="ic" aria-hidden="true"><use href="#ic-x"/></svg> </button>
-        ${(!isGlobal && !ehRestrito() && !c._esgotado)?`<button class="btn btn-outline btn-sm" style="font-size:10px;padding:3px 6px;white-space:nowrap" title="Fornecedor confirmou que acabou: grava estoque=0 nessa cotação (preço intacto), some das buscas e já busca o plano B" onclick="marcarEsgotado('${c.id}')"><svg class="ic" aria-hidden="true"><use href="#ic-bloqueado"/></svg> Esgotou</button>`:''}
-        ${c._esgotado?`<span style="font-size:10px;color:var(--vermelho-700);text-align:center" title="Marcado esgotado no fornecedor — fora das buscas"><svg class="ic" aria-hidden="true"><use href="#ic-bloqueado"/></svg> esgotado</span>`:''}
+        <button class="btn btn-danger btn-sm btn-ic" onclick="remItem('${c.id}')"><svg class="ic" aria-hidden="true"><use href="#ic-x"/></svg> </button>
+        ${(!isGlobal && !ehRestrito() && !c._esgotado)?`<button class="btn btn-outline btn-sm" style="font-size:var(--txt-1);padding:4px 4px;white-space:nowrap" title="Fornecedor confirmou que acabou: grava estoque=0 nessa cotação (preço intacto), some das buscas e já busca o plano B" onclick="marcarEsgotado('${c.id}')"><svg class="ic" aria-hidden="true"><use href="#ic-bloqueado"/></svg> Esgotou</button>`:''}
+        ${c._esgotado?`<span style="font-size:var(--txt-1);color:var(--vermelho-700);text-align:center" title="Marcado esgotado no fornecedor — fora das buscas"><svg class="ic" aria-hidden="true"><use href="#ic-bloqueado"/></svg> esgotado</span>`:''}
       </div>
     </div>`;
   }).join('');
@@ -3548,9 +3621,9 @@ function renderNaoEncontrados() {
     <div class="nao-encontrado-row">
       <span style="color:var(--vermelho);font-size:13px"><svg class="ic" aria-hidden="true"><use href="#ic-x"/></svg> </span>
       <span style="flex:1;font-size:13px">${n}</span>
-      <span style="font-size:11px;color:var(--muted)">Não disponível no estoque</span>
+      <span style="font-size:var(--txt-1);color:var(--muted)">Não disponível no estoque</span>
       <button class="btn btn-outline btn-sm no-print" onclick="iacAddUm(${JSON.stringify(n).replace(/"/g,'&quot;')}, this)" style="margin-left:8px" title="Manda pra fila de Itens a Cotar">+ Add à fila</button>
-      <button class="btn btn-danger btn-sm no-print" onclick="remNaoEncontrado(${i})" style="margin-left:4px"><svg class="ic" aria-hidden="true"><use href="#ic-x"/></svg> </button>
+      <button class="btn btn-danger btn-sm no-print btn-ic" onclick="remNaoEncontrado(${i})" style="margin-left:4px"><svg class="ic" aria-hidden="true"><use href="#ic-x"/></svg> </button>
     </div>`).join('');
 }
 
@@ -3923,14 +3996,14 @@ function buscarCliente(q, imediato){
       rows = await (await fetch(url,{headers:H})).json();
     }catch(e){ rows=[]; }
     if(!Array.isArray(rows) || !rows.length){
-      box.innerHTML = `<div style="padding:10px;font-size:12px;color:var(--muted)">Nenhum cliente encontrado. Preencha "Cliente / Hospital" + CNPJ e clique <b>Cadastrar novo cliente</b>.</div>`;
+      box.innerHTML = `<div style="padding:8px;font-size:12px;color:var(--muted)">Nenhum cliente encontrado. Preencha "Cliente / Hospital" + CNPJ e clique <b>Cadastrar novo cliente</b>.</div>`;
       box.style.display='block'; return;
     }
     box.innerHTML = rows.map(c=>`
-      <div style="padding:9px 12px;border-bottom:1px solid var(--borda);cursor:pointer" onmouseover="this.style.background='var(--azul-50)'" onmouseout="this.style.background=''"
+      <div style="padding:8px 12px;border-bottom:1px solid var(--borda);cursor:pointer" onmouseover="this.style.background='var(--azul-50)'" onmouseout="this.style.background=''"
         onclick='selecionarCliente(${JSON.stringify(c).replace(/'/g,"&#39;")})'>
         <div style="font-size:13px;color:var(--texto);font-weight:600">#${c.codigo} · ${c.nome||'(sem nome)'}</div>
-        <div style="font-size:11px;color:var(--muted)">${c.cnpj||'sem CNPJ'}${c.cod_cliente_erp?` · ERP ${c.cod_cliente_erp}`:''}${c.cidade?` · ${c.cidade}/${c.uf||''}`:''}</div>
+        <div style="font-size:var(--txt-1);color:var(--muted)">${c.cnpj||'sem CNPJ'}${c.cod_cliente_erp?` · ERP ${c.cod_cliente_erp}`:''}${c.cidade?` · ${c.cidade}/${c.uf||''}`:''}</div>
       </div>`).join('');
     box.style.display='block';
   }, imediato?0:250);
@@ -4300,12 +4373,12 @@ function importarListaIA() {
   const naoEl = document.getElementById('ia-lista-nao-encontrados');
   if (naoEncontrados.length) {
     // idem: o que a IA não achou também alimenta a fila em vez de se perder
-    naoEl.innerHTML = `<div style="background:var(--vermelho-50);border:1px solid var(--vermelho-300);border-radius:8px;padding:10px 14px">
-      <div style="font-size:11px;font-weight:600;color:var(--vermelho-700);margin-bottom:6px;display:flex;align-items:center;gap:8px">
+    naoEl.innerHTML = `<div style="background:var(--vermelho-50);border:1px solid var(--vermelho-300);border-radius:8px;padding:8px 12px">
+      <div style="font-size:var(--txt-1);font-weight:600;color:var(--vermelho-700);margin-bottom:4px;display:flex;align-items:center;gap:8px">
         <span style="flex:1"><svg class="ic" aria-hidden="true"><use href="#ic-x"/></svg> Não encontrados:</span>
         <button class="btn btn-outline btn-sm no-print" onclick="iacAddTodos(${JSON.stringify(naoEncontrados).replace(/"/g,'&quot;')}, this)">+ Adicionar os ${naoEncontrados.length} à fila</button>
       </div>
-      ${naoEncontrados.map(p=>`<div style="font-size:12px;color:var(--vermelho-300);padding:3px 0;display:flex;align-items:center;gap:8px">
+      ${naoEncontrados.map(p=>`<div style="font-size:12px;color:var(--vermelho-300);padding:4px 0;display:flex;align-items:center;gap:8px">
         <span style="flex:1">${p}</span>
         <button class="btn btn-outline btn-sm no-print" onclick="iacAddUm(${JSON.stringify(p).replace(/"/g,'&quot;')}, this)">+ Add à fila</button>
       </div>`).join('')}</div>`;
@@ -4568,9 +4641,9 @@ function addLinhaImport() {
   const tr = document.createElement('tr');
   tr.id = id;
   tr.style.borderBottom = '1px solid var(--borda)';
-  const inp = "width:100%;padding:5px 7px;border:1px solid var(--borda);border-radius:6px;font-size:12px;outline:none;font-family:'Inter',sans-serif;background:var(--card);color:var(--texto)";
+  const inp = "width:100%;padding:4px 8px;border:1px solid var(--borda);border-radius:6px;font-size:12px;outline:none;font-family:'Inter',sans-serif;background:var(--card);color:var(--texto)";
   tr.innerHTML = `
-    <td style="padding:6px 8px"><input type="text" id="${id}_codigo" placeholder="Cód." style="${inp};max-width:80px"></td>
+    <td style="padding:4px 8px"><input type="text" id="${id}_codigo" placeholder="Cód." style="${inp};max-width:80px"></td>
     <!-- ══ CÓDIGO DE BARRAS (EAN) — item 9 (b) ═══════════════════════════════════════════════
          NUNCA OBRIGATÓRIO (ordem do dono), e o placeholder diz isso em vez de o formulário
          cobrar depois: campo que só revela ser opcional na hora do erro já custou a paciência
@@ -4578,18 +4651,18 @@ function addLinhaImport() {
          O inputmode numérico põe o teclado de números no celular sem impedir colar de um leitor.
          (E este comentário mora DENTRO de um template literal: crase aqui fecha a string e
           quebra o arquivo inteiro — foi o que aconteceu na primeira tentativa.) -->
-    <td style="padding:6px 8px"><input type="text" id="${id}_ean" placeholder="EAN (opcional)"
+    <td style="padding:4px 8px"><input type="text" id="${id}_ean" placeholder="EAN (opcional)"
       inputmode="numeric" autocomplete="off" oninput="eanDigitado('${id}')"
       title="Código de barras. Opcional — deixe vazio se não tiver."
-      style="${inp};max-width:130px"><div id="${id}_ean_aviso" style="font-size:10.5px;margin-top:2px;line-height:1.35"></div></td>
-    <td style="padding:6px 8px"><input type="text" id="${id}_produto" placeholder="Nome do produto *" style="${inp}"></td>
-    <td style="padding:6px 8px"><input type="text" id="${id}_marca" placeholder="Marca" style="${inp}"></td>
-    <td style="padding:6px 8px"><input type="text" id="${id}_und" placeholder="CX/50" style="${inp};max-width:70px"></td>
-    <td style="padding:6px 8px"><input type="number" id="${id}_qtd" placeholder="0" min="1" style="${inp};max-width:55px;text-align:center"></td>
-    <td style="padding:6px 8px"><input type="number" id="${id}_valor" placeholder="0.00" step="0.01" min="0" style="${inp};max-width:90px"></td>
-    <td style="padding:6px 8px"><input type="date" id="${id}_venc" style="${inp};max-width:130px"></td>
-    <td style="padding:6px 8px"><input type="number" id="${id}_emb" placeholder="1" min="1" title="Unidades por caixa" style="${inp};max-width:65px;text-align:center"></td>
-    <td style="padding:6px 8px"><button onclick="remLinhaImport('${id}')" style="background:none;border:none;cursor:pointer;color:var(--vermelho);font-size:16px;padding:2px 6px"><svg class="ic" aria-hidden="true"><use href="#ic-x"/></svg> </button></td>
+      style="${inp};max-width:130px"><div id="${id}_ean_aviso" style="font-size:var(--txt-1);margin-top:4px;line-height:1.35"></div></td>
+    <td style="padding:4px 8px"><input type="text" id="${id}_produto" placeholder="Nome do produto *" style="${inp}"></td>
+    <td style="padding:4px 8px"><input type="text" id="${id}_marca" placeholder="Marca" style="${inp}"></td>
+    <td style="padding:4px 8px"><input type="text" id="${id}_und" placeholder="CX/50" style="${inp};max-width:70px"></td>
+    <td style="padding:4px 8px"><input type="number" id="${id}_qtd" placeholder="0" min="1" style="${inp};max-width:55px;text-align:center"></td>
+    <td style="padding:4px 8px"><input type="number" id="${id}_valor" placeholder="0.00" step="0.01" min="0" style="${inp};max-width:90px"></td>
+    <td style="padding:4px 8px"><input type="date" id="${id}_venc" style="${inp};max-width:130px"></td>
+    <td style="padding:4px 8px"><input type="number" id="${id}_emb" placeholder="1" min="1" title="Unidades por caixa" style="${inp};max-width:65px;text-align:center"></td>
+    <td style="padding:4px 8px"><button class="btn-ic" onclick="remLinhaImport('${id}')" style="background:none;border:none;cursor:pointer;color:var(--vermelho);font-size:16px;padding:4px 4px"><svg class="ic" aria-hidden="true"><use href="#ic-x"/></svg> </button></td>
   `;
   tbody.appendChild(tr);
 }

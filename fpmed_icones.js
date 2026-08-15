@@ -85,9 +85,14 @@
     'ic-certo':      '<path d="m4 12.5 5 5L20 6.5"/>',
     'ic-x':          '<path d="M6 6l12 12M18 6 6 18"/>',
     /* ic-mais entrou na fatia B19 (14/08), e ele é ADITIVO: nenhum desenho existente mudou,
-       então nenhuma tela que já usava o sprite muda de aparência. Ele existe porque a Negócios
-       escrevia "＋ Agendar" com o caractere U+FF0B (o "mais" de largura inteira), e caractere
-       não é ícone: ele muda de desenho por fonte instalada e não aceita a cor da marca. */
+       então nenhuma tela que já usava o sprite muda de aparência.
+       >>> ELE NÃO É MAIS DO TRABALHADOR B, E A HISTÓRIA VALE A LINHA. Eu o criei para trocar o
+       "＋" (U+FF0B, o mais de largura INTEIRA) das minhas telas — e a suíte me derrubou: o
+       assert 62 do tests/testa_molde_proposta.js guarda uma decisão anterior da casa de que
+       sinal de mais em rótulo de botão é TIPOGRAFIA, não ícone, "mesma fronteira das setas".
+       Nas telas do B o "＋" virou o "+" ASCII, e nenhum SVG. O símbolo FICA aqui porque a tela
+       Encontrar (do A) passou a chamar `ic('mais')` na mesma rodada, e o tests/testa_icones.js
+       já protege esse uso. Apagá-lo por eu ter desistido dele quebraria a tela de outro dono. */
     'ic-mais':       '<path d="M12 5v14M5 12h14"/>',
     'ic-lupa':       '<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>',
     'ic-envelope':   '<rect x="2.5" y="5" width="19" height="14" rx="2"/><path d="m3 7 9 6 9-6"/>',

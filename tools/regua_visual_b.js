@@ -51,6 +51,40 @@ function blocosDeMedia(txt) {
   }
   return blocos;
 }
+// >>> DEFEITO 11 DESTA RÉGUA — O PIOR DE TODOS, PORQUE ELE ERA POR OMISSÃO E ATESTAVA SAÚDE.
+//     A régua achava que "papel" é só o que está dentro de `@media print`. Na Proposta NÃO É: a
+//     folha que vai para o hospital é a `.print-doc`, que fica `display:none` na tela e vira
+//     `display:block` na impressão — ou seja, o CSS dela mora FORA do `@media print`, logo
+//     abaixo do marcador de comentário PRINT.
+//     O número que ela publicava era este: `[papel: 0]` na Proposta. Medido depois de enxergar
+//     a região: dos 21 hex "da tela", 18 SÃO DO PAPEL; dos 58 furos de piso, 10 SÃO DO PAPEL
+//     (o documento imprime em 9, 10 e 11px, e o piso de 12 vale para TELA — o próprio molde
+//     declara o papel como a exceção). "papel: 0" não era atestado de limpeza: era a régua
+//     dizendo que não enxergava a folha.
+//     E o risco não era o número: eu ia rodar o aplicador do molde nesses 28 achados. O papel
+//     está CONGELADO por ordem da caixa desde a B8, e a `tools/prova_papel_congelado.js`
+//     compara as três regiões byte a byte — eu teria reescrito a folha que vai para o hospital
+//     e derrubado a prova, com o estrago já no disco.
+// >>> A FRONTEIRA É A MESMA DA PROVA, DE PROPÓSITO. Duas âncoras para o mesmo fato viram duas
+//     verdades, e a que divergir vai ser justamente a que ninguém está olhando (BASE 2.3). Se a
+//     prova mudar de recorte, esta régua e o aplicador mudam junto.
+// SÃO AS TRÊS REGIÕES DA PROVA, e não só o CSS: a folha em si (o HTML do `print-doc`, onde mora
+// o `<img>` do logo), o CSS de impressão e o `gerarPDF` que preenche a folha. Copiar duas das
+// três teria deixado o logo do papel sendo cobrado como PNG solto na tela.
+const ANCORAS_DO_PAPEL = [
+  /<div class="print-doc" id="print-doc">[\s\S]*?\n<!-- MODAL MANUAL -->/,
+  /\/\* PRINT \*\/[\s\S]*?<\/style>/,
+  /function gerarPDF\(\)[\s\S]*?\n\}/,
+];
+function blocosDePapel(txt) {
+  const achados = [];
+  for (const re of ANCORAS_DO_PAPEL) {
+    const m = re.exec(txt);
+    if (m) achados.push({ consulta: 'print (papel congelado — ancora do prova_papel_congelado)',
+                          ini: m.index, fim: m.index + m[0].length });
+  }
+  return achados;
+}
 const dentroDe = (blocos, pos, teste) =>
   blocos.some(b => pos >= b.ini && pos < b.fim && teste(b.consulta));
 
@@ -66,11 +100,67 @@ const ehCelular = q => /max-width\s*:\s*(\d+)px/.test(q) &&
 //     comentário por espaços e apontava linha ERRADA (o #111 "da linha 3006" era um `}`).
 //     Régua que erra o endereço manda consertar o lugar errado — é o mesmo defeito de família
 //     que a BASE chama de "régua antes do número", só que no eixo do arquivo.
+/* >>> DEFEITO 13 — O QUE A RÉGUA NÃO ENXERGAVA, e foi o mais caro dos treze: ela apagava
+   `/*…*​/` no ARQUIVO INTEIRO. Só que `/*` não é comentário em HTML. Na Proposta existe
+   `accept="image/*,application/pdf"` — e aquele `/*` do `image/*` abriu um comentário falso que
+   engoliu 288 LINHAS (20.530 chars, da 508 à 795), incluindo a abertura do `<script>` que
+   carrega quase todo o JavaScript da tela.
+   DUAS CONSEQUÊNCIAS:
+     1. o defeito 12 não funcionava — a régua achava que aquele script não era script;
+     2. e ela estava CALADA sobre 288 linhas da tela.
+   >>> E AQUI EU ERREI, E O ERRO FICA ESCRITO PORQUE ELE ENSINA. Ao achar o buraco eu contei o
+   que havia lá dentro — 4 hex (`#888`, `#000`), um 🔒 e um `<img>` — e escrevi neste mesmo
+   comentário que eram "defeitos de verdade que ela nunca contou". NÃO ERAM. Consertada a
+   fronteira, os cinco caíram na coluna certa sozinhos: `#888` e `#000` são o `print-obs` da
+   FOLHA (linhas 732-736), o `<img>` é o LOGO do papel, e o 🔒 é um comentário de HTML avisando
+   para não pôr coluna de fornecedor no PDF do cliente. Nenhum é defeito de tela; mexer neles
+   seria justamente violar o congelamento.
+   A lição não é "não era nada": é que enquanto ela estava cega ela também não podia me dizer
+   que estava tudo bem ali. Cega, ela não sabia acusar NEM absolver. Eu contei antes de
+   classificar, e contar sem classificar é o mesmo pecado das manchetes de régua ruim que a
+   BASE registra — só que desta vez o erro era meu, e não dela.
+   >>> O CONSERTO É DE FRONTEIRA, e não de expressão: `/*` só é comentário DENTRO de `<style>` e
+   de `<script>`. Em HTML o comentário é `<!-- -->`, e um `/*` em atributo é conteúdo. As regiões
+   saem do texto ORIGINAL, antes de qualquer apagamento — foi apagar primeiro e recortar depois
+   que destruiu a fronteira. */
 function semComentario(txt) {
   const branco = m => m.replace(/[^\n]/g, ' ');
-  return txt.replace(/<!--[\s\S]*?-->/g, branco)
-            .replace(/\/\*[\s\S]*?\*\//g, branco);
+  let saida = txt.replace(/<!--[\s\S]*?-->/g, branco);
+  const troca = (re, limpa) => {
+    let m;
+    while ((m = re.exec(txt))) {
+      const ini = m.index + m[0].indexOf(m[1]);
+      saida = saida.slice(0, ini) + limpa(saida.substr(ini, m[1].length)) + saida.slice(ini + m[1].length);
+    }
+  };
+  const semBloco = s => s.replace(/\/\*[\s\S]*?\*\//g, branco);
+  troca(/<style\b[^>]*>([\s\S]*?)<\/style>/gi, semBloco);
+  // no <script> saem os dois: o de bloco e o de LINHA (defeito 12)
+  troca(/<script\b[^>]*>([\s\S]*?)<\/script>/gi,
+        s => semBloco(s).replace(/^([ \t]*)\/\/[^\n]*/gm,
+                                 (l, id) => id + ' '.repeat(l.length - id.length)));
+  return saida;
 }
+
+/* >>> DEFEITO 12 — E É A TERCEIRA VEZ QUE O COMENTÁRIO MORDE ESTA RÉGUA (depois do 1 e do 10).
+   Ela apagava comentário de HTML e de bloco, e não o de LINHA (`//`). Medido na Proposta: os
+   TRÊS hex "chumbados na tela" eram a linha que registra a medição de contraste que condenou
+   essas mesmas três cores — `#22c55e 2,29:1 · #f59e0b 2,15:1 · #ef4444 3,76:1 sobre branco` —,
+   e OITO dos onze pictogramas eram comentários descrevendo a tela ("o card marca ⚠️ via
+   qtdEmbDiv", "botão 🚫 do card", "botão 🔍 Buscar"). A régua estava cobrando de mim o registro
+   de por que aquelas cores saíram. Assert que só fica verde se eu apagar a explicação está
+   contra a lei do porquê escrito — é o precedente do assert 15 do testa_tema_tela_propria, que
+   esta mesma régua cita no bloco de cima e não estava cumprindo.
+
+   >>> E ELE É PROPOSITALMENTE TÍMIDO, porque régua emudece tão fácil quanto grita:
+   1. só dentro de `<script>` — `//` fora dali é `https://`, e apagar até o fim da linha comeria
+      marcação de verdade;
+   2. só quando o `//` ABRE a linha (depois de espaço). Comentário no fim de uma linha de código
+      continua sendo lido, então um emoji plantado ali continua sendo cobrado.
+   O erro que sobra é sempre para MAIS. Uma régua que erra para mais me faz olhar; uma que erra
+   para menos me faz publicar "está limpo". (O apagamento em si mora no `semComentario` acima,
+   junto com o do defeito 13 — os dois precisam da MESMA fronteira de `<script>`, e separá-los
+   foi como o 12 nasceu quebrado.) */
 const linhaDe = (txt, pos) => txt.slice(0, pos).split('\n').length;
 
 /* ── 2b. O DOCUMENTO GERADO EM JANELA NOVA É OUTRO MEIO ────────────────────────────────────
@@ -159,44 +249,72 @@ function medeEspaco(txt, blocos, docs) {
 // >>> `rgba(var(--azul-500-rgb),.55)` NÃO É COR CHUMBADA: é o token sendo usado na forma que o
 //     próprio fpmed_tema.css publica para isso (`--azul-500-rgb: 44,169,224`). A primeira
 //     versão contava esses 6 como defeito — mandaria eu "consertar" o uso CERTO do token.
-function medeCor(txt, docs) {
+// O PAPEL ENTRA AQUI PELO MESMO MOTIVO DO PISO (defeito 11): o documento congelado tem 18 hex
+// escritos à mão, e eles NÃO são defeito de tela — a folha não carrega o tema, e mexer neles é
+// justamente o que a caixa proíbe. Coluna própria: não se exclui, separa-se.
+function medeCor(txt, blocos, docs) {
   const limpo = semComentario(txt);
   const hex = [], rgb = [];
+  const onde = pos => emDocGerado(docs, pos) ? 'doc'
+                    : dentroDe(blocos, pos, ehPrint) ? 'papel' : 'tela';
   let m;
   const reHex = /#[0-9a-fA-F]{3,8}\b/g;
   while ((m = reHex.exec(limpo)))
-    hex.push({ linha: linhaDe(limpo, m.index), valor: m[0], doc: emDocGerado(docs, m.index) });
+    hex.push({ linha: linhaDe(limpo, m.index), valor: m[0], onde: onde(m.index) });
   const reRgb = /\brgba?\s*\(\s*([^)]*)/g;
   while ((m = reRgb.exec(limpo))) {
     if (/^var\(/.test(m[1].trim())) continue;           // token na forma rgba(var(--x-rgb),a)
     rgb.push({ linha: linhaDe(limpo, m.index), valor: 'rgb(' + m[1].trim().slice(0, 24),
-               doc: emDocGerado(docs, m.index) });
+               onde: onde(m.index) });
   }
-  return { hex: hex.filter(x => !x.doc), rgb: rgb.filter(x => !x.doc),
-           docGerado: hex.filter(x => x.doc).concat(rgb.filter(x => x.doc)) };
+  const todos = hex.concat(rgb);
+  return { hex: hex.filter(x => x.onde === 'tela'), rgb: rgb.filter(x => x.onde === 'tela'),
+           papel: todos.filter(x => x.onde === 'papel'),
+           docGerado: todos.filter(x => x.onde === 'doc') };
 }
 
 // 3.4 ÍCONES. Emoji e pictograma escritos como TEXTO, e <img> de PNG no corpo da tela.
 // O favicon do <head> NÃO é ícone de tela — sai em coluna própria em vez de ser excluído.
 const RE_EMOJI = /[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{2B00}-\u{2BFF}\u{FE0F}\u{2190}-\u{21FF}\u{2900}-\u{297F}\u{FF01}-\u{FF60}]/gu;
-function medeIcones(txt, docs) {
+function medeIcones(txt, blocos, docs) {
   const limpo = semComentario(txt);
   const emoji = [];
+  const onde = pos => emDocGerado(docs, pos) ? 'doc'
+                    : dentroDe(blocos, pos, ehPrint) ? 'papel' : 'tela';
   let m;
   RE_EMOJI.lastIndex = 0;
   while ((m = RE_EMOJI.exec(limpo))) {
     // a seta tipográfica de navegação ("← Sistema") é caractere de texto, não pictograma:
     // ela entra em coluna própria, para o número não misturar duas coisas diferentes.
+    // >>> E O MESMO VALE PARA O BLOCO DE LARGURA INTEIRA (U+FF01–FF60), onde mora o "＋" que a
+    //     Proposta usava. ISSO EU APRENDI LEVANDO VERMELHO: a régua o chamou de pictograma, eu
+    //     troquei por um SVG, e o assert 62 do testa_molde_proposta me derrubou — a casa já
+    //     tinha decidido, com razão escrita, que sinal de mais em rótulo de botão é TIPOGRAFIA,
+    //     "mesma fronteira das setas", e que desenhar um SVG para ele deixa a tela pior.
+    //     Ele continua sendo achado, porque é defeito de verdade (largura CJK numa tela em
+    //     português, que muda de desenho por fonte instalada) — mas o conserto dele é o
+    //     caractere ASCII, e NÃO o sprite. Coluna própria é o que diz isso sem precisar de mim.
+    const cp = m[0].codePointAt(0);
     const seta = /[\u{2190}-\u{21FF}\u{2900}-\u{297F}]/u.test(m[0]);
-    emoji.push({ linha: linhaDe(limpo, m.index), valor: m[0], seta,
-                 cod: 'U+' + m[0].codePointAt(0).toString(16).toUpperCase(),
-                 doc: emDocGerado(docs, m.index) });
+    const largo = cp >= 0xFF01 && cp <= 0xFF60;
+    emoji.push({ linha: linhaDe(limpo, m.index), valor: m[0], seta, largo,
+                 cod: 'U+' + cp.toString(16).toUpperCase(),
+                 onde: onde(m.index) });
   }
-  const png = [];
+  // >>> O `<img>` DO LOGO DA FOLHA (defeito 11 de novo): ele mora no HTML congelado do
+  //     `print-doc`. Cobrá-lo como "PNG solto na tela" mandaria trocar por sprite o logo da
+  //     proposta que vai para o hospital — a única imagem do sistema que É para ser imagem.
+  const png = [], pngPapel = [];
   const reImg = /<img\b[^>]*>/gi;
-  while ((m = reImg.exec(limpo))) png.push({ linha: linhaDe(limpo, m.index), valor: m[0].slice(0, 70) });
-  return { pictograma: emoji.filter(e => !e.seta && !e.doc), seta: emoji.filter(e => e.seta),
-           docGerado: emoji.filter(e => e.doc && !e.seta), img: png };
+  while ((m = reImg.exec(limpo)))
+    (onde(m.index) === 'tela' ? png : pngPapel)
+      .push({ linha: linhaDe(limpo, m.index), valor: m[0].slice(0, 70) });
+  const desenho = e => !e.seta && !e.largo;
+  return { pictograma: emoji.filter(e => desenho(e) && e.onde === 'tela'),
+           seta: emoji.filter(e => e.seta),
+           largura: emoji.filter(e => e.largo && e.onde === 'tela'), img: png,
+           papel: emoji.filter(e => desenho(e) && e.onde === 'papel').concat(pngPapel),
+           docGerado: emoji.filter(e => desenho(e) && e.onde === 'doc') };
 }
 
 // 3.5 ALVO DE TOQUE. Só olha DENTRO de `@media (max-width:480px)`: fora dali o alvo é o
@@ -235,7 +353,26 @@ function medeToque(txt, blocos) {
                     prop: m[1], valor: n });
     }
   }
-  return { temBloco: celulares.length > 0, blocos: celulares.length, curtos };
+  /* BOTÃO SÓ DE ÍCONE SEM ALVO DECLARADO — a conta que faltava, e ela nasceu de uma escolha da
+     fatia B19 na Proposta. O alvo de 44 dos botões só de ícone é dado por uma CLASSE escrita à
+     mão (`btn-ic`), e não por `button:has(> svg:only-child)`, porque `:has()` não existe em
+     nenhum arquivo deste projeto e onde ele não for entendido o alvo some sem avisar.
+     O preço de escrever à mão é o esquecimento: o próximo botão só de ícone nasce sem a classe
+     e ninguém percebe. Então a régua conta os dois — quantos existem e quantos estão marcados —
+     e a diferença é o que ficou sem alvo. Regra escolhida à mão precisa de quem conte à mão. */
+  const soIcone = [], semMarca = [];
+  const reB = /<button\b([^>]*)>([\s\S]*?)<\/button>/gi;
+  let b;
+  while ((b = reB.exec(txt))) {
+    const dentro = b[2].replace(/<svg[\s\S]*?<\/svg>/gi, '[SVG]')
+                       .replace(/<!--[\s\S]*?-->/g, '').replace(/\s+/g, ' ').trim();
+    if (!/^(\[SVG\]|[^\w\s]{1,3})$/.test(dentro)) continue;   // tem palavra: o texto dá largura
+    const achado = { linha: linhaDe(txt, b.index), trecho: b[0].slice(0, 60).replace(/\s+/g, ' ') };
+    soIcone.push(achado);
+    if (!/\bclass\s*=\s*["'][^"']*\bbtn-ic\b/.test(b[1])) semMarca.push(achado);
+  }
+  return { temBloco: celulares.length > 0, blocos: celulares.length, curtos,
+           soIcone, semMarca };
 }
 
 // 3.6 VAZAMENTO HORIZONTAL — candidatos estáticos. NÃO é a medição do navegador: é a lista de
@@ -397,7 +534,8 @@ function medeLargura(txt, blocos, docs) {
 /* ── 4. O retrato ───────────────────────────────────────────────────────────────────────── */
 function mede(arquivo) {
   const txt = fs.readFileSync(path.join(raiz, arquivo), 'utf8');
-  const blocos = blocosDeMedia(txt);
+  // o papel entra na MESMA lista dos @media: quem pergunta "estou no papel?" pergunta uma vez só
+  const blocos = blocosDeMedia(txt).concat(blocosDePapel(txt));
   const docs = blocosDeDocGerado(txt);
   return {
     arquivo,
@@ -408,8 +546,8 @@ function mede(arquivo) {
     carregaSprite: /fpmed_icones\.js/.test(txt),
     texto: medeTexto(txt, blocos, docs),
     espaco: medeEspaco(txt, blocos, docs),
-    cor: medeCor(txt, docs),
-    icones: medeIcones(txt, docs),
+    cor: medeCor(txt, blocos, docs),
+    icones: medeIcones(txt, blocos, docs),
     toque: medeToque(txt, blocos),
     largura: medeLargura(txt, blocos, docs),
   };
@@ -426,12 +564,16 @@ function imprime(r) {
   console.log('   GRADE DE 8 ...... ' + n(r.espaco.tela) + ' espacos fora da grade' +
               '   [papel: ' + n(r.espaco.papel) + ' · doc gerado: ' + n(r.espaco.docGerado) + ']');
   console.log('   COR CHUMBADA .... ' + n(r.cor.hex) + ' hex + ' + n(r.cor.rgb) + ' rgb()' +
-              '   [doc gerado: ' + n(r.cor.docGerado) + ']');
+              '   [papel: ' + n(r.cor.papel) + ' · doc gerado: ' + n(r.cor.docGerado) + ']');
   console.log('   ICONES .......... ' + n(r.icones.pictograma) + ' pictogramas + ' +
               n(r.icones.img) + ' <img>' + '   [setas: ' + n(r.icones.seta) +
+              ' · largura inteira: ' + n(r.icones.largura) +
+              ' · papel: ' + n(r.icones.papel) +
               ' · doc gerado: ' + n(r.icones.docGerado) + ']');
   console.log('   TOQUE 44px ...... bloco de celular: ' + (r.toque.temBloco ? r.toque.blocos : 'NENHUM') +
-              ' · ' + n(r.toque.curtos) + ' alvos curtos declarados');
+              ' · ' + n(r.toque.curtos) + ' alvos curtos declarados' +
+              ' · botao so-de-icone: ' + n(r.toque.soIcone) +
+              ', dos quais ' + n(r.toque.semMarca) + ' SEM alvo');
   console.log('   LARGURA FIXA .... ' + n(r.largura.fixos) + ' pecas >360px em vigor a 390 + ' +
               n(r.largura.grades) + ' grades que ESTOURAM' +
               '   [candidatas: ' + n(r.largura.candidatas) +
