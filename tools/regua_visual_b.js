@@ -226,15 +226,36 @@ function medeToque(txt, blocos) {
 // 3.6 VAZAMENTO HORIZONTAL — candidatos estáticos. NÃO é a medição do navegador: é a lista de
 // PEÇAS DE LARGURA FIXA, que o molde nomeia como a causa quase sempre (regra 3). O que só a
 // tela pintada responderia sai declarado no relatório, não convertido em número bonito.
-function medeLargura(txt, blocos) {
-  const fixos = [];
+//
+// >>> DEFEITO 5 DESTA RÉGUA, achado ao aplicar a fatia na Negócios: `\bwidth` casa DENTRO de
+//     `max-width`, porque o hífen é fronteira de palavra. E `max-width` é o CONTRÁRIO de peça
+//     fixa — é o teto que faz a peça encolher. A régua listava `max-width:1420px` e a própria
+//     condição `@media(max-width:900px)` como causa de vazamento: mandaria eu "consertar" a
+//     peça que já obedece. Agora a propriedade tem de começar palavra, e a condição de @media
+//     (o trecho entre `@media` e o `{`) sai da conta — condição não é peça.
+// >>> DEFEITO 6, do mesmo bloco: ela contava dentro do `document.write()`. Os 4 relatórios da
+//     Negócios abrem em janela própria, com a largura do papel — 4 das 18 "peças fixas" eram o
+//     `max-width` do corpo do documento gerado. Vai para coluna própria, como o resto.
+function condicoesDeMedia(txt) {
+  const zonas = [];
+  const re = /@media([^{]*)\{/g;
   let m;
-  const re = /\b(min-width|width)\s*:\s*([\d.]+)px/gi;
+  while ((m = re.exec(txt))) zonas.push([m.index, re.lastIndex]);
+  return zonas;
+}
+function medeLargura(txt, blocos, docs) {
+  const fixos = [], docGerado = [];
+  const cond = condicoesDeMedia(txt);
+  let m;
+  const re = /(^|[^\w-])(min-width|width)\s*:\s*([\d.]+)px/gi;
   while ((m = re.exec(txt))) {
-    const n = Number(m[2]);
+    const n = Number(m[3]);
+    const pos = m.index + m[1].length;
     if (n <= 360) continue;                                  // cabe em 390 com folga de margem
-    if (dentroDe(blocos, m.index, ehPrint)) continue;        // papel tem largura de papel
-    fixos.push({ linha: linhaDe(txt, m.index), prop: m[1], valor: n });
+    if (dentroDe(blocos, pos, ehPrint)) continue;            // papel tem largura de papel
+    if (cond.some(([a, b]) => pos >= a && pos < b)) continue; // condição de @media não é peça
+    const achado = { linha: linhaDe(txt, pos), prop: m[2], valor: n };
+    (emDocGerado(docs, pos) ? docGerado : fixos).push(achado);
   }
   const grades = [];
   const reG = /grid-template-columns\s*:\s*([^;}"']+)/gi;
@@ -242,9 +263,11 @@ function medeLargura(txt, blocos) {
     const v = m[1].trim();
     // grade de coluna FIXA (px) ou de 3+ colunas sem minmax: item de grade nasce min-width:auto
     if (/\d+px/.test(v) || (!/minmax|auto-fit|auto-fill/.test(v) && (v.match(/fr/g) || []).length >= 3))
-      grades.push({ linha: linhaDe(txt, m.index), valor: v.slice(0, 60) });
+      grades.push({ linha: linhaDe(txt, m.index), valor: v.slice(0, 60),
+                    doc: emDocGerado(docs, m.index) });
   }
-  return { fixos, grades };
+  return { fixos, docGerado, grades: grades.filter(g => !g.doc),
+           gradesDoc: grades.filter(g => g.doc) };
 }
 
 /* ── 4. O retrato ───────────────────────────────────────────────────────────────────────── */
@@ -264,7 +287,7 @@ function mede(arquivo) {
     cor: medeCor(txt, docs),
     icones: medeIcones(txt, docs),
     toque: medeToque(txt, blocos),
-    largura: medeLargura(txt, blocos),
+    largura: medeLargura(txt, blocos, docs),
   };
 }
 
@@ -286,7 +309,8 @@ function imprime(r) {
   console.log('   TOQUE 44px ...... bloco de celular: ' + (r.toque.temBloco ? r.toque.blocos : 'NENHUM') +
               ' · ' + n(r.toque.curtos) + ' alvos curtos declarados');
   console.log('   LARGURA FIXA .... ' + n(r.largura.fixos) + ' pecas >360px + ' +
-              n(r.largura.grades) + ' grades rigidas');
+              n(r.largura.grades) + ' grades rigidas' +
+              '   [doc gerado: ' + (n(r.largura.docGerado) + n(r.largura.gradesDoc)) + ']');
 }
 
 // só imprime quando é CHAMADA na linha de comando: exigido porque as suítes fazem
