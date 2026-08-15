@@ -79,6 +79,26 @@ body{
 .pg{margin-left:var(--menu-largura);min-height:100vh}
 @media (max-width:900px){ .pg{margin-left:0} }
 
+/* ══ O DEDO (14/08, fatia B19) ═══════════════════════════════════════════════════════════════
+   Esta tela é a mais simples das quatro do B, e por isso ela mostra bem onde está o alvo: ela
+   não tem UM botão, UM campo nem UMA caixinha de marcar — contados no arquivo. Ela tem SETE
+   links, e é neles que o dedo bate.
+   >>> A ARMADILHA QUE O MOLDE NOMEIA ESTÁ AQUI: `min-height` em elemento inline não faz NADA.
+       Os chips do índice já são `inline-flex` (então recebem altura), mas o link de voltar é um
+       `<a>` de texto — ele precisa virar `inline-flex` ANTES de ganhar altura, senão a regra
+       existe, a catraca fica verde e o dedo continua errando.
+   >>> LINK DENTRO DE FRASE CORRIDA NÃO ENGORDA, de propósito: é a exceção "inline" do próprio
+       WCAG 2.5.8, e engordá-lo abriria buracos no meio do parágrafo sem dar alvo a ninguém.
+       Por isso a regra nomeia os dois lugares onde o link é BOTÃO, e não `a{}`. */
+@media(max-width:480px){
+  .indice a, .topo a, .voltar{
+    display:inline-flex;align-items:center;min-height:44px}
+  /* a fita do índice rola em vez de empilhar sete chips de 44px de altura, que empurrariam o
+     guia inteiro para baixo da dobra — a regra 3 do molde, "fita de abas rola". */
+  .indice{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:thin}
+  .indice a{white-space:nowrap}
+}
+
 /* O cabeçalho gruda no topo: num guia longo, quem rolou 4 telas ainda precisa saber onde está e
    ainda precisa do índice a um clique. */
 .topo{
@@ -114,11 +134,22 @@ body{
 }
 .indice a:hover{background:var(--azul-50);border-color:var(--azul-200);color:var(--azul-700)}
 .indice a:focus-visible{outline:none;box-shadow:var(--foco)}
+/* ══ O NÚMERO DO ÍNDICE FURAVA O PISO POR TOKEN, E É O CASO INVISÍVEL ═════════════════════════
+   Ele estava em `--txt-0`, que vale 10px. Quem procura `font-size:10px` no arquivo não acha
+   nada — o furo entra pelo TOKEN, e foi assim que a primeira versão da minha régua deu "Ajuda
+   limpa" com a Ajuda furada.
+   >>> O `--txt-0` É EXCEÇÃO DECLARADA DA CASA, MAS COM CONDIÇÃO, e a condição não se cumpre
+       aqui: o tema publica esse degrau com o ofício escrito ("rótulo de GRUPO, caixa alta e
+       espaçado — nada mais"), e a catraca do A cobra a LETRA ESPAÇADA (≥0,1em) como prova de
+       que é sigla, e não frase pequena. Isto aqui é um NÚMERO dentro de uma bolinha: não tem
+       espaçamento nenhum, e nem faria sentido ter. Então não é a exceção — é o piso furado.
+   >>> A BOLINHA FOI DE 18 PARA 20px junto: 12px em caixa de 18 encosta nas bordas. 20 é degrau
+       da grade, e a bolinha continua bolinha. */
 .indice .n{
   display:inline-flex;align-items:center;justify-content:center;
-  width:18px;height:18px;border-radius:var(--raio-pilula);
+  width:20px;height:20px;border-radius:var(--raio-pilula);
   background:var(--cinza-100);color:var(--cinza-700);
-  font-size:var(--txt-0);font-weight:var(--peso-forte);
+  font-size:var(--txt-1);font-weight:var(--peso-forte);
 }
 
 /* ── SEÇÃO ─────────────────────────────────────────────────────────────────────────────────── */
@@ -173,7 +204,12 @@ body{
 .passos .bolha{
   grid-row:1 / span 2;
   display:inline-flex;align-items:center;justify-content:center;
-  width:22px;height:22px;flex:none;margin-top:2px;
+  /* o `margin-top:2px` saiu: 2px não é degrau da grade, e ele não era ESPAÇO — era um empurrão
+     ótico para a bolinha descer até a altura da primeira linha. Subir para 4 dobraria o
+     empurrão (e "quase alinhado" é pior que desalinhado); então ele volta à posição natural,
+     que é a que o próprio grid dá. Se o olho pedir o empurrão de volta, ele volta como
+     alinhamento, e não como margem — margem é distância entre coisas, não conserto de fonte. */
+  width:22px;height:22px;flex:none;
   border-radius:var(--raio-pilula);
   background:var(--cinza-100);color:var(--cinza-700);
   font-size:var(--txt-1);font-weight:var(--peso-forte);
@@ -181,9 +217,19 @@ body{
 /* O botão citado no texto: é uma AMOSTRA do botão, não um botão. Cursor de texto, e por isso
    `cursor:default` explícito — elemento com cara de clicável e cursor de mão que não faz nada é
    o defeito que esta casa persegue com nome próprio. */
+/* >>> O ÚNICO LUGAR ONDE A REGRA "ZERO NÃO É DEGRAU" DO MEU APLICADOR ENCONTROU CONTRA-EXEMPLO.
+   Ele arredonda 1, 2 e 3 para CIMA, para 4, com a razão escrita: "quem escreveu 2px queria
+   espaço; 0 é AUSÊNCIA de espaço, que é outra decisão, não um arredondamento". A razão continua
+   boa — e aqui ela dá o resultado errado. Este `.bt` é a TECLA desenhada no meio de uma frase
+   ("aperte Conferir"), `inline-block` com borda: subir o respiro vertical de 1 para 4 engorda a
+   caixa em 6px e AFASTA a linha de texto onde ela aparece, sozinha, no meio do parágrafo. O
+   defeito ficaria em outro lugar do que o número consertado.
+   O degrau MAIS PRÓXIMO de 1 é o 0 (anda 1), e não o 4 (anda 3). Aqui vale o mais próximo, e o
+   zero é decisão declarada: a altura da tecla passa a ser a da letra mais a borda, que é o que
+   ela já aparentava. O respiro horizontal (`--esp-2`) não muda. */
 .bt{
   display:inline-block;
-  padding:1px var(--esp-2);
+  padding:0 var(--esp-2);
   border:1px solid var(--borda-controle);
   border-radius:var(--raio-mini);
   background:var(--cinza-100);

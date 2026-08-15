@@ -50,8 +50,25 @@
     "  Cortar para 64 sem medir seria trocar um numero fora da grade por um fora da grade E errado.",
     "  Falta a largura do selo medida na tela pintada — e eu nao logo.",
     "",
-    "fpmed_ajuda.html e fpmed_documentos.html: fatia feita nesta mesma rodada, numeros no",
-    "RELATORIO_B.md. Elas entram quando estes dois impedimentos sairem do caminho."
+    "fpmed_ajuda.html — 1 falha, e e a MAIS INTERESSANTE DAS TRES, porque a tela esta LIMPA:",
+    "  ela zera nas seis contas das duas reguas (piso, espaco, cor, icone, contraste, vazamento).",
+    "  O que a testa_numero_honesto acusa e a linha 495, que e a FRASE DO GUIA QUE ENSINA A REGRA:",
+    "  '\"Sem referencia\" nao e o mesmo que \"R$ 0,00\"'. O literal esta ali entre aspas, na prosa,",
+    "  como o EXEMPLO DO ERRADO — e o guia so consegue ensinar a regra nomeando o que ela proibe.",
+    "  Para ficar verde eu teria de apagar a explicacao. NAO APAGUEI, e essa e a razao:",
+    "  nesta mesma fatia eu achei o MESMO defeito quatro vezes na minha propria regua (numeros 1,",
+    "  10, 12 e 14) — instrumento que se confunde com o registro cobra mais de quem explica mais, e",
+    "  numa casa onde o porque escrito e lei esse defeito nao erra o numero: ele corroi a regra.",
+    "  O conserto e da regua (literal dentro de prosa nao e preco), e a regua e do A.",
+    "",
+    "fpmed_documentos.html — 17 hex, e os 17 estao DENTRO do `:root` dela. Esta tela e uma ILHA DE",
+    "  TEMA declarada: nao carrega o fpmed_tema.css e o testa_tema_tela_propria guarda essa escolha",
+    "  ('nesta tela o tema do cliente NAO ESCREVE NADA'). O `:root` dela tem o mesmo oficio que o",
+    "  fpmed_tema.css tem para o resto do sistema — e a lista aqui em cima ja abre excecao para o",
+    "  tema pelo mesmo motivo ('o UNICO arquivo onde hex e legitimo'). Falta a catraca saber que a",
+    "  fonte de cor de uma ilha declarada tambem e fonte. Na fatia, TODAS as cores que estavam",
+    "  espalhadas pelas regras viraram token (11 hex + 6 rgba), e isso esta medido: a tela saiu de",
+    "  23 hex + 7 rgba para 17 hex, todos na definicao."
   ],
 
   "pendentes": [

@@ -205,7 +205,21 @@ const TOKENS_TEXTO = tokensDeTexto();
 // pelo token do tema que vale menos que o piso. Alcança CSS de <style>, atributo style= e
 // string escrita por JavaScript — a forma é a mesma nos três.
 // `@media print` NÃO é excluído: vai para coluna própria (PARTE 4.4 — não se exclui, separa-se).
-function medeTexto(txt, blocos, docs) {
+/* >>> DEFEITO 14, E É A QUARTA VEZ QUE O COMENTÁRIO MORDE ESTA RÉGUA (1, 10, 12 e agora este) —
+   mas esta é a versão mais afiada de todas, porque ela me pegou no ato. O `semComentario` estava
+   sendo usado só pela conta de COR e de ÍCONE. As contas de PISO e de ESPAÇO liam o arquivo
+   cru — e nunca deu sintoma, porque até hoje nenhum comentário do projeto tinha um
+   `font-size:10px` ou um `margin-top:2px` escrito por extenso dentro dele.
+   Aí eu consertei a Ajuda e escrevi, no comentário do conserto, a frase "quem procura
+   font-size:10px no arquivo não acha nada" e "o margin-top:2px saiu". A régua contou as duas
+   como DEFEITO. Ou seja: ela cobrava de mim exatamente o registro do conserto que ela mesma
+   tinha mandado fazer — e quem a desmentiu foi a régua do A, que já lia sem comentário e dava a
+   Ajuda como limpa.
+   >>> UMA RÉGUA QUE PUNE A EXPLICAÇÃO EMPURRA QUEM A USA PARA APAGAR A EXPLICAÇÃO. Numa casa
+   onde o porquê escrito é lei, esse é o defeito mais caro que um instrumento pode ter: ele não
+   erra o número, ele corrói a regra. */
+function medeTexto(txtCru, blocos, docs) {
+  const txt = semComentario(txtCru);
   const achados = { tela: [], papel: [], docGerado: [] };
   const guarda = (pos, valor, trecho, viaToken) => {
     const alvo = emDocGerado(docs, pos) ? achados.docGerado
@@ -217,17 +231,36 @@ function medeTexto(txt, blocos, docs) {
   while ((m = rePx.exec(txt))) {
     if (Number(m[1]) < PISO_TEXTO) guarda(m.index, Number(m[1]), m[0], false);
   }
+  /* >>> DEFEITO 15: A EXCEÇÃO DECLARADA DA CASA, QUE ESTA RÉGUA NÃO CONHECIA.
+     O `--txt-0` (10px) não é um furo tolerado: o `fpmed_tema.css` o publica com o ofício escrito
+     — "rótulo de GRUPO, caixa alta e espaçado, nada mais" —, e a catraca do A cobra a prova
+     MEDÍVEL disso: letra espaçada de pelo menos 0,1em na MESMA regra. É o que separa a sigla
+     curta legível a 10px da frase pequena ilegível a 10px.
+     Sem esta condição, esta régua reprovava o "HOSPITALAR" do wordmark — e mandava consertar
+     quem já obedece, que é o defeito de família que ela já pagou nos números 5, 7 e 9. E o pior:
+     as duas réguas do projeto discordariam sobre a mesma linha, o que é a "fonte dupla de
+     verdade" que a BASE proíbe. O corte de 0,1em e a condição são copiados da régua do A de
+     propósito — regra é uma só, e onde ela mora em dois lugares os dois têm de dizer igual. */
+  const ESPACAMENTO_ROTULO = 0.1;   // em
   const reVar = /font-size\s*:\s*var\(\s*(--txt-[a-z0-9-]+)/gi;
   while ((m = reVar.exec(txt))) {
     const v = TOKENS_TEXTO[m[1]];
-    if (v !== undefined && v < PISO_TEXTO) guarda(m.index, v, m[0], true);
+    if (v === undefined || v >= PISO_TEXTO) continue;
+    // a regra inteira em volta deste font-size, para ver se a letra é espaçada de verdade
+    const ini = txt.lastIndexOf('{', m.index), fim = txt.indexOf('}', m.index);
+    const regra = ini >= 0 && fim > ini ? txt.slice(ini, fim) : '';
+    const ls = /letter-spacing\s*:\s*([\d.]+)(px|em|rem)/i.exec(regra);
+    const emQue = ls ? (ls[2].toLowerCase() === 'px' ? Number(ls[1]) / v : Number(ls[1])) : 0;
+    if (emQue >= ESPACAMENTO_ROTULO) continue;   // é sigla espaçada: exceção declarada da casa
+    guarda(m.index, v, m[0], true);
   }
   return achados;
 }
 
 // 3.2 ESPAÇO NA GRADE DE 8. Conta só propriedade de ESPAÇO (padding/margin/gap) — largura,
 // altura e posição não são espaço e entrariam de carona inflando o número.
-function medeEspaco(txt, blocos, docs) {
+function medeEspaco(txtCru, blocos, docs) {
+  const txt = semComentario(txtCru);   // defeito 14, o mesmo do medeTexto
   const fora = [];
   const re = /\b(padding|margin|gap|row-gap|column-gap)(-top|-right|-bottom|-left)?\s*:\s*([^;}"']+)/gi;
   let m;

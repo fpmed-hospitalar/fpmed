@@ -103,9 +103,31 @@ function aplica(arquivo, opcoes) {
     });
   }
 
-  // ── PISO DE TEXTO: tudo abaixo de 12px vira o TOKEN --txt-1, não o número 12px.
-  //    "font-size:12px está errado mesmo que dê o mesmo pixel — porque no dia em que o piso
-  //    mudar, um sobe e o outro não" (MOLDE_VISUAL, regra de ouro).
+  /* ── PISO DE TEXTO: tudo abaixo de 12px vira o TOKEN --txt-1, não o número 12px.
+        "font-size:12px está errado mesmo que dê o mesmo pixel — porque no dia em que o piso
+        mudar, um sobe e o outro não" (MOLDE_VISUAL, regra de ouro).
+
+     >>> MAS SÓ SE O TOKEN EXISTIR NESTA TELA. Este é o DEFEITO 2 deste aplicador, achado ao
+     chegar na quarta tela do B: a `fpmed_documentos.html` é uma ILHA DE TEMA — ela não carrega o
+     `fpmed_tema.css` e publica a paleta dela no próprio `:root`. Escrever `var(--txt-1)` ali
+     seria escrever um token que NINGUÉM define: em CSS isso não dá erro, não avisa e não pinta
+     de vermelho — o `font-size` inteiro vira inválido e a letra volta ao padrão do navegador,
+     16px. O aplicador teria "consertado" 6 tamanhos pequenos transformando-os em 6 tamanhos
+     GRANDES, e a régua diria que o piso está limpo, porque não há mais número abaixo de 12.
+     Defeito que o instrumento CRIA e depois não vê é o pior tipo, e este teria passado.
+     Por isso ele agora CONFERE se o token resolve nesta tela (pelo tema carregado ou por um
+     `--txt-1:` declarado no próprio arquivo) e RECUSA se não resolver, em vez de escrever. */
+  if (opcoes.piso) {
+    const temTema = /<link[^>]+fpmed_tema\.css/.test(txt);
+    const temTokenProprio = /--txt-1\s*:/.test(txt);
+    if (!temTema && !temTokenProprio) {
+      const quantos = (txt.match(/font-size\s*:\s*([\d.]+)px/gi) || [])
+        .filter(s => Number(/([\d.]+)/.exec(s)[1]) < 12).length;
+      recusados.push({ linha: 0, prop: 'font-size', valor: quantos,
+        nota: 'ilha de tema sem --txt-1: escrever var(--txt-1) aqui apagaria o tamanho' });
+      opcoes.piso = false;
+    }
+  }
   if (opcoes.piso) {
     txt = txt.replace(/font-size\s*:\s*([\d.]+)px/gi, (todo, num, pos) => {
       if (estaFora(fora, pos)) return todo;
