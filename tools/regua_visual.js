@@ -122,6 +122,131 @@ function blocosDeDocGerado(txt) {
 }
 const emDocGerado = (docs, pos) => docs.some(b => pos >= b.ini && pos < b.fim);
 
+/* ── 1.b · A FRONTEIRA DO PAPEL ─────────────────────────────────────────────────────────────
+   >>> DEFEITO 12 DESTA RÉGUA, medido pelo trabalhador B com número na fatia B19: ela entendia
+       por "papel" só o que está dentro de `@media print`, e cobrou 36 defeitos do documento
+       congelado da Proposta (18 hex + 7 espaços fora da grade + 11 tamanhos abaixo de 12px).
+       Nenhum dos 36 é da tela: os 36 são a folha que sai impressa e vai para o hospital.
+
+   ══ POR QUE `@media print` NÃO É A FRONTEIRA DO PAPEL ═══════════════════════════════════════
+   Porque a folha que o hospital recebe não é a tela reformatada — é um documento PRÓPRIO, que
+   existe escondido no HTML e só aparece na impressão:
+       .print-doc{display:none; …}                 ← o CSS da folha, na folha de estilo normal
+       @media print{ .print-doc{display:block!important} }
+   O `@media print` guarda uma linha só (a que revela); as outras vinte e duas moram FORA dele,
+   porque `display:none` já basta para a tela não ver nada. Ou seja: quanto MAIS bem feito for o
+   documento impresso, MENOS dele cabe dentro do `@media print` — e mais a régua o cobrava.
+
+   ══ E O CUSTO DISSO NÃO ERA UM NÚMERO FEIO NUM RELATÓRIO ════════════════════════════════════
+   O B escreveu que quase rodou o aplicador do molde em cima destes 36. Se tivesse rodado, o
+   aplicador teria trocado `#173A5E` por `var(--azul-700)` e `font-size:9px` por `var(--txt-1)`
+   dentro da folha — num documento que é impresso SEM o `fpmed_tema.css` valendo para nada além
+   da tela, com token que em papel resolve para o padrão do navegador. A régua não estaria
+   errando um número: estaria mandando reescrever o PDF que o hospital assina.
+
+   ══ COMO A RÉGUA RECONHECE O PAPEL — DEDUZIDO, NUNCA DECLARADO À MÃO ════════════════════════
+   Marcador escrito à mão (um comentário dizendo "daqui pra baixo é papel") seria uma porta
+   para esconder defeito de tela aqui
+   dentro — é o mesmo motivo pelo qual o recorte do documento gerado em janela nova é automático
+   (defeito 4 do B). Então a régua PERGUNTA AO PRÓPRIO CSS quem é papel, e a resposta tem forma:
+       é raiz de papel o seletor que está ESCONDIDO na tela (`display:none` fora do print)
+       e REVELADO no papel (`display:` qualquer-outra-coisa dentro de `@media print`).
+   As duas metades juntas, e só juntas. Só escondido é menu fechado, aba inativa, card colapsado;
+   só revelado no print é cabeçalho de impressão que também vive na tela. Escondido na tela E
+   revelado no papel é uma coisa só no sistema inteiro: a folha.
+
+   E a fronteira tem DUAS bordas, porque a folha tem duas metades:
+     (a) o CSS — toda regra cujo seletor DESCENDE de uma raiz do papel;
+     (b) a MARCAÇÃO — a subárvore do elemento que carrega a raiz (`<div class="print-doc">` até
+         o `</div>` que o fecha), que é onde moram os `style=` embutidos da folha.
+   Se a subárvore não fechar, a régua NÃO cria a região e declara o arquivo em `semFecho`. Errar
+   para o lado de medir demais custa um falso defeito; errar para o lado de medir de menos custa
+   a cegueira — e a cegueira já custou 287 linhas nesta mesma régua (defeito 11).
+
+   >>> O QUE ESTA FRONTEIRA NÃO ALCANÇA, e sai DECLARADO em vez de virar exceção silenciosa: o
+       JavaScript que ESCREVE dentro do papel. `const linhas = itens.map(…)` monta as linhas da
+       tabela impressa vinte linhas antes de alguém fazer `getElementById('print-itens')
+       .innerHTML = linhas`, e nenhuma leitura estática liga as duas pontas sem inventar. O que
+       está lá continua contando como tela, com esta linha do lado. */
+const RE_ABRE_TAG_VAZIA = /^(img|br|hr|input|meta|link|source|track|area|base|col|embed|param|wbr|use|path)$/i;
+
+function raizesDePapel(limpo, blocos) {
+  const escondidoNaTela = new Set(), reveladoNoPapel = new Set();
+  for (const g of regrasCss(limpo)) {
+    const sel = g.sel.trim().replace(/\s+/g, ' ');
+    if (!ehSeletorCss(sel)) continue;
+    const d = /(?:^|[;{\s])display\s*:\s*([a-z-]+)/i.exec(g.corpo);
+    if (!d) continue;
+    const noPrint = dentroDe(blocos, g.pos, ehPrint);
+    for (const parte of sel.split(',')) {
+      const p = parte.trim().replace(/\s*!important\s*$/i, '');
+      if (!p) continue;
+      if (noPrint) { if (d[1].toLowerCase() !== 'none') reveladoNoPapel.add(p); }
+      else if (d[1].toLowerCase() === 'none') escondidoNaTela.add(p);
+    }
+  }
+  return [...reveladoNoPapel].filter(s => escondidoNaTela.has(s));
+}
+
+// `.print-doc` alcança `.print-doc .doc-header` e NÃO alcança `.print-docx`: a fronteira do
+// nome é um caractere que só pode vir depois do fim de um seletor.
+const descendeDe = (sel, raiz) =>
+  sel === raiz || (sel.startsWith(raiz) && /[\s.:#[>+~,]/.test(sel[raiz.length]));
+
+// Só é papel a regra em que TODAS as partes da vírgula são papel. Uma regra compartilhada
+// (`.print-doc td, .itens td`) pinta na tela também — e o lado seguro é continuar medindo.
+const regraEhPapel = (sel, raizes) =>
+  sel.split(',').map(s => s.trim()).filter(Boolean)
+     .every(p => raizes.some(r => descendeDe(p, r)));
+
+function subarvoreDe(limpo, pos) {
+  const abre = /^<([a-zA-Z][\w-]*)/.exec(limpo.slice(pos, pos + 40));
+  if (!abre) return null;
+  const tag = abre[1];
+  const fimAbre = limpo.indexOf('>', pos);
+  if (fimAbre < 0) return null;
+  if (RE_ABRE_TAG_VAZIA.test(tag) || limpo[fimAbre - 1] === '/') return { ini: pos, fim: fimAbre + 1 };
+  const re = new RegExp('<(/?)' + tag + '(?=[\\s/>])', 'gi');
+  re.lastIndex = pos;
+  let prof = 0, m;
+  while ((m = re.exec(limpo))) {
+    if (m[1]) { if (--prof === 0) { const f = limpo.indexOf('>', m.index); return { ini: pos, fim: f < 0 ? null : f + 1 }; } }
+    else prof++;
+  }
+  return { ini: pos, fim: null };   // não fechou — quem chama declara, não adivinha
+}
+
+function regioesDePapel(txt, blocos) {
+  const limpo = limpoCss(txt);
+  const raizes = raizesDePapel(limpo, blocos);
+  const regioes = [], semFecho = [];
+  if (!raizes.length) return { raizes, regioes, semFecho };
+  // (a) o CSS da folha
+  for (const g of regrasCss(limpo)) {
+    const sel = g.sel.trim().replace(/\s+/g, ' ');
+    if (!ehSeletorCss(sel) || !regraEhPapel(sel, raizes)) continue;
+    regioes.push({ ini: g.pos, fim: g.pos + g.corpo.length + 2, via: 'css:' + sel });
+  }
+  // (b) a marcação da folha
+  const semCom = semComentario(txt);
+  for (const raiz of raizes) {
+    const m0 = /^[.#]([A-Za-z0-9_-]+)$/.exec(raiz);
+    if (!m0) continue;
+    const nome = m0[1];
+    const re = raiz[0] === '.'
+      ? new RegExp('<[a-zA-Z][\\w-]*\\b[^>]*\\bclass\\s*=\\s*["\'][^"\']*\\b' + nome + '\\b[^"\']*["\'][^>]*>', 'g')
+      : new RegExp('<[a-zA-Z][\\w-]*\\b[^>]*\\bid\\s*=\\s*["\']' + nome + '["\'][^>]*>', 'g');
+    for (const m of semCom.matchAll(re)) {
+      const sub = subarvoreDe(semCom, m.index);
+      if (!sub || sub.fim === null) { semFecho.push({ linha: linhaDe(semCom, m.index), raiz }); continue; }
+      regioes.push({ ini: sub.ini, fim: sub.fim, via: 'marcacao:' + raiz });
+    }
+  }
+  return { raizes, regioes, semFecho };
+}
+const emPapel = (papel, blocos, pos) =>
+  papel.regioes.some(b => pos >= b.ini && pos < b.fim) || dentroDe(blocos, pos, ehPrint);
+
 /* DEFEITO 1 DO B: apagar comentário TEM de preservar as quebras de linha, senão a régua
    aponta o endereço errado e manda consertar o lugar errado.
 
@@ -133,11 +258,28 @@ const emDocGerado = (docs, pos) => docs.some(b => pos >= b.ini && pos < b.fim);
    >>> E O RECORTE É ESTREITO DE PROPÓSITO: só apaga `//` que ABRE a linha (depois de espaço).
        `//` no meio da linha pode ser `https://`, `url(//…)` ou estar dentro de uma string — e
        apagar por engano deixaria a régua CEGA, que é o pior lado do erro: régua cega publica
-       atestado de saúde. Comentário à direita do código continua contando; está declarado. */
+       atestado de saúde. Comentário à direita do código continua contando; está declarado.
+
+   >>> DEFEITO 11 DESTA RÉGUA, e ele é o IRMÃO DO 10: a régua não errou o número, ela PAROU DE
+       OLHAR. O recorte estreito valia para o `//` e não valia para o `/*`, e a Proposta tem
+           <input type="file" accept="image/*,application/pdf" …>
+       O `/*` do curinga de MIME abriu um comentário que só fechou no fecha-bloco seguinte, 287
+       linhas adiante — e com ele foram embora, da vista das OITO catracas, a `div.print-doc`
+       inteira, o `img` do logotipo e toda a marcação da proposta. Na Documentos o mesmo
+       `accept=".pdf,image/*"` cegou 33 linhas. Eram 320 linhas de marcação com atestado de
+       saúde emitido por quem não olhou.
+   >>> O CONSERTO É O MESMO RECORTE DO `//`, e é medido, não suposto: nos 10 arquivos que a
+       régua mede há exatamente TRÊS `/*` colados em caractere que não é espaço, e os três são
+       `image/*`. Nenhum comentário legítimo desta casa abre grudado numa letra — comentário
+       nasce depois de espaço, de quebra de linha ou no começo do arquivo. Então o `/*` só abre
+       comentário quando NADA ou ESPAÇO vem antes dele.
+   >>> E ISTO NÃO É REGRA NOVA, é a mesma de sempre aplicada onde faltava: `//` no meio da linha
+       pode ser `https://`; `/*` no meio da linha pode ser `image/*`. Os dois casos são a mesma
+       frase — "barra no meio de um valor não é comentário". */
 function semComentario(txt) {
   const branco = m => m.replace(/[^\n]/g, ' ');
   return txt.replace(/<!--[\s\S]*?-->/g, branco)
-            .replace(/\/\*[\s\S]*?\*\//g, branco)
+            .replace(/(?<![^\s])\/\*[\s\S]*?\*\//g, branco)
             .replace(/^([ \t]*)\/\/[^\n]*/gm, (m, esp) => esp + ' '.repeat(m.length - esp.length));
 }
 const linhaDe = (txt, pos) => txt.slice(0, pos).split('\n').length;
@@ -205,26 +347,58 @@ function resolveCor(valor, prof) {
 /* ── 3 · AS OITO MEDIDAS ────────────────────────────────────────────────────────────────────*/
 
 // 3.1 COR — hex e rgb() escritos na tela, inclusive vindos de JS (BASE_VISUAL 2.3).
-function medeCor(txt, docs) {
+/* >>> DEFEITO 13 DESTA RÉGUA, medido pelo B: o `:root` de uma ILHA DE TEMA DECLARADA é FONTE DE
+       COR, exatamente como o `fpmed_tema.css` é para o resto do sistema — e a régua contava os
+       17 hex da definição da ilha (a Documentos) como cor chumbada.
+
+   ══ E A ILHA NÃO SE DECLARA POR COMENTÁRIO — ELA SE DECLARA POR CONTRATO ════════════════════
+   O sinal é o `data-tema` no `<html>`, e ele não foi inventado para esta régua: é o MESMO
+   atributo que o `limedtec-config.js` lê para não escrever cor nenhuma naquela tela, e que a
+   `tests/testa_tema_tela_propria.js` guarda dos dois lados (asserts 1-3: com `data-tema`,
+   nenhuma variável entra; assert 16: nenhuma tela clara se declara dona do tema por engano).
+   Ou seja: a régua não passa a acreditar em quem diz "sou ilha" — ela lê a MESMA marca que já
+   faz o sistema inteiro se comportar de outro jeito naquela tela, e que já tem catraca própria.
+
+   ══ E ISTO É EXCEÇÃO ESTREITA, NÃO ANISTIA ══════════════════════════════════════════════════
+   Vale só o que está DENTRO do bloco `:root{…}`. Hex escrito no meio de uma regra da ilha
+   continua reprovando — e é bom que continue: o próprio B mediu que a Documentos tinha 23 hex
+   + 7 rgba espalhados pelas regras e os levou todos para o `:root`. A exceção protege a fonte
+   de cor; ela não protege quem redigita a cor no meio do caminho.
+   >>> E NÃO SOME DA CONTA: vai para coluna própria (BASE_VISUAL 4.4 — não se exclui, separa-se). */
+function raizesDeIlha(txt) {
   const limpo = semComentario(txt);
-  const fora = [], doc = [];
+  if (!/<html\b[^>]*\sdata-tema\s*=\s*["'][^"']+["']/i.test(limpo)) return [];
+  const blocos = [];
+  for (const m of limpo.matchAll(/(?:^|[}\s;])(:root\b[^{]*)\{/g)) {
+    let i = m.index + m[0].length, prof = 1;
+    while (i < limpo.length && prof > 0) { if (limpo[i] === '{') prof++; else if (limpo[i] === '}') prof--; i++; }
+    if (prof === 0) blocos.push({ ini: m.index, fim: i });
+  }
+  return blocos;
+}
+const emIlha = (ilhas, pos) => ilhas.some(b => pos >= b.ini && pos < b.fim);
+
+function medeCor(txt, docs, papel, blocos, ilhas) {
+  const limpo = semComentario(txt);
+  const fora = [], doc = [], folha = [], fonteIlha = [];
+  const guarda = (pos, a) => (emDocGerado(docs, pos) ? doc
+    : emIlha(ilhas, pos) ? fonteIlha
+    : emPapel(papel, blocos, pos) ? folha : fora).push(a);
   for (const m of limpo.matchAll(/#[0-9a-fA-F]{3,8}\b/g)) {
-    const a = { linha: linhaDe(limpo, m.index), valor: m[0], tipo: 'hex' };
-    (emDocGerado(docs, m.index) ? doc : fora).push(a);
+    guarda(m.index, { linha: linhaDe(limpo, m.index), valor: m[0], tipo: 'hex' });
   }
   // DEFEITO 3 DO B: `rgba(var(--azul-500-rgb),.55)` é o token na forma que o próprio tema
   // publica para compor alfa. Contá-lo mandaria consertar o uso CERTO do token.
   for (const m of limpo.matchAll(/\brgba?\s*\(\s*([^)]*)/g)) {
     if (/^var\(/.test(m[1].trim())) continue;
-    const a = { linha: linhaDe(limpo, m.index), valor: 'rgb(' + m[1].trim().slice(0, 28), tipo: 'rgb' };
-    (emDocGerado(docs, m.index) ? doc : fora).push(a);
+    guarda(m.index, { linha: linhaDe(limpo, m.index), valor: 'rgb(' + m[1].trim().slice(0, 28), tipo: 'rgb' });
   }
-  return { tela: fora, docGerado: doc };
+  return { tela: fora, docGerado: doc, papel: folha, fonteIlha };
 }
 
 // 3.2 ESPAÇO — só propriedade de ESPAÇO. Largura/altura/posição não são espaço e entrariam de
 // carona inflando o número (a régua tem de contar o que diz que conta).
-function medeEspaco(txt, blocos, docs) {
+function medeEspaco(txt, blocos, docs, regPapel) {
   const tela = [], papel = [], doc = [];
   const limpo = semComentario(txt);
   for (const m of limpo.matchAll(/\b(padding|margin|gap|row-gap|column-gap)(-top|-right|-bottom|-left)?\s*:\s*([^;}"'\n]+)/gi)) {
@@ -232,20 +406,20 @@ function medeEspaco(txt, blocos, docs) {
       const n = Math.abs(parseFloat(v));
       if (GRADE.includes(n)) continue;
       const a = { linha: linhaDe(limpo, m.index), prop: m[1] + (m[2] || ''), valor: n };
-      (emDocGerado(docs, m.index) ? doc : dentroDe(blocos, m.index, ehPrint) ? papel : tela).push(a);
+      (emDocGerado(docs, m.index) ? doc : emPapel(regPapel, blocos, m.index) ? papel : tela).push(a);
     }
   }
   return { tela, papel, docGerado: doc };
 }
 
 // 3.3 PISO DE TEXTO — pixel cru e token abaixo do piso. DEFEITO 2 DO B.
-function medeTextoPiso(txt, blocos, docs) {
+function medeTextoPiso(txt, blocos, docs, regPapel) {
   const tela = [], papel = [], doc = [], rotuloGrupo = [];
   const limpo = semComentario(txt);
   const guarda = (pos, valor, trecho, viaToken) => {
     const a = { linha: linhaDe(limpo, pos), valor, trecho: trecho.slice(0, 50), viaToken: !!viaToken,
                 seletor: seletorEm(limpo, pos) };
-    (emDocGerado(docs, pos) ? doc : dentroDe(blocos, pos, ehPrint) ? papel : tela).push(a);
+    (emDocGerado(docs, pos) ? doc : emPapel(regPapel, blocos, pos) ? papel : tela).push(a);
   };
   for (const m of limpo.matchAll(/font-size\s*:\s*([\d.]+)px/gi)) {
     if (parseFloat(m[1]) < PISO_TEXTO) guarda(m.index, parseFloat(m[1]), m[0], false);
@@ -272,23 +446,30 @@ function medeTextoPiso(txt, blocos, docs) {
 // corrido ("← Sistema") tem coluna própria: ela é caractere, não desenho de botão.
 const RE_PICTO = /[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{2B00}-\u{2BFF}\u{FE0F}\u{2190}-\u{21FF}\u{2900}-\u{297F}\u{FF01}-\u{FF60}\u{2716}\u{2715}\u{2717}\u{2718}\u{2726}\u{2727}\u{2605}\u{2606}]/gu;
 const RE_SETA = /[\u{2190}-\u{21FF}\u{2900}-\u{297F}]/u;
-function medeIcones(txt, docs) {
+/* >>> E O PAPEL TEM COLUNA PRÓPRIA AQUI TAMBÉM, pelo mesmo motivo do documento gerado em janela
+       nova: o `<img>` do papel é o LOGOTIPO da empresa impresso no cabeçalho da proposta, e o
+       sprite é um `<symbol>` de linha única com `currentColor` — ele é ícone de interface, não
+       marca. Trocar o logotipo do documento que o hospital assina por um pictograma do sprite
+       seria a régua mandando descaracterizar a papelada da empresa. Ele não some: sai contado. */
+function medeIcones(txt, docs, papel, blocos) {
   const limpo = semComentario(txt);
-  const picto = [], seta = [], doc = [];
+  const picto = [], seta = [], doc = [], folha = [];
   RE_PICTO.lastIndex = 0;
   for (const m of limpo.matchAll(RE_PICTO)) {
     const a = { linha: linhaDe(limpo, m.index), valor: m[0],
                 cod: 'U+' + m[0].codePointAt(0).toString(16).toUpperCase().padStart(4, '0') };
     if (RE_SETA.test(m[0])) seta.push(a);
     else if (emDocGerado(docs, m.index)) doc.push(a);
+    else if (emPapel(papel, blocos, m.index)) folha.push(a);
     else picto.push(a);
   }
-  const img = [];
+  const img = [], imgPapel = [];
   for (const m of limpo.matchAll(/<img\b[^>]*>/gi)) {
     if (/rel=|favicon/i.test(m[0])) continue;
-    img.push({ linha: linhaDe(limpo, m.index), valor: m[0].slice(0, 70) });
+    (emPapel(papel, blocos, m.index) ? imgPapel : img)
+      .push({ linha: linhaDe(limpo, m.index), valor: m[0].slice(0, 70) });
   }
-  return { pictograma: picto, seta, docGerado: doc, img };
+  return { pictograma: picto, seta, docGerado: doc, papel: folha, img, imgPapel };
 }
 
 // 3.5 TOQUE — só dentro de @media (max-width:480px). DEFEITOS 7 e 8 DO B.
@@ -469,10 +650,24 @@ function* regrasCss(txt) {
     yield { sel: seletorEm(txt, m.index + 1), corpo: m[0].slice(1, -1), pos: m.index };
 }
 
-function medeTabelaDensa(txt, docs, blocos) {
+/* >>> E O PAPEL SAI INTEIRO DESTA MEDIDA, e a razão não é tolerância — é que as QUATRO regras
+       da tabela densa são regras de TELA, e nenhuma delas quer dizer coisa alguma numa folha
+       impressa. `position:sticky` num cabeçalho de papel não gruda em nada: papel não rola. A
+       zebra "briga com o hover" numa folha que não tem hover. E 40/48px são as densidades da
+       INTERFACE — a tabela impressa aperta a linha de propósito, para caber na página que o
+       hospital arquiva. Cobrar as quatro do documento congelado seria a régua reprovando o
+       papel por não ser tela, que é o mesmo defeito de família do `::before` (defeito 7 do B) e
+       do `svg` dentro do botão (defeito 6 desta régua): cobrar de quem já obedeceu, com o
+       número certo tirado da régua errada. */
+function medeTabelaDensa(txt, docs, blocos, regPapel) {
   const limpo = limpoCss(txt);
-  const temTabela = /<table\b|<thead\b|role\s*=\s*["']table["']/i.test(limpo);
-  if (!temTabela) return { temTabela: false, defeitos: [] };
+  const naFolha = pos => emPapel(regPapel, blocos, pos);
+  // a tabela da folha não conta como "esta tela tem tabela": ela não é da tela.
+  const tabelasVisiveis = [...limpo.matchAll(/<table\b|<thead\b|role\s*=\s*["']table["']/gi)]
+    .filter(m => !naFolha(m.index));
+  const tabelasNoPapel = [...limpo.matchAll(/<table\b/gi)].filter(m => naFolha(m.index)).length;
+  const temTabela = tabelasVisiveis.length > 0;
+  if (!temTabela) return { temTabela: false, tabelasNoPapel, defeitos: [] };
   const defeitos = [];
   /* (a) CABEÇALHO FIXO — POR TABELA, e não "alguma tabela".
      >>> DEFEITO 7 DESTA RÉGUA, e ele foi achado pela MUTAÇÃO, que é exatamente para isso que ela
@@ -484,7 +679,7 @@ function medeTabelaDensa(txt, docs, blocos) {
      `.det-tab2 thead th.num` são a mesma tabela; `.itens th` é outra. */
   const porTabela = new Map();
   for (const g of regrasCss(limpo)) {
-    if (emDocGerado(docs, g.pos)) continue;
+    if (emDocGerado(docs, g.pos) || naFolha(g.pos)) continue;
     if (!ehSeletorCss(g.sel)) continue;
     if (!/:/.test(g.corpo)) continue;                       // corpo sem declaração não é regra
     const selCru = g.sel.trim().replace(/\s+/g, ' ');
@@ -502,17 +697,22 @@ function medeTabelaDensa(txt, docs, blocos) {
       detalhe: 'a tabela `' + chave + '` nao declara position:sticky no cabecalho — rolou trinta '
         + 'linhas, perdeu a legenda de qual coluna e o teto CMED' });
   // (b) número à direita, com dígito tabular
-  const alinhaDireita = /text-align\s*:\s*right/i.test(limpo);
+  const direita = [...limpo.matchAll(/text-align\s*:\s*right/gi)].filter(m => !naFolha(m.index));
   const tabular = /tabular-nums|"tnum"|font-variant-numeric/i.test(limpo);
-  if (alinhaDireita && !tabular) defeitos.push({ regra: 'digito-tabular', linha: linhaDe(limpo, limpo.search(/text-align\s*:\s*right/i)),
+  if (direita.length && !tabular) defeitos.push({ regra: 'digito-tabular', linha: linhaDe(limpo, direita[0].index),
     detalhe: 'há coluna alinhada à direita e nenhum tabular-nums — a coluna de R$ dança a cada linha' });
   // (c) zebra em tabela interativa (hover existe = a tabela é interativa)
   const temHover = /tr[^{}]*:hover|tbody[^{}]*:hover/i.test(limpo);
   for (const m of limpo.matchAll(/([^{}]*\bnth-child\s*\(\s*(?:even|odd|2n[^)]*)\)[^{}]*)\{([^{}]*)\}/gi)) {
-    if (emDocGerado(docs, m.index)) continue;
+    /* O `m.index` desta expressão aponta o começo do SELETOR, que é o caractere logo depois do
+       `}` da regra anterior — e não o corpo da regra. Perguntar "isto é papel?" naquele ponto
+       responde pela regra de CIMA, não por esta: a zebra do `.print-doc` ficava reprovando com o
+       endereço da linha anterior. A pergunta se faz onde a regra realmente começa, no `{`. */
+    const posRegra = m.index + m[1].length;
+    if (emDocGerado(docs, posRegra) || naFolha(posRegra)) continue;
     if (!/background/i.test(m[2])) continue;
     if (!temHover) continue;
-    defeitos.push({ regra: 'zebra', linha: linhaDe(limpo, m.index),
+    defeitos.push({ regra: 'zebra', linha: linhaDe(limpo, posRegra),
       detalhe: 'zebra com fundo numa tabela que tem hover — a listra briga com o hover e com a seleção' });
   }
   /* (d) AS DUAS DENSIDADES, E SÓ ELAS — medidas FORA do bloco de celular.
@@ -521,7 +721,7 @@ function medeTabelaDensa(txt, docs, blocos) {
      mesma armadilha do `::before` da caixinha, um andar acima. */
   const alturas = new Set();
   for (const g of regrasCss(limpo)) {
-    if (emDocGerado(docs, g.pos)) continue;
+    if (emDocGerado(docs, g.pos) || naFolha(g.pos)) continue;
     if (dentroDe(blocos || [], g.pos, ehCelular)) continue;
     const sel = g.sel.trim().replace(/\s+/g, ' ');
     if (!ehSeletorCss(sel) || !/\b(tr|td|th)\b|\.linha\b|\.lin\b/.test(sel)) continue;
@@ -530,7 +730,7 @@ function medeTabelaDensa(txt, docs, blocos) {
   }
   for (const h of alturas) if (!ALTURAS_LINHA.includes(h))
     defeitos.push({ regra: 'densidade', linha: 0, detalhe: 'altura de linha ' + h + 'px — as densidades da casa são 40 (compacta) e 48 (confortável)' });
-  return { temTabela: true, tabelas: [...porTabela.keys()],
+  return { temTabela: true, tabelasNoPapel, tabelas: [...porTabela.keys()],
            semCabecalhoFixo: [...porTabela].filter(([, t]) => !t.sticky).map(([k]) => k),
            tabular, alturas: [...alturas], defeitos };
 }
@@ -545,9 +745,40 @@ function medeTabelaDensa(txt, docs, blocos) {
        frase de ausência escrita ("não informado", "sem referência", "sigiloso"). Catraca que só
        proíbe ensina a esconder; esta exige que a alternativa honesta exista no arquivo. */
 const FRASES_HONESTAS = /não informado|nao informado|sem referência|sem referencia|sigiloso|não publicad|nao publicad|não sei|nao sei|ainda não|ainda nao/i;
+
+/* >>> DEFEITO 14 DESTA RÉGUA, e ele é o MESMO da família do defeito 5 (o comentário do calibre
+       French contado como preço) — só que um andar acima, e mais caro. A catraca reprovava a
+       `fpmed_ajuda.html`, que é a tela do GUIA, por causa da linha que ENSINA ESTA REGRA:
+           «"Sem referência" não é o mesmo que "R$ 0,00".»
+       A tela zera nas seis outras contas. A única coisa que ela fazia de "errado" era nomear o
+       que a regra proíbe — e um guia não tem outro jeito de ensinar. Para ficar verde, o B teria
+       de apagar a explicação.
+
+   ══ E ESTE É O DEFEITO MAIS CARO QUE UMA RÉGUA PODE TER NESTA CASA ══════════════════════════
+   Régua que pune a explicação empurra todo mundo a apagar a explicação. Numa casa onde o porquê
+   escrito é lei — e onde os arquivos são metade comentário de propósito — isso não erra um
+   número: corrói a lei. O B achou o mesmo defeito QUATRO vezes na régua dele (1, 10, 12 e 14),
+   e o arquiteto escreveu a frase inteira na caixa desta fatia. É defeito de família, e a
+   família tem nome: **instrumento que confunde o REGISTRO com o REGISTRADO**.
+
+   ══ A FRONTEIRA, E POR QUE ELA É A ASPA TIPOGRÁFICA ═════════════════════════════════════════
+   `“R$ 0,00”` entre aspas CURVAS é MENÇÃO: alguém está falando SOBRE a string.
+   `'R$ 0,00'` entre aspas RETAS é USO: é uma string de JavaScript, e ela vai pintar na tela.
+   A separação não é gosto de tipografia — é que a aspa curva é pontuação de PROSA e a aspa reta
+   é sintaxe de CÓDIGO. Nenhuma linguagem desta casa aceita `“` para abrir string; nenhum texto
+   corrido revisado desta casa usa `"` para citar. Então a régua isenta a citação e continua
+   cobrando, sem afrouxar um milímetro, o caso que ela nasceu para pegar:
+       <span id="val-subtotal">R$ 0,00</span>        ← continua reprovando
+       const vazio = 'R$ 0,00';                       ← continua reprovando
+       «"Sem referência" não é o mesmo que “R$ 0,00”» ← citação, não some da conta: coluna própria
+   >>> A PROVA DE QUE NÃO AFROUXOU está na mutação: trocar as aspas curvas por retas na mesma
+       linha do guia devolve a reprovação. */
+const ASPA_ABRE = '“‘«';   // “ ‘ «  — pontuação de prosa, nunca sintaxe
+const ASPA_FECHA = '”’»';  // ” ’ »
+
 function medeNumeroHonesto(txt, docs) {
   const limpo = semComentario(txt);
-  const mentiras = [];
+  const mentiras = [], citacoes = [];
   /* >>> DEFEITO 5 DESTA RÉGUA: a primeira versão aceitava `[.,]00?`, e por isso lia "R$ 0,0865"
          e "R$ 0,03" como se fossem "R$ 0". Zero seguido de centavo é um PREÇO — e um preço de
          oito décimos de centavo é justamente o que a unitarização produz. A régua estava
@@ -555,6 +786,13 @@ function medeNumeroHonesto(txt, docs) {
          o que vier depois de dígito, vírgula ou ponto derruba o casamento. */
   for (const m of limpo.matchAll(/R\$\s*0(?:[.,]00)?(?![\d.,])/g)) {
     if (emDocGerado(docs, m.index)) continue;
+    // a citação é o literal COLADO nas duas aspas curvas — “R$ 0,00”. Aspa de um lado só, ou
+    // aspa com texto no meio, não é citação do literal: é prosa que por acaso tem aspas por perto.
+    const antes = limpo[m.index - 1], depois = limpo[m.index + m[0].length];
+    if (antes && depois && ASPA_ABRE.includes(antes) && ASPA_FECHA.includes(depois)) {
+      citacoes.push({ linha: linhaDe(limpo, m.index), trecho: antes + m[0] + depois });
+      continue;
+    }
     mentiras.push({ linha: linhaDe(limpo, m.index), forma: 'literal', trecho: m[0] });
   }
   for (const m of limpo.matchAll(/\b(brl|moeda|celValor|formataValor|fmtValor)\s*\(([^()]{0,120}?)(\|\||\?\?)\s*0\b/gi)) {
@@ -565,7 +803,7 @@ function medeNumeroHonesto(txt, docs) {
   }
   const exibeDinheiro = /R\$|\bbrl\s*\(|toLocaleString\([^)]*BRL/i.test(limpo);
   const temFraseHonesta = FRASES_HONESTAS.test(limpo);
-  return { mentiras, exibeDinheiro, temFraseHonesta };
+  return { mentiras, citacoes, exibeDinheiro, temFraseHonesta };
 }
 
 /* ── 4 · OS 4 ESTADOS OBRIGATÓRIOS (BASE_ENGENHARIA §4) ─────────────────────────────────────
@@ -589,19 +827,23 @@ function mede(arquivo) {
   const txt = leia(arquivo);
   const blocos = blocosDeMedia(txt);
   const docs = blocosDeDocGerado(txt);
+  const papel = regioesDePapel(txt, blocos);
+  const ilhas = raizesDeIlha(txt);
   return {
     arquivo,
     linhas: txt.split('\n').length,
     docsGerados: docs.length,
     carregaTema: /fpmed_tema\.css/.test(txt),
     carregaSprite: /fpmed_icones\.js/.test(txt),
-    cor: medeCor(txt, docs),
-    espaco: medeEspaco(txt, blocos, docs),
-    texto: medeTextoPiso(txt, blocos, docs),
-    icones: medeIcones(txt, docs),
+    papel,
+    ilhaDeTema: ilhas.length > 0,
+    cor: medeCor(txt, docs, papel, blocos, ilhas),
+    espaco: medeEspaco(txt, blocos, docs, papel),
+    texto: medeTextoPiso(txt, blocos, docs, papel),
+    icones: medeIcones(txt, docs, papel, blocos),
     toque: medeToque(txt, blocos),
     contraste: medeContraste(txt, blocos, docs),
-    tabela: medeTabelaDensa(txt, docs, blocos),
+    tabela: medeTabelaDensa(txt, docs, blocos, papel),
     numero: medeNumeroHonesto(txt, docs),
     estados: medeEstados(txt, docs),
   };
@@ -636,11 +878,18 @@ if (require.main === module) {
       if (r.erro) { console.log('══ ' + r.arquivo + '  ERRO: ' + r.erro); continue; }
       console.log('══ ' + r.arquivo + '  (' + r.linhas + ' linhas · tema:' + (r.carregaTema ? 'sim' : 'NAO')
         + ' · sprite:' + (r.carregaSprite ? 'sim' : 'NAO') + ')');
-      console.log('   cor chumbada .... ' + r.cor.tela.length + '   [doc gerado: ' + r.cor.docGerado.length + ']');
+      if (r.papel.raizes.length) console.log('   papel ........... raiz(es): ' + r.papel.raizes.join(' · ')
+        + ' · ' + r.papel.regioes.length + ' região(ões)'
+        + (r.papel.semFecho.length ? '  ⚠ ' + r.papel.semFecho.length + ' marcação(ões) SEM FECHO (não viraram papel)' : ''));
+      if (r.ilhaDeTema) console.log('   ilha de tema .... declarada em <html data-tema> — o :root dela é fonte de cor');
+      console.log('   cor chumbada .... ' + r.cor.tela.length + '   [doc gerado: ' + r.cor.docGerado.length
+        + ' · papel: ' + r.cor.papel.length + ' · fonte da ilha: ' + r.cor.fonteIlha.length + ']');
       console.log('   fora da grade ... ' + r.espaco.tela.length + '   [papel: ' + r.espaco.papel.length + ']');
       console.log('   abaixo do piso .. ' + r.texto.tela.length + '   (por token: '
-        + r.texto.tela.filter(x => x.viaToken).length + ' · rótulo de grupo legítimo: ' + r.texto.rotuloGrupo.length + ')');
-      console.log('   ícone fora ...... ' + r.icones.pictograma.length + ' pictogramas + ' + r.icones.img.length + ' <img>');
+        + r.texto.tela.filter(x => x.viaToken).length + ' · rótulo de grupo legítimo: ' + r.texto.rotuloGrupo.length
+        + ' · papel: ' + r.texto.papel.length + ')');
+      console.log('   ícone fora ...... ' + r.icones.pictograma.length + ' pictogramas + ' + r.icones.img.length + ' <img>'
+        + '   [papel: ' + r.icones.papel.length + ' pictogramas + ' + r.icones.imgPapel.length + ' <img>]');
       console.log('   toque ........... bloco de celular: ' + (r.toque.temBloco ? r.toque.blocos : 'NENHUM')
         + ' · curtos: ' + r.toque.curtos.length + ' · promessa vazia: ' + r.toque.promessaVazia.length);
       console.log('   contraste ....... ' + r.contraste.reprovados.length + ' reprovados de '
@@ -648,8 +897,10 @@ if (require.main === module) {
         + '   [não-texto (3:1): ' + r.contraste.naoTexto.length
         + ' · desligado (isento): ' + r.contraste.desligados.length
         + ' · não medidos: ' + r.contraste.naoMedidos.length + ']');
-      console.log('   tabela densa .... ' + (r.tabela.temTabela ? r.tabela.defeitos.length + ' defeitos' : 'sem tabela'));
+      console.log('   tabela densa .... ' + (r.tabela.temTabela ? r.tabela.defeitos.length + ' defeitos' : 'sem tabela na tela')
+        + (r.tabela.tabelasNoPapel ? '   [' + r.tabela.tabelasNoPapel + ' tabela(s) no papel — as 4 regras são de tela]' : ''));
       console.log('   número honesto .. ' + r.numero.mentiras.length + ' mentiras'
+        + (r.numero.citacoes.length ? ' · ' + r.numero.citacoes.length + ' citação(ões) em prosa (menção, não uso)' : '')
         + (r.numero.exibeDinheiro ? ' · frase de ausência: ' + (r.numero.temFraseHonesta ? 'sim' : 'NAO') : ''));
       console.log('   4 estados ....... ' + (r.estados.buscaDado
         ? 'vazio:' + (r.estados.vazio ? 'sim' : 'NAO')
