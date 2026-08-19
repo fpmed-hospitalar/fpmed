@@ -1227,6 +1227,44 @@ textarea.anot:focus{border-color:var(--azul)}
 .pk-tab tbody tr:hover{background:var(--painel2)}
 .pk-tab tfoot td{border-top:2px solid var(--cinza-300);border-bottom:0;padding-top:8px;color:var(--cinza-800)}
 .pk-dif{font-size:var(--txt-1);color:var(--ambar-700);margin-top:4px}
+/* ══ A ATA: O QUE ELE GANHOU, COM OS PREÇOS (15/08, fatia B23 — pedido direto do dono) ════════
+   Palavras dele, em 14/08: *"esse que já tá em ata tem que aparecer os itens que ganhei com os
+   preços, tá muito superficial"*. A BASE_FUNCOES_PROFISSIONAIS (1.5) diz por que isso dói: o
+   produto acompanha até a vitória e **abandona o cliente exatamente onde o dinheiro entra**.
+   >>> `tabular-nums` NÃO É ENFEITE E É A REGRA DA CASA (BASE_VISUAL 2.1): com fonte proporcional
+       `R$ 1.111,11` desenha mais ESTREITO que `R$ 999,99`, e o olho — que compara pela borda —
+       erra a ordem de grandeza numa coluna que vira faturamento.
+   >>> A CLASSE É UMA SÓ E SERVE À COLUNA E AO TOTAL: se o total tivesse fonte de largura livre e
+       a coluna não, o número em destaque seria justamente o que não alinha com a soma dele. */
+.at-num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.at-total{display:flex;align-items:baseline;justify-content:space-between;gap:12px;
+  border-top:2px solid var(--cinza-300);margin-top:8px;padding-top:8px}
+.at-total .rot{font-size:var(--txt-1);color:var(--muted);text-transform:uppercase;letter-spacing:.6px}
+.at-total .v{font-family:Montserrat;font-weight:800;font-size:19px;color:var(--verde-700);
+  text-align:right;font-variant-numeric:tabular-nums}
+/* O MOTIVO ESCRITO ANDA COLADO NO TRAVESSÃO. Travessão sozinho diz "não tem"; travessão com
+   motivo diz "não tem PORQUE", e só o segundo deixa alguém resolver. */
+.at-falta{display:block;font-size:var(--txt-1);color:var(--ambar-700);font-weight:var(--peso-semi);
+  white-space:normal;font-variant-numeric:normal}
+/* ══ AS COLUNAS DE DINHEIRO NÃO PODEM SER AS QUE SAEM DA TELA ════════════════════════════════
+   Medido na tela pintada: a ficha tem 560px e o quadro 504px; com largura automática a tabela
+   fechou em **621,1px** — ou seja, UNIT. HOMOLOGADO e TOTAL ficavam FORA, atrás de uma rolagem
+   lateral. A pergunta que o dono fez ("os itens que ganhei COM OS PREÇOS") ficava a um arrasto
+   de distância, e ninguém arrasta o que não sabe que existe.
+   >>> `table-layout:fixed` + largura em cada coluna: quem cede espaço é a DESCRIÇÃO, que quebra
+       em linha, e não o número, que não quebra. As larguras são degraus da grade de 8. */
+.at-tab{table-layout:fixed}
+.at-tab th:nth-child(1),.at-tab td:nth-child(1){width:32px}
+.at-tab th:nth-child(3),.at-tab td:nth-child(3){width:80px}
+.at-tab th:nth-child(4),.at-tab td:nth-child(4){width:56px}
+.at-tab th:nth-child(5),.at-tab td:nth-child(5){width:40px}
+.at-tab th:nth-child(6),.at-tab td:nth-child(6){width:96px}
+.at-tab th:nth-child(7),.at-tab td:nth-child(7){width:88px}
+.at-tab td,.at-tab th{padding:8px 4px;overflow-wrap:anywhere}
+/* O RÓTULO DA COLUNA QUEBRA EM DUAS LINHAS EM VEZ DE SER CORTADO: com `nowrap` herdado do
+   `.at-num`, "UNIT. HOMOLOGADO" saía como "UNIT. HOMOLC" — e cabeçalho cortado numa tabela de
+   dinheiro é a coluna perdendo o nome justamente onde o nome é o que evita ler a coluna errada. */
+.at-tab th{white-space:normal;position:sticky;top:0}
 /* ── PROPOSTA ANEXADA ── */
 .prop-novo{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:12px 0 4px}
 .prop-novo input[type=file]{background:var(--painel2);color:var(--texto);border:1px solid var(--linha);
@@ -3425,6 +3463,11 @@ async function carregarItensEdital(id){
   }catch(e){ ITENS_ERRO = e.message; }
   if(ABERTO !== id) return;
   pintaItensEdital(id);
+  /* E O QUADRO DA ATA TAMBÉM (15/08, fatia B23), pelo mesmo motivo que a `carregarItensGanhos` já
+     repinta a aba Itens: as duas leituras correm juntas e a ordem de chegada não é garantida.
+     Sem esta linha, quem chegasse primeiro decidiria se a Ata mostra os itens do PNCP — e o
+     sintoma seria o pior de todos: a tela certa metade das vezes, sem ninguém saber reproduzir. */
+  pintaItensGanhos(id);
   // Quem clicou na aba ANTES de a lista chegar não pode ficar com a coluna do teto vazia pra
   // sempre: naquele momento não havia item nenhum pra conferir, e o gatilho da aba não vai
   // disparar de novo. Se a aba já está aberta agora, a conferência sai daqui.
@@ -3666,7 +3709,11 @@ function ganhosDoNegocio(n){
     const k = String(g.item_n == null ? '' : g.item_n);
     porItem[k] = { item: k, descricao: g.descricao, marca: g.marca, marca_origem: g.marca_origem,
       quantidade: g.quantidade, unitario: g.valor_unitario, total: g.total,
-      nosso: true, pncp: null };
+      // A UNIDADE NÃO É DA NOSSA CONFIRMAÇÃO — a `v_negocio_itens_ganhos` não tem a coluna
+      // (conferido no banco). Ela é do ITEM DO EDITAL, e o passo 2 a traz quando encontra o par.
+      // Sem par, ela fica `null` e a tela escreve travessão: unidade chutada num documento que
+      // vira faturamento é o tipo de "quase certo" que ninguém confere depois.
+      unidade: null, nosso: true, pncp: null };
   });
 
   // 2. O QUE O PNCP PUBLICOU, e só as linhas em que o vencedor somos NÓS. Sem CNPJ da empresa
@@ -3680,8 +3727,8 @@ function ganhosDoNegocio(n){
     const linhaPncp = { vencedor: it.resultado_vencedor, cnpj: it.resultado_cnpj,
       unitario: unit, quantidade: qtd, situacao: it.resultado_situacao,
       total: (unit != null && qtd != null) ? unit * Number(qtd) : null, meu: !!doPncp };
-    if(porItem[k]) porItem[k].pncp = linhaPncp;
-    else if(doPncp) porItem[k] = { item: k, descricao: it.descricao, marca: null,
+    if(porItem[k]){ porItem[k].pncp = linhaPncp; if(porItem[k].unidade == null) porItem[k].unidade = it.unidade || null; }
+    else if(doPncp) porItem[k] = { item: k, descricao: it.descricao, marca: null, unidade: it.unidade || null,
       quantidade: qtd, unitario: unit, total: linhaPncp.total, nosso: false, pncp: linhaPncp };
   });
 
@@ -6284,16 +6331,27 @@ function pintaBotoesAta(id, porCat){
        quadro diz o que ele é: resultado importado do histórico, sem detalhe por item.
    >>> E QUANDO OS DOIS NÚMEROS DIVERGEM, A TELA MOSTRA A DIFERENÇA. Escondê-la seria escolher em
        qual dos dois acreditar — e essa escolha é de quem confere, não da tela. */
-let ITENS_GANHOS = [];
+let ITENS_GANHOS = [], GANHOS_ERRO = null;
 async function carregarItensGanhos(id){
   const box = document.getElementById('ata-resultado'); if(!box) return;
-  const n = NEG.find(x => x.id === id) || {};
-  const ganhou = Number(n.valor_ganho) > 0;
-  if(!ganhou){ box.innerHTML = ''; ITENS_GANHOS = []; return; }
+  ITENS_GANHOS = []; GANHOS_ERRO = null;
+  /* ══ O `if(!ganhou) return` MORREU AQUI (15/08, fatia B23) ═══════════════════════════════════
+     Ele saía calado quando `valor_ganho` era nulo ou zero, e **apagava o quadro inteiro**. Medido
+     no banco desta casa, com o negócio 2567 (MUNICIPIO DE PEDRA BONITA, PE 34/2026): ele está na
+     fase Ata, tem `licitacao_id` 6719, e essa licitação tem **195 itens, 192 deles com preço
+     homologado publicado pelo PNCP** — e o `valor_ganho` dele é nulo. Ou seja: a aba Ata desse
+     negócio mostrava **NADA**, com o resultado inteiro do certame já dentro do nosso banco.
+     >>> É o retrato do que a BASE_FUNCOES_PROFISSIONAIS (1.5) diz: o produto acompanha até a
+         vitória e abandona o cliente exatamente onde o dinheiro entra. `valor_ganho` é um campo
+         que ALGUÉM DIGITA; usá-lo como porteiro do que a tela mostra é deixar a ausência de
+         digitação apagar dado publicado.
+     Agora quem decide o que aparece é o DADO, e cada estado tem a sua frase. */
+  box.innerHTML = '<h4>Itens ganhos nesta ata</h4><div class="salvo">carregando os itens…</div>';
   try{
     const r = await fetch(`${SB_URL}/rest/v1/v_negocio_itens_ganhos?negocio_id=eq.${id}`
       + '&select=*&order=item_n.asc', {headers:SB_H});
-    ITENS_GANHOS = r.ok ? await r.json() : [];
+    if(!r.ok) throw new Error('o banco respondeu ' + r.status);
+    ITENS_GANHOS = await r.json();
     pintaItensGanhos(id);
     /* A ABA ITENS TAMBÉM MOSTRA O QUE FOI GANHO (14/08, fatia B5), e ela é pintada por outra
        chamada assíncrona. As duas correm juntas e a ordem de chegada não é garantida: sem esta
@@ -6302,9 +6360,60 @@ async function carregarItensGanhos(id){
   }catch(e){
     // "não sei" e "não tem" outra vez: um erro de leitura mostrando "sem detalhe por item"
     // faria alguém concluir que o resultado nunca foi confirmado — e confirmar de novo.
-    box.innerHTML = '<h4>Resultado</h4><div class="salvo">não consegui ler os itens ('+esc(e.message)+') — '
-      + 'isto <b>não</b> quer dizer que não existam.</div>';
+    GANHOS_ERRO = e.message;
+    box.innerHTML = '<h4>Itens ganhos nesta ata</h4>'
+      + '<div class="pk-conta" style="border-color:var(--vermelho-300)">'
+      +   '<b style="color:var(--vermelho-700)"><svg class="ic" aria-hidden="true"><use href="#ic-alerta"/></svg> '
+      +   'Não consegui ler os itens ganhos</b>'
+      +   '<div class="salvo" style="margin-top:4px">' + esc(e.message) + ' — isto <b>não</b> quer '
+      +   'dizer que não existam. Feche e abra a ficha para tentar de novo; se persistir, é leitura '
+      +   'do banco, não o resultado.</div></div>';
   }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════════
+   O QUE FALTA E DE ONDE VIRIA — a frase do estado vazio, montada com o que existe no banco.
+
+   A caixa da B23 é literal: *"Se o dado do resultado não existir para aquele item, a linha diz o
+   que falta e de onde viria. Nunca invente e nunca esconda."* Isto aqui é essa frase, e ela muda
+   conforme o caso — porque "o PNCP ainda não publicou" e "o PNCP publicou e nenhum item é seu"
+   são coisas MUITO diferentes, e a tela que disser a mesma frase para as duas está mentindo por
+   omissão para uma delas.
+
+   As quatro respostas, na ordem em que a pergunta some:
+     1. nem sabemos qual certame é   -> falta a amarração; ela vem do número de controle do PNCP;
+     2. sabemos, mas não há item     -> falta a lista de itens do edital;
+     3. há item, o PNCP não publicou -> falta o resultado; ele chega sozinho quando sair;
+     4. o PNCP publicou e nenhum é seu -> **este é o caso que ninguém escreve**, e é o mais caro:
+        ou o certame foi de outra empresa, ou a vitória saiu sob outro CNPJ. A tela diz os dois
+        números (quantos itens publicados, quantos seus) e o CNPJ que ela usou para comparar.
+   ══════════════════════════════════════════════════════════════════════════════════════════════ */
+function faltaDoResultado(n){
+  const emp = EMPRESAS.find(e => e.id === (n && n.empresa_id)) || {};
+  const meuCnpj = _soNum(emp.cnpj);
+  if(!n.numero_controle && !n.licitacao_id)
+    return 'Esta ficha ainda não está amarrada a um certame do PNCP. A amarração é o <b>número '
+         + 'de controle</b>, na aba Informações — é ele que traz a lista de itens e o resultado.';
+  if(ITENS_ERRO)
+    return 'Não consegui ler os itens do certame (' + esc(ITENS_ERRO) + '). Isto <b>não</b> quer '
+         + 'dizer que não existam.';
+  if(!ITENS_EDITAL.length)
+    return 'O certame está amarrado, mas os <b>itens do edital ainda não foram coletados</b>. '
+         + 'Eles vêm da coleta do PNCP e aparecem aqui sozinhos quando chegarem.';
+  const publicados = ITENS_EDITAL.filter(it => it.resultado_valor_unit != null).length;
+  if(!publicados)
+    return 'Os <b>' + ITENS_EDITAL.length + '</b> itens do edital estão aqui, mas o <b>PNCP ainda '
+         + 'não publicou o resultado</b> de nenhum deles. Resultado não publicado é '
+         + '<b>“ainda não sei”</b>, e não “não ganhei”. Quando sair, aparece sozinho.';
+  if(!meuCnpj)
+    return 'O PNCP publicou o resultado de <b>' + publicados + '</b> dos ' + ITENS_EDITAL.length
+         + ' itens, mas <b>esta ficha não tem empresa com CNPJ</b> — sem CNPJ não dá para afirmar '
+         + 'quais itens são seus, e a tela não chuta. Escolha a empresa na aba Informações.';
+  return 'O PNCP publicou o resultado de <b>' + publicados + '</b> dos ' + ITENS_EDITAL.length
+       + ' itens deste certame, e <b>nenhum deles está sob o CNPJ ' + esc(emp.cnpj || meuCnpj)
+       + '</b>. Ou a vitória saiu sob outro CNPJ, ou os itens foram de outra empresa. Se você '
+       + 'ganhou, <b>anexe a ata e confirme os itens</b> — a confirmação de gente manda sobre a '
+       + 'publicação.';
 }
 
 function pintaItensGanhos(id){
@@ -6312,50 +6421,101 @@ function pintaItensGanhos(id){
   const n = NEG.find(x => x.id === id) || {};
   const cnt = document.getElementById('dw-ata-n');
   const num = v => { const x = Number(v); return isFinite(x) && v != null ? x : null; };
+  const TIT = '<h4>Itens ganhos nesta ata</h4>';
 
-  if(!ITENS_GANHOS.length){
-    box.innerHTML = '<h4>Resultado</h4>'
-      + '<div class="pk-conta" style="border-color:var(--verde-300)">'
-      +   '<b style="color:var(--verde)">Ganho · ' + brl(n.valor_ganho) + '</b>'
-      +   '<div class="salvo" style="margin-top:4px">Resultado <b>importado do histórico</b> — '
-      +   'sem detalhe por item. Os negócios do Calendário guardam o valor total, e não a relação '
-      +   'de itens; para ter o detalhe, anexe o documento de resultado e use o relatório abaixo.</div>'
+  /* A FONTE É A MESMA DA ABA ITENS, e isso é a decisão de projeto desta fatia. O quadro lia só a
+     `v_negocio_itens_ganhos` (o que NÓS confirmamos) e ignorava o resultado publicado pelo PNCP,
+     que o `ganhosDoNegocio` já juntava desde a B5 para a outra aba. Duas telas com fontes
+     diferentes para a MESMA pergunta é o par que um dia diverge — e aqui ele já divergia: a aba
+     Itens mostrava o resultado do PNCP e a aba Ata mostrava nada. */
+  const linhas = ganhosDoNegocio(n);
+  if(cnt) cnt.textContent = linhas.length ? linhas.length : '';
+
+  if(!linhas.length){
+    const temValor = Number(n.valor_ganho) > 0;
+    box.innerHTML = TIT
+      + '<div class="pk-conta" style="border-color:var(--ambar-300)">'
+      +   (temValor
+          ? '<b>Ganho registrado · <span class="at-num">' + brl(n.valor_ganho) + '</span></b>'
+            + '<div class="salvo" style="margin-top:4px">Resultado <b>importado do histórico</b> — '
+            + 'o <b>valor total</b> está na ficha, mas a <b>relação de itens não</b>. É o caso dos '
+            + 'negócios do Calendário 2025, que guardam só o total.</div>'
+          : '<b>Ainda não há itens ganhos para mostrar</b>')
+      +   '<div class="salvo" style="margin-top:8px">' + faltaDoResultado(n) + '</div>'
       + '</div>';
     return;
   }
-  const soma = ITENS_GANHOS.reduce((s,x) => s + (num(x.total) || 0), 0);
-  const dif = Number(n.valor_ganho||0) - soma;
-  const semMarca = ITENS_GANHOS.filter(x => !x.marca).length;
-  const quando = ITENS_GANHOS[0] ? new Date(ITENS_GANHOS[0].confirmado_em) : null;
-  if(cnt) cnt.textContent = ITENS_GANHOS.length;
 
-  box.innerHTML = '<h4>Resultado</h4>'
+  const soma = linhas.reduce((s,x) => s + (num(x.total) || 0), 0);
+  const dif = Number(n.valor_ganho||0) - soma;
+  const semPreco = linhas.filter(x => num(x.unitario) == null).length;
+  const semMarca = linhas.filter(x => !x.marca).length;
+  const semUnid  = linhas.filter(x => !x.unidade).length;
+  const conf = ITENS_GANHOS[0] || null;
+  const quando = conf && conf.confirmado_em ? new Date(conf.confirmado_em) : null;
+
+  /* ══ O TRAVESSÃO COM MOTIVO — a regra mais dura desta fatia ═══════════════════════════════════
+     A caixa: *"item sem preço homologado sai com travessão e motivo escrito — nunca R$ 0,00"*. É
+     a mesma lição do `fmtBRL` da Proposta, aplicada onde ela vale contrato: R$ 0,00 numa linha de
+     ata não é célula em branco, é a AFIRMAÇÃO de que o órgão vai pagar zero por aquele item.
+     >>> E o motivo é DIFERENTE por origem: se a linha é nossa e o PNCP não publicou, falta a
+         publicação; se veio do PNCP sem valor, o que falta é o valor na própria publicação. */
+  const semPrecoTxt = x => x.nosso
+    ? '<span class="at-falta">sem preço homologado — a confirmação não trouxe o valor deste item</span>'
+    : '<span class="at-falta">sem preço homologado — o PNCP publicou o item sem o valor unitário</span>';
+
+  const linha = x => {
+    const unit = num(x.unitario), tot = num(x.total), qtd = num(x.quantidade);
+    return `<tr style="cursor:default">
+      <td>${esc(x.item || '—')}</td>
+      <td>${esc(String(x.descricao || '(sem descrição)').slice(0,64))}
+        ${x.nosso ? '' : '<span class="salvo">publicado pelo PNCP</span>'}</td>
+      <td>${x.marca ? esc(x.marca) + (x.marca_origem === 'estoque' ? ' <span class="salvo">(do estoque)</span>' : '')
+                    : '<span class="salvo">sem marca no documento</span>'}</td>
+      <td class="at-num">${qtd != null ? qtd.toLocaleString('pt-BR') : '—'}</td>
+      <td>${x.unidade ? esc(x.unidade) : '<span class="salvo">—</span>'}</td>
+      <td class="at-num">${unit != null ? brl(unit) : '—' + semPrecoTxt(x)}</td>
+      <td class="at-num"><b>${tot != null ? brl(tot) : '—'}</b></td>
+    </tr>`;
+  };
+
+  box.innerHTML = TIT
     + '<div class="pk-conta" style="border-color:var(--verde-300)">'
-    +   '<b style="color:var(--verde)">Ganhou ' + ITENS_GANHOS.length + ' item(ns) · ' + brl(soma) + '</b>'
-    +   '<div class="salvo" style="margin-top:4px">'
-    +     'confirmado' + (quando ? ' em ' + esc(quando.toLocaleDateString('pt-BR')) : '')
-    +     (ITENS_GANHOS[0] && ITENS_GANHOS[0].confirmado_por ? ' por ' + esc(String(ITENS_GANHOS[0].confirmado_por).split('@')[0]) : '')
-    +     (ITENS_GANHOS[0] && ITENS_GANHOS[0].confirmacao > 1 ? ' · <b>' + ITENS_GANHOS[0].confirmacao + 'ª confirmação</b> (as anteriores ficam no rastro)' : '')
-    +   '</div>'
+    +   '<b style="color:var(--verde-700)">' + linhas.length + ' item(ns) ganhos nesta ata</b>'
+    +   (quando
+        ? '<div class="salvo" style="margin-top:4px">confirmado em ' + esc(quando.toLocaleDateString('pt-BR'))
+          + (conf.confirmado_por ? ' por ' + esc(String(conf.confirmado_por).split('@')[0]) : '')
+          + (conf.confirmacao > 1 ? ' · <b>' + conf.confirmacao + 'ª confirmação</b> (as anteriores ficam no rastro)' : '')
+          + '</div>'
+        : '<div class="salvo" style="margin-top:4px">origem: <b>resultado publicado pelo PNCP</b> — '
+          + 'ainda sem confirmação de gente. Anexe a ata e confirme para o comercial mandar.</div>')
     // A DIFERENÇA, quando existe, aparece aqui — no lugar onde os dois números estão juntos.
-    +   (Math.abs(dif) >= 0.01
+    +   (Math.abs(dif) >= 0.01 && Number(n.valor_ganho) > 0
         ? '<div class="salvo" style="margin-top:4px;color:var(--ambar-700)"><b><svg class="ic" aria-hidden="true"><use href="#ic-alerta"/></svg> Conferir:</b> valor da ficha '
-          + brl(n.valor_ganho) + ' · soma dos itens ' + brl(soma) + ' — diferença de ' + brl(Math.abs(dif)) + '.</div>'
+          + brl(n.valor_ganho) + ' · soma dos itens ' + brl(soma) + ' — diferença de ' + brl(Math.abs(dif))
+          + '. A tela não escolhe qual está certo.</div>'
         : '')
     + '</div>'
-    + '<div style="max-height:300px;overflow:auto"><table class="pk-tab">'
-    + '<thead><tr>' + ['Nº','ITEM','MARCA','QTD','UNIT.','TOTAL'].map(h => '<th>'+h+'</th>').join('') + '</tr></thead><tbody>'
-    + ITENS_GANHOS.map(x => `<tr style="cursor:default">
-        <td>${esc(x.item_n || '—')}</td>
-        <td>${esc(String(x.descricao||'').slice(0,64))}</td>
-        <td>${x.marca ? esc(x.marca) + (x.marca_origem === 'estoque' ? ' <span class="salvo">(do estoque)</span>' : '')
-                      : '<span class="salvo">sem marca no documento</span>'}</td>
-        <td style="text-align:right">${num(x.quantidade) != null ? Number(x.quantidade).toLocaleString('pt-BR') : '—'}</td>
-        <td style="text-align:right">${brl(num(x.valor_unitario))}</td>
-        <td style="text-align:right"><b>${brl(num(x.total))}</b></td>
-      </tr>`).join('')
-    + '</tbody><tfoot><tr><td colspan="5" style="text-align:right"><b>total</b></td>'
-    +   '<td style="text-align:right"><b>' + brl(soma) + '</b></td></tr></tfoot></table></div>'
+    + '<div style="max-height:300px;overflow:auto"><table class="pk-tab at-tab">'
+    + '<thead><tr>'
+    +   ['Nº','ITEM','MARCA'].map(h => '<th>'+h+'</th>').join('')
+    +   ['QTD'].map(h => '<th class="at-num">'+h+'</th>').join('')
+    +   '<th>UN</th>'
+    +   ['UNIT. HOMOLOGADO','TOTAL'].map(h => '<th class="at-num">'+h+'</th>').join('')
+    + '</tr></thead><tbody>'
+    + linhas.map(linha).join('')
+    + '</tbody></table></div>'
+    /* O TOTAL DA ATA EM DESTAQUE, e FORA da tabela de propósito: dentro do `tfoot` ele rolava
+       para fora junto com as linhas, e o número que responde "quanto vale esta ata" é o que menos
+       pode sumir. Alinhado à direita e com `tabular-nums`, como manda a BASE_VISUAL 2.1. */
+    + '<div class="at-total"><span class="rot">Total da ata</span>'
+    +   '<span class="v">' + brl(soma) + '</span></div>'
+    + (semPreco ? '<div class="salvo" style="margin-top:8px;color:var(--ambar-700)"><b>' + semPreco
+        + ' item(ns) sem preço homologado.</b> Eles entram na lista com travessão e <b>não somam</b> '
+        + 'no total — item sem preço não vale zero, vale “ainda não sei”.</div>' : '')
+    + (semUnid ? '<div class="salvo" style="margin-top:4px">' + semUnid + ' item(ns) sem unidade: '
+        + 'ela vem do item do edital, e a nossa confirmação não a guarda. Sem o par no edital, fica '
+        + 'em branco — unidade deduzida num documento que vira faturamento é o pior tipo de chute.</div>' : '')
     + (semMarca ? '<div class="salvo" style="margin-top:4px">' + semMarca + ' item(ns) sem marca: o documento '
         + 'não trouxe. <b>Marca em branco é marca não sabida</b> — nunca preenchida por dedução.</div>' : '');
 }
