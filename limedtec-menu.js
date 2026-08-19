@@ -388,7 +388,28 @@
     '  #limedtec-menu .lm-marca,#limedtec-menu .lm-grupo,#limedtec-menu .lm-rodape{display:none}',
     '  #limedtec-menu a,#limedtec-menu .lm-off{white-space:nowrap;border-radius:0;',
     '    margin:0;border-bottom:3px solid transparent}',
-    '  #limedtec-menu a.lm-on{background:none;border-bottom-color:var(--azul-500)}}'
+    '  #limedtec-menu a.lm-on{background:none;border-bottom-color:var(--azul-500)}}',
+
+    /* ══ O DEDO — E ESTE BLOCO NÃO EXISTIA (fatia A32, 19/08/2026) ═══════════════════════
+       MEDIDO na tela pintada, a 390px de `clientWidth`, com `getBoundingClientRect`: os
+       ONZE links deste menu entregavam **30px de altura** ao dedo. Não é um número teórico
+       — é a navegação inteira do sistema no celular, e ela vinha 14px abaixo do piso de 44
+       que a BASE_VISUAL 2.6 fixa e que as telas já cumprem.
+       >>> E A RÉGUA ESTÁTICA DAVA VERDE, com razão e sem valor: ela só sabe reprovar
+           `width/height/min-height` DECLARADOS dentro de um `@media(max-width:480px)`, e
+           este arquivo não tinha bloco de celular nenhum — ela devolvia "bloco de celular:
+           NENHUM · curtos: 0". Zero curtos porque zero medidos. É a V7 da BASE ("a ausência
+           de alvo não é aprovação") acontecendo no arquivo que a escreveu, e é por isso que
+           a divergência P1 virou linha na PARTE 7.
+       >>> POR QUE 480 E NÃO 900: aos 900px o menu já vira faixa horizontal, mas ali ainda é
+           tablet/notebook estreito, onde o ponteiro é preciso. O piso de dedo é a régua do
+           CELULAR, e o molde da casa mede exatamente `max-width:480px` — usar a mesma
+           fronteira que as telas evita duas definições de "celular" no mesmo sistema.
+       >>> O `min-height` PINTA porque a regra base já é `display:flex`: alvo que o CSS
+           promete e o navegador não entrega é pior que alvo curto declarado (é o defeito da
+           "promessa vazia" que a régua caça). Medido depois: 44px nos onze. */
+    '@media (max-width:480px){',
+    '  #limedtec-menu a,#limedtec-menu .lm-off{min-height:44px;padding:0 var(--esp-3)}}'
   ].join('\n');
 
   function svg(nome) {

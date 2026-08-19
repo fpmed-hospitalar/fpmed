@@ -21,9 +21,10 @@
                                      que faltava — a pendência 5 dos sete pares.
 
    ══ AS REGRAS DURAS DA FATIA, E ONDE CADA UMA ESTÁ CUMPRIDA NO CÓDIGO ═══════════════════════
-   · SÓ O NOSSO SISTEMA. A URL é `http://127.0.0.1:<porta>/` servida pelo `servidor_local.js`,
-     cuja raiz é travada em `C:\fpmed`. Nenhum site de terceiro é aberto — a lista de alvos é
-     conferida contra o prefixo antes de navegar.
+   · SÓ O NOSSO SISTEMA. A URL é `http://127.0.0.1:<porta>/` servida pelo servidor estático do
+     projeto (`tools/servidor_estatico.js`), cuja raiz é travada em `C:\fpmed`. Nenhum site de
+     terceiro é aberto — a lista de alvos é conferida contra o prefixo antes de navegar. Este
+     condutor SOBE o servidor sozinho se ele não estiver de pé.
    · `clientWidth`, NUNCA `innerWidth`. Está dentro do medidor do B, e o relatório imprime os
      DOIS lado a lado para que a diferença (a barra de rolagem) apareça em vez de virar 16px de
      vazamento fantasma.
@@ -40,6 +41,7 @@
 const fs = require('fs');
 const path = require('path');
 const http = require('http');
+const { spawn } = require('child_process');
 const { chromium } = require('playwright-core');
 
 const RAIZ = path.join(__dirname, '..');
@@ -63,13 +65,33 @@ const PARES_PENDENTES = ['.buscabox input', '.chip-f button', '.dens button',
 
 const dormir = ms => new Promise(r => setTimeout(r, ms));
 
-/* ── O SERVIDOR: sobe se não estiver de pé, e a raiz é travada lá dentro ─────────────────── */
+/* ── O SERVIDOR: sobe sozinho se não estiver de pé, e a raiz é travada lá dentro ───────────
+   >>> ELE NÃO ERA SUBIDO POR AQUI, e isso quebrou a medição no meio da fatia: o servidor
+       estático mudou de nome na outra janela (`servidor_local.js` -> `servidor_estatico.js`)
+       e este arquivo mandou "suba-o antes" citando um caminho que não existia mais. Ferramenta
+       que depende de alguém lembrar de um passo manual é passo manual — e a lei da autonomia
+       diz que passo manual repetido é defeito de processo, não rotina. Agora ele acha o
+       servidor pelo nome que existir e o sobe sozinho. */
+const NOMES_SERVIDOR = ['servidor_estatico.js', 'servidor_local.js'];
 function servidorDePe() {
   return new Promise(res => {
     const r = http.get(BASE, { timeout: 2500 }, x => { x.resume(); res(true); });
     r.on('error', () => res(false));
     r.on('timeout', () => { r.destroy(); res(false); });
   });
+}
+async function garanteServidor() {
+  if (await servidorDePe()) return { subiu: false, proc: null };
+  const arq = NOMES_SERVIDOR.map(n => path.join(__dirname, n)).find(p => fs.existsSync(p));
+  if (!arq) return { erro: 'nenhum servidor estatico em tools/ (' + NOMES_SERVIDOR.join(' ou ') + ')' };
+  const proc = spawn(process.execPath, [arq, String(PORTA)],
+    { cwd: RAIZ, detached: false, stdio: 'ignore' });
+  for (let i = 0; i < 20; i++) {
+    await dormir(400);
+    if (await servidorDePe()) return { subiu: true, proc, arq: path.basename(arq) };
+  }
+  try { proc.kill(); } catch (_) {}
+  return { erro: 'subi o ' + path.basename(arq) + ' e ele nao respondeu em 8s' };
 }
 
 /* ── A BARREIRA DE LOGIN: detectar, declarar, NÃO tentar passar ──────────────────────────── */
@@ -113,13 +135,11 @@ async function injeta(page, arquivo) {
 
 (async () => {
   if (!fs.existsSync(LOGS)) fs.mkdirSync(LOGS, { recursive: true });
-  if (!await servidorDePe()) {
-    console.error('O servidor local nao respondeu em ' + BASE);
-    console.error('Suba-o antes:  node tools/servidor_local.js ' + PORTA);
-    process.exit(1);
-  }
+  const srv = await garanteServidor();
+  if (srv.erro) { console.error('SERVIDOR: ' + srv.erro); process.exit(1); }
   console.log('MEDICAO NA TELA PINTADA — Chrome da maquina, servidor local, so o nosso sistema.');
-  console.log('base: ' + BASE + '   telas: ' + TELAS.join(', ') + '\n');
+  console.log('base: ' + BASE + (srv.subiu ? '  (subi o ' + srv.arq + ' agora)' : '  (ja estava de pe)')
+    + '   telas: ' + TELAS.join(', ') + '\n');
 
   const navegador = await chromium.launch({ channel: 'chrome', headless: true });
   const retrato = { quando: new Date().toISOString(), base: BASE, telas: {} };
@@ -406,4 +426,12 @@ async function injeta(page, arquivo) {
 
   const dest = arg('--json');
   if (dest) { fs.writeFileSync(path.join(RAIZ, dest), JSON.stringify(retrato, null, 1)); console.log('\nretrato gravado em ' + dest); }
+
+  /* >>> O SERVIDOR QUE ESTE ARQUIVO SUBIU, ESTE ARQUIVO DERRUBA — e o `process.exit(0)` é
+         DECLARADO, não decoração. Sem ele a rodada terminava com código 255 mesmo tendo
+         medido tudo: sobrava um `spawn` segurando o laço de eventos, e o Node saía por
+         caminho de erro. Ferramenta que diz "falhei" depois de dar certo ensina a ignorar o
+         código de saída dela — que é a mesma doença do vermelho que ninguém mais lê. */
+  if (srv.subiu && srv.proc) { try { srv.proc.kill(); } catch (_) {} }
+  process.exit(0);
 })().catch(e => { console.error('ERRO: ' + e.message); process.exit(1); });

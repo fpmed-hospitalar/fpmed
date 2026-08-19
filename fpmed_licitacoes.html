@@ -1403,10 +1403,28 @@ svg.ic.bom{color:var(--verde-700)}
   .btn,.btn.mini{min-height:44px;padding-left:var(--esp-4);padding-right:var(--esp-4)}
   .lic .titulo{min-height:44px;display:flex;align-items:center}
   .det-aba{height:44px}
+  /* ══ `input:not([type])` ENTROU NA A32, E ELE É O CAMPO MAIS IMPORTANTE DA TELA ═══════════
+     MEDIDO na tela pintada a 390px: o `#f-kw` — a caixa onde se digita "albumina", a razão de
+     esta tela existir — entregava **16px** de altura de caixa ao dedo, dentro de uma
+     `.buscabox` de 64px. Vinte e quatro pixels de respiro em cima e em baixo que PARECEM o
+     campo e não focam o campo.
+     >>> A CAUSA É UM ATRIBUTO QUE NINGUÉM ESCREVEU. A regra cobra `input[type=text]`, e o
+         `<input id="f-kw">` não declara `type` nenhum. Em HTML ele É text — o padrão do
+         atributo; em CSS ele NÃO É `[type=text]`, porque o seletor de atributo pergunta pelo
+         atributo escrito, não pelo comportamento. Os dois estão certos e discordam, e o CSS
+         não avisa: ele simplesmente não pinta.
+     >>> É A MESMA FAMÍLIA DO SELO "IA" desta mesma fatia (`var(--x, var(--y))` que nunca
+         recua) e do `<use href="#ic-mais">` sem símbolo no sprite: regra que falha em
+         SILÊNCIO, sem erro, sem aviso e sem quebrar nada. A régua estática não pega nenhuma
+         das três, porque para ela a declaração está lá — quem responde é a tela. */
   .ord select,.periodo select,.periodo input[type=date],
-  select,input[type=date],input[type=text],input[type=number]{min-height:44px}
+  select,input[type=date],input[type=text],input[type=number],
+  input:not([type]){min-height:44px}
   .dens button{min-height:44px;padding-left:var(--esp-4);padding-right:var(--esp-4)}
   .mais .cx a,.mais .cx button{min-height:44px}
+  /* O botão da lupa fica ao lado do campo e é o par dele: com o campo em 44 e o botão em 30,
+     a linha da busca teria dois alvos de tamanhos diferentes para o mesmo gesto. */
+  .buscabox .go,button.go{min-height:44px}
 
   /* ── OS DOIS SÓ DE ÍCONE: largura E altura ──────────────────────────────────────────────── */
   .det-fechar{width:44px;height:44px}
