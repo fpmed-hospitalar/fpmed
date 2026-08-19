@@ -21,7 +21,10 @@
   "adotadas": [
     "fpmed_tema.css",
     "fpmed_licitacoes.html",
-    "limedtec-menu.js"
+    "limedtec-menu.js",
+    "fpmed_negocios.html",
+    "fpmed_ajuda.html",
+    "fpmed_documentos.html"
   ],
 
   "_pendencia_do_B": [
@@ -113,11 +116,41 @@
     "         catraca que existe por causa dos 7.456 itens nao tem como saber disso."
   ],
 
+  "_adocao_do_B": [
+    "ESCRITO PELO B EM 15/08, NA FATIA B22, DEPOIS DE RODAR AS 8 CATRACAS COM CADA TELA DENTRO.",
+    "TRES ENTRARAM: fpmed_negocios.html, fpmed_ajuda.html e fpmed_documentos.html. As 8 catracas",
+    "verdes com elas dentro (14+8+6+22+12+8+9+18 = 97 conferencias, 0 falha). O que destravou:",
+    "os defeitos 11 a 14 da regua do A (fatia A31) e, na Negocios, a reserva do selo medida no",
+    "navegador (era 96px, o selo mede 113,22 e exige 128,02 — o titulo passava por baixo dele).",
+    "",
+    "A QUARTA, fpmed_giovana.html, NAO ENTROU. Medido com ela dentro: 2 catracas vermelhas, 1",
+    "assert cada — e as duas sao O PAPEL ALCANCADO POR JAVASCRIPT, que e o limite que a propria",
+    "regua declara sobre si mesma:",
+    "  testa_texto_piso  — o `font-size:10px` embutido no <td> que o gerarPDF monta. O A anotou",
+    "    que apagar resolve e a folha nao muda um pixel, e ele tem razao sobre a FOLHA. Mas eu",
+    "    medi o recorte: essa linha esta DENTRO da regiao `gerarPDF` que a tools/prova_papel_",
+    "    congelado.js compara byte a byte (linhas 3721 a 3809, 5865 chars). A caixa desta rodada",
+    "    diz, com todas as letras: se a prova do papel reprovar, PARE a fatia. Entao eu parei.",
+    "    Quem levanta o congelamento de uma linha e o dono, nao eu.",
+    "  testa_icones — o `⚠` do OBS_PADRAO. Eu CHEGUEI a separar simbolo e palavras para o papel",
+    "    ficar com o glifo e a tela com o icone do sprite. Desfiz: `testa_molde_proposta` (assert",
+    "    52) guarda esse literal PELO AVESSO, citando a ordem do dono de 13/08, e o",
+    "    `testa_pdf_proposta` recorta a const do arquivo e a executa — as duas quebraram na hora.",
+    "    Duas suites que nao se conhecem dizendo a mesma coisa e a casa falando; eu obedeci.",
+    "",
+    "OS OUTROS DOIS QUE O A LISTOU EU CONSERTEI, e eles nao eram papel:",
+    "  testa_tabela_densa — `.item-preco` era `text-align:right` SEM tabular-nums. Numa coluna de",
+    "    dinheiro isso e o unico jeito de ficar inutil sem parecer quebrada. VERDE.",
+    "  testa_numero_honesto — os tres `R$ 0,00` do Resumo Financeiro viraram travessao. O cartao",
+    "    nasce display:none e o calcTotal preenche, mas R$ 0,00 num resumo e uma AFIRMACAO: diz",
+    "    que a proposta soma zero. Mesma licao do fmtBRL, da B19. VERDE.",
+    "",
+    "PLACAR DA DIVIDA DA GIOVANA: era 4 catracas vermelhas (medicao do A na A31), esta em 2. As",
+    "2 que ficam nao dependem de mim nem da regua: dependem de o dono liberar uma linha do papel."
+  ],
+
   "pendentes": [
-    "fpmed_negocios.html",
     "fpmed_giovana.html",
-    "fpmed_ajuda.html",
-    "fpmed_documentos.html",
     "index.html",
     "fpmed_edital_ia.html",
     "fpmed_declaracoes.html"

@@ -221,8 +221,19 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--texto);min-
 .item-row .item-nome{font-size:13px;font-weight:500;line-height:1.3;color:var(--texto);}
 .item-row .item-det{font-size:var(--txt-1);color:var(--muted);margin-top:4px;}
 .item-row input[type=number]{width:62px;padding:4px 8px;border:1px solid var(--borda);border-radius:7px;text-align:center;font-size:13px;outline:none;background:var(--branco);color:var(--texto);}
-.item-row .item-preco{font-family:'Montserrat',sans-serif;font-weight:700;font-size:14px;color:var(--navy);min-width:85px;text-align:right;}
-.item-preco-info{font-size:var(--txt-1);color:var(--muted);text-align:right;margin-top:4px;}
+/* ══ DÍGITO TABULAR NA COLUNA DE DINHEIRO (15/08, fatia B21/B22) ═════════════════════════════
+   Esta é a coluna de preço da lista de itens da proposta, e ela era `text-align:right` SEM
+   `tabular-nums`. Com fonte proporcional os algarismos têm larguras diferentes: `R$ 1.111,11`
+   desenha MAIS ESTREITO que `R$ 999,99`, e o olho — que compara pela borda, não pelo valor —
+   erra a ordem de grandeza. Numa tela cujo trabalho é exatamente comparar preço com teto, é o
+   único jeito de uma coluna de dinheiro ficar inútil sem parecer quebrada (BASE_VISUAL 2.1).
+   >>> Ela só apareceu agora porque a régua do A estava CEGA em 287 linhas desta tela (o defeito
+       11 dele: `accept="image/*"` abrindo comentário falso). A tela sempre teve tabela; a régua
+       é que achava que não. Verde de quem não olhou.
+   >>> `--num-tabular` não existe como token; `font-variant-numeric` é propriedade, não cor nem
+       espaço, então ela se escreve por extenso mesmo — como no resto do sistema. */
+.item-row .item-preco{font-family:'Montserrat',sans-serif;font-weight:700;font-size:14px;color:var(--navy);min-width:85px;text-align:right;font-variant-numeric:tabular-nums;}
+.item-preco-info{font-size:var(--txt-1);color:var(--muted);text-align:right;margin-top:4px;font-variant-numeric:tabular-nums;}
 /* ── TETO CMED ── o selo fica ao lado do preço, onde a decisão acontece.
    `acima` usa a mesma linguagem visual dos outros alertas desta tela (âmbar/vermelho com fundo
    fraco), e o `ok` é DISCRETO de propósito: quem está dentro do teto não precisa de festa —
@@ -728,16 +739,28 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--texto);min-
   <div class="card" id="card-total" style="display:none">
     <h3><svg class="ic" aria-hidden="true"><use href="#ic-dinheiro"/></svg> Resumo Financeiro</h3>
     <div class="total-box" id="total-box">
-      <div class="total-row"><span>Subtotal</span><span id="val-subtotal">R$ 0,00</span></div>
+      <!-- ══ O CARTÃO NASCE COM TRAVESSÃO, NÃO COM "R$ 0,00" (15/08, fatia B22) ═══════════════
+           Os três valores abaixo vinham escritos "R$ 0,00" no HTML. O cartão nasce
+           `display:none` e o `calcTotal()` os preenche, então na prática ninguém via — mas essa
+           é exatamente a defesa que a fatia B19 já derrubou uma vez nesta mesma tela, no
+           `fmtBRL`: **R$ 0,00 num resumo financeiro não é espaço em branco, é uma AFIRMAÇÃO**, e
+           ela diz que a proposta soma zero. Basta o `calcTotal()` falhar (ou o cartão aparecer
+           por outro caminho) para a tela afirmar um total falso com toda a cara de conta feita.
+           >>> O travessão é a convenção que ESTA tela já usa para "ainda não sei", e é o mesmo
+               desfecho da lição do fmtBRL: ausência vira travessão, zero de verdade continua
+               R$ 0,00 — e quando o calcTotal roda, é ele quem escreve o zero verdadeiro.
+           >>> A catraca `testa_numero_honesto` acusava os três. Ela só os alcançou agora porque
+               a régua do A estava cega nesta região (o defeito 11 dele). Ela estava certa. -->
+      <div class="total-row"><span>Subtotal</span><span id="val-subtotal">—</span></div>
       <div class="total-row"><span>Desconto Geral (%)</span>
         <div style="display:flex;align-items:center;gap:8px">
           <input type="number" id="desc-geral" value="0" min="0" max="8" step="0.5" style="width:55px;padding:4px 8px;border:1px solid var(--borda);border-radius:6px;text-align:center;font-size:12px;outline:none;" oninput="calcTotal()">
           <span style="font-size:12px;color:var(--muted)">% (máx 8%)</span>
         </div>
       </div>
-      <div class="total-row"><span style="color:var(--vermelho)">- Desconto</span><span id="val-desconto" style="color:var(--vermelho)">R$ 0,00</span></div>
+      <div class="total-row"><span style="color:var(--vermelho)">- Desconto</span><span id="val-desconto" style="color:var(--vermelho)">—</span></div>
       <div class="divider" style="margin:8px 0"></div>
-      <div class="total-row"><span style="font-size:15px;font-weight:600">TOTAL GERAL</span><span class="total-final" id="val-total">R$ 0,00</span></div>
+      <div class="total-row"><span style="font-size:15px;font-weight:600">TOTAL GERAL</span><span class="total-final" id="val-total">—</span></div>
       <div style="font-size:var(--txt-1);color:var(--muted);margin-top:4px">Condição: <strong id="cond-display">À VISTA</strong> · Validade: <strong id="valid-display">7 dias</strong></div>
     </div>
   </div>
@@ -1163,6 +1186,25 @@ function fmtDate(d) { if(!d)return'—';const dt=new Date(d);return isNaN(dt)?'�
 // O aviso vive AQUI, no código, e não no banco: se dependesse de um registro, uma proposta
 // nova sairia sem ele — que é justamente o caso em que o aviso mais importa. O campo do
 // vendedor guarda só o texto ADICIONAL.
+/* ══ POR QUE ESTE `⚠` FICA, MESMO COM A CATRACA ACUSANDO (15/08, fatia B22) ═══════════════════
+   A `testa_icones` conta este caractere como pictograma de texto, e do lado da TELA ela está
+   certa. Eu cheguei a separar a string em SÍMBOLO + PALAVRAS, para o papel receber o glifo e a
+   tela receber o ícone do sprite. **Desfiz, e a casa é que me disse para desfazer, em dois
+   lugares independentes:**
+     · `testa_molde_proposta` assert 52 guarda o literal `var OBS_PADRAO = '⚠ OBSERVAÇÕES:` PELO
+       AVESSO — ele existe para garantir que o aviso do papel continua intocado, e o comentário
+       dele cita a ordem do dono de 13/08 ("peça formal que vai pro órgão público");
+     · `testa_pdf_proposta` recorta esta declaração do arquivo com `konst('OBS_PADRAO')` e a
+       executa. Partir a const em três quebrou o recorte na hora.
+   Onde o molde da casa e a minha ideia discordam, o molde da casa manda — e aqui ele está
+   escrito duas vezes, por duas suítes que não se conhecem.
+   >>> E A CATRACA CONTINUA COM RAZÃO SOBRE UM FATO QUE ELA NÃO CONSEGUE ENXERGAR: este literal
+       chega ao `#print-obs-padrao`, que é PAPEL. A folha não tem sprite — o `<use href=...>`
+       aponta para um símbolo que mora no documento da tela, e mandar isso para a impressora
+       troca um aviso legal por um retângulo vazio. Num aviso que diz "esta cotação pode ter
+       erro", o símbolo sumir do papel é o pior desfecho possível.
+   >>> É o mesmo limite que o cabeçalho da régua do A declara sobre si mesma: *a régua não alcança
+       JS que escreve dentro do papel*. Fica contado na dívida, com número, e não como isenção. */
 var OBS_PADRAO = '⚠ OBSERVAÇÕES: Esta cotação foi elaborada com auxílio de inteligência artificial '
   + 'e está sujeita a erros e falhas. Em caso de dúvida ou identificação de qualquer erro, entre em '
   + 'contato com o(a) vendedor(a). Estoque rotativo: preços e quantidades sujeitos a alteração '
