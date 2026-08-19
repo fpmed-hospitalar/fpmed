@@ -2314,10 +2314,29 @@ function celValor(v){
    >>> QUEM DECIDE É A DATA DE ENCERRAMENTO DA PROPOSTA, e não a `situacaoCompraNome`: MEDIDO no
        índice, ela vale "Divulgada no PNCP" em 100% das linhas da forma de consulta. O campo
        existe, tem cara de estado e não discrimina nada. Data discrimina.
-   >>> SEM DATA É UM TERCEIRO ESTADO, E NÃO "ENCERRADA". São 710 linhas sem prazo no índice.
-       Tratá-las como encerradas esconderia o caminho de disputar de uma licitação que pode estar
-       aberta; tratá-las como abertas prometeria disputa de uma que pode ter fechado. O estado
-       próprio é o que deixa a tela DIZER que não sabe e oferecer o caminho de conferir. */
+   >>> SEM DATA É UM TERCEIRO ESTADO, E NÃO "ENCERRADA". Tratá-las como encerradas esconderia o
+       caminho de disputar de uma licitação que pode estar aberta; tratá-las como abertas
+       prometeria disputa de uma que pode ter fechado. O estado próprio é o que deixa a tela
+       DIZER que não sabe e oferecer o caminho de conferir.
+   >>> E O NÚMERO AQUI ESTAVA VELHO POR DOZE VEZES — a A33 remediu. Eram "710 linhas sem prazo";
+       são 8.599 de 11.843 (72,6%), medidas em 19/08/2026. Número medido que envelhece calado
+       dentro de um comentário é a mesma família do "1.569 consultas" que a A30 achou emprestado
+       da Global: cara de conta feita, e ninguém confere de novo.
+   >>> E A CONTA NOVA MUDA O QUE ESTE TERCEIRO ESTADO SIGNIFICA, então ela fica escrita. As 8.599
+       têm TRÊS causas, e só uma é buraco nosso (medido por `tools/preenche_prazo.js`, que
+       reparte por porta de entrada × modalidade):
+         2.882 já perguntamos à porta de CONSULTA e o PNCP devolveu VAZIO. Não é falta de coleta,
+               é o fato: são dispensa (49,6% têm janela) e inexigibilidade (0,16%), que são
+               contratação DIRETA e em geral não abrem janela de proposta. Para estas, "PRAZO NÃO
+               INFORMADO" é a resposta certa e definitiva, e não uma pendência.
+         3.108 são pregão eletrônico que entrou pela porta de BUSCA, que não carrega o campo. Na
+               porta certa a modalidade 6 tem 99,94% de janela preenchida — ou seja, o dado EXISTE
+               no PNCP e falta a gente perguntar. Este é o buraco de verdade, e é o que a A33 mira.
+         2.068 são credenciamento (modalidade 12), que o coletor NUNCA pediu à porta certa: ele
+               varre `6,8,9`. Sem uma pergunta sequer não há taxa medida, então não há palpite —
+               a primeira rodada do preenche_prazo mede a dela.
+       Em 19/08 a porta de consulta respondeu HTTP 504 em 70s, e o preenchimento ficou pendurado
+       nela. O que esta tela desenha, porém, NÃO depende disso: ela já diz que não sabe. */
 const EST_ABERTA = 'aberta', EST_ENCERRADA = 'encerrada', EST_SEM_PRAZO = 'sem-prazo';
 function estadoLic(l, agora){
   const ag = agora || new Date();
