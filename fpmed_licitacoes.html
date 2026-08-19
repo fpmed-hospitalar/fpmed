@@ -1021,9 +1021,28 @@ body.det-aberto{overflow:hidden}
 .det-tab .desc{min-width:220px}
 /* O SELO "IA" MUDOU DE ENDEREÇO NA FATIA A2: saiu do item de menu e veio pro botão que dispara
    o gasto. Mesmo desenho de sempre — verde da marca com o navy por cima, o par que já estava
-   medido em 9,04:1 no menu. Aviso longe da decisão não muda decisão. */
+   medido em 9,04:1 no menu. Aviso longe da decisão não muda decisão.
+
+   ══ E ELE ESTAVA ILEGÍVEL DESDE ENTÃO — MEDIDO NA TELA PINTADA EM 19/08 (fatia A32) ═════════
+   A regra dizia `color:var(--navy-tinta, var(--cinza-800))`, e o navegador computou
+   **1,28:1** — um cinza-claro sobre o verde da marca. O selo que avisa "este botão gasta
+   dinheiro" era o texto menos legível da tela inteira.
+   >>> A CAUSA É UM RECUO QUE NUNCA RECUA. `--cinza-800` é a tinta que o autor queria, e ela
+       está escrita ali como alternativa — 8,96:1, medida agora. Só que alternativa de `var()`
+       só entra quando o token principal NÃO EXISTE, e o `--navy-tinta` existe: ele é
+       `#C2CEDE`, e o próprio `fpmed_tema.css` diz para que serve, na linha ao lado dele —
+       *"item de menu em repouso"*, ou seja, tinta CLARA para o fundo NAVY, medida em 10,78:1
+       contra o navy. Sobre o verde ela dá 1,28.
+   >>> POR QUE NINGUÉM VIU: `var(--x, var(--y))` LÊ como "y se x não servir", e não é isso que
+       ele quer dizer. O CSS não avisa, não erra e não quebra — ele pinta. É o mesmo silêncio do
+       `<use href="#ic-mais">` sem o símbolo no sprite, que a `testa_icones` passou a caçar.
+   >>> E A RÉGUA ESTÁTICA NÃO PODIA TER PEGADO: o `resolveCor` dela não abre `var()` aninhado
+       dentro da alternativa, então o par caiu em `naoMedidos` — declarado, nunca contado como
+       aprovado. Foi a tela pintada que respondeu, e é a regra da fatia: quando as duas
+       discordam, a do navegador ganha.
+   O conserto é escrever a tinta que já estava declarada, sem indireção: 1,28:1 -> 8,96:1. */
 .lm-selo-ia{display:inline-block;margin-left:var(--esp-1);padding:0 var(--esp-1);
-  border-radius:var(--raio-pilula);background:var(--verde-500);color:var(--navy-tinta,var(--cinza-800));
+  border-radius:var(--raio-pilula);background:var(--verde-500);color:var(--cinza-800);
   font-size:var(--txt-1);font-weight:var(--peso-forte);letter-spacing:.04em}
 
 /* O controle "Ordenar" — mesma régua do alternador de densidade, que já vive no cabeçalho. */
@@ -4787,7 +4806,25 @@ async function buscar(aoVivo){
   const chave = [uf,mod,de,ate].join('|');
   const emCache = cache.get(chave);
   const fresco = emCache && (Date.now()-emCache.quando) < CACHE_MIN*60000;
-  st.textContent = fresco ? 'usando o resultado em cache…' : 'consultando o PNCP…';
+  /* ══ "CARREGANDO" SEM NÚMERO É RODINHA MUDA, E ESTA ERA MUDA POR 70 SEGUNDOS ═══════════════
+     MEDIDO na tela pintada em 19/08 (fatia A32), com a rede derrubada de propósito: o
+     `#status` escrevia "consultando o PNCP…" e ficava assim até a primeira resposta. A linha
+     4911 logo abaixo já diz "página p/tp" — ou seja, o número existe da SEGUNDA página em
+     diante, e a primeira, que é a longa, era a única sem ele.
+     >>> E "a longa" não é figura de linguagem: a API de consulta do PNCP está fora hoje e
+         responde 504 em ~70 SEGUNDOS (medido na A33). São setenta segundos de uma frase que
+         não muda, sobre uma busca cujo tamanho a tela conhece desde antes de sair.
+     >>> O NÚMERO QUE ELA JÁ TEM NA MÃO é o intervalo: de/até estão preenchidos duas linhas
+         acima. "30 dias, página 1" é verdade no instante em que é escrito e continua sendo
+         verdade se a resposta demorar — que é a diferença entre informar e enfeitar. */
+  const diasDaJanela = (() => {
+    const d = String(de), a = String(ate || de);
+    const iso = s => new Date(+s.slice(0,4), +s.slice(4,6)-1, +s.slice(6,8));
+    const n = Math.round((iso(a) - iso(d)) / 86400000) + 1;
+    return isFinite(n) && n > 0 ? n : null;
+  })();
+  st.textContent = fresco ? 'usando o resultado em cache…'
+    : 'consultando o PNCP… ' + (diasDaJanela ? diasDaJanela + (diasDaJanela === 1 ? ' dia' : ' dias') + ', ' : '') + 'página 1';
   // SKELETON no lugar de "Buscando…": a tela já mostra a FORMA do resultado enquanto carrega,
   // então a espera não parece travamento — foi a lição do "Carregando…" eterno de hoje.
   lista.innerHTML = Array.from({length:3}, () =>

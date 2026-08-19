@@ -4,6 +4,7 @@
     "xlsx": "^0.18.5"
   },
   "devDependencies": {
-    "pdfjs-dist": "^3.11.174"
+    "pdfjs-dist": "^3.11.174",
+    "playwright-core": "^1.62.1"
   }
 }

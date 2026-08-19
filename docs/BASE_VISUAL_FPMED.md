@@ -215,6 +215,37 @@ hex exato da marca. O código ficou na primeira enquanto o dono não decide.
 
 ---
 
+## PARTE 7 — QUANDO A RÉGUA E A TELA PINTADA DISCORDAM (fatia A32, 19/08/2026)
+
+> A fatia A32 mandou medir com navegador de verdade e trouxe uma regra junto: *"se uma medição do
+> navegador discordar da medição estática da régua, a do navegador ganha — e a divergência vira
+> linha na BASE_VISUAL com o número dos dois lados"*. São estas, e o número dos dois lados está
+> em cada uma. A medição é repetível: `node tools/roda_medicao_tela.js --estados`.
+>
+> **A lição comum às três** é a mesma, e vale mais do que os três casos: a régua estática só sabe
+> reprovar o que alguém DECLAROU. Ela lê o que está escrito no arquivo, e por isso é cega para o
+> que está errado por OMISSÃO — o tamanho que ninguém escreveu, a cor que só existe depois de
+> resolver três indireções, o estado que nunca foi provocado. Verde dela quer dizer *"o que está
+> escrito obedece"*, e nunca *"a tela obedece"*.
+
+| # | a régua estática diz | a tela pintada diz | o que vale |
+|---|---|---|---|
+| **P1** | `fpmed_licitacoes.html` — alvo de toque: **0 curtos**, 2 blocos de celular. `limedtec-menu.js` — **NENHUM** bloco de celular. | a 390px, **21 alvos abaixo de 44px**, medidos com `getBoundingClientRect`: 11 links do menu do topo a **30px de altura** (5 deles já fora da janela, numa faixa que rola na horizontal), `button.go «Buscar»` a **30px**, `input#f-kw` com **16px** de altura de caixa dentro de uma `.buscabox` de 64px (24px de respiro morto em cima e embaixo, que não focam o campo), 5 links secundários a 30px e 3 caixas de marcar a **17×17**. | **A tela.** E a causa da divergência é estrutural, não um descuido da régua: ela só enxerga `width/height/min-height` **declarados** dentro do `@media(max-width:480px)`. Alvo que é pequeno porque ninguém escreveu tamanho nenhum é invisível para ela — e é justamente o caso mais comum. A V7 mandou exigir que o bloco exista; falta exigir que ele ALCANCE os alvos, e isso só a tela responde. |
+| **P2** | `.lm-selo-ia` → **não medido** (o par foi para `naoMedidos`, declarado, nunca contado como aprovado — é a V5 funcionando). | **1,28:1**. `color:var(--navy-tinta, var(--cinza-800))` sobre `var(--verde-500)`: cinza-claro `#C2CEDE` sobre o verde da marca `#8DC63F`. | **A tela**, e o defeito era real e grave — o selo que avisa *"este botão gasta dinheiro"* era o texto menos legível da tela. A causa: `var(--x, var(--y))` **lê** como "y se x não servir" e **quer dizer** "y se x não existir". O `--navy-tinta` existe: é a tinta CLARA para fundo navy (o tema escreve o ofício ao lado dela, e ela dá 10,78:1 **contra o navy**). A alternativa `--cinza-800`, que era a intenção, dá **8,96:1** — e foi o que ficou. A régua não podia ter pego: o `resolveCor` dela não abre `var()` aninhado dentro da alternativa. |
+| **P3** | os 4 estados: `vazio: sim · carregando c/ número: sim · erro c/ saída: sim` (o texto EXISTE no arquivo). | provocados de verdade, derrubando a rede: **vazio** desenha ✓ · **erro** desenha com as duas causas separadas e com saída ("Tentar de novo") ✓ · **cheio** desenha ✓ · **carregando** desenhava `"consultando o PNCP…"` **sem número nenhum**. | **A tela.** O número existia da *segunda* página em diante (`"página p/tp"`), e faltava exatamente na primeira — que é a longa: com a API de consulta do PNCP fora, ela responde 504 em **~70 segundos**. Setenta segundos de uma frase que não muda. A régua leu a linha da página 2 e deu o arquivo por bom; a distância entre "a frase existe" e "a frase aparece na hora certa" é o que só a tela mede. Corrigido para `"consultando o PNCP… N dias, página 1"` — e o N vem do intervalo que a tela já tem na mão, não de um denominador inventado (a V8 continua valendo). |
+
+**E uma nota de método, porque ela custou três medições erradas antes de sair certa.** Nesta
+fatia o *medidor* errou mais que a tela, e as três vezes pelo mesmo motivo — ele olhava menos do
+que dizia olhar: (a) acusou "barreira de login" numa tela aberta, porque perguntou se existe
+`input[type=password]` no DOM em vez de perguntar se ele está PINTADO — o portão do `gm-auth`
+fica montado e escondido em toda tela; (b) escreveu "FUNDO ASSUMIDO BRANCO" sobre um branco que
+tinha medido, por fazer a pergunta depois de consumir a lista de camadas; (c) declarou "o erro
+não desenha" tendo esperado 5 segundos por uma tela que estava, corretamente, esperando 70 pelo
+PNCP. **Instrumento novo mente primeiro sobre si mesmo**, e o único jeito de descobrir é
+conferir cada resultado surpreendente contra o arquivo antes de acreditar nele.
+
+---
+
 ## FONTES CONSULTADAS (14/08/2026)
 
 - W3C · WCAG 2.2, Contraste Mínimo (1.4.3), Contraste de Não-Texto (1.4.11), Tamanho de Alvo (2.5.8)
