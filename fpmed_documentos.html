@@ -146,6 +146,15 @@ header nav.portal a.on{background:rgba(var(--azul-rgb),.16);color:var(--azul-cla
 .regua span{font-size:var(--txt-1);color:var(--muted);letter-spacing:.2px}
 .regua.vencido b{color:var(--vermelho)} .regua.vencendo b{color:var(--ambar)}
 .regua.ok b{color:var(--verde)} .regua.total b{color:var(--branco)}
+/* ══ O QUINTO CONTADOR ENTROU NA B25, E ELE JÁ ERA CALCULADO E JOGADO FORA ═══════════════════
+   O `cont` sempre teve quatro chaves e o painel mostrava três delas mais o total: os documentos
+   sem validade eram somados numa variável que ninguém lia. Isso fazia o painel não fechar a
+   conta — vencidos + vencendo + em dia raramente dava o total, e a diferença não tinha nome na
+   tela. Contador que não fecha ensina a não confiar no painel.
+   >>> E A COR DELE É A DO TEXTO APAGADO DE PROPÓSITO: não é vermelho (não é problema agora) e
+       NÃO PODE SER VERDE (verde é promessa, e a promessa aqui seria falsa — a tela não sabe se
+       o documento não vence ou se alguém esqueceu de digitar a data). */
+.regua.sem_validade b{color:var(--muted)}
 
 .barra{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:16px}
 input,select{background:var(--painel2);color:var(--texto);border:1px solid var(--linha);
@@ -172,6 +181,24 @@ input::placeholder{color:var(--placeholder)}
 .selo.ok{background:rgba(var(--verde-rgb),.16);color:var(--verde)}
 .selo.sem_validade{background:var(--painel2);color:var(--muted)}
 .hint{font-size:var(--txt-1);color:var(--muted)}
+/* ══ A VERSÃO E O HISTÓRICO (B25) ════════════════════════════════════════════════════════════
+   A etiqueta de versão fica NO CARTÃO, ao lado do nome, e não escondida atrás do histórico: a
+   pergunta "esta é a certidão nova ou a que eu já tinha?" tem de ser respondida sem clique.
+   >>> ELA SÓ APARECE DA VERSÃO 2 EM DIANTE. "versão 1" em todo cartão vira ruído em 100% da
+       lista para informar 0% de nada — e o que interessa é justamente o cartão que TEM passado. */
+.doc .versao{display:inline-block;margin-left:var(--esp-2);padding:0 var(--esp-2);border-radius:20px;
+  font-size:var(--txt-1);font-weight:700;background:var(--painel2);color:var(--muted)}
+/* O histórico nasce fechado e abre DENTRO do cartão, recuado. Abrir noutro lugar da tela (modal,
+   painel lateral) faria a pessoa perder de vista de qual documento é o passado que ela está
+   lendo — e é exatamente aí que se confunde a CND velha com a nova. */
+.hist{margin:var(--esp-2) 0 var(--esp-1);padding-left:var(--esp-3);border-left:2px solid var(--linha);width:100%}
+.hist .linha{display:flex;gap:var(--esp-2);align-items:center;flex-wrap:wrap;
+  font-size:var(--txt-1);color:var(--muted);padding:var(--esp-1) 0}
+.hist .linha b{color:var(--texto);font-weight:600}
+/* O aviso de substituição precisa ser impossível de não ver: quem abriu o formulário por engano
+   tem de perceber ANTES de salvar que está criando uma versão, e não um documento novo. */
+.subst{background:rgba(var(--ambar-rgb),.13);border:1px solid var(--ambar);border-radius:9px;
+  padding:var(--esp-2) var(--esp-3);margin-bottom:var(--esp-3);font-size:var(--txt-1);color:var(--ambar-claro)}
 .aviso{background:var(--painel);border:1px dashed var(--linha);border-radius:12px;padding:24px;text-align:center;color:var(--muted)}
 #form{display:none;background:var(--painel);border:1px solid var(--linha);border-radius:12px;padding:16px;margin-bottom:16px}
 #form.open{display:block}
@@ -227,14 +254,44 @@ label{display:block;font-size:var(--txt-1);font-weight:600;color:var(--muted);ma
   </div>
 
   <div id="form">
+    <!-- O aviso de que isto é uma SUBSTITUIÇÃO, e não um documento novo. Ele é escrito pelo
+         `abrirSubstituicao()` e apagado pelo `fecharForm()`. -->
+    <div class="subst" id="aviso-subst" style="display:none"></div>
     <div class="grid">
       <div><label>Nome do documento *</label><input type="text" id="f-nome" placeholder="ex.: CND Federal"></div>
-      <div><label>Tipo</label><input type="text" id="f-tipo" placeholder="fiscal, trabalhista, jurídico…"></div>
+      <!-- ══ O TIPO VIROU LISTA NA B25, E ERA CAMPO LIVRE ═══════════════════════════════════
+           Campo livre num agrupador é como a mesma certidão vira três: "CND federal", "cnd
+           Federal" e "Certidão Negativa Federal" convivem, o filtro por tipo passa a mentir, e
+           quem confere a habilitação acha que falta um documento que está ali.
+           >>> A LISTA É A DO DONO (ordem de obra aprovada), e ela termina em "outro" com campo
+               aberto DE PROPÓSITO: lista fechada num país que inventa exigência de habilitação
+               toda semana viraria a tela recusando um documento real. O "outro" é a válvula
+               declarada — e ele obriga a escrever, em vez de deixar em branco. -->
+      <div><label>Tipo</label>
+        <select id="f-tipo" onchange="tipoMudou()" style="width:100%">
+          <option value="">— escolha —</option>
+          <option>CND Federal</option>
+          <option>CND Estadual</option>
+          <option>CND Municipal</option>
+          <option>CRF FGTS</option>
+          <option>CNDT Trabalhista</option>
+          <option>Contrato Social</option>
+          <option>Balanço Patrimonial</option>
+          <option>Atestado de Capacidade Técnica</option>
+          <option>Alvará</option>
+          <option>Licença Sanitária</option>
+          <option>AFE (Autorização de Funcionamento)</option>
+          <option value="__outro">outro (escrever)…</option>
+        </select>
+        <input type="text" id="f-tipo-outro" placeholder="qual é o documento?" style="width:100%;margin-top:4px;display:none"></div>
       <div><label>Órgão emissor</label><input type="text" id="f-orgao" placeholder="Receita Federal"></div>
       <div><label>Número</label><input type="text" id="f-numero"></div>
       <div><label>Emissão</label><input type="date" id="f-emissao"></div>
+      <!-- "em branco = não vence" era uma PROMESSA que esta tela não tem como cumprir: ela não
+           sabe distinguir contrato social (que de fato não vence) de CND que alguém esqueceu de
+           datar. O que ela sabe dizer é o que acontece — ninguém vai ser avisado. -->
       <div><label>Validade</label><input type="date" id="f-validade">
-        <div class="hint" style="margin-top:4px">em branco = não vence</div></div>
+        <div class="hint" style="margin-top:4px">em branco = validade não informada (e aí ele não avisa ninguém)</div></div>
       <!-- POR DOCUMENTO, e não um número fixo: certidão federal sai em minutos, alvará da
            vigilância leva semanas. Avisar os dois com a mesma antecedência trata como iguais
            coisas que não são. -->
@@ -318,10 +375,49 @@ function traduzRecusaDoCofre(status, corpo, tipo){
 }
 
 const esc = s => String(s==null?'':s).replace(/[<>&"]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c]));
+/* ══ O CAMINHO DO ARQUIVO VAI DENTRO DE UM `onclick`, E ISSO PEDE DOIS ESCAPES, NÃO UM ════════
+   O `esc()` cuida do HTML (o atributo é delimitado por aspas duplas). Mas o que está DENTRO do
+   atributo é código JavaScript com uma string de aspas simples — e uma aspa simples ou uma barra
+   invertida no nome do arquivo fecharia essa string e o resto viraria código.
+   >>> HOJE O `salvar()` já lava o nome (`[^a-z0-9._-]` vira hífen), então não existe caminho
+       perigoso no cofre. Isto aqui é para o dia em que um caminho entrar por outra porta — e
+       depender de uma limpeza feita em OUTRA função, cem linhas acima, é a forma de defeito que
+       sobrevive a toda revisão. Escapa-se onde se usa. */
+const jsq = s => esc(String(s==null?'':s).replace(/\\/g,'\\\\').replace(/'/g,"\\'"));
+
+/* ══ O CAMINHO DO ARQUIVO NA URL SE ESCAPA POR PEDAÇO, E NÃO INTEIRO (B25) ═══════════════════
+   MEDIDO EM 19/08, no cofre de verdade, com sessão de verdade, num arquivo em pasta:
+     encodeURIComponent(caminho inteiro)  ->  assinar HTTP 200, e a URL assinada volta com `%2F`
+                                              ->  BAIXAR HTTP 400. O arquivo some sem erro nenhum.
+     caminho.split('/').map(encodeURIComponent).join('/')  ->  assinar 200, baixar 200, 207 bytes.
+   A causa é de uma linha: `encodeURIComponent` escapa a BARRA, que é o separador do caminho. O
+   cofre aceita, guarda, e devolve a URL assinada com o `%2F` dentro — e aí a própria URL que ele
+   assinou não abre. Assinar responde 200 e mente: quem falha é o download, depois.
+   >>> HOJE ISSO AINDA NÃO MORDE, e é justamente por isso que ele merecia conserto agora: o
+       `salvar()` monta o caminho como `<hora>-<nome lavado>`, sem pasta nenhuma. No dia em que
+       alguém organizar o cofre por empresa ou por ano — que é o passo seguinte óbvio de um cofre
+       de certidões — TODO "abrir arquivo" passaria a dar 400 e a certidão pareceria perdida.
+       Defeito que dorme esperando uma pasta é pior que defeito que aparece hoje. */
+const caminhoNaUrl = p => String(p==null?'':p).split('/').map(encodeURIComponent).join('/');
 const semAcento = s => { let o=''; for(const c of String(s||'').normalize('NFD')){ const k=c.codePointAt(0); if(k>=0x300&&k<=0x36f) continue; o+=c; } return o.toLowerCase(); };
 const brData = s => s ? s.slice(8,10)+'/'+s.slice(5,7)+'/'+s.slice(0,4) : '—';
 
 let DOCS = null, ERRO = null;
+
+/* ══ A CONTA DO PAINEL É PURA, E POR ISSO DÁ PARA CONFERIR CONTRA O BANCO ════════════════════
+   Ela estava embutida no meio do `pinta()`, cercada de `innerHTML` — ou seja, só era possível
+   conferi-la abrindo a tela e olhando. Fora dali, ela é uma função que recebe uma lista e
+   devolve quatro números, e a `tools/prova_cofre_certidoes.js` ARRANCA esta função do arquivo e
+   roda a MESMA conta contra o `group by situacao` do Postgres. Se um dia a tela e o banco
+   discordarem, a prova reprova — em vez de alguém descobrir olhando.
+   >>> AS QUATRO CHAVES NASCEM EM ZERO DE PROPÓSITO. Se elas nascessem do dado, um estado sem
+       nenhum documento sumiria do painel em vez de mostrar "0" — e "0 vencidos" é a resposta
+       mais importante que esta tela dá. Ausência não é a mesma coisa que zero. */
+function contaSituacoes(docs){
+  const c = { vencido:0, vencendo:0, ok:0, sem_validade:0 };
+  (docs||[]).forEach(d => { if(c[d.situacao] !== undefined) c[d.situacao]++; });
+  return c;
+}
 
 // A CONTA DE DIAS NÃO É REFEITA AQUI: ela vem da view `v_documentos_situacao`. Se a tela
 // calculasse por conta própria, um dia ela diria "vence em 5" e o sino diria "vencido" — e foi
@@ -353,12 +449,16 @@ function pinta(){
   }
   if(!DOCS){ lista.innerHTML = '<div class="aviso">carregando…</div>'; return; }
 
-  const cont = { vencido:0, vencendo:0, ok:0, sem_validade:0 };
-  DOCS.forEach(d => cont[d.situacao] = (cont[d.situacao]||0)+1);
+  const cont = contaSituacoes(DOCS);
+  // >>> OS QUATRO CONTADORES FECHAM COM O TOTAL, E ISSO É CONFERÍVEL A OLHO. Antes da B25 o
+  //     painel mostrava três dos quatro estados: os sem validade sumiam da soma e reapareciam
+  //     só no total, como uma diferença sem nome. Painel que não fecha a conta é painel que a
+  //     pessoa para de conferir — e aí ele pode errar sem ninguém notar.
   reg.innerHTML =
       '<div class="regua vencido"><b>'+cont.vencido+'</b><span>vencidos</span></div>'
     + '<div class="regua vencendo"><b>'+cont.vencendo+'</b><span>vencendo (dentro do aviso)</span></div>'
     + '<div class="regua ok"><b>'+cont.ok+'</b><span>em dia</span></div>'
+    + '<div class="regua sem_validade"><b>'+cont.sem_validade+'</b><span>sem validade informada</span></div>'
     + '<div class="regua total"><b>'+DOCS.length+'</b><span>documentos cadastrados</span></div>';
 
   const q = semAcento(document.getElementById('busca').value.trim());
@@ -378,25 +478,145 @@ function pinta(){
   }
   if(!vis.length){ lista.innerHTML = '<div class="aviso">Nenhum documento bate com o filtro.</div>'; return; }
 
-  const rotulo = { vencido:'VENCIDO', vencendo:'VENCE EM BREVE', ok:'EM DIA', sem_validade:'SEM VALIDADE' };
+  // "SEM VALIDADE" dizia que o documento não vence. "VALIDADE NÃO INFORMADA" diz o que a tela
+  // realmente sabe: que ninguém digitou a data. A diferença entre as duas é a diferença entre
+  // uma promessa e um fato — e a promessa é falsa em toda CND que alguém cadastrou com pressa.
+  const rotulo = { vencido:'VENCIDO', vencendo:'VENCE EM BREVE', ok:'EM DIA', sem_validade:'VALIDADE NÃO INFORMADA' };
   lista.innerHTML = vis.map(d => {
     const dias = d.dias_para_vencer;
-    const quando = d.situacao==='sem_validade' ? 'não vence'
+    const quando = d.situacao==='sem_validade' ? 'validade não informada — este documento não avisa ninguém'
       : d.situacao==='vencido' ? ('venceu em '+brData(d.validade)+' — há '+Math.abs(dias)+' dia(s)')
       : ('vence em '+brData(d.validade)+' — em '+dias+' dia(s)');
-    return '<div class="doc '+d.situacao+'">'
-      + '<div><div class="nome">'+esc(d.nome)+'</div>'
+    // `versoes_anteriores` vem da view (contagem recursiva no banco). A tela NÃO percorre a
+    // corrente para contar: seria a segunda implementação da mesma regra, que é a família de
+    // defeito mais cara deste projeto.
+    const anteriores = Number(d.versoes_anteriores || 0);
+    return '<div class="doc '+d.situacao+'" id="doc-'+d.id+'">'
+      + '<div><div class="nome">'+esc(d.nome)
+      +     (d.versao > 1 ? '<span class="versao">versão '+d.versao+'</span>' : '')+'</div>'
       +   '<div class="sub">'+[d.tipo, d.orgao_emissor, d.numero?('nº '+d.numero):null].filter(Boolean).map(esc).join(' · ')
       +     (d.emissao?' · emitido em '+brData(d.emissao):'')+'</div>'
       +   '<div class="sub">'+esc(quando)+' · avisa '+d.dias_aviso+' dias antes</div></div>'
       + '<div class="dir"><span class="selo '+d.situacao+'">'+rotulo[d.situacao]+'</span>'
-      +   (d.arquivo_path ? ' <button class="btn sec mini" onclick="abrirArquivo('+d.id+')">abrir arquivo</button>' : '')
-      + '</div></div>';
+      +   (d.arquivo_path ? ' <button class="btn sec mini" onclick="abrirArquivo(\''+jsq(d.arquivo_path)+'\')">abrir arquivo</button>' : '')
+      +   ' <button class="btn sec mini" onclick="abrirSubstituicao('+d.id+')">substituir</button>'
+      +   (anteriores ? ' <button class="btn sec mini" onclick="verHistorico('+d.id+')">histórico ('+anteriores+')</button>' : '')
+      + '</div>'
+      + '<div class="hist" id="hist-'+d.id+'" style="display:none"></div>'
+      + '</div>';
   }).join('');
 }
 
+function tipoMudou(){
+  const s = document.getElementById('f-tipo'), o = document.getElementById('f-tipo-outro');
+  o.style.display = s.value === '__outro' ? '' : 'none';
+  if(s.value === '__outro') o.focus(); else o.value = '';
+}
+// O tipo que vai para o banco: a escolha da lista, ou o que a pessoa escreveu em "outro".
+function tipoEscolhido(){
+  const s = document.getElementById('f-tipo').value;
+  if(s === '__outro') return document.getElementById('f-tipo-outro').value.trim() || null;
+  return s || null;
+}
+// O caminho inverso: pôr um tipo GRAVADO de volta no formulário. Um tipo antigo que não está na
+// lista (os cadastrados antes da B25 são texto livre) não pode sumir na substituição — ele cai
+// em "outro" com o texto original, e quem substitui decide se troca pelo nome canônico.
+function poeTipo(valor){
+  const s = document.getElementById('f-tipo'), o = document.getElementById('f-tipo-outro');
+  const v = String(valor == null ? '' : valor);
+  const naLista = [...s.options].some(op => op.value === v || op.text === v);
+  if(v && naLista){ s.value = v; o.value=''; o.style.display='none'; }
+  else if(v){ s.value = '__outro'; o.value = v; o.style.display = ''; }
+  else { s.value = ''; o.value=''; o.style.display='none'; }
+}
+
+/* ══ SUBSTITUIR NÃO É EDITAR, E O COFRE GUARDA OS DOIS FATOS ══════════════════════════════════
+   Editar diz "eu errei o que estava escrito". Substituir diz "aquela certidão valeu até aqui,
+   esta vale daqui". São fatos diferentes sobre o mundo.
+   >>> E O PASSADO PRECISA FICAR INTEIRO PORQUE ELE AINDA SERVE: a CND que valia NO DIA DA SESSÃO
+       é a que habilita. Se em outubro o órgão pedir a certidão que estava válida em agosto e o
+       cofre só tiver a mais recente, a empresa perde um recurso que ela ganharia. Sobrescrever o
+       arquivo antigo é apagar prova de habilitação. */
+let SUBSTITUINDO = null;   // o documento que esta gravação vai aposentar (null = documento novo)
+
 function abrirForm(){ document.getElementById('form').classList.add('open'); document.getElementById('f-nome').focus(); }
-function fecharForm(){ document.getElementById('form').classList.remove('open'); document.getElementById('msg-form').textContent=''; }
+function fecharForm(){
+  document.getElementById('form').classList.remove('open');
+  document.getElementById('msg-form').textContent='';
+  // Sair do formulário SEMPRE apaga a substituição pendente. Deixá-la de pé faria o próximo
+  // "+ Novo documento" aposentar em silêncio um documento que ninguém mandou aposentar.
+  SUBSTITUINDO = null;
+  document.getElementById('aviso-subst').style.display = 'none';
+  document.getElementById('bt-salvar').textContent = 'Salvar documento';
+}
+
+function abrirSubstituicao(id){
+  const d = (DOCS||[]).find(x => x.id === id); if(!d) return;
+  SUBSTITUINDO = d;
+  /* O QUE SE COPIA E O QUE NÃO SE COPIA — a lista é a regra:
+     copia-se o que IDENTIFICA o documento (nome, tipo, órgão, e a antecedência de aviso que
+     alguém já pensou uma vez para ESTE documento); NÃO se copia o que muda de uma via para a
+     outra (número, emissão, validade, arquivo). Herdar a validade antiga seria o pior defeito
+     possível aqui: a versão nova nasceria com a data da velha e a tela diria "em dia". */
+  document.getElementById('f-nome').value   = d.nome || '';
+  poeTipo(d.tipo);
+  document.getElementById('f-orgao').value  = d.orgao_emissor || '';
+  document.getElementById('f-aviso').value  = d.dias_aviso == null ? 30 : d.dias_aviso;
+  ['f-numero','f-emissao','f-validade','f-arq'].forEach(i => document.getElementById(i).value = '');
+  const av = document.getElementById('aviso-subst');
+  av.innerHTML = '<svg class="ic" aria-hidden="true"><use href="#ic-alerta"/></svg> '
+    + 'Substituindo a <b>versão ' + d.versao + '</b> de «' + esc(d.nome) + '». '
+    + 'A via anterior sai da lista e vai para o histórico — ela <b>não é apagada</b>, '
+    + 'e o arquivo dela continua no cofre.';
+  av.style.display = '';
+  document.getElementById('bt-salvar').textContent = 'Gravar a versão ' + (d.versao + 1);
+  abrirForm();
+  document.getElementById('f-validade').focus();   // é o campo que MUDA numa via nova
+}
+
+/* O histórico é UMA consulta e é lido de trás para frente pela corrente `substitui_id`. A view
+   `v_documentos_historico` é a única que enxerga quem já saiu de cena (a da tela filtra `ativo`),
+   e ela não filtra nada — por isso a corrente é percorrida aqui, com o dado na mão. */
+function verHistorico(id){
+  const caixa = document.getElementById('hist-'+id); if(!caixa) return;
+  if(caixa.style.display !== 'none'){ caixa.style.display='none'; return; }
+  caixa.style.display = '';
+  carregaHistorico(id);
+}
+// Abrir e LER são duas coisas: o "tentar de novo" da falha precisa reler sem fechar a gaveta.
+async function carregaHistorico(id){
+  const caixa = document.getElementById('hist-'+id); if(!caixa) return;
+  caixa.innerHTML = '<div class="linha">lendo o histórico…</div>';
+  try{
+    const r = await fetch(`${SB_URL}/rest/v1/v_documentos_historico?select=*`, {headers:SB_H});
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    const todos = await r.json();
+    const porId = new Map(todos.map(x => [x.id, x]));
+    const corrente = [];
+    let atual = porId.get(id);
+    // >>> A TRAVA DE VOLTA NÃO É PARANOIA: `substitui_id` é uma coluna, e coluna aceita ciclo.
+    //     Um ciclo aqui travaria a aba do navegador em silêncio — a tela inteira, por causa de
+    //     um clique num botão de histórico.
+    const vistos = new Set();
+    while(atual && atual.substitui_id != null && !vistos.has(atual.substitui_id)){
+      vistos.add(atual.substitui_id);
+      atual = porId.get(atual.substitui_id);
+      if(atual) corrente.push(atual);
+    }
+    if(!corrente.length){ caixa.innerHTML = '<div class="linha">sem versões anteriores.</div>'; return; }
+    caixa.innerHTML = corrente.map(v =>
+      '<div class="linha"><b>versão '+v.versao+'</b> · '
+      + (v.validade ? 'valia até '+brData(v.validade) : 'validade não informada')
+      + (v.substituido_em ? ' · substituída em '+brData(String(v.substituido_em).slice(0,10)) : '')
+      + (v.numero ? ' · nº '+esc(v.numero) : '')
+      + (v.arquivo_path ? ' <button class="btn sec mini" onclick="abrirArquivo(\''+jsq(v.arquivo_path)+'\')">abrir arquivo</button>' : '')
+      + '</div>').join('');
+  }catch(e){
+    // Mesma lei da lista: falha de leitura NÃO pode virar "não há histórico".
+    caixa.innerHTML = '<div class="linha">não consegui ler o histórico ('+esc(e.message)+') — '
+      + '<button class="btn sec mini" onclick="carregaHistorico('+id+')">tentar de novo</button></div>';
+  }
+}
 
 async function salvar(){
   const msg = document.getElementById('msg-form'), bt = document.getElementById('bt-salvar');
@@ -413,7 +633,7 @@ async function salvar(){
       path = Date.now() + '-' + limpo;
       msg.textContent = 'enviando o arquivo…';
       const tipo = tipoDoArquivo(arq);
-      const up = await fetch(`${SB_URL}/storage/v1/object/documentos/${encodeURIComponent(path)}`, {
+      const up = await fetch(`${SB_URL}/storage/v1/object/documentos/${caminhoNaUrl(path)}`, {
         method:'POST', headers: cabecalhoCofre(tipo), body: arq });
       if(!up.ok){
         const t = await up.text().catch(() => '');
@@ -421,14 +641,17 @@ async function salvar(){
       }
       bytes = arq.size; arqNome = arq.name;
     }
+    const velho = SUBSTITUINDO;
     const corpo = {
-      nome, tipo: document.getElementById('f-tipo').value.trim() || null,
+      nome, tipo: tipoEscolhido(),
       orgao_emissor: document.getElementById('f-orgao').value.trim() || null,
       numero: document.getElementById('f-numero').value.trim() || null,
       emissao: document.getElementById('f-emissao').value || null,
       validade: document.getElementById('f-validade').value || null,
       dias_aviso: parseInt(document.getElementById('f-aviso').value || '30', 10),
       arquivo_path: path, arquivo_nome: arqNome, arquivo_bytes: bytes,
+      substitui_id: velho ? velho.id : null,
+      versao: velho ? (velho.versao || 1) + 1 : 1,
     };
     const r = await fetch(`${SB_URL}/rest/v1/documentos`, {method:'POST',
       headers: Object.assign({'Prefer':'return=representation'}, SB_HW), body: JSON.stringify(corpo)});
@@ -436,7 +659,30 @@ async function salvar(){
       const t = await r.text();
       throw new Error(r.status===401||r.status===403 ? 'só gestor pode cadastrar documento' : ('HTTP '+r.status+' '+t.slice(0,70)));
     }
-    ['f-nome','f-tipo','f-orgao','f-numero','f-emissao','f-validade','f-arq'].forEach(id=>document.getElementById(id).value='');
+    /* ══ A ORDEM DAS DUAS GRAVAÇÕES É A DECISÃO, E ELA TEM UM LADO SEGURO ═══════════════════
+       Primeiro NASCE a via nova; só depois a velha sai de cena. Se a segunda chamada falhar (a
+       rede cai entre uma e outra), a lista fica com DUAS vias do mesmo documento — feio, e
+       visível na hora, e consertável com um clique em "substituir". Na ordem inversa a falha
+       deixaria ZERO: a certidão que valia teria saído da lista e a nova nunca teria nascido, e
+       ninguém veria nada — o painel diria "3 em dia" com uma certidão a menos. Entre um defeito
+       que grita e um que se esconde, escolhe-se o que grita. */
+    if(velho){
+      const up = await fetch(`${SB_URL}/rest/v1/documentos?id=eq.${velho.id}`, {method:'PATCH',
+        headers: SB_HW, body: JSON.stringify({ ativo:false, substituido_em:new Date().toISOString(),
+                                               atualizado_em:new Date().toISOString() })});
+      if(!up.ok){
+        const t = await up.text();
+        // A versão nova JÁ ESTÁ GRAVADA — dizer "não consegui salvar" aqui seria mentira, e a
+        // pessoa mandaria de novo, criando uma terceira via. A mensagem diz o que ficou pela
+        // metade e o que fazer.
+        await carregar();
+        throw new Error('a versão nova foi gravada, mas a anterior NÃO saiu da lista (HTTP '
+          + up.status + ' ' + t.slice(0,60) + '). As duas estão aparecendo — clique em '
+          + '"substituir" na antiga para tentar de novo.');
+      }
+    }
+    ['f-nome','f-orgao','f-numero','f-emissao','f-validade','f-arq'].forEach(id=>document.getElementById(id).value='');
+    poeTipo('');
     document.getElementById('f-aviso').value = 30;
     fecharForm();
     await carregar();
@@ -454,10 +700,14 @@ async function salvar(){
 // >>> AQUI O `Content-Type: application/json` ESTÁ CERTO (o corpo é JSON de verdade, não é um
 //     arquivo); o que estava errado era o CRACHÁ: assinar é `/storage/v1/`, que o gm-auth não
 //     toca, e a policy `docs_storage_le` exige sessão. Medido: anon -> 400/403, sessão -> 200.
-async function abrirArquivo(id){
-  const d = (DOCS||[]).find(x=>x.id===id); if(!d || !d.arquivo_path) return;
+// >>> ELE PASSOU A RECEBER O CAMINHO, E NÃO O `id` (B25). O botão do histórico abre a via
+//     ANTIGA, que por definição não está na lista `DOCS` — procurar por id ali devolveria
+//     `undefined` e o botão não faria nada, em silêncio, que é o defeito que a testa_icones
+//     chama de "botão que não faz nada" na versão invisível dele.
+async function abrirArquivo(caminho){
+  if(!caminho) return;
   try{
-    const r = await fetch(`${SB_URL}/storage/v1/object/sign/documentos/${encodeURIComponent(d.arquivo_path)}`, {
+    const r = await fetch(`${SB_URL}/storage/v1/object/sign/documentos/${caminhoNaUrl(caminho)}`, {
       method:'POST', headers: cabecalhoCofre('application/json'), body: JSON.stringify({ expiresIn: 60 }) });
     if(!r.ok) throw new Error(traduzRecusaDoCofre(r.status, await r.text().catch(()=>''), 'application/json'));
     const j = await r.json();
