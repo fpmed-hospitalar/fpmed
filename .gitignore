@@ -131,3 +131,18 @@ relatorios/
 # watchdog sem o jeito de rodar sozinho — que e a fatia inteira.
 !WATCHDOG_PNCP.bat
 !AGENDAR_WATCHDOG.bat
+
+# ── O QUE O NAVEGADOR DEIXA CAIR (fatia B21, 15/08) ─────────────────────────────
+# O MCP do Playwright grava sozinho, a cada passo, em .playwright-mcp/: retrato da
+# arvore da pagina (.yml) e o console (.log). Depois de uma sessao de medicao ja
+# eram 32 arquivos, e eles trazem o CONTEUDO DAS TELAS do sistema — inclusive o que
+# vier de dado real quando alguem medir logado.
+# Isto e exatamente a armadilha do commit 6c5ca52 ("11 arquivos de dado colhido
+# estavam a um `git add -A` do repo publico"), so que agora ela se rearma sozinha a
+# cada medicao. O repo e publico; a saida do navegador nao entra nele.
+.playwright-mcp/
+
+# .playwright-mcp/ - rascunho do MCP do navegador (console-*.log, page-*.png). E saida de
+# execucao, como logs/, e nao fonte. Entrou na A32, no mesmo dia em que 11 arquivos de dado
+# colhido estavam a um `git add -A` do repo publico (miudo da A30).
+.playwright-mcp/
