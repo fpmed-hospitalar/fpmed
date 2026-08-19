@@ -34,9 +34,60 @@ const alvos = process.argv.slice(2).length
 const semEstilo = (html) => html.replace(/(^|\n)([ \t]*)<style\b[^>]*>[\s\S]*?<\/style>/gi,
   (bloco, quebra) => quebra + '\n'.repeat((bloco.match(/\n/g) || []).length - (quebra ? 1 : 0)));
 
+/* ══ E A TERCEIRA VEZ FOI O COMENTÁRIO DE HTML (15/08, fatia B21) ═══════════════════════════════
+   Este arquivo já conta a mesma história duas vezes: o `<style>` citado em comentário e o
+   `<script>` citado em comentário. Faltava o caso que a âncora `^[ \t]*` **não** enxerga —
+   a etiqueta escrita no COMEÇO DE UMA LINHA, DENTRO DE UM COMENTÁRIO DE HTML:
+
+       >>> ELE VEM AQUI, e não no <head>: a injeção é insertAdjacentHTML no próprio
+           <script>, então o sprite já está no documento quando o navegador ...
+
+   Aquele `<script>` abre no começo da linha, passa na âncora, e a varredura compila a prosa em
+   português que vem depois. Resultado: `fpmed_negocios.html` e `fpmed_giovana.html` estavam
+   **VERMELHOS HÁ DIAS** por dois comentários que EXPLICAM consertos — e o vermelho fixo que não
+   é erro é o pior estado de uma ferramenta, como o próprio bloco acima já tinha escrito.
+   Comentário de HTML não é executado por navegador nenhum: apagá-lo antes da varredura é a
+   leitura certa, não uma tolerância.
+
+   >>> A ÂNCORA `^[ \t]*<!--` SOZINHA NÃO SERVE, E EU MEDI ISSO ANTES DE ENTREGAR — era o mesmo
+       defeito que esta ferramenta já cometeu uma vez, indo pro terceiro round. O `card()` do
+       Negócios monta HTML dentro de um template literal, e lá dentro há **23 comentários de HTML
+       começando no início da linha** (o da Proposta tem 3). Apagá-los tira 11.530 caracteres de
+       dentro de uma STRING DE JAVASCRIPT — e um `-->` casado com o `<!--` errado leva junto a
+       crase que fecha o template. A versão anterior desta ferramenta nasceu de exatamente esse
+       erro com o `<style>`; repeti-lo com o comentário seria a terceira vez.
+   >>> ENTÃO A REGRA NÃO É ÂNCORA, É ORDEM DE ABERTURA, numa varredura da esquerda pra direita:
+       **quem abre primeiro manda.** Comentário aberto ANTES de qualquer `<script>` engole tudo
+       até o `-->` (inclusive uma etiqueta `<script>` citada na prosa — que é o defeito que se
+       queria matar). E `<script>` aberto antes de qualquer `<!--` protege o corpo inteiro até o
+       `</script>` — que é o que salva os 23 comentários de dentro do template literal.
+       Isso não é heurística: é a mesma ordem que o navegador usa pra ler o documento.
+   >>> Espaços no lugar do que sai, e as quebras de linha mantidas: número de linha errado num
+       validador custa mais tempo que o erro que ele achou. */
+function semComentarioHTML(html) {
+  const reCom = /<!--/g, reScr = /<script\b[^>]*>/gi;
+  const branco = (s) => s.replace(/[^\n]/g, ' ');
+  let saida = '', i = 0;
+  while (i < html.length) {
+    reCom.lastIndex = i; reScr.lastIndex = i;
+    const c = reCom.exec(html), s = reScr.exec(html);
+    if (!c) { saida += html.slice(i); break; }                 // não há mais comentário: o resto é como está
+    if (s && s.index < c.index) {                              // o <script> abriu primeiro: corpo intocado
+      const fim = html.indexOf('</script>', s.index);
+      const ate = fim === -1 ? html.length : fim + 9;
+      saida += html.slice(i, ate); i = ate; continue;
+    }
+    const fim = html.indexOf('-->', c.index + 4);
+    if (fim === -1) { saida += html.slice(i); break; }          // comentário sem fecho: não inventa
+    saida += html.slice(i, c.index) + branco(html.slice(c.index, fim + 3));
+    i = fim + 3;
+  }
+  return saida;
+}
+
 let erros = 0, blocos = 0;
 for (const arq of alvos) {
-  const html = semEstilo(fs.readFileSync(arq, 'utf8'));
+  const html = semComentarioHTML(semEstilo(fs.readFileSync(arq, 'utf8')));
   /* ══ E A ETIQUETA `<script>` PRECISAVA DA MESMA ÂNCORA QUE O `<style>` (achado em 14/08) ═══
      O bloco acima resolveu o falso positivo do `<style>` citado em comentário, e deixou o
      `<script>` com o defeito idêntico. O `fpmed_negocios.html` acusa erro de sintaxe HÁ DIAS

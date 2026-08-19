@@ -3375,7 +3375,19 @@ function renderItens() {
           ${c.estoque>0?` · <span style="color:var(--verde-escuro)">Estoque: ${c.estoque}</span>`:''}
           ${c.validade?` · Venc: ${fmtDate(c.validade)}`:''}
         </div>
-        <!-- ══ A IDENTIDADE EXIGIDA PELO EDITAL (B17) — e ela é `no-print` de propósito ═══════
+        <!-- ══ A IDENTIDADE EXIGIDA PELO EDITAL (B17) — e ela é "no-print" de propósito ═══════
+             ASPAS, NUNCA CRASE — e esta linha é o registro do porquê. As duas crases que estavam
+             aqui FECHAVAM O TEMPLATE LITERAL aberto no "return" algumas linhas acima, e o
+             no-print seguinte virava identificador solto: "Unexpected identifier 'no'".
+             Resultado: este bloco de script — 289 mil caracteres, quase a tela inteira — NÃO ERA
+             COMPILADO pelo navegador desde a B17. Medido em 15/08 na tela pintada: o console
+             devolve o erro de sintaxe e, logo abaixo, "ReferenceError: FORN_NOMES is not
+             defined", que é o bloco seguinte tropeçando no que o bloco morto devia ter
+             declarado. O tools/valida_sintaxe.js vinha dizendo isto há dias e foi lido como
+             falso positivo. Era verdadeiro.
+             O aviso já estava escrito no fpmed_negocios.html, em 14/08, com todas as letras:
+             "Sem crase neste comentário: ele mora DENTRO de um template literal, e crase aqui
+              fecha a string e quebra o arquivo inteiro. Já me pegou duas vezes hoje." -->
              O documento impresso está CONGELADO (ordem da caixa desde a B8). Esta linha vive na
              tela, que é onde a proposta é MONTADA e onde ainda dá tempo de consertar. Ver a
              fatia B17 no relatório para o caminho que NÃO foi tomado no papel, e o porquê. -->
