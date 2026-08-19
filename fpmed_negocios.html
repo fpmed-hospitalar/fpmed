@@ -293,27 +293,49 @@ body{
    O :hover devolve a opacidade cheia — cartão que não dá pra ler direito vira cartão ignorado. */
 .card.parado{opacity:.55;filter:saturate(.6)}
 .card.parado:hover{opacity:1;filter:none}
-/* ══ O ÚNICO ESPAÇO FORA DA GRADE QUE SOBROU NESTA TELA — DECLARADO, E NÃO ARREDONDADO ═══════
-   `96px` não é degrau da grade da casa (4·8·12·16·20·24·32·48·64). O aplicador da fatia B19
-   RECUSOU mexer nele por regra própria — "nada anda mais de 8px, porque mudar 96 para 64 não é
-   arredondar, é redesenhar" — e a caixa manda relatar o que não couber em vez de inventar
-   degrau. Este é o relato, no lugar onde quem for mexer vai olhar.
-   >>> O QUE ESTE NÚMERO É: uma RESERVA. O `.sit-tag` ("REMARCADO", "CANCELADO") é
-       `position:absolute;right:14px` no alto do cartão, e elemento absoluto não empurra
-       ninguém. Sem a reserva, o título passa POR BAIXO da etiqueta no caso real do kanban sem
-       kit e sem empresa, onde o título é o primeiro elemento do fluxo.
-   >>> POR QUE NÃO CORTEI PARA 64: eu não sei quanto a etiqueta mede. "REMARCADO" são 9 letras
-       em peso 800 com 1,2px de espaçamento, mais 8+8 de respiro, mais os 14 da direita — a
-       conta de cabeça dá perto de 115, ou seja, a reserva de 96 pode já estar CURTA hoje. É
-       exatamente o defeito que o MOLDE_VISUAL nomeia ("um 310px escrito numa tela virou reserva
-       curta no dia em que o botão do componente cresceu, e ninguém viu"). Encolher para 64 sem
-       medir seria trocar um número fora da grade por um número fora da grade E errado.
-   >>> O QUE FECHA ISTO: a largura da etiqueta medida na TELA PINTADA, e daí a reserva vira o
-       degrau certo — ou a etiqueta publica a própria medida, que é a receita do molde ("quem
-       tem a peça publica a medida"). Nenhuma das duas se faz sem navegador com sessão, e eu
-       não logo. Está na lista de PENDÊNCIAS do relatório da B19. */
+/* ══ A RESERVA DO SELO — MEDIDA NA TELA PINTADA (15/08, fatia B21) ═══════════════════════════
+   Aqui morava um `96px` com um bilhete meu dizendo, na B19: *"eu não sei quanto a etiqueta mede;
+   a conta de cabeça dá perto de 115, ou seja a reserva pode JÁ ESTAR CURTA hoje — e eu não
+   logo"*. O navegador chegou e respondeu. **Estava curta, e o título passava por baixo do selo.**
+
+   >>> O QUE FOI MEDIDO (Chromium, `getBoundingClientRect`, cartão de 744,8px):
+         REMARCADO 113,22px · CANCELADO 109,85 · SUSPENSO 96,54 · ADIADO 77,71.
+       O selo é `position:absolute;right:14px`, então ele ocupa 113,22 + 14 = **128,02px** a
+       partir da borda direita do cartão. O que a reserva entregava: 96 (título) + 16 (padding do
+       cartão) = **112,80px**. **Faltavam 15,22px.**
+
+   >>> A PROVA DE QUE ISSO APARECIA NA TELA, e não só na conta: varri 60 comprimentos de título
+       no cartão do KANBAN — onde não há `progressoCard` e o título é o primeiro elemento do
+       fluxo, logo ele fica na MESMA faixa vertical do selo. **4 dos 60 desenharam a linha 1 por
+       baixo do selo, com até 12,77px de sobreposição.** Não era todo título: era todo título
+       cujo fim de linha caísse dentro daqueles 15,22px. É o pior tipo de defeito — passa em
+       quase todo teste e aparece no cartão de alguém, uma vez, sem ninguém saber reproduzir.
+
+   >>> O NÚMERO NOVO: 113,22 + 14 − 16 = 111,22px de mínimo. `128px` é o degrau de 8 logo acima
+       que ainda deixa respiro (15,98px), e o respiro tem ofício: absorve a Montserrat não ter
+       carregado (o fallback é mais largo) e um rótulo de situação futuro maior que REMARCADO.
+       Ele é PUBLICADO como token no `.card` — quem tem a peça publica a medida, que é a receita
+       do molde — em vez de ficar um número solto dentro do `padding-right`.
+
+   >>> E A RESERVA VIROU CONDICIONAL, que é o segundo achado da medição: antes **todo** cartão
+       pagava 96px de reserva por uma etiqueta que a esmagadora maioria dos cartões não tem
+       (`situacao` normal = sem selo). Agora paga só quem tem selo — é o `~` da regra abaixo. Os
+       outros ganharam 96px de título de volta, num cartão onde o título é o que se lê primeiro.
+
+   >>> O QUE ESTE CONSERTO CUSTA, MEDIDO, porque conserto que só mostra o ganho é propaganda:
+       na coluna do KANBAN (300px, cartão de 274,4px) o cartão COM selo passou de 283,2px de
+       altura / 7 linhas de título para **322,4px / 9 linhas**. A reserva vale para a coluna
+       inteira, e o selo só ocupa a primeira linha.
+   >>> A ALTERNATIVA QUE EU MEDI E NÃO ADOTEI: trocar o selo de `position:absolute` para
+       `float:right`. Aí ele reserva espaço SÓ na linha em que está, e o mesmo cartão do kanban
+       fecha em **252,1px / 4 linhas**, sem colisão nenhuma e com 70px a menos de altura. É
+       melhor por todo número que eu sei medir — e MEXE NO DESENHO: o selo desce de `top:9` para
+       16 e anda de `right:14` para a borda do conteúdo. Onde eu meço, eu decido; onde o desenho
+       muda, quem decide é quem desenhou. Está no relatório, com os três números. */
+.card{--selo-reserva:128px}
 .card .tit{font-family:Montserrat;font-weight:700;font-size:13.5px;color:var(--azul-claro);text-decoration:none;
-  display:inline-block;line-height:1.45;padding-right:96px}
+  display:inline-block;line-height:1.45}
+.card .sit-tag ~ * .tit{padding-right:var(--selo-reserva)}
 .card:hover .tit{color:var(--azul-800);text-decoration:underline}
 .card .emp{display:inline-block;background:var(--roxo-50);border:1px solid var(--roxo-200);
   color:var(--roxo);border-radius:20px;padding:4px 8px;font-size:var(--txt-1);font-weight:700;margin-bottom:8px}
@@ -1340,6 +1362,25 @@ textarea.anot:focus{border-color:var(--azul)}
 
   /* 6. LINHA DE TABELA CLICÁVEL (a lista de pacotes abre o item no clique da linha). */
   .pk-tab tbody tr{height:44px}
+
+  /* ══ 7. OS DOIS ALVOS QUE SÓ O NAVEGADOR ACHOU (15/08, fatia B21) ═════════════════════════
+     A regra 3 aí em cima nasceu de contar o arquivo, e ela erra em dois lugares. O Chromium a
+     390px de `documentElement.clientWidth` mediu, com `getBoundingClientRect`:
+
+       · `.trilha > a` ("Sistema") — **57,5 × 26px**. A regra 3 mira `.pagina-topo nav a`, e a
+         trilha desta tela é `.topo > .faixa-int > nav.trilha`: o seletor NÃO A PEGA. Escrevi um
+         conserto para um elemento que não existe com aquele nome e a régua estática não tinha
+         como saber — ela confere que a regra está escrita, não que ela ENCONTRA alguém.
+       · `.barra > a.lnk` ("Filtrar") — **38 × 44px**. A altura obedeceu (a regra 3 funciona), a
+         largura não. E a razão está escrita na própria regra 3, com todas as letras: *"Texto dá
+         largura de graça — por isso aqui basta a altura"*. **Não dá.** "Filtrar" são 7 letras em
+         12px: 38px de largura, 6 a menos que o dedo precisa. A frase valia para "Sistema
+         comercial" e não valia para o rótulo curto, que é justamente o que sobra numa barra.
+
+     Onde o navegador discorda do arquivo, o navegador ganha — e a divergência fica escrita com
+     o número dos dois lados, que é a ordem da caixa. */
+  .trilha a{display:inline-flex;align-items:center;min-height:44px}
+  .barra .lnk, .sublinks a, .pagina-topo nav a{min-width:44px;justify-content:center}
 
   /* 7. VAZAMENTO — a ÚNICA peça de largura fixa acima de 360px que sobrou nesta tela depois de
         a régua parar de contar `max-width` como peça fixa (defeito 5 dela, consertado hoje):
