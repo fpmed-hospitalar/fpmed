@@ -328,6 +328,23 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--texto);min-
         empurra a linha inteira para fora da tela. */
   .busca-wrap,.item-row,.resultado-item,.nao-encontrado-row,.trilha{flex-wrap:wrap}
   .busca-wrap input,.item-row .item-info,.resultado-item .info,.desc-control{min-width:0}
+
+  /* ══ 6. OS CINCO BOTÕES QUE A REGRA 1 NÃO PEGAVA (15/08, fatia B21) ═══════════════════════
+     A regra 1 mira `.btn` porque, quando eu a escrevi contando o arquivo, TODO botão desta tela
+     que eu vi tinha `.btn`. O Chromium a 390px de `documentElement.clientWidth` mediu outra
+     coisa — cinco `<button>` SEM CLASSE NENHUMA:
+        · as quatro abas do cartão de busca (`#tab-busca-btn` e as irmãs: "Busca individual",
+          "Importar lista", "IA — Ler Pedido", "Importar Cotação") — **151,2 × 33,6px**;
+        · o "Instalar aplicativo", que o `limedtec-pwa.js` pendura na `.faixa-int` desta tela —
+          **130,4 × 26,8px**. Ele não é meu, mas o alvo dele acontece DENTRO da minha moldura, e
+          uma regra minha resolve sem eu escrever no arquivo de ninguém.
+     >>> E A CORREÇÃO ALINHA AS DUAS TELAS: a Negócios já resolve por `button`, esta resolvia por
+         `.btn`. Duas soluções para o mesmo fato é o que a BASE 2.3 proíbe, e foi assim que estes
+         cinco escaparam — a régua confere que a regra existe, não que ela ENCONTRA alguém.
+     >>> A TRILHA entra junto: `.trilha > a` ("Sistema") media **53 × 23,2px**. Ela aparecia na
+         regra 5 (que só manda ela quebrar linha) e em lugar nenhum que desse altura de dedo. */
+  button,.btn{min-height:44px}
+  .trilha a{display:inline-flex;align-items:center;min-height:44px}
 }
 
 /* PRINT */
@@ -937,6 +954,30 @@ async function iniciar() {
           'Range': `${from}-${to}`
         }
       });
+      /* ══ "NÃO CONSEGUI LER" ESTAVA SAINDO COMO "NÃO TEM NADA" (15/08, fatia B21) ═══════════
+         MEDIDO NA TELA PINTADA, e é assim que eu achei: abri esta tela no navegador de verdade
+         sem sessão. O console trouxe **HTTP 401 em `/rest/v1/cotacoes_vendedor`** e o distintivo
+         do topo escreveu, em verde, **"Supabase Online · 0 itens"**.
+         A causa é esta linha, e ela era por OMISSÃO: ninguém olhava o `r.ok`. Num 401 o
+         PostgREST devolve um OBJETO de erro (`{code, message, hint}`), o `Array.isArray` dá
+         falso, o laço faz `break` — e a leitura que FALHOU segue adiante como leitura que
+         terminou. Dali para baixo é tudo consequência: `cotacoes = []`, `setDbStatus(true)` e um
+         aviso dizendo "0 produtos carregados".
+         >>> É a lei da casa quebrada no lugar mais caro dela: *"não sei" nunca vira zero*. E o
+             `pinta()` do fpmed_negocios.html já tinha a frase certa escrita, sobre o MESMO caso:
+             "com a lista vazia por erro, 'nenhum aviso' e 'não sei' são a mesma tela — e não são
+             a mesma coisa". Aqui a tela ainda dizia a pior das duas: dizia que estava tudo bem.
+         >>> O ERRO ENSINA A SAÍDA, que é a outra metade: o 401/403 tem nome próprio ("a sessão
+             caiu, entre de novo") porque a saída dele é outra — recarregar a página não resolve
+             sessão morta, e mandar "tente de novo" para quem precisa relogar é o conselho que
+             faz a pessoa desistir. */
+      if (!r.ok) {
+        const corpo = await r.text().catch(() => '');
+        const causa = (r.status === 401 || r.status === 403)
+          ? 'sua sessão caiu — entre de novo'
+          : ('o banco respondeu HTTP ' + r.status + (corpo ? ' · ' + corpo.slice(0, 120) : ''));
+        throw new Error('não consegui ler o catálogo de produtos: ' + causa);
+      }
       const data = await r.json();
       if (!Array.isArray(data) || data.length === 0) break;
       allData = allData.concat(data);

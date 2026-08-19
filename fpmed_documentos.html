@@ -93,6 +93,16 @@
   /* o cartão do documento passa a ter duas linhas, com a data embaixo em vez de fora da tela */
   .doc .dir{margin-left:0;text-align:left;white-space:normal;width:100%}
   .grid{grid-template-columns:1fr}
+
+  /* ══ O CAMINHO DE VOLTA, QUE SÓ O NAVEGADOR ACHOU (15/08, fatia B21) ══════════════════════
+     A 390px de `documentElement.clientWidth`, este é o ÚNICO alvo desta tela abaixo do piso:
+     `.topfaixa .faixa-int > a` ("← Sistema"), medido em **85,2 × 24,8px**. A regra acima resolve
+     `.btn`, `input`, `select` e as abas do portal — e o caminho de volta não é nenhum dos quatro.
+     >>> E ele é o alvo que MENOS pode falhar numa tela de celular: errar o "voltar" é a diferença
+         entre sair da tela e ficar preso nela. Ele já tem `padding:4px 12px` e cara de pastilha;
+         faltava a altura de dedo, e `min-height` em `<a>` inline não faz nada — por isso o
+         `inline-flex` vem antes, que é a armadilha nomeada no molde. */
+  .topfaixa a{display:inline-flex;align-items:center;min-height:44px}
 }
 body{background:var(--bg);color:var(--texto);font-family:'Inter',system-ui,Arial,sans-serif;min-height:100vh}
 .faixa-int{max-width:1180px;margin:0 auto;padding:0 20px;display:flex;align-items:center;gap:12px}

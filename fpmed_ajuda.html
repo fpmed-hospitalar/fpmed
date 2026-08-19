@@ -97,6 +97,19 @@ body{
      guia inteiro para baixo da dobra — a regra 3 do molde, "fita de abas rola". */
   .indice{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:thin}
   .indice a{white-space:nowrap}
+
+  /* ══ "ELA NÃO TEM UM BOTÃO" — E TEM (15/08, fatia B21) ════════════════════════════════════
+     A frase lá em cima diz, com todas as letras, *"ela não tem UM botão, UM campo nem UMA
+     caixinha de marcar — contados no arquivo"*. Contados no arquivo, certo. Na tela pintada, a
+     390px de `documentElement.clientWidth`, há UM botão e ele é o único alvo desta tela abaixo
+     do piso: o **"Instalar aplicativo", 136 × 32,8px**, que o `limedtec-pwa.js` pendura aqui
+     quando o navegador oferece a instalação.
+     >>> A LIÇÃO É SOBRE O INSTRUMENTO, não sobre o botão: **contar o arquivo não enxerga o que
+         outro script pendura na página.** Nenhuma régua estática desta casa acharia este alvo,
+         e ele é o mesmo nas quatro telas do B — a Proposta tinha o dele, com 130,4 × 26,8px.
+     >>> `button` e não `.btn`: este chega sem classe nenhuma. A regra tem de mirar a ETIQUETA,
+         porque a classe é combinada entre nós e ele vem de fora. */
+  button{min-height:44px}
 }
 
 /* O cabeçalho gruda no topo: num guia longo, quem rolou 4 telas ainda precisa saber onde está e
