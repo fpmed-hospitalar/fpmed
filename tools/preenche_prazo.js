@@ -339,9 +339,22 @@ if (require.main !== module) return;
   const ritmo = C.criaRitmo();
   let feitas = 0, gravadas = 0; const falhas = [];
 
+  /* ══ ESTE LAÇO RODAVA CALADO, E ISSO CUSTOU UMA TARDE DE DÚVIDA (A36 · 20/08) ════════════════
+     Medido hoje: chamado pela `carga_diaria.js` com orçamento de 39 minutos e a porta aberta, ele
+     imprimia a sonda e depois NADA — nem uma linha por combinação. Quem olha o log vê um processo
+     parado há meia hora e não tem como distinguir "trabalhando" de "travado".
+     >>> E O SILÊNCIO CUSTA MAIS DO QUE PARECE: o `[N/M]` é a única testemunha que a
+         `carga_diaria` tem de quanto uma etapa REALMENTE processou antes de o relógio matá-la.
+         Sem ele, a etapa de prazos entra no carimbo com `feito: null` e a rodada seguinte não
+         aprende nada sobre o ritmo dela.
+     >>> O FORMATO É O MESMO `[N/M]` das outras etapas, de propósito: o condutor lê UM formato, e
+         um segundo formato aqui seria uma segunda régua para o mesmo número. */
+  let n = 0;
   for (const c of aRodar) {
+    n++;
     if (breaker.aberto || ritmo.estourou) {
       falhas.push(c.dia + '/' + c.uf + '/mod' + c.mod + ': rodada cortada (breaker/rate limit)');
+      console.log(`  [${n}/${aRodar.length}] ${c.dia} ${c.uf} mod${c.mod}  ⏭️ cortada (breaker/rate limit)`);
       continue;
     }
     const dia = c.dia.replace(/-/g, '');
@@ -362,12 +375,20 @@ if (require.main !== module) return;
       await dormir(ritmo.pausa);
     } while (pag <= totalPag && !breaker.aberto);
 
-    if (ruim) { falhas.push(c.dia + '/' + c.uf + '/mod' + c.mod + ': ' + ruim); await dormir(1200); continue; }
+    if (ruim) {
+      falhas.push(c.dia + '/' + c.uf + '/mod' + c.mod + ': ' + ruim);
+      console.log(`  [${n}/${aRodar.length}] ${c.dia} ${c.uf} mod${c.mod}  ⚠️ ${ruim}`);
+      await dormir(1200); continue;
+    }
 
     /* O UPSERT É O MESMO DO COLETOR — mesma chave natural, mesma resolução de conflito. O que
        ele faz aqui é PREENCHER a janela das linhas que a busca deixou nulas, sem duplicar
        nenhuma: a chave (portal, cnpj, ano, sequencial) já existe. */
     const regs = [...achados.values()];
+    /* A LINHA SAI ANTES DO UPSERT e diz QUANTAS voltaram da porta. Zero aqui é resposta legítima
+       (aquele dia/UF/modalidade não teve contratação) e precisa ser visível: uma sequência de
+       zeros é a notícia de que o alvo está mal escolhido, e ela não pode se parecer com silêncio. */
+    console.log(`  [${n}/${aRodar.length}] ${c.dia} ${c.uf} mod${c.mod}  ${regs.length} da porta`);
     const { SB, H } = banco();
     for (let i = 0; i < regs.length; i += 200) {
       const lote = regs.slice(i, i + 200);
