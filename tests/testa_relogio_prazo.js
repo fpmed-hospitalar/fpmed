@@ -275,5 +275,75 @@ const emDias = (d, h) => new Date(2026, 7, 20 + d, h == null ? 9 : h, 0, 0).toIS
     /lista\.innerHTML = h;[\s\S]{0,600}?gravaEstadoNaURL\(true\);/.test(TELA)); n++;
 }
 
+// ══════════ 7. OS ITENS NA PROPRIA LISTA (molde itens 5, 6, 8 e 13) ══════════
+{
+  ok(n + '. *** as SETE colunas do molde estao na lista, e nao so no detalhe ***',
+    /<th class="num">Nº<\/th><th class="desc">Descrição do item<\/th>/.test(TELA)
+    && /<th class="num">Qtd<\/th><th>Un<\/th>/.test(TELA)
+    && /<th class="num">Referência<\/th>/.test(TELA)
+    && /Teto CMED<\/th>/.test(TELA) && /Folga<\/th>/.test(TELA)); n++;
+  ok(n + '. *** so os itens do estoque do cliente, por padrao (item 6) ***',
+    /const meus = r\.itens\.filter\(x => x\.pares && x\.pares\.length\);/.test(TELA)); n++;
+  ok(n + '. ...e ha o caminho para o resto ("Ver os N itens"), com o N do edital inteiro',
+    /'Ver os ' \+ total \+ ' ' \+ \(total === 1 \? 'item' : 'itens'\) \+ ' →<\/button>'/.test(TELA)); n++;
+
+  /* A FOLGA VEM DA MESMA CONTA DO DETALHE. Duas formulas de folga na mesma tela e como um item
+     aparece com 25% na lista e 23% no detalhe — e a pessoa nao tem como saber qual acreditar. */
+  ok(n + '. *** a folga usa o TETO como base, como a A27 declarou (nao a referencia do molde) ***',
+    /const pct = \(t\.teto - uE\.valor\) \/ t\.teto \* 100;/.test(TELA)); n++;
+  ok(n + '. ...e o teto vem do MESMO detTeto que o painel de detalhe usa (uma regua so)',
+    /const t = detTeto\(it, uE\);/.test(TELA)
+    && (TELA.match(/function detTeto\(/g) || []).length === 1); n++;
+
+  // ── NUMERO HONESTO NA TABELA (item 7 do molde, aqui dentro) ──
+  ok(n + '. *** os quatro "nao da pra dizer" sao DISTINTOS, e nenhum e um travessao mudo ***',
+    /texto:'lendo a régua…'/.test(TELA) && /texto:'não sei'/.test(TELA)
+    && /texto:'sem casamento'/.test(TELA) && /texto:'não informado'/.test(TELA)); n++;
+  /* O PNCP devolve 0 quando o orgao nao publicou a quantidade — e "0" numa coluna de quantidade
+     le-se como "nao vao comprar nada". */
+  ok(n + '. *** quantidade zero DIZ "não informada", e nao imprime um zero ***',
+    /Number\(it\.quantidade\) > 0[\s\S]{0,200}?não publicou a quantidade deste item">não informada/.test(TELA)); n++;
+  ok(n + '. *** o valor dos itens so e somado se TODAS as linhas tiverem preco e quantidade ***',
+    /temValor === meus\.length && somaMeus > 0/.test(TELA) && /valor não somável/.test(TELA)); n++;
+
+  // ── O RODAPE CONTA A DIVIDA E SEPARA AS CAUSAS (item 8) ──
+  ok(n + '. *** o rodape diz quantos ficaram sem teto E POR QUE, com as duas causas separadas ***',
+    /sem preço de referência no edital/.test(TELA)
+    && /sem casamento na tabela da CMED/.test(TELA)
+    && /const semTeto = semRef \+ semCasa;/.test(TELA)); n++;
+  /* Contar a divida sobre os 212 do edital faria o rodape falar de linhas que nao estao ali. */
+  ok(n + '. ...e a divida e contada sobre OS QUE A TABELA MOSTRA, nao sobre o edital inteiro',
+    /if\(f\.estado === 'sem-ref'\)   semRef\+\+;/.test(TELA)); n++;
+  ok(n + '. leitura truncada e DITA no cabecalho (o "de N no edital" seria um total que nao e o total)',
+    /r\.truncado \? ' <span class="im-nota" title="a leitura do edital bateu no teto de páginas/.test(TELA)); n++;
+
+  // ── TABELA DENSA (item 13) ──
+  ok(n + '. *** 40px compacta / 48px confortavel, por VARIAVEL — nao por segunda regra de tabela ***',
+    /\.itens-meus\{--im-linha:48px;/.test(CSS)
+    && /\.painel-res\.compacta \.itens-meus\{--im-linha:40px\}/.test(CSS)
+    && /height:var\(--im-linha\)/.test(CSS)); n++;
+  ok(n + '. cabecalho fixo, numero a direita com tabular-nums, fio de 1px e SEM zebra',
+    /\.im-tab thead th\{position:sticky;top:0/.test(CSS)
+    && /\.im-tab \.num,\.im-tab th\.num\{text-align:right;font-variant-numeric:tabular-nums/.test(CSS)
+    && /\.im-tab th,\.im-tab td\{[^}]*border-bottom:1px solid var\(--linha\)/.test(CSS)
+    && !/\.im-tab tbody tr:nth-child/.test(CSS)); n++;
+  /* Sete colunas nao cabem num celular, e a saida honesta e a tabela rolar DENTRO da moldura —
+     nunca a pagina inteira andar de lado (item 16). */
+  ok(n + '. *** a 390px a tabela rola por dentro; a pagina nao anda de lado ***',
+    /\.itens-meus\{overflow-x:auto\}/.test(CSS)); n++;
+
+  // ── E ELE NAO PODE APARECER ONDE NAO HA LEITURA ──
+  ok(n + '. *** sem cruzamento, sem bloco — o cartao continua dizendo "itens ainda não lidos" ***',
+    /if\(!r \|\| !Array\.isArray\(r\.itens\) \|\| !r\.itens\.length\) return '';/.test(TELA)
+    && /itens ainda não lidos/.test(TELA)); n++;
+  ok(n + '. ...e ele entra sem repintar a lista (o "Cruzar todas" nao joga a pessoa pro topo)',
+    /const caixa = document\.getElementById\('im-' \+ i\);[\s\S]{0,200}?caixa\.innerHTML = blocoItensMeus\(l, i\);/
+      .test(TELA.replace(/\r/g, ''))); n++;
+  /* Clicar na tabela nao pode abrir o painel de detalhe: o cartao inteiro e clicavel desde a A21,
+     e quem esta lendo uma celula de teto nao pediu para trocar de tela. */
+  ok(n + '. *** clicar dentro da tabela NAO abre o detalhe por tabela (o cartao inteiro e clicavel) ***',
+    /<div class="itens-meus" onclick="event\.stopPropagation\(\)">/.test(TELA)); n++;
+}
+
 console.log('\nRESULTADO: ' + p + ' ok, ' + f + ' falha(s)');
 process.exit(f ? 1 : 0);

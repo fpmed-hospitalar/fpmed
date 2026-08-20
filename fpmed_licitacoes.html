@@ -760,6 +760,58 @@ select[disabled],input[disabled],textarea[disabled]{
   .lic .relogio{order:3;width:100%;text-align:left;min-width:0;padding-left:0;margin-top:var(--esp-2)}
 }
 
+/* ══ OS ITENS DO CLIENTE NA PRÓPRIA LINHA (fatia A38 · molde v2, itens 5, 6, 8 e 13) ═════════
+   TABELA DENSA, e o item 13 do molde é uma especificação e não uma sugestão: linha de 40px na
+   compacta e 48px na confortável, cabeçalho fixo, número à direita com `tabular-nums`, fio de
+   1px, SEM ZEBRA.
+   >>> SEM ZEBRA É DECISÃO, não esquecimento: a zebra desenha um ritmo que compete com o único
+       ritmo que importa nesta tabela, que é a coluna da folga. Numa tabela de seis linhas ela
+       custa mais do que ajuda.
+   >>> O `overflow-x:auto` é o que segura o item 16 (zero vazamento a 390px): sete colunas não
+       cabem num celular, e a saída honesta é a tabela rolar DENTRO da moldura — nunca a página
+       inteira andar de lado. */
+/* A ALTURA DA LINHA É UMA VARIÁVEL, e não uma segunda regra de tabela: escrever
+   `.painel-res.compacta .im-tab td{height:40px}` faz a régua da casa ler DUAS tabelas e cobrar
+   cabeçalho fixo de cada uma — foi exatamente o que ela reprovou aqui. Uma tabela, duas alturas. */
+.itens-meus{--im-linha:48px;
+  margin:var(--esp-4) 0 0 calc(var(--selo-lic) + var(--esp-3));
+  border:1px solid var(--linha);border-radius:var(--raio-item);overflow:hidden;background:var(--branco)}
+.painel-res.compacta .itens-meus{--im-linha:40px}
+.im-cab{display:flex;align-items:center;gap:var(--esp-3);flex-wrap:wrap;
+  padding:var(--esp-2) var(--esp-3);background:var(--painel);
+  border-bottom:1px solid var(--linha);font-size:var(--txt-1);color:var(--cinza-700)}
+.im-cab .dir{margin-left:auto}
+.im-cab b{color:var(--cinza-800);font-weight:var(--peso-semi);font-variant-numeric:tabular-nums}
+.im-nota{color:var(--cinza-600);font-weight:var(--peso-normal)}
+.itens-meus .im-tab{width:100%;border-collapse:collapse;table-layout:auto}
+.itens-meus{overflow-x:auto}
+.im-tab th,.im-tab td{padding:0 var(--esp-3);height:var(--im-linha);text-align:left;
+  font-size:var(--txt-1);border-bottom:1px solid var(--linha);vertical-align:middle}
+.im-tab thead th{position:sticky;top:0;background:var(--branco);
+  font-size:var(--txt-1);text-transform:uppercase;letter-spacing:.3px;
+  color:var(--cinza-600);font-weight:var(--peso-forte);border-bottom:1px solid var(--cinza-300)}
+.im-tab tbody tr:last-child td{border-bottom:0}
+.im-tab .num,.im-tab th.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.im-tab .desc{min-width:180px;max-width:340px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.itens-meus .vazio{color:var(--cinza-600);font-weight:var(--peso-normal)}
+/* A FOLGA É O ÚNICO LUGAR COM COR NESTA TABELA, e é de propósito: ela é a resposta da linha.
+   Os pares são os mesmos do resto do sistema — nada de verde e vermelho inventados aqui. */
+.im-tab .folga{display:inline-block;padding:var(--esp-1) var(--esp-2);border-radius:var(--raio-mini);
+  font-weight:var(--peso-semi);font-variant-numeric:tabular-nums}
+.im-tab .folga.boa{background:var(--sinal-bom-fundo);color:var(--sinal-bom-tinta)}
+.im-tab .folga.ruim{background:var(--sinal-perigo-fundo);color:var(--sinal-perigo-tinta)}
+.im-rodape{display:flex;align-items:center;gap:var(--esp-3);flex-wrap:wrap;
+  padding:var(--esp-2) var(--esp-3);background:var(--painel);
+  border-top:1px solid var(--linha);font-size:var(--txt-1);color:var(--cinza-700)}
+.im-rodape b{color:var(--cinza-800);font-weight:var(--peso-semi);font-variant-numeric:tabular-nums}
+.im-todos{margin-left:auto;border:0;background:none;cursor:pointer;padding:var(--esp-1) var(--esp-2);
+  color:var(--azul-700);font-size:var(--txt-1);font-weight:var(--peso-semi);border-radius:var(--raio-mini)}
+.im-todos:hover{background:var(--azul-50)}
+.im-todos:focus-visible{outline:none;box-shadow:var(--foco)}
+@media (max-width:860px){
+  .itens-meus{margin-left:0}
+}
+
 /* ══ O RODAPÉ DE SELEÇÃO (fatia A38 · molde v2, item 14) ═════════════════════════════════════
    O fundo é o `--navy`, e não uma escolha minha: o `fpmed_tema.css` reserva esse token, com
    estas palavras, para *"sidebar, cartão de destaque, BARRA FLUTUANTE"* — e traz os pares de
@@ -6600,6 +6652,13 @@ function render(todos, kws, excl, aviso, procedencia, procIcone){
                  + (m.n > 1 ? ' +' + (m.n - 1) : '') + '</span>';
           })()
       + '</div>'
+      /* ══ OS ITENS DO CLIENTE, NA PRÓPRIA LINHA (fatia A38 · molde v2, item 5) ══════════════
+         A caixa é pintada AQUI, no render, quando o cruzamento já rodou — e fica vazia quando
+         não rodou, para que o `atualizaBadge` possa enchê-la sem repintar a lista.
+         >>> ELE VEM DEPOIS DAS ETIQUETAS E ANTES DOS DADOS, que é a posição do molde: o teto e a
+             folga respondem "até onde posso baixar", e essa pergunta vem antes de "quanto vale o
+             edital inteiro". */
+      + '<div class="im-caixa" id="im-'+i+'">' + blocoItensMeus(l, i) + '</div>'
       /* ── OS TRÊS NÚMEROS QUE DECIDEM PARTICIPAÇÃO ────────────────────────────────────────
          O rodapé tinha SETE crachás do mesmo peso e o valor pendurado na ponta direita. Sete
          coisas iguais é o mesmo que nenhuma em destaque (D1), e o valor — que é o primeiro
@@ -6933,8 +6992,143 @@ function tabelaItens(r, i){
   return h + '</tbody></table>';
 }
 
+/* ══ A FOLGA CONTRA O TETO, NUMA CONTA SÓ (fatia A38 · molde v2, item 5) ══════════════════════
+   O molde traz a coluna "Folga" com `+25,5%` e `−9,5%`. O número existe nesta tela desde a A27,
+   dentro do `detSelo` do painel de detalhe — e é de LÁ que a conta vem, e não de uma segunda
+   escrita aqui: duas fórmulas de folga na mesma tela é como um item aparece com 25% na lista e
+   com 23% no detalhe, e a pessoa não tem como saber qual acreditar.
+   >>> A BASE É O TETO NOS DOIS SENTIDOS, e isso é a divergência DECLARADA da A27 contra o molde:
+       lá, "cabe" era calculado sobre a referência e "estoura" sobre o teto — duas bases na mesma
+       coluna fazem dois itens com a mesma folga real mostrarem números diferentes.
+   >>> OS QUATRO "NÃO DÁ PRA DIZER" SÃO DISTINTOS, e nenhum deles é um travessão mudo. Achatar
+       "ainda não li a régua" em "não tem teto" é a confusão mais cara desta tela. */
+function folgaDoItem(it, uE){
+  const t = detTeto(it, uE);
+  if(t.estado === 'lendo')    return { estado:'lendo',    texto:'lendo a régua…', titulo:'a tabela da CMED ainda está carregando' };
+  if(t.estado === 'erro')     return { estado:'erro',     texto:'não sei',        titulo:'não consegui ler a tabela da CMED: ' + (t.msg||'') };
+  if(t.estado === 'sem-teto') return { estado:'sem-teto', texto:'sem casamento',  titulo:'este item não casou com a CMED. Material e correlato não têm teto CMED por natureza — só medicamento tem.' };
+  if(uE.status !== 'ok')      return { estado:'sem-ref',  texto:'não informado',  titulo:'o órgão não publicou preço de referência para este item — sem as duas pontas não há folga a calcular' };
+  const pct = (t.teto - uE.valor) / t.teto * 100;
+  return { estado:'ok', pct, boa: pct >= 0,
+           texto: (pct >= 0 ? '+' : '−') + _pct1(pct) + '%',
+           titulo: pct >= 0
+             ? 'a referência do edital está ' + _pct1(pct) + '% ABAIXO do teto legal — é a margem que existe para baixar'
+             : 'a referência do edital está ' + _pct1(pct) + '% ACIMA do teto legal da CMED' };
+}
+
+/* ══ OS ITENS APARECEM NA LISTA (fatia A38 · molde v2, itens 5, 6, 8 e 13) ════════════════════
+   *"Os itens aparecem NA LISTA, não só no detalhe: nº, descrição, quantidade, unidade,
+   referência, teto CMED e folga em %. É a tela respondendo 'até onde posso baixar' sem exigir um
+   clique."*
+
+   >>> ELE SÓ EXISTE ONDE OS ITENS JÁ FORAM LIDOS, e isso não é meia entrega: ler os itens é uma
+       requisição ao PNCP POR LICITAÇÃO, e pintar a lista inteira "sem clique" significaria
+       disparar 128 leituras ao portal público toda vez que alguém busca. A tela já tem o gesto
+       que faz isso quando a pessoa quer ("Cruzar todas"), e onde a leitura não aconteceu o
+       cartão continua dizendo "itens ainda não lidos" — que é o estado honesto, não a ausência
+       do bloco.
+   >>> SÓ OS ITENS DO ESTOQUE, POR PADRÃO (item 6). Um edital de 212 itens dos quais 4 são meus
+       vira, sem esse corte, 212 linhas para achar 4 — e a tela volta a ser a "lista crua de
+       caixinhas" que o dono já recusou uma vez.
+   >>> E O RODAPÉ CONTA A DÍVIDA (item 8): quantos ficaram sem teto E POR QUÊ, separando "sem
+       referência publicada" de "não casou com a CMED". São causas diferentes e levam a gestos
+       diferentes — uma se resolve olhando o edital, a outra não se resolve. */
+const _TETO_LINHAS_MEUS = 6;
+function blocoItensMeus(l, i){
+  const r = CRUZ.get(chaveLic(l));
+  if(!r || !Array.isArray(r.itens) || !r.itens.length) return '';
+  const meus = r.itens.filter(x => x.pares && x.pares.length);
+  const total = r.itens.length;
+  if(!meus.length) return '';
+
+  const linhas = meus.slice(0, _TETO_LINHAS_MEUS);
+  /* A DÍVIDA É CONTADA SOBRE **OS MEUS**, que são os que a tabela mostra. Contá-la sobre os 212
+     do edital faria o rodapé falar de linhas que não estão ali — e o número não fecharia com
+     nada que a pessoa pudesse conferir com o olho. */
+  let semRef = 0, semCasa = 0, comFolga = 0, somaMeus = 0, temValor = 0;
+  const celulas = meus.map(x => {
+    const uE = unitarioEdital(x.it);
+    const f = folgaDoItem(x.it, uE);
+    if(f.estado === 'sem-ref')   semRef++;
+    if(f.estado === 'sem-teto')  semCasa++;
+    if(f.estado === 'ok')        comFolga++;
+    if(uE.status === 'ok' && Number(x.it.quantidade) > 0){ somaMeus += uE.valor * Number(x.it.quantidade); temValor++; }
+    return { x, uE, f };
+  });
+  const semTeto = semRef + semCasa;
+
+  let h = '<div class="itens-meus" onclick="event.stopPropagation()">'
+    + '<div class="im-cab">'
+    +   '<span><b>' + meus.length + '</b> ' + (meus.length === 1 ? 'item seu' : 'itens seus')
+    +     ', de <b>' + total + '</b> ' + (total === 1 ? 'no edital' : 'no edital')
+    +     (r.truncado ? ' <span class="im-nota" title="a leitura do edital bateu no teto de páginas — '
+          + 'o total acima é o que eu consegui ler, não o do edital">leitura truncada</span>' : '')
+    +   '</span>'
+    /* O VALOR SÓ SAI SE TODAS AS LINHAS TIVEREM PREÇO E QUANTIDADE. Somar o que se sabe e chamar
+       de "valor dos seus itens" faria um total menor passar por completo — e ninguém confere. */
+    +   (temValor === meus.length && somaMeus > 0
+        ? '<span class="dir">valor dos seus itens: <b>' + brl(somaMeus) + '</b></span>'
+        : '<span class="dir im-nota" title="' + (meus.length - temValor) + ' dos seus itens não têm '
+          + 'preço de referência ou quantidade publicados — somar só os outros daria um total que '
+          + 'parece o de todos">valor não somável</span>')
+    + '</div>'
+    /* TABELA DENSA (item 13): fio de 1px, sem zebra, número à direita com `tabular-nums`,
+       cabeçalho fixo. A altura da linha segue a densidade escolhida, no CSS. */
+    + '<table class="im-tab"><thead><tr>'
+    +   '<th class="num">Nº</th><th class="desc">Descrição do item</th>'
+    +   '<th class="num">Qtd</th><th>Un</th>'
+    +   '<th class="num">Referência</th>'
+    +   '<th class="num" title="teto legal da CMED por unidade">Teto CMED</th>'
+    +   '<th class="num" title="quanto a referência do edital está abaixo do teto legal — '
+    +     'a margem que existe para baixar">Folga</th>'
+    + '</tr></thead><tbody>';
+  for(const { x, uE, f } of celulas.slice(0, _TETO_LINHAS_MEUS)){
+    const it = x.it;
+    const d = String(it.descricao||'').replace(/\s+/g,' ').trim();
+    h += '<tr>'
+      + '<td class="num">' + esc(String(it.numeroItem)) + '</td>'
+      + '<td class="desc" title="' + esc(d) + '">' + esc(d) + '</td>'
+      /* QUANTIDADE ZERO NÃO É QUANTIDADE: o PNCP devolve 0 quando o órgão não publicou, e
+         "0" numa coluna de quantidade lê-se como "não vão comprar nada". */
+      + '<td class="num">' + (Number(it.quantidade) > 0
+          ? Number(it.quantidade).toLocaleString('pt-BR')
+          : '<span class="vazio" title="o órgão não publicou a quantidade deste item">não informada</span>') + '</td>'
+      + '<td>' + (it.unidadeMedida ? esc(it.unidadeMedida) : '<span class="vazio">—</span>') + '</td>'
+      + '<td class="num">' + detRef(uE) + '</td>'
+      + '<td class="num">' + detCelTeto(detTeto(it, uE)) + '</td>'
+      + '<td class="num"><span class="' + (f.estado === 'ok' ? ('folga ' + (f.boa ? 'boa' : 'ruim')) : 'vazio')
+      +   '" title="' + esc(f.titulo) + '">' + esc(f.texto) + '</span></td>'
+      + '</tr>';
+  }
+  h += '</tbody></table>'
+    + '<div class="im-rodape">'
+    /* ══ O RODAPÉ CONTA A DÍVIDA (item 8), E SEPARA AS DUAS CAUSAS ══════════════════════════
+       "2 itens sem teto" sem o porquê manda a pessoa procurar um defeito. Uma das causas está no
+       edital (o órgão não publicou referência) e a outra é da natureza do produto (material e
+       correlato não têm teto CMED) — e só a primeira tem algo a fazer a respeito. */
+    +   (semTeto
+        ? '<span><b>' + semTeto + '</b> ' + (semTeto === 1 ? 'item sem folga a calcular' : 'itens sem folga a calcular')
+          + ': ' + [ semRef  ? semRef  + ' sem preço de referência no edital' : '',
+                     semCasa ? semCasa + ' sem casamento na tabela da CMED' : '' ].filter(Boolean).join(' · ')
+          + '</span>'
+        : '<span><b>' + comFolga + '</b> ' + (comFolga === 1 ? 'item com folga calculada' : 'itens com folga calculada')
+          + ' — nenhum ficou sem teto</span>')
+    +   (meus.length > _TETO_LINHAS_MEUS
+        ? '<span class="im-nota">mostrando ' + _TETO_LINHAS_MEUS + ' dos ' + meus.length + ' seus</span>' : '')
+    +   '<button type="button" class="im-todos" onclick="abrirDetalhe(' + i + ')">'
+    +     'Ver os ' + total + ' ' + (total === 1 ? 'item' : 'itens') + ' →</button>'
+    + '</div>'
+    + '</div>';
+  return h;
+}
+
 function atualizaBadge(i){
   const l = (window._hits||[])[i]; if(!l) return;
+  /* O BLOCO DOS ITENS ENTRA AQUI, e não num `rerender()` — pela mesma razão dos chips logo
+     abaixo: repintar a lista inteira jogaria a pessoa de volta pro topo no meio de um "Cruzar
+     todas" que ainda está andando. */
+  const caixa = document.getElementById('im-' + i);
+  if(caixa) caixa.innerHTML = blocoItensMeus(l, i);
   const n = aderencia(l), cx = document.getElementById('etq-'+i);
   /* ══ OS CHIPS APARECEM AQUI, e não num `rerender()` (fatia A21) ══════════════════════════════
      Antes de cruzar, o cartão diz "itens ainda não lidos" — é o estado honesto. No instante em

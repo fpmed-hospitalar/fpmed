@@ -89,6 +89,46 @@ const MUTACOES = [
    '    + (cs.length > 1',
    '    + (cs.length > 0',
    '43'],
+
+  ['a tabela da lista passa a mostrar OS 212 itens do edital, e nao os 4 do cliente (item 6)',
+   '  const meus = r.itens.filter(x => x.pares && x.pares.length);',
+   '  const meus = r.itens.slice();',
+   '61'],
+
+  ['a folga troca a base para a REFERENCIA (dois itens com a mesma folga real, numeros diferentes)',
+   '  const pct = (t.teto - uE.valor) / t.teto * 100;',
+   '  const pct = (t.teto - uE.valor) / uE.valor * 100;',
+   '63'],
+
+  ['quantidade zero volta a ser impressa como "0" ("nao vao comprar nada")',
+   "      + '<td class=\"num\">' + (Number(it.quantidade) > 0",
+   "      + '<td class=\"num\">' + (Number(it.quantidade) >= 0",
+   '67'],
+
+  ['o valor dos itens passa a somar so o que se sabe e a chamar de total (o menor passando por completo)',
+   '    +   (temValor === meus.length && somaMeus > 0',
+   '    +   (somaMeus > 0',
+   '68'],
+
+  ['o rodape para de separar as duas causas da divida ("2 sem teto" manda procurar defeito)',
+   "          + ': ' + [ semRef  ? semRef  + ' sem preço de referência no edital' : '',",
+   "          + ': ' + [ '',",
+   '69'],
+
+  ['as duas densidades viram uma so — a tabela deixa de obedecer a preferencia da casa',
+   '.painel-res.compacta .itens-meus{--im-linha:40px}',
+   '.painel-res.compacta .itens-meus{--im-linha:48px}',
+   '72'],
+
+  ['a tabela deixa de rolar por dentro e a PAGINA passa a andar de lado a 390px (item 16)',
+   '.itens-meus{overflow-x:auto}',
+   '.itens-meus{overflow-x:visible}',
+   '74'],
+
+  ['clicar na tabela volta a abrir o painel de detalhe por tabela',
+   '  let h = \'<div class="itens-meus" onclick="event.stopPropagation()">\'',
+   '  let h = \'<div class="itens-meus">\'',
+   '77'],
 ];
 
 function rodaSuite() {
