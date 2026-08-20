@@ -36,6 +36,9 @@
 const fs = require('fs');
 const path = require('path');
 const RAIZ = path.join(__dirname, '..');
+/* A régua PERGUNTA à prova do papel quais regiões estão congeladas — ver o bloco 5.b, lá
+   embaixo. Uma fonte de verdade só; nunca uma lista copiada. */
+const PAPEL = require('./prova_papel_congelado.js');
 
 const leia = arq => fs.readFileSync(path.join(RAIZ, arq), 'utf8').replace(/\r\n/g, '\n');
 
@@ -822,6 +825,95 @@ function medeEstados(txt, docs) {
   };
 }
 
+/* ── 5.b · O PAPEL CONGELADO POR ORDEM DO DONO (fatia A37, 20/08/2026) ──────────────────────
+   ══ O IMPASSE, E ELE FOI MEDIDO PELAS DUAS JANELAS ══════════════════════════════════════════
+   A Giovana ficou parada em 2 catracas vermelhas, 1 assert cada — e as duas caem sobre O PAPEL,
+   que está congelado por ordem do dono desde a B8 e é comparado byte a byte pela
+   `tools/prova_papel_congelado.js`:
+     · `testa_texto_piso` → o `font-size:10px` embutido no `<td>` que o `gerarPDF` monta. Apagar
+       NÃO muda um pixel (a regra `.print-doc table.doc-itens{font-size:10px}` já manda por
+       cascata) — mas a linha está DENTRO da região `gerarPDF`, e tirar um caractere ali reprova
+       a prova do papel.
+     · `testa_icones` → o `⚠` do `OBS_PADRAO`. As três saídas estão fechadas, e o B provou cada
+       uma: tirar da const quebra o `testa_molde_proposta` (que guarda o literal PELO AVESSO,
+       citando ordem do dono de 13/08); pôr o glifo no HTML da folha cai dentro da primeira
+       região congelada; e trocar por `ic('aviso')` manda RETÂNGULO VAZIO para a impressora,
+       porque a folha não carrega o sprite.
+
+   ══ E O DEFEITO NÃO ESTÁ NA TELA NEM NO PAPEL — ESTÁ AQUI, NA RÉGUA ═════════════════════════
+   Ela media como se tudo fosse tela, e uma parte daquele arquivo NÃO ESTÁ SOB A JURISDIÇÃO
+   DELA: está sob ordem de congelamento. O resultado era um vermelho que NÃO PODE FICAR VERDE
+   POR TRABALHO NENHUM — e o próprio trabalhador B já escreveu a frase que condena isso:
+   *"vermelho que mistura verdadeiro com falso ensina todo mundo a ignorar vermelho"*. Manter
+   esse vermelho é ensinar a casa a ignorar a catraca.
+   >>> ISTO NÃO É ABRIR EXCEÇÃO PARA ESCONDER DÍVIDA. A dívida continua contada em voz alta,
+       numa linha própria, com arquivo e linha de cada achado. É pôr cada achado na coluna certa
+       — a mesma lei que já vale para o documento gerado em janela nova (defeito 4 do B), para o
+       `:root` da ilha de tema (defeito 13) e para a citação em prosa (defeito 14):
+       NÃO SE EXCLUI, SEPARA-SE (BASE_VISUAL 4.4).
+
+   ══ AS QUATRO PROMESSAS QUE ESTE BLOCO GUARDA ═══════════════════════════════════════════════
+   1. AS REGIÕES VÊM DA PROVA, e não de uma lista copiada aqui. Uma fonte de verdade só: se a
+      prova mudar de região, a régua muda junto, no mesmo instante.
+   2. A ISENÇÃO É ANCORADA NO HASH, NÃO NA LINHA. A `confereImpressao` compara as três regiões
+      com a impressão digital declarada; região que não bater NÃO isenta ninguém, e a régua
+      grita. Sem isso a isenção viraria a porta dos fundos por onde se muda o papel do hospital
+      sem ninguém ver — e é isso que separa esta decisão de um `// ignore`.
+   3. SE O DONO DESCONGELAR, O VERMELHO VOLTA SOZINHO. Tirar a região do `REGIOES` da prova
+      apaga a isenção no mesmo ato. Não há lista manual para alguém lembrar de limpar depois.
+   4. E A ISENÇÃO É ESTREITA: vale para o ARQUIVO da prova e só para as LINHAS das regiões. O
+      resto da Giovana continua sendo medido como qualquer tela. */
+const BUCKETS_QUE_REPROVAM = [
+  ['cor', 'tela', 'cor chumbada'],
+  ['espaco', 'tela', 'espaço fora da grade'],
+  ['texto', 'tela', 'texto abaixo do piso'],
+  ['icones', 'pictograma', 'pictograma escrito como texto'],
+  ['icones', 'img', '<img> fazendo trabalho de ícone'],
+  ['numero', 'mentiras', 'R$ 0,00 onde o dado é ausente'],
+  ['toque', 'curtos', 'alvo de toque curto'],
+  ['toque', 'promessaVazia', 'min-height que não pinta'],
+  ['tabela', 'defeitos', 'tabela densa'],
+  ['contraste', 'reprovados', 'contraste abaixo do mínimo'],
+  /* `pares` e `naoTexto` NÃO reprovam sozinhos (`reprovados` é que reprova), mas eles são a
+     CONTAGEM que a catraca imprime — deixar o par congelado dentro deles faria o placar dizer
+     "8 pares medidos" sobre um conjunto que já não é o que a régua está julgando.
+     >>> E ELES SAEM DA LISTA IMPRESSA, marcados com `contagem`. Um par que PASSOU não é um
+         achado, e chamá-lo de achado na linha do papel congelado inflaria o número da dívida com
+         coisa que nunca foi defeito — a régua mentindo para o lado feio, que também é mentir. */
+  ['contraste', 'pares', 'contraste (par medido)', 'contagem'],
+  ['contraste', 'naoTexto', 'contraste (elemento não-textual)', 'contagem'],
+];
+
+function congelamentoDe(arquivo, txt) {
+  /* A isenção vale para O ARQUIVO da prova, e o nome vem de lá — não de uma segunda constante
+     aqui, que é como duas réguas começam a discordar. */
+  if (path.basename(arquivo) !== PAPEL.ALVO) {
+    return { alvo: false, regioes: [], divergentes: [], achados: [], contados: [] };
+  }
+  const conf = PAPEL.confereImpressao(txt);
+  return { alvo: true, regioes: conf.regioes, divergentes: conf.divergentes, achados: [], contados: [] };
+}
+
+/* Move para a coluna própria todo achado cuja LINHA cai dentro de região congelada conferida.
+   Ele não some: sai com arquivo, linha, qual medida o pegou e em qual região do papel caiu. */
+function separaCongelados(r, cong) {
+  if (!cong.alvo) return;
+  const conf = { regioes: cong.regioes, divergentes: cong.divergentes };
+  cong.contados = [];
+  for (const [medida, campo, oQue, so] of BUCKETS_QUE_REPROVAM) {
+    const lista = r[medida] && r[medida][campo];
+    if (!Array.isArray(lista)) continue;
+    const ficam = [];
+    for (const a of lista) {
+      const regiao = (a && a.linha) ? PAPEL.congelaLinha(conf, a.linha) : null;
+      if (!regiao) { ficam.push(a); continue; }
+      (so === 'contagem' ? cong.contados : cong.achados)
+        .push({ linha: a.linha, medida, campo, oQue, regiao, achado: a });
+    }
+    r[medida][campo] = ficam;
+  }
+}
+
 /* ── 5 · O RETRATO ──────────────────────────────────────────────────────────────────────────*/
 function mede(arquivo) {
   const txt = leia(arquivo);
@@ -829,8 +921,10 @@ function mede(arquivo) {
   const docs = blocosDeDocGerado(txt);
   const papel = regioesDePapel(txt, blocos);
   const ilhas = raizesDeIlha(txt);
-  return {
+  const congelado = congelamentoDe(arquivo, txt);
+  const retrato = {
     arquivo,
+    congelado,
     linhas: txt.split('\n').length,
     docsGerados: docs.length,
     carregaTema: /fpmed_tema\.css/.test(txt),
@@ -847,6 +941,8 @@ function mede(arquivo) {
     numero: medeNumeroHonesto(txt, docs),
     estados: medeEstados(txt, docs),
   };
+  separaCongelados(retrato, congelado);
+  return retrato;
 }
 
 /* A LISTA DE TELAS ADOTADAS mora em arquivo próprio, versionado, e NÃO nesta régua.
@@ -861,7 +957,8 @@ function adotadas() {
 }
 
 module.exports = { mede, adotadas, GRADE, ESCALA_TEXTO, PISO_TEXTO, ALVO_TOQUE, ALTURAS_LINHA,
-                   TOKENS, contraste, lum, resolveCor, linhaDe, semComentario, leia, RAIZ };
+                   TOKENS, contraste, lum, resolveCor, linhaDe, semComentario, leia, RAIZ,
+                   congelamentoDe, separaCongelados, BUCKETS_QUE_REPROVAM, PAPEL };
 
 /* ── 6 · LINHA DE COMANDO ───────────────────────────────────────────────────────────────────*/
 if (require.main === module) {
@@ -882,6 +979,20 @@ if (require.main === module) {
         + ' · ' + r.papel.regioes.length + ' região(ões)'
         + (r.papel.semFecho.length ? '  ⚠ ' + r.papel.semFecho.length + ' marcação(ões) SEM FECHO (não viraram papel)' : ''));
       if (r.ilhaDeTema) console.log('   ilha de tema .... declarada em <html data-tema> — o :root dela é fonte de cor');
+      /* A linha do papel congelado sai SEMPRE que o arquivo tem regiões congeladas, mesmo com
+         zero achados: quem lê precisa saber que existe uma parte deste arquivo fora da alçada
+         da régua, e não descobrir isso só no dia em que houver achado lá dentro. */
+      if (r.congelado && r.congelado.alvo) {
+        console.log('   papel congelado . ' + r.congelado.regioes.filter(x => x.achou).length
+          + ' região(ões) por ordem do dono · ' + r.congelado.achados.length
+          + ' achado(s) fora da alçada da régua (ver tools/prova_papel_congelado.js)'
+          + (r.congelado.contados.length ? ' · ' + r.congelado.contados.length
+             + ' medida(s) que não são achado' : ''));
+        for (const a of r.congelado.achados)
+          console.log('        ' + r.arquivo + ':' + a.linha + '  ' + a.oQue + '  [' + a.regiao + ']');
+        for (const d of r.congelado.divergentes)
+          console.log('     ⚠ PARA E GRITA — ' + d.nome + ': ' + d.porque);
+      }
       console.log('   cor chumbada .... ' + r.cor.tela.length + '   [doc gerado: ' + r.cor.docGerado.length
         + ' · papel: ' + r.cor.papel.length + ' · fonte da ilha: ' + r.cor.fonteIlha.length + ']');
       console.log('   fora da grade ... ' + r.espaco.tela.length + '   [papel: ' + r.espaco.papel.length + ']');

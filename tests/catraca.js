@@ -33,11 +33,40 @@ function catraca(nome, titulo, regra) {
     console.log('  FALHA ' + t + (onde ? '\n         ' + onde : ''));
   };
 
+  /* ══ O PAPEL CONGELADO SAI NUMA LINHA PRÓPRIA (fatia A37, 20/08/2026) ══════════════════════
+     Achado que cai dentro de região congelada por ordem do dono NÃO é reprovação — ele está
+     fora da alçada desta régua. Mas ele NÃO SOME: sai aqui embaixo, com número, arquivo, linha
+     e o nome da região do papel em que caiu. Não é abrir exceção para esconder dívida; é pôr
+     cada achado na coluna certa. Vermelho que mistura verdadeiro com falso ensina todo mundo a
+     ignorar vermelho — e essa frase é do próprio trabalhador B, que já pagou por ela. */
+  const congelados = [];
   for (const arquivo of lista.adotadas) {
     let r;
     try { r = R.mede(arquivo); }
     catch (e) { f++; console.log('  FALHA nao consegui medir ' + arquivo + ': ' + e.message); continue; }
+    /* ══ E A ISENÇÃO É ANCORADA NO HASH: se ele não bater, A CATRACA PARA E GRITA ═════════════
+       Sem esta linha a isenção viraria a porta dos fundos por onde se muda o papel que o
+       hospital assina sem ninguém ver. É o que separa esta decisão de um `// ignore`. */
+    if (r.congelado && r.congelado.divergentes.length) {
+      for (const d of r.congelado.divergentes) {
+        f++;
+        console.log('  FALHA *** O PAPEL CONGELADO MUDOU — a isencao esta SUSPENSA ***'
+          + '\n         ' + arquivo + '  regiao: ' + d.nome
+          + '\n         ' + d.porque
+          + '\n         Se foi ordem do dono: node tools/prova_papel_congelado.js --impressao');
+      }
+    }
+    if (r.congelado && r.congelado.achados.length)
+      congelados.push({ arquivo, achados: r.congelado.achados });
     regra({ arquivo, r, ok, lista });
+  }
+
+  if (congelados.length) {
+    const total = congelados.reduce((s, c) => s + c.achados.length, 0);
+    console.log('\n  >>> ' + total + ' achado(s) dentro do papel congelado por ordem do dono — fora da');
+    console.log('      alcada da regua (ver tools/prova_papel_congelado.js):');
+    for (const c of congelados) for (const a of c.achados)
+      console.log('        ' + c.arquivo + ':' + a.linha + '  ' + a.oQue + '  [' + a.regiao + ']');
   }
 
   /* A DÍVIDA, EM VOZ ALTA. Ela não conta como falha (a tela ainda não passou pela fatia dela),
