@@ -98,8 +98,16 @@ const MUTACOES = [
     para: 'function pisoContaHTML(r){ if(r && r.abaixo){ alert("abaixo do piso"); }' },
   { nome: 'o motor sai da casca do service worker', deveRuir: true, arq: 'sw.js',
     de: /\n\s*'\.\/fpmed_piso\.js',[^\n]*\n/, para: '\n' },
+  /* ══ ESTE PADRÃO ERA FIXO E PAROU DE CASAR (corrigido em 20/08, pela fatia B30) ═════════════
+     Ele procurava `-87` exato. Quando a B30 bumpou a casca para -88, a mutação deixou de casar —
+     e mutação que não casa **não fica vermelha: ela se declara "escapada"**, e o placar passa a
+     acusar um buraco na catraca que não existe. Ou seja: o controle que existe para medir a
+     catraca passou a mentir sobre ela, e ninguém teria olhado se o placar não fosse lido.
+     >>> A forma certa é a que a própria `testa_piso.js` já usava para o mesmo número: tratar a
+         versão como PISO, e não como igualdade. O `sw.js` é o único arquivo que as duas janelas
+         editam no mesmo dia, e a regra combinada é que o número só sobe. */
   { nome: 'a casca ganha arquivo novo mas ninguém bumpa a versão', deveRuir: true, arq: 'sw.js',
-    de: /limedtec-fpmed-2026-08-20-87/, para: 'limedtec-fpmed-2026-08-20-86' },
+    de: /limedtec-fpmed-\d{4}-\d{2}-\d{2}-\d+/, para: 'limedtec-fpmed-2026-08-20-86' },
   { nome: 'o banco passa a aceitar meio componente (o CHECK some)', deveRuir: true, arq: DDL,
     de: /constraint op_par_coerente check \(/, para: 'constraint op_par_frouxo check (true) /* (' },
   { nome: 'o banco passa a aceitar volume mensal ZERO', deveRuir: true, arq: DDL,

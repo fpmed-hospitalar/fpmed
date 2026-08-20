@@ -356,8 +356,19 @@ ok('nem UPDATE destrutivo', !/^\s*update\s+public\./im.test(DDL));
 // ── 11. O SERVICE WORKER ────────────────────────────────────────────────────────────────────
 console.log('\n-- 11. a casca --');
 ok('o motor esta na casca', /'\.\/fpmed_ata_saldo\.js'/.test(SW));
-ok('*** e a versao foi bumpada (arquivo novo na lista sem bump nao e baixado) ***',
-  /limedtec-fpmed-2026-08-20-88/.test(SW));
+/* ══ A VERSÃO É COBRADA COMO PISO (>= 88), E NÃO COMO IGUALDADE ═══════════════════════════════
+   A primeira versão deste assert cobrava `-88` exato — e seria uma mina para a próxima janela: o
+   `sw.js` é o único arquivo que as DUAS frentes editam no mesmo dia, e a regra combinada é *"quem
+   commitar depois SOBE o número, nunca volta"*. Com igualdade, o bump legítimo do A para -89
+   deixaria a MINHA catraca vermelha, sobre código correto, num arquivo que não é meu.
+   >>> O DEFEITO NÃO É TEÓRICO: ele acabou de acontecer no sentido inverso. A `muta_b29.js`
+       procurava `-87` e parou de casar quando eu bumpei para -88 — a mutação passou a medir nada
+       e se declarou "escapada". Quem viu foi o placar da mutação, não a suíte.
+   >>> A `testa_piso.js` já tinha acertado isto (ela cobra `>= 87`). Copiar a forma certa do
+       vizinho é mais barato que descobrir a errada de novo. */
+ok('*** e a versao foi bumpada para 88 ou mais (arquivo novo na lista sem bump nao e baixado) ***',
+  (Number((SW.match(/limedtec-fpmed-\d{4}-\d{2}-\d{2}-(\d+)/) || [])[1]) || 0) >= 88,
+  (SW.match(/limedtec-fpmed-[\d-]+/) || [])[0]);
 
 console.log('\n' + p + ' ok, ' + f + ' falha(s)');
 process.exitCode = f ? 1 : 0;

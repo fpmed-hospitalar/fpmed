@@ -130,8 +130,12 @@ const MUTACOES = [
   // ── a casca ───────────────────────────────────────────────────────────────────────────────
   { nome: 'o motor sai da casca do service worker', deveRuir: true, arq: 'sw.js',
     de: /\n\s*'\.\/fpmed_ata_saldo\.js',[^\n]*\n/, para: '\n' },
+  /* O PADRÃO É GENÉRICO DE PROPÓSITO. Fixar o número exato faz a mutação parar de casar no dia do
+     próximo bump — e mutação que não casa não fica vermelha: ela se declara "escapada" e o placar
+     acusa um buraco que não existe. Foi o que aconteceu com a `muta_b29.js` quando esta fatia
+     subiu a casca de -87 para -88. */
   { nome: 'a casca ganha arquivo novo mas ninguem bumpa a versao', deveRuir: true, arq: 'sw.js',
-    de: /limedtec-fpmed-2026-08-20-88/, para: 'limedtec-fpmed-2026-08-20-87' },
+    de: /limedtec-fpmed-\d{4}-\d{2}-\d{2}-\d+/, para: 'limedtec-fpmed-2026-08-20-87' },
 
   // ── o banco ───────────────────────────────────────────────────────────────────────────────
   { nome: '*** `empenhado` nasce NOT NULL DEFAULT 0 (toda ata nova diz "ninguem empenhou") ***',
