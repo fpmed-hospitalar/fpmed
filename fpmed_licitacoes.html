@@ -2719,7 +2719,19 @@ async function puxarItens(lic, anuncia){
       if(e.name==='AbortError') throw new Error('o PNCP não respondeu em '+(TIMEOUT_MS/1000)+'s');
       throw e;
     }finally{ clearTimeout(t); }
-    if(!Array.isArray(lote) || !lote.length) break;
+    /* ══ DUAS SAÍDAS DIFERENTES QUE SAÍAM PELA MESMA PORTA, EM SILÊNCIO (A36 · 20/08) ══════════
+       Era `if(!Array.isArray(lote) || !lote.length) break;` — e as duas metades dessa condição
+       são fatos opostos:
+         · `!lote.length` .......... a página veio VAZIA: acabou. É o fim normal do laço.
+         · `!Array.isArray(lote)` .. veio 200 e NÃO é uma lista: isso não é "acabou", é uma
+                                     resposta que ninguém sabe ler.
+       Saindo pela mesma porta, a segunda virava a primeira: o cartão mostrava "nenhum item"
+       sobre um edital que pode ter duzentos. É a família do `Array.isArray` da Proposta com
+       outra roupa — a leitura que deu errado seguindo como leitura que terminou.
+       >>> O `r.ok` JÁ ESTÁ CONFERIDO ACIMA, então este caso é raro por construção. Raro não é
+           impossível, e o preço de dizê-lo é uma linha. */
+    if(!Array.isArray(lote)) throw new Error('o PNCP respondeu 200 com algo que não é uma lista de itens');
+    if(!lote.length) break;
     itens = itens.concat(lote);
     if(lote.length < ITENS_TAM) break;
     if(p === ITENS_TETO_PAG) truncado = true;
@@ -2789,7 +2801,14 @@ async function lerPaginado(qBase){
       });
       if(!r.ok) return out.length ? out : null;   // sem nada lido, é "não sei"; com algo, devolve
       const j = await r.json();
-      if(!Array.isArray(j) || !j.length) return out;
+      /* ══ AS DUAS SAÍDAS SEPARADAS (A36 · 20/08) ═══════════════════════════════════════════
+         `!j.length` é a página vazia: acabou, e devolver o que já se leu é o certo.
+         `!Array.isArray(j)` é um 200 que não é lista — e devolver `out` ali seria entregar meia
+         leitura como leitura inteira, que é o defeito de 11/08 ("albumina" respondendo 0 sobre
+         meia base) voltando por outra porta. Sem nada lido isso vira `null`, que é o "não sei"
+         desta função; com algo lido, o `_bancoTruncou` acende e a tela DIZ que leu parcial. */
+      if(!Array.isArray(j)){ window._bancoTruncou = true; return out.length ? out : null; }
+      if(!j.length) return out;
       out = out.concat(j);
       if(j.length < PAG_BANCO) return out;        // veio página incompleta: acabou
       de += PAG_BANCO;
@@ -5041,7 +5060,12 @@ async function registrarLeitura(j){
   const hits = window._hits;
   // sem resultado NENHUM na tela (PNCP fora, banco vazio) não se registra leitura: gravar
   // "li tudo" numa busca que falhou faria as licitações de hoje nascerem VELHAS amanhã.
-  if(!Array.isArray(hits) || !hits.length) return;
+  /* `hits` é ESTADO DESTA TELA (o `window._hits` que o `render` deixou), e não resposta de rede:
+     aqui as duas metades querem dizer a MESMA coisa — não há o que registrar. O `Array.isArray`
+     era zelo defensivo sobre um valor que só esta tela escreve, e ele fazia esta linha parecer,
+     para quem varre, a conflação de "página vazia" com "200 que não é lista" que a A36 caçou nos
+     laços de paginação. Escrito assim, a linha diz o que ela é. (A36 · 20/08) */
+  if(!hits || !hits.length) return;
   const vistos = [...new Set((j.vistos||[]).concat(hits.map(_numCtrl)))].slice(-TETO_VISTOS);
   try{
     const r = await fetch(`${SB_URL}/rest/v1/jornais?id=eq.${j.id}`, {method:'PATCH', headers:SB_HW,

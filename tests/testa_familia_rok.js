@@ -63,6 +63,28 @@ console.log('SUITE testa_familia_rok — o `r.ok` conferido em todo fetch do ter
       + "const j = await r.json();\nif (Array.isArray(j) && j[0]) usa(j[0]);").length === 1);
 }
 
+// ══════════ 1b. A TERCEIRA FORMA: O LACO QUE SAI CALADO ══════════
+/* A caixa A36 pede as tres formas. Esta nao passa pelo detector de cima porque o `r.ok` DELA
+   esta conferido — o que ela junta e outra coisa:
+       if (!Array.isArray(lote) || !lote.length) break;
+   `!lote.length` e a pagina vazia, o fim NORMAL de um laco de paginacao. `!Array.isArray(lote)`
+   e um 200 que nao e lista, uma resposta que ninguem sabe ler. Pela mesma porta calada, a
+   segunda vira a primeira: a licitacao e contada como "nenhum item", a lista de alvos da rodada
+   inteira e cortada no meio, e o banco chega a GRAVAR "o PNCP nao publicou arquivo" sobre uma
+   resposta que ninguem entendeu. Foram 6 no territorio, e uma delas era falso alarme (estado
+   interno da tela, nao resposta de rede) — reescrita para dizer o que e. */
+{
+  const acusouTodas = V.CONFLADAS.every(([, js]) => V.lacosConflados(js).length > 0);
+  ok('5b. *** o detector da 3a forma acusa a conflacao ***', acusouTodas,
+    V.CONFLADAS.filter(([, js]) => !V.lacosConflados(js).length).map(([n]) => n));
+  /* E O USO CERTO NAO PODE SER ACUSADO: ha 29 `Array.isArray` legitimos neste territorio, prova
+     de FORMA depois de o sucesso ja ter sido conferido. Um detector que os acusasse ensinaria a
+     todo mundo a ignorar esta suite. */
+  const falsoAlarme = V.SEPARADAS.filter(([, js]) => V.lacosConflados(js).length > 0).map(([n]) => n);
+  ok('5c. ...e NAO acusa as duas metades separadas, nem a prova de forma legitima',
+    falsoAlarme.length === 0, falsoAlarme);
+}
+
 // ══════════ 2. APONTADO PARA O TERRITORIO DE VERDADE ══════════
 {
   const alvos = V.TELAS_E_LIBS.concat(V.FERRAMENTAS);
@@ -70,19 +92,28 @@ console.log('SUITE testa_familia_rok — o `r.ok` conferido em todo fetch do ter
   ok('6. a lista do territorio esta inteira no disco (arquivo sumido nao pode virar zero achado)',
     faltando.length === 0, faltando);
 
-  let varridos = 0, sujos = [];
+  let varridos = 0, sujos = [], calados = [], formas = 0;
   for (const rel of alvos) {
     const abs = path.join(raiz, rel);
     if (!fs.existsSync(abs)) continue;
     const js = V.semComentario(fs.readFileSync(abs, 'utf8').replace(/\r\n/g, '\n'));
     varridos += V.chamadas(js).length;
+    formas += (js.match(/Array\.isArray/g) || []).length;
     for (const a of V.analisa(js)) sujos.push({ arq: rel, tipo: a.tipo, trecho: a.alvo.slice(0, 50) });
+    for (const c of V.lacosConflados(js)) calados.push({ arq: rel, trecho: c.trecho });
   }
   /* O NUMERO MINIMO DE `fetch` E COBRADO, e nao so o zero de achados. Se um dia a lista de
      arquivos ou o extrator quebrarem, o resultado seria "0 sujos" sobre 0 varridos — verde de
      quem nao olhou, que e o defeito que esta suite inteira existe para nao repetir. */
   ok('7. a varredura de fato olhou o territorio (nao deu verde sobre nada)', varridos >= 50, { varridos });
   ok('8. *** nenhum fetch do territorio do A deixa de conferir o `ok` ***', sujos.length === 0, sujos.slice(0, 6));
+  /* O MESMO CUIDADO DO 7, PARA A 3a FORMA: se o `Array.isArray` sumisse do territorio inteiro, o
+     assert 9 daria verde por nao haver o que olhar. Ha 29 usos LEGITIMOS aqui — e e justamente
+     porque eles sao muitos que a conflacao passava despercebida no meio deles. */
+  ok('9a. ha usos de `Array.isArray` para a varredura olhar (senao o 9 e verde de quem nao olhou)',
+    formas >= 20, { formas });
+  ok('9. *** nenhum laco do territorio junta "pagina vazia" com "200 que nao e lista" ***',
+    calados.length === 0, calados.slice(0, 6));
 }
 
 console.log('\nRESULTADO: ' + p + ' ok, ' + f + ' falha(s)');

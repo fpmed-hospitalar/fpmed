@@ -162,6 +162,30 @@ function analisa(js) {
   return achados;
 }
 
+/* ══ A TERCEIRA FORMA DA FAMÍLIA: "PÁGINA VAZIA" E "RESPOSTA ESTRANHA" NA MESMA PORTA ════════
+   A caixa A36 pede as três formas, e esta é a que não passa pelo detector de cima porque o
+   `r.ok` DELA está conferido. O que ela junta é outra coisa:
+
+       if (!Array.isArray(lote) || !lote.length) break;
+
+   As duas metades são fatos opostos. `!lote.length` é a página vazia — o fim NORMAL de um laço
+   de paginação. `!Array.isArray(lote)` é um 200 que não é uma lista — uma resposta que ninguém
+   sabe ler. Saindo pela mesma porta calada, a segunda vira a primeira: a licitação é contada
+   como "nenhum item" e a lista de alvos é cortada no meio, com cara de trabalho terminado.
+   >>> ACHADAS TRÊS NO TERRITÓRIO DO A, em 20/08: `fpmed_licitacoes.html` (o cartão diria
+       "nenhum item" sobre um edital com duzentos), `coleta_itens_lote.js` (a lista de alvos da
+       rodada inteira, cortada) e `coleta_resultados.js`.
+   >>> O DETECTOR PEDE A CONDIÇÃO JUNTA, e não o `Array.isArray` sozinho: separado, ele é o uso
+       CERTO — prova de forma depois de o sucesso já ter sido conferido, e há 29 desses aqui. */
+const CONFLACAO = /!\s*Array\.isArray\s*\(\s*([A-Za-z_$][\w$]*)\s*\)\s*\|\|\s*!\s*\1\s*(?:\.\s*length|\b)/g;
+function lacosConflados(js) {
+  const out = [];
+  let m;
+  const re = new RegExp(CONFLACAO.source, 'g');
+  while ((m = re.exec(js)) !== null) out.push({ pos: m.index, trecho: m[0].replace(/\s+/g, ' ') });
+  return out;
+}
+
 // ══════════ A PROVA DO DETECTOR, NAS DUAS DIREÇÕES ══════════════════════════════════════════
 // Sem ela, um "0 achados" no território seria indistinguível de um detector quebrado.
 const BOM = [
@@ -190,7 +214,19 @@ const ENTREGUES = [
    cópia do detector é uma segunda régua — e as duas medem o mesmo território, então elas vão
    discordar no dia em que uma delas melhorar. A lição é a mesma do `criaBreaker` emprestado
    pelos dois coletores em vez de copiado. */
-module.exports = { analisa, chamadas, semComentario, TELAS_E_LIBS, FERRAMENTAS, BOM, RUIM, ENTREGUES };
+/* As fixtures da terceira forma, tambem nas duas direcoes: a conflacao tem de ser acusada, e as
+   duas metades SEPARADAS (que sao o uso certo) nao podem ser. */
+const CONFLADAS = [
+  ['o laco do cartao de itens, letra por letra', 'if(!Array.isArray(lote) || !lote.length) break;'],
+  ['com espacos e nome diferente', 'if (! Array.isArray( j )  ||  ! j.length ) break;'],
+];
+const SEPARADAS = [
+  ['as duas metades, cada uma com a sua saida', 'if(!Array.isArray(lote)) throw new Error("200 sem lista");\nif(!lote.length) break;'],
+  ['prova de forma depois do sucesso ja conferido', 'if(!r.ok) return null; const j = await r.json(); return (Array.isArray(j) && j[0]) ? j[0] : null;'],
+];
+
+module.exports = { analisa, chamadas, semComentario, lacosConflados,
+                   TELAS_E_LIBS, FERRAMENTAS, BOM, RUIM, ENTREGUES, CONFLADAS, SEPARADAS };
 /* Sem esta linha, `require('./varre_rok.js')` VARRERIA o repositório inteiro só de ser
    importado — e a suíte imprimiria a varredura no meio dos asserts. */
 if (require.main !== module) return;
@@ -213,6 +249,15 @@ if (tem('--prova')) {
     if (a.length === 0 && a.entregues === 1) { p++; console.log('  ✓ conta como ENTREGUE (não acusa, não some): ' + nome); }
     else { f++; console.log('  ✗ classificou errado: ' + nome + '  [acusados ' + a.length + ' · entregues ' + a.entregues + ']'); }
   }
+  console.log('\n  -- a 3a forma: "pagina vazia" e "200 que nao e lista" na mesma porta --');
+  for (const [nome, js] of CONFLADAS) {
+    if (lacosConflados(js).length > 0) { p++; console.log('  ✓ acusa a conflacao: ' + nome); }
+    else { f++; console.log('  ✗ ESCAPOU: ' + nome); }
+  }
+  for (const [nome, js] of SEPARADAS) {
+    if (lacosConflados(js).length === 0) { p++; console.log('  ✓ deixa passar o uso certo: ' + nome); }
+    else { f++; console.log('  ✗ FALSO ALARME em: ' + nome); }
+  }
   console.log('\nRESULTADO DA PROVA: ' + p + ' ok, ' + f + ' falha(s)');
   process.exit(f ? 1 : 0);
 }
@@ -229,8 +274,12 @@ for (const rel of alvos) {
   const n = chamadas(js).length;
   total += n;
   const achados = analisa(js);
-  comDefeito += achados.length;
+  const conflados = lacosConflados(js);
+  comDefeito += achados.length + conflados.length;
   entregues += achados.entregues;
+  for (const c of conflados)
+    console.log('  ' + rel.padEnd(30) + '  linha ' + String(linhaDe(js, c.pos)).padStart(5)
+      + '  LACO CALADO: "pagina vazia" e "200 que nao e lista" saem pela mesma porta');
   if (!n) continue;
   console.log('  ' + rel.padEnd(30) + String(n).padStart(3) + ' fetch · '
     + (achados.length ? String(achados.length) + ' SEM CONFERIR' : 'todos conferem o ok')

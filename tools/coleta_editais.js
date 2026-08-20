@@ -111,7 +111,18 @@ async function umaLicitacao(lic) {
     }
     arqs = [];
   }
-  if (!Array.isArray(arqs) || !arqs.length) {
+  /* ══ "NAO CONSEGUI LER" ENTRANDO NO FALLBACK DE "NAO TEM" (A36 · 20/08) ═══════════════════════
+     Era `if (!Array.isArray(arqs) || !arqs.length)`. A segunda metade é o caso honesto: lista
+     vazia (ou o 404, que a linha acima traduz em `[]`) quer dizer que o PNCP não publicou nada, e
+     isso vira um FATO gravado no banco. A primeira é um 200 que não é lista — e ela caía no MESMO
+     lugar, gravando "o PNCP não publicou arquivo para esta licitação" sobre uma resposta que
+     ninguém conseguiu ler. Escrever "não tem" no banco por não ter entendido a resposta é a forma
+     mais duradoura deste defeito: o erro fica gravado e a tela passa a repeti-lo. */
+  if (!Array.isArray(arqs)) {
+    console.log(`  ${rot}  ⚠️ o PNCP respondeu 200 com algo que não é uma lista de arquivos`);
+    return { erro: '200 sem lista de arquivos' };
+  }
+  if (!arqs.length) {
     /* ══ O FALLBACK HONESTO (item (d) da fatia) ═══════════════════════════════════════════
        O PNCP nem sempre publica o edital. Isto é registrado como FATO — uma linha com o
        motivo — e não como ausência. Ausência é indistinguível de "ainda não coletei", e a

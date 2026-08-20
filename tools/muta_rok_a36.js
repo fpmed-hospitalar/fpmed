@@ -46,6 +46,16 @@ const MUTACOES = [
     de: '      if (!r.ok) return null;\n',
     para: '',
   },
+  /* ══ A 3a FORMA TAMBÉM É MUTADA, e ela é a que mais parece inofensiva ═══════════════════════
+     Juntar as duas saídas de novo é uma edição de um caractere de distância — é o tipo de
+     "simplificação" que alguém faz de boa fé lendo duas linhas parecidas. Se a catraca não
+     ficar vermelha aqui, ela não guarda a terceira forma. */
+  {
+    nome: 'o laço de paginação volta a juntar "página vazia" com "200 que não é lista"',
+    arquivo: 'tools/coleta_itens_lote.js',
+    de: '    if (!Array.isArray(lote)) throw new Error(base + \' -> 200, mas a resposta não é uma lista\');\n    if (!lote.length) break;\n',
+    para: '    if (!Array.isArray(lote) || !lote.length) break;\n',
+  },
 ];
 
 function rodaSuite() {

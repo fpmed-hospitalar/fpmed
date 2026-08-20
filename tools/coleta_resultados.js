@@ -69,7 +69,14 @@ async function umaLicitacao(lic) {
       if (e.status === 404 && p === 1) { console.log(`  ${lic.numero_controle}  ○ o PNCP não tem itens para esta licitação`); return { semItens: true }; }
       console.log(`  ${lic.numero_controle}  ⚠️ ${e.message}`); return { erro: e.message };
     }
-    if (!Array.isArray(lote) || !lote.length) break;
+    /* "PÁGINA VAZIA" (fim normal) e "200 que não é lista" (resposta que ninguém sabe ler) saíam
+       pela mesma porta calada — e aí a segunda virava a primeira, e a licitação era contada como
+       "nenhum item". A19: não consegui ler nunca vira não existe. (A36 · 20/08) */
+    if (!Array.isArray(lote)) {
+      console.log(`  ${lic.numero_controle}  ⚠️ o PNCP respondeu 200 com algo que não é uma lista`);
+      return { erro: '200 sem lista de itens' };
+    }
+    if (!lote.length) break;
     itens = itens.concat(lote);
     if (lote.length < 100) break;
     if (p === 6) truncou = true;

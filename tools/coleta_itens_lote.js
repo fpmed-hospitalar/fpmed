@@ -285,7 +285,13 @@ async function paginado(base, quantos) {
   for (let de = 0; out.length < quantos; de += PAG) {
     const pedaco = Math.min(PAG, quantos - out.length);
     const lote = await le(`${base}&limit=${pedaco}&offset=${de}`);
-    if (!Array.isArray(lote) || !lote.length) break;
+    /* ══ "PÁGINA VAZIA" E "RESPOSTA ESTRANHA" SAÍAM PELA MESMA PORTA CALADA (A36 · 20/08) ══════
+       A primeira é o fim normal do laço; a segunda é um 200 que ninguém sabe ler. Juntas num
+       `break` só, a segunda virava a primeira — e a rodada seguiria com uma lista de alvos
+       CURTADA, relatando sucesso sobre metade do trabalho. Aqui isso é pior que na tela: a lista
+       de alvos é o que a rodada inteira vai fazer. */
+    if (!Array.isArray(lote)) throw new Error(base + ' -> 200, mas a resposta não é uma lista');
+    if (!lote.length) break;
     out = out.concat(lote);
     if (lote.length < pedaco) break;
   }
