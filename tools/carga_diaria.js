@@ -40,6 +40,13 @@
      node tools/carga_diaria.js --carimbo       (só mostra o último carimbo, não roda nada)
      node tools/carga_diaria.js --previa        (diz o que faria, não executa nem grava)
      node tools/carga_diaria.js --minutos 25    (orçamento total, padrão 20)
+     node tools/carga_diaria.js --carimbos-pendentes   (reenvia carimbo que a rede não deixou gravar)
+
+   ══ E A RODADA NÃO DEPENDE MAIS DE UMA ÚLTIMA CHAMADA (fatia A39, 20/08/2026) ════════════════
+   A rodada inteira terminava num `POST coleta_status` sem retentativa, com um `.catch` que
+   devolvia um objeto falso-ok: um `fetch failed` ali apagava a prestação de contas de vinte
+   minutos de trabalho que JÁ ESTAVA no banco. Agora essa chamada é teimosa (espera crescente,
+   teto de tentativas) e, ao desistir, GRAVA O QUE TEM em `logs/carimbo_pendente_*.json`.
    ═══════════════════════════════════════════════════════════════════════════════════════════ */
 'use strict';
 const fs = require('fs');
@@ -70,6 +77,7 @@ const tem = n => process.argv.includes(n);
 const FORCAR  = tem('--forcar');
 const PREVIA  = tem('--previa');
 const SO_CARIMBO = tem('--carimbo');
+const SO_PENDENTES = tem('--carimbos-pendentes');
 /* 12 HORAS — o MESMO número que `FRESCOR_HORAS` no fpmed_licitacoes.html. Se um dia mudar, muda
    nos dois: a tela chamando de velho o que o condutor chama de fresco é uma contradição visível
    para o operador e invisível para quem lê só um dos dois arquivos. */
@@ -188,11 +196,78 @@ function textoDoSaldo(saldoVivas, plano) {
 
 const agora = () => new Date();
 const iso = d => d.toISOString();
+const dormir = ms => new Promise(r => setTimeout(r, ms));
+
+/* ══ A REDE QUE PISCA NÃO PODE SER O FIM DA RODADA (fatia A39, 20/08/2026) ═══════════════════
+   A rodada inteira deste condutor termina em UMA chamada: o `POST coleta_status` que grava o
+   carimbo. Um `fetch failed` ali apagava a prestação de contas de vinte minutos de trabalho que
+   JÁ ESTAVA FEITO — as licitações no banco, os itens no banco, e o carimbo em lugar nenhum. É o
+   mesmo defeito que matou três ciclos do trabalhador A com `ENOTFOUND`, um deles com 2h33 de
+   trabalho: quem só presta contas no fim tem o registro inteiro pendurado na chamada mais frágil.
+
+   >>> ESPERA CRESCENTE E TETO DE TENTATIVAS, e nada de engolir. Depois das tentativas o erro
+       CONTINUA sendo erro — ele sobe, sai no console e a rodada não se declara boa. O que muda é
+       o alcance: uma gravação adiada em vez de uma rodada inteira sem registro.
+   >>> SÓ FALHA DE TRANSPORTE ENTRA AQUI. Um 401 ou um 409 voltam como `r` e quem chamou confere
+       o `r.ok`, como sempre conferiu — retentar um 401 é bater três vezes na mesma porta trancada.
+   >>> A ESCADA É A MESMA DO `coleta_itens_lote.js` em espírito (2s · 6s · 18s): rápida o
+       bastante para atravessar um piscar de roteador, curta o bastante para não comer o
+       orçamento da rodada seguinte. */
+const TENTATIVAS_REDE = 4;
+const esperaCrescente = t => Math.min(18000, 2000 * Math.pow(3, t));
+const ehQuedaDeRede = e => /fetch failed|ENOTFOUND|ECONNRESET|ETIMEDOUT|EAI_AGAIN|socket hang up|network/i
+  .test(String((e && e.message) || e));
+/* O PLANO DA TEIMOSIA É UM PARÂMETRO COM PADRÃO, e não um número escrito dentro do laço. A razão
+   é a lição da A34, agora da casa: uma catraca que quisesse provar "ele retenta e desiste" com o
+   plano de produção esperaria 26 segundos por assert, e teste lento é teste que ninguém roda.
+   >>> E O PADRÃO CONTINUA SENDO O DE PRODUÇÃO — a suíte confere OS DOIS: que o padrão é 4
+       tentativas com 2s·6s·18s, e que o comportamento é o certo, com o plano curto. */
+const PLANO_PADRAO = { tentativas: TENTATIVAS_REDE, espera: esperaCrescente };
+
+async function fetchTeimoso(url, opcoes, oQue, plano) {
+  const { tentativas, espera: quantoEsperar } = Object.assign({}, PLANO_PADRAO, plano || {});
+  let ultimo = null;
+  for (let t = 0; t < tentativas; t++) {
+    try { return await fetch(url, opcoes); }
+    catch (e) {
+      /* SÓ A FALHA DE TRANSPORTE CAI AQUI. Resposta 4xx/5xx não levanta exceção — ela volta como
+         `r` e quem chamou confere o `r.ok`, como sempre conferiu. */
+      ultimo = e;
+      if (t === tentativas - 1) break;
+      const ms = quantoEsperar(t);
+      console.log('    ! rede (' + oQue + '): ' + e.message + ' — nova tentativa em ' + ms / 1000 + 's');
+      await dormir(ms);
+    }
+  }
+  const erro = new Error(oQue + ': ' + (ultimo && ultimo.message) + ' (' + tentativas + ' tentativas)');
+  erro.quedaDeRede = ehQuedaDeRede(ultimo);
+  erro.tentativas = tentativas;
+  throw erro;
+}
+
+/* ══ E AO DESISTIR, GRAVA O QUE TEM ══════════════════════════════════════════════════════════
+   O carimbo que não chegou ao banco vai pro disco, inteiro, com o nome da hora. Ele não substitui
+   a gravação — ele impede que o trabalho medido desapareça enquanto a porta está fechada.
+   `node tools/carga_diaria.js --carimbos-pendentes` reenvia o que estiver lá e só apaga o arquivo
+   DEPOIS de o banco confirmar. Apagar antes seria trocar um registro adiado por nenhum. */
+const PASTA_PENDENTES = path.join(RAIZ, 'logs');
+let _seq = 0;   // duas quedas no mesmo milissegundo não podem virar um arquivo só
+function guardaCarimboEmDisco(linha, porque, pasta) {
+  const destino = pasta || PASTA_PENDENTES;
+  try {
+    if (!fs.existsSync(destino)) fs.mkdirSync(destino, { recursive: true });
+    const nome = 'carimbo_pendente_' + new Date().toISOString().replace(/[:.]/g, '-')
+      + '_' + String(++_seq).padStart(2, '0') + '.json';
+    const caminho = path.join(destino, nome);
+    fs.writeFileSync(caminho, JSON.stringify({ porque, gravado_em: new Date().toISOString(), linha }, null, 2), 'utf8');
+    return caminho;
+  } catch (e) { return null; }
+}
 
 async function pede(caminho, extra) {
   const { SB, H } = banco();
-  const r = await fetch(SB + '/rest/v1/' + caminho, { headers: Object.assign({}, H, extra || {}) });
-  return r;
+  return await fetchTeimoso(SB + '/rest/v1/' + caminho,
+    { headers: Object.assign({}, H, extra || {}) }, 'GET ' + caminho.split('?')[0]);
 }
 
 /* A contagem vem do SERVIDOR (`content-range`), como na `conta_indice.js`. Contar pelo `length`
@@ -204,6 +279,65 @@ async function conta(filtro) {
     const n = parseInt(String(r.headers.get('content-range') || '').split('/')[1], 10);
     return isFinite(n) ? n : null;
   } catch (_) { return null; }
+}
+
+/* Devolve `{ok}` como um `fetch` devolveria, mais `pendente` com o caminho do disco quando a
+   porta não abriu. Quem chama continua conferindo `r.ok` — o desfecho novo é ADITIVO. */
+/* `onde` (o endereço e o cabeçalho) e `pasta` (o disco) são PARÂMETROS com padrão de produção,
+   pela mesma razão do plano da teimosia: sem eles, provar "a rede caiu e o carimbo foi pro disco"
+   exigiria a `service_role` na mão e escreveria no `logs/` de verdade — e regra que só se testa
+   com a chave-mestra na mão é regra que ninguém testa. */
+async function gravaCarimbo(linha, onde, plano, pasta) {
+  const { SB, H } = onde || banco();
+  try {
+    const r = await fetchTeimoso(`${SB}/rest/v1/coleta_status?on_conflict=fonte`, {
+      method: 'POST',
+      headers: { ...H, 'Content-Type': 'application/json', Prefer: 'return=minimal,resolution=merge-duplicates' },
+      body: JSON.stringify([linha]),
+    }, 'gravar o carimbo', plano);
+    if (r.ok) return r;
+    /* RESPONDEU MAL também perde o carimbo se ninguém guardar. 4xx/5xx não é queda de rede, mas o
+       trabalho da rodada some do mesmo jeito — e o disco custa nada. */
+    const guardado = guardaCarimboEmDisco(linha, 'o banco respondeu HTTP ' + r.status, pasta);
+    return { ok: false, status: r.status, pendente: guardado };
+  } catch (e) {
+    const guardado = guardaCarimboEmDisco(linha, e.message, pasta);
+    return { ok: false, status: e.message, pendente: guardado, quedaDeRede: !!e.quedaDeRede };
+  }
+}
+
+/* ══ REENVIAR O QUE FICOU NO DISCO ═══════════════════════════════════════════════════════════
+   O arquivo só é apagado DEPOIS de o banco confirmar. Apagar antes trocaria um registro adiado
+   por nenhum — que é exatamente o defeito que esta fatia veio matar. */
+async function reenviaPendentes(onde, plano, pasta) {
+  const dir = pasta || PASTA_PENDENTES;
+  if (!fs.existsSync(dir)) { console.log('não há carimbo pendente no disco.'); return 0; }
+  const arquivos = fs.readdirSync(dir).filter(n => /^carimbo_pendente_.*\.json$/.test(n)).sort();
+  if (!arquivos.length) { console.log('não há carimbo pendente no disco.'); return 0; }
+  let enviados = 0;
+  for (const nome of arquivos) {
+    const caminho = path.join(dir, nome);
+    let guardado;
+    try { guardado = JSON.parse(fs.readFileSync(caminho, 'utf8')); }
+    catch (e) { console.log('  ! ' + nome + ': não consegui ler (' + e.message + ') — fica onde está'); continue; }
+    const { SB, H } = onde || banco();
+    let r;
+    try {
+      r = await fetchTeimoso(`${SB}/rest/v1/coleta_status?on_conflict=fonte`, {
+        method: 'POST',
+        headers: { ...H, 'Content-Type': 'application/json', Prefer: 'return=minimal,resolution=merge-duplicates' },
+        body: JSON.stringify([guardado.linha]),
+      }, 'reenviar ' + nome, plano);
+    } catch (e) { console.log('  ! ' + nome + ': ' + e.message + ' — fica no disco'); continue; }
+    /* SÓ APAGA DEPOIS DE O BANCO CONFIRMAR. Apagar antes trocaria um registro adiado por nenhum —
+       que é exatamente o defeito que esta fatia veio matar. */
+    if (!r.ok) { console.log('  ! ' + nome + ': HTTP ' + r.status + ' — fica no disco'); continue; }
+    fs.unlinkSync(caminho);
+    enviados++;
+    console.log('  ✓ ' + nome + ' gravado no banco e removido do disco (era de ' + guardado.gravado_em + ')');
+  }
+  console.log(enviados + ' de ' + arquivos.length + ' carimbo(s) pendente(s) enviado(s).');
+  return enviados;
 }
 
 async function leCarimbo() {
@@ -323,10 +457,19 @@ function mostraCarimbo(c) {
    Supabase e chamaria o PNCP — um teste que fala com o governo não é um teste, é uma coleta.
    >>> E é o mesmo caminho da `testa_familia_rok`: ela IMPORTA o detector da ferramenta em vez de
        copiá-lo. Duas cópias são duas réguas, e a que discorda calada é a que fica. */
-module.exports = { planoDeItens, textoDoSaldo, FRESCOR_HORAS, FATIA, SEG_POR_LIC_PADRAO };
+module.exports = { planoDeItens, textoDoSaldo, FRESCOR_HORAS, FATIA, SEG_POR_LIC_PADRAO,
+  /* A A39 também: a teimosia da rede e o carimbo que vai pro disco são regras, e regra sem porta
+     de pergunta é regra sem catraca. Nenhuma delas lê a `service_role` ao ser importada. */
+  fetchTeimoso, esperaCrescente, ehQuedaDeRede, PLANO_PADRAO, TENTATIVAS_REDE,
+  guardaCarimboEmDisco, gravaCarimbo, reenviaPendentes, PASTA_PENDENTES };
 if (require.main !== module) return;
 
 (async () => {
+  /* Antes de qualquer coisa que fale com a rede: se ficou carimbo no disco de uma rodada que não
+     conseguiu gravar, ele vai primeiro. Deixar para depois seria repetir a aposta na última
+     chamada, que é o defeito inteiro desta fatia. */
+  if (SO_PENDENTES) { await reenviaPendentes(); return; }
+
   const carimboAntes = await leCarimbo();
 
   if (SO_CARIMBO) { mostraCarimbo(carimboAntes); return; }
@@ -506,12 +649,11 @@ if (require.main !== module) return;
   };
   if (okDeVerdade) linha.ultima_ok = iso(fim);
 
-  const gravar = banco();
-  const r = await fetch(`${gravar.SB}/rest/v1/coleta_status?on_conflict=fonte`, {
-    method: 'POST',
-    headers: { ...gravar.H, 'Content-Type': 'application/json', Prefer: 'return=minimal,resolution=merge-duplicates' },
-    body: JSON.stringify([linha]),
-  }).catch(e => ({ ok: false, status: e.message }));
+  /* A CHAMADA QUE CARREGA A RODADA INTEIRA. Ela é teimosa (espera crescente, teto de tentativas)
+     e, se ainda assim não passar, o carimbo vai pro DISCO em vez de evaporar — ver `fetchTeimoso`
+     e `guardaCarimboEmDisco` no topo. O `.catch` que estava aqui devolvia um objeto falso-ok e
+     seguia em frente: o aviso saía, e o trabalho da rodada ficava sem registro nenhum. */
+  const r = await gravaCarimbo(linha);
 
   console.log('\n══════════════════════════════════════════════════════════════');
   console.log('=== CARGA DIÁRIA — fim ' + hm(fim) + ' (' + detalhe.minutos + ' min) ===');
@@ -528,7 +670,19 @@ if (require.main !== module) return;
   console.log('  por quê ........ ' + detalhe.porque);
   console.log(okDeVerdade ? '✅ carimbo de frescor AVANÇOU — a faixa da Encontrar vai dizer "atualizados hoje às ' + hm(fim) + '"'
                           : '⚠️  carimbo NÃO avançou — a faixa vai continuar mostrando a idade da última carga boa');
-  if (!r || !r.ok) console.error('⚠️  não consegui gravar o carimbo: ' + (r && r.status));
+  if (!r || !r.ok) {
+    console.error('⚠️  não consegui gravar o carimbo: ' + (r && r.status));
+    if (r && r.pendente) {
+      console.error('   O CARIMBO ESTÁ NO DISCO, INTEIRO: ' + path.relative(RAIZ, r.pendente));
+      console.error('   reenvie com:  node tools/carga_diaria.js --carimbos-pendentes');
+    } else {
+      console.error('   E NÃO CONSEGUI GUARDÁ-LO NEM NO DISCO — o registro desta rodada se perdeu.');
+    }
+    /* Uma rodada cujo carimbo não chegou ao banco NÃO é uma rodada boa: a faixa da tela vai
+       continuar mostrando a idade da carga anterior, e o código de saída tem de dizer isso. */
+    process.exitCode = 1;
+    return;
+  }
 
   process.exitCode = okDeVerdade ? 0 : 1;
 })().catch(e => { console.error('ERRO: ' + e.message); process.exit(1); });

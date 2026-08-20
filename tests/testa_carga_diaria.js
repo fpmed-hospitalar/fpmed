@@ -180,5 +180,85 @@ console.log('SUITE testa_carga_diaria — o teto pela divida, e o saldo com cade
     && /const FRESCOR_HORAS = 12;/.test(fs.readFileSync(path.join(raiz, 'fpmed_licitacoes.html'), 'utf8')));
 }
 
-console.log('\nRESULTADO: ' + p + ' ok, ' + f + ' falha(s)');
-if (f) process.exit(1);
+// ══════════ 5. A REDE QUE PISCA NAO E FIM DE RODADA (fatia A39 · 20/08/2026) ══════════
+// A rodada inteira terminava numa unica chamada — o `POST coleta_status` — sem retentativa, com um
+// `.catch` que devolvia um objeto falso-ok. Um `fetch failed` ali apagava a prestacao de contas de
+// vinte minutos de trabalho que JA ESTAVA no banco. E o mesmo defeito que matou tres ciclos do
+// trabalhador A com ENOTFOUND, um deles com 2h33 de trabalho.
+{
+  const os = require('os');
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'a39carga_'));
+  // um plano CURTO, para a suite nao esperar 26 s por assert. O plano de PRODUCAO e conferido
+  // logo abaixo, pelo numero — as duas perguntas sao diferentes e as duas precisam de resposta.
+  const rapido = { tentativas: 3, espera: () => 1 };
+  const MORTA = 'http://nao-existe-fpmed-a39.invalid';
+
+  ok('27. as regras da A39 podem ser IMPORTADAS sem chave-mestra e sem disparar a carga',
+    typeof C.fetchTeimoso === 'function' && typeof C.gravaCarimbo === 'function'
+    && typeof C.reenviaPendentes === 'function' && typeof C.guardaCarimboEmDisco === 'function');
+
+  ok('28. *** o plano de PRODUCAO e teto de 4 tentativas com espera CRESCENTE (2s · 6s · 18s) ***',
+    C.TENTATIVAS_REDE === 4 && C.esperaCrescente(0) === 2000 && C.esperaCrescente(1) === 6000
+    && C.esperaCrescente(2) === 18000,
+    [C.TENTATIVAS_REDE, C.esperaCrescente(0), C.esperaCrescente(1), C.esperaCrescente(2)]);
+  ok('29. ...e a espera tem TETO — sem ele a decima tentativa dormiria 33 horas',
+    C.esperaCrescente(9) === 18000 && C.esperaCrescente(50) === 18000, C.esperaCrescente(9));
+
+  ok('30. ENOTFOUND e `fetch failed` sao reconhecidos como queda de rede',
+    C.ehQuedaDeRede(new Error('getaddrinfo ENOTFOUND pncp.gov.br'))
+    && C.ehQuedaDeRede(new Error('fetch failed')) && C.ehQuedaDeRede(new Error('ECONNRESET')));
+  ok('31. ...e um 401 NAO e: retentar porta trancada e bater tres vezes na mesma porta',
+    !C.ehQuedaDeRede(new Error('HTTP 401 Unauthorized')));
+
+  // ── o desfecho de verdade, com uma queda de rede de verdade (dominio .invalid) ──
+  // O fecho da suite mora AQUI DENTRO porque estes asserts sao assincronos: imprimir o RESULTADO
+  // la embaixo, fora da promessa, contaria o placar antes de eles rodarem — e a suite sairia
+  // verde por nao ter esperado. E o `run_all.js` le exatamente essa linha.
+  const linha = { fonte: 'CARGA', registros: 7273, detalhe: { saldo: 'faltam 4.558 vivas sem item' } };
+  (async () => {
+    let subiu = null;
+    try { await C.fetchTeimoso(MORTA + '/x', {}, 'teste', rapido); }
+    catch (e) { subiu = e; }
+    ok('32. *** depois das tentativas o erro CONTINUA sendo erro — retentar e legitimo, engolir nao ***',
+      subiu instanceof Error && subiu.tentativas === 3 && subiu.quedaDeRede === true,
+      subiu && subiu.message);
+
+    const r = await C.gravaCarimbo(linha, { SB: MORTA, H: {} }, rapido, tmp);
+    ok('33. *** a rede caiu e o carimbo NAO se declara gravado ***', r.ok === false, r.status);
+    ok('34. *** ...e o carimbo foi GRAVADO NO DISCO, inteiro, em vez de evaporar ***',
+      !!r.pendente && fs.existsSync(r.pendente), r.pendente);
+
+    const guardado = JSON.parse(fs.readFileSync(r.pendente, 'utf8'));
+    ok('35. o que foi pro disco e a LINHA INTEIRA, com o saldo medido — nao um resumo',
+      guardado.linha.registros === 7273
+      && guardado.linha.detalhe.saldo === 'faltam 4.558 vivas sem item', guardado.linha);
+    ok('36. ...e ele diz POR QUE ficou pendente e a que hora',
+      /invalid|fetch failed|ENOTFOUND|tentativas/i.test(guardado.porque) && !!guardado.gravado_em,
+      guardado.porque);
+
+    // ── o reenvio: com a porta ainda fechada, o arquivo NAO pode sumir ──
+    const antes = fs.readdirSync(tmp).length;
+    await C.reenviaPendentes({ SB: MORTA, H: {} }, rapido, tmp);
+    ok('37. *** porta ainda fechada: o pendente FICA no disco (apagar antes = registro adiado -> nenhum) ***',
+      fs.readdirSync(tmp).length === antes, fs.readdirSync(tmp));
+
+    // duas quedas seguidas nao podem virar um arquivo so
+    const r2 = await C.gravaCarimbo(linha, { SB: MORTA, H: {} }, rapido, tmp);
+    ok('38. duas quedas no mesmo instante geram DOIS arquivos (uma nao sobrescreve a outra)',
+      r2.pendente !== r.pendente && fs.readdirSync(tmp).length === antes + 1, fs.readdirSync(tmp));
+
+    // ── e na FONTE: o `.catch` falso-ok nao pode voltar ──
+    ok('39. *** a gravacao do carimbo passa pela teimosa, e nao por um `fetch` nu com .catch ***',
+      /const r = await gravaCarimbo\(linha\)/.test(src)
+      && !/\}\)\.catch\(e => \(\{ ok: false, status: e\.message \}\)\)/.test(src));
+    ok('40. carimbo que nao chegou ao banco faz a rodada sair com codigo != 0',
+      /if \(!r \|\| !r\.ok\) \{[\s\S]{0,900}?process\.exitCode = 1;/.test(src));
+    ok('41. e o console DIZ onde o carimbo ficou e como reenviar',
+      /--carimbos-pendentes/.test(src) && /O CARIMBO ESTÁ NO DISCO/.test(src));
+
+    try { fs.rmSync(tmp, { recursive: true, force: true }); } catch (_) {}
+    console.log('\nRESULTADO: ' + p + ' ok, ' + f + ' falha(s)');
+    process.exit(f ? 1 : 0);
+  })().catch(e => { console.log('  FALHA bloco 5 estourou: ' + e.message);
+    console.log('\nRESULTADO: ' + p + ' ok, ' + (f + 1) + ' falha(s)'); process.exit(1); });
+}
