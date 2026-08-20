@@ -66,7 +66,27 @@
      seis tamanhos GRANDES, com a régua atestando piso limpo porque não sobrou número abaixo de
      12. Os valores são copiados do `fpmed_tema.css` de propósito: enquanto a ilha existir, ela
      tem de dizer as mesmas coisas que a casa diz, e no dia da migração os nomes já batem. */
-  --txt-0:10px;--txt-1:12px;--txt-2:14px;--txt-3:16px;--txt-4:20px;--txt-5:24px}
+  --txt-0:10px;--txt-1:12px;--txt-2:14px;--txt-3:16px;--txt-4:20px;--txt-5:24px;
+  /* ══ A GRADE DE ESPAÇO DA ILHA — E ELA FALTAVA, COM AS REGRAS JÁ USANDO (20/08, fatia B27) ═══
+     A B19 trouxe a escala de TEXTO para cá com o motivo escrito quatro linhas acima: token que a
+     ilha não define não dá erro nem avisa, a declaração inteira fica inválida e o valor volta ao
+     inicial. **A B25 caiu na mesma armadilha, no mesmo arquivo, uma fatia depois** — ela escreveu
+     `var(--esp-1/2/3)` em quatro regras (a etiqueta de versão, a caixa do histórico, a linha do
+     histórico e o aviso de substituição) e não trouxe a grade junto. Os `--esp-*` só existem no
+     `fpmed_tema.css`, que esta tela **não carrega**, de propósito.
+     >>> MEDIDO NO NAVEGADOR EM 20/08, na tela pintada, e não deduzido do CSS:
+         `--esp-1..4` devolvem string VAZIA no `:root`; `.doc .versao` computa
+         `margin-left:0px` e `padding:0px` (a pastilha "versão 2" nasce COLADA no nome e sem
+         respiro interno); `.hist` computa `padding-left:0px` (o histórico não recua, e a barra
+         de 2px encosta no texto); `.hist .linha` e `.subst` computam `padding:0px` (o aviso
+         âmbar de substituição fica com o texto encostado na borda).
+     >>> E NENHUMA CATRACA PEGOU, porque nenhuma perguntava "este token existe no lugar onde ESTA
+         tela vai procurá-lo?". A `tests/testa_token_definido.js` nasceu desta fatia e pergunta —
+         em todas as telas, não só nesta. Defeito que a régua não sabe procurar volta sempre.
+     Os valores são copiados do `fpmed_tema.css`, pelo mesmo motivo dos de texto: enquanto a ilha
+     existir ela tem de dizer as mesmas coisas que a casa diz, e no dia da migração os nomes já
+     batem. */
+  --esp-1:4px;--esp-2:8px;--esp-3:12px;--esp-4:16px;--esp-5:20px;--esp-6:24px}
 *{margin:0;padding:0;box-sizing:border-box}
 /* ══ O TAMANHO DO ÍCONE, COPIADO PALAVRA POR PALAVRA DAS OUTRAS TELAS DO B ═══════════════════
    Sem esta regra o `<svg class="ic">` do sprite sai com o tamanho padrão de SVG do navegador —
@@ -208,6 +228,48 @@ input::placeholder{color:var(--placeholder)}
    tem de perceber ANTES de salvar que está criando uma versão, e não um documento novo. */
 .subst{background:rgba(var(--ambar-rgb),.13);border:1px solid var(--ambar);border-radius:9px;
   padding:var(--esp-2) var(--esp-3);margin-bottom:var(--esp-3);font-size:var(--txt-1);color:var(--ambar-claro)}
+
+/* ══ ARQUIVAR (20/08, fatia B27) ══════════════════════════════════════════════════════════════
+   O painel de arquivamento abre DENTRO do cartão, como o histórico — e pela mesma razão: quem
+   arquiva precisa ver de qual documento é a decisão enquanto escreve o motivo. Uma janela por
+   cima faria a pessoa confirmar sobre o cartão errado, e "arquivei a CND errada" é justamente o
+   estrago que o motivo obrigatório existe para tornar reversível.
+   >>> A COR É A DO ALERTA, NÃO A DO PERIGO. Arquivar não apaga nada — âmbar (mesma família do
+       aviso de substituição), nunca vermelho. Vermelho aqui prometeria destruição e ensinaria a
+       pessoa a temer um botão que ela deveria usar. */
+.arqbox{width:100%;margin:var(--esp-2) 0 var(--esp-1);padding:var(--esp-3);border-radius:9px;
+  background:var(--painel2);border:1px solid var(--ambar)}
+.arqbox .tit{font-size:var(--txt-1);color:var(--ambar-claro);font-weight:700;margin-bottom:var(--esp-2)}
+.arqbox .campos{display:flex;gap:var(--esp-2);flex-wrap:wrap;align-items:center}
+.arqbox select,.arqbox input{flex:1 1 200px;min-width:0}
+.arqbox .acoes{display:flex;gap:var(--esp-2);align-items:center;margin-top:var(--esp-2);flex-wrap:wrap}
+
+/* A GAVETA. Ela nasce FECHADA e diz quantos guarda no próprio botão — "ver 5 arquivados" é uma
+   frase que informa mesmo sem ser clicada. Um acordeão que só diz "arquivados" obriga o clique
+   para responder a pergunta mais simples ("tem alguma coisa aí?"). */
+.gaveta{margin-top:var(--esp-4);border-top:1px dashed var(--linha);padding-top:var(--esp-3)}
+.gaveta .corpo{margin-top:var(--esp-2);padding-left:var(--esp-3);border-left:2px solid var(--linha)}
+.gaveta .linha{display:flex;gap:var(--esp-2);align-items:center;flex-wrap:wrap;
+  font-size:var(--txt-1);color:var(--muted);padding:var(--esp-2) 0;border-bottom:1px solid var(--linha)}
+.gaveta .linha:last-child{border-bottom:0}
+.gaveta .linha b{color:var(--texto);font-weight:600}
+.gaveta .linha .motivo{color:var(--ambar-claro)}
+/* O documento que VOLTOU do arquivo continua contando essa história no cartão dele. Sumir com o
+   carimbo faria a linha mentir por omissão: ela já esteve fora, e quem confere habilitação em
+   outubro tem o direito de saber que em agosto alguém a tirou e devolveu. */
+.doc .voltou{font-size:var(--txt-1);color:var(--ambar-claro);margin-top:var(--esp-1)}
+
+/* ══ O AVISO POR E-MAIL (20/08, fatia B27) ════════════════════════════════════════════════════
+   A faixa fica ABAIXO do painel de contagem e ACIMA da lista: ela fala sobre o conjunto (quem
+   seria avisado), não sobre um documento. E ela diz, em letra pequena, a única coisa que o
+   e-mail NÃO conta — que documento sem data de validade fica de fora. A caixa pediu essa frase
+   aqui e não no e-mail, e está certo: o e-mail é sobre o que está vencendo; a tela é sobre o
+   cofre inteiro, e é ela que sabe que existe um terceiro estado. */
+.avisocx{background:var(--painel);border:1px solid var(--linha);border-radius:12px;
+  padding:var(--esp-3) var(--esp-4);margin-bottom:var(--esp-4)}
+.avisocx .linha1{display:flex;gap:var(--esp-2);align-items:center;flex-wrap:wrap}
+.avisocx input{min-width:220px}
+.avisocx .obs{font-size:var(--txt-1);color:var(--muted);margin-top:var(--esp-2);line-height:1.5}
 .aviso{background:var(--painel);border:1px dashed var(--linha);border-radius:12px;padding:24px;text-align:center;color:var(--muted)}
 #form{display:none;background:var(--painel);border:1px solid var(--linha);border-radius:12px;padding:16px;margin-bottom:16px}
 #form.open{display:block}
@@ -249,6 +311,11 @@ label{display:block;font-size:var(--txt-1);font-weight:600;color:var(--muted);ma
   <!-- A RÉGUA VEM ANTES DA LISTA, e não depois: a pergunta que traz alguém aqui é "tem alguma
        certidão vencida?", não "quais documentos eu tenho". A lista responde a segunda. -->
   <div class="reguas" id="reguas"></div>
+
+  <!-- A FAIXA DO AVISO. Ela é pintada pelo `pintaAviso()` — inclusive a frase sobre os documentos
+       sem validade, que só aparece quando existe algum. Frase fixa sobre um caso que não existe é
+       ruído; frase que aparece quando o caso existe é informação. -->
+  <div class="avisocx" id="avisocx" style="display:none"></div>
 
   <div class="barra">
     <input type="text" id="busca" placeholder="filtrar por nome, tipo ou órgão…" oninput="pinta()" style="min-width:260px">
@@ -304,7 +371,18 @@ label{display:block;font-size:var(--txt-1);font-weight:600;color:var(--muted);ma
       <!-- POR DOCUMENTO, e não um número fixo: certidão federal sai em minutos, alvará da
            vigilância leva semanas. Avisar os dois com a mesma antecedência trata como iguais
            coisas que não são. -->
-      <div><label>Avisar quantos dias antes</label><input type="number" id="f-aviso" value="30" min="0" max="365"></div>
+      <div><label>Avisar quantos dias antes</label><input type="number" id="f-aviso" value="30" min="0" max="365">
+        <div class="hint" style="margin-top:4px">30 é o padrão porque é o que já está gravado em todos os documentos deste cofre — não é chute</div></div>
+      <!-- ══ PARA QUEM AVISAR — POR DOCUMENTO, PELA MESMA RAZÃO QUE A ANTECEDÊNCIA É (B27) ═════
+           O alvará da vigilância interessa a quem cuida da licença sanitária; a CND federal
+           interessa a quem monta habilitação. Um endereço único no sistema mandaria os dois para
+           a mesma caixa, e um dos dois passaria a ser ignorado.
+           >>> EM BRANCO É "o e-mail da empresa", NUNCA "não avisa". Ausência de endereço não pode
+               virar silêncio: silêncio por omissão é exatamente como a certidão vence sem
+               ninguém saber, que é o defeito que este módulo existe para matar. O placeholder
+               mostra QUAL é esse e-mail, para a pessoa poder discordar dele. -->
+      <div><label>Avisar quem (e-mail)</label><input type="email" id="f-email" placeholder="—">
+        <div class="hint" style="margin-top:4px" id="f-email-hint">em branco = o e-mail da empresa cadastrada</div></div>
       <div><label>Arquivo (PDF ou imagem, até 20 MB)</label><input type="file" id="f-arq" accept=".pdf,image/*"></div>
     </div>
     <div style="margin-top:12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
@@ -315,6 +393,11 @@ label{display:block;font-size:var(--txt-1);font-weight:600;color:var(--muted);ma
   </div>
 
   <div id="lista"><div class="aviso">carregando…</div></div>
+
+  <!-- A GAVETA DOS ARQUIVADOS, fora do `#lista` de propósito: ela NÃO é parte da lista e não pode
+       ser apagada junto com ela a cada `pinta()`. Documento arquivado não some do sistema — ele
+       sai da frente. Some-lo de vez seria a tela decidindo que o passado não existe. -->
+  <div id="gaveta"></div>
 </div>
 
 <script>
@@ -411,7 +494,27 @@ const caminhoNaUrl = p => String(p==null?'':p).split('/').map(encodeURIComponent
 const semAcento = s => { let o=''; for(const c of String(s||'').normalize('NFD')){ const k=c.codePointAt(0); if(k>=0x300&&k<=0x36f) continue; o+=c; } return o.toLowerCase(); };
 const brData = s => s ? s.slice(8,10)+'/'+s.slice(5,7)+'/'+s.slice(0,4) : '—';
 
+/* ══ O E-MAIL DA EMPRESA VEM DO `cliente.config.js`, E NÃO DE UMA CONSTANTE AQUI (B27) ═══════
+   O `cliente.config.js` é, por escrito, "a ÚNICA coisa que muda entre um cliente e outro" — e
+   ele diz que nada de "marca, cor, nome, e-mail, telefone" vive no código do produto. Escrever
+   `comercial@fpmed.com.br` nesta tela criaria a segunda cópia do endereço da empresa, e no dia
+   em que o cliente trocasse de e-mail o cofre continuaria avisando o antigo, calado.
+   >>> E SE O CONFIG NÃO CARREGAR, NÃO HÁ PADRÃO INVENTADO: fica vazio, e a dica da tela diz que
+       não há e-mail de empresa configurado. Endereço chutado é aviso que vai para o lugar errado
+       — pior que aviso que não vai. */
+const EMAIL_EMPRESA = (function(){
+  try{ return String(((window.LIMEDTEC_CLIENTE||{}).empresa||{}).email || '').trim(); }
+  catch(e){ return ''; }
+})();
+
 let DOCS = null, ERRO = null;
+/* `null` = ainda não li; `[]` = li e não há nenhum. A gaveta precisa dessa diferença: com `[]`
+   ela não aparece (não há o que guardar), e com `null` ela também não aparece — mas por outro
+   motivo, e é por isso que o erro de leitura tem carimbo próprio em vez de virar lista vazia. */
+let ARQUIVADOS = null, ARQ_ERRO = null, GAVETA_ABERTA = false;
+// Qual cartão está com o painel de arquivamento aberto (um por vez: dois painéis abertos é
+// convite para confirmar sobre o cartão errado). `null` = nenhum.
+let ARQUIVANDO = null;
 
 /* ══ A CONTA DO PAINEL É PURA, E POR ISSO DÁ PARA CONFERIR CONTRA O BANCO ════════════════════
    Ela estava embutida no meio do `pinta()`, cercada de `innerHTML` — ou seja, só era possível
@@ -447,7 +550,24 @@ async function carregar(){
        é dado da empresa do dono e não sai da máquina dele. */
     window.FPMED_TELEMETRIA && FPMED_TELEMETRIA.evento('erro_visto_pelo_usuario',
       { causa: e.message, tela: 'documentos' }); }
+  /* ══ OS ARQUIVADOS VÊM NA MESMA IDA, E NÃO NUM `count` SEPARADO ═════════════════════════════
+     O botão precisa do NÚMERO ("ver 5 arquivados") antes de alguém clicar. A saída barata seria
+     um `Prefer: count=exact` só para o rótulo e a lista depois — e aí existiriam duas leituras
+     do mesmo fato, feitas em momentos diferentes, que podem discordar: o botão diria 5 e a gaveta
+     abriria com 4. Uma leitura só não tem como se contradizer.
+     >>> E ELA NÃO DERRUBA A LISTA. Se os arquivados falharem, a tela principal continua inteira e
+         só a gaveta diz que não conseguiu ler — porque a resposta "tem certidão vencida?" não
+         pode depender de uma gaveta que ninguém abriu. */
+  await carregarArquivados();
   pinta();
+}
+
+async function carregarArquivados(){
+  try{
+    const r = await fetch(`${SB_URL}/rest/v1/v_documentos_arquivados?select=*&order=arquivado_em.desc`, {headers:SB_H});
+    if(!r.ok) throw new Error('HTTP ' + r.status);
+    ARQUIVADOS = await r.json(); ARQ_ERRO = null;
+  }catch(e){ ARQUIVADOS = null; ARQ_ERRO = e.message; }
 }
 
 function pinta(){
@@ -460,6 +580,12 @@ function pinta(){
       + '<svg class="ic" aria-hidden="true"><use href="#ic-alerta"/></svg> Não consegui ler os documentos: '+esc(ERRO)
       + '<div style="margin-top:12px"><button class="btn" onclick="carregar()">Tentar de novo</button></div></div>';
     document.getElementById('resumo').textContent = '';
+    /* A FAIXA DO AVISO SOME QUANDO A LISTA FALHOU, e isso não é detalhe: ela diz "N documento(s)
+       entrariam no aviso", e esse número viria de uma lista que não existe. Um "0 documentos
+       entrariam no aviso" com o banco fora é a mesma mentira que "nenhum documento cadastrado" —
+       só que num lugar onde ela sugere que está tudo bem. */
+    document.getElementById('avisocx').style.display = 'none';
+    pintaGaveta();
     return;
   }
   if(!DOCS){ lista.innerHTML = '<div class="aviso">carregando…</div>'; return; }
@@ -475,6 +601,14 @@ function pinta(){
     + '<div class="regua ok"><b>'+cont.ok+'</b><span>em dia</span></div>'
     + '<div class="regua sem_validade"><b>'+cont.sem_validade+'</b><span>sem validade informada</span></div>'
     + '<div class="regua total"><b>'+DOCS.length+'</b><span>documentos cadastrados</span></div>';
+
+  /* >>> O PAINEL NÃO CONTA ARQUIVADO, E ISSO NÃO PRECISOU DE UMA LINHA DE CÓDIGO: `DOCS` vem da
+         `v_documentos_situacao`, que filtra `where d.ativo`, e arquivar grava `ativo=false`.
+         Registrando aqui porque "funciona por herança" é a espécie de acerto que alguém desfaz
+         sem perceber — e a `tools/prova_aviso_certidao.js` confere os cinco números contra o
+         `group by` do Postgres depois de arquivar um documento de verdade. */
+  pintaAviso(cont);
+  pintaGaveta();
 
   const q = semAcento(document.getElementById('busca').value.trim());
   const sit = document.getElementById('f-sit').value;
@@ -511,15 +645,260 @@ function pinta(){
       +     (d.versao > 1 ? '<span class="versao">versão '+d.versao+'</span>' : '')+'</div>'
       +   '<div class="sub">'+[d.tipo, d.orgao_emissor, d.numero?('nº '+d.numero):null].filter(Boolean).map(esc).join(' · ')
       +     (d.emissao?' · emitido em '+brData(d.emissao):'')+'</div>'
-      +   '<div class="sub">'+esc(quando)+' · avisa '+d.dias_aviso+' dias antes</div></div>'
+      +   '<div class="sub">'+esc(quando)+' · avisa '+d.dias_aviso+' dias antes'
+      /* PARA QUEM o aviso iria, dito no cartão. Sem isto, o campo do formulário viraria um dado
+         que só existe no formulário: alguém escolhe um destinatário, fecha, e nunca mais tem como
+         saber para onde aquele documento avisa sem reabrir o formulário de substituição. */
+      +     ' · avisa <b>' + esc(d.email_aviso || EMAIL_EMPRESA || 'ninguém — não há e-mail configurado') + '</b></div>'
+      /* O QUE VOLTOU DO ARQUIVO CONTINUA CONTANDO ISSO. Ver o comentário da regra `.doc .voltou`:
+         quem confere habilitação meses depois tem o direito de saber que este documento já esteve
+         fora da lista — e por quê. Sumir com o carimbo é mentir por omissão. */
+      +   (d.desarquivado_em ? '<div class="voltou"><svg class="ic" aria-hidden="true"><use href="#ic-alerta"/></svg> '
+      +     'voltou do arquivo em ' + brData(String(d.desarquivado_em).slice(0,10))
+      +     (d.arquivado_motivo ? ' — tinha sido arquivado por «' + esc(d.arquivado_motivo) + '»' : '') + '</div>' : '')
+      + '</div>'
       + '<div class="dir"><span class="selo '+d.situacao+'">'+rotulo[d.situacao]+'</span>'
       +   (d.arquivo_path ? ' <button class="btn sec mini" onclick="abrirArquivo(\''+jsq(d.arquivo_path)+'\')">abrir arquivo</button>' : '')
       +   ' <button class="btn sec mini" onclick="abrirSubstituicao('+d.id+')">substituir</button>'
+      +   ' <button class="btn sec mini" onclick="abrirArquivamento('+d.id+')">arquivar</button>'
       +   (anteriores ? ' <button class="btn sec mini" onclick="verHistorico('+d.id+')">histórico ('+anteriores+')</button>' : '')
       + '</div>'
+      + (ARQUIVANDO === d.id ? caixaDeArquivamento(d) : '')
       + '<div class="hist" id="hist-'+d.id+'" style="display:none"></div>'
       + '</div>';
   }).join('');
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════════
+   ARQUIVAR — TIRAR DA FRENTE SEM APAGAR (20/08, fatia B27)
+
+   ── POR QUE ISTO É PRODUTO, E NÃO O DONO DIGITANDO SQL ───────────────────────────────────────
+   O cofre já sabia SUBSTITUIR desde a B25. Ele não sabia TIRAR: documento cadastrado por engano,
+   certidão que a empresa deixou de precisar, e — de propósito, para eu não ter para onde fugir —
+   os registros de prova que as MINHAS fatias deixaram no cofre do dono. A única saída era um
+   `delete` no banco, ou seja: ou o dono digita comando, ou o assistente apaga linha. As duas
+   erradas, e a segunda proibida pela regra da casa.
+
+   ── E NÃO É DELETE, É `ativo=false` COM CARIMBO E MOTIVO ─────────────────────────────────────
+   Cofre de certidão existe para PROVAR. Quem tirou uma CND de lá um dia vai precisar mostrar que
+   ela existiu, e em que dia — é a mesma lei da B25 sobre a via substituída, aplicada à outra
+   ponta. Apagar a linha destruiria o único documento que responde "eu tinha essa certidão em
+   agosto?", que é a pergunta que faz a empresa ganhar recurso.
+
+   ── O MOTIVO É OBRIGATÓRIO, E ISSO NÃO É BUROCRACIA ──────────────────────────────────────────
+   Sem motivo, a gaveta vira um cemitério anônimo: daqui a seis meses ninguém sabe se a CND saiu
+   porque estava errada, porque a empresa parou de precisar, ou por engano — e a diferença entre
+   as três é o que decide se ela volta. A lista é curta e termina em "outro (escrever)", pela
+   MESMA razão que o campo Tipo terminou na B25: lista fechada num país que inventa exigência
+   toda semana viraria a tela recusando um motivo real.
+   ══════════════════════════════════════════════════════════════════════════════════════════════ */
+const MOTIVOS_ARQUIVO = [
+  'cadastrado por engano',
+  'a empresa não precisa mais deste documento',
+  'documento duplicado',
+  'registro de teste do sistema',
+  'substituído fora do sistema',
+];
+// O texto digitado vive em variável, e não só no `<input>`: qualquer `pinta()` (filtrar a lista,
+// por exemplo) redesenha o cartão inteiro, e um motivo pela metade sumiria sem a pessoa entender
+// por quê. Perder o que alguém escreveu é como se ensina a não escrever.
+let ARQ_MOTIVO = '', ARQ_TEXTO = '', ARQ_MSG = '';
+
+function caixaDeArquivamento(d){
+  const ops = MOTIVOS_ARQUIVO.map(m =>
+    '<option'+(ARQ_MOTIVO === m ? ' selected' : '')+'>'+esc(m)+'</option>').join('');
+  return '<div class="arqbox">'
+    + '<div class="tit"><svg class="ic" aria-hidden="true"><use href="#ic-alerta"/></svg> '
+    +   'Arquivar «'+esc(d.nome)+'» — ele sai da lista e vai para a gaveta. '
+    +   '<b>Não é apagado</b>, e o arquivo dele continua no cofre.</div>'
+    + '<div class="campos">'
+    +   '<select id="arq-motivo" onchange="ARQ_MOTIVO=this.value;document.getElementById(\'arq-outro\').style.display=this.value===\'__outro\'?\'\':\'none\'">'
+    +     '<option value=""'+(ARQ_MOTIVO ? '' : ' selected')+'>— por que está tirando? —</option>'
+    +     ops
+    +     '<option value="__outro"'+(ARQ_MOTIVO === '__outro' ? ' selected' : '')+'>outro (escrever)…</option>'
+    +   '</select>'
+    +   '<input type="text" id="arq-outro" placeholder="qual é o motivo?" value="'+esc(ARQ_TEXTO)+'"'
+    +     ' oninput="ARQ_TEXTO=this.value" style="display:'+(ARQ_MOTIVO === '__outro' ? '' : 'none')+'">'
+    + '</div>'
+    + '<div class="acoes">'
+    +   '<button class="btn mini" onclick="confirmarArquivamento('+d.id+')" id="arq-ok">Arquivar</button>'
+    +   '<button class="btn sec mini" onclick="cancelarArquivamento()">Cancelar</button>'
+    +   '<span class="hint" id="arq-msg">'+esc(ARQ_MSG)+'</span>'
+    + '</div></div>';
+}
+
+function abrirArquivamento(id){
+  ARQUIVANDO = id; ARQ_MOTIVO = ''; ARQ_TEXTO = ''; ARQ_MSG = '';
+  pinta();
+  const s = document.getElementById('arq-motivo'); if(s) s.focus();
+}
+function cancelarArquivamento(){ ARQUIVANDO = null; ARQ_MOTIVO = ''; ARQ_TEXTO = ''; ARQ_MSG = ''; pinta(); }
+
+// O motivo que vai para o banco: a escolha da lista, ou o que a pessoa escreveu em "outro".
+// Mesma forma do `tipoEscolhido()` da B25 — duas maneiras diferentes de fazer a mesma coisa na
+// mesma tela é como uma delas passa a aceitar vazio sem ninguém notar.
+function motivoEscolhido(){
+  if(ARQ_MOTIVO === '__outro') return String(ARQ_TEXTO || '').trim();
+  return String(ARQ_MOTIVO || '').trim();
+}
+
+async function confirmarArquivamento(id){
+  const motivo = motivoEscolhido();
+  if(!motivo){
+    ARQ_MSG = 'escolha o motivo — a gaveta sem motivo vira um cemitério anônimo';
+    const m = document.getElementById('arq-msg'); if(m) m.textContent = ARQ_MSG;
+    return;
+  }
+  const bt = document.getElementById('arq-ok'); if(bt) bt.disabled = true;
+  const m = document.getElementById('arq-msg'); if(m) m.textContent = 'arquivando…';
+  try{
+    /* >>> `desarquivado_em: null` VAI JUNTO, e é o que impede a mentira do segundo arquivamento:
+           um documento que já voltou uma vez guarda a data da volta. Arquivando de novo sem
+           limpar essa data, o cartão passaria a dizer "voltou do arquivo em 21/08" sobre um
+           documento que está ARQUIVADO agora — a linha se contradizendo sozinha. */
+    const r = await fetch(`${SB_URL}/rest/v1/documentos?id=eq.${id}`, {method:'PATCH',
+      headers: SB_HW, body: JSON.stringify({ ativo:false, arquivado_em:new Date().toISOString(),
+        arquivado_motivo: motivo, desarquivado_em: null, atualizado_em:new Date().toISOString() })});
+    if(!r.ok){
+      const t = await r.text();
+      throw new Error(r.status===401||r.status===403 ? 'só gestor pode arquivar documento' : ('HTTP '+r.status+' '+t.slice(0,70)));
+    }
+    ARQUIVANDO = null; ARQ_MOTIVO = ''; ARQ_TEXTO = ''; ARQ_MSG = '';
+    // A gaveta ABRE sozinha depois de arquivar. Sem isto o documento simplesmente sumiria da
+    // tela e a pessoa ficaria sem prova de que ele foi para algum lugar — que é exatamente a
+    // sensação de "apaguei" que este botão inteiro existe para não causar.
+    GAVETA_ABERTA = true;
+    await carregar();
+  }catch(e){
+    ARQ_MSG = e.message;
+    const m2 = document.getElementById('arq-msg'); if(m2) m2.textContent = ARQ_MSG;
+    if(bt) bt.disabled = false;
+  }
+}
+
+/* DESARQUIVAR — e ele NÃO apaga o carimbo de saída. Ver o cabeçalho do ddl: quem desfaz um ato
+   não desfaz o fato de ter feito. `arquivado_em` e `arquivado_motivo` ficam, e `desarquivado_em`
+   é a terceira data. O cartão passa a contar a história inteira.
+   >>> BOTÃO SEM VOLTA É BOTÃO QUE NINGUÉM CLICA, e aí o recurso não existe na prática. */
+async function restaurar(id){
+  const cx = document.getElementById('gaveta-msg-'+id);
+  if(cx) cx.textContent = 'devolvendo…';
+  try{
+    const r = await fetch(`${SB_URL}/rest/v1/documentos?id=eq.${id}`, {method:'PATCH',
+      headers: SB_HW, body: JSON.stringify({ ativo:true, desarquivado_em:new Date().toISOString(),
+        atualizado_em:new Date().toISOString() })});
+    if(!r.ok){
+      const t = await r.text();
+      throw new Error(r.status===401||r.status===403 ? 'só gestor pode devolver documento' : ('HTTP '+r.status+' '+t.slice(0,70)));
+    }
+    await carregar();
+  }catch(e){ if(cx) cx.textContent = 'não consegui devolver: ' + e.message; }
+}
+
+function pintaGaveta(){
+  const cx = document.getElementById('gaveta'); if(!cx) return;
+  /* ERRO DE LEITURA NÃO VIRA GAVETA VAZIA — é a mesma lei da lista, e aqui ela é mais traiçoeira:
+     "nenhum arquivado" é a resposta mais provável e a mais crível, então ninguém desconfiaria. */
+  if(ARQ_ERRO){
+    cx.innerHTML = '<div class="gaveta"><span class="hint">não consegui ler os arquivados ('+esc(ARQ_ERRO)+') — '
+      + '<button class="btn sec mini" onclick="carregar()">tentar de novo</button></span></div>';
+    return;
+  }
+  if(!ARQUIVADOS || !ARQUIVADOS.length){ cx.innerHTML = ''; return; }
+  const n = ARQUIVADOS.length;
+  cx.innerHTML = '<div class="gaveta">'
+    + '<button class="btn sec mini" onclick="GAVETA_ABERTA=!GAVETA_ABERTA;pintaGaveta()">'
+    /* O PLURAL É CALCULADO, e não colado. "ver 1 arquivados" é o tipo de descuido que faz uma
+       tela inteira parecer não revisada — e esta é a tela em que o dono precisa acreditar. */
+    +   (GAVETA_ABERTA ? 'esconder ' + (n>1 ? 'os ' + n + ' arquivados' : 'o arquivado')
+                       : 'ver ' + n + ' arquivado' + (n>1 ? 's' : ''))
+    + '</button>'
+    + ' <span class="hint">arquivado sai do painel de contagem e da lista — não é apagado</span>'
+    + (GAVETA_ABERTA ? '<div class="corpo">' + ARQUIVADOS.map(a =>
+        '<div class="linha"><b>'+esc(a.nome)+'</b>'
+        + (Number(a.versao) > 1 ? ' <span class="versao">versão '+esc(a.versao)+'</span>' : '')
+        + ' · arquivado em ' + brData(String(a.arquivado_em||'').slice(0,10))
+        + (a.arquivado_motivo ? ' · <span class="motivo">«'+esc(a.arquivado_motivo)+'»</span>' : '')
+        + (a.validade ? ' · valia até ' + brData(a.validade) : ' · validade não informada')
+        + (a.arquivo_path ? ' <button class="btn sec mini" onclick="abrirArquivo(\''+jsq(a.arquivo_path)+'\')">abrir arquivo</button>' : '')
+        + ' <button class="btn sec mini" onclick="restaurar('+a.id+')">devolver à lista</button>'
+        + ' <span class="hint" id="gaveta-msg-'+a.id+'"></span></div>').join('') + '</div>' : '')
+    + '</div>';
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════════
+   O AVISO DE CERTIDÃO VENCENDO (20/08, fatia B27)
+
+   ── O E-MAIL NÃO SAI DAQUI, E ISSO NÃO É DETALHE DE ARQUITETURA ──────────────────────────────
+   A chave do provedor de e-mail não pode viver nesta página: o repositório é PÚBLICO. Quem manda
+   é a edge function `avisar-certidao`, que recebe o crachá DA SESSÃO (não um segredo embutido) e
+   valida quem está pedindo no próprio Supabase. Ou seja: esta tela não sabe nenhum segredo, e
+   mesmo assim só um gestor consegue disparar.
+
+   ── O PRIMEIRO ENVIO É POR BOTÃO, E O AUTOMÁTICO NÃO EXISTE ──────────────────────────────────
+   Mandar e-mail sozinho, sem o dono ter visto um, é o tipo de automação que não se liga sem ele
+   ver primeiro. O botão manda UM aviso, para um endereço que ele lê na tela antes de clicar. No
+   dia em que o disparo automático entrar, ele já vai saber exatamente como o e-mail é.
+   ══════════════════════════════════════════════════════════════════════════════════════════════ */
+function pintaAviso(cont){
+  const cx = document.getElementById('avisocx'); if(!cx) return;
+  const alvo = (DOCS||[]).filter(d => d.situacao === 'vencido' || d.situacao === 'vencendo');
+  const eu = (window.gmAuth && gmAuth.user && gmAuth.user.email) || '';
+  cx.style.display = '';
+  cx.innerHTML = '<div class="linha1">'
+    + '<b style="font-size:var(--txt-2);color:var(--branco)">'
+    +   '<svg class="ic" aria-hidden="true"><use href="#ic-envelope"/></svg> Aviso por e-mail</b>'
+    + '<span class="hint">'
+    +   (alvo.length ? '<b>'+alvo.length+'</b> documento(s) entrariam no aviso agora'
+                     : 'nenhum documento entraria no aviso agora')
+    + '</span>'
+    + '<input type="email" id="av-para" value="'+esc(eu)+'" placeholder="para quem mandar o teste">'
+    + '<button class="btn" onclick="enviarAvisoTeste()" id="av-bt">enviar um aviso de teste para mim agora</button>'
+    + '<span class="hint" id="av-msg"></span>'
+    + '</div>'
+    /* ══ A FRASE DOS SEM-VALIDADE MORA AQUI, E NÃO NO E-MAIL ═══════════════════════════════════
+       Documento sem data não está vencendo — está SEM DATA, e são coisas diferentes. O e-mail é
+       sobre o que está vencendo e cala sobre eles; se ele os citasse, quem recebe passaria a ler
+       "sua certidão está para vencer" sobre um contrato social que não vence, e um aviso falso é
+       o que ensina a ignorar os verdadeiros. Mas o silêncio também não pode ser total: alguém
+       precisa saber que existe um terceiro grupo que NUNCA vai ser avisado por e-mail. A tela é
+       o lugar dessa frase, e ela só aparece quando o caso existe. */
+    + ((cont && cont.sem_validade) ? '<div class="obs"><svg class="ic" aria-hidden="true"><use href="#ic-alerta"/></svg> '
+        + '<b>'+cont.sem_validade+'</b> documento(s) estão sem data de validade e <b>não entram neste aviso</b> — '
+        + 'eles não estão vencendo, estão sem data, e o e-mail não tem como avisar sobre um prazo que ninguém digitou. '
+        + 'Quem quiser ser avisado sobre eles precisa preencher a validade.</div>' : '')
+    + '<div class="obs">O envio automático <b>não está ligado</b>. Este botão manda um e-mail só, agora, '
+    + 'para o endereço acima — para o senhor ver como o aviso é antes de alguém decidir ligá-lo. '
+    + 'O e-mail leva tipo, órgão, número e validade; <b>não leva arquivo, anexo nem CNPJ</b>.</div>';
+}
+
+async function enviarAvisoTeste(){
+  const msg = document.getElementById('av-msg'), bt = document.getElementById('av-bt');
+  const para = (document.getElementById('av-para') || {}).value || '';
+  bt.disabled = true; msg.textContent = 'enviando…';
+  try{
+    const tk = tokenDaSessao();
+    if(!tk) throw new Error('sua sessão expirou — recarregue a página e entre de novo');
+    const r = await fetch(`${SB_URL}/functions/v1/avisar-certidao`, {method:'POST',
+      headers: { apikey: SB_KEY, Authorization: 'Bearer ' + tk, 'Content-Type':'application/json' },
+      body: JSON.stringify({ teste:true, para: para.trim() || undefined })});
+    const j = await r.json().catch(() => ({}));
+    // A FUNÇÃO PODE RESPONDER 200 COM `ok:false` (a trava de compliance faz isso de propósito, e
+    // é a resposta certa: a chamada foi entendida, o envio é que foi recusado). Ler só o status
+    // HTTP faria a tela dizer "enviado" sobre um e-mail barrado.
+    if(!j.ok) throw new Error(j.erro || ('não consegui enviar (HTTP ' + r.status + ')'));
+    /* O `id` DO PROVEDOR VAI PARA A TELA, e ele é a única coisa que torna "não chegou"
+       investigável: sem esse número, a resposta a "o aviso não veio" é um encolher de ombros. */
+    msg.innerHTML = '<svg class="ic" aria-hidden="true"><use href="#ic-envelope"/></svg> enviado para '
+      + esc(j.para) + ' · ' + esc(j.documentos) + ' documento(s) · id ' + esc(j.id || '(sem id)');
+  }catch(e){
+    msg.innerHTML = '<svg class="ic" aria-hidden="true"><use href="#ic-alerta"/></svg> ' + esc(e.message);
+    /* O ERRO DO AVISO É ERRO QUE A PESSOA VÊ, e por isso ele entra no MESMO evento que o resto da
+       tela usa — com a CAUSA e só ela. Nome de métrica que mente é pior que métrica que falta. */
+    window.FPMED_TELEMETRIA && FPMED_TELEMETRIA.evento('erro_visto_pelo_usuario',
+      { causa: e.message, tela: 'documentos' });
+  }
+  bt.disabled = false;
 }
 
 function tipoMudou(){
@@ -577,6 +956,10 @@ function abrirSubstituicao(id){
   poeTipo(d.tipo);
   document.getElementById('f-orgao').value  = d.orgao_emissor || '';
   document.getElementById('f-aviso').value  = d.dias_aviso == null ? 30 : d.dias_aviso;
+  // O DESTINATÁRIO ENTRA NA LISTA DO QUE SE COPIA, junto com a antecedência, e pelo mesmo motivo
+  // escrito acima: alguém já pensou uma vez PARA QUEM este documento avisa. Perder essa escolha
+  // na substituição faria a via nova voltar em silêncio para o e-mail da empresa.
+  document.getElementById('f-email').value  = d.email_aviso || '';
   ['f-numero','f-emissao','f-validade','f-arq'].forEach(i => document.getElementById(i).value = '');
   const av = document.getElementById('aviso-subst');
   av.innerHTML = '<svg class="ic" aria-hidden="true"><use href="#ic-alerta"/></svg> '
@@ -664,6 +1047,11 @@ async function salvar(){
       emissao: document.getElementById('f-emissao').value || null,
       validade: document.getElementById('f-validade').value || null,
       dias_aviso: parseInt(document.getElementById('f-aviso').value || '30', 10),
+      // >>> VAZIO GRAVA `null`, E `null` NÃO É "não avisa": é "usa o e-mail da empresa". Gravar
+      //     o EMAIL_EMPRESA aqui como valor concreto seria congelar hoje um endereço que o
+      //     `cliente.config.js` pode trocar amanhã — e aí o documento continuaria avisando o
+      //     antigo, calado. O padrão se resolve na HORA DO AVISO, não na hora de salvar.
+      email_aviso: document.getElementById('f-email').value.trim() || null,
       arquivo_path: path, arquivo_nome: arqNome, arquivo_bytes: bytes,
       substitui_id: velho ? velho.id : null,
       versao: velho ? (velho.versao || 1) + 1 : 1,
@@ -696,7 +1084,7 @@ async function salvar(){
           + '"substituir" na antiga para tentar de novo.');
       }
     }
-    ['f-nome','f-orgao','f-numero','f-emissao','f-validade','f-arq'].forEach(id=>document.getElementById(id).value='');
+    ['f-nome','f-orgao','f-numero','f-emissao','f-validade','f-arq','f-email'].forEach(id=>document.getElementById(id).value='');
     poeTipo('');
     document.getElementById('f-aviso').value = 30;
     fecharForm();
@@ -734,7 +1122,19 @@ async function abrirArquivo(caminho){
 // é assíncrono quando o token precisa ser renovado, e pedir dados antes disso manda a consulta
 // como `anon`, que a RLS não atende.
 let _iniciado = false;
-function iniciar(){ if(_iniciado) return; _iniciado = true; carregar(); }
+function iniciar(){
+  if(_iniciado) return; _iniciado = true;
+  /* O E-MAIL DA EMPRESA APARECE NO CAMPO ANTES DE ALGUÉM DIGITAR — como placeholder, não como
+     valor. Placeholder mostra o padrão sem gravá-lo (ver o comentário do `salvar`); valor
+     preenchido faria toda certidão nascer com o endereço congelado. E quando não há e-mail
+     configurado, a dica diz isso em vez de mentir sobre um padrão que não existe. */
+  const em = document.getElementById('f-email'), hint = document.getElementById('f-email-hint');
+  if(em) em.placeholder = EMAIL_EMPRESA || 'não há e-mail de empresa configurado';
+  if(hint) hint.textContent = EMAIL_EMPRESA
+    ? ('em branco = ' + EMAIL_EMPRESA + ', o e-mail da empresa cadastrada')
+    : 'não há e-mail de empresa no cliente.config.js — em branco, este documento não avisa ninguém';
+  carregar();
+}
 if(window.gmAuth) iniciar();
 else { document.addEventListener('gm-auth-ready', iniciar, { once:true }); setTimeout(iniciar, 12000); }
 </script>
