@@ -35,6 +35,15 @@
      implementações de "por quanto isto já saiu?" dariam dois números para o mesmo item, e um
      deles estaria errado sem ninguém saber qual. -->
 <script src="fpmed_teto_homologado.js"></script>
+<!-- ══ O PISO (20/08, fatia B29) ═══════════════════════════════════════════════════════════════
+     Os dois de cima olham para FORA: até onde a lei deixa, e por quanto o mercado já vendeu. Este
+     olha para DENTRO — abaixo de quanto esta empresa não pode ir sem pagar para trabalhar. É o
+     único dos três que protege o bolso, e o único que depende de parâmetro que alguém informou
+     (regime tributário, frete, rateio; cadastrados na tela de Documentos).
+     >>> ENQUANTO FALTAR PARÂMETRO ELE NÃO MOSTRA NÚMERO NENHUM, e diz o nome do que falta. Piso
+         chutado é pior que piso ausente: ausente faz o gestor parar e perguntar; errado faz ele
+         dar o lance. -->
+<script src="fpmed_piso.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <!-- O DESIGN SYSTEM. Ele vem ANTES do <style> de propósito: os apelidos abaixo apontam para os
      tokens dele, e o que não for apelido pode escrever o token direto. Ele é INERTE (só `:root` e
@@ -280,6 +289,26 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--texto);min-
 .homol-badge.folga{background:var(--verde-50);color:var(--verde-700);border-color:var(--verde-300)}
 .homol-badge.aperto{background:var(--ambar-50);color:var(--ambar-700);border-color:var(--ambar-300)}
 @media print{ .homol-badge{display:none !important} }
+/* ── O PISO, O TERCEIRO DA FILEIRA (20/08, fatia B29) ────────────────────────────────────────
+   Legal · competitivo · LUCRATIVO. Os três selos ficam na mesma linha do preço porque respondem
+   à mesma pergunta em três frentes, e separá-los faria a pessoa decidir com um terço da resposta.
+   >>> O `abaixo` É O ÚNICO VERMELHO FORTE DOS TRÊS, e isso é hierarquia, não decoração: estourar
+       o teto legal é risco de desclassificação (grave, e reversível na sessão); vender abaixo do
+       piso é prejuízo certo, repetido em cada entrega de um contrato de doze meses.
+   >>> A CONTA ABERTA (`piso-conta`) NÃO É `title`. Um tooltip só existe para quem passa o mouse, e
+       "gestor que não vê a conta não confia no número" não se resolve com dica escondida. Ela sai
+       na linha, em letra pequena, e some no papel como os irmãos. */
+.piso-badge{font-size:var(--txt-1);font-weight:700;padding:4px 8px;border-radius:10px;
+  white-space:nowrap;cursor:help;border:1px solid var(--borda)}
+.piso-badge.vazio{background:transparent;color:var(--muted);font-weight:600}
+.piso-badge.folga{background:var(--verde-50);color:var(--verde-700);border-color:var(--verde-300)}
+.piso-badge.abaixo{background:var(--vermelho-50);color:var(--vermelho-700);border-color:var(--vermelho-300)}
+.piso-conta{font-size:var(--txt-1);color:var(--muted);margin-top:4px;line-height:1.6;
+  font-variant-numeric:tabular-nums}
+.piso-conta b{color:var(--texto)}
+.piso-conta .pc-piso{color:var(--navy);font-weight:700}
+.piso-conta .pc-perda{color:var(--vermelho-700);font-weight:700}
+@media print{ .piso-badge{display:none !important} .piso-conta{display:none !important} }
 
 /* ITENS NAO ENCONTRADOS */
 .nao-encontrado-row{background:var(--vermelho-50);border:1px dashed var(--vermelho-300);border-radius:8px;padding:8px 12px;margin-bottom:8px;display:flex;align-items:center;gap:8px;}
@@ -3168,6 +3197,9 @@ function importarPedidoEdital(){
          sempre — silêncio é indistinguível de "não há", que é justamente a confusão que este
          bloco inteiro existe para não criar. */
   if(typeof carregarHomologados === 'function') carregarHomologados().then(() => { if(typeof repintarTetos==='function') repintarTetos(); });
+  // E o piso, pelo mesmo caminho e pelo mesmo motivo (fatia B29): leitura própria, repintura
+  // própria, e repinta MESMO falhando — para dizer "piso indisponível" em vez de ficar em branco.
+  if(typeof carregarParametrosPiso === 'function') carregarParametrosPiso().then(() => { if(typeof repintarTetos==='function') repintarTetos(); });
   for(const nome of naoAchados) if(!naoEncontrados.some(n => n.toLowerCase() === nome.toLowerCase())) naoEncontrados.push(nome);
   try{ sessionStorage.removeItem('fpmed_pedido_edital'); }catch(e){}
 
@@ -3391,6 +3423,7 @@ function addItem(c) {
   // olhar não paga por 4.875 chaves que não vai usar. Quando chega, repinta os que já estão.
   carregarTetoCMED().then(idx => { if(idx) repintarTetos(); });
   carregarHomologados().then(() => repintarTetos());   // ver o comentário do outro gatilho (B28)
+  carregarParametrosPiso().then(() => repintarTetos()); // e o piso junto (B29)
   const qtdCx = qtdEmbalagem(c.und, c.produto);
   itens.push({...c, qtd:1, desc_item:0, _pvv:pv(c), _qtd_caixa: qtdCx, _bpAlerta:bpAlerta(c), _conf:{nivel:'alta',motivos:[]}});   // escolhido à mão = confiança alta
   renderItens();
@@ -3541,8 +3574,14 @@ function renderItens() {
           <!-- O TETO COMPETITIVO, colado no legal (fatia B28). Os dois falam do MESMO preço, e por
                isso ficam juntos: o de cima diz se é permitido, este diz se é suficiente. -->
           <span id="homol-badge-${c.id}">${homolBadgeHTML(avaliarHomologado(c, precoUnit))}</span>
+          <!-- O TERCEIRO: legal · competitivo · LUCRATIVO. Os dois de cima olham para fora (a lei e
+               o mercado); este olha para dentro, e é o único que diz se sobra alguma coisa. -->
+          <span id="piso-badge-${c.id}">${pisoBadgeHTML(avaliarPiso(c, precoUnit))}</span>
           <span style="font-size:var(--txt-1);color:var(--muted)">Orig: ${fmtBRL(c._pvv)}</span>
         </div>
+        <!-- A CONTA ABERTA fica FORA da fileira de selos, na linha de baixo: ela é longa, e
+             espremida entre pastilhas ela quebraria a fileira inteira no notebook. -->
+        <div id="piso-conta-${c.id}">${pisoContaHTML(avaliarPiso(c, precoUnit))}</div>
       </div>
       <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
         <span style="font-size:var(--txt-1);color:var(--muted)">Qtd</span>
@@ -3804,11 +3843,171 @@ function homolBadgeHTML(r){
     : `<span class="homol-badge aperto" title="${esc(titulo)}">já saiu por ${faixa} · você está ${p1(Math.abs(r.folgaPct))}% ACIMA</span>`;
 }
 
+/* ══════════════════════════════════════════════════════════════════════════════════════════════
+   O PISO NA PROPOSTA (20/08, fatia B29)
+
+   ── O TERCEIRO NÚMERO, E O ÚNICO QUE OLHA PARA DENTRO ────────────────────────────────────────
+   O teto CMED responde "é permitido?". O teto competitivo responde "é suficiente para ganhar?".
+   O piso responde "sobra alguma coisa?" — e é o único dos três que, quando ignorado, custa
+   dinheiro em TODA entrega de um contrato de doze meses.
+
+   ── A CONTA É UMA SÓ, E ELA MORA NO `fpmed_piso.js` ──────────────────────────────────────────
+   Esta tela não calcula piso: ela pergunta. A conta reimplementada aqui "só para ajustar um
+   detalhe" seria a família de defeito mais cara deste projeto outra vez (o preço unitário) — e
+   pior, num número que decide lance.
+
+   ── OS TRÊS ESTADOS QUE NÃO SÃO PISO, E POR QUE CADA UM TEM FRASE PRÓPRIA ────────────────────
+   · falta parâmetro ..... a empresa não informou regime/frete/rateio. O selo diz O QUE falta e
+                           manda para a tela de Documentos. Não é erro da tela; é trabalho que
+                           ainda não foi feito, e o caminho está escrito.
+   · sem custo de compra . 1.416 dos 8.832 itens deste banco (medido: 1.415 sem valor e 1 com
+                           ZERO gravado, que é pior — zero é um número, e número se acredita).
+                           Sem custo não há piso, e o item fica FORA de qualquer soma de margem:
+                           inventar denominador é como uma margem média vira ficção.
+   · custo estimado ...... o item é do estoque GLOBAL e o custo que a tela mostra é derivado
+                           (venda ÷ 1,25). Isso serve para exibir markup; **não serve para piso**.
+                           Piso sobre custo estimado é piso chutado, e a lei da fatia proíbe.
+   ══════════════════════════════════════════════════════════════════════════════════════════════ */
+let _pisoLinhas = null, _pisoErro = null, _pisoCarregando = null, _pisoVig = null;
+
+function carregarParametrosPiso(){
+  if(_pisoVig) return Promise.resolve(_pisoVig);
+  if(_pisoCarregando) return _pisoCarregando;
+  _pisoCarregando = (async () => {
+    const P = window.FPMED_PISO;
+    if(!P) throw new Error('o motor do piso não carregou');
+    const r = await fetch(`${SUPA_URL}/rest/v1/operacao_parametros?select=*&ativo=is.true`
+      + '&order=componente.asc,vigencia_inicio.desc&limit=500', {headers:H});
+    if(!r.ok) throw new Error('HTTP ' + r.status);
+    _pisoLinhas = await r.json();
+    /* A DATA É A DE HOJE porque a proposta que está sendo montada é de hoje. O motor aceita
+       QUALQUER data de propósito — é assim que uma proposta de junho continua explicável em
+       dezembro — mas quem monta preço agora tem de ver o parâmetro que vale agora. */
+    _pisoVig = P.vigentes(_pisoLinhas, P.hojeISO());
+    _pisoErro = null;
+    return _pisoVig;
+  })().catch(e => {
+    /* FALHA DE LEITURA NÃO VIRA "FALTA PARÂMETRO". São coisas diferentes: a segunda manda a pessoa
+       cadastrar de novo o que já está cadastrado — e cadastrar de novo cria uma segunda vigência
+       no mesmo dia, que é justamente o que o índice único do banco recusa. Então ela viraria um
+       erro em cima de outro, com a pessoa convencida de que a culpa é dela. */
+    _pisoErro = e.message; _pisoVig = null; _pisoCarregando = null;
+    return null;
+  });
+  return _pisoCarregando;
+}
+
+/* O CUSTO DE COMPRA DE VERDADE, e só ele. A mesma leitura do `renderItens` — e ela está aqui numa
+   função para as duas não divergirem no dia em que uma delas mudar.
+   >>> O GLOBAL NÃO TEM CUSTO DE COMPRA. `compra_unit` dele é nulo (o estoque interno guarda venda,
+       não compra), e o que a tela mostra como "Custo (ref.)" é `venda ÷ 1,25` — uma suposição
+       sobre o markup histórico, não um fato. Devolver isso como custo faria o piso nascer de um
+       chute, e o chute ficaria invisível dentro de um número com quatro casas decimais. */
+function custoDeCompra(c){
+  const qtd_caixa = c._qtd_caixa || qtdEmbalagem(c.und, c.produto) || 1;
+  const isGlobal = (c.fornecedor||'').toString() === '1' || c.tipo === 'global';
+  const bruto = parseFloat(c.compra_unit||0) || parseFloat(c.compra_caixa||0)/qtd_caixa || 0;
+  const custo = isGlobal ? bruto / qtd_caixa : bruto;
+  return { custo: custo > 0 ? custo : null, estimado: isGlobal && !(custo > 0) };
+}
+
+function avaliarPiso(c, precoUnit){
+  const P = window.FPMED_PISO;
+  if(!P || (!_pisoVig && !_pisoErro)) return null;      // ainda carregando: nada, nunca um zero
+  if(_pisoErro) return { estado: 'erro', causa: _pisoErro };
+  const k = custoDeCompra(c);
+  const qtd_caixa = c._qtd_caixa || qtdEmbalagem(c.und, c.produto) || 1;
+  return P.avaliar({
+    custoUnit: k.custo, custoEstimado: k.estimado,
+    precoUnit,
+    // UNIDADES, e não caixas: o preço editável desta tela é por unidade, e o prejuízo tem de ser
+    // dito na mesma moeda em que a decisão é tomada. `c.qtd` é caixa; multiplicar pela embalagem
+    // é o que o `totalItem` já faz três funções acima.
+    unidades: qtd_caixa * (Number(c.qtd) || 0),
+    params: _pisoVig,
+  });
+}
+
+function pisoBadgeHTML(r){
+  if(!r) return '';
+  if(r.estado === 'erro')
+    return `<span class="piso-badge vazio" title="Não consegui ler os parâmetros da operação (${esc(r.causa)}). Isso não quer dizer que eles não estejam cadastrados — quer dizer que eu não sei."><svg class="ic" aria-hidden="true"><use href="#ic-alerta"/></svg> piso indisponível</span>`;
+  if(r.estado === 'sem_parametro'){
+    /* O NOME DO QUE FALTA E O CAMINHO PARA INFORMAR — a caixa pediu os dois, e o segundo é o que
+       transforma o aviso em saída. "Erro que ensina a saída" é a lei 2.1 da BASE. */
+    const q = (r.faltam || []).map(f => f.falta).join(' · e ');
+    return '<span class="piso-badge vazio" title="' + esc('Não dá para calcular o piso: falta ' + q
+      + '. Cadastre em Documentos → Parâmetros da operação. Um piso provisório seria pior: o gestor dá lance nele.')
+      + '">não dá para calcular o piso: falta ' + esc((r.faltam[0]||{}).rotulo || 'parâmetro') + '</span>';
+  }
+  if(r.estado === 'custo_estimado')
+    return '<span class="piso-badge vazio" title="O custo que aparece nesta linha é de REFERÊNCIA (venda ÷ 1,25), não é custo de compra: o estoque GLOBAL guarda venda, não compra. Piso sobre custo estimado é piso chutado, e chute com quatro casas decimais parece medida.">sem custo de compra — piso não calculado</span>';
+  if(r.estado === 'sem_custo')
+    return '<span class="piso-badge vazio" title="Este item não tem custo de compra cadastrado (1.416 dos 8.832 estão assim, medido em 20/08). Sem custo não há piso, e o item fica de fora de qualquer soma de margem — inventar denominador é como uma média vira ficção.">sem custo de compra cadastrado</span>';
+
+  const p1 = v => Number(v).toLocaleString('pt-BR', {minimumFractionDigits:1, maximumFractionDigits:1});
+  const tit = 'Piso ' + fmtBRL(r.pisoCentavos) + ' · ' + esc(r.regimeRotulo) + ' ' + p1(r.aliquotaPct) + '%'
+    + ' · frete ' + (r.freteTipo === 'pct' ? p1(r.freteValor) + '% do custo' : fmtBRL(r.freteValor) + '/un')
+    + ' · rateio ' + fmtBRL(r.parcelas.rateio) + '/un. '
+    + 'O imposto incide sobre a venda, então ele divide (÷ 1 − alíquota) em vez de somar.';
+  if(r.folgaPct == null)
+    return `<span class="piso-badge vazio" title="${esc(tit)}">piso ${fmtBRL(r.pisoCentavos)}</span>`;
+  if(r.abaixo){
+    /* AVISA COM NÚMERO, NÃO IMPEDE. O dono pode ter razão para ir abaixo do piso — queimar estoque
+       perto do vencimento vale mais que segurar. O que ele não pode é ir sem saber de quanto é.
+       >>> E O PREJUÍZO TOTAL ENTRA NO TÍTULO E NA CONTA, não só o unitário: "R$ 0,12 abaixo" parece
+           nada; "R$ 0,12 × 40.000 unidades = R$ 4.800" é a mesma verdade do tamanho que ela tem. */
+    return '<span class="piso-badge abaixo" title="' + esc(tit) + '">'
+      + '<svg class="ic" aria-hidden="true"><use href="#ic-alerta"/></svg> ABAIXO DO PISO '
+      + fmtBRL(r.pisoCentavos) + ' · perde ' + fmtBRL(r.prejuizoUnit) + '/un</span>';
+  }
+  return `<span class="piso-badge folga" title="${esc(tit)}">piso ${fmtBRL(r.pisoCentavos)} · folga ${p1(r.folgaPct)}%</span>`;
+}
+
+/* ── A CONTA ABERTA ──────────────────────────────────────────────────────────────────────────
+   As parcelas, na linha, em letra pequena. "Gestor que não vê a conta não confia no número, e com
+   razão" — e um `title` não resolve isso: tooltip só existe para quem passa o mouse.
+   >>> A ORDEM É compra → frete → rateio → CUSTO TOTAL → impostos → PISO, e ela é diferente da que
+       a caixa desenhou (que punha o imposto em segundo). De propósito: o imposto só pode ser
+       calculado depois do custo total, porque incide sobre a VENDA. Mostrá-lo antes do subtotal
+       desenharia uma conta que ninguém consegue refazer na calculadora — e refazer na calculadora
+       é o ponto inteiro de mostrar parcela. */
+function pisoContaHTML(r){
+  if(!r || r.estado !== 'ok') return '';
+  const p = r.parcelas;
+  const linha = (rot, v, extra) => rot + ' <b>' + fmtBRL(v) + '</b>' + (extra ? ' <i>' + extra + '</i>' : '');
+  const p1 = v => Number(v).toLocaleString('pt-BR', {minimumFractionDigits:1, maximumFractionDigits:1});
+  let txt = '<div class="piso-conta">'
+    + linha('compra', p.compra)
+    + ' + ' + linha('frete', p.frete, r.freteTipo === 'pct' ? p1(r.freteValor) + '% do custo' : 'R$/un')
+    + ' + ' + linha('rateio', p.rateio, fmtBRL(r.custoFixoMensal) + ' ÷ ' + Number(r.volumeMensal).toLocaleString('pt-BR') + ' un/mês')
+    + ' = ' + linha('custo', p.custoTotal)
+    + ' + ' + linha('impostos', p.impostos, esc(r.regimeRotulo) + ' ' + p1(r.aliquotaPct) + '% sobre a venda')
+    + ' = <span class="pc-piso">piso ' + fmtBRL(r.pisoCentavos) + '</span>';
+  if(r.abaixo)
+    txt += '<br><span class="pc-perda">prejuízo de ' + fmtBRL(r.prejuizoUnit) + ' por unidade'
+      + (r.prejuizoTotal != null ? ' · ' + fmtBRL(r.prejuizoTotal) + ' neste item' : '')
+      + '</span> — a tela avisa, não impede: pode haver motivo (estoque perto do vencimento).';
+  else if(r.folgaReais != null)
+    txt += '<br>folga sobre o piso: <b>' + fmtBRL(r.folgaReais) + '</b> por unidade';
+  return txt + '</div>';
+}
+
 function repintarTetos(){
   itens.forEach(c => {
     const precoUnit = c._pvv_editado !== undefined ? c._pvv_editado : c._pvv * (1 - (c.desc_item||0)/100);
     const el = document.getElementById('teto-badge-' + c.id);
     if(el) el.outerHTML = `<span id="teto-badge-${c.id}">${tetoBadgeHTML(avaliarTeto(c, precoUnit))}</span>`;
+    // O PISO REPINTA NA MESMA VOLTA que os outros dois, pelo mesmo motivo escrito abaixo: três
+    // selos sobre o mesmo preço, e um deles atrasado mostraria duas conclusões sobre preços
+    // diferentes na mesma linha — pior do que mostrar uma só.
+    const ep = document.getElementById('piso-badge-' + c.id);
+    if(ep){
+      const rp = avaliarPiso(c, precoUnit);
+      ep.outerHTML = `<span id="piso-badge-${c.id}">${pisoBadgeHTML(rp)}</span>`;
+      const ec = document.getElementById('piso-conta-' + c.id);
+      if(ec) ec.outerHTML = `<div id="piso-conta-${c.id}">${pisoContaHTML(rp)}</div>`;
+    }
     // O badge competitivo repinta na MESMA volta: os dois falam do mesmo preço, e se um
     // acompanhasse a tecla e o outro não, a linha mostraria duas conclusões sobre preços
     // diferentes — que é pior que mostrar uma só.
@@ -3848,6 +4047,17 @@ function setPrecoEdit(id, v) {
   // "você está X% ACIMA" na hora. Aviso que fica na tela depois de resolvido ensina a ignorar.
   const bh = document.getElementById('homol-badge-'+id);
   if(bh) bh.outerHTML = `<span id="homol-badge-${id}">${homolBadgeHTML(avaliarHomologado(c, novo))}</span>`;
+  /* E O PISO TECLA A TECLA TAMBÉM. Aqui isso vale ainda mais que nos outros dois: o vermelho de
+     "ABAIXO DO PISO" tem de sumir no instante em que a pessoa sobe o preço, senão ela aprende que
+     o alerta fica aceso de qualquer jeito — e aí ele deixa de ser alerta. E o caminho inverso é
+     pior: baixar o preço e o vermelho demorar a acender é o lance sendo dado no escuro. */
+  const bp = document.getElementById('piso-badge-'+id);
+  if(bp){
+    const rp = avaliarPiso(c, novo);
+    bp.outerHTML = `<span id="piso-badge-${id}">${pisoBadgeHTML(rp)}</span>`;
+    const cp = document.getElementById('piso-conta-'+id);
+    if(cp) cp.outerHTML = `<div id="piso-conta-${id}">${pisoContaHTML(rp)}</div>`;
+  }
   calcTotal();
   reRenderPreco(id);
 }

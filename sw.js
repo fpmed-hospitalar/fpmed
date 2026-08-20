@@ -104,7 +104,15 @@
    >>> E ELE ENTRA NA CASCA, ao contrário do `fpmed_telemetria.js`: aquele carrega configuração de
        PRIVACIDADE, que envelhece perigosamente no cache; este carrega uma regra de preço, que
        envelhece do mesmo jeito que as telas e é substituído no mesmo bump que elas. */
-const VERSAO = 'limedtec-fpmed-2026-08-20-86';
+/* -87 pela FATIA B29: o `fpmed_piso.js` NASCEU e é chamado pela Proposta (que calcula o piso) e
+   pela Documentos (que cadastra os parâmetros dele). As duas estão na casca. Sem bump, quem já
+   instalou o aplicativo receberia as telas velhas do cache — sem a linha do `<script>`, sem o
+   painel de parâmetros e sem o terceiro selo — e o recurso existiria só para quem chegou hoje.
+   E offline seria pior: a tela nova pedindo um arquivo que a casca não tem. As chamadas são
+   guardadas (`window.FPMED_PISO` e o `if(!P)`), então nada quebra: o selo simplesmente nunca
+   apareceria, que é o formato de defeito que ninguém reporta porque parece que o recurso não
+   existe. É a lição S13 outra vez, e é a terceira fatia seguida em que ela vale. */
+const VERSAO = 'limedtec-fpmed-2026-08-20-87';
 const CACHE = 'limedtec-shell-' + VERSAO;
 
 // A CASCA DA FPMED. Lista MONTADA A MAO conferindo `git ls-files` (= o que o Pages serve),
@@ -129,6 +137,7 @@ const SHELL = [
   './fpmed_ajuda.html',                // Guia do usuario (passo a passo da jornada)
   './fpmed_teto_cmed.js',
   './fpmed_teto_homologado.js',      // o teto COMPETITIVO (B28) — Proposta e Negocios chamam o mesmo
+  './fpmed_piso.js',                 // o PISO (B29) — Proposta calcula, Documentos cadastra o parametro
   './fpmed_alarme_coleta.js',        // o sino do Negocios depende dele              // o motor "meu preco x teto", compartilhado
   './fpmed_competitividade.html',      // aqui ELA ENTRA (na instalacao de origem estava fora por
                                        // ficar no .gitignore; na FPMED e versionada e vai pro ar)

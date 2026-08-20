@@ -30,6 +30,13 @@
      OPERACIONAL de quem abre, e não aceita a cor da marca. Duas pessoas olhando a mesma tela
      veem coisas diferentes, e nenhuma das duas está com defeito. -->
 <script src="fpmed_icones.js"></script>
+<!-- ══ O MOTOR DO PISO (20/08, fatia B29) ═══════════════════════════════════════════════════════
+     Esta tela não CALCULA piso — quem calcula é a Proposta. Ela carrega o motor porque é dele a
+     lista do que um piso precisa (`FPMED_PISO.COMPONENTES`) e a regra de qual parâmetro vale numa
+     data (`vigentes`). Uma segunda lista aqui seria o par que um dia diverge: a tela de cadastro
+     diria "está completo" e a tela de preço continuaria dizendo "falta componente", sobre o mesmo
+     banco, e ninguém saberia qual acreditar. -->
+<script src="fpmed_piso.js"></script>
 <style>
 /* ══ ESTA TELA É UMA ILHA DE TEMA, E ISSO É DECISÃO DECLARADA — NÃO DESCUIDO ══════════════════
    Ela não carrega o `fpmed_tema.css`: tem paleta própria, escura, e o `testa_tema_tela_propria`
@@ -270,6 +277,31 @@ input::placeholder{color:var(--placeholder)}
 .avisocx .linha1{display:flex;gap:var(--esp-2);align-items:center;flex-wrap:wrap}
 .avisocx input{min-width:220px}
 .avisocx .obs{font-size:var(--txt-1);color:var(--muted);margin-top:var(--esp-2);line-height:1.5}
+/* ══ OS PARÂMETROS DA OPERAÇÃO (20/08, fatia B29) ═════════════════════════════════════════════
+   Três cartões, um por componente, e cada um mostra O QUE VALE HOJE antes de qualquer campo de
+   digitar. Um formulário vazio em cima responderia "o que eu preencho?"; o que a pessoa pergunta
+   ao abrir é "o que está valendo?" — e essa pergunta tem de ser respondida sem clique.
+   >>> O CARTÃO INCOMPLETO É ÂMBAR, NUNCA VERMELHO. Não informar a alíquota ainda não é erro: é
+       trabalho que falta. Vermelho aqui ensinaria a tratar como defeito uma tela que o dono
+       simplesmente ainda não visitou — e quem aprende a ignorar vermelho ignora o vermelho que
+       importa, que é o do preço abaixo do piso. */
+.parcx{margin-top:var(--esp-6);border-top:1px dashed var(--linha);padding-top:var(--esp-4)}
+.parcx h2{font-family:Montserrat;font-size:var(--txt-3);color:var(--branco);font-weight:700;margin-bottom:var(--esp-1)}
+.pargrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:var(--esp-3);margin-top:var(--esp-3)}
+.par{background:var(--painel);border:1px solid var(--linha);border-left-width:4px;border-radius:12px;padding:var(--esp-3) var(--esp-4)}
+.par.falta{border-left-color:var(--ambar)}
+.par.tem{border-left-color:var(--verde)}
+.par h3{font-size:var(--txt-2);color:var(--branco);font-weight:600;margin-bottom:var(--esp-1)}
+.par .valor{font-family:Montserrat;font-size:var(--txt-4);color:var(--verde);line-height:1.2}
+.par .valor.vazio{color:var(--ambar-claro);font-size:var(--txt-2);font-family:inherit;font-weight:600}
+.par .campos{display:flex;gap:var(--esp-2);flex-wrap:wrap;align-items:flex-end;margin-top:var(--esp-3)}
+.par .campos > div{flex:1 1 120px;min-width:0}
+.par input,.par select{width:100%}
+.par .acoes{display:flex;gap:var(--esp-2);align-items:center;margin-top:var(--esp-2);flex-wrap:wrap}
+.par .hist{margin-top:var(--esp-2)}
+.parconta{background:var(--painel2);border:1px solid var(--linha);border-radius:9px;
+  padding:var(--esp-3);margin-top:var(--esp-3);font-size:var(--txt-1);color:var(--muted);line-height:1.6}
+.parconta b{color:var(--texto)}
 .aviso{background:var(--painel);border:1px dashed var(--linha);border-radius:12px;padding:24px;text-align:center;color:var(--muted)}
 #form{display:none;background:var(--painel);border:1px solid var(--linha);border-radius:12px;padding:16px;margin-bottom:16px}
 #form.open{display:block}
@@ -398,6 +430,30 @@ label{display:block;font-size:var(--txt-1);font-weight:600;color:var(--muted);ma
        ser apagada junto com ela a cada `pinta()`. Documento arquivado não some do sistema — ele
        sai da frente. Some-lo de vez seria a tela decidindo que o passado não existe. -->
   <div id="gaveta"></div>
+
+  <!-- ══ PARÂMETROS DA OPERAÇÃO — POR QUE ELES MORAM AQUI E NÃO NO NEGÓCIOS (20/08, fatia B29) ══
+       A caixa deixou a escolha e pediu a justificativa. Eles ficam na Documentos por três razões,
+       e a terceira é a que decide:
+         1. ELES SÃO DA EMPRESA, NÃO DO CERTAME. Alíquota efetiva, frete padrão e custo fixo valem
+            para todos os pregões. No Negócios eles morariam dentro da ficha de UM negócio entre
+            2.562 — e um parâmetro global desenhado dentro de uma ficha é lido como parâmetro
+            daquela ficha. Quem visse "alíquota 6%" na ficha do pregão de Jataí concluiria que dá
+            para pôr outra no pregão de Goiânia.
+         2. ESTA TELA JÁ É A TELA DA VIGÊNCIA. Todo cartão dela é um documento com data de
+            validade; "o que valia em junho" é a pergunta que ela já responde o dia inteiro. O
+            parâmetro com vigência entra no mesmo hábito, sem inventar um conceito novo.
+         3. E ELA É A TELA DO "UMA VEZ SÓ". O Negócios é onde se trabalha todo dia; a Documentos é
+            onde se ARRUMA a empresa. Parâmetro que se cadastra uma vez por ano pertence ao lugar
+            onde já se cadastra uma vez por ano — e não no caminho de quem está com pressa.
+       >>> O QUE ESTA TELA NÃO FAZ: ela não mostra piso de item nenhum. Piso é por produto e por
+           preço, e isso é a Proposta. Aqui só se declara com que números ele será calculado. -->
+  <div class="parcx" id="parcx">
+    <h2>Parâmetros da operação</h2>
+    <div class="hint">São eles que fecham a conta do <b>piso</b> na tela de Proposta — abaixo de
+      quanto não dá para vender. <b>Enquanto faltar um, a Proposta não mostra piso nenhum</b> e diz
+      o nome do que falta: piso chutado é pior que piso ausente, porque o gestor dá lance nele.</div>
+    <div id="par-lista"><div class="aviso">carregando os parâmetros…</div></div>
+  </div>
 </div>
 
 <script>
@@ -1118,6 +1174,224 @@ async function abrirArquivo(caminho){
   }catch(e){ alert('Não consegui abrir o arquivo: ' + e.message); }
 }
 
+/* ══════════════════════════════════════════════════════════════════════════════════════════════
+   OS PARÂMETROS DA OPERAÇÃO (20/08, fatia B29)
+
+   Três componentes, cada um com a sua vigência, e a tela mostra O QUE VALE HOJE antes de oferecer
+   qualquer campo para digitar. Ver o comentário do bloco no HTML para o porquê de eles morarem
+   nesta tela e não no Negócios.
+
+   ── TROCAR UM PARÂMETRO É INSERIR, NUNCA EDITAR ─────────────────────────────────────────────
+   A alíquota de junho tem de continuar escrita em dezembro, senão a proposta de junho deixa de
+   ter explicação — e explicar preço velho é metade do trabalho de quem responde a uma diligência.
+   O botão diz "gravar nova vigência", e não "salvar": o rótulo é o que ensina que nada por cima.
+   ══════════════════════════════════════════════════════════════════════════════════════════════ */
+let PARAMS = null, PAR_ERRO = null, PAR_MSG = {};
+
+const brl4 = v => (v == null || !isFinite(Number(v))) ? '—'
+  : Number(v).toLocaleString('pt-BR', {style:'currency', currency:'BRL', minimumFractionDigits:4, maximumFractionDigits:4});
+const brl2 = v => (v == null || !isFinite(Number(v))) ? '—'
+  : Number(v).toLocaleString('pt-BR', {style:'currency', currency:'BRL'});
+// PERCENTUAL EM PORTUGUÊS: vírgula. `toFixed(2)` devolve "6.00", e o ponto é separador de MILHAR
+// para quem lê em português — a mesma lição que a B28 pagou na Proposta.
+const pct2 = v => Number(v).toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
+const dataBRp = ymd => {
+  const s = String(ymd == null ? '' : ymd).slice(0, 10);
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(s)) return '—';
+  // O `T12:00:00` impede o fuso de voltar um dia: uma vigência de 01/01 sairia como 31/12 em
+  // Goiás, e ninguém desconfia de uma data plausível.
+  const d = new Date(s + 'T12:00:00');
+  return isNaN(+d) ? s : d.toLocaleDateString('pt-BR');
+};
+
+async function carregarParametros(){
+  try{
+    // A LISTA INTEIRA, e não só a vigente: o histórico é o que permite responder "o que valia em
+    // junho?". Uma consulta que já filtrasse por hoje devolveria uma tela sem passado, e aí a
+    // única forma de conferir uma proposta velha seria abrir o banco.
+    const r = await fetch(`${SB_URL}/rest/v1/operacao_parametros?select=*&ativo=is.true`
+      + '&order=componente.asc,vigencia_inicio.desc', {headers:SB_H});
+    if(!r.ok) throw new Error(r.status===401||r.status===403
+      ? 'sua sessão expirou ou não tem permissão' : ('HTTP ' + r.status));
+    PARAMS = await r.json(); PAR_ERRO = null;
+  }catch(e){
+    // "não consegui ler" NÃO É "não está cadastrado". A segunda faria alguém recadastrar por cima
+    // do que já existe — e recadastrar parâmetro cria uma segunda vigência no mesmo dia, que é
+    // justamente o que o índice único do banco recusa. O erro tem estado próprio.
+    PARAMS = null; PAR_ERRO = e.message;
+  }
+  pintaParametros();
+}
+
+function pintaParametros(){
+  const box = document.getElementById('par-lista'); if(!box) return;
+  const P = window.FPMED_PISO;
+  if(!P){ box.innerHTML = '<div class="aviso">o motor do piso não carregou — recarregue a página.</div>'; return; }
+  if(PAR_ERRO){
+    box.innerHTML = '<div class="aviso" style="border-color:var(--vermelho);color:var(--vermelho-claro)">'
+      + '<svg class="ic" aria-hidden="true"><use href="#ic-alerta"/></svg> Não consegui ler os parâmetros: '
+      + esc(PAR_ERRO) + ' — isto <b>não</b> quer dizer que não estejam cadastrados.'
+      + '<div style="margin-top:12px"><button class="btn" onclick="carregarParametros()">Tentar de novo</button></div></div>';
+    return;
+  }
+  const hoje = P.hojeISO();
+  const vig = P.vigentes(PARAMS || [], hoje);
+  const faltam = P.faltas(vig);
+  const faltaDe = {}; faltam.forEach(f => faltaDe[f.componente] = f);
+
+  box.innerHTML = '<div class="pargrid">'
+    + P.COMPONENTES.map(c => cartaoParametro(c, vig[c.chave], !faltaDe[c.chave])).join('')
+    + '</div>'
+    /* O VEREDITO EMBAIXO DOS TRÊS, e ele é a frase que a Proposta vai repetir. Duas telas dizendo
+       a mesma coisa com palavras diferentes fazem a pessoa achar que são dois assuntos. */
+    + '<div class="parconta">'
+    + (faltam.length
+       ? '<b style="color:var(--ambar-claro)"><svg class="ic" aria-hidden="true"><use href="#ic-alerta"/></svg> '
+         + 'A Proposta ainda NÃO calcula piso.</b> Falta ' + esc(faltam.map(f => f.falta).join(' · e '))
+         + '. Enquanto faltar, cada item da Proposta diz o nome do que falta em vez de mostrar um número — '
+         + '<b>piso chutado é pior que piso ausente</b>, porque o gestor dá lance nele.'
+       : '<b style="color:var(--verde)"><svg class="ic" aria-hidden="true"><use href="#ic-certo"/></svg> '
+         + 'A Proposta já calcula o piso.</b> A conta é '
+         + '<b>custo de compra + frete + rateio de custo fixo</b>, tudo dividido por '
+         + '<b>(1 − alíquota)</b> — o imposto incide sobre a VENDA, não sobre o custo, por isso ele '
+         + 'divide em vez de somar. Multiplicar por (1 + alíquota) devolveria um piso ABAIXO do piso: '
+         + 'com 25% de alíquota, 6,25% abaixo.'
+         + '<div style="margin-top:8px">Vale para item com <b>custo de compra cadastrado</b>. '
+         + 'Item sem custo continua sem piso, e diz isso.</div>')
+    + '</div>';
+}
+
+function cartaoParametro(c, linha, completo){
+  const antigas = (PARAMS || []).filter(l => l.componente === c.chave
+    && String(l.vigencia_inicio).slice(0,10) !== String((linha||{}).vigencia_inicio || '').slice(0,10));
+  const msg = PAR_MSG[c.chave] || '';
+  return '<div class="par ' + (completo ? 'tem' : 'falta') + '">'
+    + '<h3>' + esc(c.rotulo) + '</h3>'
+    + (completo
+       ? '<div class="valor">' + valorDoParametro(c.chave, linha) + '</div>'
+         + '<div class="hint" style="margin-top:4px">em vigor desde <b>' + dataBRp(linha.vigencia_inicio) + '</b>'
+           + (linha.observacao ? ' · ' + esc(linha.observacao) : '') + '</div>'
+       // O ESTADO VAZIO DIZ O QUE FALTA E O QUE ISSO CAUSA, não só "—". Um travessão aqui seria a
+       // pessoa tendo que adivinhar se o campo é opcional.
+       : '<div class="valor vazio">não informado</div>'
+         + '<div class="hint" style="margin-top:4px">sem ' + esc(c.falta) + ', a Proposta não mostra piso.</div>')
+    + camposDoParametro(c.chave)
+    + '<div class="acoes"><button class="btn mini" onclick="salvarParametro(\'' + c.chave + '\')" '
+    +   'id="par-bt-' + c.chave + '">gravar nova vigência</button>'
+    +   '<span class="hint" id="par-msg-' + c.chave + '">' + esc(msg) + '</span></div>'
+    + (antigas.length
+       ? '<div class="hist">' + antigas.slice(0, 4).map(a =>
+           '<div class="linha"><b>' + valorDoParametro(c.chave, a) + '</b> · desde ' + dataBRp(a.vigencia_inicio) + '</div>').join('')
+         + (antigas.length > 4 ? '<div class="linha">e mais ' + (antigas.length - 4) + ' anterior(es)</div>' : '')
+         + '</div>'
+       : '')
+    + '</div>';
+}
+
+function valorDoParametro(chave, l){
+  if(!l) return '—';
+  if(chave === 'tributos')
+    return esc((window.FPMED_PISO.REGIMES[l.regime] || l.regime || '')) + ' · ' + pct2(l.aliquota_pct) + '%';
+  if(chave === 'frete')
+    return l.frete_tipo === 'pct' ? pct2(l.frete_valor) + '% do custo' : brl4(l.frete_valor) + ' por unidade';
+  // O RATEIO MOSTRA A DIVISÃO INTEIRA, e não só o resultado: "R$ 0,0500 por unidade" sozinho é um
+  // número que ninguém confere. Com os dois lados, qualquer um refaz na calculadora — que é a
+  // mesma lei das parcelas do piso.
+  const un = Number(l.custo_fixo_mensal) / Number(l.volume_mensal);
+  return brl4(un) + '/un';
+}
+
+function camposDoParametro(chave){
+  const hoje = window.FPMED_PISO.hojeISO();
+  const vig = '<div><label>Vigência a partir de</label>'
+    + '<input type="date" id="par-' + chave + '-vig" value="' + hoje + '"></div>';
+  if(chave === 'tributos')
+    return '<div class="campos">'
+      + '<div><label>Regime</label><select id="par-tributos-regime">'
+      +   '<option value="">— escolha —</option>'
+      +   '<option value="simples">Simples Nacional</option>'
+      +   '<option value="presumido">Lucro Presumido</option>'
+      +   '<option value="real">Lucro Real</option></select></div>'
+      /* ALÍQUOTA **EFETIVA**, e o rótulo diz isso com todas as letras. A nominal da tabela do
+         Simples não é o que sai do caixa; quem digitasse a nominal montaria um piso alto demais e
+         perderia pregão achando que estava se protegendo. E não há tabela de anexo escondida aqui:
+         uma tabela dessas desatualiza em silêncio e passa a devolver piso errado com cara de piso
+         calculado. Quem sabe a efetiva é a contabilidade da empresa. */
+      + '<div><label>Alíquota efetiva (%)</label>'
+      +   '<input type="number" id="par-tributos-aliq" min="0" max="99.99" step="0.01" placeholder="ex.: 6,00"></div>'
+      + vig + '</div>'
+      + '<div class="hint" style="margin-top:4px">a <b>efetiva</b> (a que sai do caixa), não a nominal da tabela</div>';
+  if(chave === 'frete')
+    return '<div class="campos">'
+      + '<div><label>Como cobra</label><select id="par-frete-tipo">'
+      +   '<option value="pct">% sobre o custo</option>'
+      +   '<option value="valor">R$ por unidade</option></select></div>'
+      + '<div><label>Valor</label><input type="number" id="par-frete-valor" min="0" step="0.0001" placeholder="0"></div>'
+      + vig + '</div>'
+      /* ZERO INFORMADO É DIFERENTE DE NÃO INFORMADO, e a dica diz isso. Há operação com frete
+         embutido no preço do fornecedor, e nela o zero é a verdade. O que não pode é o zero
+         aparecer por ninguém ter passado por aqui. */
+      + '<div class="hint" style="margin-top:4px">se o fornecedor entrega sem cobrar, grave <b>0</b> — '
+      + 'zero informado é uma resposta; em branco não é</div>';
+  return '<div class="campos">'
+    + '<div><label>Custo fixo mensal (R$)</label><input type="number" id="par-rateio-fixo" min="0" step="0.01" placeholder="0,00"></div>'
+    + '<div><label>Volume mensal (unidades)</label><input type="number" id="par-rateio-volume" min="0.0001" step="1" placeholder="0"></div>'
+    + vig + '</div>'
+    + '<div class="hint" style="margin-top:4px">aluguel, folha, frota, licenças — o que a operação gasta '
+    + 'para existir. <b>Não</b> é a conta do sistema: a tabela <code>custos_fixos</code> guarda o '
+    + 'Supabase, e ratear o banco de dados no preço da dipirona seria um número certo com nome errado.</div>';
+}
+
+async function salvarParametro(chave){
+  const bt = document.getElementById('par-bt-' + chave);
+  const el = id => document.getElementById('par-' + chave + '-' + id);
+  const vig = el('vig').value;
+  const diz = t => { PAR_MSG[chave] = t; const m = document.getElementById('par-msg-' + chave); if(m) m.textContent = t; };
+  if(!vig){ diz('informe a data de vigência.'); return; }
+
+  const corpo = { empresa_id: 1, componente: chave, vigencia_inicio: vig };
+  if(chave === 'tributos'){
+    const reg = el('regime').value, a = el('aliq').value;
+    if(!reg){ diz('escolha o regime.'); return; }
+    // >>> `=== ''` E NÃO `!a`: com `!a`, o zero digitado seria recusado como se fosse campo em
+    //     branco. Zero é uma resposta possível, e recusá-la em silêncio ensinaria a pessoa a
+    //     digitar 0,01 para o campo aceitar — que é como um parâmetro entra errado de propósito.
+    if(a === ''){ diz('informe a alíquota efetiva.'); return; }
+    corpo.regime = reg; corpo.aliquota_pct = Number(a);
+  } else if(chave === 'frete'){
+    const v = el('valor').value;
+    if(v === ''){ diz('informe o valor do frete (pode ser 0).'); return; }
+    corpo.frete_tipo = el('tipo').value; corpo.frete_valor = Number(v);
+  } else {
+    const f = el('fixo').value, vol = el('volume').value;
+    if(f === '' || vol === ''){ diz('informe o custo fixo e o volume.'); return; }
+    if(!(Number(vol) > 0)){ diz('o volume mensal tem de ser maior que zero — dividir por zero não dá piso, dá infinito.'); return; }
+    corpo.custo_fixo_mensal = Number(f); corpo.volume_mensal = Number(vol);
+  }
+
+  bt.disabled = true; diz('gravando…');
+  try{
+    const r = await fetch(`${SB_URL}/rest/v1/operacao_parametros`, {method:'POST',
+      headers: Object.assign({'Prefer':'return=representation'}, SB_HW), body: JSON.stringify(corpo)});
+    if(!r.ok){
+      const t = await r.text();
+      /* A RECUSA DO BANCO É TRADUZIDA, e não repassada crua. `duplicate key value violates unique
+         constraint "operacao_parametros_vigencia_idx"` é verdade e não ajuda ninguém: quem lê
+         precisa saber que já existe uma vigência naquele dia e que o caminho é escolher outra
+         data. Erro que não ensina a saída faz a pessoa desistir da tela (BASE 2.1). */
+      if(/operacao_parametros_vigencia_idx|duplicate key/i.test(t))
+        throw new Error('já existe uma vigência deste componente começando em ' + dataBRp(vig)
+          + '. Duas vigências no mesmo dia seriam duas respostas para "o que valia nesse dia" — escolha outra data.');
+      if(/op_par_coerente/.test(t))
+        throw new Error('faltou preencher um dos campos deste componente — meio parâmetro não é meio piso.');
+      throw new Error(r.status===401||r.status===403 ? 'só gestor pode gravar parâmetro da operação' : ('HTTP '+r.status+' '+t.slice(0,80)));
+    }
+    diz('gravado.');
+    await carregarParametros();
+  }catch(e){ diz(e.message); }
+  if(bt) bt.disabled = false;
+}
+
 // CORRIDA COM O gm-auth — a mesma lição de 05/08 e a raiz das travadas de 07/08: o boot() dele
 // é assíncrono quando o token precisa ser renovado, e pedir dados antes disso manda a consulta
 // como `anon`, que a RLS não atende.
@@ -1134,6 +1408,10 @@ function iniciar(){
     ? ('em branco = ' + EMAIL_EMPRESA + ', o e-mail da empresa cadastrada')
     : 'não há e-mail de empresa no cliente.config.js — em branco, este documento não avisa ninguém';
   carregar();
+  /* OS PARÂMETROS CARREGAM À PARTE, e uma falha deles NÃO derruba o cofre. A pergunta que traz
+     alguém a esta tela é "tem certidão vencida?"; ela não pode depender de uma tabela que nasceu
+     hoje e que a maioria dos dias ninguém abre. */
+  carregarParametros();
 }
 if(window.gmAuth) iniciar();
 else { document.addEventListener('gm-auth-ready', iniciar, { once:true }); setTimeout(iniciar, 12000); }
