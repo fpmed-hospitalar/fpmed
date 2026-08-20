@@ -1,0 +1,87 @@
+@echo off
+rem ============================================================================================
+rem  motor_A.bat.novo — A VERSAO QUE RESPEITA O LIMITE DO PLANO (fatia A36, 20/08/2026)
+rem
+rem  == O QUE ACONTECEU, COM O NUMERO MEDIDO ===================================================
+rem  Entre 15 e 18/08 a fabrica ficou parada por limite semanal do plano. Os dois motores
+rem  continuaram batendo na porta de 10 em 10 minutos: 82 ciclos do A e 86 do B, tres dias
+rem  seguidos, TODOS gravando a mesma linha —
+rem      "You've hit your weekly limit - resets Aug 18, 1am"
+rem  168 ciclos que nao podiam dar em nada, porque a data em que o limite voltava ESTAVA
+rem  ESCRITA na propria resposta. O motor tinha a informacao na mao e nao a lia.
+rem
+rem  == O CONSERTO, E POR QUE ELE E DE UMA LINHA SO ============================================
+rem  Ao fim de cada ciclo, o motor le o log DAQUELE ciclo. Se a frase do limite estiver la, ele
+rem  espera UMA HORA em vez de dez minutos. Nada mais muda.
+rem  >>> POR QUE UMA HORA E NAO ATE A DATA QUE A MENSAGEM DIZ: porque ler a data exigiria
+rem      interpretar texto em ingles dentro de um .bat, e um erro nessa leitura deixaria a
+rem      fabrica dormindo ate uma data errada — o defeito oposto, e pior. Uma hora e curta o
+rem      bastante para nao perder a volta e longa o bastante para 72 horas de limite custarem
+rem      72 ciclos em vez de 432.
+rem  >>> E ELE NAO DESISTE. Tentar de tempos em tempos e o certo aqui: o limite volta sozinho e
+rem      ninguem esta olhando as 3 da manha de um domingo. O que estava errado era a FREQUENCIA,
+rem      nao a insistencia.
+rem
+rem  == O BLOCO FOI PROVADO, E NAO SO ESCRITO =================================================
+rem  Medido em 20/08 com quatro logs de mentira: "weekly limit" -> 3600s · "usage limit" ->
+rem  3600s · log limpo -> 600s · log inexistente -> 600s. As duas direcoes, porque um detector
+rem  que so acha e indistinguivel de um que acha sempre.
+rem
+rem  == POR QUE ESTE ARQUIVO SE CHAMA `.novo` E NAO SUBSTITUIU O QUE ESTA EM USO ================
+rem  O `cmd` RELE o .bat do disco DURANTE a execucao, linha a linha. Trocar o arquivo com a
+rem  janela aberta faz o interpretador continuar de um deslocamento de bytes que agora aponta
+rem  para o meio de outra linha — o erro que o arquiteto ja cometeu uma vez e que nao se repete.
+rem  >>> A TROCA E DO DONO, COM AS DUAS JANELAS FECHADAS:
+rem        1. feche as janelas "fpmed" e "fpmed2";
+rem        2. renomeie motor_A.bat para motor_A.bat.velho e motor_A.bat.novo para motor_A.bat
+rem           (idem para o B);
+rem        3. abra as janelas de novo.
+rem
+rem  DIFERENCA PARA O motor_A.bat EM USO: so o bloco ":espera" e a chamada a ele. O prompt, o
+rem  titulo, os caminhos de log e o numero do ciclo estao IGUAIS, byte por byte — mudar duas
+rem  coisas numa troca e como uma delas passa sem ser vista.
+rem ============================================================================================
+title fpmed (Trabalhador A - automatico)
+cd /d C:\fpmed
+if not exist C:\fpmed\logs mkdir C:\fpmed\logs
+set INDICE=C:\fpmed\logs\motor_A.log
+set SESSAO=%RANDOM%
+set /a N=0
+echo ============================================================
+echo   TRABALHADOR A - motor automatico
+echo   indice dos ciclos : %INDICE%
+echo   detalhe de cada um: C:\fpmed\logs\A_%SESSAO%_ciclo_N.log
+echo   NAO FECHE esta janela. Para parar, feche-a de proposito.
+echo ============================================================
+echo. >> "%INDICE%" 2>nul
+echo ===== MOTOR A INICIADO em %date% %time% (sessao %SESSAO%) ===== >> "%INDICE%" 2>nul
+
+:loop
+set /a N+=1
+set CICLO=C:\fpmed\logs\A_%SESSAO%_ciclo_%N%.log
+echo.
+echo [%time%] ciclo %N% iniciado - trabalhando... (detalhe em %CICLO%)
+echo [%date% %time%] ciclo %N% iniciado >> "%INDICE%" 2>nul
+call claude -p --verbose --dangerously-skip-permissions "Voce e o Trabalhador A (janela fpmed). Leia C:\fpmed\caixas\CAIXA_A.md. Se o SINAL no topo for AGUARDE, responda apenas 'aguardando' e encerre. Se for TRABALHE: execute a caixa inteira no regime nao-parar do CLAUDE.md, grave o relatorio em C:\fpmed\relatorios\RELATORIO_A.md (acrescentando no topo) e, como ULTIMO ato, troque o SINAL da caixa para AGUARDE." > "%CICLO%" 2>&1
+set CODIGO=%ERRORLEVEL%
+echo [%date% %time%] ciclo %N% terminou codigo %CODIGO% (detalhe: %CICLO%) >> "%INDICE%" 2>nul
+
+rem -- O LIMITE DO PLANO, LIDO DO LOG DAQUELE CICLO --------------------------------------------
+rem  `findstr` devolve 0 quando ACHOU. As duas frases porque o texto ja apareceu nas duas formas
+rem  ("weekly limit" e "usage limit") e cobrar so uma seria a regra que cobre o que alguem
+rem  lembrou de listar — a licao que o .gitignore desta casa ja conta quatro vezes.
+rem  O `if exist` existe porque um ciclo que morreu antes de escrever nao pode virar um erro de
+rem  findstr no meio do laco.
+set ESPERA=600
+set MOTIVO=nova checagem em 10 min
+if exist "%CICLO%" (
+  findstr /i /c:"weekly limit" /c:"usage limit" "%CICLO%" >nul 2>nul
+  if not errorlevel 1 (
+    set ESPERA=3600
+    set MOTIVO=LIMITE DO PLANO detectado no log - esperando 1 hora em vez de 10 min
+    echo [%date% %time%] ciclo %N%: LIMITE DO PLANO - esperando 3600s >> "%INDICE%" 2>nul
+  )
+)
+echo [%time%] ciclo %N% terminado (codigo %CODIGO%) - %MOTIVO%
+timeout /t %ESPERA% /nobreak
+goto loop

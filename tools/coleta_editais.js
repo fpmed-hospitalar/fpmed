@@ -118,14 +118,33 @@ async function umaLicitacao(lic) {
        tela precisa poder dizer "o PNCP não publicou" em vez de "não sei". */
     console.log(`  ${rot}  ○ o PNCP não publicou arquivo nenhum para esta licitação`);
     if (!PREVIA) {
-      await fetch(`${SB}/rest/v1/licitacao_arquivos?on_conflict=numero_controle,url_pncp`, {
-        method: 'POST', headers: { ...H, Prefer: 'return=minimal,resolution=merge-duplicates' },
-        body: JSON.stringify([{
-          numero_controle: lic.numero_controle, licitacao_id: lic.id || null,
-          url_pncp: 'sem-arquivo://pncp', titulo: null, tipo: null, sequencial: null,
-          extracao_erro: 'o PNCP não publicou arquivo para esta licitação',
-        }]),
-      });
+      /* ══ O `r.ok` ENTROU NA FATIA A36 (20/08), E AQUI ELE VALE DUPLO ═════════════════════════
+         Este `fetch` grava o FATO de que o PNCP não publicou nada — é exatamente o registro que
+         o comentário logo acima diz existir para a tela poder dizer "o PNCP não publicou" em vez
+         de "não sei". Ele era disparado sem conferência nenhuma, e a função devolvia
+         `{semArquivo:true}` de qualquer jeito.
+         >>> ENTÃO UMA GRAVAÇÃO QUE FALHOU ERA CONTADA COMO FATO REGISTRADO, e o resumo da rodada
+             somava a licitação em `sem`. O efeito é o oposto do que esta linha existe para
+             causar: a tela continuaria dizendo "ainda não coletei" para sempre, e o log juraria
+             que o registro tinha sido feito. */
+      try {
+        const rg = await fetch(`${SB}/rest/v1/licitacao_arquivos?on_conflict=numero_controle,url_pncp`, {
+          method: 'POST', headers: { ...H, Prefer: 'return=minimal,resolution=merge-duplicates' },
+          body: JSON.stringify([{
+            numero_controle: lic.numero_controle, licitacao_id: lic.id || null,
+            url_pncp: 'sem-arquivo://pncp', titulo: null, tipo: null, sequencial: null,
+            extracao_erro: 'o PNCP não publicou arquivo para esta licitação',
+          }]),
+        });
+        if (!rg.ok) {
+          const txt = (await rg.text()).slice(0, 160);
+          console.log(`  ${rot}  ⚠️ NÃO consegui registrar o "sem arquivo": HTTP ${rg.status} ${txt}`);
+          return { erro: 'não gravei o registro de "sem arquivo": HTTP ' + rg.status };
+        }
+      } catch (e) {
+        console.log(`  ${rot}  ⚠️ NÃO consegui registrar o "sem arquivo": ${e.message}`);
+        return { erro: 'não gravei o registro de "sem arquivo": ' + e.message };
+      }
     }
     return { semArquivo: true };
   }
@@ -216,19 +235,47 @@ async function umaLicitacao(lic) {
     process.exit(1);
   }
 
+  /* ══ A LEITURA DE ALVOS — E ELA CONFUNDIA AS DUAS COISAS QUE A A19 SEPARA (A36 · 20/08) ══════
+     As três leituras abaixo eram `await (await fetch(...)).json()`, sem uma conferência. Num 401
+     ou 403 o PostgREST devolve um OBJETO de erro, e aí:
+       · `alvos.length` é `undefined` → cai no `if (!alvos.length)` → o programa escreve
+         **"não achei esta licitação no índice"** e sai com código 1;
+       · `negs.map` não é função → estoura com um TypeError que não diz nada sobre permissão;
+       · `alvos.slice` idem.
+     >>> O PRIMEIRO É O DEFEITO CARO, e ele tem nome nesta casa desde a A19: **"não consegui
+         perguntar" NUNCA vira "não existe"**. A frase que sai é uma afirmação sobre o índice,
+         feita por quem não conseguiu olhar o índice — e quem a lê vai conferir o número de
+         controle, não a permissão.
+     >>> A PORTA `le()` EXISTE PARA QUE A REGRA SEJA UMA SÓ. Três leituras com três tratamentos
+         é como uma delas fica para trás; e a mensagem de erro diz o que falhou, não o que não
+         existe. */
+  const le = async (q, oQue) => {
+    let r;
+    try { r = await fetch(`${SB}/rest/v1/${q}`, { headers: H }); }
+    catch (e) { console.error(`\n🔴 não consegui perguntar ao banco (${oQue}): ${e.message}`); process.exit(1); }
+    if (!r.ok) {
+      console.error(`\n🔴 não consegui perguntar ao banco (${oQue}): HTTP ${r.status} ${(await r.text()).slice(0, 160)}`);
+      console.error('   ISTO NÃO É "não achei" — é "não consegui olhar". As duas levam a ações diferentes.');
+      process.exit(1);
+    }
+    const j = await r.json();
+    if (!Array.isArray(j)) { console.error(`\n🔴 a resposta de ${oQue} veio 200 mas não é uma lista`); process.exit(1); }
+    return j;
+  };
+
   let alvos = [];
   if (controle) {
-    alvos = await (await fetch(`${SB}/rest/v1/licitacoes?select=id,numero_controle,cnpj,ano,sequencial,objeto&numero_controle=eq.${encodeURIComponent(controle)}`, { headers: H })).json();
+    alvos = await le(`licitacoes?select=id,numero_controle,cnpj,ano,sequencial,objeto&numero_controle=eq.${encodeURIComponent(controle)}`, 'a licitação pelo número de controle');
     if (!alvos.length) { console.error('\nnão achei esta licitação no índice: ' + controle); process.exit(1); }
   } else {
     /* SÓ AS DO FUNIL. A junção é por `numero`, que é a mesma chave que a ponte Encontrar ->
        Negócios já usa pra não duplicar negócio. Duas chaves diferentes pra "é o mesmo pregão?"
        seria o defeito que o selo "dos meus negócios" existe pra evitar. */
-    const negs = await (await fetch(`${SB}/rest/v1/negocios?select=licitacao_id,numero&arquivado=is.false`, { headers: H })).json();
+    const negs = await le('negocios?select=licitacao_id,numero&arquivado=is.false', 'os negócios abertos');
     const ids = [...new Set(negs.map(n => n.licitacao_id).filter(Boolean))];
     console.log(`\n${negs.length} negócio(s) aberto(s) no funil · ${ids.length} com licitação do índice ligada`);
     if (ids.length) {
-      alvos = await (await fetch(`${SB}/rest/v1/licitacoes?select=id,numero_controle,cnpj,ano,sequencial,objeto&id=in.(${ids.join(',')})&limit=${TETO}`, { headers: H })).json();
+      alvos = await le(`licitacoes?select=id,numero_controle,cnpj,ano,sequencial,objeto&id=in.(${ids.join(',')})&limit=${TETO}`, 'as licitações do funil');
     }
   }
 

@@ -197,10 +197,18 @@ function dependenciasReais() {
       return (await r.json())[0];
     },
 
+    /* ══ O `r.ok` ENTROU NA FATIA A36 (20/08) ══════════════════════════════════════════════════
+       Sem ele, um 401 fazia esta função devolver `NaN` — porque a resposta de erro não traz
+       `content-range` e `Number(undefined)` é NaN. E NaN é o pior tipo de "não sei": ele não
+       levanta, não é falso, e vai parar no log do watchdog dentro de uma frase.
+       >>> `null` É O "NÃO SEI" DESTA CASA, e quem chama já sabe distinguir. A regra é a mesma
+           da A19: não consegui perguntar nunca vira uma resposta. */
     async contaNulas() {
       const r = await fetch(`${SB}/rest/v1/licitacoes?select=id&data_abertura=is.null`,
         { headers: { ...H, Prefer: 'count=exact', Range: '0-0' } });
-      return Number((r.headers.get('content-range') || '').split('/')[1]);
+      if (!r.ok) return null;
+      const n = Number((r.headers.get('content-range') || '').split('/')[1]);
+      return isFinite(n) ? n : null;
     },
 
     /* A VARREDURA NORMAL, e não uma segunda coleta escrita aqui. O `coleta_pncp.js` já tem
@@ -250,15 +258,22 @@ async function roda(dep, opcoes) {
     linha.datas_antes = await dep.contaNulas();
     log(`\n  >>> ${o.forcaDisparo && !v.virada ? 'DISPARO FORÇADO' : 'O PNCP VOLTOU'}`
       + (v.fora_minutos != null ? ` (ficou fora ${v.fora_minutos} min)` : '')
-      + ` — datas de abertura nulas agora: ${linha.datas_antes}`);
+      + ` — datas de abertura nulas agora: ${linha.datas_antes == null ? 'não consegui contar' : linha.datas_antes}`);
     log('  >>> disparando a varredura normal (tools/coleta_pncp.js)…\n');
     const r = await dep.dispara();
     linha.disparou = true;
     linha.disparo_erro = r.ok ? null : r.erro;
     linha.datas_depois = await dep.contaNulas();
     log(`\n  varredura: ${r.ok ? 'terminou' : 'FALHOU — ' + r.erro}`);
-    log(`  datas de abertura nulas: ${linha.datas_antes} -> ${linha.datas_depois}`
-      + `  (${linha.datas_antes - linha.datas_depois} preenchida(s))`);
+    /* A SUBTRAÇÃO SÓ SAI QUANDO AS DUAS PONTAS FORAM MEDIDAS. Com uma delas em "não sei", o
+       `antes - depois` viraria NaN — ou, pior, um número plausível se um dos lados fosse zero.
+       "Preencheu N" é uma afirmação sobre trabalho feito; ela não pode nascer de uma conta que
+       não pôde ser feita. */
+    log(`  datas de abertura nulas: ${linha.datas_antes == null ? '?' : linha.datas_antes}`
+      + ` -> ${linha.datas_depois == null ? '?' : linha.datas_depois}`
+      + (linha.datas_antes != null && linha.datas_depois != null
+          ? `  (${linha.datas_antes - linha.datas_depois} preenchida(s))`
+          : '  (não consegui contar as duas pontas — não dá para dizer quantas foram)'));
     /* A CONTA QUE FALTA É A HONESTA: sobrou o quê? A varredura normal cobre a janela recente,
        e as linhas antigas ficam para as rodadas seguintes. Dizer só "preencheu N" faria uma
        cobertura parcial parecer completa — o defeito que esta obra já pagou três vezes. */

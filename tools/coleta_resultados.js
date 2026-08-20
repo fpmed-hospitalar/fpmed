@@ -159,15 +159,37 @@ async function umaLicitacao(lic) {
     process.exit(1);
   }
 
+  /* ══ A MESMA CORREÇÃO DA `coleta_editais.js`, PELA MESMA RAZÃO (A36 · 20/08) ═════════════════
+     As três leituras eram `await (await fetch(...)).json()` sem conferência. Num 403,
+     `alvos.length` vinha `undefined` e o programa escrevia **"não achei esta licitação no
+     índice"** — uma afirmação sobre o índice feita por quem não conseguiu olhar o índice. É o
+     defeito que a A19 nomeou: *"não consegui perguntar" NUNCA vira "não existe"*.
+     >>> AS DUAS FERRAMENTAS SÃO IRMÃS E O CONSERTO É IGUAL NAS DUAS, de propósito. Consertar só
+         uma criaria o par que diverge — e a próxima pessoa a ler acharia que a diferença é
+         intencional. */
+  const le = async (q, oQue) => {
+    let r;
+    try { r = await fetch(`${SB}/rest/v1/${q}`, { headers: H }); }
+    catch (e) { console.error(`\n🔴 não consegui perguntar ao banco (${oQue}): ${e.message}`); process.exit(1); }
+    if (!r.ok) {
+      console.error(`\n🔴 não consegui perguntar ao banco (${oQue}): HTTP ${r.status} ${(await r.text()).slice(0, 160)}`);
+      console.error('   ISTO NÃO É "não achei" — é "não consegui olhar". As duas levam a ações diferentes.');
+      process.exit(1);
+    }
+    const j = await r.json();
+    if (!Array.isArray(j)) { console.error(`\n🔴 a resposta de ${oQue} veio 200 mas não é uma lista`); process.exit(1); }
+    return j;
+  };
+
   let alvos = [];
   if (controle) {
-    alvos = await (await fetch(`${SB}/rest/v1/licitacoes?select=id,numero_controle,cnpj,ano,sequencial&numero_controle=eq.${encodeURIComponent(controle)}`, { headers: H })).json();
+    alvos = await le(`licitacoes?select=id,numero_controle,cnpj,ano,sequencial&numero_controle=eq.${encodeURIComponent(controle)}`, 'a licitação pelo número de controle');
     if (!alvos.length) { console.error('\nnão achei esta licitação no índice: ' + controle); process.exit(1); }
   } else {
-    const negs = await (await fetch(`${SB}/rest/v1/negocios?select=licitacao_id&arquivado=is.false`, { headers: H })).json();
+    const negs = await le('negocios?select=licitacao_id&arquivado=is.false', 'os negócios abertos');
     const ids = [...new Set(negs.map(n => n.licitacao_id).filter(Boolean))];
     console.log(`\n${negs.length} negócio(s) aberto(s) · ${ids.length} com licitação do índice ligada`);
-    if (ids.length) alvos = await (await fetch(`${SB}/rest/v1/licitacoes?select=id,numero_controle,cnpj,ano,sequencial&id=in.(${ids.join(',')})&limit=${TETO}`, { headers: H })).json();
+    if (ids.length) alvos = await le(`licitacoes?select=id,numero_controle,cnpj,ano,sequencial&id=in.(${ids.join(',')})&limit=${TETO}`, 'as licitações do funil');
   }
 
   console.log(`\nlicitações: ${alvos.length}`);

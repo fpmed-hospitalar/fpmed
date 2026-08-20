@@ -212,16 +212,44 @@ async function puxa(url, breaker, ritmo) {
 
 (async () => {
   console.log(PREVIEW ? '[PREVIEW — nada e gravado]' : '[COLETA]');
-  // estado anterior
+  /* ══ O ESTADO ANTERIOR — E A LEITURA DELE ERA O DEFEITO MAIS CARO DESTE ARQUIVO (A36 · 20/08) ══
+     Ela não conferia o `r.ok`. Num 401 ou 403 o PostgREST devolve um OBJETO de erro; os quatro
+     `Array.isArray` davam falso, o `catch` não era acionado (a resposta CHEGOU, só não era o que
+     se esperava) e a rodada seguia com as quatro variáveis no valor de "nunca coletei nada".
+
+     >>> E O ESTRAGO NÃO PARA NA RODADA. Com `ultimoDiaOk` falsamente nulo, a linha 355 —
+         `if (ultimoDiaCompleto && (!ultimoDiaOk || ultimoDiaCompleto > ultimoDiaOk))` — GRAVA por
+         cima do carimbo do dia. Ou seja: uma leitura que falhou podia fazer o índice ANDAR PARA
+         TRÁS no único número que a tela usa para dizer "completo até DD/MM". A licitação
+         continuaria lá; a promessa sobre ela é que ficaria menor, e ninguém veria.
+     >>> E `ufsFeitas` vazio faz a rodada refazer UFs já varridas contra um serviço público — o
+         custo de um erro de leitura pago por quem não errou nada.
+     >>> ENTÃO A REGRA É A DA A19, e ela é a mesma em toda esta obra: **"não consegui perguntar"
+         nunca vira "não existe"**. Se a leitura não respondeu, a rodada NÃO pode fingir que é a
+         primeira: ela avisa alto e sai com código 1, sem tocar no carimbo. Perder uma rodada é
+         barato; apagar o carimbo é o que a tela lê. */
   let ultimaOk = null, ultimoDiaOk = null, diaEmCurso = null, ufsFeitas = [];
   try {
     const r = await fetch(`${SB}/rest/v1/coleta_status?fonte=eq.PNCP&select=*`, { headers: H });
+    if (!r.ok) throw new Error('HTTP ' + r.status + ' ' + (await r.text()).slice(0, 160));
     const j = await r.json();
-    if (Array.isArray(j) && j[0] && j[0].ultima_ok) ultimaOk = new Date(j[0].ultima_ok);
-    if (Array.isArray(j) && j[0] && j[0].ultimo_dia_ok) ultimoDiaOk = String(j[0].ultimo_dia_ok).slice(0, 10);
-    if (Array.isArray(j) && j[0] && j[0].dia_em_curso) diaEmCurso = String(j[0].dia_em_curso).slice(0, 10);
-    if (Array.isArray(j) && j[0] && Array.isArray(j[0].ufs_feitas)) ufsFeitas = j[0].ufs_feitas.slice();
-  } catch (_) {}
+    /* O `Array.isArray` CONTINUA, e agora ele é o que sempre foi: prova de FORMA. Com o `r.ok`
+       conferido antes, uma resposta 200 que não é lista é outra coisa — e essa também não pode
+       passar por "primeira coleta". */
+    if (!Array.isArray(j)) throw new Error('a resposta veio 200 mas não é uma lista');
+    if (j[0] && j[0].ultima_ok) ultimaOk = new Date(j[0].ultima_ok);
+    if (j[0] && j[0].ultimo_dia_ok) ultimoDiaOk = String(j[0].ultimo_dia_ok).slice(0, 10);
+    if (j[0] && j[0].dia_em_curso) diaEmCurso = String(j[0].dia_em_curso).slice(0, 10);
+    if (j[0] && Array.isArray(j[0].ufs_feitas)) ufsFeitas = j[0].ufs_feitas.slice();
+    /* LISTA VAZIA É RESPOSTA, e é diferente de erro: quer dizer que a linha `PNCP` ainda não
+       existe, e aí "primeira coleta" é a verdade. É por isso que este caso NÃO levanta. */
+  } catch (e) {
+    console.error('\n🔴 NÃO CONSEGUI LER O ESTADO ANTERIOR DA COLETA: ' + e.message);
+    console.error('   Parando ANTES de varrer. Seguir daqui faria esta rodada se comportar como');
+    console.error('   a primeira: janela de ' + DIAS_1A_COLETA + ' dias, UFs já feitas refeitas, e');
+    console.error('   — o pior — o `ultimo_dia_ok` podendo ser gravado para TRÁS por cima do bom.');
+    process.exit(1);
+  }
   const { ini, fim } = janela(ultimaOk, new Date(), parseInt(arg('--dias')) || null);
   // a origem da janela tem que bater com a janela impressa: `--dias 2` dizendo "primeira
   // coleta: 30 dias" faz quem lê o log conferir a data errada quando algo não fechar.
@@ -357,11 +385,31 @@ async function puxa(url, breaker, ritmo) {
   // foi publicado depois. O carimbo do dia já guarda que a volta aconteceu.
   st.dia_em_curso = diaEmCurso;
   st.ufs_feitas = voltaFechou ? [] : ufsFeitas;
-  await fetch(`${SB}/rest/v1/coleta_status?on_conflict=fonte`, {
-    method: 'POST', headers: { ...H, Prefer: 'return=minimal,resolution=merge-duplicates' },
-    body: JSON.stringify([st]),
-  }).catch(() => {});
-  console.log(okDeVerdade ? '✅ coleta concluída — carimbo de frescor avançado'
+  /* ══ A GRAVAÇÃO DO CARIMBO ERA MUDA NAS DUAS PONTAS (A36 · 20/08) ═══════════════════════════
+     Ela não conferia o `r.ok` e engolia a exceção com um `.catch(() => {})`. Duas linhas abaixo,
+     o console escrevia **"✅ coleta concluída — carimbo de frescor avançado"** — uma afirmação
+     verde sobre uma escrita que podia não ter acontecido.
+     >>> É A MESMA FAMÍLIA DO 401 DA PROPOSTA, e talvez a forma mais cara dela: quem lê o log vai
+         embora achando que o carimbo andou. Na próxima rodada a janela recomeça do `ultima_ok`
+         VELHO e varre de novo dias inteiros — e o log de ontem jura que estava tudo certo.
+     >>> O CATCH CONTINUA, porque a rodada NÃO deve morrer aqui: a licitação já está gravada e o
+         trabalho de verdade foi feito. O que muda é que o desfecho passa a ser DITO, e o ✅ passa
+         a depender dele. Verde que não depende de nada é enfeite. */
+  let gravouCarimbo = true, motivoCarimbo = '';
+  try {
+    const rc = await fetch(`${SB}/rest/v1/coleta_status?on_conflict=fonte`, {
+      method: 'POST', headers: { ...H, Prefer: 'return=minimal,resolution=merge-duplicates' },
+      body: JSON.stringify([st]),
+    });
+    if (!rc.ok) { gravouCarimbo = false; motivoCarimbo = 'HTTP ' + rc.status + ' ' + (await rc.text()).slice(0, 160); }
+  } catch (e) { gravouCarimbo = false; motivoCarimbo = e.message; }
+  if (!gravouCarimbo) {
+    console.error('🔴 NÃO CONSEGUI GRAVAR O CARIMBO: ' + motivoCarimbo);
+    console.error('   As licitações desta rodada FICARAM no banco. O que não avançou foi o');
+    console.error('   carimbo — a próxima rodada vai varrer a mesma janela de novo.');
+  }
+  console.log(okDeVerdade && gravouCarimbo
+                          ? '✅ coleta concluída — carimbo de frescor avançado'
                           : '⚠️  coleta INCOMPLETA — o carimbo NÃO avançou (a tela vai continuar mostrando a hora da última coleta boa)');
   console.log(ultimoDiaCompleto ? `📅 índice completo até ${ultimoDiaCompleto}`
                                 : '📅 nenhum dia foi coberto por inteiro nesta rodada');
@@ -369,5 +417,8 @@ async function puxa(url, breaker, ritmo) {
   console.log(voltaFechou ? `🔄 volta do dia ${diaEmCurso} FECHADA (as ${UFS.length} UFs) — o progresso zerou`
     : `🔄 ${diaEmCurso}: ${ufsFeitas.length}/${UFS.length} UFs varridas` + (faltam.length ? ` · faltam ${faltam.join(',')}` : ''));
   if (UFS_SEMPRE.length) console.log(`⭐ praça principal (toda rodada): ${UFS_SEMPRE.join(',')}`);
-  process.exitCode = okDeVerdade ? 0 : 1;
+  /* O CARIMBO NÃO GRAVADO ENTRA NO CÓDIGO DE SAÍDA, e não só no texto do log. Quem chama este
+     coletor é a `carga_diaria.js`, que decide pelo CÓDIGO se a rodada dela pode se declarar
+     completa — um desfecho que só existe em prosa não chega até lá. */
+  process.exitCode = (okDeVerdade && gravouCarimbo) ? 0 : 1;
 })().catch(e => { console.error('ERRO: ' + e.message); process.exit(1); });
