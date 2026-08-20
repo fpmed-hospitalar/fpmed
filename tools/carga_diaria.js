@@ -47,11 +47,22 @@ const path = require('path');
 const { spawn } = require('child_process');
 
 const RAIZ = path.join(__dirname, '..');
-const seg = fs.readFileSync(path.join(RAIZ, 'segredos.local.txt'), 'utf8');
-const SB = seg.match(/PROJECT_URL\s*[:=]\s*(\S+)/i)[1].replace(/\/$/, '');
-const SR = (seg.match(/service_role[\s\S]{0,240}?(eyJ[A-Za-z0-9._-]{60,})/i) || [])[1];
-if (!SR) { console.error('service_role nao encontrada em segredos.local.txt'); process.exit(1); }
-const H = { apikey: SR, Authorization: 'Bearer ' + SR };
+
+/* ══ A CREDENCIAL É LIDA QUANDO FOR USADA, E NÃO AO CARREGAR O ARQUIVO ═══════════════════════
+   Ela era lida na primeira linha, e isso trancava a porta para a catraca: quem faz `require`
+   deste arquivo só para PERGUNTAR a regra do teto acabava lendo a `service_role` do disco e
+   saindo por `process.exit(1)` numa máquina sem o segredo. Regra que só pode ser testada com a
+   chave-mestra na mão é regra que ninguém testa — e a do teto estava sem catraca nenhuma. */
+let _banco = null;
+function banco() {
+  if (_banco) return _banco;
+  const seg = fs.readFileSync(path.join(RAIZ, 'segredos.local.txt'), 'utf8');
+  const SB = seg.match(/PROJECT_URL\s*[:=]\s*(\S+)/i)[1].replace(/\/$/, '');
+  const SR = (seg.match(/service_role[\s\S]{0,240}?(eyJ[A-Za-z0-9._-]{60,})/i) || [])[1];
+  if (!SR) { console.error('service_role nao encontrada em segredos.local.txt'); process.exit(1); }
+  _banco = { SB, H: { apikey: SR, Authorization: 'Bearer ' + SR } };
+  return _banco;
+}
 
 const arg = n => { const i = process.argv.indexOf(n); return i > -1 ? process.argv[i + 1] : null; };
 const tem = n => process.argv.includes(n);
@@ -102,10 +113,84 @@ const SEG_POR_LIC_PADRAO = 2.0;
    número sairia menor do que o trabalho feito. */
 const ULTIMO_PROGRESSO = /\[(\d+)\/(\d+)\]/;
 
+/* ══ O PLANO DA ETAPA DE ITENS — FUNÇÃO PURA, PORQUE ELA É A REGRA DA FATIA ═══════════════════
+   Entra: a dívida medida, o orçamento em minutos e a taxa que a rodada anterior deixou.
+   Sai:   o teto, e a CADÊNCIA — em quantas rodadas deste tamanho a dívida se paga.
+   Não faz: não lê banco, não imprime, não roda nada.
+
+   >>> POR QUE ELA SAIU DE DENTRO DO CORPO DA RODADA. Ela era quatro linhas soltas no meio de
+       uma função de 200 que só roda com a `service_role` na mão e falando com o PNCP. Regra que
+       só se observa rodando a coisa inteira é regra sem catraca — e esta é EXATAMENTE a
+       exigência (b) da caixa, a que trocou o teto fixo de 400 pelo teto da dívida.
+
+   ══ E MEDIR A CADÊNCIA REVELOU QUE O DEFEITO DO TETO FIXO TINHA UMA TERCEIRA PORTA ═══════════
+   Medido hoje, 20/08 13:12, com o ritmo real já aprendido (0,94 s por licitação):
+
+       dívida 4.558 vivas · orçamento PADRÃO de 20 min · teto da rodada: 429
+
+   O teto obedece a dívida, como a caixa mandou — mas ele é o MENOR entre a dívida e o que cabe,
+   e com o orçamento padrão o que cabe são 429. A rotina escrita no CONTINUAR_AQUI.txt
+   (`node tools/carga_diaria.js`, sem argumento) roda com esse padrão. Ou seja: o "400 por
+   rodada" que esta fatia matou voltou pela porta do ORÇAMENTO, com o número 429 e sem nome.
+
+   >>> E A FRASE ANTIGA ERA VERDADEIRA E INSUFICIENTE. "faltam N, volto na próxima" é uma
+       PROMESSA: ela faz quem lê entender que mais algumas rodadas pagam a conta. Com 429 por
+       rodada contra 4.558, são ONZE rodadas — e nesse meio-tempo a varredura da PRÓPRIA
+       rodada traz mais vivas do que a etapa de itens paga (medido: +2.989 chegaram enquanto
+       2.887 eram pagas). Dizer só o saldo esconde a cadência, e é a cadência que responde
+       "isto está sendo pago ou está andando para trás?".
+   >>> ENTÃO A REGRA NÃO AFROUXA E O NÚMERO NÃO ENGORDA: quem decide gastar 3 horas de máquina é
+       o dono, não eu. O que muda é que o condutor passa a DIZER o tamanho da conta e o
+       `--minutos` que a zeraria — em vez de prometer uma próxima rodada que não alcança. */
+function planoDeItens(o) {
+  const orcamentoMin = o.orcamentoMin;
+  const divida = (o.dividaVivas != null && o.dividaVivas > 0) ? o.dividaVivas : null;
+  /* `> 0.05` recusa medida absurda: uma etapa que morreu em dois segundos sem processar nada
+     devolveria uma taxa perto de zero e o teto seguinte seria astronômico — e aí a etapa
+     morreria de novo, agora por culpa da própria medição. */
+  const taxa = Number(o.taxaAnterior);
+  const medida = isFinite(taxa) && taxa > 0.05;
+  const segPorLic = medida ? taxa : SEG_POR_LIC_PADRAO;
+  /* os 25% de folga são do relógio, não do alvo: uma etapa que enche o orçamento até a borda é
+     uma etapa que a primeira lentidão da rede mata no meio. */
+  const segundosUteis = orcamentoMin * FATIA.itens * 60 * 0.75;
+  const cabe = Math.max(50, Math.floor(segundosUteis / segPorLic));
+  const teto = divida == null ? cabe : Math.max(50, Math.min(divida, cabe));
+  const zeraHoje = divida == null ? true : divida <= cabe;
+  /* A cadência só existe quando há dívida E ela não cabe. `Math.ceil` porque meia rodada não
+     paga meia dívida: a rodada que sobra é uma rodada inteira. */
+  const rodadasParaZerar = (divida != null && !zeraHoje) ? Math.ceil(divida / cabe) : null;
+  /* O `--minutos` que zeraria numa rodada só, pela mesma conta ao contrário. Ele é ARREDONDADO
+     PARA CIMA: um número que dá "quase" faz a etapa morrer no relógio no último punhado. */
+  const minutosParaZerar = (divida != null && !zeraHoje)
+    ? Math.ceil((divida * segPorLic) / (FATIA.itens * 60 * 0.75))
+    : null;
+  return { segPorLic, medida, cabe, teto, divida, zeraHoje, rodadasParaZerar, minutosParaZerar };
+}
+
+/* ══ O SALDO DITO POR INTEIRO — saldo E cadência ═════════════════════════════════════════════
+   Ele é medido DEPOIS, pela mesma régua do antes (`retrato`), e não deduzido do teto: entre o
+   começo e o fim da rodada chegam licitações novas, e um saldo calculado por subtração diria
+   "faltam 0" com a fila cheia.
+   >>> O SALDO NÃO É ERRO, e a distinção é de propósito: ele NÃO entra em `motivos` (que vira o
+       `ultimo_erro` da linha), senão a tela — que lê `ultimo_erro` para dizer "a última carga
+       falhou" — acusaria falha em toda rodada honesta. */
+function textoDoSaldo(saldoVivas, plano) {
+  if (saldoVivas == null) return null;
+  if (saldoVivas <= 0) return 'saldo: a dívida das vivas está zerada';
+  const base = 'saldo: faltam ' + saldoVivas.toLocaleString('pt-BR') + ' vivas sem item';
+  /* O plano desta rodada é o que diz se "volto na próxima" é promessa cumprível. Sem ele (não
+     deveria acontecer, mas o texto não pode depender disso) fica só o saldo, sem promessa. */
+  if (!plano || plano.rodadasParaZerar == null) return base + ' — volto na próxima';
+  return base + ' — neste orçamento são ' + plano.rodadasParaZerar
+    + ' rodadas; para zerar numa só, --minutos ' + plano.minutosParaZerar;
+}
+
 const agora = () => new Date();
 const iso = d => d.toISOString();
 
 async function pede(caminho, extra) {
+  const { SB, H } = banco();
   const r = await fetch(SB + '/rest/v1/' + caminho, { headers: Object.assign({}, H, extra || {}) });
   return r;
 }
@@ -223,11 +308,23 @@ function mostraCarimbo(c) {
     + '   (teto da rodada: ' + num(d.teto_itens) + ')');
   console.log('  sem prazo ....... ' + num(d.sem_prazo));
   if (d.saldo) console.log('  saldo ........... ' + d.saldo);
+  if (d.rodadas_para_zerar) console.log('  cadência ........ ' + d.rodadas_para_zerar
+    + ' rodadas de ' + num(d.orcamento_min) + ' min para zerar (numa só: --minutos '
+    + num(d.minutos_para_zerar) + ')');
   if (Array.isArray(d.etapas)) for (const e of d.etapas)
     console.log('   · ' + String(e.nome).padEnd(12) + ' código ' + e.codigo
       + (e.interrompida ? ' (INTERROMPIDA pelo orçamento)' : '') + '  ' + Math.round(e.ms / 1000) + 's');
   if (d.porque) console.log('  por quê ......... ' + d.porque);
 }
+
+/* ══ A PORTA DA CATRACA ══════════════════════════════════════════════════════════════════════
+   Quem faz `require` deste arquivo recebe as duas regras puras e NÃO dispara a rodada. Sem este
+   portão, a suíte que perguntasse "qual o teto para 4.558 de dívida?" abriria conexão com o
+   Supabase e chamaria o PNCP — um teste que fala com o governo não é um teste, é uma coleta.
+   >>> E é o mesmo caminho da `testa_familia_rok`: ela IMPORTA o detector da ferramenta em vez de
+       copiá-lo. Duas cópias são duas réguas, e a que discorda calada é a que fica. */
+module.exports = { planoDeItens, textoDoSaldo, FRESCOR_HORAS, FATIA, SEG_POR_LIC_PADRAO };
+if (require.main !== module) return;
 
 (async () => {
   const carimboAntes = await leCarimbo();
@@ -269,21 +366,27 @@ function mostraCarimbo(c) {
   /* A TAXA DA RODADA ANTERIOR, se houver. `> 0.05` recusa medida absurda: uma etapa que morreu
      em dois segundos sem processar nada devolveria uma taxa perto de zero e o teto seguinte
      seria astronômico — e aí a etapa morreria de novo, agora por culpa da própria medição. */
-  const taxaAntes = carimboAntes && carimboAntes.detalhe && Number(carimboAntes.detalhe.seg_por_lic);
-  const SEG_POR_LIC = (isFinite(taxaAntes) && taxaAntes > 0.05) ? taxaAntes : SEG_POR_LIC_PADRAO;
+  const plano = planoDeItens({
+    dividaVivas: antes.vivas_sem_itens,
+    orcamentoMin: ORCAMENTO_MIN,
+    taxaAnterior: carimboAntes && carimboAntes.detalhe && carimboAntes.detalhe.seg_por_lic,
+  });
+  const SEG_POR_LIC = plano.segPorLic;
+  const cabeNoOrcamento = plano.cabe;
+  const tetoItens = plano.teto;
+  const dividaVivas = plano.divida;
   console.log('ritmo dos itens: ' + SEG_POR_LIC.toFixed(2) + ' s por licitação '
-    + (SEG_POR_LIC === SEG_POR_LIC_PADRAO ? '(valor de partida — a rodada anterior não deixou medida)'
-                                          : '(medido na rodada anterior)'));
-  const cabeNoOrcamento = Math.max(50, Math.floor((ORCAMENTO_MIN * FATIA.itens * 60 * 0.75) / SEG_POR_LIC));
-  const dividaVivas = antes.vivas_sem_itens;
-  const tetoItens = (dividaVivas != null && dividaVivas > 0)
-    ? Math.max(50, Math.min(dividaVivas, cabeNoOrcamento))
-    : cabeNoOrcamento;
+    + (plano.medida ? '(medido na rodada anterior)'
+                    : '(valor de partida — a rodada anterior não deixou medida)'));
   console.log('DÍVIDA DE ITENS: ' + num(dividaVivas) + ' vivas sem item'
     + '   · cabem nesta rodada: ' + num(cabeNoOrcamento)
     + '   · teto desta rodada: ' + num(tetoItens)
-    + ((dividaVivas != null && dividaVivas > cabeNoOrcamento)
-        ? '   (não zera hoje — o saldo vai no carimbo)' : '   (dá para zerar hoje)'));
+    + (plano.zeraHoje ? '   (dá para zerar hoje)' : '   (não zera hoje — o saldo vai no carimbo)'));
+  /* A CADÊNCIA SAI NO CONSOLE ANTES DE A RODADA COMEÇAR, e não só no carimbo do fim: quem
+     dispara a carga e vê "11 rodadas" na primeira linha ainda pode decidir dar `--minutos` a
+     ela. Dito só no fim, a informação chega quando não serve mais para esta rodada. */
+  if (!plano.zeraHoje) console.log('   ⚠ neste orçamento (' + ORCAMENTO_MIN + ' min) são '
+    + plano.rodadasParaZerar + ' rodadas para zerar. Numa só: --minutos ' + plano.minutosParaZerar);
 
   const etapas = [
     { nome: 'varredura', args: ['tools/coleta_pncp.js'], fatia: FATIA.varredura },
@@ -350,19 +453,15 @@ function mostraCarimbo(c) {
   }
   const okDeVerdade = !feitas.some(f => f.interrompida || (f.codigo !== 0 && !toleravel(f)));
 
-  /* ══ O SALDO, DITO COM O NÚMERO — exigência (b) da caixa ═════════════════════════════════════
-     "trabalha até zerar ou até o orçamento de tempo — e aí DECLARA O SALDO: faltam N, volto na
-     próxima". O saldo é medido DEPOIS, pela mesma régua do antes (`retrato`), e não deduzido do
-     teto: entre o começo e o fim da rodada chegam licitações novas, e um saldo calculado por
-     subtração diria "faltam 0" com a fila cheia. */
+  /* ══ O SALDO, DITO COM O NÚMERO E COM A CADÊNCIA — exigência (b) da caixa ════════════════════
+     A regra mora em `textoDoSaldo`, lá em cima, junto do `planoDeItens` que a alimenta: as duas
+     respondem à mesma exigência, e separá-las era como uma delas passava a mentir sobre a outra.
+     >>> A CADÊNCIA VEM DO PLANO DESTA RODADA, e não de uma conta refeita aqui com o saldo novo.
+         Refazê-la com o saldo do FIM misturaria duas medidas (a dívida do começo, que foi o alvo,
+         e a do fim, que já tem chegada nova dentro) e daria um número que não é nem uma nem
+         outra. O plano é o que esta rodada prometeu; o saldo é o que ela deixou. */
   const saldoVivas = depois.vivas_sem_itens;
-  /* >>> O SALDO NÃO ENTRA EM `motivos`, e a distinção é de propósito. `motivos` vira o
-         `ultimo_erro` da linha, e "faltam 900 vivas" NÃO é erro — é o relatório normal de uma
-         rodada que trabalhou dentro do orçamento. Misturá-los faria a tela, que lê o
-         `ultimo_erro` para dizer "a última carga falhou", acusar falha em toda rodada honesta. */
-  const saldoTexto = saldoVivas == null ? null
-    : saldoVivas > 0 ? 'saldo: faltam ' + num(saldoVivas) + ' vivas sem item — volto na próxima'
-                     : 'saldo: a dívida das vivas está zerada';
+  const saldoTexto = textoDoSaldo(saldoVivas, plano);
 
   const detalhe = {
     inicio: iso(inicio), fim: iso(fim), minutos: +((fim - inicio) / 60000).toFixed(1),
@@ -374,6 +473,12 @@ function mostraCarimbo(c) {
     divida_vivas_depois: saldoVivas,
     teto_itens: tetoItens,
     cabe_no_orcamento: cabeNoOrcamento,
+    /* A CADÊNCIA GRAVADA, e não só impressa. Quem abre o carimbo dias depois (`--carimbo`, o
+       relatório, o arquiteto) precisa poder ver que a dívida não estava sendo paga NAQUELE dia —
+       um número que só existe no console de uma rodada que já rolou não existe. */
+    orcamento_min: ORCAMENTO_MIN,
+    rodadas_para_zerar: plano.rodadasParaZerar,
+    minutos_para_zerar: plano.minutosParaZerar,
     /* A TAXA APRENDIDA NESTA RODADA, para a próxima dimensionar o teto com ela. Se a etapa não
        chegou a processar nada, o campo carrega a taxa que foi USADA — nunca `null` e nunca zero:
        um buraco aqui faria a rodada seguinte voltar ao valor de partida e desaprender. */
@@ -401,9 +506,10 @@ function mostraCarimbo(c) {
   };
   if (okDeVerdade) linha.ultima_ok = iso(fim);
 
-  const r = await fetch(`${SB}/rest/v1/coleta_status?on_conflict=fonte`, {
+  const gravar = banco();
+  const r = await fetch(`${gravar.SB}/rest/v1/coleta_status?on_conflict=fonte`, {
     method: 'POST',
-    headers: { ...H, 'Content-Type': 'application/json', Prefer: 'return=minimal,resolution=merge-duplicates' },
+    headers: { ...gravar.H, 'Content-Type': 'application/json', Prefer: 'return=minimal,resolution=merge-duplicates' },
     body: JSON.stringify([linha]),
   }).catch(e => ({ ok: false, status: e.message }));
 
