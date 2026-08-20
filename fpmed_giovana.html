@@ -29,6 +29,12 @@
 <!-- O MESMO motor do Conferidor: "meu preço x teto legal da CMED". Aqui ele entra no momento em
      que o preço é DECIDIDO — conferir depois de mandar a proposta é conferir tarde. -->
 <script src="fpmed_teto_cmed.js"></script>
+<!-- ══ O TETO COMPETITIVO (20/08, fatia B28) ═══════════════════════════════════════════════════
+     O de cima diz até onde é PERMITIDO cobrar. Este diz por quanto o item JÁ FOI VENDIDO ao poder
+     público — que é o número que decide o pregão. É o MESMO arquivo que o Negócios carrega: duas
+     implementações de "por quanto isto já saiu?" dariam dois números para o mesmo item, e um
+     deles estaria errado sem ninguém saber qual. -->
+<script src="fpmed_teto_homologado.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <!-- O DESIGN SYSTEM. Ele vem ANTES do <style> de propósito: os apelidos abaixo apontam para os
      tokens dele, e o que não for apelido pode escrever o token direto. Ele é INERTE (só `:root` e
@@ -256,6 +262,24 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--texto);min-
    fallback que nunca dispara é uma cor a mais para alguém achar que precisa manter igual */
 .teto-badge.ok{background:transparent;color:var(--muted);font-weight:600;border:1px solid var(--borda)}
 @media print{ .teto-badge{display:none !important} }
+/* ── O TETO COMPETITIVO, AO LADO DO LEGAL (20/08, fatia B28) ────────────────────────────────
+   O badge do teto CMED responde "isto é LEGAL?". Este responde "isto é COMPETITIVO?" — por quanto
+   o produto já saiu de verdade para o poder público. São perguntas diferentes e as respostas
+   divergem: um preço pode caber com folga no teto legal e mesmo assim estar acima do que o
+   mercado já praticou, e quem entra assim perde sem ter feito nada de errado.
+   >>> ELE FICA COLADO NO OUTRO, pelo mesmo motivo escrito lá: é aqui que a decisão de preço
+       acontece, e aviso longe da decisão é aviso que não muda decisão.
+   >>> O ESTADO VAZIO É NEUTRO E DISCRETO, e não some. Com a cobertura de hoje (0,06%, medida) ele
+       é o caso de quase todo item; um badge cinza que diz "sem histórico" informa, e um espaço em
+       branco no lugar dele deixaria a pessoa achando que o recurso não existe.
+   >>> E ELE SAI DO PAPEL, como o irmão: o `@media print` esconde os dois. Preço de concorrente
+       impresso numa proposta que vai para o órgão é a última coisa que esta casa quer. */
+.homol-badge{font-size:var(--txt-1);font-weight:700;padding:4px 8px;border-radius:10px;
+  white-space:nowrap;cursor:help;border:1px solid var(--borda)}
+.homol-badge.vazio{background:transparent;color:var(--muted);font-weight:600}
+.homol-badge.folga{background:var(--verde-50);color:var(--verde-700);border-color:var(--verde-300)}
+.homol-badge.aperto{background:var(--ambar-50);color:var(--ambar-700);border-color:var(--ambar-300)}
+@media print{ .homol-badge{display:none !important} }
 
 /* ITENS NAO ENCONTRADOS */
 .nao-encontrado-row{background:var(--vermelho-50);border:1px dashed var(--vermelho-300);border-radius:8px;padding:8px 12px;margin-bottom:8px;display:flex;align-items:center;gap:8px;}
@@ -3135,6 +3159,15 @@ function importarPedidoEdital(){
   }
   // A CMED entra junto: o selo do teto legal vale ainda mais numa proposta pro governo.
   if(typeof carregarTetoCMED === 'function') carregarTetoCMED().then(idx => { if(idx && typeof repintarTetos==='function') repintarTetos(); });
+  /* O TETO COMPETITIVO CARREGA JUNTO E REPINTA QUANDO CHEGA (fatia B28). As duas leituras correm
+     em paralelo e a ordem de chegada não é garantida — por isso cada uma repinta a sua, em vez de
+     uma esperar a outra. Sem isto, quem chegasse primeiro decidiria se o segundo badge aparece, e
+     o sintoma seria a tela certa metade das vezes, sem ninguém saber reproduzir.
+     >>> ELE REPINTA MESMO FALHANDO: o `.then` roda com `idx = null` quando a leitura deu erro, e
+         aí o badge tem de dizer "histórico indisponível" em vez de continuar em branco para
+         sempre — silêncio é indistinguível de "não há", que é justamente a confusão que este
+         bloco inteiro existe para não criar. */
+  if(typeof carregarHomologados === 'function') carregarHomologados().then(() => { if(typeof repintarTetos==='function') repintarTetos(); });
   for(const nome of naoAchados) if(!naoEncontrados.some(n => n.toLowerCase() === nome.toLowerCase())) naoEncontrados.push(nome);
   try{ sessionStorage.removeItem('fpmed_pedido_edital'); }catch(e){}
 
@@ -3357,6 +3390,7 @@ function addItem(c) {
   // a CMED é carregada na PRIMEIRA vez que entra item, e não no boot: quem só abre a tela pra
   // olhar não paga por 4.875 chaves que não vai usar. Quando chega, repinta os que já estão.
   carregarTetoCMED().then(idx => { if(idx) repintarTetos(); });
+  carregarHomologados().then(() => repintarTetos());   // ver o comentário do outro gatilho (B28)
   const qtdCx = qtdEmbalagem(c.und, c.produto);
   itens.push({...c, qtd:1, desc_item:0, _pvv:pv(c), _qtd_caixa: qtdCx, _bpAlerta:bpAlerta(c), _conf:{nivel:'alta',motivos:[]}});   // escolhido à mão = confiança alta
   renderItens();
@@ -3504,6 +3538,9 @@ function renderItens() {
                Vale para TODOS, inclusive o vendedor restrito — o teto é lei, não é intel de
                custo, e esconder dele faria justamente quem monta a proposta não saber. -->
           <span id="teto-badge-${c.id}">${tetoBadgeHTML(avaliarTeto(c, precoUnit))}</span>
+          <!-- O TETO COMPETITIVO, colado no legal (fatia B28). Os dois falam do MESMO preço, e por
+               isso ficam juntos: o de cima diz se é permitido, este diz se é suficiente. -->
+          <span id="homol-badge-${c.id}">${homolBadgeHTML(avaliarHomologado(c, precoUnit))}</span>
           <span style="font-size:var(--txt-1);color:var(--muted)">Orig: ${fmtBRL(c._pvv)}</span>
         </div>
       </div>
@@ -3655,12 +3692,128 @@ function tetoBadgeHTML(r){
     ? `<span class="teto-badge acima" title="Teto legal ${fmtBRL(r.teto)} (${r.tipoTeto}) — casou com ${r.evidencia}. Acima do teto, a proposta pode ser desclassificada."><svg class="ic" aria-hidden="true"><use href="#ic-alerta"/></svg> ACIMA DO TETO +${r.pctAcima}%</span>`
     : `<span class="teto-badge ok" title="Teto legal ${fmtBRL(r.teto)} (${r.tipoTeto}) — casou com ${r.evidencia}">teto ${fmtBRL(r.teto)} · folga ${r.folgaPct}%</span>`;
 }
+/* ══════════════════════════════════════════════════════════════════════════════════════════════
+   O TETO COMPETITIVO NA PROPOSTA (20/08, fatia B28)
+
+   ── AQUI O PREÇO É NOSSO, E ISSO MUDA O QUE A FOLGA SIGNIFICA ────────────────────────────────
+   No Negócios, o preço comparado é o valor de referência DO EDITAL, e a folga competitiva de lá
+   responde "o órgão referenciou acima ou abaixo do mercado?". Nesta tela o preço é o que NÓS
+   vamos propor — então a folga daqui responde a pergunta que a `BASE_FUNCOES_PROFISSIONAIS`
+   chama de o nosso maior buraco: *"até onde posso baixar e ainda ganhar?"*. O teto legal diz até
+   onde é permitido; este diz até onde é suficiente.
+
+   ── A COBERTURA HOJE É 0,06%, MEDIDA, E O ESTADO VAZIO É A REGRA ─────────────────────────────
+   192 resultados homologados em 310.982 itens, todos de um certame de material escolar. O badge
+   vazio vai aparecer em praticamente todo item de medicamento — e ele diz "ainda não temos
+   resultado homologado", nunca "R$ 0,00" e nunca nada. "Não houve venda" é uma afirmação sobre o
+   mercado; "eu não tenho o dado" é uma afirmação sobre nós, e só a segunda é verdade.
+
+   ── O ÍNDICE NÃO ATRASA A TELA ───────────────────────────────────────────────────────────────
+   Ele carrega em segundo plano e repinta quando chega, como o teto CMED já faz. Uma proposta que
+   espera uma tabela para desenhar a primeira linha é uma tela que parece quebrada.
+   ══════════════════════════════════════════════════════════════════════════════════════════════ */
+let _homolIdx = null, _homolErro = null, _homolCarregando = null;
+const HOMOL_TETO = 2000;
+function carregarHomologados(){
+  if(_homolIdx) return Promise.resolve(_homolIdx);
+  if(_homolCarregando) return _homolCarregando;
+  _homolCarregando = (async () => {
+    const T = window.FPMED_TETO_HOMOLOGADO;
+    if(!T) throw new Error('o motor do teto competitivo não carregou');
+    const r = await fetch(`${SUPA_URL}/rest/v1/licitacao_itens?resultado_valor_unit=not.is.null`
+      + '&select=numero_controle,numero_item,descricao,unidade,quantidade,'
+      + 'resultado_valor_unit,resultado_quantidade,resultado_situacao,resultado_vencedor'
+      + `&order=resultado_lido_em.desc&limit=${HOMOL_TETO}`,
+      {headers: Object.assign({Prefer:'count=exact'}, H)});
+    if(!r.ok) throw new Error('HTTP ' + r.status);
+    const linhas = await r.json();
+    const total = parseInt(String(r.headers.get('content-range') || '/0').split('/')[1], 10);
+    /* O ÓRGÃO E A DATA VÊM NUMA SEGUNDA IDA (não há chave estrangeira de `licitacao_itens` para
+       `licitacoes`, de propósito — item lido do PNCP ao vivo não tem linha no índice). E se ela
+       falhar, o índice continua valendo sem o nome do órgão: perder o rótulo não pode apagar o
+       PREÇO, que é a razão de tudo isto existir. */
+    const ctrls = [...new Set(linhas.map(l => l.numero_controle).filter(Boolean))].slice(0, 300);
+    const certames = {};
+    if(ctrls.length){
+      try{
+        const lista = ctrls.map(c => '"' + String(c).replace(/"/g,'') + '"').join(',');
+        const rl = await fetch(`${SUPA_URL}/rest/v1/licitacoes?numero_controle=in.(${encodeURIComponent(lista)})`
+          + '&select=numero_controle,orgao,municipio,uf,data_abertura', {headers:H});
+        if(rl.ok) for(const c of await rl.json())
+          certames[c.numero_controle] = { orgao:c.orgao, municipio:c.municipio, uf:c.uf,
+            data: c.data_abertura ? String(c.data_abertura).slice(0,10) : null };
+      }catch(e){ /* fica sem órgão; o preço continua de pé */ }
+    }
+    _homolIdx = T.indexa(linhas, { certames, total, truncado: total > linhas.length });
+    _homolErro = null;
+    return _homolIdx;
+  })().catch(e => {
+    // FALHA DE LEITURA NÃO VIRA "NÃO HÁ HISTÓRICO": são coisas diferentes, e a segunda é uma
+    // afirmação sobre o mercado que eu não posso fazer se nem consegui ler a tabela.
+    _homolErro = e.message; _homolIdx = null; _homolCarregando = null;
+    return null;
+  });
+  return _homolCarregando;
+}
+
+/* `null` = não sei (índice não carregou). `{n:0}` = carregou e não há. A tela mostra os dois de
+   maneiras diferentes, porque eles são coisas diferentes. */
+function avaliarHomologado(c, precoUnit){
+  const T = window.FPMED_TETO_HOMOLOGADO;
+  if(!T || !_homolIdx) return null;
+  // A chave é o NOME DO PRODUTO, e não produto + princípio ativo como no teto CMED: lá o motor
+  // procura substância numa tabela de remédios; aqui ele compara com a DESCRIÇÃO de um item de
+  // edital, e edital descreve o produto, não a substância.
+  return T.avaliar({ descricao: c.produto, precoUnit }, _homolIdx);
+}
+
+function homolBadgeHTML(r){
+  if(_homolErro)
+    return `<span class="homol-badge vazio" title="Não consegui ler os resultados homologados (${esc(_homolErro)}). Isso não quer dizer que não exista resultado — quer dizer que eu não sei."><svg class="ic" aria-hidden="true"><use href="#ic-alerta"/></svg> histórico indisponível</span>`;
+  if(!r) return '';                                  // índice ainda não desceu: nada, nunca um zero
+  if(!r.n)
+    /* O ESTADO HONESTO, e ele é o caso comum. Ele NÃO diz "nunca foi vendido" — diz que nós ainda
+       não temos o dado. A diferença é a mesma de sempre: uma é afirmação sobre o mercado, a outra
+       é afirmação sobre nós, e só a segunda eu posso fazer. */
+    return '<span class="homol-badge vazio" title="O resultado por item chega do PNCP depois da homologação. Enquanto não chega, o teto legal ao lado é a única régua deste item.">'
+      + 'ainda sem resultado homologado</span>';
+
+  const faixa = r.temFaixa ? `de ${fmtBRL(r.min)} a ${fmtBRL(r.max)} · mediana ${fmtBRL(r.mediana)}`
+                           : `${fmtBRL(r.mediana)}`;
+  const u = r.ultimo || {};
+  const onde = [u.orgao, [u.municipio, u.uf].filter(Boolean).join('/')].filter(Boolean).join(' · ') || 'órgão não informado';
+  /* O TÍTULO CARREGA A PROCEDÊNCIA — órgão, data e quantos resultados. Um número de preço sem
+     dizer de onde veio é um palpite com cara de medida, e numa tela de proposta ele viraria
+     decisão. E o CNPJ do vencedor NÃO entra: nome de concorrente em destaque numa tela de
+     proposta é convite para o uso errado; ele fica no dado, onde o Negócios já o usa. */
+  const titulo = `Já homologado ${faixa}. ${r.n} resultado(s) do mesmo produto; o mais recente em `
+    + `${onde}${u.data ? ' · sessão de ' + u.data.split('-').reverse().join('/') : ''}. `
+    + (r.temFaixa ? 'A mediana, e não a média: um pregão desesperado puxa a média e não move a mediana.' : '');
+  if(r.folgaPct == null)
+    return `<span class="homol-badge vazio" title="${esc(titulo)}">já homologado ${faixa}</span>`;
+  /* POSITIVO = o nosso preço está ABAIXO do já homologado (há folga para disputar). O sinal é o
+     MESMO da folga do teto legal, de propósito: dois badges lado a lado com sinais invertidos
+     fariam "-12%" ser boa num e ruim no outro. */
+  /* PERCENTUAL EM PORTUGUÊS: vírgula, como todo número desta casa. `toFixed(1)` devolve "20.0", e
+     o ponto é separador de MILHAR para quem lê em português — "20.0%" é lido como vinte mil na
+     primeira olhada. Num número que decide preço, a primeira olhada é a que importa. (Achado pela
+     `tools/prova_teto_homologado.js`, que cobrou "20,0%" e recebeu "20.0%".) */
+  const p1 = v => Number(v).toLocaleString('pt-BR', {minimumFractionDigits:1, maximumFractionDigits:1});
+  return r.folgaPct >= 0
+    ? `<span class="homol-badge folga" title="${esc(titulo)}">já saiu por ${faixa} · você está ${p1(r.folgaPct)}% abaixo</span>`
+    : `<span class="homol-badge aperto" title="${esc(titulo)}">já saiu por ${faixa} · você está ${p1(Math.abs(r.folgaPct))}% ACIMA</span>`;
+}
+
 function repintarTetos(){
   itens.forEach(c => {
-    const el = document.getElementById('teto-badge-' + c.id);
-    if(!el) return;
     const precoUnit = c._pvv_editado !== undefined ? c._pvv_editado : c._pvv * (1 - (c.desc_item||0)/100);
-    el.outerHTML = `<span id="teto-badge-${c.id}">${tetoBadgeHTML(avaliarTeto(c, precoUnit))}</span>`;
+    const el = document.getElementById('teto-badge-' + c.id);
+    if(el) el.outerHTML = `<span id="teto-badge-${c.id}">${tetoBadgeHTML(avaliarTeto(c, precoUnit))}</span>`;
+    // O badge competitivo repinta na MESMA volta: os dois falam do mesmo preço, e se um
+    // acompanhasse a tecla e o outro não, a linha mostraria duas conclusões sobre preços
+    // diferentes — que é pior que mostrar uma só.
+    const eh = document.getElementById('homol-badge-' + c.id);
+    if(eh) eh.outerHTML = `<span id="homol-badge-${c.id}">${homolBadgeHTML(avaliarHomologado(c, precoUnit))}</span>`;
   });
 }
 
@@ -3691,6 +3844,10 @@ function setPrecoEdit(id, v) {
   // hora, senão o vermelho fica na tela depois de resolvido e a pessoa aprende a ignorá-lo.
   const bt = document.getElementById('teto-badge-'+id);
   if(bt) bt.outerHTML = `<span id="teto-badge-${id}">${tetoBadgeHTML(avaliarTeto(c, novo))}</span>`;
+  // e o competitivo junto, tecla a tecla, pela mesma razão: baixar o preço tem que APAGAR o
+  // "você está X% ACIMA" na hora. Aviso que fica na tela depois de resolvido ensina a ignorar.
+  const bh = document.getElementById('homol-badge-'+id);
+  if(bh) bh.outerHTML = `<span id="homol-badge-${id}">${homolBadgeHTML(avaliarHomologado(c, novo))}</span>`;
   calcTotal();
   reRenderPreco(id);
 }

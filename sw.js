@@ -92,7 +92,19 @@
        para quem já tem a versão de hoje instalada. Fora da casca, ele vem sempre da rede ou não
        vem — e não vir é inofensivo, porque as chamadas das telas são todas guardadas por
        `window.FPMED_TELEMETRIA &&`, e offline não há para onde mandar evento mesmo. */
-const VERSAO = 'limedtec-fpmed-2026-08-20-85';
+/* ══ -86 (fatia B28, 20/08/2026) ═════════════════════════════════════════════════════════════
+   O `fpmed_teto_homologado.js` NASCEU nesta fatia e é chamado pela Proposta e pelo Negócios — as
+   duas na casca. Sem bump acontecem DUAS coisas, e a segunda é pior que a primeira:
+     1. as telas do cache não têm a linha do `<script>`, então quem já instalou o aplicativo nunca
+        veria o teto competitivo — o recurso existiria só para quem chegou hoje;
+     2. e o arquivo novo não estaria na casca, então quem abrisse OFFLINE receberia a tela nova
+        pedindo um script que o cache não tem. As chamadas são guardadas (`window.FPMED_TETO_
+        HOMOLOGADO` e o `if(!T)`), então nada quebra — mas o badge diria "procurando…" para
+        sempre, que é o formato de defeito que ninguém reporta porque parece lentidão.
+   >>> E ELE ENTRA NA CASCA, ao contrário do `fpmed_telemetria.js`: aquele carrega configuração de
+       PRIVACIDADE, que envelhece perigosamente no cache; este carrega uma regra de preço, que
+       envelhece do mesmo jeito que as telas e é substituído no mesmo bump que elas. */
+const VERSAO = 'limedtec-fpmed-2026-08-20-86';
 const CACHE = 'limedtec-shell-' + VERSAO;
 
 // A CASCA DA FPMED. Lista MONTADA A MAO conferindo `git ls-files` (= o que o Pages serve),
@@ -116,6 +128,7 @@ const SHELL = [
      exatamente quem vai abrir a ajuda. Tela de ajuda que so abre com rede ajuda quem nao precisa. */
   './fpmed_ajuda.html',                // Guia do usuario (passo a passo da jornada)
   './fpmed_teto_cmed.js',
+  './fpmed_teto_homologado.js',      // o teto COMPETITIVO (B28) — Proposta e Negocios chamam o mesmo
   './fpmed_alarme_coleta.js',        // o sino do Negocios depende dele              // o motor "meu preco x teto", compartilhado
   './fpmed_competitividade.html',      // aqui ELA ENTRA (na instalacao de origem estava fora por
                                        // ficar no .gitignore; na FPMED e versionada e vai pro ar)

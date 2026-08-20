@@ -103,14 +103,18 @@ ok('9. ...e a tela diz que a diferenca e essa', /não é "sem teto" — é que e
 API.poe([], { '1': { situacao: 'abaixo', teto: 0.573, tipoTeto: 'PF', folgaPct: 26.7, confianca: 'exata' } });
 const verde = API.tetoDoItem(ITEM('1', 0.42));
 ok('10. cabe no teto: verde, com o teto e a folga escritos',
-  /cabe no teto/.test(verde) && /R\$ 0,57/.test(verde) && /folga 26\.7%/.test(verde), verde);
+  // VIRGULA, e nao ponto (fatia B28): o percentual passou a sair em pt-BR como todo numero desta
+  // casa. O assert guarda a MESMA coisa de antes — que a folga aparece escrita na tela — so que
+  // com a grafia que o resto da tela usa. Ponto aqui e separador de MILHAR para quem le em
+  // portugues, e "26.7" e lido como "vinte e seis mil" na primeira olhada.
+  /cabe no teto/.test(verde) && /R\$ 0,57/.test(verde) && /folga 26,7%/.test(verde), verde);
 ok('11. ...e sem selo de confianca quando o casamento foi EXATO (ggrem/registro/EAN)',
   !/casou por/.test(verde));
 
 API.poe([], { '1': { situacao: 'acima', teto: 0.8871, tipoTeto: 'PF', pctAcima: 362.2, confianca: 'media' } });
 const vermelho = API.tetoDoItem(ITEM('1', 4.10));
 ok('12. estoura o teto: vermelho, com quanto passou',
-  /estoura o teto/.test(vermelho) && /362\.2%/.test(vermelho), vermelho);
+  /estoura o teto/.test(vermelho) && /362,2%/.test(vermelho), vermelho);   // virgula: ver o assert 10
 // *** O PALPITE TEM QUE SE ANUNCIAR ***: casar por substancia chutada da primeira palavra do
 // nome e encostar um teto legal num palpite. Sem o selo, quem le nao tem como saber.
 ok('13. *** casamento por palpite vem com o selo dizendo que e palpite ***',

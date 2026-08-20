@@ -30,8 +30,20 @@ ok('1. *** a proposta carrega o motor compartilhado ***', /<script src="fpmed_te
 ok('2. *** e o Conferidor carrega o MESMO arquivo ***', /<script src="fpmed_teto_cmed\.js"><\/script>/.test(conf));
 ok('3. a proposta chama `avaliar` do motor, nao uma conta propria',
   /window\.LimedtecTetoCMED\.avaliar\(/.test(g));
-ok('4. ...e nao ha conta de teto reimplementada na proposta',
-  !/pctAcima\s*=/.test(g) && !/folgaPct\s*=/.test(g));
+/* ══ ATRIBUICAO NAO E COMPARACAO — CONSERTO DE REGUA DA FATIA B28 (20/08) ══════════════════════
+   Este assert existe para pegar quem RECALCULAR o teto dentro da proposta (`folgaPct = ...`). A
+   regra estava certa; o padrao e que era de borracha: `folgaPct\s*=` casa tambem com
+   `folgaPct == null`, que e o oposto — e LER o campo que o motor devolveu, sem refazer conta
+   nenhuma, e exatamente o comportamento que este teste quer PROTEGER.
+   >>> ELE FICOU VERMELHO NA B28 por causa disso: o badge do teto competitivo pergunta
+       `if(r.folgaPct == null)` para nao transformar "nao sei" em "0%". Codigo certo, regua errada.
+   >>> E UM VERMELHO QUE NAO E DEFEITO E PIOR QUE UM VERDE QUE NAO OLHOU: o conserto obvio, para
+       quem chegasse com pressa, seria apagar a comparacao — trocando codigo honesto por um
+       teste satisfeito. O `(?!=)` e o que separa `=` de `==`; o `[^!<>=]` na frente tira
+       `!==`, `>=` e `<=`. */
+const atribui = nome => new RegExp('(?:^|[^!<>=])' + nome + '\\s*=(?!=)').test(g);
+ok('4. ...e nao ha conta de teto reimplementada na proposta (atribuicao, nao comparacao)',
+  !atribui('pctAcima') && !atribui('folgaPct'));
 ok('5. usa a MESMA view do banco que o Conferidor', /cmed_teto\?select=/.test(g) && /cmed_teto\?select=/.test(conf));
 
 // ══════════ 2. FALHA NAO VIRA APROVACAO ══════════

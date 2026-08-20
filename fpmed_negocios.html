@@ -44,6 +44,17 @@
      >>> ELE JÁ ESTAVA NA CASCA DO SERVICE WORKER (`./fpmed_teto_cmed.js` no SHELL), então esta
          linha não muda nada offline: o arquivo já era baixado, só não era usado por ninguém. -->
 <script src="fpmed_teto_cmed.js"></script>
+<!-- ══ O TETO COMPETITIVO (20/08, fatia B28) ═══════════════════════════════════════════════════
+     O `fpmed_teto_cmed.js` acima responde "até onde é PERMITIDO cobrar". Este responde a outra
+     pergunta, que é a que ganha pregão: "por quanto este item JÁ FOI VENDIDO de verdade para o
+     poder público". A `BASE_FUNCOES_PROFISSIONAIS` abre dizendo que a segunda é o nosso maior
+     buraco, e ela está certa: o teto legal é o mesmo para todo mundo; o preço já homologado é o
+     que separa quem sabe de quem chuta.
+     >>> É UM ARQUIVO, E AS DUAS TELAS DO B CHAMAM O MESMO. Negócios e Proposta fazem a mesma
+         pergunta sobre o mesmo dado; duas implementações dariam dois números para o mesmo item, e
+         um deles estaria errado sem ninguém saber qual. É a família de defeito mais cara deste
+         projeto (o preço unitário) e ela não se repete aqui. -->
+<script src="fpmed_teto_homologado.js"></script>
 <!-- A PORTA INTERNA DO LEITOR (fatia A2 do arquiteto), usada pela fatia B6 para conversar com o
      edital sem sair da ficha. Ela NÃO é o motor: permissão, custo e registro continuam na edge
      function `ler-edital`, e este arquivo existe justamente para que ninguém escreva uma
@@ -616,7 +627,7 @@ body{
 .it-barra .salvo{margin-top:0}
 .it-cx{border:1px solid var(--linha);border-radius:10px;max-height:420px;overflow-y:auto}
 .it-l{display:grid;grid-template-columns:38px minmax(0,1fr) minmax(0,auto);
-  grid-template-areas:"n desc desc" ". preco teto";
+  grid-template-areas:"n desc desc" ". preco teto" ". homol homol";
   gap:4px 12px;padding:8px 12px;font-size:12.5px;border-bottom:1px solid var(--linha)}
 .it-l:last-child{border-bottom:0}
 .it-l.apagado{opacity:.45}
@@ -635,8 +646,30 @@ body{
 /* O grau de confiança é um sussurro, e é assim que ele tem que ser: ele qualifica o teto sem
    competir com o veredito. Do mesmo tamanho, viraria uma segunda conclusão na mesma linha. */
 .it-t .conf{display:block;font-style:normal;font-size:var(--txt-1);color:var(--ambar-700);margin-top:4px}
+/* ── O TETO COMPETITIVO, NA TERCEIRA FILEIRA (20/08, fatia B28) ─────────────────────────────
+   Ele ocupa a linha inteira e vem DEPOIS do par referência × teto legal, porque é a terceira
+   pergunta e não uma quarta coluna: as quatro colunas já não couberam na gaveta de 530px uma vez
+   (o registro está três blocos acima), e o que ele tem a dizer — órgão, data, quantidade, faixa —
+   não cabe num canto de linha de qualquer jeito.
+   >>> O ESTADO VAZIO É O CASO COMUM, E ELE TEM DE PARECER UMA FRASE, NÃO UMA FALHA. Com 0,06% de
+       cobertura medida hoje, quase todo item cai nele. Por isso ele é `--muted` e escrito por
+       extenso: célula em branco, R$ 0,00 ou um travessão são três maneiras diferentes de o olho
+       ler "não houve" — e "não houve venda" é uma afirmação sobre o mercado que ninguém apurou.
+   >>> A FOLGA COMPETITIVA É O ÚNICO NÚMERO COLORIDO DAQUI, pelo mesmo motivo da margem dos
+       ganhos: o resto é fato, ela é julgamento — e é ela que decide se vale entrar. */
+/* Os degraus são os da grade da casa (4·8·12…), e não "o que ficou bonito": 6px e 3px passaram
+   por aqui na primeira escrita e a `testa_espaco_token` os pegou na hora. O respiro vertical
+   entre esta fileira e a de cima já vem do `gap:4px` da própria linha — por isso não há
+   `margin-top` nenhum aqui: ele seria uma segunda fonte para o mesmo espaço. */
+.it-h{grid-area:homol;min-width:0;border-top:1px dashed var(--linha);padding-top:8px}
+.it-h b{font-size:var(--txt-1);color:var(--texto)}
+.it-h i{display:block;font-style:normal;font-size:var(--txt-1);color:var(--muted);margin-top:4px;line-height:1.45}
+.it-h b.vazio{color:var(--muted);font-weight:600}
+.it-h .folga{font-weight:700}
+.it-h .folga.boa{color:var(--verde-700)}
+.it-h .folga.ruim{color:var(--vermelho-700)}
 @media(max-width:520px){
-  .it-l{grid-template-areas:"n desc desc" ". preco preco" ". teto teto"}
+  .it-l{grid-template-areas:"n desc desc" ". preco preco" ". teto teto" ". homol homol"}
   .it-t{text-align:left}
 }
 /* ── OS ITENS GANHOS (14/08, fatia B5) ──────────────────────────────────────────────────────
@@ -3490,6 +3523,16 @@ async function carregarItensEdital(id){
   // disparar de novo. Se a aba já está aberta agora, a conferência sai daqui.
   const painel = document.getElementById('aba-itens');
   if(ITENS_EDITAL.length && painel && painel.classList.contains('on')) conferirItensDoEdital(id);
+  /* ══ O TETO COMPETITIVO CARREGA JUNTO, E NÃO NUM BOTÃO (20/08, fatia B28) ═══════════════════
+     Mesma razão do teto CMED três blocos abaixo: um botão faria o bloco nascer vazio e ficar
+     vazio, porque quem não sabe o que ele faz não clica. O índice fica em memória e o segundo
+     negócio da sessão pinta na hora.
+     >>> E ELE REPINTA QUANDO CHEGA. As duas leituras (CMED e homologado) correm juntas e a ordem
+         de chegada não é garantida — sem esta repintura, quem chegasse primeiro decidiria se o
+         bloco aparece, e o sintoma seria o pior de todos: a tela certa metade das vezes, sem
+         ninguém saber reproduzir. É a mesma linha que a `pintaItensGanhos` já tem, pelo mesmo
+         motivo. */
+  if(ITENS_EDITAL.length) carregarHomologados().then(() => { if(ABERTO === id) pintaItensEdital(id); });
 }
 
 // `null` em `itens_participo` quer dizer O PREGÃO INTEIRO (contrato A5, seção 2) — e não
@@ -3616,6 +3659,182 @@ async function conferirItensDoEdital(id){
   if(ABERTO === id) pintaItensEdital(id);
 }
 
+/* ══════════════════════════════════════════════════════════════════════════════════════════════
+   O TETO COMPETITIVO (20/08, fatia B28)
+
+   ── AS DUAS FOLGAS, E A SEGUNDA É A QUE DECIDE SE VALE ENTRAR ────────────────────────────────
+   A coluna do teto CMED responde "isto é LEGAL?". Este bloco responde "isto é COMPETITIVO?".
+   São perguntas diferentes e as respostas divergem o tempo todo: um item pode caber com folga no
+   teto legal e mesmo assim já ter saído por metade daquele preço num pregão do mês passado — e
+   quem entra pelo teto legal nesse item perde, sem ter feito nada ilegal.
+
+   ── O QUE É COMPARADO AQUI, DITO SEM RODEIO ──────────────────────────────────────────────────
+   Nesta tela o preço da esquerda é o **valor de referência DO EDITAL** — não é o nosso preço (o
+   comentário do bloco do teto CMED já dizia isso e continua valendo). Então a folga competitiva
+   daqui responde: *"o órgão referenciou acima ou abaixo do que este produto já saiu?"*. É
+   informação de impugnação e de decisão de entrar, e é diferente da folga da nossa proposta —
+   essa mora na tela de Proposta, onde o preço é nosso.
+
+   ── A COBERTURA DE HOJE É 0,06%, E É POR ISSO QUE O ESTADO VAZIO É A FATIA ────────────────────
+   Medido em 20/08: 192 resultados homologados em 310.982 itens, todos de UM certame. Quase todo
+   item vai cair no estado vazio, e o estado vazio tem de dizer **"ainda não temos resultado
+   homologado para este item"** — nunca uma célula em branco, nunca R$ 0,00, e nunca um traço que
+   o olho leia como "não houve". "Não houve venda" é uma afirmação sobre o mercado; "eu não tenho
+   o dado" é uma afirmação sobre nós. Só a segunda é verdade.
+   ══════════════════════════════════════════════════════════════════════════════════════════════ */
+let ITENS_HOMOL = null, HOMOL_ERRO = null, _homolCarregando = null;
+
+/* `AAAA-MM-DD` -> `DD/MM/AAAA`. O `T12:00:00` NÃO é enfeite e não é meio-dia por gosto: uma data
+   pura ("2026-06-16") é lida pelo `new Date` como meia-noite **em UTC**, e em Goiás (UTC−3) isso
+   volta um dia — a sessão de 16/06 apareceria como 15/06 na tela. É a mesma armadilha que já
+   mordeu o e-mail de alarme desta casa em 12/08, e o conserto é o mesmo que esta tela já usa em
+   outros seis lugares; aqui ele vira uma função porque a sétima cópia é como uma delas esquece
+   o `T12:00:00`.
+   >>> E DATA QUE NÃO DÁ PARA LER SAI COMO VEIO, em vez de virar "Invalid Date": um carimbo
+       estranho impresso cru pelo menos denuncia o dado; "Invalid Date" denuncia o programador e
+       esconde o dado. */
+/* ══ PERCENTUAL EM PORTUGUÊS — ACHADO PELA PRÓPRIA PROVA DESTA FATIA (20/08, B28) ═════════════
+   Eu escrevi `folgaPct.toFixed(1) + '%'` e a `tools/prova_teto_homologado.js` cobrou "20,0%" e
+   recebeu **"20.0%"**. Fui olhar e o defeito já existia na tela: a coluna do teto CMED, três
+   blocos abaixo, imprime "estoura o teto · +362.2%" desde a B3 — com ponto, numa tela em que
+   todo preço sai com vírgula (`brl` usa `pt-BR`).
+   >>> E NÃO É SÓ FEIURA. Aqui o ponto é separador de MILHAR: "20.0" é lido por brasileiro como
+       "vinte mil" na primeira olhada, e a segunda olhada é que corrige. Num número que decide
+       preço, a primeira olhada é a que importa.
+   >>> O CONSERTO ALCANÇOU A COLUNA ANTIGA TAMBÉM, e isso mudou um assert do
+       `tests/testa_itens_no_negocio.js` (ele guardava o literal `362\.2%`, com o ponto). Trocar
+       um assert é coisa séria e por isso está dito aqui e no relatório: o teste continua guardando
+       exatamente a mesma coisa — que o percentual sai na tela — só que escrito como esta casa
+       escreve número. Duas grafias do mesmo número na MESMA linha da tela seria pior. */
+const pct1 = v => Number(v).toLocaleString('pt-BR', {minimumFractionDigits:1, maximumFractionDigits:1});
+
+function dataBR(ymd){
+  const s = String(ymd == null ? '' : ymd).slice(0, 10);
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(s)) return String(ymd == null ? '' : ymd);
+  const d = new Date(s + 'T12:00:00');
+  return isNaN(+d) ? s : d.toLocaleDateString('pt-BR');
+}
+
+/* O índice é carregado UMA VEZ por sessão e fica em memória — mesma decisão do `carregarIdxCMED`
+   e pelo mesmo motivo: abrir o segundo negócio não pode rebaixar a tabela inteira.
+   >>> O TETO DA CONSULTA É DECLARADO E A TELA SABE QUANDO BATEU NELE. Hoje são 192 linhas e cabem
+       de sobra. No dia em que forem 30.000, o servidor devolve uma PARTE — e uma tela que não sabe
+       que leu uma parte diz "não há resultado" com toda a convicção sobre um item que tem. Foi
+       exatamente o defeito do `limit=3000` desta mesma tela (o teto não é do pedido, é do
+       servidor). Aqui o `count=exact` responde quantos existem, e o rodapé avisa. */
+const HOMOL_TETO = 2000;
+async function carregarHomologados(){
+  if(ITENS_HOMOL) return ITENS_HOMOL;
+  if(_homolCarregando) return _homolCarregando;
+  _homolCarregando = (async () => {
+    const T = window.FPMED_TETO_HOMOLOGADO;
+    if(!T) throw new Error('o motor do teto competitivo não carregou');
+    const r = await fetch(`${SB_URL}/rest/v1/licitacao_itens?resultado_valor_unit=not.is.null`
+      + '&select=numero_controle,numero_item,descricao,unidade,quantidade,'
+      + 'resultado_valor_unit,resultado_quantidade,resultado_situacao,resultado_vencedor'
+      + `&order=resultado_lido_em.desc&limit=${HOMOL_TETO}`,
+      {headers: Object.assign({Prefer:'count=exact'}, SB_H)});
+    if(!r.ok) throw new Error('o banco respondeu ' + r.status);
+    const linhas = await r.json();
+    const total = parseInt(String(r.headers.get('content-range') || '/0').split('/')[1], 10);
+
+    /* O ÓRGÃO E A DATA VÊM DA `licitacoes`, NUMA SEGUNDA IDA. A tabela de itens não tem chave
+       estrangeira para lá de propósito (item lido do PNCP ao vivo não tem linha no índice), então
+       o PostgREST não sabe embutir. Duas idas pequenas valem mais que uma junção que não existe.
+       >>> E SE ESTA SEGUNDA IDA FALHAR, O ÍNDICE CONTINUA VALENDO: perde-se o órgão e a data, e a
+           tela escreve "órgão não informado". Perder o nome do órgão não pode apagar o PREÇO, que
+           é a razão de o bloco existir. */
+    const ctrls = [...new Set(linhas.map(l => l.numero_controle).filter(Boolean))].slice(0, 300);
+    const certames = {};
+    if(ctrls.length){
+      try{
+        const lista = ctrls.map(c => '"' + String(c).replace(/"/g,'') + '"').join(',');
+        const rl = await fetch(`${SB_URL}/rest/v1/licitacoes?numero_controle=in.(${encodeURIComponent(lista)})`
+          + '&select=numero_controle,orgao,municipio,uf,data_abertura', {headers:SB_H});
+        if(rl.ok) for(const c of await rl.json())
+          certames[c.numero_controle] = { orgao:c.orgao, municipio:c.municipio, uf:c.uf,
+            // A DATA DA SESSÃO, não a de quando NÓS lemos o resultado. Ver o comentário do
+            // `fpmed_teto_homologado.js`: número certo com nome errado é pior que número faltando.
+            data: c.data_abertura ? String(c.data_abertura).slice(0,10) : null };
+      }catch(e){ /* fica sem órgão; o preço continua de pé */ }
+    }
+    ITENS_HOMOL = T.indexa(linhas, { certames, total, truncado: total > linhas.length });
+    HOMOL_ERRO = null;
+    return ITENS_HOMOL;
+  })().catch(e => {
+    /* FALHA DE LEITURA NÃO VIRA "NÃO HÁ RESULTADO". São coisas diferentes, e a segunda é uma
+       afirmação sobre o mercado que eu não posso fazer se nem consegui ler a tabela. É a mesma
+       lei do `ITENS_CMED = 'erro'` vinte linhas acima. */
+    HOMOL_ERRO = e.message; ITENS_HOMOL = null; _homolCarregando = null;
+    return null;
+  });
+  return _homolCarregando;
+}
+
+// O bloco da linha. `n` entra porque a folga se lê diferente para item que é meu e item que não é.
+function homologadoDoItem(it){
+  const T = window.FPMED_TETO_HOMOLOGADO;
+  if(HOMOL_ERRO)
+    return '<span class="it-h"><b class="vazio">não consegui ler os resultados homologados</b>'
+      + '<i>' + esc(HOMOL_ERRO) + ' — isso não quer dizer que não exista resultado; quer dizer que eu não sei</i></span>';
+  if(!T || !ITENS_HOMOL) return '<span class="it-h"><b class="vazio">procurando preço já homologado…</b></span>';
+
+  /* O RESULTADO DO PRÓPRIO ITEM É OUTRA COISA, e vem primeiro. Ele não é pesquisa de mercado: é o
+     fato desta compra. Misturá-lo com o histórico de outros certames faria o item se comparar
+     consigo mesmo — uma tautologia com cara de pesquisa. */
+  const meuResultado = Number(it.resultado_valor_unit) > 0 ? Number(it.resultado_valor_unit) : null;
+
+  const r = T.avaliar({
+    descricao: it.descricao,
+    precoUnit: semReferencia(it) ? null : Number(it.valor_unitario_ref),
+    // tira ESTE item da conta: ele já aparece no bloco de cima, com o nome certo
+    ignorar: { numero_controle: ITENS_DE, numero_item: it.numero_item },
+  }, ITENS_HOMOL);
+
+  const partes = [];
+  if(meuResultado != null){
+    const q = it.resultado_quantidade != null ? Number(it.resultado_quantidade) : (it.quantidade != null ? Number(it.quantidade) : null);
+    partes.push('<b>este item foi homologado por ' + brl(meuResultado) + '</b>'
+      /* >>> O CNPJ DO VENCEDOR NÃO APARECE NA TELA. Ele fica no dado (é ele que responde "fui EU
+             que ganhei?", e a `ganhosDoNegocio` já o usa para isso). Nome de concorrente em
+             destaque numa tela de proposta é convite para o uso errado. */
+      + '<i>' + (it.resultado_vencedor ? 'o vencedor' : 'vencedor não publicado')
+      + (q != null ? ' · ' + q.toLocaleString('pt-BR') + (it.unidade ? ' ' + esc(it.unidade) : '') + ' unidade(s)' : '')
+      + (it.resultado_situacao ? ' · ' + esc(it.resultado_situacao) : '') + '</i>');
+  }
+
+  if(r && r.n > 0){
+    const ref = r.temFaixa
+      ? 'de ' + brl(r.min) + ' a ' + brl(r.max) + ' · <b>mediana ' + brl(r.mediana) + '</b>'
+      : 'por ' + brl(r.mediana);
+    const u = r.ultimo || {};
+    const onde = [u.orgao, [u.municipio, u.uf].filter(Boolean).join('/')].filter(Boolean).join(' · ') || 'órgão não informado';
+    /* A FOLGA COMPETITIVA, no MESMO sinal da folga legal: positivo = sobra. Duas folgas com
+       sinais invertidos lado a lado fariam "-12%" ser boa numa e ruim na outra. */
+    const folga = r.folgaPct == null ? ''
+      : ' · <span class="folga ' + (r.folgaPct >= 0 ? 'boa' : 'ruim') + '">'
+        + (r.folgaPct >= 0 ? 'a referência do edital está ' + pct1(r.folgaPct) + '% ABAIXO'
+                           : 'a referência do edital está ' + pct1(Math.abs(r.folgaPct)) + '% ACIMA')
+        + ' do já homologado</span>';
+    partes.push('<b>já foi homologado ' + ref + '</b>'
+      /* >>> O NÚMERO DE RESULTADOS SAI, E NÃO SAI PERCENTUAL NENHUM. Eu sei quantos resultados
+             ACHEI; não sei quantos itens iguais existem no Brasil. Percentual sem denominador
+             conhecido é número inventado com cara de medida. */
+      + '<i>' + r.n + ' resultado(s) do mesmo produto · mais recente em ' + esc(onde)
+      + (u.data ? ' · sessão de ' + esc(dataBR(u.data)) : ' · data da sessão não informada')
+      + folga + '</i>');
+  }
+
+  if(!partes.length){
+    /* O ESTADO HONESTO, e ele é a fatia inteira. Nunca "R$ 0,00", nunca um traço, nunca branco:
+       o que a tela sabe é que NÓS não temos o dado — e não que o produto nunca foi vendido. */
+    return '<span class="it-h"><b class="vazio">ainda não temos resultado homologado para este item</b>'
+      + '<i>o resultado por item chega do PNCP depois da homologação; enquanto não chega, o teto '
+      + 'legal ao lado é a única régua desta linha</i></span>';
+  }
+  return '<span class="it-h">' + partes.join('') + '</span>';
+}
+
 function linhaDeItem(n, it){
   const meu = participoDoItem(n, it.numero_item);
   const qtd = it.quantidade != null
@@ -3638,6 +3857,7 @@ function linhaDeItem(n, it){
     <span class="it-p">${temRef ? '<b>' + brl(it.valor_unitario_ref) + '</b><i>referência do edital</i>'
                                 : '<b class="sem">sem referência</b><i>o edital não publicou preço</i>'}</span>
     ${tetoDoItem(it)}
+    ${homologadoDoItem(it)}
   </div>`;
 }
 
@@ -3683,10 +3903,10 @@ function tetoDoItem(it){
   //     sem ele. Zero não é "não sei" — e num selo de teto de medicamento essa diferença é a que
   //     decide se alguém baixa o preço.
   if(r.situacao === 'acima')
-    return `<span class="it-t"><b class="estoura">estoura o teto${r.pctAcima != null && isFinite(r.pctAcima) ? ' · +' + Number(r.pctAcima).toFixed(1) + '%' : ''}</b>
+    return `<span class="it-t"><b class="estoura">estoura o teto${r.pctAcima != null && isFinite(r.pctAcima) ? ' · +' + pct1(r.pctAcima) + '%' : ''}</b>
       <i>teto ${esc(r.tipoTeto || 'CMED')} ${brl(r.teto)}</i>${selo}</span>`;
   return `<span class="it-t"><b class="cabe">cabe no teto</b>
-    <i>teto ${esc(r.tipoTeto || 'CMED')} ${brl(r.teto)}${r.folgaPct != null ? ' · folga ' + Number(r.folgaPct).toFixed(1) + '%' : ''}</i>${selo}</span>`;
+    <i>teto ${esc(r.tipoTeto || 'CMED')} ${brl(r.teto)}${r.folgaPct != null ? ' · folga ' + pct1(r.folgaPct) + '%' : ''}</i>${selo}</span>`;
 }
 
 /* ══════════════════════════════════════════════════════════════════════════════════════════════
@@ -3844,10 +4064,35 @@ function blocoDosGanhos(n){
   </div>`;
 }
 
+/* ══ A DÍVIDA DO TETO COMPETITIVO, CONTADA EM VOZ ALTA (20/08, fatia B28) ═══════════════════════
+   A caixa pede esta frase com estas palavras: *"resultado homologado disponível em N de M itens
+   desta licitação"*. Ela é a linha mais importante do rodapé, porque com 0,06% de cobertura o
+   bloco vazio vai aparecer em quase todo item — e sem esta contagem alguém concluiria que o
+   recurso não funciona, quando o que falta é o DADO.
+   >>> O DENOMINADOR É O QUE A TELA CONHECE: os itens DESTE edital. Não há aqui nenhum percentual
+       sobre "quantos itens iguais existem no Brasil", porque esse número ninguém sabe — e a caixa
+       manda, com todas as letras, não inventar denominador.
+   >>> E O TRUNCAMENTO É DITO. Se a consulta bateu no teto do servidor, a tela avisa em vez de
+       deixar "não há resultado" passar por resposta: leitura parcial que se apresenta como
+       completa é a forma de mentira que esta casa mais persegue. */
+function rodapeDoHomologado(){
+  const T = window.FPMED_TETO_HOMOLOGADO;
+  if(HOMOL_ERRO) return '<br>Não consegui ler os resultados homologados (' + esc(HOMOL_ERRO) + ').';
+  if(!T || !ITENS_HOMOL) return '';
+  const c = T.cobertura(ITENS_EDITAL);
+  let s = '<br><b>Resultado homologado disponível em ' + c.com + ' de ' + c.de + '</b> item(ns) desta licitação. '
+    + 'O resto ainda não foi publicado pelo PNCP — <b>"sem resultado" não quer dizer que o produto nunca foi vendido</b>, '
+    + 'quer dizer que nós ainda não temos o dado.';
+  if(ITENS_HOMOL.truncado)
+    s += '<br><b>Atenção:</b> o índice de resultados tem ' + ITENS_HOMOL.total + ' linhas e eu li as '
+       + ITENS_HOMOL.linhas + ' mais recentes. Pode existir preço homologado que esta lista não enxergou.';
+  return s;
+}
+
 function rodapeDosItens(){
   const base = 'A coluna da direita compara o <b>valor de referência do edital</b> com o teto legal — '
     + 'ela <b>não</b> é a sua proposta. Vermelho aqui quer dizer que o <b>órgão</b> referenciou acima do teto.';
-  if(ITENS_CMED === null || ITENS_CMED === 'erro') return base;
+  if(ITENS_CMED === null || ITENS_CMED === 'erro') return base + rodapeDoHomologado();
   const vals = Object.keys(ITENS_CMED).map(k => ITENS_CMED[k]);
   const acima = vals.filter(x => x && x.situacao === 'acima').length;
   const dentro = vals.filter(x => x && x.situacao === 'abaixo').length;
@@ -3855,7 +4100,8 @@ function rodapeDosItens(){
   return base + '<br><b>' + dentro + '</b> dentro · <b>' + acima + '</b> acima · <b>' + fora + '</b> sem teto na CMED. '
     + fraseReguaNeg()
     + '<br><b>Sem teto na CMED não quer dizer dentro do teto.</b> Pode ser material (que não tem teto legal) '
-    + 'ou remédio cujo nome não casou com a tabela.';
+    + 'ou remédio cujo nome não casou com a tabela.'
+    + rodapeDoHomologado();
 }
 
 /* ══ OS PRAZOS QUE PENDEM DESTA DATA (14/08, fatias B2 + B4) ══════════════════════════════════
