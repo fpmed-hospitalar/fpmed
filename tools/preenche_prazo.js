@@ -241,13 +241,47 @@ function montaAlvo(linhas, taxas) {
      certa. Modalidade nunca pedida à porta certa entra com taxa DESCONHECIDA e vai para o fim,
      em vez de receber uma taxa inventada. Se a rodada for cortada no meio (breaker, 429, falta
      de luz), o que ficou pronto é o que mais responde "ainda dá tempo?". */
-  const lista = [...combos.values()].map(c => {
+  const bruta = [...combos.values()].map(c => {
     const t = taxas.get(c.mod);
     const amostra = t ? t.com + t.sem : 0;
     const taxa = amostra >= 30 ? t.com / amostra : null;   // amostra curta não vira taxa
     return { ...c, taxa, amostra, rende: c.linhas * (taxa == null ? 0.001 : taxa) };
   }).sort((a, b) => b.rende - a.rende);
-  return { lista, jaPerguntamos, semData };
+
+  /* ══ A COTA DE EXPLORAÇÃO — E ELA EXISTE PORQUE A ORDEM ACIMA TINHA UM IMPASSE (A36 · 20/08) ══
+     A regra "modalidade nunca pedida à porta certa entra com taxa DESCONHECIDA e vai para o fim,
+     em vez de receber uma taxa inventada" está certa e continua valendo. O que ela não previu é
+     que a taxa **só pode nascer de linhas que vieram pela CONSULTA** (é o `_coleta !== 'busca'`
+     do `taxaPorModalidade`) — e uma modalidade que a coleta não varre nunca entra por ali.
+
+     >>> ENTÃO ERA UM IMPASSE FECHADO, e ele tem nome e número: a modalidade 12 (credenciamento)
+         tem 2.068 linhas no índice, ZERO amostra pela consulta, `rende = linhas × 0,001`, último
+         lugar de 2.353 combinações — e o teto é de 60 por rodada. Ela nunca seria perguntada, e
+         por isso nunca teria taxa, e por isso nunca sairia do fim. Não é fila lenta: é fila que
+         não anda.
+     >>> MEDIDO EM 20/08 (`tools/mede_modalidade12.js`), amostra de 30 espalhada por 30
+         combinações, na porta certa: **30 de 30 COM janela de proposta — 100%**. O palpite
+         plausível ("credenciamento é chamamento aberto, logo não tem prazo") estava errado, e
+         eram 2.068 licitações em que a tela não responde "ainda dá tempo?" só porque ninguém
+         perguntou.
+     >>> O CONSERTO NÃO CITA A MODALIDADE 12 PELO NOME, e isso é decisão: exceção por nome é como
+         este tipo de regra morre (a próxima modalidade nova ganha a dela, e em três meses a
+         ordem vale para nada). O que entra é uma COTA: uma fatia das combinações da rodada fica
+         reservada para modalidades SEM taxa medida, ordenadas por quantas linhas elas têm. É a
+         lei da casa — "meça, não adivinhe" — virada em código: quem não tem medida ganha o
+         direito de ser medido, em vez de ser adivinhado ou esquecido.
+     >>> E A COTA É PEQUENA DE PROPÓSITO (1 em 5). Ela não pode roubar a rodada de quem tem
+         rendimento medido e alto; ela só garante que o desconhecido deixe de ser permanente. */
+  const semTaxa = bruta.filter(c => c.taxa == null).sort((a, b) => b.linhas - a.linhas);
+  const comTaxa = bruta.filter(c => c.taxa != null);
+  const lista = [];
+  let i = 0, j = 0;
+  while (i < comTaxa.length || j < semTaxa.length) {
+    // 4 com taxa medida para 1 sem — e quando um dos lados acaba, o outro segue sozinho
+    for (let k = 0; k < 4 && i < comTaxa.length; k++) lista.push(comTaxa[i++]);
+    if (j < semTaxa.length) lista.push(Object.assign({ exploracao: true }, semTaxa[j++]));
+  }
+  return { lista, jaPerguntamos, semData, exploracao: semTaxa.length };
 }
 
 /* As três funções PURAS saem para a suíte. Elas são onde moram as decisões que erram calado:
@@ -388,7 +422,8 @@ if (require.main !== module) return;
     /* A LINHA SAI ANTES DO UPSERT e diz QUANTAS voltaram da porta. Zero aqui é resposta legítima
        (aquele dia/UF/modalidade não teve contratação) e precisa ser visível: uma sequência de
        zeros é a notícia de que o alvo está mal escolhido, e ela não pode se parecer com silêncio. */
-    console.log(`  [${n}/${aRodar.length}] ${c.dia} ${c.uf} mod${c.mod}  ${regs.length} da porta`);
+    console.log(`  [${n}/${aRodar.length}] ${c.dia} ${c.uf} mod${c.mod}  ${regs.length} da porta`
+      + (c.exploracao ? '   🔎 EXPLORACAO (modalidade sem taxa medida)' : ''));
     const { SB, H } = banco();
     for (let i = 0; i < regs.length; i += 200) {
       const lote = regs.slice(i, i + 200);

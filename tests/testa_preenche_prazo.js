@@ -116,6 +116,50 @@ const muitas = (n, ...a) => Array.from({ length: n }, () => lin(...a));
   ok('12. ...e ela NAO some da fila: divida contada em voz alta e fila', !!c12 && c12.linhas === 2000);
 }
 {
+  /* ══ A COTA DE EXPLORACAO (A36 · 20/08) — O ASSERT 11 ESTAVA CERTO E ERA UM IMPASSE ══════════
+     "Sem taxa medida vai para o fim" continua valendo (o 11 acima cobra isso). O que ninguem
+     tinha visto e que a taxa SO PODE NASCER de linhas que vieram pela CONSULTA — e uma
+     modalidade que a coleta nao varre nunca entra por ali. Entao "ir para o fim" nao era fila
+     lenta: era fila que NAO ANDA. Medido: a modalidade 12 tinha 2.068 linhas, zero amostra,
+     ultimo lugar de 2.353 combinacoes, com teto de 60 por rodada.
+     >>> E QUANDO A PERGUNTA FINALMENTE FOI FEITA (tools/mede_modalidade12.js, amostra de 30 na
+         porta certa): 30 de 30 COM janela. 100%. O palpite plausivel estava errado.
+     >>> A COTA E 1 EM 5, e os dois asserts abaixo sao as duas direcoes da mesma regra: ela tem
+         de CABER no teto de uma rodada (senao nao conserta nada) e NAO pode roubar a rodada de
+         quem tem rendimento medido (senao troca um defeito por outro). */
+  const linhas = [
+    ...muitas(40, 6, null, true),
+    ...muitas(5, 6, 'busca', false, '2026-08-10', 'GO'),
+    ...muitas(5, 6, 'busca', false, '2026-08-11', 'GO'),
+    ...muitas(5, 6, 'busca', false, '2026-08-12', 'GO'),
+    ...muitas(5, 6, 'busca', false, '2026-08-13', 'GO'),
+    ...muitas(5, 6, 'busca', false, '2026-08-14', 'GO'),
+    ...muitas(5, 6, 'busca', false, '2026-08-15', 'GO'),
+    ...muitas(5, 6, 'busca', false, '2026-08-16', 'GO'),
+    ...muitas(5, 6, 'busca', false, '2026-08-17', 'GO'),
+    ...muitas(2000, 12, 'busca', false, '2026-08-10', 'MG'),
+  ];
+  const a = P.montaAlvo(linhas, P.taxaPorModalidade(linhas));
+  const pos12 = a.lista.findIndex(c => c.mod === 12);
+  ok('12b. *** a modalidade SEM taxa medida cabe na rodada, em vez de ficar no fim para sempre ***',
+    pos12 > -1 && pos12 < 5, { posicao: pos12, fila: a.lista.map(c => 'mod' + c.mod).join(',') });
+  ok('12c. ...e ela vem MARCADA como exploracao (o log tem de dizer por que ela entrou)',
+    pos12 > -1 && a.lista[pos12].exploracao === true);
+  ok('12d. ...sem roubar a rodada: os 4 primeiros de cada 5 continuam sendo os de taxa medida',
+    a.lista.slice(0, 4).every(c => c.mod === 6) && a.lista.slice(5, 9).every(c => c.mod === 6),
+    a.lista.map(c => 'mod' + c.mod).join(','));
+  ok('12e. ...e a conta de quantas combinacoes estao sem taxa sai declarada',
+    a.exploracao === 1, { exploracao: a.exploracao });
+  /* A PROVA AO CONTRARIO: sem NENHUMA modalidade desconhecida, a fila nao muda de forma. Sem
+     este assert, a cota poderia estar embaralhando a ordem de todo mundo e ninguem veria. */
+  const soConhecidas = [...muitas(40, 6, null, true), ...muitas(5, 6, 'busca', false, '2026-08-10', 'GO'),
+                        ...muitas(3, 6, 'busca', false, '2026-08-11', 'GO')];
+  const b = P.montaAlvo(soConhecidas, P.taxaPorModalidade(soConhecidas));
+  ok('12f. e sem nenhuma modalidade desconhecida a fila continua so por rendimento',
+    b.exploracao === 0 && b.lista.length === 2 && b.lista[0].linhas === 5 && b.lista[1].linhas === 3,
+    b.lista.map(c => c.linhas).join(','));
+}
+{
   // Sem data de publicação não dá para montar a pergunta — e isso sai contado, não descartado.
   const linhas = [lin(6, 'busca', false), { ...lin(6, 'busca', false), data_publicacao: null }];
   const a = P.montaAlvo(linhas, P.taxaPorModalidade(linhas));
