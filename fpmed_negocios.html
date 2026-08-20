@@ -55,6 +55,14 @@
          um deles estaria errado sem ninguém saber qual. É a família de defeito mais cara deste
          projeto (o preço unitário) e ela não se repete aqui. -->
 <script src="fpmed_teto_homologado.js"></script>
+<!-- ══ O SALDO DA ATA (20/08, fatia B30) ════════════════════════════════════════════════════════
+     A pergunta que o gestor faz toda semana e que este produto não respondia: *"dessa ata que eu
+     ganhei, quanto ainda posso entregar?"*. A B23 destravou a aba Ata; esta fatia põe o número
+     dentro dela. Ata sem saldo é papel; ata com saldo é agenda de faturamento.
+     >>> A REGRA QUE MANDA NO ARQUIVO INTEIRO está escrita lá dentro e vale repetir aqui, porque é
+         ela que decide o desenho da tela: `null` é "não informado" e `0` é "acabou". As duas
+         frases levam a decisões opostas — uma manda cobrar o órgão, a outra manda esquecer a ata. -->
+<script src="fpmed_ata_saldo.js"></script>
 <!-- A PORTA INTERNA DO LEITOR (fatia A2 do arquiteto), usada pela fatia B6 para conversar com o
      edital sem sair da ficha. Ela NÃO é o motor: permissão, custo e registro continuam na edge
      function `ler-edital`, e este arquivo existe justamente para que ninguém escreva uma
@@ -1307,6 +1315,56 @@ textarea.anot:focus{border-color:var(--azul)}
    `.at-num`, "UNIT. HOMOLOGADO" saía como "UNIT. HOMOLC" — e cabeçalho cortado numa tabela de
    dinheiro é a coluna perdendo o nome justamente onde o nome é o que evita ler a coluna errada. */
 .at-tab th{white-space:normal;position:sticky;top:0}
+/* ══ A ATA COM SALDO (20/08, fatia B30) ══════════════════════════════════════════════════════
+   Duas peças nascem aqui: a FAIXA DA VALIDADE e a TABELA DO SALDO. A pergunta que o gestor faz
+   toda semana — *"dessa ata que eu ganhei, quanto ainda posso entregar?"* — não tinha resposta
+   nesta tela; o quadro de cima diz o que se GANHOU, e ganhar não é entregar.
+   >>> A FAIXA MUDA A BORDA, e não só o texto — a mesma decisão do `.cred.parado` e pelo mesmo
+       motivo escrito lá: ata vencendo com saldo grande é dinheiro indo embora em silêncio, e o
+       olho que varre a tela lê a borda antes de ler a frase.
+   >>> A COR NUNCA VAI SOZINHA. O número de dias e a palavra ("vence em 43 dias", "venceu há 12
+       dias") dizem a mesma coisa sem depender de enxergar cor — é a WCAG 1.4.1, e é o que a
+       régua da casa cobra. */
+.at-vig{display:flex;gap:12px;align-items:baseline;flex-wrap:wrap;
+  border:1px solid var(--linha);border-left:4px solid var(--cinza-400);
+  border-radius:10px;background:var(--painel2);padding:8px 12px}
+.at-vig .dias{font-family:Montserrat,sans-serif;font-weight:800;font-size:19px;
+  font-variant-numeric:tabular-nums;color:var(--cinza-800)}
+.at-vig .quando{font-size:12.5px;color:var(--cinza-800)}
+.at-vig.vigente{border-left-color:var(--verde-300)}
+.at-vig.vigente .dias{color:var(--verde-700)}
+.at-vig.vencendo{border-left-color:var(--ambar-300);background:var(--ambar-50)}
+.at-vig.vencendo .dias{color:var(--ambar-700)}
+.at-vig.vencida{border-left-color:var(--vermelho-300);background:var(--vermelho-50)}
+.at-vig.vencida .dias{color:var(--vermelho-700)}
+/* A TABELA DO SALDO É IRMÃ DA `.at-tab`, E NÃO A MESMA. Aquela responde "o que eu ganhei e por
+   quanto"; esta responde "quanto ainda dá pra entregar". Empilhar as três colunas novas dentro
+   da `.at-tab` — que já fechava em 621px dentro de um quadro de 504px, MEDIDO na B23 — traria de
+   volta a rolagem lateral que aquela fatia matou, e justamente sobre as colunas novas. */
+.sd-tab{table-layout:fixed}
+.sd-tab th:nth-child(1),.sd-tab td:nth-child(1){width:32px}
+.sd-tab th:nth-child(3),.sd-tab td:nth-child(3){width:72px}
+.sd-tab th:nth-child(4),.sd-tab td:nth-child(4){width:80px}
+.sd-tab th:nth-child(5),.sd-tab td:nth-child(5){width:80px}
+.sd-tab th:nth-child(6),.sd-tab td:nth-child(6){width:88px}
+.sd-tab td,.sd-tab th{padding:8px 4px;overflow-wrap:anywhere}
+.sd-tab th{white-space:normal;position:sticky;top:0}
+/* "NÃO INFORMADO" TEM DE **PARECER** DIFERENTE DE UM NÚMERO, e não só dizer que é. Sem isto, o
+   olho que corre a coluna de saldo lê a lacuna como zero — e zero é uma afirmação ("acabou"). */
+.sd-nao{color:var(--muted);font-style:italic;white-space:normal;font-variant-numeric:normal}
+/* O SELO DO DADO DIGITADO — a lição do `valor_ganho` virada em pixel. Dado que veio de gente não
+   pode se parecer com dado publicado, porque quem lê decide diferente sobre cada um. */
+.sd-inf{font-size:var(--txt-1);font-weight:700;color:var(--azul-claro);
+  border:1px solid var(--azul-claro);border-radius:20px;padding:4px 8px;white-space:nowrap}
+.sd-alerta{display:block;font-size:var(--txt-1);color:var(--ambar-700);
+  font-weight:var(--peso-semi);white-space:normal;font-variant-numeric:normal}
+/* O CAMPO DE LANÇAR À MÃO. Ele nasce VAZIO quando não há dado, e o `placeholder` diz o que o
+   vazio significa — um `0` pré-preenchido seria a tela digitando pelo usuário a única afirmação
+   que esta fatia inteira existe para não fazer. */
+.sd-in{width:100%;box-sizing:border-box;background:var(--painel2);color:var(--texto);
+  border:1px solid var(--linha);border-radius:8px;padding:4px 8px;font-size:12px;
+  font-family:inherit;text-align:right;font-variant-numeric:tabular-nums}
+.sd-in::placeholder{font-style:italic;color:var(--muted)}
 /* ── PROPOSTA ANEXADA ── */
 .prop-novo{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:12px 0 4px}
 .prop-novo input[type=file]{background:var(--painel2);color:var(--texto);border:1px solid var(--linha);
@@ -1569,6 +1627,14 @@ textarea.anot:focus{border-color:var(--azul)}
       <option value="recentes">Ordenar por: Mais recentes</option>
       <option value="abertura">Ordenar por: Abertura mais próxima</option>
       <option value="orgao">Ordenar por: Órgão</option>
+      <!-- ══ A ORDEM DO DINHEIRO INDO EMBORA (20/08, fatia B30) ═════════════════════════════
+           As três de cima ordenam pela ENTRADA do negócio (quando chegou, quando abre, de quem
+           é). Esta ordena pela SAÍDA: ata vencendo com saldo grande é faturamento perdido em
+           silêncio, e silêncio é o que uma lista ordenada por "mais recentes" garante.
+           >>> É OPÇÃO E NÃO AUTOMÁTICO. Trocar a ordem sozinho ao filtrar a fase Ata mudaria a
+               tela sem ninguém pedir — e quem procura um negócio pelo lugar em que ele estava
+               não o acharia mais. -->
+      <option value="ata_vence">Ordenar por: Ata vencendo primeiro</option>
     </select>
     <a class="lnk" onclick="toggleFiltro()">Filtrar</a>
     <!-- ══ DUAS PORTAS PARA CRIAR NEGÓCIO, E ISSO NÃO É O DEFEITO QUE MATEI EM 12/08 ══════════
@@ -2118,6 +2184,14 @@ function visiveis(){
   if(FASE_SEL) l = l.filter(n => n.estagio === FASE_SEL);
   if(q) l = l.filter(n => [n.orgao,n.objeto,n.numero,n.municipio,n.portal].some(x => String(x||'').toLowerCase().includes(q)));
   const ord = document.getElementById('f-ordem').value;
+  /* ── QUEM VENCE PRIMEIRO (20/08, fatia B30) ──────────────────────────────────────────────
+     A comparação mora no motor, e não aqui, pelo mesmo motivo de sempre: a regra "as sem data
+     vão para o FIM" tem de valer igual na tela e na `v_atas_vigencia`. Escrita duas vezes, um
+     dia uma delas põe a ata sem data no topo — no lugar de destaque, parecendo a mais urgente,
+     quando ela é justamente a que ninguém sabe.
+     >>> SEM O MOTOR, A ORDEM ANTIGA CONTINUA. Cair no `sort` de baixo devolve a lista ordenada
+         por outra coisa, e não uma lista quebrada — degradar é melhor que sumir. */
+  if(ord === 'ata_vence' && window.FPMED_ATA_SALDO) return FPMED_ATA_SALDO.ordenaPorVencimento(l);
   l.sort((a,b) => ord==='orgao' ? String(a.orgao||'').localeCompare(String(b.orgao||''))
                 : ord==='abertura' ? String(a.abertura||'9').localeCompare(String(b.abertura||'9'))
                 : String(b.abertura||'').localeCompare(String(a.abertura||'')));
@@ -2832,6 +2906,10 @@ async function abrirDrawer(id){
   CTX_LIC = null;
   if(ABERTO === id){ carregarRastro(id); carregarLembretes(id); carregarCredenciamentos(id);
                      carregarProposta(id); carregarAta(id); carregarItensGanhos(id);
+                     /* A VALIDADE PINTA DIRETO (o dado já veio no `NEG`) e o saldo vai buscar o
+                        que alguém digitou. São duas coisas de naturezas diferentes e por isso
+                        duas chamadas: uma não pode ficar esperando a rede da outra. */
+                     pintaVigenciaAta(id); carregarSaldoAta(id);
                      carregarEdital(id); carregarItensEdital(id); carregarConversaEdital(id);
                      pintaControlePNCP(id); carregarContextoLic(id);
                      montaSeletorArquivos(); carregarMeusArquivos(id);
@@ -3179,6 +3257,17 @@ function corpoDrawer(n, obs, carregando){
              o que quase ninguém guarda — POR QUANTO se perdeu. O mapa de preços é a única parte
              deste sistema que serve pra aprender em vez de executar. -->
     <div class="${pnl(n,"ata")}" id="aba-ata">
+      <!-- ══ A VALIDADE VEM PRIMEIRO (20/08, fatia B30) ═══════════════════════════════════════
+           E vir primeiro é a decisão, não o acaso: é o único dado desta aba que tem PRAZO. Os
+           documentos, os itens e o saldo continuam iguais amanhã; a validade não. É a mesma lei
+           do "ainda dá tempo" da tela Encontrar — o que tem relógio responde antes.
+           >>> Ela fica FORA do quadro de documentos porque não é documento: é atributo do
+               negócio, e mora nas colunas ata_vigencia_* da tabela negocios, pelo motivo
+               escrito por extenso no ddl/ata_saldo.sql.
+           >>> SEM CRASE NESTE COMENTÁRIO, e não é descuido de estilo: este trecho está DENTRO
+               de um template literal do desenho do drawer, e uma crase aqui fecha a string —
+               foi exatamente assim que ele quebrou na primeira escrita desta fatia. -->
+      <div class="dw-sec" id="ata-vigencia"></div>
       <div class="dw-sec">
         <h4>Documentos da ata</h4>
         <div class="dica" style="font-size:var(--txt-1);color:var(--muted);margin-bottom:8px">
@@ -3204,6 +3293,13 @@ function corpoDrawer(n, obs, carregando){
            um negócio ganho quer VER o que ganhou, não ser convidado a pagar uma leitura. O botão
            de ler só interessa a quem ainda não confirmou. -->
       <div class="dw-sec" id="ata-resultado"></div>
+      <!-- ══ O SALDO VEM DEPOIS DO QUE SE GANHOU, E NÃO ANTES (20/08, fatia B30) ══════════════
+           A ordem é a da pergunta: primeiro "o que eu ganhei", depois "quanto disso ainda posso
+           entregar". O saldo lê a MESMA lista de itens do quadro de cima (a ganhosDoNegocio) —
+           uma segunda lista de itens da ata seria o par que um dia diverge, e neste arquivo ele
+           JÁ divergiu uma vez: a B23 achou a aba Itens mostrando o resultado do PNCP e a aba Ata
+           mostrando nada. -->
+      <div class="dw-sec" id="ata-saldo"></div>
       <div class="dw-sec" id="ata-relatorios"></div>
       <div class="dw-sec" id="ata-saida"></div>
     </div>
@@ -3518,6 +3614,9 @@ async function carregarItensEdital(id){
      Sem esta linha, quem chegasse primeiro decidiria se a Ata mostra os itens do PNCP — e o
      sintoma seria o pior de todos: a tela certa metade das vezes, sem ninguém saber reproduzir. */
   pintaItensGanhos(id);
+  // E O SALDO JUNTO (20/08, B30): ele lê a MESMA lista (`ganhosDoNegocio`), então herda a mesma
+  // corrida. Sem esta linha, a tabela do saldo diria "ata sem itens lidos" com 195 itens ao lado.
+  pintaSaldoAta(id);
   // Quem clicou na aba ANTES de a lista chegar não pode ficar com a coluna do teto vazia pra
   // sempre: naquele momento não havia item nenhum pra conferir, e o gatilho da aba não vai
   // disparar de novo. Se a aba já está aberta agora, a conferência sai daqui.
@@ -6631,6 +6730,7 @@ async function carregarItensGanhos(id){
     if(!r.ok) throw new Error('o banco respondeu ' + r.status);
     ITENS_GANHOS = await r.json();
     pintaItensGanhos(id);
+    pintaSaldoAta(id);   // mesma corrida, mesma razão: o saldo lê a lista que acabou de chegar
     /* A ABA ITENS TAMBÉM MOSTRA O QUE FOI GANHO (14/08, fatia B5), e ela é pintada por outra
        chamada assíncrona. As duas correm juntas e a ordem de chegada não é garantida: sem esta
        repintura, quem carregasse mais rápido decidiria se o bloco dos ganhos apareceria. */
@@ -6796,6 +6896,313 @@ function pintaItensGanhos(id){
         + 'em branco — unidade deduzida num documento que vira faturamento é o pior tipo de chute.</div>' : '')
     + (semMarca ? '<div class="salvo" style="margin-top:4px">' + semMarca + ' item(ns) sem marca: o documento '
         + 'não trouxe. <b>Marca em branco é marca não sabida</b> — nunca preenchida por dedução.</div>' : '');
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════════
+   O SALDO DA ATA (20/08, fatia B30) — *"dessa ata que eu ganhei, quanto ainda posso entregar?"*
+
+   A B23 destravou esta aba quando achou o `valor_ganho` fazendo de porteiro do que ela mostrava.
+   O que ficou faltando é a pergunta de toda semana. **Ata sem saldo é papel; ata com saldo é
+   agenda de faturamento.**
+
+   ══ A LEI QUE MANDA NESTAS QUATRO FUNÇÕES ═══════════════════════════════════════════════════
+   **`null` é "não informado". `0` é "acabou", e isso é uma afirmação.** As duas frases mandam o
+   gestor para lados opostos — uma manda cobrar o órgão, a outra manda esquecer a ata. Por isso
+   nenhum campo nasce com zero, nenhum total soma o que não sabe, e todo total diz quantas linhas
+   ficaram de fora dele.
+   >>> A CONTA NÃO MORA AQUI. Ela está no `fpmed_ata_saldo.js`, e a tela só pergunta. É a regra
+       que a B28 pagou para aprender: conta reimplementada dentro da tela é a família de defeito
+       mais cara deste projeto (o preço unitário), e aqui ela viraria faturamento.
+   ══════════════════════════════════════════════════════════════════════════════════════════════ */
+let ATA_SALDOS = [], SALDO_ERRO = null;
+
+async function carregarSaldoAta(id){
+  ATA_SALDOS = []; SALDO_ERRO = null;
+  const box = document.getElementById('ata-saldo');
+  if(box) box.innerHTML = '<h4>Saldo da ata</h4><div class="salvo">carregando o saldo…</div>';
+  try{
+    const r = await fetch(`${SB_URL}/rest/v1/ata_saldo?negocio_id=eq.${id}&select=*`, {headers:SB_H});
+    if(!r.ok) throw new Error('o banco respondeu ' + r.status);
+    ATA_SALDOS = await r.json();
+  }catch(e){ SALDO_ERRO = e.message; }
+  if(ABERTO !== id) return;
+  pintaSaldoAta(id);
+}
+
+/* ── A FRASE DA VALIDADE ────────────────────────────────────────────────────────────────────
+   Ela é montada num lugar só porque a MESMA data aparece na faixa e no aviso, e duas frases
+   escritas em dois lugares é onde uma delas um dia diz "vence em 1 dia" e a outra "vence hoje".
+   >>> "HOJE" E "AMANHÃ" TÊM PALAVRA PRÓPRIA. "vence em 0 dias" é o tipo de frase que se lê como
+       defeito de programa e não como prazo — e o dia em que ela aparece é justamente o único em
+       que alguém ainda pode fazer alguma coisa. */
+function frasePrazoAta(v){
+  if(v.situacao === 'sem_vigencia') return { n:'—', txt:'validade não informada' };
+  const d = v.dias;
+  if(d < 0)  return { n: Math.abs(d), txt: 'venceu há ' + Math.abs(d) + (Math.abs(d) === 1 ? ' dia' : ' dias') };
+  if(d === 0) return { n:'hoje', txt:'vence HOJE' };
+  if(d === 1) return { n:'1', txt:'vence amanhã' };
+  return { n: d, txt: 'vence em ' + d + ' dias' };
+}
+
+function pintaVigenciaAta(id){
+  const box = document.getElementById('ata-vigencia'); if(!box) return;
+  const n = NEG.find(x => x.id === id) || {};
+  const M = window.FPMED_ATA_SALDO;
+  /* SEM O MOTOR A FAIXA NÃO NASCE, em vez de nascer com a conta feita aqui. Um `if(!M)` que
+     calculasse os dias por conta própria seria a segunda implementação da mesma regra — e ela
+     divergiria no dia em que o corte de 60 mudasse num arquivo só. */
+  if(!M){ box.innerHTML = ''; return; }
+  const v = M.vigencia(n.ata_vigencia_fim, M.hojeISO());
+  const p = frasePrazoAta(v);
+  const ini = n.ata_vigencia_inicio ? String(n.ata_vigencia_inicio).slice(0,10) : '';
+  const fim = n.ata_vigencia_fim ? String(n.ata_vigencia_fim).slice(0,10) : '';
+
+  box.innerHTML = '<h4>Validade da ata</h4>'
+    + '<div class="at-vig ' + v.situacao + '">'
+    +   '<span class="dias">' + esc(String(p.n)) + '</span>'
+    +   '<span class="quando"><b>' + esc(p.txt) + '</b>'
+    +     (fim ? ' · até ' + esc(dataBR(fim)) : '')
+    +     (ini ? ' · desde ' + esc(dataBR(ini)) : '')
+    +   '</span>'
+    + '</div>'
+    /* O ESTADO VAZIO NÃO PROMETE NADA. "Sem data" não é "não vence": ata vence, em regra em doze
+       meses. Dizer "vigente" numa ficha sem data seria a tela afirmando uma coisa sobre um
+       contrato que ela não leu — e é a afirmação que faz alguém deixar o saldo virar pó. */
+    + (v.situacao === 'sem_vigencia'
+        ? '<div class="salvo" style="margin-top:8px;color:var(--ambar-700)">A validade desta ata '
+          + '<b>não foi informada</b>, e isso <b>não</b> quer dizer que ela não vença — ata vence, '
+          + 'em regra em doze meses. Sem a data, a tela não tem como avisar que o saldo está indo '
+          + 'embora. Ela está no documento da ata, no quadro acima.</div>'
+        : (v.situacao === 'vencida'
+          ? '<div class="salvo" style="margin-top:8px;color:var(--vermelho-700)">Ata <b>vencida</b>. '
+            + 'O que sobrou de saldo <b>não é mais entregável</b> por esta ata — e continua abaixo '
+            + 'para memória, não para faturar.</div>'
+          : (v.situacao === 'vencendo'
+            ? '<div class="salvo" style="margin-top:8px;color:var(--ambar-700)">Ata <b>vencendo</b>. '
+              + 'Esvaziar saldo é vender, empenhar e entregar — e isso não se faz em uma semana. '
+              + 'O que não sair até lá não sai.</div>'
+            : '')))
+    + (ehGestor()
+        ? '<div class="prop-novo">'
+          + '<label class="salvo" for="vig-ini">início</label>'
+          + '<input type="date" id="vig-ini" value="' + esc(ini) + '" style="background:var(--painel2);color:var(--texto);border:1px solid var(--linha);border-radius:8px;padding:8px 8px;font-size:12.5px;font-family:inherit">'
+          + '<label class="salvo" for="vig-fim">fim</label>'
+          + '<input type="date" id="vig-fim" value="' + esc(fim) + '" style="background:var(--painel2);color:var(--texto);border:1px solid var(--linha);border-radius:8px;padding:8px 8px;font-size:12.5px;font-family:inherit">'
+          + '<button class="btn-ed" id="vig-bt" onclick="salvarVigenciaAta(' + id + ')">Gravar validade</button>'
+          + '</div><div class="salvo" id="vig-msg"></div>'
+        : '<div class="salvo" style="margin-top:8px">a validade é campo de gestor.</div>');
+}
+
+async function salvarVigenciaAta(id){
+  const n = NEG.find(x => x.id === id); if(!n) return;
+  const msg = document.getElementById('vig-msg'), bt = document.getElementById('vig-bt');
+  const ini = (document.getElementById('vig-ini').value || '') || null;
+  const fim = (document.getElementById('vig-fim').value || '') || null;
+  /* A ÚNICA RECUSA DESTA TELA, e ela é sobre COERÊNCIA, não sobre gosto: fim antes do início não
+     é um dado incomum, é um dado impossível — e ele faria a conta de dias devolver um prazo que
+     não existe. Todo o resto (empenho maior que a quantidade, entrega maior que o empenho) a
+     tela MOSTRA em vez de recusar, porque aquilo acontece de verdade. */
+  if(ini && fim && fim < ini){
+    if(msg) msg.textContent = 'a data de fim é anterior à de início — confira no documento.';
+    return;
+  }
+  if(bt){ bt.disabled = true; }
+  if(msg) msg.textContent = 'gravando…';
+  try{
+    await gravar(id, { ata_vigencia_inicio: ini, ata_vigencia_fim: fim });
+    n.ata_vigencia_inicio = ini; n.ata_vigencia_fim = fim;
+    if(msg) msg.textContent = 'validade gravada.';
+    pintaVigenciaAta(id);
+    pinta();          // a ordem "ata vencendo primeiro" muda com esta data
+  }catch(e){
+    if(bt) bt.disabled = false;
+    if(msg) msg.textContent = 'não consegui gravar: ' + e.message;
+  }
+}
+
+function pintaSaldoAta(id){
+  const box = document.getElementById('ata-saldo'); if(!box) return;
+  const n = NEG.find(x => x.id === id) || {};
+  const M = window.FPMED_ATA_SALDO;
+  const TIT = '<h4>Saldo da ata — quanto ainda dá para entregar</h4>';
+  if(!M){ box.innerHTML = ''; return; }
+
+  // "NÃO SEI" E "NÃO TEM" OUTRA VEZ: um erro de leitura mostrando "saldo não informado" faria
+  // alguém digitar de novo por cima de um dado que já existe no banco.
+  if(SALDO_ERRO){
+    box.innerHTML = TIT
+      + '<div class="pk-conta" style="border-color:var(--vermelho-300)">'
+      +   '<b style="color:var(--vermelho-700)"><svg class="ic" aria-hidden="true"><use href="#ic-alerta"/></svg> '
+      +   'Não consegui ler o saldo</b>'
+      +   '<div class="salvo" style="margin-top:4px">' + esc(SALDO_ERRO) + ' — isto <b>não</b> quer '
+      +   'dizer que não haja saldo informado. <b>Não digite por cima</b> sem recarregar: o que '
+      +   'estiver gravado continua lá.</div></div>';
+    return;
+  }
+
+  const itens = ganhosDoNegocio(n);
+  if(!itens.length){
+    /* ATA SEM ITENS LIDOS DIZ ISSO, e não repete aqui as quatro frases do quadro de cima. A
+       explicação de POR QUE não há itens é uma só e já está a dois centímetros daqui — dizê-la
+       duas vezes é o defeito que a B25 nomeou (seis avisos empilhados dizendo a mesma coisa). */
+    box.innerHTML = TIT
+      + '<div class="pk-conta" style="border-color:var(--ambar-300)">'
+      +   '<b>Esta ata ainda não tem itens lidos</b>'
+      +   '<div class="salvo" style="margin-top:4px">Sem a lista de itens não há o que ter saldo — '
+      +   'e o quadro acima diz o que falta e de onde vem. <b>Não é saldo zero</b>: saldo zero '
+      +   'seria dizer que a ata acabou.</div></div>';
+    return;
+  }
+
+  const ls = M.linhas(itens, ATA_SALDOS);
+  const t  = M.totais(ls);
+  const pode = ehGestor();
+  const nb = v => Number(v).toLocaleString('pt-BR', { maximumFractionDigits: 4 });
+  const naoInf = '<span class="sd-nao">não informado</span>';
+
+  /* O CAMPO NASCE VAZIO QUANDO NÃO HÁ DADO. Um `value="0"` seria a tela digitando pelo usuário
+     justamente a afirmação que esta fatia inteira existe para não fazer — e ela ficaria gravada
+     no banco com o nome de quem abriu a ficha. O `placeholder` diz o que o vazio significa. */
+  const campo = (l, i, qual) => '<input class="sd-in" type="number" min="0" step="any"'
+    + ' id="sd-' + qual + '-' + i + '" placeholder="não informado"'
+    + ' aria-label="' + (qual === 'emp' ? 'empenhado' : 'entregue') + ' do item ' + esc(l.item) + '"'
+    + ' value="' + (l[qual === 'emp' ? 'empenhado' : 'entregue'] == null ? '' : l[qual === 'emp' ? 'empenhado' : 'entregue']) + '">';
+
+  const linha = (l, i) => `<tr style="cursor:default">
+    <td>${esc(l.item || '—')}</td>
+    <td>${esc(String(l.descricao || '(sem descrição)').slice(0,44))}
+      ${l.informado ? '<span class="sd-inf">informado por você</span>' : ''}
+      ${l.alertas.map(a => '<span class="sd-alerta">' + esc(a) + '</span>').join('')}</td>
+    <td class="at-num">${l.quantidade != null ? nb(l.quantidade)
+        : '<span class="sd-nao">sem quantidade publicada</span>'}</td>
+    <td class="at-num">${pode ? campo(l, i, 'emp') : (l.empenhado != null ? nb(l.empenhado) : naoInf)}</td>
+    <td class="at-num">${pode ? campo(l, i, 'ent') : (l.entregue != null ? nb(l.entregue) : naoInf)}</td>
+    <td class="at-num"><b>${l.saldo != null ? nb(l.saldo) : naoInf}</b>${
+      l.saldoValor != null ? '<div class="salvo">' + brl(l.saldoValor) + '</div>' : ''}</td>
+  </tr>`;
+
+  box.innerHTML = TIT
+    + '<div class="dica" style="font-size:var(--txt-1);color:var(--muted);margin-bottom:8px">'
+    +   'O empenho <b>não existe no nosso dado</b> — o PNCP não publica empenho por item, e '
+    +   'nenhuma tabela desta casa o guarda. Então ele vem de gente, e sai marcado como tal: '
+    +   '<b>dado digitado nunca se confunde com dado publicado</b>.'
+    + '</div>'
+    + '<div style="max-height:300px;overflow:auto"><table class="pk-tab sd-tab">'
+    + '<thead><tr><th>Nº</th><th>ITEM</th>'
+    +   ['REGISTRADA','EMPENHADA','ENTREGUE','SALDO'].map(h => '<th class="at-num">'+h+'</th>').join('')
+    + '</tr></thead><tbody>'
+    + ls.map(linha).join('')
+    + '</tbody></table></div>'
+    + (pode
+        ? '<div class="prop-novo"><button class="btn-ed" id="sd-bt" onclick="gravarSaldoAta(' + id + ')">'
+          + 'Gravar o que eu informei</button>'
+          + '<span class="salvo" id="sd-msg">nada foi gravado ainda — o campo em branco continua '
+          + '“não informado”.</span></div>'
+        : '<div class="salvo" style="margin-top:8px">o saldo é campo de gestor.</div>')
+    /* ══ O TOTAL, E O QUE ELE DIZ QUE NÃO SABE ═══════════════════════════════════════════════
+       `comSaldo === 0` é o estado de TODAS as 108 atas desta casa hoje, e é o motivo de este
+       bloco existir: sem ele o total imprimiria **0**, que se lê como "a ata acabou". */
+    + '<div class="at-total"><span class="rot">Saldo a entregar</span><span class="v">'
+    +   (t.comSaldo === 0 ? '<span class="sd-nao">não informado</span>'
+        : nb(t.saldo) + (t.comValor ? ' · ' + brl(t.saldoValor) : ''))
+    + '</span></div>'
+    + (t.comSaldo === 0
+        ? '<div class="salvo" style="margin-top:8px;color:var(--ambar-700)"><b>Nenhum dos '
+          + t.itens + ' itens tem empenho informado</b>, então não há saldo a somar. Isto '
+          + '<b>não é saldo zero</b> — zero diria que a ata acabou, e ninguém afirmou isso.</div>'
+        : (t.semInfo
+          ? '<div class="salvo" style="margin-top:8px;color:var(--ambar-700)"><b>' + t.semInfo
+            + ' de ' + t.itens + ' itens sem empenho informado.</b> Eles <b>não</b> entram no total '
+            + 'acima — desconhecido somado como zero é a forma silenciosa de errar para baixo: o '
+            + 'número fecha e parece completo.</div>'
+          : ''))
+    + (t.semQtd ? '<div class="salvo" style="margin-top:4px">' + t.semQtd + ' item(ns) <b>sem '
+        + 'quantidade registrada</b>: sem ela não há de quanto subtrair, e o saldo fica “não '
+        + 'informado” mesmo com o empenho digitado.</div>' : '')
+    /* ══ A FRASE FOI REESCRITA POR ORDEM DE UMA CATRACA DA CASA (e ela estava certa) ══════════
+       Aqui estava escrito o valor "zero reais" POR EXTENSO, em algarismos, dentro da frase que
+       explica por que ele é proibido. A `testa_numero_honesto` ficou vermelha e apontou a linha.
+       >>> ELA PEGOU UM FALSO POSITIVO **DE SUBSTÂNCIA E VERDADEIRO DE FORMA**, e o conserto certo
+           é o meu texto, não a catraca. Ela varre as telas atrás de dinheiro impresso como zero;
+           ensiná-la a distinguir "o zero que é preço" do "zero que é exemplo dentro de uma
+           explicação" exigiria que ela lesse a intenção da frase — e uma catraca que lê intenção
+           é uma catraca que se convence. A regra fica dura e quem cede sou eu. */
+    + (t.semPreco ? '<div class="salvo" style="margin-top:4px">' + t.semPreco + ' item(ns) com saldo '
+        + 'mas <b>sem preço homologado</b>: o saldo existe em unidades e <b>não vira reais</b>. '
+        + 'Um valor zerado aqui diria que o que sobrou não vale nada.</div>' : '')
+    + (t.comAlerta ? '<div class="salvo" style="margin-top:4px;color:var(--ambar-700)"><b>'
+        + t.comAlerta + ' item(ns) com número incoerente</b> (marcado na linha). A tela '
+        + '<b>mostra</b> e não recusa: o órgão pedir antes de lançar o empenho acontece, e '
+        + 'digitação recusada vira anotação no caderno de alguém, fora do sistema.</div>' : '');
+}
+
+/* ── GRAVAR O QUE FOI INFORMADO ─────────────────────────────────────────────────────────────
+   >>> SÓ SOBE O QUE MUDOU. Sem esta comparação, abrir a ficha e clicar em gravar reescreveria as
+       195 linhas com o nome de quem clicou e a data de hoje — e o `atualizado_em`, que é a única
+       resposta para "quando foi que alguém olhou este saldo?", viraria a data do último clique
+       ocioso. Carimbo que se aplica sozinho não é carimbo.
+   >>> E CAMPO ESVAZIADO GRAVA `null`, de propósito: é como se DESINFORMA um número digitado por
+       engano. O caminho de apagar não existe (não há DELETE na política), e não deveria — o
+       histórico de quem informou o quê fica. */
+async function gravarSaldoAta(id){
+  const n = NEG.find(x => x.id === id); if(!n) return;
+  const M = window.FPMED_ATA_SALDO; if(!M) return;
+  const msg = document.getElementById('sd-msg'), bt = document.getElementById('sd-bt');
+  const ls = M.linhas(ganhosDoNegocio(n), ATA_SALDOS);
+  const quem = (window.gmAuth && gmAuth.user && gmAuth.user.email) || null;
+  const agora = new Date().toISOString();
+  const lerCampo = eid => {
+    const el = document.getElementById(eid); if(!el) return undefined;
+    const v = String(el.value || '').trim();
+    if(v === '') return null;
+    const x = Number(v);
+    return isFinite(x) && x >= 0 ? x : undefined;   // `undefined` = não mexa nisto
+  };
+
+  const subir = [];
+  let recusados = 0;
+  ls.forEach((l, i) => {
+    const emp = lerCampo('sd-emp-' + i), ent = lerCampo('sd-ent-' + i);
+    if(emp === undefined && ent === undefined) return;
+    if(emp === undefined || ent === undefined){ recusados++; return; }
+    // NADA A FAZER quando os dois continuam vazios e a linha nunca existiu: gravar aqui criaria
+    // uma linha de "informado" sem nada informado — ruído com carimbo de gente.
+    if(emp === null && ent === null && !l.informado) return;
+    if(emp === l.empenhado && ent === l.entregue) return;              // não mudou
+    subir.push({ negocio_id: id, item_n: l.item, empenhado: emp, entregue: ent,
+                 origem: 'informado', informado_por: quem, atualizado_em: agora });
+  });
+
+  if(recusados && msg){
+    msg.textContent = recusados + ' campo(s) com número inválido — corrija antes de gravar.';
+    return;
+  }
+  if(!subir.length){ if(msg) msg.textContent = 'nada mudou — nenhuma linha foi gravada.'; return; }
+
+  if(bt){ bt.disabled = true; bt.textContent = 'gravando…'; }
+  if(msg) msg.textContent = '';
+  try{
+    // UPSERT PELA CHAVE (negocio_id, item_n) — a mesma do `ata_saldo_item_unico`. Sem
+    // `merge-duplicates`, a segunda informação do mesmo item bateria na restrição e o gestor
+    // veria "409" onde o que ele quis foi corrigir um número.
+    const r = await fetch(`${SB_URL}/rest/v1/ata_saldo?on_conflict=negocio_id,item_n`, {
+      method:'POST',
+      headers: Object.assign({ 'Prefer':'resolution=merge-duplicates,return=representation' },
+                             SB_H, { 'Content-Type':'application/json' }),
+      body: JSON.stringify(subir) });
+    if(!r.ok){
+      const corpo = await r.text().catch(() => '');
+      throw new Error('HTTP ' + r.status
+        + (r.status === 401 || r.status === 403 ? ' — só gestor informa saldo' : '')
+        + (corpo ? ' · ' + corpo.slice(0,160) : ''));
+    }
+    await carregarSaldoAta(id);
+    const m2 = document.getElementById('sd-msg');
+    if(m2) m2.textContent = subir.length + ' item(ns) gravados como informados por você.';
+  }catch(e){
+    if(bt){ bt.disabled = false; bt.textContent = 'Gravar o que eu informei'; }
+    if(msg) msg.textContent = 'não consegui gravar: ' + e.message;
+  }
 }
 
 async function anexarAta(id){

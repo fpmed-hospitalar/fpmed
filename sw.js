@@ -112,7 +112,16 @@
    guardadas (`window.FPMED_PISO` e o `if(!P)`), então nada quebra: o selo simplesmente nunca
    apareceria, que é o formato de defeito que ninguém reporta porque parece que o recurso não
    existe. É a lição S13 outra vez, e é a terceira fatia seguida em que ela vale. */
-const VERSAO = 'limedtec-fpmed-2026-08-20-87';
+/* -88 pela FATIA B30: o `fpmed_ata_saldo.js` NASCEU e é chamado pelo `fpmed_negocios.html`, que
+   ESTÁ na casca. Sem bump, quem já instalou receberia a tela velha do cache — sem a faixa da
+   validade, sem a tabela do saldo e sem a ordem "ata vencendo primeiro" — e o recurso existiria
+   só para quem chegou hoje.
+   >>> ESTE BUMP TEM UM AGRAVANTE QUE OS ANTERIORES NÃO TINHAM. As chamadas são guardadas
+       (`window.FPMED_ATA_SALDO` e o `if(!M)`), então nada quebra: a faixa e a tabela simplesmente
+       não nascem. Só que o assunto delas é PRAZO — e a tela que se cala sobre uma ata vencendo
+       não parece quebrada, parece uma ata que não corre risco. O defeito, aqui, tem a mesma cara
+       da boa notícia. É a lição S13 pela quarta fatia seguida. */
+const VERSAO = 'limedtec-fpmed-2026-08-20-88';
 const CACHE = 'limedtec-shell-' + VERSAO;
 
 // A CASCA DA FPMED. Lista MONTADA A MAO conferindo `git ls-files` (= o que o Pages serve),
@@ -138,6 +147,7 @@ const SHELL = [
   './fpmed_teto_cmed.js',
   './fpmed_teto_homologado.js',      // o teto COMPETITIVO (B28) — Proposta e Negocios chamam o mesmo
   './fpmed_piso.js',                 // o PISO (B29) — Proposta calcula, Documentos cadastra o parametro
+  './fpmed_ata_saldo.js',            // o SALDO DA ATA (B30) — so o Negocios chama, e ja basta
   './fpmed_alarme_coleta.js',        // o sino do Negocios depende dele              // o motor "meu preco x teto", compartilhado
   './fpmed_competitividade.html',      // aqui ELA ENTRA (na instalacao de origem estava fora por
                                        // ficar no .gitignore; na FPMED e versionada e vai pro ar)
