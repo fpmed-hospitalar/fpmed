@@ -8,6 +8,12 @@
     esse condutor, FORA da hora do uso. Se ele nao rodar, o indice envelhece — e a FAIXA DE
     FRESCOR no topo da Encontrar vai dizer a idade real, em ambar, para quem estiver usando.
     Ver o carimbo sem rodar nada: node tools/carga_diaria.js --carimbo
+    >>> E LEIA A LINHA DA CADENCIA que ele imprime antes de comecar (medida em 20/08 13:12):
+        "divida 4.558 vivas - teto desta rodada: 429 - sao 11 rodadas para zerar. Numa so:
+        --minutos 213". O comando NU roda com o orcamento padrao de 20 minutos, e 20 minutos
+        pagam ~429. Isso NAO e defeito escondido: e o tamanho da conta, dito em voz alta. Quem
+        quiser zerar numa rodada so passa o --minutos que ele mesmo recomenda - e gastar 3 horas
+        de maquina e decisao do DONO (pendencia 1 do RELATORIO_A da rodada 8), nao do trabalhador.
 
 >>> CORREIO DO ARQUITETO: caixa atual do A: C:\fpmed\caixas\CAIXA_A.md · do B:
     C:\fpmed\caixas\CAIXA_B.md · relatorios em C:\fpmed\relatorios\ (RELATORIO_A.md /
