@@ -63,6 +63,22 @@
          ela que decide o desenho da tela: `null` é "não informado" e `0` é "acabou". As duas
          frases levam a decisões opostas — uma manda cobrar o órgão, a outra manda esquecer a ata. -->
 <script src="fpmed_ata_saldo.js"></script>
+<!-- ══ O CAMINHO DE ENTRADA DO DADO DA ATA (20/08, fatia B31) ══════════════════════════════════
+     Três telas prontas e VAZIAS não é falha de tela, é falha de caminho de entrada. A coleta traz
+     o que o poder público publica; ela não tem como trazer o que só o dono sabe — que ata é dele,
+     qual item ele ganhou, até quando ela vale. Este arquivo é esse caminho, e ele é de graça:
+     sem IA e sem custo por leitura, para quem tem a ata na mão.
+     >>> Ele guarda também a lei que decidiu a gravação inteira: gravar SUBSTITUI a lista de itens
+         ganhos desta ata (a view mostra só a confirmação mais alta), então a lista sobe COMPLETA
+         ou o que não subiu some da vista sem erro nenhum. -->
+<script src="fpmed_ata_entrada.js"></script>
+<!-- ══ O QUE ESTÁ INDO EMBORA (20/08, fatia B32) ═══════════════════════════════════════════════
+     Uma pergunta só: *o que morre primeiro se eu não fizer nada hoje?* Três fontes (certidão do
+     cofre, ata do saldo, licitação do índice) e UM relógio.
+     >>> Ele NÃO redefine o que é "vencendo" — pergunta a cada módulo. Um corte próprio faria a
+         MESMA ata sair "vencendo" na aba Ata e ausente da lista da manhã, que é o defeito que a
+         `v_documentos_situacao` existe para evitar, voltando pela porta da tela nova. -->
+<script src="fpmed_vai_embora.js"></script>
 <!-- A PORTA INTERNA DO LEITOR (fatia A2 do arquiteto), usada pela fatia B6 para conversar com o
      edital sem sair da ficha. Ela NÃO é o motor: permissão, custo e registro continuam na edge
      function `ler-edital`, e este arquivo existe justamente para que ninguém escreva uma
@@ -1365,6 +1381,83 @@ textarea.anot:focus{border-color:var(--azul)}
   border:1px solid var(--linha);border-radius:8px;padding:4px 8px;font-size:12px;
   font-family:inherit;text-align:right;font-variant-numeric:tabular-nums}
 .sd-in::placeholder{font-style:italic;color:var(--muted)}
+/* ══ O CAMINHO DE ENTRADA (20/08, fatia B31) ═════════════════════════════════════════════════
+   O CONVITE DA VALIDADE não é um aviso de erro, e o desenho tem de dizer isso antes da frase.
+   O dono não errou nada: o dado simplesmente não existe. Âmbar aqui — a cor que esta casa usa
+   para "confira isto" — ensinaria que abrir uma ata nova é abrir um problema, e quem recebe
+   aviso todo dia sobre coisa que não é problema aprende a não ler aviso. */
+.mk-convite{border:1px dashed var(--azul-300);border-radius:10px;background:var(--azul-50);
+  padding:8px 12px;margin-top:8px;font-size:12.5px;color:var(--cinza-800)}
+.mk-convite b{color:var(--azul-700)}
+/* A TABELA DE MARCAR. Irmã das outras duas e com as MESMAS larguras de número, para as três
+   colunas de dinheiro da aba caírem no mesmo eixo — coluna que muda de lugar entre quadros faz
+   o olho reancorar a cada rolagem. */
+.mk-tab{table-layout:fixed}
+.mk-tab th:nth-child(1),.mk-tab td:nth-child(1){width:28px}
+.mk-tab th:nth-child(2),.mk-tab td:nth-child(2){width:32px}
+.mk-tab th:nth-child(4),.mk-tab td:nth-child(4){width:80px}
+.mk-tab th:nth-child(5),.mk-tab td:nth-child(5){width:80px}
+.mk-tab td,.mk-tab th{padding:8px 4px;overflow-wrap:anywhere}
+.mk-tab th{white-space:normal;position:sticky;top:0}
+/* A LINHA MARCADA MUDA DE FUNDO, e não só a caixinha. Numa lista de 195 itens em que 3 são meus,
+   a marca de 13px é a informação mais importante da tela e a mais fácil de perder de vista. */
+.mk-tab tr.on{background:var(--verde-50)}
+.mk-in{width:100%;box-sizing:border-box;background:var(--painel2);color:var(--texto);
+  border:1px solid var(--linha);border-radius:8px;padding:4px 8px;font-size:12px;
+  font-family:inherit;text-align:right;font-variant-numeric:tabular-nums}
+.mk-in::placeholder{font-style:italic;color:var(--muted)}
+.mk-in:disabled{background:transparent;border-color:transparent;color:var(--muted)}
+/* A REFERÊNCIA DO EDITAL FICA CINZA E MENOR QUE O CAMPO, sempre. Ela é dado publicado sobre a
+   COMPRA, não afirmação sobre o que eu ganhei — se tivesse o peso do campo, o olho a leria como
+   valor preenchido e alguém gravaria a quantidade do edital achando que conferiu. */
+.mk-ref{display:block;font-size:var(--txt-1);color:var(--muted);font-variant-numeric:tabular-nums;
+  white-space:normal}
+.mk-selo{font-size:var(--txt-1);font-weight:700;border:1px solid;border-radius:20px;
+  padding:4px 8px;white-space:nowrap}
+.mk-selo.meu{color:var(--verde-700);border-color:var(--verde-300)}
+.mk-selo.outro{color:var(--ambar-700);border-color:var(--ambar-300)}
+.mk-selo.sem{color:var(--muted);border-color:var(--linha)}
+/* ══ "O QUE ESTÁ INDO EMBORA" (20/08, fatia B32) ══════════════════════════════════════════════
+   A lista da manhã. Ela mora no TOPO da tela e por isso não pode gritar: o que faz o olho parar
+   é o NÚMERO DE DIAS, grande e alinhado, e não a cor de fundo. Fundo colorido em bloco de topo
+   vira papel de parede na segunda semana.
+   >>> A COR NUNCA VAI SOZINHA (WCAG 1.4.1): a barra da esquerda repete o que o número e a frase
+       já dizem. Ninguém precisa enxergar cor para saber o que morre primeiro. */
+.ve-cx{border:1px solid var(--linha);border-radius:var(--raio-cartao);background:var(--painel2);
+  padding:12px;margin-bottom:12px}
+.ve-topo{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap;margin-bottom:8px}
+.ve-topo h3{margin:0;font-family:Montserrat,sans-serif;font-size:15px;color:var(--cinza-800)}
+.ve-topo .sub{font-size:var(--txt-1);color:var(--muted)}
+.ve-l{display:flex;gap:12px;align-items:center;padding:8px 12px;border:1px solid var(--linha);
+  border-left:4px solid var(--cinza-400);border-radius:10px;margin-bottom:4px;
+  background:var(--painel);text-align:left;width:100%;box-sizing:border-box;
+  font-family:inherit;cursor:pointer}
+.ve-l:hover{background:var(--linha-hover)}
+.ve-l .dias{font-family:Montserrat,sans-serif;font-weight:800;font-size:19px;min-width:56px;
+  text-align:right;font-variant-numeric:tabular-nums;color:var(--cinza-800)}
+.ve-l .meio{flex:1;min-width:0}
+.ve-l .tit{font-size:12.5px;font-weight:var(--peso-semi);color:var(--cinza-800);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ve-l .sub{font-size:var(--txt-1);color:var(--muted)}
+/* O VERBO É O QUE A LINHA MANDA FAZER, e ele fica na ponta direita, no mesmo lugar em toda
+   linha. Uma coluna de verbos lê-se de cima a baixo como uma lista de tarefas — que é o que
+   esta tela é. */
+.ve-l .verbo{font-size:var(--txt-1);font-weight:700;text-transform:uppercase;letter-spacing:.6px;
+  border:1px solid;border-radius:20px;padding:4px 8px;white-space:nowrap}
+.ve-l.vencido{border-left-color:var(--vermelho-300);background:var(--vermelho-50)}
+.ve-l.vencido .dias{color:var(--vermelho-700)}
+.ve-l.perto{border-left-color:var(--ambar-300);background:var(--ambar-50)}
+.ve-l.perto .dias{color:var(--ambar-700)}
+.ve-l .verbo.renovar{color:var(--azul-700);border-color:var(--azul-300)}
+.ve-l .verbo.empenhar{color:var(--verde-700);border-color:var(--verde-300)}
+.ve-l .verbo.propor{color:var(--roxo-700);border-color:var(--roxo-200)}
+/* VAZIO É VITÓRIA, E TEM QUE PARECER. Regra 4 da caixa. Uma tela em branco no lugar onde mora a
+   urgência é indistinguível de uma tela que não carregou — e a diferença entre "não há nada
+   vencendo" e "eu não consegui olhar" é a diferença entre dormir tranquilo e perder uma ata. */
+.ve-vazio{display:flex;gap:12px;align-items:center;border:1px solid var(--verde-300);
+  border-radius:10px;background:var(--verde-50);padding:12px;color:var(--verde-800);font-size:12.5px}
+.ve-vazio b{color:var(--verde-700)}
+.ve-divida{margin-top:8px;font-size:var(--txt-1);color:var(--muted);line-height:1.6}
 /* ── PROPOSTA ANEXADA ── */
 .prop-novo{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:12px 0 4px}
 .prop-novo input[type=file]{background:var(--painel2);color:var(--texto);border:1px solid var(--linha);
@@ -1680,6 +1773,26 @@ textarea.anot:focus{border-color:var(--azul)}
            abertura. O que o difere é a `origem: manual` — e ela aparece na ficha, com a mesma
            honestidade do "Calendário 2025" nos importados. -->
   <div id="form-manual" style="display:none"></div>
+  <!-- ══ O QUE ESTÁ INDO EMBORA (20/08, fatia B32) ═════════════════════════════════════════════
+       Uma pergunta só: *o que morre primeiro se eu não fizer nada hoje?* Três fontes — a certidão
+       do cofre, a ata do saldo, a licitação do índice — e UM relógio, ordenado por quem morre
+       primeiro. Sem abas e sem filtro por tipo na primeira vista: separar por tipo devolveria as
+       três telas que esta veio substituir.
+
+       >>> ELE FICA ACIMA DAS CAIXINHAS, e a ordem é a decisão. As caixinhas respondem "onde a
+           empresa está" — e a resposta delas é a mesma amanhã. Esta lista responde "o que fazer
+           hoje", e o conteúdo dela caduca. É a mesma lei que pôs a validade no alto da aba Ata na
+           B30: o que tem relógio responde primeiro.
+       >>> E ELE NASCE COM ESQUELETO NO PRÓPRIO HTML, e não em branco. Esta é a única tela desta
+           casa em que o defeito e a boa notícia têm a MESMA cara — um espaço calmo. Um bloco
+           vazio enquanto a leitura não chega lê-se como "não há nada vencendo", que é a única
+           frase que esta tela não pode dizer sem ter olhado. -->
+  <div id="vai-embora" class="ve-cx">
+    <div class="ve-topo"><h3>O que está indo embora</h3>
+      <span class="sub">lendo os prazos…</span></div>
+    <div class="fp-skeleton fp-skeleton--cartao" aria-hidden="true" style="height:44px"></div>
+    <span class="fp-so-leitor">Carregando os prazos que vencem…</span>
+  </div>
   <div class="kpis" id="kpis"></div>
   <!-- O painel abre ENTRE as caixinhas e a lista, e não numa tela nova: é o detalhe do número
        que está logo acima, e o caminho de volta é fechar — não é navegar. -->
@@ -2910,6 +3023,12 @@ async function abrirDrawer(id){
                         que alguém digitou. São duas coisas de naturezas diferentes e por isso
                         duas chamadas: uma não pode ficar esperando a rede da outra. */
                      pintaVigenciaAta(id); carregarSaldoAta(id);
+                     /* O QUADRO DE MARCAR E O DE ARQUIVAR PINTAM DIRETO: os dois leem dado que
+                        já está em memória (os itens do certame e a própria ficha). Uma leitura a
+                        mais aqui seria uma chance a mais de a aba abrir sem o caminho de
+                        entrada — que é o único pedaço desta aba que ainda não depende de a
+                        coleta ter trazido alguma coisa. */
+                     MARCAS = {}; pintaMarcarGanhos(id); pintaArquivoAta(id);
                      carregarEdital(id); carregarItensEdital(id); carregarConversaEdital(id);
                      pintaControlePNCP(id); carregarContextoLic(id);
                      montaSeletorArquivos(); carregarMeusArquivos(id);
@@ -3293,6 +3412,14 @@ function corpoDrawer(n, obs, carregando){
            um negócio ganho quer VER o que ganhou, não ser convidado a pagar uma leitura. O botão
            de ler só interessa a quem ainda não confirmou. -->
       <div class="dw-sec" id="ata-resultado"></div>
+      <!-- ══ O CAMINHO DE ENTRADA, LOGO ABAIXO DO QUADRO QUE ESTÁ VAZIO (20/08, fatia B31) ════
+           Ele fica AQUI e não no fim da aba: o quadro de cima acabou de dizer "esta ata ainda não
+           tem itens lidos e eis por quê", e a resposta a essa frase tem de estar no campo de
+           visão de quem acabou de lê-la. Caminho de entrada uma tela abaixo do estado vazio é
+           caminho que só quem já sabe que ele existe encontra.
+           >>> E ELE É O CAMINHO DE GRAÇA. O botão que usa IA já existe mais abaixo e cobra por
+               leitura; este é para quem tem a ata na mão e sabe o que ganhou. -->
+      <div class="dw-sec" id="ata-marcar"></div>
       <!-- ══ O SALDO VEM DEPOIS DO QUE SE GANHOU, E NÃO ANTES (20/08, fatia B30) ══════════════
            A ordem é a da pergunta: primeiro "o que eu ganhei", depois "quanto disso ainda posso
            entregar". O saldo lê a MESMA lista de itens do quadro de cima (a ganhosDoNegocio) —
@@ -3302,6 +3429,13 @@ function corpoDrawer(n, obs, carregando){
       <div class="dw-sec" id="ata-saldo"></div>
       <div class="dw-sec" id="ata-relatorios"></div>
       <div class="dw-sec" id="ata-saida"></div>
+      <!-- ══ ARQUIVAR A ATA (20/08, fatia B31) — POR ÚLTIMO, E DE PROPÓSITO ═══════════════════
+           É o único ato desta aba que TIRA alguma coisa da frente. Ele fica no fim porque é o
+           que menos se faz e o que mais custa desfazer de cabeça — e porque a ordem da aba é a
+           ordem da vida da ata: ela vale, tem documentos, tem itens, tem saldo, e um dia sai.
+           >>> NÃO É DELETE, e a palavra "arquivar" está no botão por isso. Ata é papel de prova:
+               quem tirou uma da frente um dia vai precisar mostrar que ela existiu, e em que dia. -->
+      <div class="dw-sec" id="ata-arquivo"></div>
     </div>
 
     <!-- ══ CREDENCIAMENTO JUNTO À INDÚSTRIA (11/08) ══════════════════════════════════════════
@@ -3617,6 +3751,11 @@ async function carregarItensEdital(id){
   // E O SALDO JUNTO (20/08, B30): ele lê a MESMA lista (`ganhosDoNegocio`), então herda a mesma
   // corrida. Sem esta linha, a tabela do saldo diria "ata sem itens lidos" com 195 itens ao lado.
   pintaSaldoAta(id);
+  // E O CAMINHO DE ENTRADA (20/08, B31), pelo mesmo motivo e com a consequência mais grave dos
+  // três: a lista de marcar é feita DOS ITENS DO EDITAL. Sem esta repintura, quem abrisse a aba
+  // antes de os itens chegarem veria "este certame ainda não tem itens" e concluiria que não há
+  // o que marcar — com os 195 itens já dentro da memória da página.
+  pintaMarcarGanhos(id);
   // Quem clicou na aba ANTES de a lista chegar não pode ficar com a coluna do teto vazia pra
   // sempre: naquele momento não havia item nenhum pra conferir, e o gatilho da aba não vai
   // disparar de novo. Se a aba já está aberta agora, a conferência sai daqui.
@@ -6731,6 +6870,7 @@ async function carregarItensGanhos(id){
     ITENS_GANHOS = await r.json();
     pintaItensGanhos(id);
     pintaSaldoAta(id);   // mesma corrida, mesma razão: o saldo lê a lista que acabou de chegar
+    pintaMarcarGanhos(id);   // e a marcação, que mostra JÁ MARCADO o que esta leitura trouxe
     /* A ABA ITENS TAMBÉM MOSTRA O QUE FOI GANHO (14/08, fatia B5), e ela é pintada por outra
        chamada assíncrona. As duas correm juntas e a ordem de chegada não é garantida: sem esta
        repintura, quem carregasse mais rápido decidiria se o bloco dos ganhos apareceria. */
@@ -6968,11 +7108,24 @@ function pintaVigenciaAta(id){
     /* O ESTADO VAZIO NÃO PROMETE NADA. "Sem data" não é "não vence": ata vence, em regra em doze
        meses. Dizer "vigente" numa ficha sem data seria a tela afirmando uma coisa sobre um
        contrato que ela não leu — e é a afirmação que faz alguém deixar o saldo virar pó. */
+    /* ══ O ESTADO VAZIO VIROU CONVITE, E NÃO É COSMÉTICA (20/08, fatia B31) ══════════════════
+       Aqui estava um bloco ÂMBAR — a cor que esta casa usa para "confira isto, pode estar
+       errado". Só que **o dono não errou nada**: o dado simplesmente não existe, e ele não
+       existe em 107 das 108 atas desta base. Um aviso de atenção repetido em toda ata que se
+       abre ensina, em duas semanas, que âmbar nesta tela não quer dizer nada — e aí o âmbar
+       verdadeiro, o da ata vencendo, chega e ninguém olha.
+       >>> O QUE MUDA É O TOM, NÃO O CONTEÚDO. As duas frases que importam continuam inteiras:
+           "sem data" não é "não vence", e sem a data a tela não tem como avisar. O que entra é o
+           MOTIVO DE PREENCHER dito como ganho ("eu aviso quando o saldo estiver indo embora"), e
+           não como falta. Pedido é para quem tem o documento na mão; acusação é para quem
+           errou. */
     + (v.situacao === 'sem_vigencia'
-        ? '<div class="salvo" style="margin-top:8px;color:var(--ambar-700)">A validade desta ata '
-          + '<b>não foi informada</b>, e isso <b>não</b> quer dizer que ela não vença — ata vence, '
-          + 'em regra em doze meses. Sem a data, a tela não tem como avisar que o saldo está indo '
-          + 'embora. Ela está no documento da ata, no quadro acima.</div>'
+        ? '<div class="mk-convite"><b>Informe a validade</b> e eu aviso quando o saldo desta ata '
+          + 'estiver indo embora — e ela entra na lista <b>“o que está indo embora”</b>, no topo '
+          + 'da tela de Negócios.'
+          + '<div class="salvo" style="margin-top:4px">A data está no documento da ata, no quadro '
+          + 'acima. <b>Sem data não é “não vence”:</b> ata vence, em regra em doze meses — é só '
+          + 'que ninguém digitou, e por isso a tela não tem como avisar.</div></div>'
         : (v.situacao === 'vencida'
           ? '<div class="salvo" style="margin-top:8px;color:var(--vermelho-700)">Ata <b>vencida</b>. '
             + 'O que sobrou de saldo <b>não é mais entregável</b> por esta ata — e continua abaixo '
@@ -7014,6 +7167,10 @@ async function salvarVigenciaAta(id){
     if(msg) msg.textContent = 'validade gravada.';
     pintaVigenciaAta(id);
     pinta();          // a ordem "ata vencendo primeiro" muda com esta data
+    // E A LISTA DA MANHÃ (B32): esta ata acabou de GANHAR um relógio. Sem esta linha, quem
+    // digitasse a validade não veria a ata aparecer na lista até recarregar a página — e o efeito
+    // do que ele acabou de fazer é justamente o que o convite prometeu.
+    carregarVaiEmbora();
   }catch(e){
     if(bt) bt.disabled = false;
     if(msg) msg.textContent = 'não consegui gravar: ' + e.message;
@@ -7202,6 +7359,392 @@ async function gravarSaldoAta(id){
   }catch(e){
     if(bt){ bt.disabled = false; bt.textContent = 'Gravar o que eu informei'; }
     if(msg) msg.textContent = 'não consegui gravar: ' + e.message;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════════
+   O CAMINHO DE ENTRADA DO DADO (20/08, fatia B31) — "marcar o que eu ganhei"
+
+   ══ O GARGALO QUE ESTA FATIA ABRE ═══════════════════════════════════════════════════════════
+   Três telas entregues nas três rodadas anteriores funcionam e estão VAZIAS: o cofre com um
+   documento de prova, o teto competitivo com 192 itens de um certame alheio, o saldo com zero
+   atas com item. **O código acabou; o dado não começou.** A coleta traz o que o poder público
+   publica — e não tem como trazer o que só o dono sabe: qual item ele ganhou, por quanto.
+
+   ══ E O NÚMERO QUE DECIDE O DESENHO, MEDIDO NO BANCO ════════════════════════════════════════
+   Dos **192 itens com resultado publicado** no único certame desta base, **ZERO** estão sob o
+   nosso CNPJ. Por isso a lista de marcar é feita dos **itens do EDITAL**, e não do resultado: uma
+   lista feita do resultado nasceria vazia justamente na casa em que ela precisa funcionar.
+
+   ══ A CONTA NÃO MORA AQUI ═══════════════════════════════════════════════════════════════════
+   Ela está no `fpmed_ata_entrada.js`. É a regra que a B28 pagou para aprender, e aqui ela viraria
+   faturamento — de novo.
+   ══════════════════════════════════════════════════════════════════════════════════════════════ */
+let MARCAS = {};      // o que a pessoa marcou nesta sessão, por número de item
+
+function marcasDaTela(cands){
+  return cands.map(c => {
+    const m = MARCAS[c.item];
+    return m ? { item: c.item, marcado: !!m.marcado, quantidade: m.quantidade, unitario: m.unitario }
+             : { item: c.item, marcado: c.marcado, quantidade: c.quantidade, unitario: c.unitario };
+  });
+}
+
+function candidatosDaAta(n){
+  const E = window.FPMED_ATA_ENTRADA; if(!E) return null;
+  const emp = EMPRESAS.find(e => e.id === (n && n.empresa_id)) || {};
+  return E.candidatos(ITENS_EDITAL, ITENS_GANHOS, emp.cnpj);
+}
+
+function pintaMarcarGanhos(id){
+  const box = document.getElementById('ata-marcar'); if(!box) return;
+  const n = NEG.find(x => x.id === id) || {};
+  const E = window.FPMED_ATA_ENTRADA;
+  const TIT = '<h4>Marcar o que eu ganhei — sem IA e sem custo</h4>';
+  /* SEM O MOTOR O QUADRO NÃO NASCE, em vez de nascer com a conta feita aqui. Mesma decisão da
+     faixa da validade na B30, e pelo mesmo motivo: um `if(!E)` que montasse a lista por conta
+     própria seria a segunda implementação da mesma regra. */
+  if(!E){ box.innerHTML = ''; return; }
+  if(!ehGestor()){
+    box.innerHTML = TIT + '<div class="salvo">marcar itens ganhos é ação de gestor.</div>';
+    return;
+  }
+
+  // ── ESTADO ERRO. "não sei" e "não tem" outra vez: quem vê "este certame não tem itens" depois
+  //    de uma falha de leitura conclui que não há o que marcar, e vai pagar a leitura por IA.
+  if(ITENS_ERRO){
+    box.innerHTML = TIT
+      + '<div class="pk-conta" style="border-color:var(--vermelho-300)">'
+      +   '<b style="color:var(--vermelho-700)"><svg class="ic" aria-hidden="true"><use href="#ic-alerta"/></svg> '
+      +   'Não consegui ler os itens do certame</b>'
+      +   '<div class="salvo" style="margin-top:4px">' + esc(ITENS_ERRO) + ' — isto <b>não</b> quer '
+      +   'dizer que este certame não tenha itens. Feche e abra a ficha para tentar de novo.</div></div>';
+    return;
+  }
+
+  const cands = candidatosDaAta(n);
+  // ── ESTADO VAZIO, e ele diz O QUE FALTA E DE ONDE VEM (a mesma frase da `faltaDoResultado`,
+  //    que já existe e já sabe distinguir os quatro casos). Repetir aqui uma quinta frase seria
+  //    a tela dizendo a mesma coisa com outras palavras a dois centímetros de distância.
+  if(!cands.length){
+    box.innerHTML = TIT
+      + '<div class="pk-conta" style="border-color:var(--ambar-300)">'
+      +   '<b>Ainda não há itens deste certame para marcar</b>'
+      +   '<div class="salvo" style="margin-top:4px">' + faltaDoResultado(n) + '</div></div>';
+    return;
+  }
+
+  const marcas = marcasDaTela(cands);
+  const t = E.totaisMarcacao(cands, marcas);
+  const nb = v => Number(v).toLocaleString('pt-BR', { maximumFractionDigits: 4 });
+
+  /* ── O SELO DE CADA LINHA ────────────────────────────────────────────────────────────────────
+     Ele existe para a tela não mentir nos DOIS sentidos. "publicado sob outro CNPJ" não impede
+     marcar — a publicação pode estar sob o CNPJ da matriz, ou estar errada, e a confirmação de
+     gente manda sobre a publicação (lei da B5). O que ele faz é obrigar quem marca a saber o que
+     está contrariando. */
+  const selo = c => c.estado === 'confirmado' ? '<span class="mk-selo meu">já na sua lista</span>'
+    : c.estado === 'meu_publicado' ? '<span class="mk-selo meu">o PNCP já publicou como seu</span>'
+    : c.estado === 'de_outro' ? '<span class="mk-selo outro">publicado sob outro CNPJ</span>'
+    : '<span class="mk-selo sem">o portal não publicou resultado</span>';
+
+  const linha = (c, i) => {
+    const m = MARCAS[c.item];
+    const on = m ? !!m.marcado : c.marcado;
+    const qtd = m ? m.quantidade : c.quantidade;
+    const unit = m ? m.unitario : c.unitario;
+    return `<tr class="${on ? 'on' : ''}" style="cursor:default">
+      <td><input type="checkbox" id="mk-on-${i}" ${on ? 'checked' : ''}
+        aria-label="marcar o item ${esc(c.item)} como ganho por mim"
+        onchange="mkMarca(${id},'${esc(c.item).replace(/'/g,"\\'")}',this.checked)"></td>
+      <td>${esc(c.item || '—')}</td>
+      <td><label for="mk-on-${i}">${esc(String(c.descricao || '(sem descrição no edital)').slice(0,52))}</label>
+        ${selo(c)}
+        ${c.resultadoVencedor && c.estado === 'de_outro'
+          ? '<span class="mk-ref">o portal deu a ' + esc(String(c.resultadoVencedor).slice(0,40)) + '</span>' : ''}</td>
+      <td class="at-num"><input class="mk-in" type="number" min="0" step="any" id="mk-qtd-${i}"
+        ${on ? '' : 'disabled'} placeholder="${on ? 'quanto eu ganhei' : '—'}"
+        aria-label="quantidade que eu ganhei do item ${esc(c.item)}"
+        value="${qtd == null ? '' : qtd}"
+        oninput="mkCampo(${id},'${esc(c.item).replace(/'/g,"\\'")}','quantidade',this.value)">
+        <span class="mk-ref">${c.qtdEdital != null
+          ? 'edital: ' + nb(c.qtdEdital) + (c.unidade ? ' ' + esc(c.unidade) : '')
+          : 'edital sem quantidade'}</span></td>
+      <td class="at-num"><input class="mk-in" type="number" min="0" step="any" id="mk-un-${i}"
+        ${on ? '' : 'disabled'} placeholder="${on ? 'meu preço' : '—'}"
+        aria-label="preço unitário com que eu ganhei o item ${esc(c.item)}"
+        value="${unit == null ? '' : unit}"
+        oninput="mkCampo(${id},'${esc(c.item).replace(/'/g,"\\'")}','unitario',this.value)">
+        ${/* A REFERÊNCIA DO EDITAL É O ESTIMADO, E ELA NÃO É SUGESTÃO DE PREÇO. O preço com que eu
+              ganhei é meu e ninguém publicou; pôr o estimado dentro do campo faria a tela digitar
+              pelo usuário justamente o número que decide o faturamento. Ele fica fora, em cinza,
+              como referência — que é o que ele é. */''}
+        <span class="mk-ref">${c.refEdital != null ? 'ref.: ' + brl(c.refEdital) : 'sem referência'}</span></td>
+    </tr>`;
+  };
+
+  box.innerHTML = TIT
+    + '<div class="dica" style="font-size:var(--txt-1);color:var(--muted);margin-bottom:8px">'
+    +   'A lista abaixo é a do <b>edital</b>. Marque os itens que <b>você</b> ganhou e escreva a '
+    +   'quantidade e o preço da <b>sua</b> ata. Tudo que entra por aqui sai marcado '
+    +   '<b>“informado por você”</b> — nunca se confunde com o que o portal publicou. '
+    +   '<b>Este caminho é de graça</b>: o botão que lê a ata por IA está mais abaixo e cobra por leitura.'
+    + '</div>'
+    + '<div style="max-height:300px;overflow:auto"><table class="pk-tab mk-tab">'
+    + '<thead><tr><th><span class="fp-so-leitor">ganhei</span></th><th>Nº</th><th>ITEM</th>'
+    +   ['QTD QUE GANHEI','MEU UNITÁRIO'].map(h => '<th class="at-num">'+h+'</th>').join('')
+    + '</tr></thead><tbody>'
+    + cands.map(linha).join('')
+    + '</tbody></table></div>'
+    /* ══ O TOTAL, E O QUE ELE DIZ QUE NÃO SABE — a regra da casa outra vez ════════════════════
+       `comTotal` é quantas linhas entraram na soma. Sem ele, marcar 3 itens sem preço e ver
+       "R$ 0,00" seria a tela afirmando que se ganhou de graça. */
+    + '<div class="at-total"><span class="rot">' + t.marcados + ' item(ns) marcado(s)</span>'
+    +   '<span class="v">' + (t.comTotal ? brl(t.total) : '<span class="sd-nao">sem preço informado</span>') + '</span></div>'
+    + (t.semPreco ? '<div class="salvo" style="margin-top:8px;color:var(--ambar-700)"><b>' + t.semPreco
+        + ' item(ns) marcado(s) sem preço.</b> Eles entram na sua lista e <b>não somam</b> no total: '
+        + 'item sem preço não vale nada informado, vale “ainda não escrevi”.</div>' : '')
+    + (t.semQtd ? '<div class="salvo" style="margin-top:4px">' + t.semQtd + ' item(ns) marcado(s) '
+        + '<b>sem quantidade</b>. Sem ela o <b>saldo</b> do quadro abaixo fica sem de quanto '
+        + 'subtrair, e continua “não informado” mesmo com o empenho digitado.</div>' : '')
+    + '<div class="prop-novo">'
+    +   '<button class="btn-ed" id="mk-bt" onclick="gravarMarcados(' + id + ')">Gravar os itens que eu ganhei</button>'
+    +   '<button class="btn-ed sec" id="mk-cp" onclick="mkCopiaEdital(' + id + ')" '
+    +     'title="preenche a quantidade dos itens JÁ MARCADOS com a do edital, sem apagar o que você digitou">'
+    +     'usar as quantidades do edital</button>'
+    + '</div>'
+    /* ══ A FRASE MAIS IMPORTANTE DESTE QUADRO, E ELA É UM AVISO ═══════════════════════════════
+       A `v_negocio_itens_ganhos` mostra só a confirmação MAIS ALTA. Gravar não acrescenta à lista
+       antiga: gravar cria uma lista nova que SUBSTITUI a anterior na vista. Quem não souber disso
+       vai desmarcar um item para "tirar só ele" e vai gravar — o que está certo — mas também vai
+       achar que os outros continuam por conta própria, o que também está certo, e é justamente
+       por isso que a frase tem de estar escrita: o comportamento é o esperado só para quem sabe
+       que a lista sobe inteira. */
+    + '<div class="salvo" id="mk-msg" style="margin-top:4px">Gravar registra a <b>lista inteira</b> '
+    + 'como uma confirmação nova. A anterior <b>não se apaga</b> — ela fica no rastro, com data e '
+    + 'autor, e é assim que “por que este negócio vale isso?” tem resposta daqui a seis meses.</div>';
+}
+
+/* ── OS DOIS GESTOS DA TELA ──────────────────────────────────────────────────────────────────
+   Marcar repinta o quadro inteiro (o total muda, a linha muda de fundo, os campos destravam);
+   digitar NÃO repinta — só guarda. Repintar a cada tecla devolveria o cursor para o fim do campo
+   a cada dígito, que é o defeito clássico de campo controlado, e ele é pior numa lista de 195
+   linhas porque a rolagem volta ao topo junto. */
+function mkMarca(id, item, ligado){
+  const n = NEG.find(x => x.id === id) || {};
+  const cands = candidatosDaAta(n) || [];
+  const c = cands.find(x => x.item === String(item));
+  const m = MARCAS[item] || { quantidade: c ? c.quantidade : null, unitario: c ? c.unitario : null };
+  MARCAS[item] = { marcado: !!ligado, quantidade: m.quantidade, unitario: m.unitario };
+  pintaMarcarGanhos(id);
+}
+function mkCampo(id, item, qual, valor){
+  const m = MARCAS[item] || { marcado: true, quantidade: null, unitario: null };
+  const s = String(valor == null ? '' : valor).trim();
+  const x = Number(s);
+  // CAMPO VAZIO VOLTA A `null` — "não informado" — e não a zero. É a lei da casa, e aqui ela
+  // decide se o item entra na soma ou fica de fora dizendo que ficou.
+  m[qual] = s === '' ? null : (isFinite(x) ? x : null);
+  m.marcado = true;
+  MARCAS[item] = m;
+  // O total do rodapé precisa acompanhar a digitação, mas repintar a tabela devolveria o cursor
+  // ao fim do campo. Então só o total é reescrito, e no lugar em que ele já está.
+  const E = window.FPMED_ATA_ENTRADA;
+  const n = NEG.find(y => y.id === id) || {};
+  const cands = candidatosDaAta(n);
+  if(!E || !cands) return;
+  const t = E.totaisMarcacao(cands, marcasDaTela(cands));
+  const cx = document.querySelector('#ata-marcar .at-total');
+  if(cx) cx.innerHTML = '<span class="rot">' + t.marcados + ' item(ns) marcado(s)</span>'
+    + '<span class="v">' + (t.comTotal ? brl(t.total) : '<span class="sd-nao">sem preço informado</span>') + '</span>';
+}
+
+function mkCopiaEdital(id){
+  const E = window.FPMED_ATA_ENTRADA; if(!E) return;
+  const n = NEG.find(x => x.id === id) || {};
+  const cands = candidatosDaAta(n); if(!cands) return;
+  const r = E.copiaQuantidades(cands, marcasDaTela(cands));
+  r.marcas.forEach(m => { MARCAS[m.item] = { marcado: true, quantidade: m.quantidade, unitario: m.unitario }; });
+  pintaMarcarGanhos(id);
+  const msg = document.getElementById('mk-msg');
+  if(msg) msg.innerHTML = r.copiadas
+    ? r.copiadas + ' quantidade(s) copiada(s) do edital. <b>Confira:</b> a quantidade do edital é '
+      + 'a da COMPRA — ganhar o item não quer dizer ganhar tudo dele.'
+      + (r.semQtdNoEdital ? ' ' + r.semQtdNoEdital + ' item(ns) ficaram vazios: o edital não trouxe quantidade.' : '')
+    : 'nada a copiar — ou nada está marcado, ou as quantidades já estão preenchidas (e este botão '
+      + '<b>não apaga</b> o que você digitou).';
+}
+
+/* ── A GRAVAÇÃO ──────────────────────────────────────────────────────────────────────────────
+   >>> `confirmacao: 0` VAI EM CADA LINHA, e não é enfeite. MEDIDO no banco em 20/08, inserindo
+       de verdade e lendo o que voltou: omitir a coluna deixa o `default 1`, a trigger nunca
+       dispara, e uma correção futura entra também como 1 — a view devolveria a lista velha E a
+       nova MISTURADAS. O `0` manda o banco escolher. (E a trigger foi consertada na mesma fatia:
+       antes ela dava 2, 3 e 4 para um lote de 3, e a view mostrava UMA linha das três.)
+   >>> A LISTA SOBE COMPLETA. Ver o aviso do quadro: a view mostra só a confirmação mais alta. */
+async function gravarMarcados(id){
+  const E = window.FPMED_ATA_ENTRADA; if(!E) return;
+  const n = NEG.find(x => x.id === id); if(!n) return;
+  const cands = candidatosDaAta(n); if(!cands) return;
+  const msg = document.getElementById('mk-msg'), bt = document.getElementById('mk-bt');
+  const quem = (window.gmAuth && gmAuth.user && gmAuth.user.email) || null;
+  const r = E.linhasParaGravar(cands, marcasDaTela(cands), quem);
+
+  if(r.erros.length){
+    if(msg) msg.innerHTML = '<b style="color:var(--vermelho-700)">' + esc(r.erros.join(' · ')) + '</b>';
+    return;
+  }
+  if(!r.mudou){ if(msg) msg.textContent = 'nada mudou — nenhuma confirmação foi gravada.'; return; }
+  /* MARCAR ZERO ITENS E GRAVAR É UMA AFIRMAÇÃO ("nenhum item desta ata é meu"), e ela some da
+     vista sem deixar tabela. Ela é legítima — é como se corrige uma lista inteira errada — mas
+     não pode sair de um clique distraído, porque o resultado parece um erro de carregamento. */
+  if(!r.linhas.length && !confirm('Você não marcou nenhum item.\n\nGravar assim registra que '
+      + 'NENHUM item desta ata é seu, e o quadro passa a aparecer vazio. A lista anterior '
+      + 'continua no rastro.\n\nConfirmar?')) return;
+
+  if(bt){ bt.disabled = true; bt.textContent = 'gravando…'; }
+  if(msg) msg.textContent = '';
+  try{
+    const corpo = r.linhas.map(l => Object.assign({ negocio_id: id }, l));
+    const rq = await fetch(`${SB_URL}/rest/v1/negocio_itens_ganhos`, { method:'POST',
+      headers: Object.assign({}, SB_H, { 'Content-Type':'application/json',
+        'Prefer':'return=representation' }),
+      body: JSON.stringify(corpo) });
+    if(!rq.ok){
+      const txt = await rq.text().catch(() => '');
+      throw new Error('HTTP ' + rq.status
+        + (rq.status === 401 || rq.status === 403 ? ' — só gestor confirma itens ganhos' : '')
+        + (txt ? ' · ' + txt.slice(0,160) : ''));
+    }
+    /* ══ A CONFERÊNCIA DO EFEITO, E NÃO DO CÓDIGO HTTP ═════════════════════════════════════════
+       É o achado do `204` da B30 virado em código: um `DELETE` sem policy responde SUCESSO e
+       apaga zero linhas. Aqui a pergunta certa é "quantas linhas voltaram?", e não "deu 201?".
+       Se o número não bater, a tela DIZ — em vez de mostrar "gravado" sobre meia lista. */
+    const volta = await rq.json().catch(() => []);
+    MARCAS = {};
+    await carregarItensGanhos(id);
+    const m2 = document.getElementById('mk-msg');
+    if(m2) m2.innerHTML = Array.isArray(volta) && volta.length === r.linhas.length
+      ? '<b>' + r.linhas.length + ' item(ns) gravados como informados por você</b> — confirmação '
+        + esc(String((volta[0] || {}).confirmacao || '?')) + '. A lista anterior ficou no rastro.'
+      : '<b style="color:var(--ambar-700)">o banco aceitou, mas devolveu '
+        + (Array.isArray(volta) ? volta.length : '?') + ' linha(s) para as ' + r.linhas.length
+        + ' que subiram.</b> Confira o quadro acima antes de considerar gravado.';
+  }catch(e){
+    if(bt){ bt.disabled = false; bt.textContent = 'Gravar os itens que eu ganhei'; }
+    const m3 = document.getElementById('mk-msg');
+    if(m3) m3.textContent = 'não consegui gravar: ' + e.message;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════════
+   ARQUIVAR A ATA (20/08, fatia B31) — a mesma lei do cofre da B27: ARQUIVAR, NÃO APAGAR.
+
+   Ata é papel de prova. Quem tirou uma da frente um dia vai precisar mostrar que ela existiu, e
+   em que dia — por isso `arquivado = true` COM carimbo e motivo, e nunca DELETE.
+
+   ══ E A ARMADILHA QUE O COFRE JÁ ENSINOU, MEDIDA DE NOVO NESTA CASA ═════════════════════════
+   `negocios.arquivado` já existia, e as **108 atas desta base estão com ele em `true`** — não por
+   decisão de ninguém, mas porque a importação do Calendário 2025 entrou arquivada de propósito.
+   Se a gaveta filtrasse pela bandeira, ela nasceria com 108 linhas que ninguém arquivou. Quem
+   manda é o CARIMBO (`arquivado_em`), e é por ele que a `v_atas_vigencia` e a lista da manhã
+   filtram. É a mesma distinção que a B27 fez entre "substituído" e "arquivado".
+   ══════════════════════════════════════════════════════════════════════════════════════════════ */
+function pintaArquivoAta(id){
+  const box = document.getElementById('ata-arquivo'); if(!box) return;
+  const n = NEG.find(x => x.id === id) || {};
+  const E = window.FPMED_ATA_ENTRADA;
+  if(!E){ box.innerHTML = ''; return; }
+  const TIT = '<h4>Arquivar esta ata</h4>';
+  const carimbo = n.arquivado_em
+    ? '<div class="salvo" style="margin-top:4px">arquivada em '
+      + esc(new Date(n.arquivado_em).toLocaleDateString('pt-BR'))
+      + (n.arquivado_motivo ? ' · motivo: <b>' + esc(n.arquivado_motivo) + '</b>' : '')
+      + (n.arquivado_por ? ' · por ' + esc(String(n.arquivado_por).split('@')[0]) : '')
+      + '</div>' : '';
+
+  if(n.arquivado_em){
+    box.innerHTML = TIT
+      + '<div class="pk-conta" style="border-color:var(--cinza-300)">'
+      +   '<b>Esta ata está arquivada</b>' + carimbo
+      /* A VOLTA NÃO APAGA O CARIMBO, e a frase diz isso antes de alguém clicar. Quem desfaz um
+         ato não desfaz o fato de ter feito — e é essa promessa que faz o botão de arquivar ser
+         clicável de verdade. Botão sem volta é botão que ninguém usa, e aí o recurso não existe. */
+      +   '<div class="salvo" style="margin-top:4px">Ela sai do painel e da lista de prazos, e '
+      +   '<b>nada foi apagado</b>: o saldo, os itens e os documentos continuam aqui. Desarquivar '
+      +   '<b>não apaga o carimbo acima</b> — a linha passa a contar que saiu e voltou.</div>'
+      + '</div>'
+      + (ehGestor()
+          ? '<div class="prop-novo"><button class="btn-ed sec" id="arq-bt" onclick="desarquivarAta(' + id + ')">'
+            + 'Desarquivar</button><span class="salvo" id="arq-msg"></span></div>'
+          : '<div class="salvo" style="margin-top:8px">arquivar é ação de gestor.</div>');
+    return;
+  }
+
+  if(!ehGestor()){
+    box.innerHTML = TIT + '<div class="salvo">arquivar é ação de gestor.</div>';
+    return;
+  }
+  box.innerHTML = TIT
+    + '<div class="dica" style="font-size:var(--txt-1);color:var(--muted);margin-bottom:8px">'
+    +   'Tira a ata do painel e da lista de prazos <b>sem apagar nada</b> — o saldo, os itens e os '
+    +   'documentos continuam. <b>O motivo é obrigatório:</b> daqui a seis meses, "esta ata foi '
+    +   'cadastrada por engano" e "esta ata acabou" mandam fazer coisas diferentes, e sem o motivo '
+    +   'a gaveta vira um cemitério anônimo.'
+    + '</div>'
+    + '<div class="prop-novo">'
+    +   '<select id="arq-motivo" onchange="arqMotivoMuda()" aria-label="motivo do arquivamento" '
+    +     'style="background:var(--painel2);color:var(--texto);border:1px solid var(--linha);border-radius:8px;padding:8px 8px;font-size:12.5px;font-family:inherit">'
+    +     '<option value="">escolha o motivo…</option>'
+    +     E.MOTIVOS_ARQUIVO.map(m => '<option value="' + esc(m) + '">' + esc(m) + '</option>').join('')
+    +   '</select>'
+    +   '<input id="arq-outro" maxlength="200" placeholder="escreva o motivo" style="display:none;flex:1;min-width:180px;'
+    +     'background:var(--painel2);color:var(--texto);border:1px solid var(--linha);border-radius:8px;padding:8px 8px;font-size:12.5px;font-family:inherit">'
+    +   '<button class="btn-ed sec" id="arq-bt" onclick="arquivarAta(' + id + ')">Arquivar ata</button>'
+    + '</div><div class="salvo" id="arq-msg"></div>';
+}
+
+function arqMotivoMuda(){
+  const s = document.getElementById('arq-motivo'), t = document.getElementById('arq-outro');
+  if(s && t) t.style.display = s.value === 'outro' ? '' : 'none';
+}
+
+async function arquivarAta(id){
+  const E = window.FPMED_ATA_ENTRADA; if(!E) return;
+  const n = NEG.find(x => x.id === id); if(!n) return;
+  const msg = document.getElementById('arq-msg'), bt = document.getElementById('arq-bt');
+  const quem = (window.gmAuth && gmAuth.user && gmAuth.user.email) || null;
+  const p = E.pedidoArquivar((document.getElementById('arq-motivo') || {}).value,
+                             (document.getElementById('arq-outro') || {}).value, quem, new Date().toISOString());
+  if(!p.ok){ if(msg) msg.textContent = p.erro; return; }
+  if(bt){ bt.disabled = true; bt.textContent = 'arquivando…'; }
+  try{
+    await gravar(id, p.campos);
+    Object.assign(n, p.campos);
+    pintaArquivoAta(id);
+    pinta();
+    carregarVaiEmbora();   // a ata sai da lista da manhã na mesma hora
+  }catch(e){
+    if(bt){ bt.disabled = false; bt.textContent = 'Arquivar ata'; }
+    if(msg) msg.textContent = 'não consegui arquivar: ' + e.message;
+  }
+}
+
+async function desarquivarAta(id){
+  const E = window.FPMED_ATA_ENTRADA; if(!E) return;
+  const n = NEG.find(x => x.id === id); if(!n) return;
+  const msg = document.getElementById('arq-msg'), bt = document.getElementById('arq-bt');
+  if(bt){ bt.disabled = true; bt.textContent = 'desarquivando…'; }
+  try{
+    const campos = E.pedidoDesarquivar(new Date().toISOString());
+    await gravar(id, campos);
+    Object.assign(n, campos);
+    pintaArquivoAta(id);
+    pinta();
+    carregarVaiEmbora();
+  }catch(e){
+    if(bt){ bt.disabled = false; bt.textContent = 'Desarquivar'; }
+    if(msg) msg.textContent = 'não consegui desarquivar: ' + e.message;
   }
 }
 
@@ -8555,11 +9098,167 @@ function reservaAuth(){
   document.documentElement.style.setProperty('--reserva-auth', l ? (l + 12) + 'px' : '0px');
 }
 window.addEventListener('resize', reservaAuth);
+/* ══════════════════════════════════════════════════════════════════════════════════════════════
+   "O QUE ESTÁ INDO EMBORA" (20/08, fatia B32) — uma tela, três relógios
+
+   ══ A PERGUNTA, E É UMA SÓ ══════════════════════════════════════════════════════════════════
+   *"O que morre primeiro se eu não fizer nada hoje?"* Quatro rodadas construíram encanamento: o
+   cofre de certidões, o saldo da ata, o índice de licitações. Cada um responde bem à SUA pergunta,
+   em três telas diferentes, e nenhum responde a esta. Quem abre o sistema de manhã não quer três
+   relatórios — quer uma lista.
+
+   ══ TRÊS LEITURAS INDEPENDENTES, E UMA QUE FALHA NÃO APAGA AS OUTRAS ════════════════════════
+   Lição que este projeto repete desde a fatia A6, e ela vale em dobro aqui: se a leitura do cofre
+   cair e a lista sair só com as atas, o que o gestor VÊ é uma lista curta — e lista curta lê-se
+   como "pouca coisa vencendo". O aviso diz QUAL fonte faltou, com o nome dela.
+
+   ══ E A CONTA NÃO MORA AQUI ═════════════════════════════════════════════════════════════════
+   Está no `fpmed_vai_embora.js`, que **não redefine o que é "vencendo"** — ele pergunta a cada
+   módulo. A certidão usa o `dias_aviso` do próprio documento (B27); a ata usa o corte de 60 dias
+   da B30. Um corte próprio desta tela faria a MESMA ata sair "vencendo" na aba Ata e ausente da
+   lista da manhã, que é o defeito que a `v_documentos_situacao` existe para evitar.
+   ══════════════════════════════════════════════════════════════════════════════════════════════ */
+let VE = null, VE_FALHOU = [];
+
+async function carregarVaiEmbora(){
+  const V = window.FPMED_VAI_EMBORA;
+  const box = document.getElementById('vai-embora'); if(!box) return;
+  if(!V){ box.innerHTML = ''; return; }
+  VE_FALHOU = [];
+
+  const le = async (nome, url) => {
+    try{
+      const r = await fetch(`${SB_URL}/rest/v1/${url}`, {headers:SB_H});
+      if(!r.ok) throw new Error('o banco respondeu ' + r.status);
+      return await r.json();
+    }catch(e){ VE_FALHOU.push({ fonte: nome, erro: e.message }); return null; }
+  };
+
+  /* ── FONTE 3, E O CRITÉRIO DELA PUBLICADO EM VOZ ALTA ─────────────────────────────────────
+     "licitação fechando com item meu" são os NEGÓCIOS VIVOS deste funil que ainda não chegaram à
+     fase Ata — vivo = não arquivado. É o recorte, e ele está escrito aqui e na tela: um negócio
+     no funil existe porque alguém desta casa decidiu participar dele, e é essa decisão que
+     responde "com item meu". Casar item do edital com o nosso catálogo seria uma ESTIMATIVA, e a
+     regra 3 desta fatia proíbe estimativa nesta lista.
+     >>> A DATA VEM DO ÍNDICE QUANDO EXISTE, e a linha diz qual usou. O índice do PNCP (tabela do
+         A, lida e NUNCA escrita aqui) publica o ENCERRAMENTO DA PROPOSTA; a ficha do funil guarda
+         a ABERTURA DA SESSÃO. Não são a mesma data — a proposta fecha antes da sessão abrir — e
+         uma lista que as misturasse sem dizer qual usou daria um prazo que ninguém consegue
+         conferir. MEDIDO em 20/08: dos 6 negócios vivos, **nenhum** tem certame amarrado, então
+         hoje as 6 datas vêm da ficha. O ramo do índice existe para o dia em que houver, e a tela
+         mostra a procedência de cada linha para que esse dia não passe despercebido. */
+  const vivos = (NEG || []).filter(n => !n.arquivado && n.estagio !== 'contrato');
+  const comCertame = vivos.filter(n => n.licitacao_id).map(n => n.licitacao_id);
+  let porLic = {};
+  if(comCertame.length){
+    const d = await le('índice de licitações',
+      `licitacoes?id=in.(${comCertame.join(',')})&select=id,data_encerramento`);
+    (d || []).forEach(l => { porLic[l.id] = l; });
+  }
+  const licitacoes = vivos.map(n => {
+    const l = n.licitacao_id ? porLic[n.licitacao_id] : null;
+    const doIndice = l && l.data_encerramento;
+    return { id: n.id, titulo: n.titulo, orgao: n.orgao, municipio: n.municipio, uf: n.uf,
+             estagio: n.estagio, valor_estimado: n.valor_estimado,
+             prazo: doIndice ? l.data_encerramento : n.abertura,
+             prazo_origem: doIndice ? 'encerramento da proposta (PNCP)' : 'abertura da sessão (ficha)' };
+  });
+
+  const [cert, atas, arq] = await Promise.all([
+    le('cofre de certidões', 'v_documentos_situacao?select=id,nome,tipo,orgao_emissor,validade,'
+       + 'dias_para_vencer,situacao&situacao=in.(vencido,vencendo)&order=validade.asc'),
+    le('atas', 'v_atas_vigencia?select=*'),
+    le('gaveta de atas arquivadas', 'v_atas_arquivadas?select=id,arquivado_em'),
+  ]);
+
+  VE = V.juntar({
+    certidoes: cert || [],
+    // AS ARQUIVADAS ENTRAM PARA SEREM CONTADAS E DESCARTADAS, e não para aparecer. Sem elas o
+    // rodapé nunca teria como dizer "N atas arquivadas não entram" — e um rodapé que só fala das
+    // dívidas que enxerga esconde as que não enxerga.
+    atas: (atas || []).concat((arq || []).map(a => Object.assign({ situacao: 'sem_vigencia' }, a))),
+    licitacoes: licitacoes,
+  }, V.hojeISO());
+  pintaVaiEmbora();
+}
+
+function pintaVaiEmbora(){
+  const V = window.FPMED_VAI_EMBORA;
+  const box = document.getElementById('vai-embora'); if(!box || !V) return;
+
+  // ── ESTADO ERRO TOTAL. As três caíram: a tela NÃO pode ficar calma, porque calma aqui quer
+  //    dizer "não há nada vencendo" — e essa é a única frase que ela não pode dizer sem ter olhado.
+  if(!VE || (VE_FALHOU.length >= 3)){
+    box.innerHTML = '<div class="ve-topo"><h3>O que está indo embora</h3></div>'
+      + '<div class="pk-conta" style="border-color:var(--vermelho-300)">'
+      +   '<b style="color:var(--vermelho-700)"><svg class="ic" aria-hidden="true"><use href="#ic-alerta"/></svg> '
+      +   'Não consegui ler os prazos</b>'
+      +   '<div class="salvo" style="margin-top:4px">'
+      +   esc(VE_FALHOU.map(f => f.fonte + ' (' + f.erro + ')').join(' · ') || 'leitura não concluída')
+      +   ' — isto <b>não</b> quer dizer que não haja nada vencendo. Recarregue a página.</div></div>';
+    return;
+  }
+
+  const l = VE.linhas, d = VE.divida;
+  const frases = V.frasesDaDivida(d);
+  const alerta = VE_FALHOU.length
+    ? '<div class="salvo" style="margin-top:8px;color:var(--vermelho-700)"><b>Faltou uma fonte:</b> '
+      + esc(VE_FALHOU.map(f => f.fonte).join(', ')) + ' não respondeu, então esta lista está '
+      + '<b>incompleta</b> — e lista curta lê-se como pouca coisa vencendo.</div>'
+    : '';
+
+  const cab = '<div class="ve-topo"><h3>O que está indo embora</h3>'
+    + '<span class="sub">' + (l.length ? l.length + ' coisa(s) com prazo, a que morre primeiro no topo'
+        : 'certidão, ata e licitação sua, num relógio só') + '</span></div>';
+
+  /* ── VAZIO É VITÓRIA, E TEM QUE PARECER (regra 4 da caixa) ────────────────────────────────
+     >>> E ELE NÃO INVENTA UM NÚMERO ÚNICO. "nada vencendo nos próximos 30 dias" seria falso para
+         duas das três fontes: a certidão usa a antecedência de cada documento e a ata usa 60
+         dias. A frase diz os três horizontes verdadeiros — é mais comprida e é conferível, e uma
+         boa notícia que ninguém consegue conferir vira uma boa notícia em que ninguém confia. */
+  if(!l.length){
+    box.innerHTML = cab
+      + '<div class="ve-vazio"><svg class="ic" aria-hidden="true"><use href="#ic-certo"/></svg>'
+      + '<div><b>Nada vencendo.</b> Nenhuma certidão dentro do próprio aviso, nenhuma ata vencendo '
+      + 'em 60 dias e nenhuma licitação sua fechando em ' + V.JANELA_LICITACAO + ' dias.</div></div>'
+      + alerta
+      + (frases.length ? '<div class="ve-divida"><b>Fora desta lista:</b> ' + frases.map(esc).join('<br>') + '</div>' : '');
+    return;
+  }
+
+  const onde = x => x.fonte === 'certidao'
+    ? "location.href='fpmed_documentos.html'"
+    : 'abrirDrawer(' + x.id + ')';
+
+  box.innerHTML = cab
+    + l.map(x => `<button class="ve-l ${x.vencido ? 'vencido' : (x.dias <= 7 ? 'perto' : '')}"
+        onclick="${onde(x)}">
+        <span class="dias">${x.dias < 0 ? '−' + Math.abs(x.dias) : x.dias}</span>
+        <span class="meio">
+          <span class="tit">${esc(String(x.titulo).slice(0,72))}</span>
+          <span class="sub">${esc(V.frase(x))}${x.detalhe ? ' · ' + esc(x.detalhe) : ''}${
+            x.prazoOrigem ? ' · ' + esc(x.prazoOrigem) : ''}${
+            /* O SALDO DA ATA APARECE AQUI PORQUE É ELE QUE MEDE O TAMANHO DA PERDA. Ata vencendo
+               sem saldo informado e ata vencendo com 25 mil unidades paradas são a mesma linha
+               sem este pedaço — e a segunda é a que faz alguém largar tudo e ir empenhar. */
+            x.fonte === 'ata'
+              ? (x.unidades ? ' · <b>' + x.unidades + ' item(ns) com saldo informado</b>'
+                            : ' · <span class="sd-nao">saldo não informado</span>') : ''}</span>
+        </span>
+        <span class="verbo ${x.verbo}">${x.verbo}</span>
+      </button>`).join('')
+    + alerta
+    + (frases.length ? '<div class="ve-divida"><b>Fora desta lista:</b> ' + frases.map(esc).join('<br>') + '</div>' : '');
+}
+
 /* O assistente da URL espera o `carregar()` de propósito: ele precisa de `EMPRESAS` (pro seletor
    do passo 2) e de `NEG` (pra procurar a duplicata antes de deixar criar). Aberto antes, ele
    mostraria um seletor de empresa vazio e deixaria criar o mesmo pregão duas vezes — que é o
    erro caro deste fluxo, e o único que o contrato do A pede explicitamente pra evitar. */
-function _aoAutenticar(){ carregar().then(() => { pinta(); formManualDaSessao(); assistenteDaUrl(); }); abreLeitorNaBarra(); reservaAuth(); }
+/* A LISTA DA MANHÃ ESPERA O `carregar()` porque a terceira fonte dela sai do `NEG` (os negócios
+   vivos deste funil). Chamada antes, ela nasceria com duas fontes de três e diria, em silêncio,
+   que não há licitação sua fechando. */
+function _aoAutenticar(){ carregar().then(() => { pinta(); carregarVaiEmbora(); formManualDaSessao(); assistenteDaUrl(); }); abreLeitorNaBarra(); reservaAuth(); }
 if(window.gmAuth) _aoAutenticar();
 else document.addEventListener('gm-auth-ready', _aoAutenticar, { once:true });
 </script>

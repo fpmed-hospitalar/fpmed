@@ -121,7 +121,18 @@
        não nascem. Só que o assunto delas é PRAZO — e a tela que se cala sobre uma ata vencendo
        não parece quebrada, parece uma ata que não corre risco. O defeito, aqui, tem a mesma cara
        da boa notícia. É a lição S13 pela quarta fatia seguida. */
-const VERSAO = 'limedtec-fpmed-2026-08-20-88';
+/* -89 pelas FATIAS B31 e B32: nasceram DOIS arquivos, `fpmed_ata_entrada.js` (o caminho de
+   entrada do dado da ata) e `fpmed_vai_embora.js` (a lista da manhã), e os dois são chamados pelo
+   `fpmed_negocios.html`, que ESTÁ na casca. Sem bump, quem já instalou receberia a tela velha —
+   sem o quadro de marcar itens, sem o arquivar da ata e sem a lista do que vence.
+   >>> E O AGRAVANTE DA B30 VOLTA MAIOR AQUI, porque agora ele é a tela INTEIRA. As chamadas
+       continuam guardadas (`window.FPMED_VAI_EMBORA` e o `if(!V)`), então nada quebra: a lista
+       simplesmente não nasce. Só que essa lista é a resposta de "o que morre primeiro se eu não
+       fizer nada hoje" — e a ausência dela lê-se como **"não há nada vencendo"**. É a única tela
+       desta casa em que o defeito e a boa notícia são graficamente a MESMA coisa: uma tela calma.
+       Por isso o bloco vazio de verdade é DESENHADO e escrito (regra 4 da caixa), e nunca um
+       espaço em branco — para que a ausência do motor não consiga se passar por ele. */
+const VERSAO = 'limedtec-fpmed-2026-08-20-89';
 const CACHE = 'limedtec-shell-' + VERSAO;
 
 // A CASCA DA FPMED. Lista MONTADA A MAO conferindo `git ls-files` (= o que o Pages serve),
@@ -148,6 +159,8 @@ const SHELL = [
   './fpmed_teto_homologado.js',      // o teto COMPETITIVO (B28) — Proposta e Negocios chamam o mesmo
   './fpmed_piso.js',                 // o PISO (B29) — Proposta calcula, Documentos cadastra o parametro
   './fpmed_ata_saldo.js',            // o SALDO DA ATA (B30) — so o Negocios chama, e ja basta
+  './fpmed_ata_entrada.js',          // o CAMINHO DE ENTRADA do dado da ata (B31) — de graca, sem IA
+  './fpmed_vai_embora.js',           // "o que esta indo embora" (B32) — a lista da manha
   './fpmed_alarme_coleta.js',        // o sino do Negocios depende dele              // o motor "meu preco x teto", compartilhado
   './fpmed_competitividade.html',      // aqui ELA ENTRA (na instalacao de origem estava fora por
                                        // ficar no .gitignore; na FPMED e versionada e vai pro ar)
