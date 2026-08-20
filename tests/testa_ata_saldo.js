@@ -306,8 +306,27 @@ ok('a ata sem itens lidos diz isso', /Esta ata ainda não tem itens lidos/.test(
 ok('*** o erro de leitura NAO e mostrado como "nao informado" ***',
   /Não consegui ler o saldo/.test(TRECHO));
 ok('e ele avisa pra nao digitar por cima', /Não digite por cima/.test(TRECHO));
-ok('a validade em branco nao promete "nao vence"',
-  /não<\/b> quer dizer que ela não vença/.test(TRECHO));
+/* ══ ESTE ASSERT FICOU VERMELHO NA B31, E A PROMESSA NÃO TINHA MUDADO — SÓ A PALAVRA ══════════
+   A B31 trocou o estado vazio da validade de um bloco ÂMBAR ("confira isto") para um CONVITE
+   ("informe a validade e eu aviso quando o saldo estiver indo embora"), pelo motivo escrito no
+   próprio lugar: o dono não errou nada, e um aviso de atenção repetido em 107 das 108 atas ensina
+   a ignorar âmbar — inclusive o âmbar verdadeiro, o da ata vencendo.
+   >>> O ASSERT MEDIA A FRASE `"não</b> quer dizer que ela não vença"`, e a frase foi reescrita. A
+       PROMESSA que ele existe para guardar é outra e continua de pé: **a tela não pode prometer
+       "não vence" numa ata sem data.** Então ele passou a cobrar as DUAS metades que fazem a
+       promessa ser impossível de quebrar — a negação explícita e a afirmação de que ata vence —
+       em vez de uma redação. É a diferença entre cobrar o LUGAR e cobrar a PALAVRA, e foi a
+       mesma lição que os cinco escapes da `muta_b30` já tinham cobrado nesta suíte.
+   >>> E ELE CONTINUA EXATO, NÃO FROUXO: as duas metades ficam no MESMO ramo `sem_vigencia`, e
+       cobrar as duas juntas é o que impede alguém de apagar a negação e deixar só a explicação. */
+{
+  const iniSV = TRECHO.indexOf("v.situacao === 'sem_vigencia'");
+  const ramoSV = iniSV >= 0 ? TRECHO.slice(iniSV, iniSV + 1200) : '';
+  ok('a validade em branco nao promete "nao vence"',
+    /não é “não vence”/.test(ramoSV) && /ata vence, em regra em doze meses/.test(ramoSV), ramoSV.slice(0, 200));
+  ok('*** e o estado vazio da validade e um CONVITE, nao um aviso de erro ***',
+    /class="mk-convite"/.test(ramoSV) && !/ambar-700/.test(ramoSV.slice(0, 400)), ramoSV.slice(0, 200));
+}
 
 console.log('\n-- 9. a gravacao --');
 ok('*** o que a tela grava e sempre `origem: informado` ***',
@@ -370,5 +389,18 @@ ok('*** e a versao foi bumpada para 88 ou mais (arquivo novo na lista sem bump n
   (Number((SW.match(/limedtec-fpmed-\d{4}-\d{2}-\d{2}-(\d+)/) || [])[1]) || 0) >= 88,
   (SW.match(/limedtec-fpmed-[\d-]+/) || [])[0]);
 
-console.log('\n' + p + ' ok, ' + f + ' falha(s)');
+/* ══ ESTA LINHA ESTAVA ERRADA DESDE ONTEM, E O SINTOMA ERA VERDE ═════════════════════════════
+   Ela imprimia `92 ok, 0 falha(s)` — sem o prefixo `RESULTADO:`. O `tests/run_all.js` lê o placar
+   de cada suíte com `/RESULTADO:\s*(\d+)\s*ok,\s*(\d+)\s*falha/`, então esta suíte inteira era
+   contada como **ZERO asserts** no total da casa. O aviso está escrito no `tests/catraca.js`
+   desde a A28, com estas palavras: *"Suíte que imprime diferente é contada como zero e o total
+   fica bonito."*
+   >>> E O DEFEITO ERA ASSIMÉTRICO, QUE É O QUE O FEZ DURAR. Quando a suíte FALHA, o `run_all` cai
+       no `catch` e imprime "ERRO", então a falha aparecia. Quando ela PASSA, o placar dela some.
+       Ou seja: ela sabia gritar e não sabia contar — e o número que o relatório de ontem publicou
+       ("5.394 conferências") estava 91 abaixo do real por causa desta linha.
+   >>> ACHADO RODANDO, e não lendo: o `run_all` disse `✗ testa_ata_saldo.js ERRO: 90 ok, 1
+       falha(s)` quando a B31 acendeu o assert 66 — e "ERRO" no lugar de "90 ok, 1 FALHA" é o que
+       denunciou que o formato não casava. */
+console.log('\nRESULTADO: ' + p + ' ok, ' + f + ' falha(s)');
 process.exitCode = f ? 1 : 0;
