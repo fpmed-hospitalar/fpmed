@@ -17,6 +17,15 @@
 <link rel="apple-touch-icon" href="icones/limedtec-192.png">
 <link rel="stylesheet" href="fpmed_tema.css">
 <script src="cliente.config.js"></script>
+<!-- ══ A TELEMETRIA, E ELA É UM ARQUIVO SÓ (20/08, fatia B26) ═══════════════════════════════════
+     Configuração, chaves e — o que mais importa aqui — o MASCARAMENTO dos dois gravadores de tela
+     moram no `fpmed_telemetria.js`. Esta linha não repete nada dele de propósito: o trecho do
+     painel do PostHog colado em cada tela seria sete lugares para esquecer, e o esquecido seria o
+     mascaramento numa tela que mostra proposta de cliente. Uma fonte de verdade.
+     >>> O QUE ESTA TELA MEDE está nas três chamadas de `FPMED_TELEMETRIA.evento` mais abaixo:
+         abrir o edital a partir do negócio, a conferência contra o teto CMED, e o erro que a
+         pessoa VÊ. Nenhuma delas manda conteúdo — ver a `limpa()` do arquivo. -->
+<script src="fpmed_telemetria.js"></script>
 <script src="limedtec-config.js"></script>
 <script src="limedtec-tema.js"></script>
 <script src="limedtec-licenca.js"></script>
@@ -3461,6 +3470,14 @@ async function carregarItensEdital(id){
       ITENS_EDITAL = await r.json();
     }
   }catch(e){ ITENS_ERRO = e.message; }
+  /* >>> `licitacao_aberta` COM `de:'negocios'` — e é ESTE ramo que só esta tela sabe contar.
+         A pergunta do docs/TELEMETRIA.md é "de onde ela abre o edital: busca, meus negócios, link
+         direto". A Encontrar responde pelo ramo dela; se aqui não houver chamada, o painel vai
+         mostrar que ninguém nunca abre um edital pelo funil — que é uma afirmação, e falsa.
+         Vai o número de itens (para saber se o edital veio vazio) e se houve erro. NÃO vai o
+         `numero_controle`: ele identifica a compra, e a pergunta não precisa dele. */
+  window.FPMED_TELEMETRIA && FPMED_TELEMETRIA.evento('licitacao_aberta',
+    { de: 'negocios', itens: ITENS_EDITAL.length, deu_erro: !!ITENS_ERRO });
   if(ABERTO !== id) return;
   pintaItensEdital(id);
   /* E O QUADRO DA ATA TAMBÉM (15/08, fatia B23), pelo mesmo motivo que a `carregarItensGanhos` já
@@ -4189,11 +4206,26 @@ async function conferirProposta(id){
           quem: (window.gmAuth && gmAuth.user && gmAuth.user.email) || null })});
     }catch(e){ /* o registro falhar não pode engolir o resultado que a pessoa já viu */ }
 
+    /* >>> `item_comparado_com_cmed` — a pergunta é "ela chega a usar o cruzamento com o teto, ou
+           para antes". Vão só números e um booleano: quantas linhas o PDF entregou, quantas
+           ficaram acima do teto e quantas não casaram com a tabela. O `naoEncontrados` é o mais
+           útil dos três: ele mede o dicionário da CMED, não a pessoa. NÃO vai descrição de item,
+           preço, nome de arquivo nem o negócio — o evento diz que a conferência ACONTECEU, não o
+           que ela conferiu. */
+    window.FPMED_TELEMETRIA && FPMED_TELEMETRIA.evento('item_comparado_com_cmed',
+      { achou: res.total > 0, itens: res.total, acima: res.acima, nao_casaram: res.naoEncontrados });
+
     msg.textContent = '';
     pintaConferencia(id);
     await carregarProposta(id);
     carregar().then(pinta);   // o selo do card lê a conferência mais nova
-  }catch(e){ msg.textContent = '<svg class="ic" aria-hidden="true"><use href="#ic-alerta"/></svg> ' + e.message; }
+  }catch(e){ msg.textContent = '<svg class="ic" aria-hidden="true"><use href="#ic-alerta"/></svg> ' + e.message;
+    /* O erro que a pessoa VÊ, com a causa. A `e.message` daqui é escrita por nós (o HTTP do anexo,
+       o PDF sem linha de preço, o motor de teto ausente) — é diagnóstico, não dado do cliente. E
+       ainda assim ela passa pela `limpa()` do arquivo de telemetria, que corta em 80 caracteres e
+       troca por `(parece documento)` qualquer coisa com cara de CNPJ, CPF, e-mail ou telefone. */
+    window.FPMED_TELEMETRIA && FPMED_TELEMETRIA.evento('erro_visto_pelo_usuario',
+      { causa: e.message, tela: 'negocios' }); }
   if(bt) bt.disabled = false;
 }
 

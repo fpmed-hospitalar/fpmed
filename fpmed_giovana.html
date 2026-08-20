@@ -10,6 +10,15 @@
 <link rel="icon" type="image/png" sizes="192x192" href="icones/limedtec-192.png">
 <link rel="apple-touch-icon" href="icones/limedtec-192.png">
 <script src="cliente.config.js"></script>
+<!-- ══ A TELEMETRIA, E ELA É UM ARQUIVO SÓ (20/08, fatia B26) ═══════════════════════════════════
+     Esta é a tela com o dado mais sensível da casa: nome de cliente, item, preço e o corpo da
+     proposta. É por isso que o mascaramento não pode morar aqui — ele mora no
+     `fpmed_telemetria.js`, uma vez, e vale para os dois gravadores de tela (PostHog e Sentry).
+     Trecho colado em cada tela é o jeito de uma delas ficar de fora numa troca de chave, e a que
+     ficaria de fora seria justamente esta.
+     >>> O QUE ESTA TELA MEDE: se a pessoa chega a usar o cruzamento com o teto CMED (e se ele
+         carregou), e o erro que ela VÊ. Não sai um nome, um preço nem uma linha de proposta. -->
+<script src="fpmed_telemetria.js"></script>
 <script src="limedtec-config.js"></script>
 <script src="limedtec-tema.js"></script>
 <script src="limedtec-licenca.js"></script>
@@ -3597,11 +3606,32 @@ function carregarTetoCMED(){
     ]);
     _tetoBase = teto.length;
     _tetoIdx = window.LimedtecTetoCMED.indexar({ regua: [], teto, dicionario: dic });
+    /* >>> `item_comparado_com_cmed`, UMA VEZ POR CARREGAMENTO — e não uma por item.
+           O `repintarTetos` roda a cada tecla no campo de preço; um evento por item transformaria
+           a métrica em ruído e queimaria a cota por nada. A pergunta é "ela CHEGA a usar o
+           cruzamento", e ela é respondida uma vez: o índice desceu, os selos podem pintar.
+           Vai o tamanho da base (que mede a CMED, não a pessoa). Não vai item nem preço. */
+    window.FPMED_TELEMETRIA && FPMED_TELEMETRIA.evento('item_comparado_com_cmed',
+      { achou: true, base: _tetoBase, tela: 'proposta' });
     return _tetoIdx;
   })().catch(e => {
     // >>> FALHA AO LER A CMED NÃO PODE VIRAR "ESTÁ TUDO DENTRO DO TETO". Sem índice, a tela
     //     simplesmente não afirma nada sobre teto — que é diferente de afirmar que está ok.
     console.warn('teto CMED indisponível:', e.message);
+    /* >>> ESTE É O EVENTO QUE EU MAIS QUERO DAQUI, e ele é invisível na tela de propósito: sem
+           índice a tela simplesmente não afirma nada sobre teto (o comentário acima), então
+           NINGUÉM RECLAMA — a pessoa monta a proposta achando que não havia teto a mostrar.
+           Defeito que não gera reclamação é defeito que dura meses. O `achou:false` é o que faz
+           ele aparecer no painel ao lado dos carregamentos que deram certo, e a diferença entre os
+           dois números é a taxa de silêncio desta tela. */
+    window.FPMED_TELEMETRIA && FPMED_TELEMETRIA.evento('item_comparado_com_cmed',
+      { achou: false, causa: e.message, tela: 'proposta' });
+    /* >>> E AQUI NÃO VAI `erro_visto_pelo_usuario`, que era o nome óbvio para chamar. Esse evento
+           está escrito no docs/TELEMETRIA.md como "o que ele VÊ quebrado", e esta falha é
+           justamente a que ele NÃO vê. Usar o nome errado enche de silêncio o número que existe
+           para contar barulho — e no dia em que alguém perguntar "quantos erros o Natanael viu
+           esta semana", a resposta viria inflada por uma falha que nunca chegou à tela dele. A
+           causa fica aqui, no evento certo, onde ela já é a diferença entre os dois números. */
     _tetoIdx = null; _tetoCarregando = null;
     return null;
   });

@@ -78,7 +78,21 @@
    tem contador de filtro e pastilha de prazo em 10px, botão de fechar de 32px no celular e
    cabeçalho de tabela que some ao rolar. O bump aqui é a diferença entre "consertei" e
    "consertei para quem abrir amanhã". */
-const VERSAO = 'limedtec-fpmed-2026-08-15-84';
+/* ══ -85 (fatia B26, 20/08/2026) ═════════════════════════════════════════════════════════════
+   AS QUATRO TELAS DO B adotaram o `fpmed_telemetria.js`, e as quatro ESTÃO na casca (Proposta,
+   Negócios, Ajuda e Documentos). Sem bump, quem já instalou o aplicativo continua servindo as
+   quatro do cache — e as do cache não chamam a telemetria. O defeito seria o pior formato
+   possível para esta fatia em particular: o painel encheria de evento de quem chegou hoje e
+   ficaria MUDO sobre quem já usa o sistema, ou seja, mudo justamente sobre o Natanael. E a
+   conclusão óbvia diante de um painel assim — "quase ninguém usa a tela X" — seria falsa, e
+   ninguém teria como desconfiar dela. É a lição S13 outra vez, agora medindo a si mesma.
+   >>> E O `fpmed_telemetria.js` NÃO ENTRA NA CASCA — decisão, não esquecimento. Ele carrega o
+       MASCARAMENTO dos dois gravadores de tela, e configuração de privacidade servida do cache é
+       a única coisa aqui que envelhece perigosamente: apertar o mascaramento amanhã não valeria
+       para quem já tem a versão de hoje instalada. Fora da casca, ele vem sempre da rede ou não
+       vem — e não vir é inofensivo, porque as chamadas das telas são todas guardadas por
+       `window.FPMED_TELEMETRIA &&`, e offline não há para onde mandar evento mesmo. */
+const VERSAO = 'limedtec-fpmed-2026-08-20-85';
 const CACHE = 'limedtec-shell-' + VERSAO;
 
 // A CASCA DA FPMED. Lista MONTADA A MAO conferindo `git ls-files` (= o que o Pages serve),

@@ -53,6 +53,14 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="stylesheet" href="fpmed_tema.css">
 <script src="cliente.config.js"></script>
+<!-- ══ A TELEMETRIA, E ELA É UM ARQUIVO SÓ (20/08, fatia B26) ═══════════════════════════════════
+     Esta tela NÃO dispara nenhum dos seis eventos, e isso é decisão, não esquecimento: a Ajuda não
+     tem ação para medir — ela tem prosa. O que ela responde é a pergunta que só a visita responde:
+     QUANTAS VEZES alguém precisou abrir a Ajuda, e vindo de onde. Isso o `capture_pageview` do
+     `fpmed_telemetria.js` já dá com esta única linha, sem uma chamada escrita aqui.
+     >>> E medir o que não se vai usar é o defeito que o próprio docs/TELEMETRIA.md nomeia:
+         painel cheio de métrica que ninguém lê ensina todo mundo a ignorar o painel. -->
+<script src="fpmed_telemetria.js"></script>
 <script src="limedtec-config.js"></script>
 <script src="limedtec-tema.js"></script>
 <script src="limedtec-licenca.js"></script>

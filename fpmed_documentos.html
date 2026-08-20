@@ -8,6 +8,15 @@
 <link rel="icon" type="image/png" sizes="192x192" href="icones/limedtec-192.png">
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="cliente.config.js"></script>
+<!-- ══ A TELEMETRIA, E ELA É UM ARQUIVO SÓ (20/08, fatia B26) ═══════════════════════════════════
+     O cofre guarda CERTIDÃO: número de documento, órgão emissor e o arquivo em si. O gravador de
+     tela do PostHog e o do Sentry gravam os dois o que está NA TELA, e o mascaramento que fecha os
+     dois mora no `fpmed_telemetria.js`, uma vez só. Repetir a configuração aqui seria criar um
+     segundo lugar onde alguém pode deixá-la aberta sem ninguém notar.
+     >>> O QUE ESTA TELA MEDE: um evento só, o erro que a pessoa VÊ — com a CAUSA, nunca com o
+         documento. O painel de vencidos/vencendo/em dia não vira métrica: ele é contagem de
+         certidão da empresa do dono, e isso não sai da máquina dele. -->
+<script src="fpmed_telemetria.js"></script>
 <script src="limedtec-config.js"></script>
 <script>LIMEDTEC.aplicaTema();</script>
 <script src="limedtec-licenca.js"></script>
@@ -431,7 +440,13 @@ async function carregar(){
       throw new Error(r.status===401||r.status===403 ? 'sua sessão expirou ou não tem permissão' : ('HTTP '+r.status+' '+t.slice(0,70)));
     }
     DOCS = await r.json(); ERRO = null;
-  }catch(e){ DOCS = null; ERRO = e.message; }
+  }catch(e){ DOCS = null; ERRO = e.message;
+    /* O único evento desta tela, e ele é o erro que a pessoa VÊ: a `pinta()` logo abaixo escreve
+       esta mesma mensagem no lugar da lista, de propósito (erro não pode virar lista vazia — o
+       comentário está no começo da `pinta`). Vai a CAUSA e só ela; a contagem de certidão vencida
+       é dado da empresa do dono e não sai da máquina dele. */
+    window.FPMED_TELEMETRIA && FPMED_TELEMETRIA.evento('erro_visto_pelo_usuario',
+      { causa: e.message, tela: 'documentos' }); }
   pinta();
 }
 
