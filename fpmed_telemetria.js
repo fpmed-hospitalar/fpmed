@@ -241,20 +241,64 @@
     (document.head || document.documentElement).appendChild(s);
   }
 
+  /* ══ O "DO NOT TRACK" DO NAVEGADOR, MEDIDO AQUI (fatia A41 · 20/08/2026) ════════════════════
+     O achado é do trabalhador B, lendo este arquivo: `respect_dnt: true` faz o PostHog NÃO ENVIAR
+     NADA de quem tem "Do Not Track" ligado. Está certo, é generoso — *"mas se o Natanael tiver
+     DNT ligado sem saber, o painel dele fica vazio e ninguém vai suspeitar do motivo."*
+
+     >>> O CONSERTO NÃO É DESLIGAR O RESPEITO AO DNT. Quem pediu para não ser seguido não é —
+         essa linha não se cruza. O conserto é a tela DIZER que a telemetria está desligada por
+         escolha do navegador: **painel vazio com causa é dado; painel vazio sem causa é
+         armadilha.** É a mesma lei do "não consegui perguntar nunca vira não existe" (A19),
+         aplicada a um painel em vez de a um registro.
+
+     >>> AS TRÊS GRAFIAS, e elas existem porque a especificação morreu no meio: `navigator
+         .doNotTrack` (o padrão), `window.doNotTrack` (o Firefox antigo) e `navigator
+         .msDoNotTrack` (o IE). O PostHog lê exatamente estas três no `respect_dnt` — ler outras
+         seria a segunda régua discordando da primeira, calada.
+     >>> E A RESPOSTA É DE TRÊS ESTADOS, não de dois: `true` (pediu para não ser seguido), `false`
+         (declarou que aceita) e `null` (NÃO DECLAROU — que é o normal e é a maioria dos
+         navegadores hoje). Achatar `null` em `false` faria a tela afirmar "você aceitou ser
+         seguido" sobre alguém que não disse nada. */
+  function dnt() {
+    try {
+      var v = (typeof navigator !== 'undefined' && navigator.doNotTrack)
+        || (typeof window !== 'undefined' && window.doNotTrack)
+        || (typeof navigator !== 'undefined' && navigator.msDoNotTrack);
+      if (v === '1' || v === 'yes' || v === 1 || v === true) return true;
+      if (v === '0' || v === 'no' || v === 0) return false;
+      return null;
+    } catch (e) { return null; }
+  }
+
   /* ══ O PORTÃO — quando a telemetria NÃO liga ═════════════════════════════════════════════════
      Abrir a tela por `file://` é o que o desenvolvedor faz o dia inteiro, e cada abertura dessas
      mandaria um pageview para o painel. Painel poluído por sessão de desenvolvimento é painel em
      que ninguém confia — e o `resultado_zero` é a métrica desta casa que mais depende de o
      denominador ser real.
-     >>> `?semtelemetria=1` desliga na mão, e existe para o dia da demonstração ao cliente. */
-  function podeLigar() {
+     >>> `?semtelemetria=1` desliga na mão, e existe para o dia da demonstração ao cliente.
+     >>> ELE DEVOLVE O MOTIVO, e não `true`/`false`. Um portão que responde só "não" obriga quem
+         quiser explicar a refazer as mesmas perguntas — e refazê-las é como as duas versões
+         começam a discordar. `null` quer dizer "pode ligar". */
+  var MOTIVOS = {
+    arquivo:  'a tela foi aberta direto do arquivo (file://) — a telemetria não liga aqui',
+    desligada:'a telemetria foi desligada nesta página (?semtelemetria=1)',
+    salva:    'a telemetria está desligada por preferência salva neste navegador',
+    dnt:      'a telemetria está desligada por escolha do navegador ("Do Not Track" ligado)',
+  };
+  function porQueNaoLiga() {
     try {
-      if (location.protocol === 'file:') return false;
-      if (/(^|[?&])semtelemetria=1/.test(location.search)) return false;
-      if (window.localStorage && localStorage.getItem('fpmed_sem_telemetria') === '1') return false;
-    } catch (e) { /* sem localStorage (aba anônima estrita): liga, que é o padrão */ }
-    return true;
+      if (location.protocol === 'file:') return 'arquivo';
+      if (/(^|[?&])semtelemetria=1/.test(location.search)) return 'desligada';
+      if (window.localStorage && localStorage.getItem('fpmed_sem_telemetria') === '1') return 'salva';
+    } catch (e) { /* sem localStorage (aba anônima estrita): segue, que é o padrão */ }
+    /* O DNT NÃO IMPEDE O `ligar()` — o PostHog é quem obedece a ele, e obedecer é dele mesmo.
+       O que o DNT faz aqui é dar NOME ao painel vazio. Tratá-lo como portão duplicaria a decisão
+       em dois lugares, e no dia em que os dois discordassem o painel ficaria vazio de novo, agora
+       por dois motivos diferentes e nenhum visível. */
+    return null;
   }
+  function podeLigar() { return porQueNaoLiga() === null; }
 
   var jaLigado = false;
 
@@ -263,7 +307,8 @@
        de um consentimento — e porque um teste precisa poder chamar sem carregar a página inteira. */
     ligar: function () {
       if (jaLigado) return true;
-      if (!podeLigar()) { aviso('desligada nesta página (file://, ?semtelemetria=1 ou preferência salva)'); return false; }
+      var porque = porQueNaoLiga();
+      if (porque) { aviso(MOTIVOS[porque]); return false; }
       jaLigado = true;
       try { carregaPosthog(); } catch (e) { aviso('PostHog não iniciou: ' + e.message); }
       try { carregaSentry(); }  catch (e) { aviso('Sentry não iniciou: ' + e.message); }
@@ -289,6 +334,23 @@
     pronto: function () { return !!(window.posthog && window.posthog.__loaded); },
     ligada: function () { return jaLigado; },
     eventos: function () { return Object.keys(EVENTOS); },
+
+    /* ══ O QUE A TELA PERGUNTA PARA PODER DIZER A CAUSA (fatia A41) ═══════════════════════════
+       `dnt()` devolve os três estados crus (true/false/null). `motivo()` devolve a FRASE pronta
+       para pintar, ou `null` quando não há nada a dizer — e "não há nada a dizer" é o caso normal.
+       >>> A FRASE VEM DAQUI, e não da tela. Sete telas escrevendo a própria versão de "a
+           telemetria está desligada" é o defeito nº 3 de "feito por IA" com outra roupa: no dia
+           em que o motivo mudar, seis telas ficam certas e uma fica errada.
+       >>> E ELA SÓ APARECE QUANDO A CAUSA É DO NAVEGADOR OU DA PREFERÊNCIA. `file://` é sessão de
+           desenvolvimento: pintar um aviso ali seria pôr recado de infraestrutura na tela de
+           quem está trabalhando, e é ruído que ensina a ignorar aviso. */
+    dnt: dnt,
+    motivo: function () {
+      var porque = porQueNaoLiga();
+      if (!porque && dnt() === true) porque = 'dnt';
+      if (!porque || porque === 'arquivo') return null;
+      return MOTIVOS[porque];
+    },
     /* exposto para o teste: é a função que decide o que sai da máquina, e ela merece ser
        exercitada com CPF, CNPJ e texto de 500 caracteres sem precisar de um navegador. */
     _limpa: limpa,

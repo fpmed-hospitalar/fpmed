@@ -1306,6 +1306,16 @@ svg.ic.bom{color:var(--verde-700)}
 .frescor.atencao b{color:var(--ambar-800)}
 .frescor svg{width:16px;height:16px;flex:0 0 auto}
 
+/* ── A CAUSA DO PAINEL VAZIO (A41) ─────────────────────────────────────────────
+   Ela REUSA a `.frescor` de propósito: é o mesmo ofício (uma linha discreta acima da lista
+   dizendo um fato sobre o estado das coisas), e um segundo desenho para o mesmo ofício é uma
+   segunda linguagem na mesma tela.
+   >>> O QUE MUDA É O PESO, E PARA MENOS. Isto não é atenção: é informação sobre uma escolha
+       LEGÍTIMA de quem está usando o navegador. Âmbar aqui repreenderia quem exerceu um direito
+       — e alarme sobre coisa certa é como se ensina a ignorar alarme. Fica no cinza da faixa
+       neutra, com o fio da esquerda no `--cinza-200` (mais leve que o `--cinza-300` dela). */
+.tel-desligada{border-left-color:var(--cinza-200)}
+
 /* ── CRUZAMENTO POR ITEM ────────────────────────────────────────────────────── */
 .acoes{display:flex;gap:var(--esp-2);flex-wrap:wrap;align-items:center;margin-top:var(--esp-3)}
 .itens{margin-top:var(--esp-3);border-top:1px solid var(--cinza-200);padding-top:var(--esp-3);overflow-x:auto}
@@ -1801,6 +1811,16 @@ svg.ic.bom{color:var(--verde-700)}
        >>> NUNCA ESCONDE DADO VELHO: DIZ A IDADE. Carga de hoje = faixa neutra com a hora. Carga
            velha ou falhada = faixa âmbar, com quantas horas/dias, e o que fazer. -->
   <div id="frescor" hidden></div>
+  <!-- ══ A CAUSA DO PAINEL VAZIO (fatia A41 · 20/08) ═══════════════════════════════════════
+       O `respect_dnt: true` do `fpmed_telemetria.js` faz o PostHog NÃO ENVIAR NADA de quem tem
+       "Do Not Track" ligado no navegador. Está certo e não muda — quem pediu para não ser
+       seguido não é. O que muda é o SILÊNCIO: sem esta linha, o painel do dono fica vazio e
+       ninguém suspeita do motivo.
+       >>> PAINEL VAZIO COM CAUSA É DADO; PAINEL VAZIO SEM CAUSA É ARMADILHA. É a mesma lei do
+           "não consegui perguntar nunca vira não existe" (A19), aplicada a um painel.
+       >>> A FRASE VEM DO MÓDULO (`FPMED_TELEMETRIA.motivo()`), e não daqui: sete telas
+           escrevendo a própria versão dela é o defeito nº 3 da BASE_ENGENHARIA com outra roupa. -->
+  <div id="tel-desligada" hidden></div>
   <div class="kpis" id="kpis" style="display:none">
     <!-- O rótulo era "publicadas no dia" e mentia sempre que o período tinha mais de um dia —
          numa busca de 26/07 a 11/08 ele dizia "no dia" sobre 17 dias. Agora o próprio texto é
@@ -3202,6 +3222,44 @@ async function faixaFrescor(){
         + num(d.sem_itens) + ' ainda sem itens lidos</span>' : '')
     + (velho ? ' — a carga roda no começo de cada rodada da fábrica; esta lista pode não ter o que saiu depois.' : '');
   return c;
+}
+
+/* ══ A CAUSA DO PAINEL VAZIO — a telemetria diz quando está calada (fatia A41 · 20/08) ════════
+   O achado é do trabalhador B, lendo o `fpmed_telemetria.js`: `respect_dnt: true` faz o PostHog
+   NÃO ENVIAR NADA de quem tem "Do Not Track" ligado. *"Se o Natanael tiver DNT ligado sem saber,
+   o painel dele fica vazio e ninguém vai suspeitar do motivo."*
+
+   >>> O RESPEITO AO DNT NÃO SE DESLIGA. Quem pediu para não ser seguido não é — e a decisão do
+       arquiteto foi explícita nisso. O que esta função faz é dar NOME ao silêncio.
+   >>> PAINEL VAZIO COM CAUSA É DADO; PAINEL VAZIO SEM CAUSA É ARMADILHA. A mesma lei da A19
+       ("não consegui perguntar" nunca vira "não existe"), aplicada a um painel de métrica: um
+       painel sem eventos e sem explicação faz o dono concluir que ninguém usou o sistema.
+   >>> E ELA NÃO INVENTA A FRASE. Pergunta ao módulo (`FPMED_TELEMETRIA.motivo()`), que devolve
+       `null` quando não há nada a dizer — que é o caso normal e é a maioria das visitas. Tela
+       que escreve a própria versão do recado é como seis telas ficam certas e uma fica errada.
+   >>> E ELA NÃO QUEBRA A TELA SE O MÓDULO NÃO CARREGOU. Um aviso sobre telemetria derrubando a
+       busca seria o pior negócio possível — a mesma lei que o próprio módulo já segue. */
+function avisoTelemetria(){
+  try{
+    const el = document.getElementById('tel-desligada');
+    if(!el) return null;
+    const T = window.FPMED_TELEMETRIA;
+    const motivo = (T && typeof T.motivo === 'function') ? T.motivo() : null;
+    if(!motivo){ el.hidden = true; return null; }
+    el.hidden = false;
+    el.className = 'frescor tel-desligada';
+    /* `ic('bloqueado')` e não `ic('alerta')`: o registro de uso está bloqueado, e quem bloqueou
+       foi o navegador de quem está usando — é fato, não é problema. Alerta sobre coisa certa é
+       como se ensina a ignorar alerta. (E o símbolo vem do sprite: a `testa_icones` recusa nome
+       que não exista lá, e ela recusa em silêncio nenhum.) */
+    /* A maiúscula é posta AQUI e não no módulo: lá a frase vai para o `console.warn`, no meio de
+       uma linha que já começa com `[telemetria]`, e capitalizá-la na origem deixaria a mensagem
+       do console com maiúscula no meio. Quem põe a frase depois de um ponto é quem sabe disso. */
+    const frase = motivo.charAt(0).toUpperCase() + motivo.slice(1);
+    el.innerHTML = ic('bloqueado') + ' <b>Sem telemetria nesta sessão.</b> ' + esc(frase)
+      + ' — a tela funciona igual; o que não acontece é o registro de uso.';
+    return motivo;
+  }catch(e){ return null; }
 }
 
 /* `ultima_tentativa` entrou na leitura em 13/08 (passo 3): o SELO DA BASE precisa dela pra
@@ -5140,6 +5198,9 @@ async function buscar(){
      linha atrasar a lista inteira — e foi exatamente por encadear coisas que não dependem uma da
      outra que esta tela levou 70 s pra responder. */
   faixaFrescor();
+  /* E o aviso de telemetria pela mesma razão, no mesmo lugar: ele é síncrono, não pergunta nada a
+     ninguém e não pode atrasar a lista. Na esmagadora maioria das visitas ele não pinta nada. (A41) */
+  avisoTelemetria();
 
   // ══ BANCO PRIMEIRO, SEMPRE — inclusive no "Atualizar agora" (10/08) ═══════════════════════
   // >>> O DEFEITO QUE ISTO CORRIGE, medido no relato do Natanael: o termo digitado NUNCA CHEGAVA

@@ -206,5 +206,75 @@ const fonte = fs.readFileSync(CAMINHO, 'utf8');
   ok('5h. nem o init do PostHog', !/posthog\s*\.\s*init\s*\(/.test(codigo));
 }
 
+// ══════════ 6. PAINEL VAZIO COM CAUSA (fatia A41 · 20/08/2026) ══════════
+// O achado é do trabalhador B, lendo este arquivo: `respect_dnt: true` faz o PostHog NÃO ENVIAR
+// NADA de quem tem "Do Not Track" ligado. Está certo e é generoso — *"mas se o Natanael tiver DNT
+// ligado sem saber, o painel dele fica vazio e ninguém vai suspeitar do motivo."*
+//
+// >>> O RESPEITO AO DNT NÃO SE DESLIGA. Quem pediu para não ser seguido não é. O que a fatia faz
+//     é dar NOME ao silêncio — painel vazio com causa é dado; painel vazio sem causa é armadilha.
+{
+  ok('6a. *** o respeito ao DNT continua LIGADO (esta fatia não o desliga, e não pode) ***',
+    /respect_dnt:\s*true/.test(fonte));
+
+  // ── o módulo executado de verdade, com um navegador de mentira ──
+  // Provar por regex que "existe uma função chamada dnt" é provar que alguém escreveu o nome
+  // certo — e o nome certo em cima de uma função que responde errado é pior que nenhuma.
+  const carrega = (doNotTrack) => {
+    const janela = {
+      location: { protocol: 'https:', search: '' },
+      localStorage: { getItem: () => null, setItem: () => {} },
+      navigator: { doNotTrack, userAgent: 'teste' },
+      document: {
+        createElement: () => ({ style: {}, setAttribute() {} }),
+        getElementsByTagName: () => [],
+        head: { appendChild() {} }, documentElement: { appendChild() {} },
+      },
+      console: { warn() {} },
+      posthog: null,
+    };
+    janela.window = janela;
+    const vm = require('vm');
+    const ctx = vm.createContext(janela);
+    // `navigator` e `window` precisam existir como globais soltos, como no navegador
+    vm.runInContext('var navigator = window.navigator; var location = window.location;'
+      + ' var document = window.document; var console = window.console;', ctx);
+    try { vm.runInContext(fonte, ctx); } catch (e) { return { erro: e.message }; }
+    return janela.FPMED_TELEMETRIA || { erro: 'o módulo não se expôs' };
+  };
+
+  const ligado = carrega('1');
+  ok('6b. *** DNT ligado: o módulo LÊ o "1" do navegador ***',
+    ligado.dnt && ligado.dnt() === true, ligado.erro || (ligado.dnt && ligado.dnt()));
+  ok('6c. *** ...e devolve a CAUSA em palavras, para a tela poder dizer ***',
+    ligado.motivo && /Do Not Track/.test(String(ligado.motivo())), ligado.motivo && ligado.motivo());
+
+  const naoDeclarado = carrega(null);
+  ok('6d. *** DNT NÃO DECLARADO é `null`, e não `false` ***',
+    naoDeclarado.dnt && naoDeclarado.dnt() === null, naoDeclarado.dnt && naoDeclarado.dnt());
+  ok('6e. ...e nesse caso NÃO há causa nenhuma a dizer (o caso normal não pinta nada)',
+    naoDeclarado.motivo && naoDeclarado.motivo() === null, naoDeclarado.motivo && naoDeclarado.motivo());
+
+  const recusou = carrega('0');
+  ok('6f. DNT declarado como "0" (aceito) é `false` — os três estados são distintos',
+    recusou.dnt && recusou.dnt() === false, recusou.dnt && recusou.dnt());
+
+  ok('6g. as TRÊS grafias são lidas (a especificação morreu no meio: navigator, window, ms)',
+    /navigator\.doNotTrack/.test(fonte) && /window\.doNotTrack/.test(fonte)
+    && /navigator\.msDoNotTrack/.test(fonte));
+
+  // ── e a TELA diz ──
+  const tela = fs.readFileSync(path.join(raiz, 'fpmed_licitacoes.html'), 'utf8');
+  const codigo = tela.replace(/<!--[\s\S]*?-->/g, '').replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+  ok('6h. *** a tela tem o lugar onde a causa é dita ***', /id="tel-desligada"/.test(codigo));
+  ok('6i. ...e ela é pintada no caminho normal da busca', /avisoTelemetria\(\)/.test(codigo));
+  ok('6j. *** e a FRASE vem do módulo, não da tela (uma fonte de verdade) ***',
+    /FPMED_TELEMETRIA[\s\S]{0,80}\.motivo\(\)/.test(codigo)
+    && !/Do Not Track/.test(codigo.replace(/motivo/g, '')));
+  ok('6k. o aviso NUNCA derruba a tela (um recado de métrica não quebra a busca)',
+    /function avisoTelemetria\(\)\{\s*try\{/.test(codigo.replace(/\s+/g, ' ').replace(/function avisoTelemetria\(\) *\{ *try *\{/, 'function avisoTelemetria(){try{'))
+    || /function avisoTelemetria\(\)\{[\s\S]{0,80}try\{/.test(codigo));
+}
+
 console.log('\nRESULTADO: ' + p + ' ok, ' + f + ' falha(s)');
 process.exit(f ? 1 : 0);
