@@ -2940,7 +2940,18 @@ window.addEventListener('hashchange', aplicaHash);
        daquela linha, então o boot foi pelo caminho do evento `gm-auth-ready` — que dispara
        tarde, com o `const` já inicializado. O caminho que quebra é o do usuário com sessão
        viva, que é justamente o do dono. Testar deslogado escondeu o defeito. */
-function _aoAutenticar(){ iniciarEstoque(); iniciarJornais(); abreLeitorNaBarra(); iniciarSeloBase(); pintaIndicadores(); reservaAuth(); pintaChips(); faixaFrescor(); aplicaHash(); }
+/* ══ O BOOT RESTAURA A FOTOGRAFIA ANTES DE QUALQUER OUTRA COISA DEPENDER DELA (A38, item 10) ══
+   `aplicaEstadoDaURL()` vem ANTES do `pintaChips()`: os chips são pintados a partir dos campos, e
+   pintá-los antes de os campos serem preenchidos desenharia a fila vazia e ela só se corrigiria
+   no próximo gesto — a tela abriria dizendo "sem filtro" com sete filtros ligados.
+   >>> A BUSCA SÓ SAI SE A URL PEDIU (`?busca=1`), e o disparo está AQUI, à vista de quem lê o
+       boot, e não escondido dentro da função que restaura. */
+function _aoAutenticar(){
+  const buscarJa = aplicaEstadoDaURL();
+  iniciarEstoque(); iniciarJornais(); abreLeitorNaBarra(); iniciarSeloBase(); pintaIndicadores();
+  reservaAuth(); pintaChips(); faixaFrescor(); aplicaHash();
+  if(buscarJa) buscaNova();
+}
 if(window.gmAuth) _aoAutenticar();
 else document.addEventListener('gm-auth-ready', _aoAutenticar, { once:true });
 
@@ -3018,6 +3029,80 @@ window.addEventListener('scroll', () => {
 //     recarregou do PNCP, ou trocou um filtro, continua lendo AQUELE jornal — e perder as marcas
 //     de "NOVA" no meio da leitura é perder justamente o que ele foi ali ver.
 function buscaNova(){ window._jornalAtivo = null; buscar(); }
+
+/* ══ O ESTADO DA TELA NA URL (fatia A38 · molde v2, item 10) ══════════════════════════════════
+   *"Estado na URL: busca, filtros, ordenação e densidade. A URL vira a fotografia da tela."*
+
+   >>> O QUE ISSO CONSERTA, E NÃO É CONFORTO: hoje, quem monta uma busca de sete filtros e manda
+       o endereço para um colega manda a tela EM BRANCO. O colega abre, vê outra coisa, e os dois
+       passam a discutir números diferentes achando que olham o mesmo. E o F5 — que é o gesto de
+       quem acha que travou — apagava o trabalho de quem o deu.
+   >>> `replaceState`, NUNCA `pushState`: cada tecla de refino viraria uma entrada no histórico, e
+       o VOLTAR do navegador levaria trinta cliques para sair da tela. A URL acompanha, não grava
+       trilha.
+   >>> SÓ O QUE FOI ESCOLHIDO ENTRA. Campo vazio não vira `&f-orgao=` na barra de endereço: URL
+       de duzentos caracteres com dezoito parâmetros vazios é ilegível, e ilegível é onde ninguém
+       percebe que um filtro veio junto.
+   >>> A JANELA DE DATA SÓ ENTRA SE FOR FIXA. Quando o operador não mexeu nas datas, a janela é
+       MÓVEL (o `filtrosDaTela` já trata isso) — gravar a data de hoje na URL faria o link,
+       aberto amanhã, pesquisar ONTEM em silêncio. É a mesma lei que o jornal já segue.
+   >>> E `?busca=1` É O QUE SEPARA "a tela com filtros prontos" de "a tela já respondida". Sem
+       ele, abrir a URL montaria os campos e esperaria a lupa; com ele, a busca sai sozinha —
+       porque quem mandou o link mandou o RESULTADO, não o formulário. */
+const _URL_CAMPOS = ['f-kw','f-excluir','f-uf','f-mod','f-portal','f-modo','f-sit','f-srp',
+                     'f-orgao','f-vmin','f-vmax'];
+function gravaEstadoNaURL(comBusca){
+  try{
+    const p = new URLSearchParams();
+    for(const id of _URL_CAMPOS){
+      const e = document.getElementById(id);
+      const v = e ? String(e.value||'').trim() : '';
+      if(v) p.set(id.replace(/^f-/,''), v);
+    }
+    const f = filtrosDaTela();
+    if(f.janela && f.janela.tipo === 'fixa'){ p.set('de', f.janela.de); p.set('ate', f.janela.ate); }
+    if(window._soDesertas) p.set('desertas','1');
+    if(ORDEM !== 'encerramento') p.set('ordem', ORDEM);
+    if(densidade() === 'compacta') p.set('densidade','compacta');
+    /* `undefined` quer dizer "não sei, preserve o que está lá". Quem troca a densidade não faz
+       busca nenhuma — e se essa chamada apagasse o `busca=1`, a URL deixaria de trazer o
+       resultado só porque alguém apertou "Compacta". Estado que se perde por um gesto que não
+       tem nada a ver com ele é a pior espécie: ninguém liga uma coisa à outra. */
+    const jaTinha = new URLSearchParams(location.search).get('busca') === '1';
+    if(comBusca === undefined ? jaTinha : comBusca) p.set('busca','1');
+    const s = p.toString();
+    history.replaceState(null, '', location.pathname + (s ? '?' + s : '') + (location.hash || ''));
+  }catch(e){ /* URL é conforto; ela NUNCA pode derrubar a busca */ }
+}
+/* Devolve `true` quando a URL pedia a busca — quem chama decide o que fazer com isso. Uma função
+   que restaura E dispara sozinha esconderia o disparo de quem lê o boot. */
+function aplicaEstadoDaURL(){
+  try{
+    const p = new URLSearchParams(location.search);
+    if(![..._URL_CAMPOS, 'de','ate','desertas','ordem','densidade','busca']
+         .some(k => p.has(k.replace(/^f-/,'')))) return false;
+    for(const id of _URL_CAMPOS){
+      const v = p.get(id.replace(/^f-/,''));
+      const e = document.getElementById(id);
+      if(e && v != null) e.value = v;
+    }
+    /* AS DUAS DATAS ANDAM JUNTAS: metade da janela restaurada é uma janela que ninguém escolheu. */
+    if(p.get('de') && p.get('ate')){
+      const de = document.getElementById('f-de'), ate = document.getElementById('f-ate');
+      if(de) de.value = p.get('de');
+      if(ate) ate.value = p.get('ate');
+    }
+    if(p.get('desertas') === '1'){ window._soDesertas = true; marcaDesertas(); }
+    /* ORDEM VINDA DE FORA É CONFERIDA CONTRA A LISTA DE OPÇÕES. Aceitar qualquer texto faria a
+       lista cair no ramo padrão calada — e o rodapé imprimiria o lixo recebido como se fosse um
+       critério ("ordenadas por drop table"). */
+    const o = p.get('ordem');
+    if(o && ['encerramento','abertura','valor','aderencia'].includes(o)) ORDEM = o;
+    if(p.get('densidade') === 'compacta') poeDensidade('compacta');
+    pintaChips();
+    return p.get('busca') === '1';
+  }catch(e){ return false; }
+}
 function porNumero(){
   const n = prompt('Número de controle PNCP (ex.: 05106805000138-1-000010/2026):');
   if(!n) return;
@@ -6639,6 +6724,10 @@ function render(todos, kws, excl, aviso, procedencia, procIcone){
      busca nova pode ter tirado da tela metade do que estava marcado. Sem esta linha ele diria
      "3 marcadas" sobre uma lista onde só uma delas ainda aparece. */
   pintaEscolhidas();
+  /* E A URL VIRA A FOTOGRAFIA DA TELA (A38, item 10) — aqui, e não no `buscar()`: é este o ponto
+     em que a lista existe e o refino já foi aplicado. Gravar antes gravaria a intenção; gravar
+     aqui grava o que está na tela. */
+  gravaEstadoNaURL(true);
 }
 
 /* ══ A DENSIDADE DA LISTA (passo 6 do molde) ══════════════════════════════════════════════════
@@ -6653,6 +6742,9 @@ function densidade(){
 }
 function poeDensidade(d){
   try { localStorage.setItem('fpmed_densidade', d === 'compacta' ? 'compacta' : 'confortavel'); } catch(e){}
+  /* A densidade entra na URL (A38, item 10) sem repintar nada — ela é uma das quatro coisas que
+     o molde manda a fotografia carregar. */
+  if(typeof gravaEstadoNaURL === 'function') gravaEstadoNaURL();
   /* Troca a classe NA HORA, sem repintar a lista: repintar perderia os itens já cruzados (o
      bloco `#itens-N` que a pessoa abriu) e faria a tela piscar por causa de um respiro. */
   const p = document.getElementById('painel-res');

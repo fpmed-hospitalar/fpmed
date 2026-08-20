@@ -69,6 +69,26 @@ const MUTACOES = [
    "     + (hits.length===1?'licitação':'licitações')+', ordenadas por <b>'",
    "     + (hits.length===1?'licitação':'licitações')+', ordenadas por quem <b>encerra primeiro</b>'+'<b hidden>'",
    '34'],
+
+  ['o replaceState vira pushState — cada tecla de refino vira uma entrada no historico',
+   "    history.replaceState(null, '', location.pathname + (s ? '?' + s : '') + (location.hash || ''));",
+   "    history.pushState(null, '', location.pathname + (s ? '?' + s : '') + (location.hash || ''));",
+   '50'],
+
+  ['a ordem vinda da URL passa a ser aceita crua ("ordenadas por drop table" no rodape)',
+   "    if(o && ['encerramento','abertura','valor','aderencia'].includes(o)) ORDEM = o;",
+   '    if(o) ORDEM = o;',
+   '55'],
+
+  ['a janela MOVEL passa a ser gravada na URL (o link, aberto amanha, pesquisa ONTEM calado)',
+   "    if(f.janela && f.janela.tipo === 'fixa'){ p.set('de', f.janela.de); p.set('ate', f.janela.ate); }",
+   "    p.set('de', document.getElementById('f-de').value);",
+   '53'],
+
+  ['"limpar tudo" passa a aparecer com UM chip so (dois controles com o mesmo efeito lado a lado)',
+   '    + (cs.length > 1',
+   '    + (cs.length > 0',
+   '43'],
 ];
 
 function rodaSuite() {

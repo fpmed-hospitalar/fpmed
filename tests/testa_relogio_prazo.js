@@ -232,5 +232,48 @@ const emDias = (d, h) => new Date(2026, 7, 20 + d, h == null ? 9 : h, 0, 0).toIS
     && /\.chip\.limpar\{background:transparent;border:0/.test(MOLDE.replace(/\s*\n\s*/g, ''))); n++;
 }
 
+// ══════════ 6. O ESTADO NA URL — "a URL vira a fotografia da tela" (molde item 10) ══════════
+{
+  ok(n + '. *** as QUATRO coisas do molde entram na URL: busca, filtros, ordenacao e densidade ***',
+    /p\.set\(id\.replace\(\/\^f-\/,''\), v\)/.test(TELA)
+    && /_URL_CAMPOS = \['f-kw','f-excluir','f-uf','f-mod','f-portal','f-modo','f-sit','f-srp',/.test(TELA)
+    && /p\.set\('ordem', ORDEM\)/.test(TELA)
+    && /p\.set\('densidade','compacta'\)/.test(TELA)); n++;
+  /* `pushState` faria cada tecla de refino virar uma entrada no historico, e o VOLTAR do
+     navegador levaria trinta cliques para sair da tela. */
+  ok(n + '. *** replaceState, NUNCA pushState — a URL acompanha, nao grava trilha ***',
+    /history\.replaceState\(null, '', location\.pathname/.test(TELA)
+    && !/history\.pushState/.test(TELA)); n++;
+  ok(n + '. ...e ela preserva o hash (a rota do painel nao pode morrer porque um filtro mudou)',
+    /\+ \(location\.hash \|\| ''\)\);/.test(TELA)); n++;
+  ok(n + '. campo vazio NAO vira parametro vazio na barra de enderecos',
+    /if\(v\) p\.set\(/.test(TELA)); n++;
+  /* A JANELA MOVEL NA URL FARIA O LINK, ABERTO AMANHA, PESQUISAR ONTEM EM SILENCIO. E a mesma
+     lei que o jornal desta tela ja segue desde que ele existe. */
+  ok(n + '. *** so a janela FIXA entra na URL — a movel gravada viraria uma data velha calada ***',
+    /if\(f\.janela && f\.janela\.tipo === 'fixa'\)\{ p\.set\('de', f\.janela\.de\); p\.set\('ate', f\.janela\.ate\); \}/.test(TELA)); n++;
+  ok(n + '. ...e as duas datas andam juntas na volta (meia janela e uma janela que ninguem escolheu)',
+    /if\(p\.get\('de'\) && p\.get\('ate'\)\)\{/.test(TELA)); n++;
+  /* ORDEM VINDA DE FORA E TEXTO DE ESTRANHO. Aceitar qualquer coisa faria o rodape imprimir o
+     lixo recebido como se fosse um criterio ("ordenadas por drop table"). */
+  ok(n + '. *** ordem vinda da URL e conferida contra a lista de opcoes, nunca aceita crua ***',
+    /if\(o && \['encerramento','abertura','valor','aderencia'\]\.includes\(o\)\) ORDEM = o;/.test(TELA)); n++;
+  ok(n + '. *** `?busca=1` separa "a tela com filtros prontos" de "a tela ja respondida" ***',
+    /return p\.get\('busca'\) === '1';/.test(TELA) && /if\(buscarJa\) buscaNova\(\);/.test(TELA)); n++;
+  /* Quem troca a densidade nao faz busca nenhuma — e se essa chamada apagasse o `busca=1`, a URL
+     deixaria de trazer o resultado por causa de um gesto que nao tem nada a ver com ele. */
+  ok(n + '. ...e trocar a densidade NAO apaga o `busca=1` que ja estava la',
+    /const jaTinha = new URLSearchParams\(location\.search\)\.get\('busca'\) === '1';/.test(TELA)
+    && /comBusca === undefined \? jaTinha : comBusca/.test(TELA)); n++;
+  ok(n + '. o boot restaura ANTES de pintar os chips (senao a tela abre dizendo "sem filtro" com sete)',
+    /const buscarJa = aplicaEstadoDaURL\(\);[\s\S]{0,300}?pintaChips\(\);/.test(TELA.replace(/\r/g,''))); n++;
+  /* URL E CONFORTO. Ela nunca pode derrubar a busca — que e o oficio da tela. */
+  ok(n + '. *** e nada disso pode derrubar a lista: as duas funcoes sao envolvidas em try ***',
+    /\}catch\(e\)\{ \/\* URL é conforto; ela NUNCA pode derrubar a busca \*\/ \}/.test(TELA)
+    && /function aplicaEstadoDaURL\(\)\{\s*try\{/.test(TELA.replace(/\r/g,''))); n++;
+  ok(n + '. a URL e gravada onde a lista JA existe (depois do innerHTML), e nao na intencao',
+    /lista\.innerHTML = h;[\s\S]{0,600}?gravaEstadoNaURL\(true\);/.test(TELA)); n++;
+}
+
 console.log('\nRESULTADO: ' + p + ' ok, ' + f + ' falha(s)');
 process.exit(f ? 1 : 0);
