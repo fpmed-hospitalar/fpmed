@@ -3161,12 +3161,24 @@ async function faixaFrescor(){
   const hoje = quando.toDateString() === new Date().toDateString();
   el.hidden = false;
   el.className = 'frescor' + (velho ? ' atencao' : '');
+  const hm = quando.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+  /* ══ A HORA SEM O DIA, JUSTAMENTE NO CASO EM QUE O DIA IMPORTA (achado na prova, 20/08) ══════
+     A faixa velha escrevia *"atualizados há 3 dias (10:48)"*. O "há 3 dias" cumpre a regra —
+     diz a idade —, mas o "(10:48)" pendurado ali é hora de QUE DIA? Quem bate o olho lê "10:48"
+     e completa com "de hoje", que é o contrário do que a frase inteira está dizendo.
+     >>> ENTÃO O RAMO VELHO GANHA A DATA COMPLETA, e o fresco continua só com a hora: quando o
+         dado é de hoje, repetir a data de hoje é ruído; quando não é, omiti-la é o erro.
+     >>> O TÍTULO TAMBÉM MUDA. "Índice do dia" sobre uma carga de três dias é uma legenda que
+         desmente o próprio número ao lado — e legenda errada sobre número certo é o jeito mais
+         barato de alguém tirar a conclusão errada de um dado correto (a lição do "publicadas no
+         dia", 13/08). Velho passa a dizer "Índice desatualizado". */
   el.innerHTML = ic(velho ? 'alerta' : 'caixa')
-    + ' <b>Índice do dia</b> — ' + num(d.licitacoes) + ' licitações e ' + num(d.itens) + ' itens, '
-    + (velho ? 'atualizados há <b>' + idadeEmPalavras(idade) + '</b> ('
-             : 'atualizados ' + (hoje ? 'hoje' : 'em ' + quando.toLocaleDateString('pt-BR')) + ' às <b>')
-    + quando.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})
-    + (velho ? ')' : '</b>')
+    + (velho ? ' <b>Índice desatualizado</b> — ' : ' <b>Índice do dia</b> — ')
+    + num(d.licitacoes) + ' licitações e ' + num(d.itens) + ' itens, '
+    + (velho ? 'atualizados há <b>' + idadeEmPalavras(idade) + '</b> (em '
+                 + quando.toLocaleDateString('pt-BR') + ' às ' + hm + ')'
+             : 'atualizados ' + (hoje ? 'hoje' : 'em ' + quando.toLocaleDateString('pt-BR'))
+                 + ' às <b>' + hm + '</b>')
     + (d.sem_itens ? ' · <span title="a carga lê os itens das que estão vivas primeiro; as sem prazo ficam para depois">'
         + num(d.sem_itens) + ' ainda sem itens lidos</span>' : '')
     + (velho ? ' — a carga roda no começo de cada rodada da fábrica; esta lista pode não ter o que saiu depois.' : '');
