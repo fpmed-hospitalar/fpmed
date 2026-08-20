@@ -345,5 +345,38 @@ const emDias = (d, h) => new Date(2026, 7, 20 + d, h == null ? 9 : h, 0, 0).toIS
     /<div class="itens-meus" onclick="event\.stopPropagation\(\)">/.test(TELA)); n++;
 }
 
+// ══════════ 8. A ACAO PRIMARIA E UMA SO, E E VERBO DO NEGOCIO (molde item 12) ══════════
+{
+  const SEM_COMENT = TELA.replace(/\/\*[\s\S]*?\*\//g, '').replace(/<!--[\s\S]*?-->/g, '');
+  /* ANCORADO NO `btCruzar`, e nao no primeiro `class="acoes"` do arquivo: o PAINEL DE DETALHE tem
+     um bloco de acoes com a mesma classe, e ele vem antes. Recortar pelo primeiro casamento media
+     a barra errada — e todos os asserts abaixo teriam falado do detalhe achando que falavam do
+     cartao. (Aconteceu comigo na primeira escrita desta secao.) */
+  const iCartao = SEM_COMENT.indexOf('const btCruzar');
+  const ini = SEM_COMENT.indexOf("+ '<div class=\"acoes\">'", iCartao);
+  const acoes = SEM_COMENT.slice(ini, SEM_COMENT.indexOf('mais ações</button>', ini));
+  /* DOIS BOTOES COM PESO DE PRIMARIO E O MESMO QUE NENHUM. `btn mini` (sem o `sec`) e o peso
+     primario desta tela — e ele tem que aparecer UMA vez em cada ramo de estado. */
+  const ramoAberta = acoes.slice(acoes.indexOf('est === EST_ABERTA'), acoes.indexOf(': est === EST_ENCERRADA'));
+  const primarios = (ramoAberta.match(/class="btn mini/g) || []).length;
+  ok(n + '. *** o ramo da ABERTA tem UM primario so, e ele e o verbo do negocio ***',
+    primarios === 1 && /class="btn mini bt-verde" onclick="adicionarAosNegocios/.test(ramoAberta),
+    { primarios, ramo: ramoAberta.slice(0, 160) }); n++;
+  ok(n + '. ...e "Ver itens e detalhes" desceu para SECUNDARIO no cartao aberto',
+    /' <button class="btn sec mini" onclick="abrirDetalhe\('\+i\+'\)">Ver itens e detalhes<\/button>'/.test(ramoAberta)); n++;
+  /* Num pregao encerrado nao HA verbo de negocio — nao da para disputar. A acao primaria segue o
+     estado, como a A21 decidiu; o que mudou foi qual verbo vence no estado ABERTA. */
+  ok(n + '. *** e a ENCERRADA mantem "Ver itens e resultado" como primario (nao ha o que disputar) ***',
+    /\? '<button class="btn mini" onclick="abrirDetalhe\('\+i\+'\)">Ver itens e resultado<\/button>'/.test(acoes)); n++;
+  ok(n + '. *** "Abrir no PNCP" continua terciario, dentro de "mais ações" ***',
+    /class="mais">[\s\S]{0,600}?Abrir no PNCP/.test(SEM_COMENT)
+    && !/class="acoes">[\s\S]{0,200}?Abrir no PNCP/.test(SEM_COMENT)); n++;
+  /* Tres copias do mesmo botao e como um dia um deles fica com o `id` errado e o
+     `atualizaBadge` deixa de encontra-lo em UM dos estados, calado. */
+  ok(n + '. o botao do cruzamento e UM so, reusado nos tres estados (nao tres copias com o mesmo id)',
+    (TELA.match(/id="bt-'\+i\+'" onclick="verItens/g) || []).length === 1
+    && (acoes.match(/\+ btCruzar/g) || []).length === 3); n++;
+}
+
 console.log('\nRESULTADO: ' + p + ' ok, ' + f + ' falha(s)');
 process.exit(f ? 1 : 0);

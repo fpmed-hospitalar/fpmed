@@ -129,6 +129,11 @@ const MUTACOES = [
    '  let h = \'<div class="itens-meus" onclick="event.stopPropagation()">\'',
    '  let h = \'<div class="itens-meus">\'',
    '77'],
+
+  ['o cartao aberto volta a ter DOIS primarios (dois primarios e o mesmo que nenhum)',
+   '            + \' <button class="btn sec mini" onclick="abrirDetalhe(\'+i+\')">Ver itens e detalhes</button>\'',
+   '            + \' <button class="btn mini" onclick="abrirDetalhe(\'+i+\')">Ver itens e detalhes</button>\'',
+   '78, 79'],
 ];
 
 function rodaSuite() {

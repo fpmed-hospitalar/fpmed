@@ -6551,6 +6551,15 @@ function render(todos, kws, excl, aviso, procedencia, procIcone){
     const rel = relogioPrazo(l.dataEncerramentoProposta, agora);
     const pct = aderenciaPct(l);
     const escolhida = ESCOLHIDAS.has(chaveLic(l));
+    /* O BOTÃO DO CRUZAMENTO MUDA DE NOME CONFORME JÁ SE LEU OU NÃO os itens: antes de ler, o que
+       ele faz é BUSCAR (é o "buscar agora" que a caixa pede pro estado sem itens); depois de
+       ler, ele é o cruzamento com o estoque, que é o que acende a nota de aderência. Mesmo
+       botão, porque é o mesmo gesto — o rótulo é que precisa dizer a verdade sobre o momento.
+       >>> ELE VIROU VARIÁVEL NA A38 porque passou a aparecer nos TRÊS ramos de estado, e três
+           cópias do mesmo botão é como um dia um deles fica com o `id` errado e o
+           `atualizaBadge` deixa de encontrá-lo em um dos estados, calado. */
+    const btCruzar = ' <button class="btn sec mini" id="bt-'+i+'" onclick="verItens('+i+')">'
+      + ic('alvo') + (cats ? ' Cruzar com nosso estoque' : ' Buscar os itens agora') + '</button>';
     /* ══ O CARTÃO INTEIRO ABRE O DETALHE (fatia A21 — urgência do dono) ═══════════════════════
        Era só o título. Um alvo de 300px de largura e 20 de altura dentro de um cartão de 200px
        de altura: o resto do cartão parecia clicável, não era, e o único clique que sempre
@@ -6699,29 +6708,41 @@ function render(todos, kws, excl, aviso, procedencia, procIcone){
                            e nenhum caminho para criar um negócio que já nasceria perdido.
          SEM PRAZO ....... a tela não sabe, e diz. Oferece conferir no portal, que é o gesto
                            que responde a pergunta — em vez de chutar um dos dois estados. */
+      /* ══ A AÇÃO PRIMÁRIA É UMA SÓ, E É VERBO DO NEGÓCIO (fatia A38 · molde v2, item 12) ═══════
+         Até hoje o cartão de um pregão ABERTO tinha DOIS botões com peso de primário: "Ver itens
+         e detalhes" e "Adicionar aos meus negócios" em verde. Dois primários é o mesmo que
+         nenhum — e o molde é explícito: *"Ação primária é uma só e é verbo do negócio"*.
+         >>> A RAZÃO DE "VER ITENS" SER O PRIMÁRIO ACABOU DE DEIXAR DE EXISTIR, e ela estava
+             escrita aqui: *"é lá que estão os itens, o teto CMED e o caminho pro funil"*. Os
+             itens e o teto CMED passaram a estar NA LISTA nesta mesma fatia. O detalhe continua
+             valendo — mas deixou de ser o pedágio para ver o que já está à vista.
+         >>> ENCERRADA CONTINUA COM "VER ITENS E RESULTADO" COMO PRIMÁRIO, e isso não é exceção
+             preguiçosa: num pregão encerrado não HÁ verbo de negócio — não dá para disputar. O
+             que sobra é o preço praticado, e ele mora no detalhe. A ação primária segue o estado,
+             como a A21 decidiu; o que mudou foi qual verbo vence no estado ABERTA.
+         >>> "ABRIR NO PNCP" CONTINUA EM "⋯ MAIS AÇÕES" — terciária, à direita, nunca em
+             destaque, que é a outra metade do item 12. */
       + '<div class="acoes">'
-      +   '<button class="btn mini" onclick="abrirDetalhe('+i+')">'
-      +     (est === EST_ENCERRADA ? 'Ver itens e resultado' : 'Ver itens e detalhes') + '</button>'
-      /* O SEGUNDO BOTÃO MUDA DE NOME CONFORME JÁ SE LEU OU NÃO os itens: antes de ler, o que ele
-         faz é BUSCAR (é o "buscar agora" que a caixa pede pro estado sem itens); depois de ler,
-         ele é o cruzamento com o estoque, que é o que acende a nota de aderência. Mesmo botão,
-         porque é o mesmo gesto — o rótulo é que precisa dizer a verdade sobre o momento. */
-      +   ' <button class="btn sec mini" id="bt-'+i+'" onclick="verItens('+i+')">'
-      +     ic('alvo') + (cats ? ' Cruzar com nosso estoque' : ' Buscar os itens agora') + '</button>'
       +   (est === EST_ABERTA
           // A PONTE ENCONTRAR -> NEGÓCIOS. Achar a oportunidade e decidir disputar são o mesmo
           // gesto; antes disso, quem achasse algo aqui tinha que ir pro funil e digitar de novo.
-          ? ' <button class="btn mini bt-verde" onclick="adicionarAosNegocios('+i+')" '
+          ? '<button class="btn mini bt-verde" onclick="adicionarAosNegocios('+i+')" '
             + 'title="abre o assistente do Negócios já com esta licitação e os itens escolhidos">'
             + ic('mais') + ' Adicionar aos meus negócios</button>'
+            + ' <button class="btn sec mini" onclick="abrirDetalhe('+i+')">Ver itens e detalhes</button>'
+            + btCruzar
             + ' <button class="btn sec mini" onclick="conversarDoCartao('+i+')" '
             + 'title="usa inteligência artificial e consome crédito por uso — o preço aparece antes de gastar">'
             + 'Conversar com o edital <span class="lm-selo-ia">IA</span></button>'
           : est === EST_ENCERRADA
-            ? ' <button class="btn sec mini" onclick="abrirReferencia('+i+')" '
+            ? '<button class="btn mini" onclick="abrirDetalhe('+i+')">Ver itens e resultado</button>'
+              + btCruzar
+              + ' <button class="btn sec mini" onclick="abrirReferencia('+i+')" '
               + 'title="mostra o que foi pago por item, ao lado do teto legal da CMED — histórico de '
               + 'preço é munição de proposta">Usar como referência de preço</button>'
-            : ' <span class="hint">prazo não informado nesta fonte — confira no portal antes de decidir</span>')
+            : '<button class="btn mini" onclick="abrirDetalhe('+i+')">Ver itens e detalhes</button>'
+              + btCruzar
+              + ' <span class="hint">prazo não informado nesta fonte — confira no portal antes de decidir</span>')
       +   '<span style="flex:1"></span>'
       +   '<span class="mais"><button type="button" class="btn sec mini" '
       +     'onclick="event.stopPropagation();this.parentNode.classList.toggle(\'on\')" '
