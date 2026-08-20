@@ -1,3 +1,14 @@
+>>> ROTINA FIXA DO TRABALHADOR A, DESDE A FATIA A34 (20/08/2026) — PRIMEIRO ATO DE CADA RODADA:
+        node tools/carga_diaria.js
+    E so isso. Ele mesmo e o agendador: se a ultima carga BOA foi ha menos de 12 horas, ele
+    escreve "carga fresca, pulando" e sai em menos de um segundo, sem tocar no PNCP. Nao ha
+    agendamento do Windows a instalar (isso e do dono) — a fabrica e que vira o agendador.
+    POR QUE ISSO VIROU ROTINA: a busca da tela Encontrar deixou de falar com o portal (ordem do
+    dono, 19/08: "buscar o PNCP uma vez por dia e deixar salvo"). Quem pergunta ao PNCP agora e
+    esse condutor, FORA da hora do uso. Se ele nao rodar, o indice envelhece — e a FAIXA DE
+    FRESCOR no topo da Encontrar vai dizer a idade real, em ambar, para quem estiver usando.
+    Ver o carimbo sem rodar nada: node tools/carga_diaria.js --carimbo
+
 >>> CORREIO DO ARQUITETO: caixa atual do A: C:\fpmed\caixas\CAIXA_A.md · do B:
     C:\fpmed\caixas\CAIXA_B.md · relatorios em C:\fpmed\relatorios\ (RELATORIO_A.md /
     RELATORIO_B.md, sempre ACRESCENTANDO no topo). Nada disso vai pro repo (.gitignore).
