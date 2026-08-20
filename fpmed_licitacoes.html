@@ -22,6 +22,11 @@
 <link rel="apple-touch-icon" href="icones/limedtec-192.png">
 <link rel="stylesheet" href="fpmed_tema.css">
 <script src="cliente.config.js"></script>
+<!-- TELEMETRIA (fatia A35). UM arquivo para as sete telas — a configuração, o mascaramento e a
+     lista fechada dos seis eventos moram lá dentro, não aqui. Ele vem CEDO de propósito: o
+     `erro_visto_pelo_usuario` e o Sentry precisam estar de pé antes de a tela ter chance de
+     quebrar, e um observador que só chega depois do acidente não observou nada. -->
+<script src="fpmed_telemetria.js"></script>
 <script src="limedtec-config.js"></script>
 <script src="limedtec-tema.js"></script>
 <script src="limedtec-licenca.js"></script>
@@ -1281,6 +1286,26 @@ svg.ic.bom{color:var(--verde-700)}
   line-height:var(--altura-texto)}
 .aviso-brando b{color:var(--azul-900);font-weight:var(--peso-semi)}
 
+/* ── A FAIXA DE FRESCOR (A34) ──────────────────────────────────────────────────
+   Ela nasce da `.aviso-brando`, que já era a forma desta casa para "aviso que informa sem
+   substituir a tela". O que muda é o PESO: esta fica acima de tudo e é lida em toda visita, então
+   ela é mais discreta ainda — fundo do painel, não azul. O âmbar entra SÓ quando há idade a
+   denunciar, e é aí que ela ganha cor.
+   >>> AS CORES SAEM DO TOKEN, valor exato, inclusive o fio de 1px — regra da casa. */
+.frescor{display:flex;gap:var(--esp-3);align-items:center;flex-wrap:wrap;
+  margin-bottom:var(--esp-4);padding:var(--esp-3) var(--esp-4);
+  background:var(--painel);border:1px solid var(--linha);border-left:3px solid var(--cinza-300);
+  border-radius:var(--raio-cartao);font-size:var(--txt-2);color:var(--muted);
+  line-height:var(--altura-texto)}
+.frescor b{color:var(--texto);font-weight:var(--peso-semi)}
+/* `--ambar-100` e `--ambar-800` e não um par inventado: é EXATAMENTE o par que a
+   `.fp-aviso--atencao` do fpmed_tema.css já usa para "aviso de atenção sobre claro". Dois
+   âmbares diferentes na mesma tela é o começo de uma segunda paleta. */
+.frescor.atencao{background:var(--ambar-50);border-color:var(--ambar-100);
+  border-left-color:var(--ambar-500);color:var(--ambar-800)}
+.frescor.atencao b{color:var(--ambar-800)}
+.frescor svg{width:16px;height:16px;flex:0 0 auto}
+
 /* ── CRUZAMENTO POR ITEM ────────────────────────────────────────────────────── */
 .acoes{display:flex;gap:var(--esp-2);flex-wrap:wrap;align-items:center;margin-top:var(--esp-3)}
 .itens{margin-top:var(--esp-3);border-top:1px solid var(--cinza-200);padding-top:var(--esp-3);overflow-x:auto}
@@ -1765,6 +1790,17 @@ svg.ic.bom{color:var(--verde-700)}
       </div>
     </div>
     <div>
+  <!-- ══ A FAIXA DE FRESCOR (fatia A34 · 19/08) ═════════════════════════════════════════════
+       ELA EXISTE PORQUE A BUSCA DEIXOU DE FALAR COM O PNCP. Enquanto a tela perguntava ao portal
+       na hora do uso, "de quando é este dado?" tinha resposta óbvia: de agora. Lendo só o nosso
+       índice, a resposta passa a ser "de quando a carga rodou" — e esconder isso seria trocar
+       uma tela lenta por uma tela rápida e muda, que é pior.
+       >>> ELA FICA ACIMA DE TUDO, inclusive dos KPIs. A primeira coisa que o gestor pergunta é
+           "ainda dá tempo?" (BASE_VISUAL, Parte 1), e essa pergunta não tem sentido sem saber a
+           idade do que ele está olhando.
+       >>> NUNCA ESCONDE DADO VELHO: DIZ A IDADE. Carga de hoje = faixa neutra com a hora. Carga
+           velha ou falhada = faixa âmbar, com quantas horas/dias, e o que fazer. -->
+  <div id="frescor" hidden></div>
   <div class="kpis" id="kpis" style="display:none">
     <!-- O rótulo era "publicadas no dia" e mentia sempre que o período tinha mais de um dia —
          numa busca de 26/07 a 11/08 ele dizia "no dia" sobre 17 dias. Agora o próprio texto é
@@ -1856,13 +1892,31 @@ if(!window.LimedtecTetoCMED){
   throw new Error('fpmed_teto_cmed.js nao carregou');
 }
 
-const API = 'https://pncp.gov.br/api/consulta/v1/contratacoes/publicacao';
+/* ══ A CONSTANTE `API` SAIU DAQUI NA FATIA A34, E A LÁPIDE FICA ══════════════════════════════
+   Ela apontava para `https://pncp.gov.br/api/consulta/v1/contratacoes/publicacao` e era o
+   endereço que a BUSCA desta tela consultava ao vivo, por até 20 páginas, quando o nosso índice
+   não tinha resposta. Ordem do dono, 19/08: *"buscar o PNCP uma vez por dia e deixar salvo"*.
+   Quem fala com essa porta agora é `tools/coleta_pncp.js`, chamado pela `tools/carga_diaria.js`.
+   >>> A CONSTANTE FOI REMOVIDA E NÃO SÓ DESLIGADA. Endereço vivo num arquivo é um convite para
+       alguém religar o caminho sem saber por que ele foi desligado — e o motivo (70 s de 504 na
+       cara de quem está buscando) não cabe num nome de variável.
+   >>> O QUE SOBROU DE PNCP NESTA TELA, e os três são GESTO EXPLÍCITO, nunca automático:
+         · `PNCP_BUSCA`  — o botão "procurar no PNCP nacional", que a pessoa clica;
+         · `puxarItens`  — os itens de UMA licitação, quando alguém abre o cartão;
+         · o link "ver no portal", que é navegação e não requisição nossa. */
 const CACHE_MIN = 15;
-const cache = new Map();
+const TIMEOUT_MS = 20000;
 
-// tamanhoPagina=10: MEDIDO em 04/08/2026. Com 50 o PNCP NÃO RESPONDE (fetch pendurada >45s e a
-// tela travava em "Buscando…"); com 10 responde em ~450ms. O mínimo aceito pela API é 10.
-const TAM_PAGINA = 10, TIMEOUT_MS = 20000, TETO_PAGINAS = 20;
+/* ══ `tel()` — O ATALHO DA TELEMETRIA, E ELE EXISTE POR UM MOTIVO ESPECÍFICO (fatia A35) ══════
+   Chamar `FPMED_TELEMETRIA.evento(...)` direto em nove pontos da tela dá nove lugares onde uma
+   página aberta sem o `fpmed_telemetria.js` no `<head>` quebra com "FPMED_TELEMETRIA is not
+   defined" — no meio de uma busca, por causa de uma métrica.
+   >>> ENTÃO O ATALHO ENGOLE A AUSÊNCIA. Sem o arquivo, `tel()` não faz nada e a tela segue
+       exatamente igual. É a mesma lei do próprio arquivo: observador que derruba o observado.
+   >>> ELE NÃO FILTRA NADA. Quem decide o que pode sair é o `fpmed_telemetria.js`, num lugar só —
+       um segundo filtro aqui seria uma segunda regra de privacidade para alguém manter. */
+const tel = (nome, props) => { try{ return window.FPMED_TELEMETRIA
+  ? window.FPMED_TELEMETRIA.evento(nome, props) : false; }catch(e){ return false; } };
 
 const brl = n => (Number(n)||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL',maximumFractionDigits:0});
 const dt  = s => { if(!s) return null; const d=new Date(s); return isNaN(d)?null:d; };
@@ -2623,7 +2677,7 @@ window.addEventListener('hashchange', aplicaHash);
        daquela linha, então o boot foi pelo caminho do evento `gm-auth-ready` — que dispara
        tarde, com o `const` já inicializado. O caminho que quebra é o do usuário com sessão
        viva, que é justamente o do dono. Testar deslogado escondeu o defeito. */
-function _aoAutenticar(){ iniciarEstoque(); iniciarJornais(); abreLeitorNaBarra(); iniciarSeloBase(); pintaIndicadores(); reservaAuth(); pintaChips(); aplicaHash(); }
+function _aoAutenticar(){ iniciarEstoque(); iniciarJornais(); abreLeitorNaBarra(); iniciarSeloBase(); pintaIndicadores(); reservaAuth(); pintaChips(); faixaFrescor(); aplicaHash(); }
 if(window.gmAuth) _aoAutenticar();
 else document.addEventListener('gm-auth-ready', _aoAutenticar, { once:true });
 
@@ -2683,20 +2737,6 @@ async function puxarItens(lic, anuncia){
 window.addEventListener('scroll', () => {
   document.getElementById('aoTopo').classList.toggle('ver', window.scrollY > 500);
 });
-
-async function puxarPagina(params, pagina){
-  const q = new URLSearchParams({...params, pagina:String(pagina), tamanhoPagina:String(TAM_PAGINA)});
-  const ctrl = new AbortController();
-  const t = setTimeout(()=>ctrl.abort(), TIMEOUT_MS);
-  try{
-    const r = await fetch(API+'?'+q, {headers:{'Accept':'application/json'}, signal:ctrl.signal});
-    if(!r.ok) throw new Error('PNCP respondeu '+r.status);
-    return await r.json();
-  }catch(e){
-    if(e.name==='AbortError') throw new Error('o PNCP não respondeu em '+(TIMEOUT_MS/1000)+'s');
-    throw e;
-  }finally{ clearTimeout(t); }
-}
 
 // BUSCA NOVA (lupa, Enter, "Aplicar e buscar", busca por nº) — desliga o contexto do jornal.
 // >>> O "Atualizar agora" e o refino NÃO passam por aqui, de propósito: quem abriu um jornal e
@@ -2760,23 +2800,97 @@ async function lerPaginado(qBase){
   finally{ clearTimeout(t); }
 }
 
-async function buscarNoBanco(uf, mod, de, ate){
+/* ══ A PALAVRA PASSA A SER FILTRADA PELO BANCO (fatia A34 · 19/08) ═══════════════════════════
+   *** O NÚMERO QUE MANDOU MEXER AQUI, medido em 19/08 com `tools/mede_encontrar.js`: ***
+
+       o que esta tela BAIXA antes de filtrar uma única palavra
+         janela de 30 dias .....  18.946 KB   2.761 ms   9.663 linhas
+         índice INTEIRO ........  23.281 KB   2.686 ms  11.843 linhas
+
+   Dezoito megabytes de JSON para mostrar três cartões de "dipirona". O `select=bruto` traz a
+   resposta inteira do PNCP (~2 KB por linha) de TODAS as licitações do período, e só então o
+   `casa()` do render joga 99% fora. É esse o "travando" que o dono descreveu — não é impressão
+   dele, é o navegador baixando, parseando e guardando 18 MB.
+
+   >>> O FILTRO DESCE PARA O BANCO, E A REGRA NÃO MUDA UM FIO. A coluna gerada `texto_busca`
+       (ddl/busca_local.sql) é `sem_acento(objeto)` — o mesmo que o `semAcento(l.objetoCompra)`
+       do `casa()` faz no navegador. Mudar o LUGAR do filtro e a REGRA do filtro na mesma fatia
+       seria duas mudanças numa, e a que some com resultado não dá sintoma: ninguém reclama do
+       que não apareceu.
+   >>> E A IGUALDADE É MEDIDA, NÃO PROMETIDA: `tools/prova_busca_local.js` baixa os 11.843
+       objetos, roda o `semAcento` do navegador em cima e compara conjunto com conjunto contra o
+       `ilike` do banco. 8 termos, inclusive acentuados ("cirúrgico", "solução") e um de 1.354
+       linhas ("hospitalar"): mesmo conjunto em todos.
+   >>> UMA CHAMADA POR TERMO, e não um `or=()` montado à mão — pela mesma razão já escrita na
+       `buscarPorItens`: o termo vem de campo de texto e pode ter vírgula, aspas ou parêntese, e
+       são esses três que quebram a sintaxe do `or=()` do PostgREST.
+   >>> O `%` E O `_` SÃO ESCAPADOS. São coringas do LIKE, e "seringa 20%" é termo plausível
+       neste ramo: sem escapar, ele viraria uma busca diferente da que a pessoa digitou.
+   >>> O `numero_controle` ENTRA NO `select` PARA A DEDUPLICAÇÃO. Uma licitação que casa em dois
+       termos volta nas duas consultas, e o cartão dela apareceria duas vezes na lista. */
+const escapaLike = t => String(t).replace(/([%_\\])/g, '\\$1');
+
+async function lerPorTermos(qBase, kws){
+  if(!kws || !kws.length) return await lerPaginado(qBase);
+  const partes = await Promise.all(kws.map(k =>
+    lerPaginado(qBase + '&texto_busca=ilike.' + encodeURIComponent('*' + escapaLike(k) + '*'))));
+  /* TODAS falharam = "não sei", e é `null` que diz isso. Se UMA respondeu, devolve o que veio:
+     meia resposta com o resto vazio é pior que nenhuma só quando ela se apresenta como inteira,
+     e quem chama isto já sabe distinguir (o `null` cai no caminho do "não consegui ler"). */
+  if(partes.every(p => p === null)) return null;
+  const vistos = new Set(), out = [];
+  for(const p of partes){
+    if(!p) continue;
+    for(const x of p){
+      const k = x.numero_controle || ('#' + out.length);
+      if(vistos.has(k)) continue;
+      vistos.add(k); out.push(x);
+    }
+  }
+  return out;
+}
+
+async function buscarNoBanco(uf, mod, de, ate, kws){
   const iso = s => s.slice(0,4)+'-'+s.slice(4,6)+'-'+s.slice(6,8);
-  let q = `${SB_URL}/rest/v1/licitacoes?select=bruto&data_publicacao=gte.${iso(de)}&data_publicacao=lte.${iso(ate)}`
+  let q = `${SB_URL}/rest/v1/licitacoes?select=numero_controle,bruto&data_publicacao=gte.${iso(de)}&data_publicacao=lte.${iso(ate)}`
         + `&order=data_publicacao.desc`;
   if (uf)  q += `&uf=eq.${encodeURIComponent(uf)}`;
   if (mod) q += `&modalidade_cod=eq.${encodeURIComponent(mod)}`;
-  const j = await lerPaginado(q);
+  const j = await lerPorTermos(q, kws);
   // normalizaBruto: as 400 linhas da forma "busca" viram a forma da consulta AQUI, na porta de
   // entrada — ver o comentário grande da fatia A21, junto da função.
   return j ? j.map(x => normalizaBruto(x.bruto)).filter(Boolean) : null;
 }
+
+/* QUANTAS FORAM PUBLICADAS NO PERÍODO — a conta que o filtro do banco tirava da tela.
+   O KPI "N publicadas de 21/07 a 19/08" era `todos.length`, e `todos` era a janela INTEIRA
+   porque a tela baixava a janela inteira. Filtrando no banco, `todos` passa a ser só quem casou
+   — e o KPI viraria uma cópia do "batem na busca", dois números iguais respondendo perguntas
+   diferentes na mesma faixa.
+   >>> ENTÃO O TOTAL VEM DO SERVIDOR, pelo `content-range`, sem baixar linha nenhuma: medido em
+       66 ms e 0 KB de acervo. É a mesma técnica dos quatro indicadores. */
+async function totalDaJanela(uf, mod, de, ate){
+  const iso = s => s.slice(0,4)+'-'+s.slice(4,6)+'-'+s.slice(6,8);
+  let q = `licitacoes?data_publicacao=gte.${iso(de)}&data_publicacao=lte.${iso(ate)}`;
+  if (uf)  q += `&uf=eq.${encodeURIComponent(uf)}`;
+  if (mod) q += `&modalidade_cod=eq.${encodeURIComponent(mod)}`;
+  try{ return await contar(q); }catch(e){ return null; }   // null = "não sei", nunca 0
+}
 // ── O ÍNDICE INTEIRO, sem janela de data (10/08) ──────────────────────────────────────────
-// Usado quando a janela escolhida não tem nada E o operador digitou um termo. Não filtra por
-// palavra AQUI de propósito: quem filtra é o `render`, com o mesmo `semAcento` de sempre. Mandar
-// o termo pro banco criaria um SEGUNDO filtro de palavra — e o do banco é sensível a acento
-// ("farmaceutico" não casaria com "FARMACÊUTICO"), então ele perderia justamente o que o do
-// navegador acha. Com o índice na casa dos milhares, trazer e filtrar aqui é instantâneo.
+// Usado quando a janela escolhida não tem nada E o operador digitou um termo.
+/* ══ ESTE COMENTÁRIO DIZIA O CONTRÁRIO DO CÓDIGO, E ISSO DUROU UMA FATIA INTEIRA ══════════════
+   Ele mandava NÃO filtrar palavra aqui, e a razão escrita era boa: *"o filtro do banco é sensível
+   a acento — 'farmaceutico' não casaria com 'FARMACÊUTICO', então ele perderia justamente o que o
+   do navegador acha"*. A A34 desceu o filtro para o banco e não veio apagar esta linha.
+   >>> E ELA NÃO É INOFENSIVA: um assert da `testa_cobertura_busca` procurava exatamente esta
+       frase para PROVAR que o termo não ia ao banco, e continuou VERDE depois de a regra ter sido
+       invertida. Comentário velho não é só ruído — é o que um teste estático lê como se fosse o
+       código, e aí ele atesta a casa olhando para uma placa na porta.
+   >>> A OBJEÇÃO CONTINUA VALENDO, e é por isso que ela foi RESOLVIDA em vez de ignorada: o banco
+       não filtra `objeto`, filtra `texto_busca` — a coluna gerada `sem_acento(objeto)`, que é o
+       mesmo `NFD → tira combinantes → lower` do navegador. A regra de casamento é a mesma letra
+       por letra; o que mudou foi só quem a executa. E a igualdade é MEDIDA, não prometida:
+       `tools/prova_busca_local.js` compara conjunto com conjunto sobre o índice de verdade. */
 /* ══ BUSCA NACIONAL NO PNCP ══════════════════════════════════════════════════════════════════
    O nosso índice cobre 7 UFs e 3 modalidades — é o que a coleta consegue manter fresco. Quando o
    operador digita um termo, porém, a pergunta dele é sobre o BRASIL: "alguém está comprando
@@ -2840,13 +2954,14 @@ async function buscarNacional(termo, uf){
   return { total: Number(j.total) || 0, itens: Array.isArray(j.items) ? j.items : [] };
 }
 
-async function buscarNoBancoAmplo(uf, mod){
+async function buscarNoBancoAmplo(uf, mod, kws){
   // Esta é a consulta do "procurei no índice INTEIRO" — era a que mais mentia parando em 1000,
-  // porque é justamente a que promete ter olhado tudo.
-  let q = `${SB_URL}/rest/v1/licitacoes?select=bruto&order=data_publicacao.desc`;
+  // porque é justamente a que promete ter olhado tudo. E era também a mais cara: 23.281 KB
+  // medidos em 19/08. Com o termo indo junto pro banco, ela passa a trazer só quem casou.
+  let q = `${SB_URL}/rest/v1/licitacoes?select=numero_controle,bruto&order=data_publicacao.desc`;
   if (uf)  q += `&uf=eq.${encodeURIComponent(uf)}`;
   if (mod) q += `&modalidade_cod=eq.${encodeURIComponent(mod)}`;
-  const j = await lerPaginado(q);
+  const j = await lerPorTermos(q, kws);
   return j ? j.map(x => normalizaBruto(x.bruto)).filter(Boolean) : null;
 }
 
@@ -2870,7 +2985,25 @@ async function buscarNoBancoAmplo(uf, mod){
    3. O TOTAL VEM DO `content-range`, E NÃO DA CONTAGEM DAS LINHAS LIDAS. O teto de leitura é
       400 itens; sem o total, um termo com 5.000 itens diria "400" com cara de resposta inteira.
       É o mesmo erro do `limit=1000` que já mordeu esta obra duas vezes. */
-const TETO_ITENS_BUSCA = 400;
+/* ══ O TETO DE 400 POR TERMO MORREU (fatia A34 · 19/08) ══════════════════════════════════════
+   *** MEDIDO ANTES DE MATAR, para que o ganho seja um número e não uma sensação: ***
+       seringa .... a tela lia 400 de  2.585 itens que casaram   ✂
+       dipirona ... a tela lia 400 de    556 itens que casaram   ✂
+       albumina ... 144 de 144 (esse cabia, e por isso ninguém via o defeito nos outros dois)
+   Ou seja: a busca por produto respondia sobre 15% dos itens de "seringa" — e escrevia o total
+   certo na procedência, então ela dizia a verdade sobre o TAMANHO e mentia sobre o CONJUNTO.
+   A licitação em que a seringa estava no item nº 900 não existia para esta tela.
+
+   >>> O TETO EXISTIA PORQUE A AGREGAÇÃO ERA AQUI. A tela pedia uma LINHA POR ITEM e montava o
+       mapa `numero_controle -> quantos` no navegador; 2.585 linhas para saber que 300
+       licitações contêm seringa. Feita no banco (`public.itens_por_licitacao`, ddl/busca_local),
+       a resposta já vem com UMA LINHA POR LICITAÇÃO — e aí não há teto a aumentar, há teto que
+       deixou de ser necessário. Aumentar teto é adiar o mesmo defeito para uma base maior.
+   >>> O `_itensTruncou` CONTINUA EXISTINDO e continua sendo dito na tela — mas agora ele só
+       acende se a RESPOSTA AGREGADA bater no teto de 1.000 do PostgREST, que é outra conversa e
+       muito mais rara. Apagar o aviso junto com a causa deixaria a tela sem voz no dia em que a
+       causa voltasse por outra porta. */
+const TETO_LIC_ITENS = 1000;     // o teto do PostgREST, e ele é DITO quando morde
 async function buscarPorItens(){
   const cru = (document.getElementById('f-kw').value || '').trim();
   if(!cru) return null;
@@ -2880,23 +3013,19 @@ async function buscarPorItens(){
   let truncou = false, falhou = 0;
   await Promise.all(termos.map(async t => {
     try{
-      const u = `${SB_URL}/rest/v1/licitacao_itens?select=numero_controle,numero_item,descricao`
-              + `&busca=wfts(pt_sem_acento).${encodeURIComponent(t)}`;
-      const r = await fetch(u, {
-        headers: Object.assign({ 'Prefer': 'count=exact', 'Range': '0-' + (TETO_ITENS_BUSCA - 1) }, SB_H),
-        signal: AbortSignal.timeout(15000),
-      });
+      const u = `${SB_URL}/rest/v1/rpc/itens_por_licitacao?p_termo=${encodeURIComponent(t)}`;
+      const r = await fetch(u, { headers: SB_H, signal: AbortSignal.timeout(15000) });
       if(!r.ok){ falhou++; return; }
-      const total = Number(String(r.headers.get('content-range')||'').split('/')[1]);
       const linhas = await r.json();
-      if(isFinite(total) && total > linhas.length) truncou = true;
-      for(const it of linhas){
-        const k = String(it.numero_controle||''); if(!k) continue;
+      if(!Array.isArray(linhas)){ falhou++; return; }   // 401 devolve OBJETO de erro, não lista
+      if(linhas.length >= TETO_LIC_ITENS) truncou = true;
+      for(const l of linhas){
+        const k = String(l.numero_controle||''); if(!k) continue;
         const v = mapa.get(k) || {n:0, amostra:null};
-        v.n++;
-        // a AMOSTRA é a 1ª descrição que casou: é ela que a etiqueta mostra, e é o que prova
-        // pra quem lê que o casamento foi real e não um acaso de radical.
-        if(!v.amostra) v.amostra = String(it.descricao||'').replace(/\s+/g,' ').trim();
+        v.n += Number(l.itens_casados) || 0;
+        // a AMOSTRA é uma das descrições que casaram: é ela que a etiqueta mostra, e é o que
+        // prova pra quem lê que o casamento foi real e não um acaso de radical.
+        if(!v.amostra) v.amostra = String(l.amostra||'').replace(/\s+/g,' ').trim();
         mapa.set(k, v);
       }
     }catch(e){ falhou++; /* item fora do ar não pode derrubar a busca por objeto */ }
@@ -2957,33 +3086,111 @@ async function coberturaItens(){
   }catch(e){ return null; }     // sem a contagem o selo não aparece; ele nunca chuta cobertura
 }
 
-// A FAIXA DISCRETA: o PNCP caiu, mas há resultado na tela. Fica ACIMA da lista, some sozinha do
-// caminho visual e oferece a ação — em vez do painel vermelho que substituía tudo.
-// `emDiaAte` (yyyy-mm-dd) tem prioridade sobre a HORA da última rodada completa: quem lê quer
-// saber até que dia pode confiar no índice, e não a que horas o robô terminou. A hora só aparece
-// quando não há dia fechado — e as duas juntas seriam duas datas concorrendo pela mesma pergunta.
-function avisoBrandoPNCP(quando, emDiaAte){
-  const lista = document.getElementById('lista');
-  if(!lista) return;
-  const faixa = document.createElement('div');
-  faixa.className = 'aviso-brando';
-  const dm2 = s => s ? s.slice(8,10)+'/'+s.slice(5,7)+'/'+s.slice(0,4) : '';
-  faixa.innerHTML = ic('globo') + ' <b>O portal do governo (PNCP) não respondeu agora.</b> '
-    + 'Mostrando o nosso índice'
-    + (emDiaAte ? ', completo até ' + dm2(emDiaAte)
-       : quando ? ', atualizado em ' + quando.toLocaleDateString('pt-BR') + ' às '
-           + quando.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})
-       : '')
-    + '. <button class="btn sec mini" onclick="atualizarAgora()">Tentar o PNCP de novo</button>';
-  lista.insertBefore(faixa, lista.firstChild);
+/* ══ A FAIXA DE FRESCOR — "eu sei de quando é este dado" (fatia A34) ═════════════════════════
+   *** ELA SUBSTITUI O `avisoBrandoPNCP`, e a troca é a fatia inteira em miniatura. ***
+   Aquele aviso dizia "o PNCP não respondeu agora, mostrando o nosso índice" — uma frase sobre um
+   ACIDENTE, que só aparecia quando o portal caía. Agora o índice não é o plano B: é o plano.
+   Então a frase deixa de ser sobre a queda do portal e passa a ser sobre a IDADE do dado, que é
+   a pergunta que a pessoa realmente tem.
+
+   >>> A REGRA DURA: NUNCA ESCONDER DADO VELHO — DIZER A IDADE. Uma tela que fica calada sobre
+       dado de três dias é pior que uma tela lenta, porque a lentidão a pessoa vê e a idade não.
+   >>> TRÊS ESTADOS, e nenhum deles é "tudo bem" sem número:
+         fresco (≤ 12 h) .. faixa neutra, com a hora e os dois números do índice;
+         velho ............ faixa ÂMBAR, com a idade real em horas ou dias;
+         não sei .......... a leitura do carimbo falhou, ou nunca houve carga — e isso tem texto
+                            próprio, porque "não sei de quando é" não é "está velho".
+   >>> O CARIMBO É O DA CARGA (`fonte='CARGA'`), escrito por `tools/carga_diaria.js`. O selo do
+       header continua lendo o da coleta (`fonte='PNCP'`): são dois fatos diferentes — "a coleta
+       de licitações está em dia" e "a rodada inteira (licitações + itens + prazos) rodou". */
+async function carimboCarga(){
+  try{
+    const r = await fetch(`${SB_URL}/rest/v1/coleta_status?fonte=eq.CARGA&select=ultima_ok,ultima_tentativa,ultimo_erro,detalhe`, {headers:SB_H});
+    if(!r.ok) return null;
+    const j = await r.json();
+    return (Array.isArray(j) && j[0]) ? j[0] : null;
+  }catch(e){ return null; }
+}
+
+function idadeEmPalavras(ms){
+  const h = ms / 3600000;
+  if(h < 1)  return Math.max(1, Math.round(ms/60000)) + ' min';
+  if(h < 48) return Math.round(h) + (Math.round(h) === 1 ? ' hora' : ' horas');
+  return Math.round(h/24) + ' dias';
+}
+
+const FRESCOR_HORAS = 12;    // o mesmo número que a `carga_diaria.js` usa para pular — um só
+
+async function faixaFrescor(){
+  const el = document.getElementById('frescor');
+  if(!el) return null;
+  const c = await carimboCarga();
+  const num = n => (Number(n)||0).toLocaleString('pt-BR');
+
+  if(!c || !c.ultima_ok){
+    /* ══ `ultima_ok` NULL É UM ALARME, NÃO UM DETALHE ═══════════════════════════════════════════
+       NÃO SEI ≠ ESTÁ VELHO. Sem carimbo, a tela não pode afirmar idade nenhuma — e também não
+       pode ficar muda, porque quem olha uma lista precisa saber que ela pode estar parada.
+       >>> E AQUI HÁ DOIS "NÃO SEI" DIFERENTES, medidos em 20/08: a linha CARGA existia, com
+           `ultima_tentativa` de 19/08 16:32 e `ultima_ok` NULL. Ou seja, o condutor TENTOU e
+           NUNCA terminou uma rodada inteira, nenhuma vez. Chamar isso de "nenhuma carga
+           registrada" esconderia que ele está rodando e falhando — que é notícia pior e mais
+           acionável que nunca ter rodado.
+       >>> O QUE NÃO SE PODE FAZER DE JEITO NENHUM é o que a tela fazia antes desta fatia: ler o
+           `ultima_tentativa` (06:29 de hoje) e escrever "atualizado hoje às 06:29". Isso é
+           verdade da LICITAÇÃO e mentira do ITEM — a licitação entrava e o item não entrava
+           havia 14 horas. A hora só sai daqui quando a rodada FECHOU. */
+    el.hidden = false;
+    el.className = 'frescor atencao';
+    const tentou = c && c.ultima_tentativa ? new Date(c.ultima_tentativa) : null;
+    el.innerHTML = ic('alerta')
+      + (tentou
+          ? ' <b>A carga nunca terminou por inteiro.</b> A última tentativa foi em '
+            + tentou.toLocaleDateString('pt-BR') + ' às '
+            + tentou.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}) + ' e não fechou'
+            + (c.ultimo_erro ? ': ' + esc(String(c.ultimo_erro).slice(0,140)) : '') + '. '
+          : ' <b>Não sei de quando é este índice.</b> Nenhuma carga foi registrada ainda. ')
+      + 'O que está na lista é o que já estava guardado — <b>não posso dizer a idade dele</b>.';
+    return c;
+  }
+
+  const d = c.detalhe || {};
+  const idade = Date.now() - new Date(c.ultima_ok).getTime();
+  const velho = idade > FRESCOR_HORAS * 3600000;
+  const quando = new Date(c.ultima_ok);
+  const hoje = quando.toDateString() === new Date().toDateString();
+  el.hidden = false;
+  el.className = 'frescor' + (velho ? ' atencao' : '');
+  el.innerHTML = ic(velho ? 'alerta' : 'caixa')
+    + ' <b>Índice do dia</b> — ' + num(d.licitacoes) + ' licitações e ' + num(d.itens) + ' itens, '
+    + (velho ? 'atualizados há <b>' + idadeEmPalavras(idade) + '</b> ('
+             : 'atualizados ' + (hoje ? 'hoje' : 'em ' + quando.toLocaleDateString('pt-BR')) + ' às <b>')
+    + quando.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})
+    + (velho ? ')' : '</b>')
+    + (d.sem_itens ? ' · <span title="a carga lê os itens das que estão vivas primeiro; as sem prazo ficam para depois">'
+        + num(d.sem_itens) + ' ainda sem itens lidos</span>' : '')
+    + (velho ? ' — a carga roda no começo de cada rodada da fábrica; esta lista pode não ter o que saiu depois.' : '');
+  return c;
 }
 
 /* `ultima_tentativa` entrou na leitura em 13/08 (passo 3): o SELO DA BASE precisa dela pra
    distinguir "o índice está velho" de "o agendador parou de rodar" — e essa é a distinção que
    mais importa, porque com o agendador parado o carimbo de dia congela num valor BOM e mente. */
+/* ══ O `r.ok` ENTROU AQUI NA FATIA A36 (20/08), E O DESFECHO JÁ ERA CERTO PELO MOTIVO ERRADO ══
+   Esta função não conferia o `r.ok`. Num 403 (papel sem leitura) o PostgREST devolve um OBJETO
+   de erro, o `Array.isArray` dá falso e ela devolvia `null` — que por sorte é o valor certo, o
+   "não sei" que o selo da base sabe pintar com cor própria.
+   >>> MAS ELA ESTAVA ACERTANDO PELO CAMINHO DA FAMÍLIA QUE O B ACHOU NA PROPOSTA: usar o
+       `Array.isArray` como se fosse prova de SUCESSO, quando ele é prova de FORMA. Toda resposta
+       de erro do PostgREST é um objeto bem formado, e todo objeto bem formado passa por qualquer
+       teste de forma. O acerto era um efeito colateral; bastaria o dia em que a resposta de erro
+       viesse dentro de uma lista para o acerto virar erro, sem uma linha mudar aqui.
+   >>> E A IRMÃ DELA, a `carimboCarga` da A34, já conferia. Duas funções, a mesma tabela, a mesma
+       forma, rigores diferentes — e a que não conferia é a mais velha. */
 async function carimboColeta(){
   try{
     const r = await fetch(`${SB_URL}/rest/v1/coleta_status?fonte=eq.PNCP&select=ultima_ok,ultimo_dia_ok,ultimo_erro,ultima_tentativa`, {headers:SB_H});
+    if(!r.ok) return null;              // "não consegui perguntar" — e o selo tem estado pra isso
     const j = await r.json();
     return (Array.isArray(j) && j[0]) ? j[0] : null;
   }catch(e){ return null; }
@@ -3128,9 +3335,16 @@ function focarBusca(){
   c.scrollIntoView({block:'center', behavior:'smooth'});
   c.focus();
 }
-// "Atualizar agora": vai no PNCP ao vivo. Se falhar, AVISA sem travar — o que está na tela
-// continua servindo, porque veio do banco e não da API.
-function atualizarAgora(){ buscar(true); }
+/* ══ "ATUALIZAR AGORA" MUDOU DE SIGNIFICADO NA A34, e o rótulo dele mudou junto ═══════════════
+   Ele mandava `buscar(true)`, e o `true` queria dizer "ignora o banco e vai no PNCP ao vivo" —
+   até 20 páginas, 20 s de espera cada, num portal que responde 504 em 70 s. Era o botão mais
+   caro da tela, oferecido logo abaixo de um resultado que já estava pronto.
+   >>> AGORA ELE RELÊ O NOSSO ÍNDICE. Continua servindo pra alguma coisa de verdade: a carga
+       diária pode ter rodado enquanto a aba estava aberta, e é isso que este botão traz.
+   >>> E ELE NÃO PROMETE O QUE NÃO FAZ. Chamar de "atualizar" uma releitura do banco seria
+       deixar a pessoa achando que o botão foi ao portal; o rótulo passa a dizer o que ele é.
+       Quem quer perguntar ao portal tem o botão do PNCP nacional, que diz isso no nome. */
+function atualizarAgora(){ buscar(); }
 
 // ══ REFINO — pesquisa avançada completa (item 9, 4º pedaço · 06/08) ═══════════════════════
 // >>> DECISÃO: o refino filtra o RESULTADO, no navegador, e não vira parâmetro de consulta.
@@ -3533,6 +3747,14 @@ function cliqueCartao(ev, i){
 function irProNegocios(l, itens){
   const id = String((l && l.numeroControlePNCP) || '').trim();
   if(!id) return false;
+  /* ══ `adicionado_aos_negocios` — A CONVERSÃO QUE IMPORTA (fatia A35) ═══════════════════════
+     É aqui que "olhar" vira "trabalhar", e é o denominador de todo o resto: mil buscas que não
+     chegam nesta linha dizem que a tela informa e não converte.
+     >>> O QUE VAI: quantos itens foram marcados (número) e se veio do painel de detalhe ou do
+         cartão. O NÚMERO DE CONTROLE NÃO VAI — ele identifica um órgão e um certame, e a
+         pergunta "quantos negócios nascem daqui?" não precisa saber quais. Regra 2 do
+         docs/TELEMETRIA.md, e o filtro do arquivo recusaria de qualquer jeito. */
+  tel('adicionado_aos_negocios', { itens: (itens && itens.length) || 0, de: itens && itens.length ? 'detalhe' : 'cartao' });
   const q = 'adicionar=' + encodeURIComponent(id)
           + (itens && itens.length ? '&itens=' + encodeURIComponent(itens.join(',')) : '');
   location.href = 'fpmed_negocios.html?' + q;
@@ -3640,6 +3862,15 @@ async function abrirDetalheDe(l, foco, i){
      quem já estava trabalhando. */
   DET = { i: (i == null ? null : i), token: t, lic:l, dados:null, busca:'', foco: foco || null,
           aba: (foco === 'resultado' ? 'resultado' : 'itens'), sel: new Set() };
+  /* ══ `licitacao_aberta` — DE ONDE ELA ABRE O EDITAL (fatia A35) ═══════════════════════════
+     Esta é a única porta de abertura do painel: o cartão da lista, o painel ao vivo do PNCP e o
+     link direto passam todos por aqui. Instrumentar a porta, e não os três chamadores, é o que
+     impede o quarto chamador de nascer sem evento.
+     >>> O `de` VEM DO `i`, que já distingue os dois casos: `null` é o painel nacional (que não
+         tem índice na lista), número é o cartão da nossa busca. É a informação que responde "o
+         índice basta, ou ele precisa do Brasil?" — e ela não custa nenhum dado novo. */
+  tel('licitacao_aberta', { de: (i == null ? 'pncp_nacional' : 'busca'),
+                            foco: foco === 'resultado' ? 'resultado' : 'itens' });
   const vale = () => DET && DET.token === t;
   abreOPainel();
   pintaDetalhe('lendo');
@@ -3667,6 +3898,14 @@ async function abrirDetalheDe(l, foco, i){
     if(!vale()) return;
     DET.erro = e.message;
     pintaDetalhe('erro');
+    /* ══ `erro_visto_pelo_usuario` — E O NOME DELE É LITERAL ══════════════════════════════════
+       Não é "erro que aconteceu": é erro que a pessoa VIU, e o lugar certo dele é colado no
+       `pintaDetalhe('erro')` — a linha que põe a falha na tela. Um `catch` que trata e segue
+       não entra aqui, porque ninguém viu nada.
+       >>> A CAUSA VAI, O DADO NÃO. `e.message` é frase de erro ("o PNCP respondeu 504"), não
+           conteúdo de edital — e o filtro do `fpmed_telemetria.js` corta em 80 caracteres e
+           recusa qualquer coisa com cara de documento, caso um dia uma mensagem carregue um. */
+    tel('erro_visto_pelo_usuario', { causa: e.message, tela: 'detalhe_do_edital' });
   }
 }
 function abrirDetalhe(i, foco){
@@ -4090,6 +4329,9 @@ function detSelo(t, uE){
 function pintaDetalhe(estado){
   const el = document.getElementById('detalhe');
   if(!el || !DET) return;
+  // o contador da CMED é DESTA pintura — sem zerar, as quatro repinturas somariam quatro vezes
+  // os mesmos itens e o evento sairia com um total que não existe em lugar nenhum da tela.
+  DET._cmed = { total: 0, casou: 0 };
   const l = DET.lic;
   const org = (l.orgaoEntidade||{}).razaoSocial || '—';
   const un = l.unidadeOrgao || {};
@@ -4376,6 +4618,20 @@ function pintaDetalhe(estado){
      : DET.aba === 'resultado'  ? '<div class="det-rolo">'+secaoResultado(l)+'</div>'
      : corpo)
     + rodape;
+
+  /* ══ `item_comparado_com_cmed` — UMA VEZ POR EDITAL ABERTO, no fim da pintura ═══════════════
+     O painel repinta quatro vezes enquanto as leituras voltam (resultado, CMED, funil, edital),
+     e o contador foi zerado no começo DESTA pintura — então o que está em `DET._cmed` agora é a
+     conta desta passada, não a soma das quatro. O `_cmedEnviado` garante que o evento sai uma
+     vez só: quatro eventos por edital fariam a métrica dizer que a pessoa usou o cruzamento
+     quatro vezes mais do que usou, e uma métrica inflada é pior que métrica nenhuma.
+     >>> O QUE VAI: quantos itens tinham teto e quantos foram avaliados. NÃO VAI o nome do
+         medicamento nem o do órgão — a pergunta é "ela chega a usar o cruzamento, ou para
+         antes?", e ela se responde com dois números. */
+  if(DET && DET._cmed && DET._cmed.total && !DET._cmedEnviado){
+    DET._cmedEnviado = true;
+    tel('item_comparado_com_cmed', { itens: DET._cmed.total, com_teto: DET._cmed.casou });
+  }
 }
 
 /* "Buscar os itens agora" — o mesmo caminho do cruzamento, forçando a releitura. O cache de 15
@@ -4811,7 +5067,7 @@ function rerender(){
   else buscar();
 }
 
-async function buscar(aoVivo){
+async function buscar(){
   const uf   = document.getElementById('f-uf').value;
   const mod  = document.getElementById('f-mod').value;
   const de   = document.getElementById('f-de').value.replace(/-/g,'');
@@ -4821,33 +5077,33 @@ async function buscar(aoVivo){
   const st = document.getElementById('status'), lista = document.getElementById('lista');
   if(!de){ st.textContent='Escolha o intervalo de datas.'; return; }
 
-  const chave = [uf,mod,de,ate].join('|');
-  const emCache = cache.get(chave);
-  const fresco = emCache && (Date.now()-emCache.quando) < CACHE_MIN*60000;
   /* ══ "CARREGANDO" SEM NÚMERO É RODINHA MUDA, E ESTA ERA MUDA POR 70 SEGUNDOS ═══════════════
      MEDIDO na tela pintada em 19/08 (fatia A32), com a rede derrubada de propósito: o
-     `#status` escrevia "consultando o PNCP…" e ficava assim até a primeira resposta. A linha
-     4911 logo abaixo já diz "página p/tp" — ou seja, o número existe da SEGUNDA página em
-     diante, e a primeira, que é a longa, era a única sem ele.
-     >>> E "a longa" não é figura de linguagem: a API de consulta do PNCP está fora hoje e
-         responde 504 em ~70 SEGUNDOS (medido na A33). São setenta segundos de uma frase que
-         não muda, sobre uma busca cujo tamanho a tela conhece desde antes de sair.
-     >>> O NÚMERO QUE ELA JÁ TEM NA MÃO é o intervalo: de/até estão preenchidos duas linhas
-         acima. "30 dias, página 1" é verdade no instante em que é escrito e continua sendo
-         verdade se a resposta demorar — que é a diferença entre informar e enfeitar. */
+     `#status` escrevia "consultando o PNCP…" e ficava assim até a primeira resposta.
+     >>> E "a longa" não era figura de linguagem: a API de consulta do PNCP responde 504 em ~70
+         SEGUNDOS (medido na A33). Setenta segundos de uma frase que não muda.
+     >>> A A34 DESFEZ A CAUSA, e por isso a frase mudou de assunto: esta busca não fala mais com
+         o portal, então prometer "consultando o PNCP" seria mentir sobre para onde ela foi. O
+         número que ela tem na mão continua sendo o intervalo — e agora é uma espera de banco,
+         medida em centenas de milissegundos, não em minutos. */
   const diasDaJanela = (() => {
     const d = String(de), a = String(ate || de);
     const iso = s => new Date(+s.slice(0,4), +s.slice(4,6)-1, +s.slice(6,8));
     const n = Math.round((iso(a) - iso(d)) / 86400000) + 1;
     return isFinite(n) && n > 0 ? n : null;
   })();
-  st.textContent = fresco ? 'usando o resultado em cache…'
-    : 'consultando o PNCP… ' + (diasDaJanela ? diasDaJanela + (diasDaJanela === 1 ? ' dia' : ' dias') + ', ' : '') + 'página 1';
+  st.textContent = 'procurando no nosso índice… '
+    + (diasDaJanela ? diasDaJanela + (diasDaJanela === 1 ? ' dia' : ' dias') : '');
   // SKELETON no lugar de "Buscando…": a tela já mostra a FORMA do resultado enquanto carrega,
   // então a espera não parece travamento — foi a lição do "Carregando…" eterno de hoje.
   lista.innerHTML = Array.from({length:3}, () =>
     '<div class="skel"><div style="width:52%;height:15px"></div><div style="width:96%"></div>'
     + '<div style="width:88%"></div><div style="width:30%;margin-top:16px"></div></div>').join('');
+  /* A faixa de frescor é pintada SEM `await`, de propósito: ela responde "de quando é este dado"
+     e a lista responde "que dados são". Encadear as duas faria a leitura de um carimbo de uma
+     linha atrasar a lista inteira — e foi exatamente por encadear coisas que não dependem uma da
+     outra que esta tela levou 70 s pra responder. */
+  faixaFrescor();
 
   // ══ BANCO PRIMEIRO, SEMPRE — inclusive no "Atualizar agora" (10/08) ═══════════════════════
   // >>> O DEFEITO QUE ISTO CORRIGE, medido no relato do Natanael: o termo digitado NUNCA CHEGAVA
@@ -4861,14 +5117,16 @@ async function buscar(aoVivo){
   //     tinha — foi exatamente isso que pintou a tela de vermelho com resultado na mão.
   let doBanco = null, janelaAmpliada = false;
   try{
-    doBanco = await buscarNoBanco(uf, mod, de, ate);
+    doBanco = await buscarNoBanco(uf, mod, de, ate, kws);
     // Janela vazia + termo digitado -> pergunta ao índice INTEIRO antes de desistir do banco.
     // "Não publicaram nada nesse dia" é uma resposta sobre a DATA, não sobre o que ele procura.
     if((!doBanco || !doBanco.length) && kws.length){
-      const amplo = await buscarNoBancoAmplo(uf, mod);
+      const amplo = await buscarNoBancoAmplo(uf, mod, kws);
       if(amplo && amplo.length){ doBanco = amplo; janelaAmpliada = true; }
     }
   }catch(e){ doBanco = null; }
+  // o total do período, do servidor, sem baixar linha — ver `totalDaJanela`.
+  window._totalJanela = await totalDaJanela(uf, mod, de, ate);
 
   /* ══ OS ITENS DO EDITAL ENTRAM NA BUSCA (fatia A9) ═════════════════════════════════════════
      A pergunta do operador é "alguém está comprando albumina?" — e essa palavra não está no
@@ -4920,73 +5178,113 @@ async function buscar(aoVivo){
     + (cobertura ? ` · itens carregados de ${cobertura.comItens.toLocaleString('pt-BR')}`
                  + ` de ${cobertura.total.toLocaleString('pt-BR')} licitações`
                  + (cobertura.comItens < cobertura.total ? ' (a carga ainda está andando)' : '') : '')
-    + (window._itensTruncou ? ' · a busca nos itens parou no teto de 400 por termo' : '')
+    + (window._itensTruncou ? ` · a busca nos itens parou no teto de ${TETO_LIC_ITENS} licitações por termo` : '')
     + (emDiaAte ? ` · completo até ${dm(emDiaAte)}` : '')
     + (quando ? ` · coletados em ${quando.toLocaleDateString('pt-BR')} às ${quando.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}` : '');
 
-  if(!aoVivo && doBanco && doBanco.length){
-    st.textContent='';
+  st.textContent = '';
+  if(doBanco && doBanco.length){
     // A rodada parcial NÃO vira "a última coleta falhou": rodada que cobriu o dia mais novo e
     // parou no dia velho fez exatamente o que devia. O alerta fica pro caso em que nenhum dia
     // fechou — aí sim ninguém sabe o que está faltando.
     const alerta = (carimbo && carimbo.ultimo_erro && !emDiaAte) ? ' · a última coleta falhou' : '';
     render(doBanco, kws, excl, null, procedenciaBanco + alerta);
+    /* >>> DEPOIS DO `render`, E NÃO ANTES. `doBanco.length` é o que o BANCO devolveu; o que a
+           pessoa vê é o que sobrou do `casa()` com as exclusões dela aplicadas, e é isso que o
+           `render` deixa em `window._hits`. Medir antes contaria como "achou" uma busca que
+           terminou com a lista vazia na tela — que é exatamente o caso que a métrica existe
+           para encontrar. */
+    marcaBusca(kws, uf, mod, (window._hits||[]).length, janelaAmpliada);
     return;
   }
 
-  let todos, truncado=null;
-  try{
-    if(fresco){ todos = emCache.dados; }
-    else{
-      const params = {dataInicial:de, dataFinal:ate, codigoModalidadeContratacao:mod};
-      if(uf) params.uf = uf;
-      const p1 = await puxarPagina(params,1);
-      todos = p1.data||[];
-      const tp = Math.min(p1.totalPaginas||1, TETO_PAGINAS);
-      for(let p=2;p<=tp;p++){
-        st.textContent = 'consultando o PNCP… página '+p+'/'+tp;
-        todos = todos.concat((await puxarPagina(params,p)).data||[]);
-      }
-      cache.set(chave,{quando:Date.now(),dados:todos});
-      if((p1.totalPaginas||1) > TETO_PAGINAS) truncado = {lidas:tp, total:p1.totalPaginas};
-    }
-  }catch(e){
-    st.textContent='';
-    // ══ O TOM (10/08) ══════════════════════════════════════════════════════════════════════
-    // >>> PAINEL VERMELHO SÓ QUANDO NÃO HÁ NADA A MOSTRAR. Com resultado na tela, o PNCP fora do
-    //     ar é um CONTRATEMPO, não uma falha do sistema — e pintar de vermelho um sistema que
-    //     está funcionando ensina o operador a desconfiar dele justamente quando ele acertou.
-    if(doBanco && doBanco.length){
-      render(doBanco, kws, excl, null, procedenciaBanco);
-      avisoBrandoPNCP(quando, emDiaAte);
-      return;
-    }
-    if(emCache){
-      render(emCache.dados, kws, excl, null, 'do cache desta sessão · ' + new Date(emCache.quando).toLocaleTimeString('pt-BR'), 'raio');
-      avisoBrandoPNCP(quando, emDiaAte);
-      return;
-    }
-    // Aqui sim: nem banco, nem cache, nem PNCP. E a mensagem separa as duas causas, porque a
-    // ação é diferente — "espera o portal voltar" não é "procura outro termo".
-    lista.innerHTML = '<div class="aviso err" style="text-align:left;padding:var(--esp-5)"><b>' + ic('alerta','aviso') + ' Sem resultado por dois motivos ao mesmo tempo</b>'
-      + '<div class="hint" style="margin-top:var(--esp-3);line-height:1.7">'
-      + '<b>1.</b> O portal do governo (PNCP) não respondeu: ' + esc(e.message) + '.<br>'
-      + '<b>2.</b> E o nosso índice não tem nada' + (kws.length ? ' para <b>' + esc(kws.join(' / ')) + '</b>' : ' no período escolhido')
-      // "a coleta nunca rodou" é uma acusação séria — só cabe quando NENHUM dia foi fechado E
-      // nenhuma rodada terminou. Com o índice completo até um dia qualquer, a coleta rodou sim;
-      // o que não há é resultado pra esta busca, que é outra conversa.
-      + (emDiaAte ? ' (o índice está completo até ' + dm(emDiaAte) + ')'
-         : quando ? ' (última coleta em ' + quando.toLocaleDateString('pt-BR') + ')'
-         : ' — <b>a coleta nunca rodou com sucesso</b>')
-      + '.</div>'
-      + '<button class="btn" style="margin-top:var(--esp-4)" onclick="buscar()">Tentar de novo</button></div>';
-    document.getElementById('kpis').style.display='none';
-    return;
-  }
-  st.textContent='';
-  render(todos, kws, excl,
-    truncado ? ('Li '+truncado.lidas+' de '+truncado.total+' páginas (teto por busca). Refine os filtros para não perder licitação.') : null,
-    fresco ? 'do cache desta sessão' : 'ao vivo do PNCP · agora', fresco ? 'raio' : 'globo');
+  /* ══ NÃO HÁ MAIS "CAI PRO PNCP AO VIVO" — E ESTE É O CORAÇÃO DA A34 ══════════════════════════
+     Até aqui, quando o banco não tinha nada, a tela disparava `puxarPagina` contra a API de
+     consulta do PNCP: até 20 páginas, uma a uma, com 20 s de timeout cada. Nos dias em que o
+     portal responde 504 em 70 SEGUNDOS (medido na A33), essa era a espera que o dono chamou de
+     "travando" — e no fim dela vinha um painel vermelho.
+     >>> A ORDEM DELE, com estas palavras: *"talvez pra não ficar travando, buscar o PNCP uma vez
+         por dia e deixar salvo"*. Então a busca lê SÓ o nosso banco, e quem fala com o PNCP é a
+         `tools/carga_diaria.js`, fora da hora do uso.
+     >>> O QUE ISSO CUSTA, DITO EM VOZ ALTA: uma licitação publicada há dez minutos não aparece
+         até a próxima carga. É por isso que a FAIXA DE FRESCOR existe e diz a idade real do
+         índice em vez de escondê-la. Trocar uma espera de 70 s por uma frase honesta é o negócio
+         que esta fatia faz — e ele só é honesto porque a frase está lá.
+     >>> A `puxarPagina` FOI APAGADA, e não desligada com um `if`. Caminho morto que continua
+         escrito é caminho que alguém religa sem saber por que ele parou. O que resta de PNCP
+         nesta tela é o botão nacional e a leitura de itens de UM cartão — os dois por gesto. */
+  const podeEstarVelho = !emDiaAte && !quando;
+  lista.innerHTML = '<div class="aviso" style="text-align:left;padding:var(--esp-5)"><b>'
+    + ic('lupa') + ' Nada no nosso índice para esta busca</b>'
+    + '<div class="hint" style="margin-top:var(--esp-3);line-height:1.7">'
+    + (kws.length ? 'Procurei <b>' + esc(kws.join(' / ')) + '</b> no objeto e na descrição dos itens'
+                  : 'Procurei o ramo da FPMED')
+    + (janelaAmpliada ? ' no índice inteiro' : ' no período escolhido')
+    + '. ' + (podeEstarVelho
+        ? '<b>E o índice ainda não foi carregado nenhuma vez com sucesso</b> — não é resposta sobre o Brasil, é resposta sobre uma gaveta vazia.'
+        : 'O índice está ' + (emDiaAte ? 'completo até <b>' + dm(emDiaAte) + '</b>'
+                                       : 'carregado até <b>' + quando.toLocaleDateString('pt-BR') + '</b>') + '.')
+    + '<br>A busca aqui <b>não fala com o portal</b> — quem fala é a carga, uma vez por dia. '
+    + 'Se você quer perguntar ao Brasil inteiro agora, use o botão abaixo.'
+    + '</div>'
+    + '<div style="display:flex;gap:var(--esp-3);flex-wrap:wrap;margin-top:var(--esp-4)">'
+    + '<button class="btn" onclick="buscar()">Buscar de novo</button>'
+    + '</div></div>';
+  document.getElementById('kpis').style.display='none';
+  /* ══ O CONVITE NACIONAL TAMBÉM PINTA AQUI, E ISTO É CONSERTO DE UM DEFEITO DA PRÓPRIA A34 ═════
+     Este caminho não chamava `convidaNacional()` — ele desenhava um segundo botão "Procurar no
+     PNCP nacional" dentro do próprio aviso e seguia. O `#nacional` ficava INTOCADO.
+     >>> O QUE ISSO PRODUZIA, e é o defeito de conteúdo velho na cara nova: quem buscou
+         "dipirona", clicou no botão nacional e leu os resultados do Brasil, e depois buscou
+         "xyzabc" (que não existe), via "Nada no nosso índice para esta busca" com os resultados
+         de DIPIRONA ainda pintados logo abaixo. Uma lista que sobrevive à busca que a substituiu
+         é indistinguível de uma resposta errada — e é pior que a lista vazia, porque tem cara de
+         resposta.
+     >>> E O SEGUNDO BOTÃO SAIU JUNTO. Chamar o convite resolveria o resto, mas deixaria DOIS
+         botões com o mesmo verbo na mesma tela — e dois caminhos para o mesmo gesto é como um
+         deles fica para trás na primeira vez que o outro mudar. O convite já traz o botão, com o
+         preço escrito ("é uma consulta ao vivo e pode levar alguns segundos"), que é justamente
+         o que o botão de dentro do aviso não dizia. */
+  convidaNacional();
+  faixaFrescor();
+  marcaBusca(kws, uf, mod, 0, janelaAmpliada);
+}
+
+/* ══ AS DUAS MÉTRICAS DA BUSCA, NUM LUGAR SÓ (fatia A35) ═════════════════════════════════════
+   Os dois desfechos da `buscar()` — "achou" e "não achou" — chamam esta função. Escrever o par
+   de eventos nos dois lugares daria dois conjuntos de propriedades que divergem no primeiro dia
+   em que alguém mexer num só, e métrica que muda de forma no meio é métrica que não dá para
+   somar.
+
+   ══ `busca_executada` — A FORMA DA BUSCA, NUNCA O TEOR DELA ═════════════════════════════════
+   Vai o COMPORTAMENTO: quantos termos, quantos resultados, se havia filtro de UF ou modalidade,
+   se a tela precisou ampliar a janela de datas. NÃO vai a palavra buscada, e não vai por medo:
+   somada ao filtro de UF e ao horário, ela vira "quem procurou o quê" — o exemplo literal de
+   vazamento com nome de métrica da regra 3 do docs/TELEMETRIA.md.
+
+   ══ `resultado_zero` — AQUI A PALAVRA VAI, E A DECISÃO ESTÁ ESCRITA ═════════════════════════
+   A caixa chama este de *"o mais valioso do sistema: quantas buscas terminam em nada e COM QUAIS
+   PALAVRAS — é o que revela sinônimo faltando"*. Sem a palavra ele responde "muitas" e não
+   responde "quais", e "quais" é a única metade acionável.
+   >>> POR QUE ISSO NÃO FERE A REGRA 3: o termo de uma busca que deu ZERO é vocabulário de
+       catálogo ("albumina", "gaze"), não dado de cliente — e, por definição, ele não está
+       ligado a nenhum resultado, porque não houve nenhum. É a diferença entre "esta palavra não
+       existe no nosso dicionário" e "esta empresa procurou este produto".
+   >>> E ELE PASSA PELO FILTRO DO `fpmed_telemetria.js` DE QUALQUER JEITO: qualquer coisa com
+       cara de CNPJ, CPF, e-mail ou telefone sai como `(parece documento)`, e texto acima de 80
+       caracteres é cortado. Se alguém colar um documento no campo de busca, ele não viaja.
+   >>> A DÚVIDA FICA REGISTRADA para o arquiteto, como manda a regra 5: se ele preferir o termo
+       fora daqui, é UMA linha nesta função — e é por isso que ela é uma função só. */
+function marcaBusca(kws, uf, mod, resultados, janelaAmpliada){
+  const termos = (kws || []).filter(Boolean);
+  tel('busca_executada', {
+    termos: termos.length,
+    resultados: resultados,
+    tem_uf: !!uf,
+    tem_modalidade: !!mod,
+    janela_ampliada: !!janelaAmpliada,
+  });
+  if(!resultados) tel('resultado_zero', { termo: termos.join(' ; ') || '(ramo da FPMED)' });
 }
 
 /* ── QUANDO A BUSCA NACIONAL ENTRA ───────────────────────────────────────────────────────────
@@ -5039,13 +5337,32 @@ async function dispararBuscaNacional(){
     pintaNacional(termo, uf, null, e.message);
   }
 }
-/* E O `render()` CHAMA ISTO DENTRO DE UM ESCUDO. Se `dispararBuscaNacional` estourar de forma
-   síncrona (um id que sumiu do HTML, por exemplo), o `render` inteiro morreria — e a tela ficaria
-   sem lista NENHUMA por causa de um recurso secundário. O escudo troca "tela quebrada" por "bloco
-   nacional dizendo que quebrou", que é o desfecho certo dos dois. */
-function nacionalProtegido(){
-  try{ dispararBuscaNacional(); }
-  catch(e){
+/* ══ O CONVITE — o que o `render` chama no lugar do disparo automático (fatia A34) ═══════════
+   O `nacionalProtegido()` que morava aqui DISPARAVA a consulta ao PNCP a cada busca. Ele existia
+   dentro de um escudo `try/catch` porque um erro dele derrubava o `render` inteiro — e o escudo
+   continua fazendo falta, porque quem pinta este bloco continua sendo o `render`.
+   >>> O QUE MUDOU É O VERBO: antes ele CONSULTAVA, agora ele CONVIDA. A regra de 11/08 ("com
+       termo no campo, este bloco pinta SEMPRE — nunca nada") vale igual: o que não pode existir
+       é a pessoa não saber que o recurso está ali.
+   >>> E O BOTÃO DIZ O PREÇO. "pode levar alguns segundos" não é modéstia: é a informação que
+       transforma uma espera em uma escolha. Foi a falta dela que fez a busca inteira parecer
+       travada. */
+function convidaNacional(){
+  try{
+    const box = document.getElementById('nacional'); if(!box) return;
+    const termo = termoNacional();
+    box.style.display = 'block';
+    box.innerHTML = termo
+      ? '<div class="faixa-nacional"><svg aria-hidden="true"><use href="#ic-globo"/></svg>'
+        + '<span><b>Quer procurar "' + esc(termo) + '" no Brasil inteiro?</b> '
+        + 'O que está acima é o nosso índice (rápido, e sem depender do portal). '
+        + 'O PNCP nacional cobre o país todo, mas é uma consulta ao vivo e pode levar alguns segundos.</span>'
+        + '<button class="btn sec mini" style="margin-left:auto" onclick="dispararBuscaNacional()">'
+        + 'Procurar no PNCP nacional</button></div>'
+      : '<div class="faixa-nacional"><svg aria-hidden="true"><use href="#ic-globo"/></svg>'
+        + '<span><b>Busca nacional no PNCP</b> — digite <b>um único termo</b> no campo de busca '
+        + '(ex.: <i>albumina</i>): aí aparece aqui o botão para consultar o Brasil inteiro.</span></div>';
+  }catch(e){
     const box = document.getElementById('nacional');
     if(box){ box.style.display = 'block';
       box.innerHTML = '<div class="faixa-nacional atencao"><svg aria-hidden="true"><use href="#ic-alerta"/></svg>'
@@ -5529,7 +5846,18 @@ function render(todos, kws, excl, aviso, procedencia, procIcone){
   const comAlvo = hits.filter(l=>aderencia(l)).length;
 
   document.getElementById('kpis').style.display='grid';   // era 'flex' e anulava o grid-template do CSS
-  document.getElementById('k-total').textContent   = todos.length;
+  /* ══ O "PUBLICADAS NO PERÍODO" PRECISOU DE UMA FONTE PRÓPRIA (fatia A34) ═════════════════════
+     Ele era `todos.length`, e isso funcionava porque a tela BAIXAVA o período inteiro (18.946 KB,
+     medidos) e filtrava a palavra depois. Com o filtro no banco, `todos` passa a ser só quem
+     casou — e este KPI viraria uma cópia exata do "batem na busca" ao lado. Dois números iguais,
+     dois rótulos diferentes, na mesma faixa: é assim que alguém aprende a não ler nenhum dos dois.
+     >>> ENTÃO O TOTAL VEM DO SERVIDOR (`totalDaJanela`, 66 ms e zero acervo). E quando ele não
+         vem, o KPI mostra "—", nunca `todos.length`: preencher com o número menor faria a tela
+         AFIRMAR que só há 3 licitações publicadas hoje quando há 9.663. */
+  const totJan = window._totalJanela;
+  const kTot = document.getElementById('k-total');
+  kTot.textContent = (typeof totJan === 'number' && isFinite(totJan)) ? totJan.toLocaleString('pt-BR') : '—';
+  kTot.title = (typeof totJan === 'number' && isFinite(totJan)) ? '' : 'não consegui contar o total do período agora';
   /* O RÓTULO DIZ O PERÍODO QUE FOI CONSULTADO, e não "no dia" fixo. Numa busca de 26/07 a 11/08
      o texto antigo afirmava "publicadas no dia" sobre 17 dias — número certo, legenda errada, que
      é o jeito mais barato de alguém tirar a conclusão errada de um dado correto. */
@@ -5563,7 +5891,8 @@ function render(todos, kws, excl, aviso, procedencia, procIcone){
     h += '<div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:var(--esp-4);padding:var(--esp-3) var(--esp-4);'
        + 'background:var(--painel);border:1px solid var(--linha);border-radius:10px;font-size:12.5px;color:var(--muted)">'
        + '<span>' + (procIcone ? ic(procIcone) + ' ' : '') + esc(procedencia)+'</span>'
-       + '<button class="btn sec mini" style="margin-left:auto" onclick="atualizarAgora()">↻ Atualizar agora</button>'
+       + '<button class="btn sec mini" style="margin-left:auto" onclick="atualizarAgora()" '
+       + 'title="relê o nosso índice — a busca não fala com o PNCP; quem fala é a carga diária">↻ Reler o índice</button>'
        + '</div>';
   }
   /* ══ OS CRITÉRIOS ATIVOS MUDARAM DE LUGAR (13/08, passo 5 do molde) ═══════════════════════
@@ -5575,12 +5904,19 @@ function render(todos, kws, excl, aviso, procedencia, procIcone){
          busca" — que é a frase que evita a conclusão errada de "não tem nada publicado hoje". */
   const pills = pillsRefino(r);
   pintaChips();
-  /* >>> A BUSCA NACIONAL DISPARA AQUI, ANTES do `return` do caso vazio — e esta linha é o
-         conserto de um defeito que eu mesmo criei em 11/08. Ela estava logo abaixo, depois deste
-         `if`, e por isso **nunca rodava justamente quando mais fazia falta**: índice com ZERO
-         resultado é exatamente a hora em que o operador quer saber se o Brasil tem aquilo.
-         O print do Lemuel era esse caso: "0 batem" e nenhum bloco nacional embaixo. */
-  nacionalProtegido();
+  /* ══ A BUSCA NACIONAL DEIXOU DE DISPARAR SOZINHA (fatia A34 · 19/08) ══════════════════════
+     ELA ERA A ÚLTIMA REQUISIÇÃO AO PNCP DENTRO DA BUSCA. Toda vez que alguém digitava um termo
+     e apertava a lupa, esta linha mandava uma pergunta ao `pncp.gov.br/api/search/` — e no dia
+     em que o portal está fora, a busca "local" continuava esperando 20 s por ele.
+     >>> A ORDEM DA CAIXA É LITERAL: *"se hoje existe qualquer caminho em que a Encontrar dispara
+         requisição ao portal durante a busca, ele sai"*. Sai daqui.
+     >>> MAS O RECURSO NÃO MORRE, PORQUE ELE ACHA O QUE O NOSSO ÍNDICE NÃO ACHA (medido na A13:
+         dos 10 primeiros de "albumina", 0 estavam no nosso índice). Ele vira BOTÃO — gesto de
+         quem decidiu esperar pelo portal, e não pedágio de quem só queria buscar.
+     >>> E ELE NÃO SOME EM SILÊNCIO, que era a lei escrita em 11/08 e continua valendo: o convite
+         aparece SEMPRE que há um termo específico, com ou sem resultado no índice. O que mudou é
+         que agora ele é um convite, e antes era uma espera. */
+  convidaNacional();
   /* >>> O CALENDÁRIO DISPARA AQUI PELO MESMO MOTIVO, e a posição desta linha é o conserto de
          11/08 aplicado à fonte nova: índice com ZERO resultado é exatamente a hora em que saber
          "já disputamos isto em 2025" mais vale. Se ela ficasse depois do `if` abaixo, a fonte
@@ -5589,13 +5925,16 @@ function render(todos, kws, excl, aviso, procedencia, procIcone){
 
   if(!hits.length){
     h += '<div class="aviso">Nenhuma licitação bate na busca.<div class="hint" style="margin-top:var(--esp-2)">'
-       + todos.length+' publicada(s) no período com esses filtros.'
+       + ((typeof totJan === 'number' && isFinite(totJan)) ? totJan.toLocaleString('pt-BR') + ' publicada(s) no período com esses filtros.' : '')
        + (pills.length ? ' <b>Há refino ligado</b> — talvez seja ele, e não a busca.' : ' Tente limpar as palavras-chave.')
        + (r.desertas ? '<br>A marca de <b>deserta por item</b> só existe depois de ler os itens daquela licitação'
                      + ' (botão “Cruzar”): antes disso o PNCP não conta essa situação na busca.' : '')
-       // ZERO NO ÍNDICE NÃO É ZERO NO BRASIL, e a tela precisa dizer as duas coisas.
-       + (termoNacional() ? '<br><b>Procurando "' + esc(termoNacional()) + '" no PNCP nacional logo abaixo</b> — '
-            + 'o nosso índice cobre 7 UFs; o PNCP cobre o país todo.' : '')
+       /* ZERO NO ÍNDICE NÃO É ZERO NO BRASIL, e a tela precisa dizer as duas coisas. O verbo
+          mudou na A34: era "Procurando… logo abaixo" (afirmação sobre uma consulta que já tinha
+          saído), e virou convite — porque a consulta agora só sai se a pessoa pedir. Prometer uma
+          busca que não está acontecendo é o mesmo defeito de 11/08 pelo avesso. */
+       + (termoNacional() ? '<br><b>Isto é o nosso índice, não o Brasil.</b> '
+            + 'O botão do <b>PNCP nacional</b>, logo abaixo, pergunta "' + esc(termoNacional()) + '" ao país todo.' : '')
        + '</div></div>';
     lista.innerHTML=h; return;
   }
@@ -6022,6 +6361,20 @@ function carregarCMED(){
        ajuda; calar não. O grau vai ESCRITO na célula, então quem lê sabe o que está olhando.
        No gerador de Proposta, onde o preço é decidido, a recomendação registrada é exigir
        'alta' (docs/cmed_camada_base.md, seção 6). */
+/* ── O CONTADOR DO `item_comparado_com_cmed` (fatia A35) ───────────────────────────────────
+   A CÉLULA É O ÚNICO LUGAR ONDE A COMPARAÇÃO ACONTECE DE VERDADE, mas ela roda uma vez POR
+   ITEM — e um edital tem 195. Mandar um evento aqui seria 195 eventos por painel aberto: cota
+   queimada para responder uma pergunta ("ela usa o cruzamento com a CMED, ou para antes?") que
+   é sobre a PESSOA, não sobre a linha da tabela.
+   >>> ENTÃO A CÉLULA SÓ CONTA, e quem manda o evento é o `pintaDetalhe`, uma vez por edital
+       aberto. O contador mora no `DET` de propósito: ele nasce e morre com o painel, então
+       abrir outro edital começa uma contagem nova sem ninguém precisar zerar nada. */
+function contaCMED(casou){
+  if(!DET) return;
+  if(!DET._cmed) DET._cmed = { total: 0, casou: 0 };
+  DET._cmed.total++;
+  if(casou) DET._cmed.casou++;
+}
 function celTetoCMED(it, uE){
   if(_cmedErro) return '<span class="hint" title="'+esc(_cmedErro)+'">não sei</span>';
   if(!_cmedIdx)  return '<span class="hint">—</span>';
@@ -6031,6 +6384,7 @@ function celTetoCMED(it, uE){
     unitario: !!(uE && uE.status === 'ok'),
     paraGoverno: true,
   }, _cmedIdx);
+  contaCMED(r.teto != null);
   // NÃO CASOU É SILÊNCIO, NUNCA TETO CHUTADO — a regra 1 do motor, e a ordem do dono.
   if(r.teto == null){
     return '<span class="hint" title="não casou com a CMED. Material e correlato não têm teto '
@@ -6194,6 +6548,11 @@ async function cruzarTodos(){
                + (erros ? ' · <span class="conferir">'+erros+' não responderam</span>' : '')
                + ' · abra um card para ver os itens.';
   bt.disabled = false;
+  /* O CRUZAMENTO EM LOTE É O GESTO MAIS CARO DA TELA — ele lê os itens de toda a lista. Saber
+     quantas vezes ele é usado e quantas licitações não respondem é o que diz se ele vale o
+     botão que ocupa. E os `erros` aqui são de leitura do PNCP, não do usuário: por isso vão
+     como propriedade deste evento e não como um `erro_visto_pelo_usuario` por licitação. */
+  tel('item_comparado_com_cmed', { lidas: ok, nao_responderam: erros, de: 'cruzar_todos' });
 }
 </script>
 <script src="limedtec-menu.js"></script>

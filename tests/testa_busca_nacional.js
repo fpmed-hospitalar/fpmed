@@ -82,12 +82,25 @@ ok('11. *** cada bloco se identifica: nacional ao vivo x o indice acima ***',
    rodava — justamente a hora em que ela mais faz falta. O operador viu "0 batem" e nada embaixo
    e concluiu que o recurso nao estava no ar; estava, e o PNCP tambem (medido: HTTP 200 em 102ms).
    Estes tres asserts existem pra que isso nao volte. */
-ok('12. *** o disparo vem ANTES do return do caso vazio ***',
-  L.indexOf('nacionalProtegido();') < L.indexOf('lista.innerHTML=h; return;')
-  && L.indexOf('nacionalProtegido();') > 0);
-ok('12b. *** e o caso "0 no indice" AVISA que esta procurando no Brasil ***',
-  /Procurando "' \+ esc\(termoNacional\(\)\) \+ '" no PNCP nacional logo abaixo/.test(L)
-  && /ZERO NO ÍNDICE NÃO É ZERO NO BRASIL/.test(L));
+/* ══ REAPONTADOS NA FATIA A34 (20/08), E O 12 ACHOU UM DEFEITO NOVO AO SER REAPONTADO ═════════
+   O `nacionalProtegido()` virou `convidaNacional()`: ele CONVIDA em vez de CONSULTAR, porque a
+   A34 tirou a consulta automatica ao portal de dentro da busca. A regra de 11/08 nao mudou um
+   fio — *com termo no campo, este bloco pinta SEMPRE, nunca nada* — mas ela deixou de ser sobre
+   o disparo e passou a ser sobre o CONVITE.
+   >>> E AO REESCREVER ESTE ASSERT EU ACHEI O QUE ELE TERIA PEGO: o caminho do "nada no indice"
+       da A34 nao chamava o convite. Quem buscasse "dipirona", clicasse no botao nacional, lesse
+       os resultados do Brasil e depois buscasse "xyzabc" veria "Nada no nosso indice" com os
+       resultados de DIPIRONA ainda pintados logo abaixo. Lista que sobrevive a busca que a
+       substituiu tem cara de resposta e e pior que lista vazia. Consertado na mesma fatia.
+   >>> O ASSERT AGORA COBRA OS DOIS DESFECHOS, e nao a ordem entre duas linhas: `convidaNacional`
+       tem que ser chamado no caminho que ACHOU (dentro do render) e no que NAO ACHOU. Cobrar
+       posicao relativa era o que fazia este assert quebrar toda vez que o codigo se mexia. */
+ok('12. *** o convite nacional pinta nos DOIS desfechos da busca (achou e nao achou) ***',
+  (L.match(/\n\s*convidaNacional\(\);/g) || []).length === 2
+  && /Nada no nosso índice para esta busca[\s\S]{0,1800}convidaNacional\(\);/.test(L));
+ok('12b. *** e o caso "0 no indice" diz que a busca NAO fala com o portal, e oferece quem fala ***',
+  /A busca aqui <b>não fala com o portal<\/b>/.test(L)
+  && /Se você quer perguntar ao Brasil inteiro agora, use o botão abaixo/.test(L));
 ok('12c. *** sem termo o bloco tambem NAO some calado: explica o gesto ***',
   /digite <b>um único termo<\/b> no campo de busca/.test(L)
   && /só aparece quando alguém adivinha o gesto certo é um recurso que ninguém acha/.test(uc(L)));
@@ -95,7 +108,7 @@ ok('12c. *** sem termo o bloco tambem NAO some calado: explica o gesto ***',
    falhou..."), entao a inicial subiu. Cobrar a CAIXA da primeira letra e cobrar tipografia, nao
    comportamento — e o comportamento e o que este assert existe pra guardar. */
 ok('12d. *** e um erro sincrono nao derruba a lista inteira ***',
-  /function nacionalProtegido\(\)/.test(L) && /a busca nacional falhou aqui na tela/i.test(L));
+  /function convidaNacional\(\)/.test(L) && /a busca nacional falhou aqui na tela/i.test(L));
 ok('12e. ...com a regra escrita (busca que falha calada parece busca que nao existe)',
   /BUSCA QUE FALHA CALADA PARECE BUSCA QUE NÃO EXISTE/.test(L));
 ok('13. resposta lenta de uma busca antiga nao pinta em cima da nova',

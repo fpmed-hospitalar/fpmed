@@ -224,8 +224,13 @@ ok('34. on delete cascade: usuario apagado nao deixa jornal orfao', /references 
     /class="bdg nova" title="não estava no resultado da última vez/.test(src));
   ok('41. a 1a leitura anuncia que nao vai marcar nada', /primeira leitura deste jornal/.test(src));
   ok('42. *** "Atualizar agora" e o refino NAO desligam o jornal (perder as marcas no meio da leitura) ***',
+    /* O `true` do `atualizarAgora` saiu na fatia A34 (20/08): ele queria dizer "ignora o banco e
+       vai no PNCP ao vivo", e a busca deixou de falar com o portal. O que este assert guarda
+       nunca foi a bandeira — e que o "Atualizar agora" NAO passe pelo `buscaNova()`, que e quem
+       zera o `_jornalAtivo`. Quem pede dado mais fresco no meio de uma leitura nao esta pedindo
+       para perder as marcas de "novo desde a ultima vez". */
     /function buscaNova\(\)\{ window\._jornalAtivo = null; buscar\(\); \}/.test(src) &&
-    /function atualizarAgora\(\)\{ buscar\(true\); \}/.test(src));
+    /function atualizarAgora\(\)\{ buscar\(\); \}/.test(src));
   ok('43. a lupa e o "Aplicar e buscar" passam por buscaNova()',
     (src.match(/onclick="buscaNova\(\)"/g) || []).length >= 2);
   ok('44. o contador do link so aparece quando ha novidade (nunca "Meus Jornais (0)")',

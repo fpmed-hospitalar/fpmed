@@ -56,12 +56,32 @@ tools/_*
 # nao mora em log — mora no banco, e a ferramenta que o le esta em tools/.
 logs/
 
-# scripts gerados com chave embutida
-restore_*.js
-apply_*.js
-carga_*.js
-fix_*.js
-*_local.js
+# ── scripts gerados com chave embutida ──────────────────────────────────────────────────────
+# 20/08/2026 (fatia A34): AS CINCO REGRAS ABAIXO GANHARAM A BARRA DA RAIZ, E O MOTIVO E MEDIDO.
+# Elas nasceram sem barra, entao valiam em QUALQUER pasta — e um `git check-ignore` de hoje diz
+# que, das cinco, o que elas de fato pegavam neste repo era isto:
+#
+#     tools/carga_diaria.js       <- o condutor da carga diaria (A34), 29 KB de codigo
+#     tools/prova_busca_local.js  <- a prova medida da igualdade das duas regras de busca
+#     tools/_fix_fa_sistema.js  ·  tools/_fix_nomeforn.js  ·  tools/_fix_nomeforn2.js
+#
+# Os tres ultimos ja estavam cobertos pelo `tools/_*` logo acima. Os dois primeiros sao CODIGO,
+# e estavam sendo escondidos do repo em silencio: o `git status` nao os mostrava, o `git add`
+# recusava sem falar, e a fatia inteira teria sido dada por commitada com o miolo dela de fora.
+#
+# >>> E O DEFEITO E O MESMO DAS QUATRO LICOES ESCRITAS ACIMA, DE CABECA PRA BAIXO. Ali a regra
+#     era ESTREITA e nao cobria o que precisava (a extensao que faltava, a pasta que ninguem
+#     listou). Aqui ela era LARGA e cobria o que nao devia. Os dois erros produzem a mesma
+#     coisa — um arquivo no lugar errado — e so um deles da sintoma.
+# >>> A BARRA E O CONSERTO CERTO, e nao uma excecao por nome: estes scripts gerados sempre
+#     nasceram na RAIZ (e o que "gerado com chave embutida" quer dizer neste projeto), e o que
+#     mora em `tools/` e fonte. Abrir excecao para `carga_diaria.js` deixaria a regra larga de pe
+#     para morder o proximo — e o proximo nao teria ninguem procurando por ele.
+/restore_*.js
+/apply_*.js
+/carga_*.js
+/fix_*.js
+/*_local.js
 
 # dados reais / relatorios de preco (repo pode virar publico como o GlobalMed)
 backups/

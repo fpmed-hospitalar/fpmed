@@ -15,6 +15,8 @@
 'use strict';
 const fs = require('fs'), path = require('path');
 const L = fs.readFileSync(path.join(__dirname, '..', 'fpmed_licitacoes.html'), 'utf8').replace(/\r\n/g, '\n');
+// metade da promessa da busca passou a morar no DDL na fatia A34 — entao ele entra na suite
+const DDL = fs.readFileSync(path.join(__dirname, '..', 'ddl', 'busca_local.sql'), 'utf8').replace(/\r\n/g, '\n');
 
 let p = 0, f = 0;
 const ok = (n, c, e) => { if (c) p++; else { f++; console.log('  FALHA ' + n + (e !== undefined ? '  [' + JSON.stringify(e) + ']' : '')); } };
@@ -47,7 +49,16 @@ ok('1. *** nenhuma consulta ao indice usa `limit=1000` ***', !/licitacoes\?selec
      a segunda forma parecia nao paginar. */
   const semPaginar = consultas.filter(m => {
     const volta = L.slice(Math.max(0, m.index - 300), m.index + 700);
-    if (/lerPaginado\(/.test(volta)) return false;
+    /* `lerPorTermos` ENTROU NA JANELA NA FATIA A34 (20/08), E ELE NAO E UMA EXCECAO ─────────────
+       A A34 desceu o filtro de palavra para o banco: `buscarNoBanco` e `buscarNoBancoAmplo`
+       deixaram de chamar `lerPaginado` direto e passaram a chamar `lerPorTermos`, que dispara UMA
+       leitura paginada por termo e junta os conjuntos. As duas consultas cairam nesta lista.
+       >>> ACEITAR O NOME SEM PROVA SERIA ABRIR A PORTA que o comentario de 14/08 logo abaixo diz
+           que mata este assert. Entao a excecao custa um assert novo (2c): `lerPorTermos` so vale
+           como paginacao porque ele MESMO passa por `lerPaginado` nos dois caminhos — com termo e
+           sem termo. Se alguem trocar o miolo dele por um fetch cru, o 2c fica vermelho e este
+           aqui volta a cobrar as duas consultas. */
+    if (/lerPaginado\(|lerPorTermos\(/.test(volta)) return false;
     /* DUAS SAIDAS SEM PAGINACAO, e as duas por PROVA e nao por nome:
        1. lista explicita de chave unica, com lote limitado (o assert 2b cobra o limite);
        2. leitura de UMA linha: `numero_controle=eq.<x>&limit=1`. Uma linha nao tem como ser
@@ -66,6 +77,18 @@ ok('1. *** nenhuma consulta ao indice usa `limit=1000` ***', !/licitacoes\?selec
   ok('2b. *** e o lote da busca por lista e PROVADAMENTE menor que a pagina do PostgREST ***',
     !!mLote && !!mPag && Number(mLote[1]) < Number(mPag[1]),
     { lote: mLote && mLote[1], pagina: mPag && mPag[1] });
+  /* O ASSERT QUE PAGA PELA SEGUNDA EXCECAO (A34). Sem ele, `lerPorTermos` seria um nome que este
+     arquivo aceita de olhos fechados — e o teto de 1000 voltaria por dentro dele. Os DOIS
+     caminhos sao cobrados: com termo (uma leitura por termo) e sem termo (a janela inteira). */
+  const corpoTermos = (() => {
+    const i = L.indexOf('async function lerPorTermos(');
+    return i < 0 ? '' : L.slice(i, L.indexOf('\n}', i));
+  })();
+  ok('2c. *** e o `lerPorTermos` pagina nos DOIS caminhos (com termo e sem termo) ***',
+    (corpoTermos.match(/lerPaginado\(/g) || []).length === 2
+    && /if\(!kws \|\| !kws\.length\) return await lerPaginado\(qBase\);/.test(corpoTermos)
+    && !/fetch\(/.test(corpoTermos),
+    { chamadas: (corpoTermos.match(/lerPaginado\(/g) || []).length });
 })();
 ok('3. existe UMA funcao de paginacao (nao duas copias do laco)',
   (L.match(/async function lerPaginado\(/g) || []).length === 1);
@@ -99,10 +122,30 @@ ok('13. periodo de um dia so continua dizendo o dia', /'publicadas em ' \+ dm\(d
 ok('14. e sem periodo, nao inventa nada', /\? 'publicadas'/.test(L));
 
 // ══════════ 5. O QUE NAO PODE TER MUDADO ══════════
-// A regra de 10/08: o termo NAO vai pro banco, porque o filtro do banco e sensivel a acento e
-// perderia o que o semAcento do navegador acha.
-ok('15. *** o termo continua NAO indo pro banco (o acento perderia resultado) ***',
-  /o do banco é sensível a acento/.test(L) && !/objeto=ilike/.test(L));
+/* ══ ESTE ASSERT ERA UM FALSO VERDE, E ELE E O TERCEIRO DA MESMA FAMILIA NESTA RODADA ══════════
+   Ele guardava a regra de 10/08 — *"o termo NAO vai pro banco, porque o filtro do banco e
+   sensivel a acento e perderia o que o semAcento do navegador acha"* — e a media de dois jeitos:
+   procurando a FRASE do comentario e recusando `objeto=ilike`.
+   >>> A FATIA A34 INVERTEU A REGRA e o assert continuou VERDE, pelas duas metades ao mesmo tempo:
+       o comentario velho ficou no arquivo (foi apagado agora) e o filtro novo se chama
+       `texto_busca=ilike`, nao `objeto=ilike`. Um assert que mede a placa na porta atesta a casa
+       que foi demolida.
+   >>> O QUE ELE COBRA AGORA e a razao pela qual a inversao pode existir: o banco NAO filtra
+       `objeto` (esse sim erraria acento) — filtra a coluna gerada `sem_acento(objeto)`, que e o
+       mesmo `semAcento` do navegador do outro lado. A regra e a mesma; so mudou quem executa. */
+ok('15. *** o termo vai pro banco pela coluna SEM ACENTO (`texto_busca`) ***',
+  /&texto_busca=ilike\./.test(L)
+  && /generated always as \(public\.sem_acento\(coalesce\(objeto, ''\)\)\) stored/.test(DDL));
+ok('15b. ...e nunca pelo `objeto` cru, que e o filtro que erraria o acento', !/objeto=ilike/.test(L));
+ok('15c. ...com os coringas do LIKE escapados (o "%" de "seringa 20%" e termo plausivel aqui)',
+  /escapaLike\(k\)/.test(L) && /replace\(\/\(\[%_\\\\\]\)\/g/.test(L));
+/* A PROVA DA IGUALDADE NAO MORA NESTE ARQUIVO, e o assert diz onde ela mora. Um teste estatico
+   nao consegue comparar `sem_acento` do Postgres com `semAcento` do JavaScript; quem faz isso e a
+   ferramenta que le o indice de verdade e compara conjunto com conjunto. Cobrar aqui que ela
+   EXISTA e o que impede a regra de virar promessa. */
+ok('15d. *** e a igualdade das duas regras e MEDIDA por ferramenta propria ***',
+  fs.existsSync(path.join(__dirname, '..', 'tools', 'prova_busca_local.js'))
+  && fs.existsSync(path.join(__dirname, '..', 'ddl', 'busca_local.sql')));
 ok('16. e a busca ampla (indice inteiro) continua existindo', /async function buscarNoBancoAmplo\(/.test(L));
 
 console.log('\nRESULTADO: ' + p + ' ok, ' + f + ' falha(s)');

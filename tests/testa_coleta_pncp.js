@@ -153,16 +153,37 @@ const X = {
 {
   const fs = require('fs'), path = require('path');
   const tela = fs.readFileSync(path.join(__dirname, '..', 'fpmed_licitacoes.html'), 'utf8');
-  // >>> A GARANTIA FICOU MAIS FORTE EM 10/08, e o assert acompanhou: o banco deixou de ser
-  //     consultado "quando nao e ao vivo" e passou a ser consultado SEMPRE — no "Atualizar
-  //     agora" ele vira REDE DE SEGURANCA. Pedir dado fresco nao pode custar o dado que ja se
-  //     tinha, que foi o que pintou a tela de vermelho com resultado na mao (urgencia do
-  //     Natanael, 10/08).
-  ok('37. *** a busca consulta o NOSSO banco SEMPRE, antes do PNCP ***',
-    /doBanco = await buscarNoBanco\(uf, mod, de, ate\);/.test(tela)
-    && !/if\(!aoVivo\)\{\s*\n\s*const doBanco = await buscarNoBanco/.test(tela));
-  ok('37b. ...e so RENDERIZA direto do banco quando nao e "Atualizar agora"',
-    /if\(!aoVivo && doBanco && doBanco\.length\)\{/.test(tela));
+  /* ══ REAPONTADO NA FATIA A34 (20/08), E O QUE MUDOU FOI A PROMESSA, NAO A REGUA ══════════════
+     Ate aqui a promessa era "o banco PRIMEIRO, o PNCP depois", e os asserts 37/37b guardavam o
+     `aoVivo` — a bandeira que mandava a tela ignorar o banco e falar com o portal. A ordem do
+     dono em 19/08 (*"buscar o PNCP uma vez por dia e deixar salvo"*) apagou a segunda metade:
+     nao ha mais "depois". A busca le SO o nosso banco.
+     >>> ENTAO O ASSERT FICOU MAIS DURO, e nao mais frouxo: antes ele cobrava a ORDEM entre duas
+         fontes; agora ele cobra que a segunda fonte NAO EXISTA dentro da `buscar()`. Uma
+         promessa de ordem se cumpre com um `if` no lugar certo; esta so se cumpre apagando o
+         caminho — e e por isso que ela pode ser medida por ausencia.
+     >>> A AUSENCIA E MEDIDA NO CORPO DA `buscar()`, e nao no arquivo inteiro. O botao nacional e
+         a leitura de itens de UM cartao continuam falando com o PNCP, e devem: os dois sao GESTO
+         de quem clicou. O que nao pode voltar e o disparo automatico. */
+  const corpoBuscar = (() => {
+    const i = tela.indexOf('async function buscar(){');
+    return i < 0 ? '' : tela.slice(i, tela.indexOf('\nfunction marcaBusca(', i));
+  })();
+  ok('37. *** a busca consulta o NOSSO banco, e o `aoVivo` deixou de existir ***',
+    /doBanco = await buscarNoBanco\(uf, mod, de, ate, kws\);/.test(tela)
+    && !/aoVivo/.test(tela));
+  ok('37b. *** e dentro da `buscar()` nao ha UMA chamada ao portal (A34) ***',
+    /* `dispararBuscaNacional()` DENTRO do corpo e permitido, e a diferenca e o verbo: ele e o
+       `onclick` do botao que a pessoa clica. O que o assert recusa e a CHAMADA — `await
+       buscarNacional(...)` ou o `puxarPagina` que a A34 apagou.
+       >>> E A CHAMADA, COM O PARENTESE. A primeira versao deste assert procurava a palavra
+           `puxarPagina` e ficava vermelha por causa da LAPIDE ("a `puxarPagina` FOI APAGADA")
+           que a propria A34 escreveu ali. Cobrar a palavra proibiria explicar por que ela saiu —
+           e comentario que nao pode nomear o que morreu e comentario que nao ensina nada. */
+    corpoBuscar.length > 2000 && !/pncp\.gov\.br/i.test(corpoBuscar)
+    && !/puxarPagina\(|await buscarNacional\(/.test(corpoBuscar)
+    && !/puxarPagina\(/.test(tela),
+    { tamanho: corpoBuscar.length });
   /* ══ ESTE ASSERT ESTAVA CERTO E A PREMISSA DELE ERA FALSA — MEDIDO EM 14/08 (fatia A21) ═════
      Ele cobrava que o banco devolvesse o `bruto` CRU, "porque e a mesma forma que o render ja
      consome". A frase valia quando so o `coleta_pncp.js` gravava. Depois a fatia A13 mandou o
@@ -185,14 +206,32 @@ const X = {
     && !/dataAberturaProposta:/.test(tela.slice(tela.indexOf('function normalizaBruto'),
         tela.indexOf('function normalizaBruto') + 2400))
     && /function celValor\(v\)/.test(tela));
-  // sem isso haveria um segundo caminho de codigo pra divergir do primeiro com o tempo
-  ok('39. *** banco vazio ou fora CAI pro ao vivo (nunca mostra vazio dizendo que nao ha licitacao) ***',
-    /if\(doBanco && doBanco\.length\)\{/.test(tela) && /catch\(e\)\{ return null; \}/.test(tela));
-  ok('40. a tela diz DE ONDE veio o que esta nela', /do nosso índice/.test(tela) && /ao vivo do PNCP/.test(tela));
+  /* ══ ESTE ASSERT ERA UM FALSO VERDE, E EU SO VI PORQUE FUI TROCAR O 37 ═════════════════════
+     Ele se chamava "banco vazio ou fora CAI pro ao vivo" — a regra que a A34 matou — e continuou
+     VERDE depois de a A34 apagar o caminho, porque as duas expressoes que ele procura
+     (`if(doBanco && doBanco.length){` e o `catch` que devolve null) sobreviveram por outras
+     razoes. Assert que guarda uma regra morta com regex que casa por acaso e pior que assert
+     vermelho: ele jura que a casa esta de pe olhando pra uma parede que ficou.
+     >>> O QUE ELE GUARDA AGORA e a metade que NAO morreu e que era o coracao do defeito de
+         10/08: "nao consegui ler" NUNCA pode virar "nao existe". O `lerPaginado` devolve `null`
+         quando nao leu nada, e e esse null que separa as duas frases na tela. */
+  ok('39. *** "nao consegui ler" continua diferente de "nao ha licitacao" ***',
+    /if\(!r\.ok\) return out\.length \? out : null;/.test(tela)
+    && /catch\(e\)\{ return null; \}/.test(tela)
+    && /Nada no nosso índice para esta busca/.test(tela));
+  /* Idem: o par que este assert media era "do nosso indice" x "ao vivo do PNCP", e o segundo so
+     sobrevivia num COMENTARIO de outra parte do arquivo (linha 3845, sobre o painel de detalhe).
+     As duas procedencias de hoje sao o indice e o bloco nacional — e o nacional agora e um
+     BOTAO, entao a prova dele e o convite, nao a consulta. */
+  ok('40. a tela diz DE ONDE veio o que esta nela', /do nosso índice/.test(tela) && /no PNCP nacional/.test(tela));
   ok('41. ...e de QUANDO (o carimbo da coleta)', /coletados em \$\{/.test(tela) || /coletados em /.test(tela));
   ok('42. avisa quando a ultima coleta falhou', /a última coleta falhou/.test(tela));
-  ok('43. e tem o botao "Atualizar agora", que forca o ao vivo',
-    /function atualizarAgora\(\)\{ buscar\(true\); \}/.test(tela) && /onclick="atualizarAgora\(\)"/.test(tela));
+  /* O BOTAO CONTINUA EXISTINDO E MUDOU DE SIGNIFICADO. Ele forcava o ao vivo; agora rele o nosso
+     indice (a carga diaria pode ter rodado com a aba aberta). O assert cobra as duas coisas —
+     que ele existe e que ele NAO leva mais a bandeira que ia ao portal — porque um botao que
+     promete "atualizar" e vai a lugar nenhum e a mesma mentira ao contrario. */
+  ok('43. e o botao de reler o indice existe, e nao forca mais o ao vivo',
+    /function atualizarAgora\(\)\{ buscar\(\); \}/.test(tela) && /onclick="atualizarAgora\(\)"/.test(tela));
 }
 
 console.log('\nRESULTADO: ' + p + ' ok, ' + f + ' falha(s)');

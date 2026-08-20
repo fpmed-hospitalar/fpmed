@@ -141,12 +141,23 @@ ok('20. *** rodada parcial NAO vira mais "a ultima coleta falhou" ***',
   /const alerta = \(carimbo && carimbo\.ultimo_erro && !emDiaAte\) \? ' · a última coleta falhou' : '';/.test(TELA));
 ok('21. ...e o motivo (aviso sempre aceso e aviso que ninguem le no dia da falha de verdade)',
   /Aviso que fica sempre aceso é aviso que ninguém lê/.test(TELA));
-ok('22. *** "a coleta nunca rodou" so aparece quando NENHUM dia fechou ***',
-  /emDiaAte \? ' \(o índice está completo até '/.test(TELA)
-  && /a coleta nunca rodou com sucesso/.test(TELA));
-ok('23. a faixa discreta prefere o DIA a hora do robo (e a pergunta que se faz)',
-  /function avisoBrandoPNCP\(quando, emDiaAte\)/.test(TELA)
-  && /emDiaAte \? ', completo até '/.test(TELA));
+/* ══ REAPONTADOS NA FATIA A34 (20/08) — A REGRA E A MESMA, O LUGAR ONDE ELA SE DIZ E QUE MUDOU ══
+   O 22 cobrava a frase "a coleta nunca rodou com sucesso" e o 23 cobrava a `avisoBrandoPNCP`.
+   As duas eram do tempo em que a busca caia pro PNCP ao vivo: a faixa discreta falava de um
+   ACIDENTE ("o portal nao respondeu agora") e o painel vazio precisava separar "portal fora" de
+   "gaveta vazia". Com a busca lendo so o nosso banco, sobrou UMA causa de vazio — e a pergunta
+   virou a idade do dado, que e a `faixaFrescor`.
+   >>> O QUE NAO PODE MUDAR, E E O QUE OS DOIS GUARDAM AGORA: a tela nunca pode responder "nao ha
+       licitacao" quando a verdade e "eu nunca carreguei nada". As duas frases levam a pessoa a
+       decisoes opostas — uma manda procurar outro termo, a outra manda consertar a carga. */
+ok('22. *** "nunca carregado" continua separado de "nao ha nada para esta busca" ***',
+  /const podeEstarVelho = !emDiaAte && !quando;/.test(TELA)
+  && /E o índice ainda não foi carregado nenhuma vez com sucesso/.test(TELA)
+  && /não é resposta sobre o Brasil, é resposta sobre uma gaveta vazia/.test(TELA));
+ok('23. e a faixa de frescor prefere o DIA/hora do CARIMBO DA CARGA a chutar idade',
+  /async function faixaFrescor\(\)/.test(TELA)
+  && /if\(!c \|\| !c\.ultima_ok\)\{/.test(TELA)
+  && /A carga nunca terminou por inteiro/.test(TELA));
 
 // ══════════ 5. OS DOIS COLETORES CONTINUAM IRMAOS ══════════
 // (o testa_coleta_agendada ja compara as constantes; aqui e a ESTRUTURA nova que nao pode

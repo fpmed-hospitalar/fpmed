@@ -48,7 +48,11 @@ function corpo(fonte, nome) {
 }
 const PINTA = corpo(LIMPO, 'pintaNacional');
 const DISPARA = corpo(LIMPO, 'dispararBuscaNacional');
-const PROTEGIDO = corpo(LIMPO, 'nacionalProtegido');
+/* A fatia A34 (20/08) renomeou `nacionalProtegido` para `convidaNacional`, e a troca nao e de
+   nome: ele DISPARAVA a consulta ao PNCP a cada busca, e agora CONVIDA. O escudo `try/catch` que
+   estes asserts guardam continua sendo o dele, pela mesma razao de sempre — quem pinta este bloco
+   e o `render`, e um erro aqui derrubaria a lista inteira. */
+const PROTEGIDO = corpo(LIMPO, 'convidaNacional');
 
 let p = 0, f = 0, n = 1;
 const ok = (t, c, e) => { if (c) p++; else { f++; console.log('  FALHA ' + t + (e !== undefined ? '  [' + JSON.stringify(e) + ']' : '')); } };

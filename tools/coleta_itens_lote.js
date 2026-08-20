@@ -80,6 +80,53 @@ const TAM_PAGINA = 100;
 const dormir = ms => new Promise(r => setTimeout(r, ms));
 const num = v => (v == null || v === '' || !isFinite(Number(v))) ? null : Number(v);
 
+/* ══ A CONVERSA COM O NOSSO BANCO TAMBÉM PRECISA SOBREVIVER A UM PISCAR DE REDE (A34 · 20/08) ══
+   *** MEDIDO, E ESTE É O NÚMERO: *** a carga de hoje às 09:10 rodou 1.109 SEGUNDOS na etapa de
+   itens, pagou 940 da dívida (2.149 → 1.209 vivas sem item) e morreu com `ERRO: fetch failed`.
+   O `ultima_ok` da carga não avançou, e a faixa de frescor da tela ficou âmbar dizendo "a carga
+   nunca terminou por inteiro" — sobre uma rodada que tinha trabalhado dezoito minutos.
+
+   ══ ONDE ESTAVA O BURACO, e ele não era do lado do governo ══════════════════════════════════
+   A conversa com o PNCP (`puxaItens`) tem backoff, breaker e rate-limit desde a A9: uma falha de
+   rede ali é retentada e, no pior caso, vira `{erro}` de UMA licitação — o laço conta e segue.
+   As três chamadas ao NOSSO banco não tinham nada disso:
+     · a gravação em lote (`licitacao_itens`),
+     · o carimbo (`PATCH licitacoes`),
+     · a leitura de alvos (`le`).
+   Elas conferem `r.ok` — o que já é mais do que a família de defeitos que o B achou na Proposta
+   fazia —, mas `r.ok` só existe se a resposta CHEGOU. Num `fetch failed` não há `r`: a promessa
+   REJEITA, a exceção sobe até o `.catch` do fim do arquivo e o processo sai com 1.
+   >>> ENTÃO O DEFEITO NÃO É "NÃO CONFERIU O ok" — É CONFERIR SÓ O ok. São dois desfechos
+       diferentes ("respondeu mal" e "não respondeu") e o segundo não passa por lugar nenhum onde
+       o primeiro é tratado. É o irmão do `Array.isArray` da Proposta virado do avesso.
+
+   ══ E O CONSERTO NÃO PODE TRANSFORMAR ESCRITA FALHA EM ESCRITA FEITA ════════════════════════
+   Esta é a linha que não se cruza: retentar é legítimo, engolir não. Depois das tentativas, o
+   erro CONTINUA sendo erro — ele volta como `{erro}` da licitação, o laço conta em `erro++`, a
+   linha sai no log e a licitação FICA SEM CARIMBO, então ela volta na próxima rodada. O que muda
+   é só o alcance: uma licitação perdida em vez de uma rodada inteira.
+   >>> O BACKOFF É O MESMO DO COLETOR DO ÍNDICE (`esperaBackoff`), emprestado e não copiado, pela
+       razão de sempre: duas réguas de "estou indo rápido demais" acabam discordando. */
+const TENTATIVAS_BANCO = 3;
+async function fetchBanco(url, opcoes, oQue) {
+  let ultimo = null;
+  for (let t = 0; t < TENTATIVAS_BANCO; t++) {
+    try {
+      return await fetch(url, opcoes);
+    } catch (e) {
+      /* SÓ A FALHA DE TRANSPORTE CAI AQUI. Resposta 4xx/5xx não levanta exceção — ela volta como
+         `r` e quem chamou confere o `r.ok`, como sempre conferiu. Retentar um 401 seria bater
+         três vezes na mesma porta trancada. */
+      ultimo = e;
+      if (t === TENTATIVAS_BANCO - 1) break;
+      const espera = esperaBackoff(t);
+      console.log(`    ! banco (${oQue}): ${e.message} — nova tentativa em ${espera / 1000}s`);
+      await dormir(espera);
+    }
+  }
+  throw new Error(`${oQue}: ${ultimo && ultimo.message} (${TENTATIVAS_BANCO} tentativas)`);
+}
+
 // ── a conversa com o PNCP, com backoff e rate-limit emprestados do coletor do índice ────────
 // Emprestados, e não copiados: uma segunda régua de "estou indo rápido demais" acabaria
 // discordando da primeira, e as duas batem no mesmo portal público.
@@ -161,10 +208,10 @@ async function umaLicitacao(lic, breaker, ritmo) {
   if (PREVIA) return { gravou: linhas.length, truncou, previa: true };
 
   for (let i = 0; i < linhas.length; i += 200) {
-    const r = await fetch(`${SB}/rest/v1/licitacao_itens?on_conflict=numero_controle,numero_item`, {
+    const r = await fetchBanco(`${SB}/rest/v1/licitacao_itens?on_conflict=numero_controle,numero_item`, {
       method: 'POST', headers: { ...H, Prefer: 'return=minimal,resolution=merge-duplicates' },
       body: JSON.stringify(linhas.slice(i, i + 200)),
-    });
+    }, 'gravação de itens');
     if (!r.ok) return { erro: 'gravação ' + r.status + ' ' + (await r.text()).slice(0, 160) };
   }
   return { gravou: linhas.length, truncou };
@@ -174,17 +221,33 @@ async function umaLicitacao(lic, breaker, ritmo) {
    marcá-la como lida seria perder o resto de um edital grande em silêncio. */
 async function carimba(lic, qtd) {
   if (PREVIA) return;
-  const r = await fetch(`${SB}/rest/v1/licitacoes?id=eq.${lic.id}`, {
-    method: 'PATCH', headers: { ...H, Prefer: 'return=minimal' },
-    body: JSON.stringify({ itens_qtd: qtd, itens_lidos_em: new Date().toISOString() }),
-  });
+  /* O CARIMBO É O ÚNICO QUE PODE FALHAR SEM DERRUBAR NADA, e por um motivo bom: sem ele a
+     licitação simplesmente volta na próxima rodada e os itens são regravados por cima (o upsert
+     é idempotente). Perder o carimbo custa uma releitura; perder a rodada custa dezoito minutos.
+     >>> MAS A FALHA DE TRANSPORTE PRECISA SER DITA IGUAL À DE RESPOSTA. Antes, um HTTP 500 saía
+         no log e um `fetch failed` matava o processo — dois desfechos com a mesma consequência
+         prática e tratamentos opostos. */
+  let r;
+  try {
+    r = await fetchBanco(`${SB}/rest/v1/licitacoes?id=eq.${lic.id}`, {
+      method: 'PATCH', headers: { ...H, Prefer: 'return=minimal' },
+      body: JSON.stringify({ itens_qtd: qtd, itens_lidos_em: new Date().toISOString() }),
+    }, 'carimbo');
+  } catch (e) {
+    console.log(`     ⚠️ não consegui carimbar a licitação ${lic.id}: ${e.message} — ela volta na próxima rodada`);
+    return;
+  }
   if (!r.ok) console.log(`     ⚠️ não consegui carimbar a licitação ${lic.id}: HTTP ${r.status}`);
 }
 
 const CAMPOS = 'id,numero_controle,cnpj,ano,sequencial,uf,data_encerramento,itens_lidos_em';
 
+/* A LEITURA DE ALVOS CONTINUA PODENDO DERRUBAR A RODADA, e isso é decisão e não esquecimento:
+   ela roda ANTES do laço, quando nada foi feito ainda, e sem a lista de alvos não há trabalho a
+   preservar. O que ela ganha é a retentativa — três tentativas contra um piscar de rede, e aí sim
+   o erro sobe com o nome da consulta junto. */
 async function le(q) {
-  const r = await fetch(`${SB}/rest/v1/${q}`, { headers: H });
+  const r = await fetchBanco(`${SB}/rest/v1/${q}`, { headers: H }, 'leitura');
   if (!r.ok) throw new Error(`${q} -> HTTP ${r.status}`);
   return r.json();
 }
@@ -319,9 +382,25 @@ async function alvosDaBusca(quantos) {
   const ritmo = criaRitmo(PAUSA_BASE);
   let ok = 0, itensTotal = 0, sem = 0, erro = 0, truncadas = 0, parou = null;
 
+  /* ══ O ESCUDO DO LAÇO — UMA LICITAÇÃO PERDIDA, NUNCA A RODADA (A34 · 20/08) ═════════════════
+     O `fetchBanco` retenta e, esgotadas as tentativas, LEVANTA — de propósito, porque escrita que
+     falhou não pode voltar como escrita feita. Sem este `catch` a exceção subiria até o fim do
+     arquivo e mataria o processo, que é exatamente o que aconteceu às 09:10 de hoje depois de
+     dezoito minutos de trabalho já pago.
+     >>> AQUI ELA VIRA `{erro}` DA LICITAÇÃO, e daí em diante o caminho já existia desde a A9: o
+         laço conta em `erro++`, a linha sai no log com o número de controle, e a licitação FICA
+         SEM CARIMBO — então ela volta na próxima rodada. Nada é dado por lido.
+     >>> E O BREAKER CONTINUA MANDANDO. Se as falhas forem seguidas, ele abre e a rodada para com
+         o motivo escrito. O escudo muda o ALCANCE de uma falha, não a régua de quando desistir. */
   for (let i = 0; i < alvos.length; i++) {
     const l = alvos[i];
-    const r = await umaLicitacao(l, breaker, ritmo);
+    let r;
+    try {
+      r = await umaLicitacao(l, breaker, ritmo);
+    } catch (e) {
+      r = { erro: String(e.message || e) };
+      breaker.falhou();
+    }
     if (r.erro) {
       erro++;
       console.log(`  [${i + 1}/${alvos.length}] ${l.numero_controle}  ⚠️ ${r.erro}`);
