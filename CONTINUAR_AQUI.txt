@@ -15,11 +15,88 @@
         quiser zerar numa rodada so passa o --minutos que ele mesmo recomenda - e gastar 3 horas
         de maquina e decisao do DONO (pendencia 1 do RELATORIO_A da rodada 8), nao do trabalhador.
 
+>>> SEGUNDA ROTINA DO TRABALHADOR A, DESDE A FATIA A40 (20/08/2026) — A MEMORIA DE PRECO:
+        node tools/coleta_resultado_item.js
+    Ela traz o RESULTADO HOMOLOGADO por item das licitacoes ENCERRADAS, que e o dado que a tela
+    do B (B28) ja mostrava e que nao existia: 192 de 358.710 itens (0,053%), todos de UM certame.
+    Depois da rodada de 20/08: 3.475 itens · 288 certames · 116 produtos com DOIS OU MAIS
+    resultados em certames diferentes — que e o que liga a FAIXA e a MEDIANA do B.
+    >>> A CARENCIA E O CORACAO DELA, e ela e PONTARIA e nao tolerancia. Medido em 40 licitacoes:
+        abaixo de 7 dias do encerramento, 0 de 26 itens tem resultado (ZERO); 7-30 dias 38%;
+        30-90 dias 62%; 90-180 50%; +180 40%. E 61% das encerradas do indice fecharam ha menos
+        de 7 dias — varrer "todas as encerradas" gastaria a MAIOR PARTE das requisicoes contra
+        um servico publico na unica faixa que medidamente nao responde nada.
+    Ver so o saldo, sem tocar no PNCP: node tools/coleta_resultado_item.js --saldo
+    Ver o antes/depois inteiro:        node tools/prova_a40_memoria.js
+    >>> ELA SE PAGA SOZINHA: em 20/08 a divida foi de 290 para 10 numa rodada de 28 min. As 10
+        que sobraram sao TRUNCADAS no teto de 120 itens por licitacao e voltam sozinhas — isso e
+        o desenho funcionando, nao pendencia.
+    >>> ATENCAO AO QUE OS 116 SAO: so 5 sao do ramo da FPMED. O indice e o PNCP inteiro, e a
+        primeira leva veio de merenda escolar e peca de veiculo. Priorizar o RAMO em vez da data
+        e decisao de produto, e esta na pendencia 4 do RELATORIO_A da rodada 9.
+
 >>> CORREIO DO ARQUITETO: caixa atual do A: C:\fpmed\caixas\CAIXA_A.md · do B:
     C:\fpmed\caixas\CAIXA_B.md · relatorios em C:\fpmed\relatorios\ (RELATORIO_A.md /
     RELATORIO_B.md, sempre ACRESCENTANDO no topo). Nada disso vai pro repo (.gitignore).
     Atalhos do dono: "A" = trabalhador A, "B" = trabalhador B, "relatorio" = gravar
     relatorio. Detalhe no CLAUDE.md, secao ATALHOS DO DONO.
+
+========================================
+>>> CAIXA A — RODADA 9, EXECUTADA INTEIRA (A39, A37, A40, A41, A38). 20/08/2026
+========================================
+  A A39 e a A37 fecharam no ciclo anterior (commits 24e7362 e 7b22385). Desta rodada:
+
+  [OK] A41 .. PAINEL VAZIO COM CAUSA E DADO (commit 11f4e07). O achado e do B lendo o meu
+             fpmed_telemetria.js: `respect_dnt: true` faz o PostHog NAO ENVIAR NADA de quem tem
+             "Do Not Track" ligado. O respeito NAO foi desligado — quem pediu para nao ser
+             seguido nao e. O que mudou foi o SILENCIO: a tela agora DIZ a causa.
+             MEDIDO NAS DUAS PONTAS: no disco, `enable_do_not_track` AUSENTE no Chrome e no Edge
+             (todos os perfis); na tela pintada, navigator.doNotTrack = null (NAO DECLARADO).
+             => o DNT NAO e a causa de painel vazio nesta maquina.
+             >>> TRES ESTADOS E NAO DOIS: true / false / null. Achatar null em false faria a
+                 tela AFIRMAR "voce aceitou ser seguido" sobre quem nao disse nada.
+             57 asserts · contraste 6,13 e 18,29 · vazamento ZERO a 390 e 1366.
+
+  [OK] A40 .. A MEMORIA DE PRECO (commit 0340d0d). Ver a SEGUNDA ROTINA no topo deste arquivo.
+             192 -> 3.475 itens com resultado · 1 -> 288 certames · 0 -> 116 produtos com faixa.
+             >>> O DEFEITO QUE A PRIMEIRA RODADA DE VERDADE REVELOU: PGRST102 "All object keys
+                 must match". Upsert em lote vira UM INSERT ... VALUES (...),(...) — a lista de
+                 colunas e UMA so. A linha COM resultado tinha 10 chaves e a SEM tinha 4, e como
+                 quase toda licitacao tem os dois, o lote que passava era a EXCECAO. A correcao
+                 nao e um try: e a linha ter FORMA (`linhaDoItem`, sempre as mesmas chaves).
+             >>> E O GUARDA DA RODADA ANTERIOR FUNCIONOU: o `&& gravou` impediu que qualquer
+                 licitacao fosse carimbada sem gravacao. Nada mentiu; a rodada e que nao pagava.
+
+  [OK] A38 .. O MOLDE DA ENCONTRAR v2, REPRODUZIDO (commits 76ca206, 74dab26, 5f40e4d, 5e7a6d4).
+             Os 16 da lista de conferencia respondidos no RELATORIO_A, item por item.
+             >>> O RELOGIO virou a informacao no 1 do cartao: "faltam 3 dias" a direita, 20px,
+                 com a data embaixo. Verde >7 · ambar 1-7 · vermelho no mesmo dia.
+             >>> A BARRA DA ESQUERDA TROCOU DE DATA, NAO DE TINTA: era a urgencia da ABERTURA
+                 (A3), passou a repetir o RELOGIO (encerramento), como o molde v2 manda. Os tres
+                 pares medidos sao os MESMOS. A abertura continua dita em palavras na pastilha.
+             >>> OS ITENS APARECEM NA LISTA, com no, descricao, qtd, un, referencia, TETO CMED e
+                 FOLGA — so os do estoque do cliente, com o rodape contando a divida e separando
+                 as duas causas (sem referencia no edital x sem casamento na CMED).
+             >>> A URL VIROU A FOTOGRAFIA DA TELA: busca, filtros, ordenacao e densidade.
+                 replaceState (nunca pushState), campo vazio nao vira parametro, janela MOVEL nao
+                 entra (o link, aberto amanha, pesquisaria ONTEM calado) e ordem vinda de fora e
+                 conferida contra a lista de opcoes.
+             >>> ACHADO QUE NAO ERA DA FATIA: o rodape do painel afirmava, em negrito e em toda
+                 busca, "ordenadas por quem ENCERRA primeiro". A lista NUNCA esteve — o padrao
+                 era a ABERTURA e podia ser valor ou aderencia. Numero certo, legenda errada.
+             81 asserts na catraca nova · muta_a38.js 24 de 24 (21 mutacoes no HTML de verdade).
+
+  Suites ao fim da rodada 9: 5.792 asserts, 153 suites, 0 falhas.
+
+  >>> PENDENCIAS (rodada 9), em uma linha cada — as 1, 2 e 3 sao as da rodada 8 e continuam:
+      4. DO DONO: dos 116 produtos com faixa, so 5 sao do ramo da FPMED. Priorizar a coleta de
+         resultado nas encerradas do RAMO em vez de por data e decisao de produto, nao minha.
+      5. DO B: a chave de produto fica ambigua em descricao curta — 20 dos 116 tem chave de 12
+         caracteres ou menos ("OLEO" junta R$ 8,99 com R$ 45,00, mediana R$ 27,00). Vale um piso
+         de comprimento, ou a faixa dizendo "descricao curta demais para comparar".
+      6. DO B: o funil so recebe UMA licitacao por vez. O rodape de selecao da Encontrar esta
+         pronto e diz o numero exato; "Adicionar as N aos meus negocios" precisa que o
+         fpmed_negocios.html?adicionar= aceite lista. NAO toquei na tela dele.
 
 ========================================
 >>> CAIXA A — RODADA 3, EXECUTADA INTEIRA (A16-A20). 14/08/2026
