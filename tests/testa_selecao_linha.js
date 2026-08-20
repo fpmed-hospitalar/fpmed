@@ -65,11 +65,21 @@ ok(n + '. ...e o hover NAO apaga a selecao (linha marcada continua marcada sob o
   /\.lic\.escolhida:hover\{background:var\(--azul-50\)\}/.test(TELA)); n++;
 /* O MOTIVO DA DECISAO DO DONO, em codigo: a barra continua pintada pelo PRAZO, e nao vira azul
    quando a linha e selecionada. Uma regra `.lic.escolhida::before{background:...}` seria adotar
-   a metade do molde que o dono recusou. */
+   a metade do molde que o dono recusou.
+   >>> EM 20/08 (fatia A38) A BARRA TROCOU DE DATA, NAO DE OFICIO: o molde v2 manda ela repetir o
+       RELOGIO, que le o ENCERRAMENTO — antes ela lia a ABERTURA. As classes viraram `rel-*`. O
+       que este assert guarda continua sendo o mesmo e e o que o dono decidiu: a barra carrega
+       PRAZO, com os pares medidos do tema, e NADA a pinta de azul quando a linha e selecionada.
+       Prender o assert ao nome antigo teria feito uma decisao de COR morrer numa renomeacao. */
 ok(n + '. *** a barra da esquerda continua na cor do PRAZO — nada a pinta de azul ao selecionar ***',
-  /\.lic\.urg-hoje::before\{background:var\(--sinal-perigo-barra\)\}/.test(TELA)
-  && /\.lic\.urg-amanha::before\{background:var\(--sinal-atencao-barra\)\}/.test(TELA)
+  /\.lic\.rel-hoje::before\{background:var\(--sinal-perigo-barra\)\}/.test(TELA)
+  && /\.lic\.rel-perto::before\{background:var\(--sinal-atencao-barra\)\}/.test(TELA)
   && !/\.lic\.escolhida::before/.test(TELA)); n++;
+/* E A BARRA NAO PODE FICAR ORFA: se alguem tirar o `rel.classe` do cartao, as regras acima
+   continuam no CSS e a catraca acima continua verde — com a barra azul em toda linha. */
+ok(n + '. ...e a classe do relogio E de fato aplicada no cartao (regra viva, nao CSS orfao)',
+  /class="lic clicavel'\+rel\.classe\+/.test(TELA)
+  && /const rel = relogioPrazo\(l\.dataEncerramentoProposta, agora\);/.test(TELA)); n++;
 
 // ══════════ 2. A DIVERGENCIA ESTA DECLARADA, COM A RAZAO ══════════
 /* Divergencia sem registro vira "alguem esqueceu de copiar o molde", e o proximo a passar por

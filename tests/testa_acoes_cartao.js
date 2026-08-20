@@ -29,8 +29,11 @@ const ok = (t, c, e) => { if (c) p++; else { f++; console.log('  FALHA ' + t + (
 console.log('SUITE testa_acoes_cartao — a fatia A21 (o cartao inteiro, e as acoes por estado)\n');
 
 // ── 1. O CARTAO INTEIRO ABRE O DETALHE, NOS TRES PAINEIS ─────────────────────
+/* A classe do cartao do INDICE deixou de vir da urgencia da ABERTURA e passou a vir do RELOGIO
+   do encerramento (fatia A38, molde v2 itens 3 e 4) — `urg.classe` virou `rel.classe`. O que
+   este assert guarda continua sendo o mesmo: o cartao inteiro e clicavel nos tres paineis. */
 ok(n + '. *** os TRES paineis tem cartao clicavel (indice, calendario e ao vivo) ***',
-  /class="lic clicavel'\+urg\.classe/.test(LIMPO)          // indice
+  /class="lic clicavel'\+rel\.classe/.test(LIMPO)          // indice
   && /class="lic clicavel'\+v\.classe\+'" onclick="cliqueVivo/.test(LIMPO)   // ao vivo
   && /class="lic clicavel prazo-nd" onclick="cliqueHistorico/.test(LIMPO)); n++;
 /* O `closest` E O CORACAO DISSO. Sem ele, marcar a caixa de selecao ou abrir "mais acoes"
@@ -145,26 +148,49 @@ ok(n + '. o chip ligado usa o par medido, e o hover nao reprova em contraste',
   && /\.etq\.chip:hover\{background:var\(--verde-200\);color:var\(--verde-800\)\}/.test(CSS1)); n++;
 
 // ── 6. A ANATOMIA DO DETALHE ─────────────────────────────────────────────────
-ok(n + '. *** o codigo da unidade (a UASG) chegou a tela — estava no bruto e nunca aparecia ***',
-  /<small>Código da unidade<\/small>/.test(L) && /é a UASG no Comprasnet/.test(L)); n++;
+/* ══ OS SEIS ASSERTS DESTE BLOCO FICARAM VERMELHOS NA A27, E FICARAM VERMELHOS POR SEIS DIAS ══
+   A A27 trocou a anatomia do detalhe (sanfona -> tabela, ficha `<small>` -> `.f-rot`, `<h4>` ->
+   aba) e estes asserts continuaram procurando o markup ANTIGO. Nenhuma promessa tinha sido
+   quebrada — exceto UMA, e ela só apareceu porque o assert existia: o "é a UASG no Comprasnet"
+   sumiu de verdade, e sobrou um número sem ofício na tela. Está de volta.
+   >>> O QUE ISSO ENSINA, E É O MOTIVO DE ESTAR ESCRITO AQUI: assert preso ao markup avisa
+       "mudou", nunca "piorou" — é a mesma lição S8 que o testa_tema já pagou três vezes.
+       Estes agora cobram a PROMESSA (o dado chegou à tela, com o nome certo do lado), e não o
+       nome da etiqueta que o carrega. E o pior dos dois mundos era o silêncio: quatro suítes
+       vermelhas em pé ensinam a equipe inteira a ignorar vermelho. */
+ok(n + '. *** o codigo da unidade (a UASG) chegou a tela — e DIZ que e a UASG ***',
+  /unidade '\s*\n?\s*\+ esc\(un\.codigoUnidade\)/.test(LIMPO) && /é a UASG no '/.test(L)); n++;
 ok(n + '. o cabecalho traz publicacao, abertura E encerramento (as tres datas)',
-  /<small>Publicação<\/small>/.test(L) && /<small>Abertura<\/small>/.test(L)
-  && /<small>Encerramento<\/small>/.test(L)); n++;
-ok(n + '. o teto CMED entrou na LINHA do item (quem varre 300 itens nao abre 300 sanfonas)',
-  /function tetoCurto\(it, uE\)/.test(LIMPO) && /\+   tetoCurto\(it, uE\)/.test(LIMPO)
-  && /\.det-item \.t\{/.test(CSS1)); n++;
+  /f-rot">Publicação</.test(L) && /f-rot">Abertura da sessão</.test(L)
+  && /f-rot">Encerramento</.test(L)); n++;
+/* O `tetoCurto` MORREU NA A27 e foi APAGADO, com o motivo escrito no lugar dele — teto que
+   ninguem chama e a semente da segunda regra de teto. O que a promessa pede continua: o teto na
+   LINHA, sem abrir sanfona nenhuma. Quem faz isso agora e a COLUNA "Teto CMED" da tabela. */
+ok(n + '. o teto CMED esta na LINHA do item (quem varre 300 itens nao abre 300 sanfonas)',
+  /<th class="num" style="width:150px">Teto CMED<\/th>/.test(L)
+  && /function detCelTeto\(t\)/.test(LIMPO) && /\+ '<td class="num">'\+detCelTeto\(t\)\+'<\/td>'/.test(LIMPO)
+  && !/function tetoCurto\(/.test(LIMPO)); n++;
 ok(n + '. ...e ele e a MESMA chamada do celTetoCMED (uma resposta so pro teto legal)',
   (LIMPO.match(/LimedtecTetoCMED\.avaliar\(\{/g) || []).length >= 2
   && /paraGoverno: true,\s*\n\s*\}, _cmedIdx\);/.test(LIMPO)); n++;
 /* SIGILOSO NAO E TRAVESSAO. Quando o orgao nao publica o valor de referencia, a linha DIZ isso:
    "—" no lugar do numero faz a pessoa procurar um dado que ninguem escondeu por engano. */
-ok(n + '. *** item sigiloso DIZ "sigiloso" na coluna do valor, nao um travessao ***',
-  /it\.orcamentoSigiloso === true/.test(LIMPO) && /">sigiloso<\/span>/.test(L)); n++;
+ok(n + '. *** item sigiloso DIZ "orcamento sigiloso" na coluna da referencia, nao um travessao ***',
+  /it\.orcamentoSigiloso === true/.test(LIMPO)
+  && /uE\.status === 'sigiloso'/.test(LIMPO) && /">orçamento sigiloso<\/span>/.test(L)
+  /* E a frase do title e a que da o ofício ao aviso: sem referencia publicada, o teto da CMED
+     deixa de ser um numero a mais e passa a ser a UNICA regua legal da linha. */
+  && /o teto da CMED ao lado é a única régua legal que sobra/.test(L)); n++;
 ok(n + '. os tres selos de contexto existem, e o sigiloso vem do ITEM',
   /REGISTRO DE PREÇO<\/span>/.test(L) && /ORÇAMENTO SIGILOSO<\/span>/.test(L)
   && /x\.it\.orcamentoSigiloso === true/.test(LIMPO)); n++;
+/* O `<h4>` saiu na A27 porque quem nomeia a secao agora e a ABA — titulo repetindo o nome da
+   aba logo abaixo dela e a mesma palavra duas vezes. O que a promessa cobra sao os QUATRO
+   dados: nome, tipo, tamanho e se o texto ja foi extraido. */
 ok(n + '. a secao de arquivos mostra nome, tipo, tamanho e o que JA FOI extraido',
-  /function secaoDocumentos\(\)/.test(LIMPO) && /Arquivos do edital<\/h4>/.test(L)
+  /function secaoDocumentos\(\)/.test(LIMPO)
+  && /<span class="nome">/.test(LIMPO) && /<span class="tipo">/.test(LIMPO)
+  && /<span class="tam">/.test(LIMPO)
   && /texto extraído · /.test(L) && /sem texto extraído/.test(L)); n++;
 ok(n + '. o resultado por item traz vencedor, quantidade, valor e a MARGEM contra o teto',
   /function secaoResultado\(l\)/.test(LIMPO) && /<th>Vencedor<\/th>/.test(L)
@@ -181,7 +207,12 @@ ok(n + '. resultado nao lido NAO vira "ninguem ganhou"',
 // a busca dentro dos itens PUXA PRO TOPO em vez de filtrar
 ok(n + '. *** a busca nos itens puxa o que casou pro TOPO, e nao some com o resto ***',
   /d\.itens\.filter\(casaTermo\)\.concat\(d\.itens\.filter\(x => !casaTermo\(x\)\)\)/.test(LIMPO)
-  && /os outros '\+\(d\.itens\.length-achados\)\+' continuam abaixo/.test(LIMPO)); n++;
+  /* A frase mudou de forma na A27 e ficou melhor: ela diz que a lista continua INTEIRA nos dois
+     casos — com resultado ("mostrando todos, os que casam vêm primeiro") e sem nenhum ("a lista
+     continua inteira"). O caso do zero e o que mais importa: e nele que filtrar esvaziaria a
+     tela e faria o edital de 300 itens parecer ter nenhum. */
+  && /mostrando todos, os que casam vêm primeiro/.test(L)
+  && /a lista continua inteira/.test(L)); n++;
 ok(n + '. ...e o termo e grifado pela MESMA regra do objeto (um grifo so na tela)',
   /function grifaCom\(texto, termo\)/.test(LIMPO)
   && /grifaCom\(String\(it\.descricao\|\|'—'\), DET\.busca\)/.test(LIMPO)); n++;

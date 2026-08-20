@@ -73,8 +73,19 @@ ok(n + '. *** o seletor de ordenacao entrou, e as TRES opcoes existem de verdade
   /id="sel-ordem"/.test(LIMPO) && /Abertura mais próxima/.test(LIMPO)
   && /Maior valor estimado/.test(LIMPO) && /Maior aderência/.test(LIMPO)
   && /function ordenaHits/.test(LIMPO)); n++;
-ok(n + '. ...e a ordem PADRAO continua sendo a abertura (a pergunta que abre o dia do gestor)',
-  /let ORDEM = 'abertura'/.test(LIMPO)); n++;
+/* ══ O PADRAO MUDOU DE ABERTURA PARA ENCERRAMENTO NA A38, E O QUE ESTE ASSERT GUARDA NAO ══════
+   O molde v2 poe o RELOGIO DO ENCERRAMENTO como a informacao no 1 do cartao, e ordenar por
+   abertura enquanto o numero grande fala de encerramento faz o primeiro cartao PARECER o mais
+   urgente sem ser. O padrao passou a ser "fecha primeiro".
+   >>> A PROTECAO DESTE ASSERT E OUTRA, e ela continua inteira: o padrao tem que ser um criterio
+       de TEMPO. Ordenar por valor (ou por aderencia) por padrao poria o contrato grande e
+       distante na frente da sessao que comeca em duas horas — e e disso que a lista precisa ser
+       protegida, nao de qual das duas datas manda. */
+ok(n + '. *** a ordem PADRAO e de TEMPO, nunca valor nem aderencia (o contrato grande e distante '
+  + 'nao vem na frente da sessao de daqui a duas horas) ***',
+  /let ORDEM = '(encerramento|abertura)'/.test(LIMPO)); n++;
+ok(n + '. ...e ela le a mesma data que o relogio do cartao grita (A38: "fecha primeiro")',
+  /let ORDEM = 'encerramento'/.test(LIMPO) && /Fecha primeiro<\/option>/.test(LIMPO)); n++;
 ok(n + '. *** e quem nao tem o criterio vai pro FIM, nunca pro topo (zero fingindo de dado) ***',
   /Number\(b\.valorTotalEstimado\)\|\|-1/.test(LIMPO)
   && /aderenciaPct\(b\) == null \? -1/.test(LIMPO)
@@ -91,24 +102,37 @@ ok(n + '. e ele diz quantas estao na tela (o rodape tambem FECHA o painel)',
 // Aqui a suite EXECUTA as duas funcoes contra um localStorage e um DOM de mentira,
 // em vez de procurar texto: o que importa e o que elas FAZEM.
 const bloco = (ini, fim) => { const s = L.indexOf(ini), e = L.indexOf(fim, s); return L.slice(s, e); };
+/* ══ O DUPLÊ DE DOM IGNORAVA O SELETOR, E ISSO CUSTOU DUAS COISAS (fatia A28) ═══════════════
+   Ele devolvia a MESMA lista de botões para qualquer `querySelectorAll`. Enquanto a função só
+   mexia em `.dens button` isso passou por bom; quando a A27 acrescentou a tabela do detalhe
+   (`.det-rolo` e `.det-dens button`), o duplê entregou botões onde o código esperava a caixa
+   de rolagem e a suíte ESTOUROU — `r.classList is undefined`.
+   >>> E O ESTOURO FOI O MENOR DOS DOIS PROBLEMAS. O grave é o outro lado: um duplê que
+       responde igual a todo seletor não sabe dizer se a função mirou no elemento CERTO.
+       Trocar '.dens button' por '.qualquer-coisa' passaria verde — que é uma catraca que não
+       cata nada. Agora ele é um mapinha de seletor -> elementos, e seletor desconhecido
+       devolve VAZIO, que é o que o navegador faz. */
 function carrega(storage) {
   const classes = new Set();
   const painel = { classList: { toggle: (c, v) => { v ? classes.add(c) : classes.delete(c); } } };
-  const botoes = [
-    { textContent: 'Confortável', attrs: {}, setAttribute(k, v) { this.attrs[k] = v; } },
-    { textContent: 'Compacta',    attrs: {}, setAttribute(k, v) { this.attrs[k] = v; } },
-  ];
+  const botao = t => ({ textContent: t, attrs: {}, setAttribute(k, v) { this.attrs[k] = v; } });
+  const botoes = [botao('Confortável'), botao('Compacta')];
+  const detBotoes = [botao('Confortável'), botao('Compacta')];
+  const classesRolo = new Set();
+  const rolos = [{ classList: { toggle: (c, v) => { v ? classesRolo.add(c) : classesRolo.delete(c); } } }];
+  const mapa = { '.dens button': botoes, '.det-dens button': detBotoes, '.det-rolo': rolos };
+  const pedidos = [];
   const doc = { getElementById: id => (id === 'painel-res' ? painel : null),
-                querySelectorAll: () => botoes };
+                querySelectorAll: sel => { pedidos.push(sel); return mapa[sel] || []; } };
   const fn = new Function('localStorage', 'document',
     bloco('function densidade(){', '\n// ══ UI DO CRUZAMENTO')
     + '\nreturn { densidade, poeDensidade };');
-  return { api: fn(storage, doc), classes, botoes };
+  return { api: fn(storage, doc), classes, botoes, detBotoes, classesRolo, pedidos };
 }
 const memoria = (() => { const m = {}; return {
   getItem: k => (k in m ? m[k] : null), setItem: (k, v) => { m[k] = String(v); } }; })();
 {
-  const { api, classes, botoes } = carrega(memoria);
+  const { api, classes, botoes, detBotoes, classesRolo, pedidos } = carrega(memoria);
   ok(n + '. o padrao e Confortavel (sem escolha guardada)', api.densidade() === 'confortavel'); n++;
   api.poeDensidade('compacta');
   ok(n + '. escolher Compacta guarda a preferencia E marca o painel',
@@ -117,9 +141,21 @@ const memoria = (() => { const m = {}; return {
   ok(n + '. e o botao ativo fica marcado pra quem le em voz alta (aria-pressed)',
     botoes[1].attrs['aria-pressed'] === 'true' && botoes[0].attrs['aria-pressed'] === 'false',
     botoes.map(b => b.textContent + '=' + b.attrs['aria-pressed'])); n++;
+  /* ── A TABELA DO DETALHE OBEDECE À MESMA ESCOLHA (fatia A27, guardado na A28) ──────────────
+     A A27 pôs um segundo alternador na barra da tabela de itens, gravando na MESMA chave. A
+     promessa é "quem escolheu compacta escolheu para o sistema" — e promessa de dois lugares
+     obedecendo a uma chave só é justamente a que se quebra na próxima fatia, quando alguém
+     mexe num dos dois. Sem estes três asserts, a metade nova ficava sem guarda nenhuma. */
+  ok(n + '. *** a tabela do detalhe segue a MESMA escolha (uma preferência, não duas) ***',
+    classesRolo.has('compacta'), [...classesRolo]); n++;
+  ok(n + '. ...e o alternador da barra do detalhe tambem fica marcado',
+    detBotoes[1].attrs['aria-pressed'] === 'true' && detBotoes[0].attrs['aria-pressed'] === 'false',
+    detBotoes.map(b => b.textContent + '=' + b.attrs['aria-pressed'])); n++;
+  ok(n + '. ...e ela mira nos seletores que existem na tela, nao num nome qualquer',
+    ['.dens button', '.det-rolo', '.det-dens button'].every(s => pedidos.includes(s)), pedidos); n++;
   api.poeDensidade('confortavel');
-  ok(n + '. voltar pra Confortavel tira a marca do painel',
-    api.densidade() === 'confortavel' && !classes.has('compacta')); n++;
+  ok(n + '. voltar pra Confortavel tira a marca do painel E a da tabela do detalhe',
+    api.densidade() === 'confortavel' && !classes.has('compacta') && !classesRolo.has('compacta')); n++;
   /* ══ ESTE ASSERT PASSOU VERDE NUMA MUTACAO, e o conserto e o que ele ensina ═══
      Ele fazia `poeDensidade('gigante')` e conferia o resultado — mas quem normaliza
      ali e o ESCRITOR, entao ele nunca tocava no LEITOR. Com o leitor devolvendo o

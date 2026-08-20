@@ -431,6 +431,15 @@ select[disabled],input[disabled],textarea[disabled]{
   font-size:var(--txt-1);line-height:1;transition:background-color var(--transicao)}
 .chip-f button:hover{background:var(--azul-100)}
 .chip-f button:focus-visible{outline:none;box-shadow:var(--foco)}
+/* ══ "LIMPAR TUDO" (fatia A38 · molde v2, item 9) ════════════════════════════════════════════
+   Ele NÃO é um chip: é um LINK de ação no meio de uma fila de rótulos. Desenhá-lo com moldura
+   igual à dos chips faria a fila ter quatro coisas parecidas das quais uma apaga as outras três
+   — que é exatamente o clique errado que ninguém desfaz. Sem fundo e sem borda, como no molde. */
+.chip-limpar{flex:0 0 auto;min-height:26px;padding:0 var(--esp-2);border:0;background:none;
+  color:var(--azul-700);font-size:var(--txt-1);font-weight:var(--peso-semi);cursor:pointer;
+  border-radius:var(--raio-mini);text-decoration:underline;text-underline-offset:2px}
+.chip-limpar:hover{background:var(--azul-50)}
+.chip-limpar:focus-visible{outline:none;box-shadow:var(--foco)}
 
 /* ══ A FILA DE ATALHOS (13/08, item 7c) ══════════════════════════════════════════════════════
    Eram seis links azuis soltos, um do lado do outro, com cara de rodapé de site antigo. Viraram
@@ -711,10 +720,74 @@ select[disabled],input[disabled],textarea[disabled]{
    >>> E O RECORTE MUDOU JUNTO: era `dias <= 2` (um balde só para hoje, amanhã e depois de
        amanhã). Agora são os três degraus que o molde nomeia, porque "abre hoje" e "abre em dois
        dias" mudam o dia de quem lê de formas diferentes. */
-.lic.urg-hoje::before{background:var(--sinal-perigo-barra)}
-.lic.urg-amanha::before{background:var(--sinal-atencao-barra)}
-.lic.urg-normal::before{background:var(--sinal-normal-barra)}
-.lic.urg-fim::before{background:var(--cinza-300)}
+/* ══ E EM 20/08 (fatia A38) A BARRA MUDOU DE DATA — NÃO DE TINTA ═════════════════════════════
+   O molde v2 manda a barra da esquerda REPETIR O RELÓGIO, e o relógio dele é o ENCERRAMENTO
+   ("faltam 3 dias · encerra 10/09"). Antes ela repetia a ABERTURA. As duas não cabem na mesma
+   barra: um cartão com barra vermelha de "abre hoje" e relógio dizendo "faltam 22 dias" ensina a
+   desconfiar dos dois sinais.
+   >>> OS TRÊS PARES MEDIDOS SÃO OS MESMOS, e continuam sendo usados para o que o
+       `fpmed_tema.css` os reserva — urgência, e não categoria. O que mudou é a data que a régua
+       lê. Nenhum par novo, nenhum token novo, nenhum hex à mão.
+   >>> O VERDE ENTROU PORQUE O MOLDE PEDE VERDE ACIMA DE 7 DIAS, e aqui ele não é "coisa boa": é
+       "sem pressa", que é o terceiro degrau da mesma escada. O par do "bom" é o único do tema com
+       tinta e fundo medidos juntos nessa faixa; a barra usa o `--sinal-bom-icone`, que é o membro
+       do par feito para MARCA, que é o ofício de uma barra de 4px.
+   >>> A ABERTURA NÃO SUMIU: ela continua dita em palavras, na pastilha `urg--*` logo abaixo do
+       título. O que ela perdeu foi a barra, não a voz. */
+.lic.rel-hoje::before{background:var(--sinal-perigo-barra)}
+.lic.rel-perto::before{background:var(--sinal-atencao-barra)}
+.lic.rel-longe::before{background:var(--sinal-bom-icone)}
+.lic.rel-fim::before{background:var(--cinza-300)}
+.lic.rel-nd::before{background:var(--sinal-normal-barra)}
+/* ══ O RELÓGIO — grande, à direita, e ele é a informação nº 1 do cartão (molde v2, item 3) ═════
+   `tabular-nums` porque numa coluna de relógios "faltam 3 dias" e "faltam 12 dias" precisam
+   alinhar o algarismo — sem isso o olho relê para comparar, que é justamente o que a barra e o
+   relógio existem para evitar. */
+.lic .relogio{flex:0 0 auto;text-align:right;min-width:132px;padding-left:var(--esp-3)}
+.lic .relogio .quanto{font-size:var(--txt-4);font-weight:var(--peso-forte);
+  letter-spacing:-.2px;font-variant-numeric:tabular-nums;line-height:1.25}
+.lic .relogio .quando{font-size:var(--txt-1);color:var(--cinza-600);
+  font-variant-numeric:tabular-nums;margin-top:var(--esp-1)}
+.lic.rel-hoje  .relogio .quanto{color:var(--sinal-perigo-tinta)}
+.lic.rel-perto .relogio .quanto{color:var(--sinal-atencao-tinta)}
+.lic.rel-longe .relogio .quanto{color:var(--sinal-bom-tinta)}
+.lic.rel-fim   .relogio .quanto{color:var(--cinza-600)}
+.lic.rel-nd    .relogio .quanto{color:var(--cinza-600);font-size:var(--txt-2)}
+/* No celular o relógio não briga por largura com o título: ele desce e vira a última linha do
+   cabeçalho, à esquerda — que é o que o próprio molde faz em `max-width:860px`. */
+@media (max-width:860px){
+  .lic .topo{flex-wrap:wrap}
+  .lic .relogio{order:3;width:100%;text-align:left;min-width:0;padding-left:0;margin-top:var(--esp-2)}
+}
+
+/* ══ O RODAPÉ DE SELEÇÃO (fatia A38 · molde v2, item 14) ═════════════════════════════════════
+   O fundo é o `--navy`, e não uma escolha minha: o `fpmed_tema.css` reserva esse token, com
+   estas palavras, para *"sidebar, cartão de destaque, BARRA FLUTUANTE"* — e traz os pares de
+   tinta já medidos sobre ele (`--navy-tinta` 10,78:1 · `--navy-apoio` 6,77:1). Escolher um
+   cinza escuro qualquer teria sido inventar o quinto par sobre fundo escuro do sistema.
+   >>> `position:sticky; bottom:0` e NÃO `fixed`: fixo, ele flutuaria sobre o rodapé da página e
+       sobre o menu do celular mesmo depois do fim da lista. Grudado, ele acompanha a lista e
+       para quando ela acaba, que é onde a seleção deixa de existir.
+   >>> ELE NÃO GANHA `z-index` ALTO. A ordem da casa é que o overlay de sessão caída cubra tudo
+       (achado da A16); uma barra de ação por cima de um pedido de login seria oferecer um gesto
+       que não pode ser executado. */
+.selbar{position:sticky;bottom:0;z-index:5;display:flex;align-items:center;
+  gap:var(--esp-4);flex-wrap:wrap;margin-top:var(--esp-4);
+  padding:var(--esp-3) var(--esp-5);border-radius:var(--raio-cartao);
+  background:var(--navy);color:var(--navy-tinta);
+  font-size:var(--txt-2);box-shadow:var(--sombra-2)}
+.selbar b{color:var(--branco);font-weight:var(--peso-forte);font-variant-numeric:tabular-nums}
+.selbar .apoio{color:var(--navy-apoio);font-variant-numeric:tabular-nums}
+.selbar .dir{margin-left:auto;display:flex;gap:var(--esp-2);flex-wrap:wrap}
+/* O botão secundário sobre o navy não pode ser o `.btn.sec` de fundo claro: ele viraria um bloco
+   branco no meio da barra escura, com mais peso que a ação primária. */
+.selbar .btn.sec{background:transparent;color:var(--navy-tinta);border-color:var(--navy-borda)}
+.selbar .btn.sec:hover{background:var(--navy-hover);color:var(--branco)}
+@media (max-width:480px){
+  .selbar{gap:var(--esp-2)}
+  .selbar .dir{width:100%;margin-left:0}
+  .selbar .dir .btn{flex:1;min-height:44px}
+}
 .urg{display:inline-flex;align-items:center;gap:var(--esp-1);
   padding:var(--esp-1) var(--esp-3);border-radius:var(--raio-pilula);
   font-size:var(--txt-1);font-weight:var(--peso-semi);white-space:nowrap}
@@ -1838,6 +1911,15 @@ svg.ic.bom{color:var(--verde-700)}
        Ele ficava neste ponto, ACIMA da lista, e abrir um edital de 600 itens empurrava os
        resultados num rolo infinito — o defeito nº 3 da lista do dono. Ver `#detalhe`. -->
   <div id="lista"><div class="aviso vazio">Ajuste os filtros e clique na lupa para buscar.</div></div>
+  <!-- ══ RODAPÉ DE SELEÇÃO (fatia A38 · molde v2, item 14) ═══════════════════════════════════
+       "Rodapé de seleção só existe com item marcado, e diz o número exato do que a ação vai
+       atingir." Ele nasce com `hidden` e só é pintado quando há seleção — barra de ação vazia
+       ocupando o pé da tela o dia inteiro é a mesma dívida de qualquer controle que não faz
+       nada: ensina o olho a pular aquela faixa.
+       >>> ATÉ HOJE A CAIXA DE SELEÇÃO NÃO LEVAVA A LUGAR NENHUM. Ela marcava, pintava a linha de
+           azul e escrevia "3 selecionadas" no cabeçalho — e acabava aí. Controle que não tem
+           ação é promessa que a tela não cumpre. -->
+  <div id="selbar" class="selbar" hidden></div>
   <!-- A BUSCA NACIONAL VEM DEPOIS DO ÍNDICE, e essa ordem é a decisão: o índice é nosso, rápido,
        das nossas praças e está sempre disponível; o nacional é do Brasil todo e depende do PNCP
        estar no ar. São duas procedências, e misturar as duas numa lista só faria o operador
@@ -2300,17 +2382,75 @@ function urgenciaAbertura(dataAbertura, agora){
   return { classe:' urg-normal', pastilha:'<span class="urg urg--normal">abre em '+diff+' dias</span>' };
 }
 
+/* ══ O RELÓGIO DO ENCERRAMENTO — A INFORMAÇÃO Nº 1 DO CARTÃO (fatia A38, molde v2 itens 3 e 4) ══
+   O molde v2 é literal: *"O relógio é a informação nº 1 de cada cartão, alinhado à direita, em
+   tamanho grande: 'faltam 3 dias', com a data embaixo. Verde > 7 dias, âmbar 1–7, vermelho no
+   mesmo dia"* — e o item 4: *"Barra colorida na borda esquerda repetindo esse sinal"*.
+
+   >>> ELE LÊ O **ENCERRAMENTO**, e não a abertura. São duas perguntas diferentes — "quando é a
+       sessão?" e "até quando dá pra mandar proposta?" — e a que decide participação é a segunda:
+       depois do encerramento não há mais nada a fazer, a sessão ainda por vir ou não.
+
+   ── E AQUI HÁ UMA DIVERGÊNCIA QUE EU **NÃO** RESOLVI SOZINHO NO ESCURO ────────────────────────
+   A barra da esquerda já carregava um sinal de tempo: a URGÊNCIA DA ABERTURA (A3, 14/08), com os
+   três pares medidos que o `fpmed_tema.css` reserva com todas as letras para "o único lugar do
+   sistema onde a cor carrega URGÊNCIA e não categoria". O molde v2 manda a barra repetir o
+   RELÓGIO — que é o encerramento. As duas coisas não cabem na mesma barra.
+   >>> A ESCOLHA É O MOLDE, e a razão é de negócio: a barra existe para o olho achar antes de ler,
+       e o que faz alguém perder um edital é o PRAZO acabar, não a sessão passar. Um cartão com a
+       barra vermelha "abre hoje" e o relógio dizendo "faltam 22 dias" ensinaria a desconfiar dos
+       dois sinais.
+   >>> O QUE **NÃO** SE PERDE: a abertura continua dita em PALAVRAS, na pastilha que já existia
+       (`urgenciaAbertura`), e os três pares medidos continuam sendo os mesmos — o que mudou é a
+       data que a régua lê, não a tinta. Nenhum par novo foi inventado e nenhum token foi criado.
+   >>> COMPARA DIA DE CALENDÁRIO, pelo mesmo defeito de fuso que a `urgenciaAbertura` já paga:
+       um encerramento às 09h de amanhã está a 20 horas, e quem lê às 13h de hoje precisa ouvir
+       "amanhã", não "hoje" — e muito menos "faltam 0 dias".
+   >>> "SEM PRAZO" NÃO É "ENCERRADA" e nenhum dos dois é um travessão: a tela diz as palavras. */
+function relogioPrazo(dataFim, agora){
+  const d = dt(dataFim);
+  if(!d) return { classe:' rel-nd', quanto:'prazo não informado', quando:'', faixa:'nd',
+                  titulo:'esta licitação entrou por uma fonte que não trouxe a data de encerramento — '
+                       + 'isto não quer dizer que ela não tenha prazo, quer dizer que eu não sei qual é' };
+  const dia0 = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate());
+  const dias = Math.floor((new Date(d.getFullYear(), d.getMonth(), d.getDate()) - dia0) / 86400000);
+  const quando = 'encerra ' + fmtDt(dataFim);
+  if(dias < 0)   return { classe:' rel-fim',   quanto:'encerrada', quando, faixa:'fim',
+                          titulo:'o prazo de proposta já passou — o que sobra deste edital é o preço praticado' };
+  if(dias === 0) return { classe:' rel-hoje',  quanto:'encerra hoje', quando, faixa:'hoje',
+                          titulo:'último dia para mandar proposta' };
+  /* 1 a 7 dias é ÂMBAR e 8+ é verde, exatamente como o molde recorta. O "faltam N dias" é o texto
+     do molde, e ele é melhor que a data sozinha porque a subtração é o que a pessoa faria de
+     cabeça — e é onde ela erra quando está com pressa. */
+  const quanto = 'faltam ' + dias + (dias === 1 ? ' dia' : ' dias');
+  return dias <= 7
+    ? { classe:' rel-perto', quanto, quando, faixa:'perto', titulo:'menos de uma semana para o encerramento' }
+    : { classe:' rel-longe', quanto, quando, faixa:'longe', titulo:'ainda há mais de uma semana' };
+}
+
 /* ══ ORDENAÇÃO (fatia A3) ═════════════════════════════════════════════════════════════════════
    O molde tem o controle com três opções. Em 13/08 ele NÃO entrou, e o motivo estava escrito:
    "um seletor com uma opção só é um controle que ensina a pessoa a clicar à toa". Ele entra
    agora porque as três opções passaram a EXISTIR de verdade — a aderência virou número real
    nesta mesma fatia, e o valor estimado sempre esteve na linha.
-   >>> A ORDEM PADRÃO CONTINUA SENDO A ABERTURA, e isso é decisão: a pergunta que abre o dia de
-       um gestor de licitação é "o que abre hoje?". Ordenar por valor por padrão colocaria o
-       contrato grande e distante na frente da sessão que começa em duas horas.
-   >>> QUEM NÃO TEM O CRITÉRIO VAI PRO FIM, sempre — nas três. Licitação sem valor informado
-       aparecendo no topo de "maior valor" seria o zero fingindo de dado outra vez. */
-let ORDEM = 'abertura';
+   >>> QUEM NÃO TEM O CRITÉRIO VAI PRO FIM, sempre — nas quatro. Licitação sem valor informado
+       aparecendo no topo de "maior valor" seria o zero fingindo de dado outra vez.
+
+   ══ E EM 20/08 (fatia A38) O PADRÃO MUDOU DE ABERTURA PARA ENCERRAMENTO ═══════════════════════
+   A ordem padrão era a ABERTURA, e a razão estava escrita: *"a pergunta que abre o dia de um
+   gestor de licitação é 'o que abre hoje?'"*. Ela deixou de valer no dia em que o RELÓGIO do
+   encerramento virou a informação nº 1 do cartão (molde v2, itens 3 e 4).
+   >>> O MOTIVO É O MESMO DA BARRA: o olho lê a lista de cima para baixo e o cartão grita
+       "faltam 3 dias". Ordenar por abertura enquanto o número grande fala de encerramento faz o
+       primeiro cartão parecer o mais urgente sem ser — e o molde v2 põe "fecha primeiro" como a
+       PRIMEIRA opção da lista de ordenação, que é onde ele diz qual é o padrão.
+   >>> A ABERTURA NÃO SAIU: continua na segunda opção, com o nome que ela sempre teve.
+   >>> A QUARTA OPÇÃO DO MOLDE — "maior folga contra o teto CMED" — NÃO ENTROU, e a razão é
+       medida: a folga é calculada POR ITEM, dentro do painel de detalhe, depois de a régua da
+       CMED responder. Na lista ela não existe para nenhuma licitação que ainda não foi aberta —
+       e um critério que ordena metade da lista por um número e a outra metade por nada é pior
+       que critério nenhum. Ele entra junto com os itens na lista (a parte 2 desta fatia). */
+let ORDEM = 'encerramento';
 function poeOrdem(v){ ORDEM = v; rerender(); }
 function ordenaHits(hits){
   const semData = 8640000000000;
@@ -2318,8 +2458,16 @@ function ordenaHits(hits){
     return hits.slice().sort((a,b) => (Number(b.valorTotalEstimado)||-1) - (Number(a.valorTotalEstimado)||-1));
   if(ORDEM === 'aderencia')
     return hits.slice().sort((a,b) => (aderenciaPct(b) == null ? -1 : aderenciaPct(b)) - (aderenciaPct(a) == null ? -1 : aderenciaPct(a)));
+  if(ORDEM === 'abertura')
+    return hits.slice().sort((a,b) => {
+      const da = dt(a.dataAberturaProposta), db = dt(b.dataAberturaProposta);
+      return (da ? da.getTime() : semData) - (db ? db.getTime() : semData);
+    });
+  /* FECHA PRIMEIRO — o padrão, e o mesmo campo que o relógio do cartão lê. Quem não tem
+     encerramento vai pro fim: "prazo não informado" no topo de "fecha primeiro" seria a
+     ausência de dado se passando pela urgência máxima. */
   return hits.slice().sort((a,b) => {
-    const da = dt(a.dataAberturaProposta), db = dt(b.dataAberturaProposta);
+    const da = dt(a.dataEncerramentoProposta), db = dt(b.dataEncerramentoProposta);
     return (da ? da.getTime() : semData) - (db ? db.getTime() : semData);
   });
 }
@@ -2337,9 +2485,104 @@ function alternaEscolha(i, el){
   pintaEscolhidas();
 }
 function pintaEscolhidas(){
-  const el = document.getElementById('sel-conta'); if(!el) return;
+  const el = document.getElementById('sel-conta');
   const n = ESCOLHIDAS.size;
-  el.textContent = n ? (n === 1 ? '1 selecionada' : n + ' selecionadas') : '';
+  if(el) el.textContent = n ? (n === 1 ? '1 selecionada' : n + ' selecionadas') : '';
+  pintaSelbar();
+}
+/* ══ AS LICITAÇÕES MARCADAS, resolvidas da CHAVE para o objeto ════════════════════════════════
+   A seleção guarda CHAVE e não índice (decisão da A3), e é por isso que ela sobrevive a trocar a
+   ordenação. O preço disso é este passo: para contar valor e itens é preciso reencontrar cada
+   uma na lista pintada. Quem estiver selecionada e tiver saído da lista (busca nova) simplesmente
+   não entra na conta — e é isso que faz o rodapé dizer o número do que a ação VAI ATINGIR, e não
+   o número do que já foi clicado algum dia. */
+function licsEscolhidas(){
+  return (window._hits || []).filter(l => ESCOLHIDAS.has(chaveLic(l)));
+}
+/* ══ O RODAPÉ DE SELEÇÃO (molde v2, item 14) ══════════════════════════════════════════════════
+   *"Rodapé de seleção só existe com item marcado, e diz o número exato do que a ação vai
+   atingir."* As três contas daqui são apuradas na hora, e cada uma só aparece quando é verdade:
+   >>> O VALOR SÓ APARECE SE ALGUMA TROUXE VALOR, e ele diz de quantas ele é. Somar R$ 0 pelas que
+       não informaram e mostrar o total como se fosse das N é o zero fingindo de dado — o defeito
+       que esta tela já pagou duas vezes.
+   >>> OS "ITENS MEUS" SÓ APARECEM DEPOIS DO CRUZAMENTO, e a frase diz em quantas ele já rodou.
+       "11 itens seus" sobre 3 marcadas das quais 1 foi cruzada seria uma afirmação sobre 3 feita
+       com o dado de 1. */
+function pintaSelbar(){
+  const bar = document.getElementById('selbar'); if(!bar) return;
+  const ls = licsEscolhidas();
+  const n = ls.length;
+  if(!n){ bar.hidden = true; bar.innerHTML = ''; return; }
+
+  const comValor = ls.filter(l => Number(l.valorTotalEstimado) > 0);
+  const soma = comValor.reduce((s,l) => s + Number(l.valorTotalEstimado), 0);
+  const cruzadas = ls.filter(l => CRUZ.has(chaveLic(l)));
+  const meus = cruzadas.reduce((s,l) => s + (Number((CRUZ.get(chaveLic(l))||{}).casados) || 0), 0);
+  const naoCruzadas = n - cruzadas.length;
+
+  bar.hidden = false;
+  bar.innerHTML =
+      '<span><b>' + n + '</b> ' + (n === 1 ? 'licitação marcada' : 'licitações marcadas') + '</span>'
+    + (comValor.length
+        ? '<span class="apoio">· ' + brl(soma) + (comValor.length < n
+            ? ' <span title="' + ((n - comValor.length) === 1
+                ? 'a outra não informou valor estimado'
+                : 'as outras ' + (n - comValor.length) + ' não informaram valor estimado')
+              + ' — somar zero por elas faria o total falar por todas">(de ' + comValor.length + ')</span>' : '') + '</span>'
+        : '<span class="apoio">· valor estimado não informado</span>')
+    + (cruzadas.length
+        ? '<span class="apoio">· <b>' + meus + '</b> ' + (meus === 1 ? 'item meu' : 'itens meus')
+          + (naoCruzadas ? ' <span title="o cruzamento com o estoque ainda não rodou nestas — '
+              + 'o número acima é só das que já foram lidas">(' + cruzadas.length + ' de ' + n + ' cruzadas)</span>' : '')
+          + '</span>'
+        : '<span class="apoio">· itens ainda não cruzados com o estoque</span>')
+    + '<span class="dir">'
+    +   '<button type="button" class="btn sec mini" onclick="limpaSelecao()">Limpar seleção</button>'
+    /* A AÇÃO PRIMÁRIA É UM VERBO DO NEGÓCIO E DIZ O NÚMERO EXATO (itens 12 e 14 do molde). O verbo
+       do molde é "Adicionar as N aos meus negócios", e ele NÃO está aqui: o funil recebe uma
+       licitação por vez (`fpmed_negocios.html?adicionar=<n>`) e a tela do funil é do trabalhador
+       B — mandar N exigiria um contrato com ele, e inventá-lo sozinho seria escrever na porta da
+       casa do vizinho. Fica anotado como pendência, e no lugar dele vai a ação em lote que existe
+       de verdade e é a mais cara da tela: ler os itens das N marcadas. */
+    +   '<button type="button" class="btn mini" id="bt-sel-cruzar" onclick="cruzarEscolhidas()">'
+    +     ic('alvo') + ' Cruzar as ' + n + ' com o estoque</button>'
+    + '</span>';
+}
+function limpaSelecao(){
+  ESCOLHIDAS.clear();
+  document.querySelectorAll('.lic.escolhida').forEach(e => e.classList.remove('escolhida'));
+  document.querySelectorAll('.lic .sel input:checked').forEach(e => { e.checked = false; });
+  pintaEscolhidas();
+}
+/* Irmão do `cruzarTodos`, com o alvo trocado — e a fila e o lote são os MESMOS de propósito: duas
+   réguas de "quantas requisições de uma vez" contra o mesmo portal público acabam discordando, e
+   a que discorda calada é a que fica. */
+async function cruzarEscolhidas(){
+  const ls = licsEscolhidas(); if(!ls.length) return;
+  const st = document.getElementById('status');
+  if(!ESTOQUE.length){
+    if(st) st.innerHTML = '<span class="conferir">o estoque FPMED não carregou — sem ele o cruzamento não tem contra o quê comparar.</span>';
+    return;
+  }
+  const bt = document.getElementById('bt-sel-cruzar');
+  if(bt) bt.disabled = true;
+  const hits = window._hits || [];
+  let ok = 0, erros = 0;
+  const LOTE = 3;
+  for(let i = 0; i < ls.length; i += LOTE){
+    if(st) st.textContent = 'cruzando itens das marcadas… ' + Math.min(i + LOTE, ls.length) + '/' + ls.length;
+    await Promise.all(ls.slice(i, i + LOTE).map(l =>
+      /* `indexOf` pode devolver -1 se a lista tiver sido repintada no meio do laço. Chamar
+         `atualizaBadge(-1)` mexeria no cartão errado ou em nenhum — o `>= 0` é o que impede que
+         uma leitura boa acenda o crachá de outra licitação. */
+      puxarItens(l).then(() => { ok++; const k = hits.indexOf(l); if(k >= 0) atualizaBadge(k); })
+                   .catch(() => { erros++; })));
+  }
+  if(st) st.innerHTML = ic('certo','bom') + ' cruzamento das marcadas: <b>' + ok + '</b> lidas'
+    + (erros ? ' · <span class="conferir">' + erros + ' não responderam</span>' : '');
+  if(bt) bt.disabled = false;
+  pintaSelbar();                       // o "N itens meus" acabou de virar verdade: ele repinta
+  tel('item_comparado_com_cmed', { lidas: ok, nao_responderam: erros, de: 'cruzar_selecao' });
 }
 function fechaMais(ev){
   document.querySelectorAll('.mais.on').forEach(m => { if(!ev || !m.contains(ev.target)) m.classList.remove('on'); });
@@ -3589,7 +3832,22 @@ function pintaChips(){
     + '<span class="campo">' + esc(c.rotulo) + '</span>'
     + '<span class="valor">' + esc(c.valor) + '</span>'
     + '<button type="button" aria-label="tirar o filtro ' + esc(c.rotulo) + '" '
-    + 'onclick="tiraCriterio(\'' + c.id + '\')">×</button></span>').join('');
+    + 'onclick="tiraCriterio(\'' + c.id + '\')">×</button></span>').join('')
+    /* ══ "LIMPAR TUDO" AO LADO DOS CHIPS (fatia A38 · molde v2, item 9) ═══════════════════════
+       O botão "Limpar refino" já existia — DENTRO do painel de filtros, que fica fechado. Ou
+       seja: para desligar os filtros era preciso primeiro abrir o lugar onde eles moram. Com
+       três ou quatro chips ligados, tirá-los um a um são quatro cliques, e o quarto some com o
+       chip que estava embaixo do dedo.
+       >>> ELE SÓ EXISTE QUANDO HÁ MAIS DE UM CHIP. Com um chip só, o "×" dele já é o "limpar
+           tudo" — dois controles com o mesmo efeito lado a lado é a pessoa parando para decidir
+           qual dos dois usar.
+       >>> E É O MESMO `limparRefino()` do painel, e não uma segunda limpeza "parecida": duas
+           funções de limpar acabam limpando conjuntos diferentes de campos, e a diferença só
+           aparece no dia em que alguém jura que desligou um filtro que continua ligado. */
+    + (cs.length > 1
+        ? '<button type="button" class="chip-limpar" onclick="limparRefino()" '
+          + 'title="tira os ' + cs.length + ' filtros de uma vez">limpar tudo</button>'
+        : '');
   return cs.length;
 }
 function limparRefino(){
@@ -6100,6 +6358,10 @@ function render(todos, kws, excl, aviso, procedencia, procIcone){
             destravou o controle foi o dado, não a vontade. */
      +   '<div class="ord"><label for="sel-ordem">Ordenar</label>'
      +     '<select id="sel-ordem" onchange="poeOrdem(this.value)">'
+     /* "Fecha primeiro" é a PRIMEIRA opção porque é o padrão, e porque é o primeiro item da
+        lista de ordenação do molde v2. A ordem das opções de um seletor é ela mesma um recado
+        sobre qual delas a casa considera a pergunta principal. */
+     +       '<option value="encerramento"'+(ORDEM==='encerramento'?' selected':'')+'>Fecha primeiro</option>'
      +       '<option value="abertura"'+(ORDEM==='abertura'?' selected':'')+'>Abertura mais próxima</option>'
      +       '<option value="valor"'+(ORDEM==='valor'?' selected':'')+'>Maior valor estimado</option>'
      +       '<option value="aderencia"'+(ORDEM==='aderencia'?' selected':'')+'>Maior aderência</option>'
@@ -6127,12 +6389,13 @@ function render(todos, kws, excl, aviso, procedencia, procIcone){
   hits.forEach((l, i) => {
     const org = (l.orgaoEntidade||{}).razaoSocial||'—';
     const un  = l.unidadeOrgao||{};
-    const fim = dt(l.dataEncerramentoProposta);
-    const dias = fim ? Math.ceil((fim-agora)/86400000) : null;
-    const prazo = dias==null ? '<span class="bdg cinza">prazo não informado</span>'
-      : dias<0  ? '<span class="bdg r">encerrada</span>'
-      : dias<=2 ? '<span class="bdg a">encerra em '+dias+'d</span>'
-      : '<span class="bdg v">encerra em '+dias+'d</span>';
+    /* ══ O CRACHÁ "ENCERRA EM Nd" SAIU DAQUI (fatia A38) ══════════════════════════════════════
+       Ele dizia, num crachá de 11px no meio de outros cinco, exatamente o que o RELÓGIO agora diz
+       à direita em 20px com a data embaixo. Dois lugares para o mesmo fato, com recortes
+       diferentes (`dias<=2` aqui, 1–7 lá) — é assim que uma tela passa a ter duas verdades sobre
+       o mesmo prazo e ensina a não ler nenhuma das duas.
+       >>> O QUE ELE DIZIA CONTINUA DITO, e melhor: "encerrada", "encerra hoje", "faltam N dias" e
+           "prazo não informado" são as quatro saídas do `relogioPrazo`, todas em palavras. */
     /* As categorias vêm do CASAMENTO DOS ITENS, nunca do objeto (fatia A21). `null` = itens
        ainda não lidos, e aí o cartão não inventa etiqueta nenhuma. */
     const cats = categoriasDosItens(l);
@@ -6141,9 +6404,14 @@ function render(todos, kws, excl, aviso, procedencia, procIcone){
     const des  = desertaDe(l);
     const titulo = esc(l.modalidadeNome||'') + ' Nº ' + esc(numCompra(l.numeroCompra, l.anoCompra))
                  + ' — ' + esc(org) + ' / ' + esc(un.ufSigla||'');
-    /* A barra da esquerda segue o prazo — o mesmo `dias` que já monta o crachá logo abaixo.
-       Uma conta só, dois lugares que a mostram: o crachá escreve, a barra acelera. */
+    /* A pastilha da ABERTURA continua aqui, em palavras — ela perdeu a barra da esquerda para o
+       relógio (A38), não perdeu a voz: "quando é a sessão?" e "até quando dá pra mandar
+       proposta?" são duas perguntas, e a tela responde as duas. */
     const urg = urgenciaAbertura(l.dataAberturaProposta, agora);
+    /* O RELÓGIO (molde v2, item 3) e a BARRA (item 4) saem da MESMA chamada — é isso que garante
+       que os dois nunca discordem. Duas contas para o mesmo sinal é como um cartão acaba com a
+       barra vermelha e o texto dizendo "faltam 22 dias". */
+    const rel = relogioPrazo(l.dataEncerramentoProposta, agora);
     const pct = aderenciaPct(l);
     const escolhida = ESCOLHIDAS.has(chaveLic(l));
     /* ══ O CARTÃO INTEIRO ABRE O DETALHE (fatia A21 — urgência do dono) ═══════════════════════
@@ -6157,7 +6425,7 @@ function render(todos, kws, excl, aviso, procedencia, procIcone){
            de outro é markup inválido que o leitor de tela anuncia errado. O caminho de teclado
            continua sendo o título (que é um <button> de verdade, focável e anunciado); o clique
            no corpo é um atalho de mouse por cima, não a única porta. */
-    h += '<div class="lic clicavel'+urg.classe+(escolhida?' escolhida':'')+'" onclick="cliqueCartao(event,'+i+')">'
+    h += '<div class="lic clicavel'+rel.classe+(escolhida?' escolhida':'')+'" onclick="cliqueCartao(event,'+i+')">'
       + '<div class="topo">'
       /* A CAIXA DE SELEÇÃO É A PRIMEIRA COISA DA LINHA, antes do selo do órgão: ela é o único
          controle do cartão que não abre nada, e o olho tem que achá-la sem procurar. */
@@ -6188,9 +6456,17 @@ function render(todos, kws, excl, aviso, procedencia, procIcone){
                 + 'que não devolve a janela de proposta">abertura não informada</span>')
       +       urg.pastilha
       +       selosContexto(l)
-      +       prazo
       +       (ehNova(l) ? '<span class="bdg nova" title="não estava no resultado da última vez que você abriu este jornal">NOVA</span>' : '')
       +     '</div>'
+      +   '</div>'
+      /* ══ O RELÓGIO — a informação nº 1 do cartão (molde v2, item 3) ═══════════════════════
+         Ele fecha o `.topo` à direita, e não entra na fila de crachás do `.sub`: crachá é uma
+         coisa entre iguais, e este número não é igual aos outros. A `.quando` embaixo existe
+         porque "faltam 3 dias" sem a data obriga a pessoa a fazer a conta de volta para marcar
+         na agenda — e é aí que ela erra. */
+      +   '<div class="relogio" title="'+esc(rel.titulo)+'">'
+      +     '<div class="quanto">'+esc(rel.quanto)+'</div>'
+      +     (rel.quando ? '<div class="quando">'+esc(rel.quando)+'</div>' : '')
       +   '</div>'
       + '</div>'
       // O GRIFO entra AQUI e só aqui: no objeto, que é o texto em que a pessoa procurou.
@@ -6255,7 +6531,10 @@ function render(todos, kws, excl, aviso, procedencia, procIcone){
       +     '<small>Município</small><span>'+esc(un.municipioNome||org)+(un.ufSigla?' · '+esc(un.ufSigla):'')+'</span></div>'
       +   '<div class="dado"><small>'+(l.usuarioNome ? 'Portal' : 'Modalidade')+'</small><span>'
       +     esc(l.usuarioNome || l.modalidadeNome || '—')+'</span></div>'
-      +   (fim ? '<div class="dado"><small>Encerra em</small><span>'+fmtDt(l.dataEncerramentoProposta)+'</span></div>' : '')
+      /* A CÉLULA "ENCERRA EM" SAIU DAQUI PELO MESMO MOTIVO (A38): ela era a TERCEIRA voz do mesmo
+         prazo — crachá, célula e agora relógio. O relógio venceu por ser o único que responde a
+         pergunta sem exigir uma subtração de cabeça, e é o que o molde v2 põe como informação
+         nº 1. A data literal não sumiu: ela é a linha `.quando`, embaixo do "faltam N dias". */
       + '</div>'
       /* ══ AS AÇÕES, REORDENADAS PELA FATIA A3 ═════════════════════════════════════════════
          A PRIMÁRIA é abrir o detalhe aqui dentro. Ela vem primeira e é a única com peso de
@@ -6335,12 +6614,31 @@ function render(todos, kws, excl, aviso, procedencia, procIcone){
      filtros), e "ordenadas por quem encerra primeiro" sozinha ocupa 250 deles. Aqui embaixo ela
      está no lugar mais certo, e não só no que sobrou: o rodapé é onde se diz COMO a lista está
      sendo mostrada, que é a mesma família de "quantas estão na tela". */
+  /* ══ ACHADO NA A38, E ELE É UMA MENTIRA DE RÓTULO ════════════════════════════════════════════
+     Este rodapé afirmava, em negrito e em toda busca, que a lista estava *"ordenada por quem
+     ENCERRA primeiro"*. Ela nunca esteve:
+       · a ordem padrão do `ordenaHits` é a **ABERTURA** (decisão escrita da A3: "a pergunta que
+         abre o dia de um gestor é o que abre hoje?");
+       · e desde que o seletor "Ordenar" existe, ela pode ser **maior valor** ou **maior
+         aderência** — e a frase continuava dizendo encerramento nos três casos.
+     >>> É O DEFEITO DO "PUBLICADAS NO DIA" OUTRA VEZ: número certo, legenda errada. E é pior aqui,
+         porque a legenda descreve a ORDEM — quem lê de cima para baixo confiando nela conclui que
+         o primeiro cartão é o mais urgente, e ele pode ser o mais caro.
+     >>> A FRASE PASSOU A VIR DA MESMA CONSTANTE QUE O SELETOR USA. Enquanto forem dois textos, um
+         dia alguém acrescenta a quarta opção no `<select>` e não nesta linha. */
+  const ORDEM_ROTULO = { encerramento:'fecha primeiro', abertura:'abre primeiro',
+                         valor:'maior valor estimado', aderencia:'maior aderência' };
   h += '</div>'                              // fecha o .linhas
      + '<div class="rodape-painel"><span>Mostrando <b>'+hits.length+'</b> '
-     + (hits.length===1?'licitação':'licitações')+', ordenadas por quem <b>encerra primeiro</b>'
+     + (hits.length===1?'licitação':'licitações')+', ordenadas por <b>'
+     + esc(ORDEM_ROTULO[ORDEM] || ORDEM) + '</b>'
      + ' — todas de uma vez, esta lista não pagina</span></div>'
      + '</div>';
   lista.innerHTML = h;
+  /* O rodapé de seleção reconta DEPOIS de a lista existir (A38): a seleção guarda chave, e uma
+     busca nova pode ter tirado da tela metade do que estava marcado. Sem esta linha ele diria
+     "3 marcadas" sobre uma lista onde só uma delas ainda aparece. */
+  pintaEscolhidas();
 }
 
 /* ══ A DENSIDADE DA LISTA (passo 6 do molde) ══════════════════════════════════════════════════
