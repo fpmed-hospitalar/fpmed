@@ -75,8 +75,18 @@ ok('3. ...e olhou as SETE doenças, e não uma amostra delas',
 ok('10. *** o botão de confirmar o valor ganho DESLIGA no clique ***',
   /btConf\.disabled = true; btConf\.textContent = 'gravando…'/.test(N));
 ok('11. ...e ele tem id próprio pra ser achado', /id="ata-conf-bt"/.test(N));
+/* 14/08 (fatia B19) — A GRAFIA MUDOU, A PROPRIEDADE NAO. O rotulo de sucesso deixou de ser
+   escrito com o caractere U+2713 e passou a usar o ICONE_CERTO (o <use href="#ic-certo"> do
+   sprite), porque caractere muda de desenho conforme a fonte da maquina de quem abre.
+   >>> ESTE ASSERT NAO AFROUXOU — ele APERTOU. Antes ele provava a propriedade "o botao nao
+       volta a ser clicavel" por tabela: casava o texto de sucesso e CONFIAVA que ninguem
+       tinha escrito um `disabled = false` junto. Agora ele cobra as duas coisas: que o rotulo
+       de sucesso e escrito, E que o trecho entre o `await` de sucesso e esse rotulo nao
+       religa o botao. Um `btConf.disabled = false` no caminho de sucesso reprova aqui, e
+       antes nao reprovava. */
 ok('12. *** gravou: o botão NÃO volta a ser clicável (duas confirmações do mesmo valor sujam o rastro) ***',
-  /btConf\.textContent = '✓ confirmado'/.test(N));
+  /btConf\.innerHTML = ICONE_CERTO \+ ' confirmado'/.test(N)
+  && !/btConf\.disabled = false;[^]{0,200}btConf\.innerHTML = ICONE_CERTO/.test(N));
 ok('13. ...mas se FALHAR ele volta, porque tentar de novo é o certo',
   /btConf\.disabled = false; btConf\.textContent = rotuloConf/.test(N));
 
