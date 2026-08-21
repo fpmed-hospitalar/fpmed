@@ -1,0 +1,448 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MOLDE — Encontrar v2 (LIMEDTEC)</title>
+<style>
+  :root{
+    --navy:#0E1B33; --fundo:#FAFBFC; --papel:#FFFFFF; --texto:#0A1526;
+    --texto-2:#475467; --texto-3:#667085; --linha:#E4E7EC; --linha-forte:#D0D5DD;
+    --azul:#2CA9E0; --azul-acao:#1576A5; --azul-600:#1B7FB8; --verde:#8DC63F;
+    --verde-fundo:#F2F9E7; --verde-texto:#3F6212;
+    --at-fundo:#FEF6E4; --at-texto:#8A5A00;
+    --pe-fundo:#FEF0EF; --pe-texto:#B42318;
+    --neutro-fundo:#F2F4F7;
+    --e1:4px; --e2:8px; --e3:12px; --e4:16px; --e5:20px; --e6:24px; --e8:32px; --e10:40px;
+    --r1:6px; --r2:10px; --r3:14px;
+    --som1:0 1px 2px rgba(16,24,40,.06);
+    --som2:0 4px 12px rgba(16,24,40,.08);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--fundo);color:var(--texto);
+    font:400 14px/1.5 -apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased}
+  .nota{background:var(--navy);color:#fff;padding:var(--e3) var(--e5);font-size:13px}
+  .nota b{color:var(--verde)}
+  .wrap{max-width:1280px;margin:0 auto;padding:var(--e6) var(--e5) 64px}
+
+  /* ---------- CABEÇA DA TELA ---------- */
+  h1{font-size:26px;font-weight:800;letter-spacing:-.3px;margin:0 0 var(--e1)}
+  .sub{color:var(--texto-2);margin:0 0 var(--e6);font-size:14px}
+
+  /* ---------- FAIXA DE FRESCOR (nova) ---------- */
+  .frescor{display:flex;align-items:center;gap:var(--e3);flex-wrap:wrap;
+    background:var(--verde-fundo);border:1px solid #D6EBB4;color:var(--verde-texto);
+    border-radius:var(--r2);padding:var(--e3) var(--e4);margin-bottom:var(--e5);font-size:13px}
+  .frescor .pt{width:8px;height:8px;border-radius:50%;background:var(--verde);flex:none}
+  .frescor b{font-weight:700}
+  .frescor .dir{margin-left:auto;display:flex;gap:var(--e2);align-items:center}
+  .mini{border:1px solid #C7E39B;background:#fff;color:var(--verde-texto);
+    border-radius:var(--r1);padding:6px var(--e3);font-size:12px;font-weight:600;cursor:pointer}
+
+  /* ---------- BUSCA ---------- */
+  .painel{background:var(--papel);border:1px solid var(--linha);border-radius:var(--r3);
+    box-shadow:var(--som1);padding:var(--e5);margin-bottom:var(--e5)}
+  .linha-busca{display:flex;gap:var(--e3);align-items:stretch}
+  .campo{flex:1;min-width:0;display:flex;align-items:center;gap:var(--e3);
+    border:1.5px solid var(--linha-forte);border-radius:var(--r2);padding:0 var(--e4);
+    background:#fff;height:48px}
+  .campo:focus-within{border-color:var(--azul);box-shadow:0 0 0 3px rgba(44,169,224,.15)}
+  .campo input{flex:1;min-width:0;border:0;outline:0;font-size:15px;color:var(--texto)}
+  .campo input::placeholder{color:var(--texto-3)}
+  .btn{height:48px;padding:0 var(--e6);border:0;border-radius:var(--r2);
+    background:var(--azul-acao);color:#fff;font-size:15px;font-weight:700;cursor:pointer;
+    display:inline-flex;align-items:center;gap:var(--e2)}
+  .btn.sec{background:#fff;color:var(--texto);border:1.5px solid var(--linha-forte);font-weight:600}
+
+  /* chips de filtro aplicado */
+  .chips{display:flex;gap:var(--e2);flex-wrap:wrap;margin-top:var(--e4);align-items:center}
+  .chip{display:inline-flex;align-items:center;gap:var(--e2);background:var(--neutro-fundo);
+    border:1px solid var(--linha);border-radius:999px;padding:6px var(--e3);font-size:13px;font-weight:600}
+  .chip b{font-weight:800}
+  .chip .x{width:18px;height:18px;border-radius:50%;background:#fff;border:1px solid var(--linha-forte);
+    display:grid;place-items:center;font-size:11px;color:var(--texto-2);cursor:pointer;line-height:1}
+  .chip.limpar{background:transparent;border:0;color:var(--azul-acao);font-weight:700;cursor:pointer}
+
+  /* ---------- BARRA DE RESULTADO ---------- */
+  .barra{display:flex;align-items:center;gap:var(--e3);flex-wrap:wrap;margin:var(--e6) 0 var(--e3)}
+  .barra .cont{font-size:15px;font-weight:800}
+  .barra .cont span{font-weight:500;color:var(--texto-2)}
+  .barra .dir{margin-left:auto;display:flex;gap:var(--e2);align-items:center}
+  .seg{display:inline-flex;border:1px solid var(--linha-forte);border-radius:var(--r1);overflow:hidden}
+  .seg button{border:0;background:#fff;padding:8px var(--e3);font-size:13px;font-weight:600;
+    color:var(--texto-2);cursor:pointer}
+  .seg button[aria-pressed="true"]{background:var(--navy);color:#fff}
+  select.ord{height:36px;border:1px solid var(--linha-forte);border-radius:var(--r1);
+    padding:0 var(--e3);font-size:13px;font-weight:600;background:#fff}
+
+  /* ---------- CARTÃO DE LICITAÇÃO ---------- */
+  .cartao{background:var(--papel);border:1px solid var(--linha);border-radius:var(--r3);
+    box-shadow:var(--som1);margin-bottom:var(--e4);overflow:hidden}
+  .cartao.urgente{border-left:4px solid var(--at-texto)}
+  .cartao.hoje{border-left:4px solid var(--pe-texto)}
+  .cartao.ok{border-left:4px solid var(--verde)}
+  .cab{display:flex;gap:var(--e4);padding:var(--e4) var(--e5) var(--e3);align-items:flex-start}
+  .marcar{width:44px;height:44px;display:grid;place-items:center;flex:none;margin:-8px 0 0 -8px}
+  .marcar input{width:18px;height:18px;accent-color:var(--azul-acao)}
+  .tit{flex:1;min-width:0}
+  .tit h2{margin:0 0 var(--e2);font-size:16px;font-weight:800;letter-spacing:-.2px;line-height:1.35}
+  .tit h2 a{color:var(--azul-acao);text-decoration:none}
+  .orgao{color:var(--texto-2);font-size:13px;margin-bottom:var(--e3)}
+  .selos{display:flex;gap:6px;flex-wrap:wrap}
+  .selo{font-size:11.5px;font-weight:800;letter-spacing:.2px;text-transform:uppercase;
+    padding:4px var(--e2);border-radius:var(--r1);background:var(--neutro-fundo);color:var(--texto-2)}
+  .selo.verde{background:var(--verde-fundo);color:var(--verde-texto)}
+  .selo.at{background:var(--at-fundo);color:var(--at-texto)}
+  .selo.pe{background:var(--pe-fundo);color:var(--pe-texto)}
+  .selo.azul{background:#E8F5FC;color:#0F5C82}
+
+  /* relógio: a 1ª pergunta do gestor */
+  .relogio{flex:none;text-align:right;min-width:170px}
+  .relogio .quanto{font-size:20px;font-weight:800;letter-spacing:-.4px;font-variant-numeric:tabular-nums}
+  .relogio .quando{font-size:12.5px;color:var(--texto-2);font-variant-numeric:tabular-nums}
+  .relogio.at .quanto{color:var(--at-texto)}
+  .relogio.pe .quanto{color:var(--pe-texto)}
+  .relogio.ok .quanto{color:var(--verde-texto)}
+
+  .objeto{padding:0 var(--e5) var(--e3);color:var(--texto-2);font-size:13.5px;
+    display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .objeto mark{background:#FFF2A8;color:inherit;padding:0 2px;border-radius:3px}
+
+  /* ---------- A NOVIDADE: OS ITENS NA PRÓPRIA LISTA ---------- */
+  .itens{margin:0 var(--e5) var(--e4);border:1px solid var(--linha);border-radius:var(--r2);overflow:hidden}
+  .itens-cab{display:flex;align-items:center;gap:var(--e3);background:#F8FAFC;
+    padding:var(--e2) var(--e3);border-bottom:1px solid var(--linha);font-size:12.5px;font-weight:700;color:var(--texto-2)}
+  .itens-cab .dir{margin-left:auto;font-weight:600}
+  table{width:100%;border-collapse:collapse}
+  th,td{padding:0 var(--e3);height:40px;text-align:left;font-size:13px;border-bottom:1px solid var(--linha)}
+  thead th{position:sticky;top:0;background:#fff;font-size:11.5px;text-transform:uppercase;
+    letter-spacing:.3px;color:var(--texto-3);height:34px;border-bottom:1px solid var(--linha-forte)}
+  tbody tr:last-child td{border-bottom:0}
+  td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+  .desc{max-width:0;width:44%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .teto{font-weight:800}
+  .folga{font-size:11.5px;font-weight:700;padding:2px 6px;border-radius:var(--r1)}
+  .folga.boa{background:var(--verde-fundo);color:var(--verde-texto)}
+  .folga.ruim{background:var(--pe-fundo);color:var(--pe-texto)}
+  .vazio{color:var(--texto-3)}
+  .rodape-itens{display:flex;align-items:center;gap:var(--e3);padding:var(--e2) var(--e3);
+    background:#F8FAFC;border-top:1px solid var(--linha);font-size:12.5px;color:var(--texto-2)}
+  .rodape-itens a{color:var(--azul-acao);font-weight:700;text-decoration:none;margin-left:auto}
+
+  /* ---------- FICHA E AÇÕES ---------- */
+  .ficha{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:var(--e4);
+    padding:0 var(--e5) var(--e4)}
+  .ficha div span{display:block;font-size:11.5px;text-transform:uppercase;letter-spacing:.3px;
+    color:var(--texto-3);font-weight:700;margin-bottom:2px}
+  .ficha div b{font-size:14.5px;font-weight:700;font-variant-numeric:tabular-nums}
+  .acoes{display:flex;gap:var(--e2);flex-wrap:wrap;padding:var(--e3) var(--e5) var(--e5);
+    border-top:1px solid var(--linha);background:#FCFDFE}
+  .acoes .btn{height:40px;padding:0 var(--e4);font-size:14px}
+  .acoes .btn.sec{height:40px}
+  .acoes .dir{margin-left:auto;display:flex;gap:var(--e2)}
+
+  /* ---------- AVISO HONESTO ---------- */
+  .aviso{display:flex;gap:var(--e3);align-items:flex-start;background:var(--at-fundo);
+    color:var(--at-texto);border:1px solid #F3DFB0;border-radius:var(--r2);
+    padding:var(--e3) var(--e4);font-size:13px;margin:0 var(--e5) var(--e4)}
+  .aviso b{font-weight:800}
+
+  /* rodapé de seleção */
+  .selbar{position:sticky;bottom:0;background:var(--navy);color:#fff;border-radius:var(--r2);
+    padding:var(--e3) var(--e5);display:flex;align-items:center;gap:var(--e4);box-shadow:var(--som2);
+    margin-top:var(--e5)}
+  .selbar b{font-variant-numeric:tabular-nums}
+  .selbar .dir{margin-left:auto;display:flex;gap:var(--e2)}
+  .selbar .btn{height:40px;padding:0 var(--e4);font-size:14px}
+  .selbar .btn.sec{background:transparent;color:#fff;border-color:rgba(255,255,255,.35)}
+
+  .legenda{margin:var(--e10) 0 0;padding:var(--e5);background:#fff;border:1px dashed var(--linha-forte);
+    border-radius:var(--r2);font-size:13px;color:var(--texto-2)}
+  .legenda h3{margin:0 0 var(--e3);font-size:14px;color:var(--texto)}
+  .legenda li{margin-bottom:6px}
+
+  @media (max-width:860px){
+    .cab{flex-wrap:wrap}
+    .relogio{text-align:left;min-width:0;width:100%;order:3}
+    .desc{width:auto}
+  }
+  @media (max-width:480px){
+    .btn,.acoes .btn{min-height:44px}
+    .mini{min-height:44px}
+    .marcar{width:44px;height:44px}
+  }
+</style>
+</head>
+<body>
+
+<div class="nota">
+  <b>MOLDE — TELA ENCONTRAR v2.</b> Desenho do arquiteto para aprovação do dono.
+  As cores aqui são aproximação: o trabalhador troca cada uma pelo token exato do
+  <b>fpmed_tema.css</b>. O que manda neste desenho é a <b>ESTRUTURA</b> — o que aparece, em que
+  ordem, e o que a tela responde antes de o gestor precisar clicar.
+</div>
+
+<div class="wrap">
+
+  <h1>Encontrar</h1>
+  <p class="sub">Medicamento, hospitalar, material médico, soro e correlatos — busca no nosso índice, sem esperar portal.</p>
+
+  <!-- 1) A FAIXA DE FRESCOR: mata o "está travando" -->
+  <div class="frescor">
+    <span class="pt"></span>
+    <span><b>Índice do dia</b> — 11.843 licitações e 262.550 itens, atualizados hoje às 05:12.</span>
+    <span>·</span>
+    <span>Busca <b>local</b>: resposta em menos de 1 segundo, sem depender do PNCP no momento da consulta.</span>
+    <span class="dir"><button class="mini">Ver o que entrou hoje (576)</button></span>
+  </div>
+
+  <!-- 2) BUSCA + FILTROS VISÍVEIS -->
+  <div class="painel">
+    <div class="linha-busca">
+      <label class="campo">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#667085" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+        <input value="dipirona" aria-label="Buscar por item">
+      </label>
+      <button class="btn">Buscar</button>
+      <button class="btn sec">Salvar esta busca</button>
+    </div>
+    <div class="chips">
+      <span class="chip">Abertas <b>·</b> ainda dá tempo <span class="x">×</span></span>
+      <span class="chip">UF <b>GO, MG, BA, DF</b> <span class="x">×</span></span>
+      <span class="chip">Registro de preços <span class="x">×</span></span>
+      <span class="chip">Valor <b>≥ R$ 50 mil</b> <span class="x">×</span></span>
+      <span class="chip">Só com item do meu estoque <span class="x">×</span></span>
+      <span class="chip limpar">limpar tudo</span>
+    </div>
+  </div>
+
+  <!-- 3) BARRA DO RESULTADO -->
+  <div class="barra">
+    <div class="cont">128 licitações <span>· 1.904 itens batem com “dipirona” · 84 do seu estoque</span></div>
+    <div class="dir">
+      <select class="ord">
+        <option>Fecha primeiro</option>
+        <option>Maior valor estimado</option>
+        <option>Mais itens meus</option>
+        <option>Maior folga contra o teto CMED</option>
+      </select>
+      <span class="seg">
+        <button aria-pressed="true">Confortável</button>
+        <button aria-pressed="false">Compacta</button>
+      </span>
+      <button class="btn sec" style="height:36px;padding:0 var(--e3);font-size:13px">Exportar</button>
+    </div>
+  </div>
+
+  <!-- ======== CARTÃO 1 — o caso completo ======== -->
+  <article class="cartao at urgente" style="border-left-color:#8A5A00">
+    <div class="cab">
+      <label class="marcar"><input type="checkbox"></label>
+      <div class="tit">
+        <h2><a href="#">Pregão Eletrônico nº 90014/2026 — Secretaria Municipal de Saúde de Goiânia / GO</a></h2>
+        <div class="orgao">Compras.gov.br · UASG 926119 · Goiânia · GO</div>
+        <div class="selos">
+          <span class="selo verde">Registro de preços</span>
+          <span class="selo azul">Aberto</span>
+          <span class="selo">Ampla concorrência</span>
+          <span class="selo at">Impugnação até 07/09</span>
+        </div>
+      </div>
+      <div class="relogio at">
+        <div class="quanto">faltam 3 dias</div>
+        <div class="quando">encerra 10/09/2026 · 09:00</div>
+      </div>
+    </div>
+
+    <p class="objeto">Registro de preços para futura e eventual aquisição de <mark>medicamentos</mark> e material
+      hospitalar destinados ao atendimento das necessidades assistenciais da rede municipal, conforme
+      especificações e quantitativos constantes do termo de referência e demais anexos deste edital.</p>
+
+    <!-- A NOVIDADE PRINCIPAL: OS ITENS APARECEM AQUI -->
+    <div class="itens">
+      <div class="itens-cab">
+        <span>4 itens seus, de 212 no edital</span>
+        <span class="dir">valor dos seus itens: <b>R$ 418.900</b></span>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th class="num" style="width:56px">Nº</th>
+            <th class="desc">Descrição do item</th>
+            <th class="num" style="width:90px">Qtd</th>
+            <th style="width:56px">Un</th>
+            <th class="num" style="width:120px">Referência</th>
+            <th class="num" style="width:120px">Teto CMED</th>
+            <th style="width:110px">Folga</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="num">14</td>
+            <td class="desc">DIPIRONA SÓDICA 500 MG/ML SOLUÇÃO INJETÁVEL AMPOLA 2 ML</td>
+            <td class="num">40.000</td><td>AMP</td>
+            <td class="num">R$ 1,84</td>
+            <td class="num teto">R$ 2,31</td>
+            <td><span class="folga boa">+25,5%</span></td>
+          </tr>
+          <tr>
+            <td class="num">15</td>
+            <td class="desc">DIPIRONA SÓDICA 500 MG COMPRIMIDO</td>
+            <td class="num">120.000</td><td>CP</td>
+            <td class="num">R$ 0,21</td>
+            <td class="num teto">R$ 0,19</td>
+            <td><span class="folga ruim">−9,5%</span></td>
+          </tr>
+          <tr>
+            <td class="num">88</td>
+            <td class="desc">DIPIRONA MONOIDRATADA 500 MG/ML GOTAS FRASCO 10 ML</td>
+            <td class="num">6.000</td><td>FR</td>
+            <td class="num vazio">não informado</td>
+            <td class="num teto">R$ 3,07</td>
+            <td><span class="vazio">—</span></td>
+          </tr>
+          <tr>
+            <td class="num">131</td>
+            <td class="desc">BUTILBROMETO DE ESCOPOLAMINA + DIPIRONA — SIMILAR</td>
+            <td class="num">9.500</td><td>AMP</td>
+            <td class="num">R$ 4,12</td>
+            <td class="num vazio">sem casamento</td>
+            <td><span class="vazio">—</span></td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="rodape-itens">
+        <span>2 itens sem teto: 1 sem preço de referência no edital · 1 sem EAN cadastrado no nosso catálogo</span>
+        <a href="#">Ver os 212 itens →</a>
+      </div>
+    </div>
+
+    <div class="ficha">
+      <div><span>Valor estimado</span><b>R$ 2.317.331</b></div>
+      <div><span>Itens no edital</span><b>212</b></div>
+      <div><span>Itens do meu estoque</span><b>4</b></div>
+      <div><span>Modalidade</span><b>Pregão eletrônico</b></div>
+      <div><span>Portal</span><b>Compras.gov.br</b></div>
+    </div>
+
+    <div class="acoes">
+      <button class="btn">Adicionar aos meus negócios</button>
+      <button class="btn sec">Conversar com o edital</button>
+      <button class="btn sec">Usar como referência de preço</button>
+      <span class="dir">
+        <button class="btn sec">Baixar edital</button>
+        <button class="btn sec">Abrir no portal</button>
+      </span>
+    </div>
+  </article>
+
+  <!-- ======== CARTÃO 2 — estado honesto: itens ainda não lidos ======== -->
+  <article class="cartao ok">
+    <div class="cab">
+      <label class="marcar"><input type="checkbox"></label>
+      <div class="tit">
+        <h2><a href="#">Pregão Eletrônico nº 3/2026 — Município de Campo Limpo de Goiás / GO</a></h2>
+        <div class="orgao">CENTI · Campo Limpo de Goiás · GO</div>
+        <div class="selos">
+          <span class="selo verde">Registro de preços</span>
+          <span class="selo azul">Aberto</span>
+        </div>
+      </div>
+      <div class="relogio ok">
+        <div class="quanto">faltam 22 dias</div>
+        <div class="quando">encerra 11/09/2026 · 09:00</div>
+      </div>
+    </div>
+
+    <p class="objeto">Registro de preços para futura e eventual aquisição de <mark>material hospitalar</mark>
+      destinado ao atendimento das necessidades assistenciais e operacionais da Secretaria Municipal de Saúde.</p>
+
+    <div class="aviso">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex:none;margin-top:1px"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16.5v.01"/></svg>
+      <div><b>Os itens deste edital ainda não foram lidos.</b> Ele entrou no índice hoje às 05:12 e a leitura
+        de itens roda em segundo plano. Isso não some sozinho da sua frente:
+        <a href="#" style="color:inherit;font-weight:800">ler os itens agora</a> (leva ~8 s).</div>
+    </div>
+
+    <div class="ficha">
+      <div><span>Valor estimado</span><b>R$ 2.317.331</b></div>
+      <div><span>Itens no edital</span><b>não lido</b></div>
+      <div><span>Itens do meu estoque</span><b>—</b></div>
+      <div><span>Modalidade</span><b>Pregão eletrônico</b></div>
+      <div><span>Portal</span><b>CENTI</b></div>
+    </div>
+
+    <div class="acoes">
+      <button class="btn">Adicionar aos meus negócios</button>
+      <button class="btn sec">Ler os itens agora</button>
+      <span class="dir"><button class="btn sec">Abrir no portal</button></span>
+    </div>
+  </article>
+
+  <!-- ======== CARTÃO 3 — compacto, para quem tria em série ======== -->
+  <article class="cartao pe" style="border-left-color:#B42318">
+    <div class="cab" style="padding-bottom:var(--e4)">
+      <label class="marcar"><input type="checkbox"></label>
+      <div class="tit">
+        <h2><a href="#">Pregão Eletrônico nº 41/2026 — Hospital das Clínicas UFMG / MG</a></h2>
+        <div class="orgao">Compras.gov.br · Belo Horizonte · MG · 3 itens seus · R$ 96.400</div>
+        <div class="selos">
+          <span class="selo pe">Fecha hoje</span>
+          <span class="selo azul">Aberto</span>
+          <span class="selo verde">Registro de preços</span>
+        </div>
+      </div>
+      <div class="relogio pe">
+        <div class="quanto">faltam 4 h 12 min</div>
+        <div class="quando">encerra hoje · 14:00</div>
+      </div>
+    </div>
+  </article>
+
+  <!-- rodapé de seleção -->
+  <div class="selbar">
+    <b>3</b> licitações marcadas
+    <span style="opacity:.7">· 11 itens seus · R$ 515.300</span>
+    <span class="dir">
+      <button class="btn sec">Exportar seleção</button>
+      <button class="btn" style="background:var(--verde);color:#12200A">Adicionar as 3 aos meus negócios</button>
+    </span>
+  </div>
+
+  <!-- LISTA DE CONFERÊNCIA -->
+  <div class="legenda">
+    <h3>Lista de conferência — o que o trabalhador tem que reproduzir</h3>
+    <ol>
+      <li><b>Busca local, nunca ao vivo.</b> A tela consulta o nosso índice. O PNCP é varrido por rotina
+        diária, fora da hora do uso. Nenhuma tela espera portal público.</li>
+      <li><b>Faixa de frescor no topo</b>, dizendo a hora da última carga e quantas entraram. É o que
+        substitui o “está travando” por “eu sei de quando é esse dado”.</li>
+      <li><b>O relógio é a informação nº 1</b> de cada cartão, alinhado à direita, em tamanho grande:
+        “faltam 3 dias”, com a data embaixo. Cor: verde &gt; 7 dias, âmbar 1–7 dias, vermelho no mesmo dia.</li>
+      <li><b>Barra colorida na borda esquerda</b> repetindo esse sinal — o olho acha antes de ler.</li>
+      <li><b>Os itens aparecem NA LISTA</b>, não só no detalhe: nº, descrição, quantidade, unidade,
+        referência, <b>teto CMED</b> e <b>folga em %</b>. É a tela respondendo “até onde posso baixar”
+        sem exigir um clique.</li>
+      <li><b>Mostrar só os itens do estoque do cliente</b> por padrão, com “ver os N itens” para abrir o resto.</li>
+      <li><b>Número honesto:</b> “não informado”, “sem casamento” e “não lido” aparecem com essas palavras.
+        Nunca R$ 0,00, nunca zero, nunca célula vazia sem explicação.</li>
+      <li><b>Rodapé do bloco de itens conta a dívida:</b> quantos ficaram sem teto e por quê.</li>
+      <li><b>Chips de filtro aplicado</b> visíveis e removíveis, mais “limpar tudo”. Filtro escondido em
+        menu fechado é a maior fonte de desconfiança em tela densa.</li>
+      <li><b>Estado na URL:</b> busca, filtros, ordenação e densidade. A URL vira a fotografia da tela.</li>
+      <li><b>Ordenação que serve ao gestor:</b> fecha primeiro · maior valor · mais itens meus ·
+        maior folga contra o teto.</li>
+      <li><b>Ação primária é uma só</b> e é verbo do negócio: “Adicionar aos meus negócios”.
+        “Abrir no portal” é ação terciária, à direita, nunca em destaque.</li>
+      <li><b>Tabela densa:</b> linha 40 px compacta / 48 px confortável, cabeçalho fixo, número à direita
+        com <code>tabular-nums</code>, fio de 1 px, sem zebra.</li>
+      <li><b>Rodapé de seleção só existe com item marcado</b>, e diz o número exato do que a ação vai atingir.</li>
+      <li><b>Alvo de 44 px</b> em @media (max-width:480px); a caixinha de marcar não engorda.</li>
+      <li><b>Zero vazamento horizontal</b> a 390 px e 1366 px.</li>
+    </ol>
+  </div>
+
+</div>
+</body>
+</html>
