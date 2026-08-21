@@ -42,6 +42,91 @@
     relatorio. Detalhe no CLAUDE.md, secao ATALHOS DO DONO.
 
 ========================================
+>>> CAIXA A — RODADA 10, EXECUTADA INTEIRA (A42, A43, A44, A45). 21/08/2026
+========================================
+  A caixa 10 trouxe FILA (lei nova do arquiteto: terminou uma fatia, puxe a proxima). As
+  quatro fecharam no mesmo ciclo. Commits 635636f, 966f400..262b8f2, e53c884, dbb46f1.
+
+  [OK] A42 .. O MOTOR NAO ACORDA UM CLAUDE CODE PARA DIZER "aguardando" (commit 635636f).
+             MEDIDO no disco: 317 ciclos entre 14 e 21/08, dos quais 87 (27%) foram um Claude
+             Code inteiro so para imprimir "aguardando" — 36 do A, 51 do B. Agora quem le a
+             linha do SINAL e o proprio .bat, com findstr. Esses 87 passam a custar ZERO.
+             >>> NAO SAO OS 30 MIN QUE A CAIXA PEDIU, e esta declarado no cabecalho: esperar
+                 30 min so compensa se ACORDAR CUSTAR. Acordar deixou de custar, entao a
+                 espera longa so cobraria fabrica parada. Ficou em 10 min. Um numero so muda.
+             >>> ACHADO QUE NAO ERA DA FATIA: o motor_*.bat.novo JA EXISTIA desde 20/08 com a
+                 A36 (respeito ao limite do plano) dentro, esperando uma troca do dono que
+                 nunca veio. Escrevendo a A42 por cima eu a apaguei, e so vi porque o git
+                 status disse "M" e nao "??". ARQUIVO PENDENTE NAO TEM QUEM COBRE POR ELE.
+                 As duas estao agora no MESMO arquivo: UMA troca entrega as duas.
+             86 asserts (a catraca RECORTA os dois blocos e roda no cmd.exe de verdade) ·
+             muta_a42.js 19 de 19 · restauracao byte a byte.
+             >>> PENDENCIA DO DONO: a troca dos .bat. Passo a passo no cabecalho do .bat.novo.
+
+  [OK] A43 .. O QUE ESTAVA SOLTO ENTROU (6 commits, um por caminho: 966f400 a 262b8f2).
+             docs/BASE_FUNCOES_PROFISSIONAIS.md, docs/BASE_RITMO.md, docs/molde_encontrar_v2.html
+             e os tres testes da tela Encontrar. Conferido antes de commitar: os tres passam
+             (130 asserts) e batem com o HEAD, nao com o trabalho vivo do B.
+
+  [OK] A44 .. A CARGA DECIDE O PROPRIO ORCAMENTO (commit e53c884). Ver a ROTINA no topo.
+             divida 3.094 · ritmo MEDIDO 0,755 s/lic · zerar pede 116 min. Com 20 min cabem
+             429 (8 rodadas); com o teto automatico de 60, cabem 1.609 (2 rodadas), sem o dono
+             clicar em nada. Conferido contra o banco: teto da rodada 429 -> 1.609.
+             >>> O ACHADO QUE MUDOU O DESENHO: o orcamento e rateado pelo FATIA, entao os
+                 `--minutos 213` que o dono rodou em 20/08 para pagar a divida de ITENS deram
+                 47 min a VARREDURA tambem — e ela trouxe 7.273 licitacoes NOVAS. A divida que
+                 ele pagava terminou a rodada MAIOR do que comecou. Encher o balde pelo cano
+                 que esvazia. ENTAO, no automatico, SO A ETAPA DE ITENS CRESCE.
+             >>> E NO CAMINHO DO DONO NADA DISSO SE APLICA: o numero dele e o orcamento
+                 inteiro. Ferramenta que faz outra coisa com o numero que voce digitou e pior
+                 que o defeito que ela conserta.
+             >>> A "MAQUINA OCIOSA" DA CAIXA EU NAO SEI MEDIR, E ESTA ESCRITO NO ARQUIVO: esta
+                 carga roda como PRIMEIRO ATO do ciclo, ou seja, quando a fabrica esta
+                 trabalhando. Inventar sensor (hora do dia, CPU) seria palpite com cara de
+                 medida. No lugar entrou um TETO declarado.
+             >>> MUTACAO QUE ESCAPOU E VIROU ACHADO: o Math.max(padrao,...) do orcamento era
+                 INALCANCAVEL (cabe e minutosParaZerar sao a mesma conversao em sentidos
+                 opostos). Saiu, e no lugar ficou o assert 63, que varre 72 pares. Algebra se
+                 guarda com prova, nao com linha que finge trabalhar.
+             63 asserts (eram 41) · muta_a44.js 14 de 14 · restauracao byte a byte.
+
+  [OK] A45 .. A CADENCIA DA MEMORIA DE PRECO (commit dbb46f1). node tools/mede_cobertura_resultado.js
+             >>> O DENOMINADOR ESTAVA ERRADO. 3.475 de 405.590 da 0,9% — mas so item de
+                 ENCERRADA pode ter resultado. Sobre os que PODEM responder (8.186) sao 42,4%.
+                 O medidor publica os DOIS lado a lado.
+             >>> 10% E 25% NAO SAO ALCANCAVEIS, e nenhum orcamento muda isso: 57.450 itens
+                 estao em encerradas = 14,2% do indice, e a 63,1% de taxa de resposta o teto
+                 realista e 8,9%. Orcamento nao cria encerrada.
+             >>> O NUMERO HONESTO: 5.202 perguntados · 3.283 com resultado (63,1%) · 1.919 com
+                 o PNCP dizendo que NAO HA (36,9%). Esses 1.919 sao TRABALHO FEITO.
+             >>> O GARGALO NAO E ESTA FERRAMENTA: 2.687 das 2.848 licitacoes da divida (94%)
+                 nao tem ITEM NENHUM LIDO — o coletor as carimba de graca. Quem le item e a
+                 carga, que le os das VIVAS de proposito. Ler os itens das 2.687 renderia da
+                 ordem de 25.557 itens com resultado (~7,1% do indice). E AQUI que estao os
+                 10% — e e DECISAO DE PRODUTO (pendencia 3 abaixo).
+             >>> DUAS CONTAS ERRADAS, ACHADAS MEDINDO: (1) a divida em itens dava 3.992 pelo
+                 carimbo da LICITACAO; a certa e 2.792 — os 1.200 sao 10 licitacoes truncadas
+                 no teto de 120 cujos itens JA foram perguntados. (2) a projecao multiplicava
+                 2.848 licitacoes por 9,5 e anunciava +27.088; a certa multiplica os 2.792
+                 itens PENDENTES pela taxa: +1.762. Media aplicada ao conjunto errado e o
+                 jeito mais limpo de publicar um numero incontestavel e errado.
+             >>> E UMA DIVERGENCIA DE ESQUEMA COM NOME: 192 itens tem valor de resultado e NAO
+                 tem carimbo de "perguntei" — os da coleta a mao da A7, anteriores a A40.
+             26 asserts (rodam SEM banco) · muta_a45.js 13 de 13 · restauracao byte a byte.
+
+  >>> PENDENCIAS DA RODADA 10 (as 4, 5 e 6 da rodada 9 continuam):
+      7. DO DONO, E E A UNICA QUE TRAVA ALGO: trocar os dois .bat dos motores. Fechar as duas
+         janelas pretas, renomear motor_A.bat -> .velho e motor_A.bat.novo -> motor_A.bat
+         (idem B), reabrir. Entrega A36 e A42 de uma vez. Passo a passo no proprio arquivo.
+      8. DO DONO: o teto automatico da carga ficou em 60 min (2 rodadas para zerar 3.094).
+         Com 120 min zeraria em UMA, e 120 e o unico numero que alcanca a pior chegada ja
+         medida (+2.989 numa rodada). Custo: a rodada passa de ~38 para ~68 min de relogio.
+         Um numero so: --teto-automatico 120, ou a constante TETO_AUTOMATICO_MIN.
+      9. DO DONO: ler os itens das 2.687 encerradas maduras sem item e o unico caminho para os
+         10% de memoria de preco. Mas orcamento de leitura gasto em ENCERRADA sai da VIVA, que
+         e a que ainda da para propor. Escolher entre "vender amanha" e "saber o preco" e dele.
+
+========================================
 >>> CAIXA A — RODADA 9, EXECUTADA INTEIRA (A39, A37, A40, A41, A38). 20/08/2026
 ========================================
   A A39 e a A37 fecharam no ciclo anterior (commits 24e7362 e 7b22385). Desta rodada:
