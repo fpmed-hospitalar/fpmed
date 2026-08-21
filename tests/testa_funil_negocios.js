@@ -277,9 +277,15 @@ ok('mudar o estágio pelo drawer também desfaz na falha', /n\.estagio = antes; 
 // e com ele a `marcaTarefa`. Nao ha mais o que desfazer porque nao ha mais o que marcar.
 // O que o assert protege agora e o que ficou no lugar: o DADO nao foi apagado.
 ok('o checklist fixo saiu da TELA, nao do BANCO', /Some da tela, não do banco/.test(src));
-ok('arquivar grava', /gravar\(id, \{ arquivado:true \}\)/.test(src));
+/* ESTE ASSERT COBRAVA O LITERAL `gravar(id, { arquivado:true })` ATE 21/08 — e cobrar o literal
+   era cobrar o defeito. Aquele objeto era TUDO o que o botao gravava: sem carimbo, sem autor, sem
+   origem, ou seja, a decisao de uma pessoa entrando no banco identica as 2.551 linhas que a
+   importacao arquivou sozinha. A fatia B34 tirou a regra da tela e a pos no motor; o assert
+   passou a cobrar o CAMINHO, e o conteudo dos campos e cobrado no testa_arquivar_rastro.js. */
+ok('arquivar grava o que o MOTOR mandou (e nao um objeto escrito na tela)',
+  /gravar\(id, p\.campos\)/.test(src) && /E\.pedidoArquivarNegocio\(/.test(src));
 ok('*** existe DESARQUIVAR — é como a linha arquivada por engano volta ***',
-  /async function desarquivar\(id\)/.test(src) && /arquivado:false/.test(src));
+  /async function desarquivar\(id\)/.test(src) && /E\.pedidoDesarquivar\(/.test(src));
 // E desarquivar NAO cria mais as 15: com o checklist fora da tela, isso gravaria dado que
 // ninguem ve — e dado invisivel e o que um dia alguem acha e nao sabe se vale.
 ok('...e quem volta pro funil NAO ganha checklist invisivel',

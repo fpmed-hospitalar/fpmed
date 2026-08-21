@@ -226,9 +226,48 @@
       arquivado_em: agoraISO || new Date().toISOString(),
       arquivado_motivo: m,
       arquivado_por: quem || null,
+      arquivado_origem: 'decisao',
     } };
   }
 
+  /* ── O ARQUIVAR DO KANBAN (fatia B34, 21/08/2026) ────────────────────────────────────────────
+     ══ O DEFEITO QUE ESTAVA AQUI, E ELE DERROTAVA A REGRA DA B31 NO PRIMEIRO CLIQUE ═══════════
+     A B31 (20/08) construiu uma distinção de dois estados e pendurou duas views nela:
+       · nasceu arquivado na importação -> `arquivado = true`, `arquivado_em` NULO
+       · alguém DECIDIU tirar           -> `arquivado_em` preenchido, com motivo e autor
+     A `v_atas_vigencia` e a `v_atas_arquivadas` filtram pelo CARIMBO justamente por isso.
+
+     Só que o botão "Arquivar" do kanban gravava `{ arquivado: true }` E MAIS NADA. Ou seja: a
+     partir do primeiro clique de gente, a decisão da pessoa ficava BYTE A BYTE IGUAL às 2.551
+     linhas da importação — a distinção existia no banco e morria no botão.
+     >>> E O RASTRO DISSO ESTÁ NO DADO: 8 linhas (origem `licitacoes`, `manual` e as de prova)
+         estão arquivadas sem carimbo nenhum. Foram cliques. O banco não tem como dizer quando.
+     >>> O PIOR CASO É A ATA. Arquivar uma ata pelo kanban tirava o cartão do funil e DEIXAVA a
+         ata no painel de vigência e na lista da manhã — porque a view só olha o carimbo. O dono
+         arquivava, e a tela continuava cobrando. Nenhum erro aparecia.
+
+     ══ POR QUE A ATA É RECUSADA AQUI EM VEZ DE SER RESOLVIDA AQUI ══════════════════════════════
+     Porque o motivo é obrigatório para ata (a razão está três parágrafos acima) e o kanban não
+     tem onde pedir motivo. Fazer o kanban arquivar ata sem motivo consertaria a view e criaria o
+     cemitério anônimo — trocaria um defeito por outro que a casa já decidiu não ter. A recusa
+     manda para o único lugar que faz a coisa inteira, e ele fica na MESMA ficha, logo abaixo. */
+  function pedidoArquivarNegocio(negocio, quem, agoraISO) {
+    var n = negocio || {};
+    if (n.estagio === 'contrato') {
+      return { ok: false, erro: 'Esta é uma ATA: arquive por "Arquivar esta ata", na aba Ata desta '
+        + 'mesma ficha — lá o motivo é obrigatório, e é ele que tira a ata do painel de vigência '
+        + 'e da lista da manhã. Arquivar por aqui tiraria só o cartão do funil.' };
+    }
+    return { ok: true, campos: {
+      arquivado: true,
+      arquivado_em: agoraISO || new Date().toISOString(),
+      arquivado_por: quem || null,
+      arquivado_origem: 'decisao',
+    } };
+  }
+
+  /* A VOLTA É UMA SÓ, e é esta, para os dois caminhos. Duas funções com o mesmo nome e conteúdo
+     diferente é como a casa já perdeu um checklist de 15 itens que virou 14 num lugar só. */
   function pedidoDesarquivar(agoraISO) {
     return { arquivado: false, arquivado_em: null,
              desarquivado_em: agoraISO || new Date().toISOString() };
@@ -240,6 +279,7 @@
     totaisMarcacao: totaisMarcacao,
     copiaQuantidades: copiaQuantidades,
     pedidoArquivar: pedidoArquivar,
+    pedidoArquivarNegocio: pedidoArquivarNegocio,
     pedidoDesarquivar: pedidoDesarquivar,
     MOTIVOS_ARQUIVO: MOTIVOS_ARQUIVO,
   };

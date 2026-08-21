@@ -2965,10 +2965,30 @@ async function gravar(id, campos){
   return true;
 }
 
+/* ══ ATÉ 21/08 ESTE BOTÃO GRAVAVA `{ arquivado: true }` E MAIS NADA (consertado na fatia B34) ══
+   E isso derrotava, no primeiro clique de gente, a distinção que a B31 tinha construído na
+   véspera: "nasceu arquivado na importação" (bandeira sem carimbo) x "alguém decidiu tirar"
+   (carimbo, motivo e autor). Sem o carimbo, a decisão da pessoa ficava idêntica às 2.551 linhas
+   que a semeadura de 06/08 arquivou sozinha — e o rastro disso está no banco: 8 linhas arquivadas
+   sem carimbo nenhum, medidas em 21/08, cujo dia ninguém tem mais como saber.
+   >>> A REGRA MORA NO MOTOR, e não aqui: `pedidoArquivarNegocio` e `pedidoDesarquivar` são as
+       MESMAS funções que a aba Ata usa. Escrita duas vezes, uma delas um dia esquece um campo —
+       que é exatamente o que acabou de acontecer com este botão. */
 async function arquivar(id){
-  if(!confirm('Arquivar este negócio? Ele sai do funil e continua no histórico.')) return;
   const n = NEG.find(x => x.id === id); if(!n) return;
-  try{ await gravar(id, { arquivado:true }); n.arquivado = true; if(ABERTO===id) fecharDrawer(); pinta(); }
+  const E = window.FPMED_ATA_ENTRADA;
+  const quem = (window.gmAuth && gmAuth.user && gmAuth.user.email) || null;
+  /* SEM O MOTOR, NÃO ARQUIVA. Um `else` que gravasse `{ arquivado:true }` seria o defeito de volta
+     pela porta dos fundos, e pior: só nos dias em que o arquivo não carregasse, que é quando
+     ninguém está olhando. Arquivar é uma decisão, e decisão sem rastro é o que esta fatia
+     terminou de consertar. */
+  const p = E ? E.pedidoArquivarNegocio(n, quem, new Date().toISOString())
+              : { ok:false, erro:'Não consegui carregar a regra de arquivamento — recarregue a página. '
+                                 + 'Arquivar sem registrar quem e quando não é uma opção.' };
+  // A ata é RECUSADA aqui e mandada para onde o motivo é obrigatório — o porquê está no motor.
+  if(!p.ok){ alert(p.erro); return; }
+  if(!confirm('Arquivar este negócio? Ele sai do funil e continua no histórico.')) return;
+  try{ await gravar(id, p.campos); Object.assign(n, p.campos); if(ABERTO===id) fecharDrawer(); pinta(); }
   catch(e){ alert('Não consegui arquivar: ' + e.message); }
 }
 // Devolver pro funil é ação de UMA linha, feita por quem decide — não migração em massa.
@@ -2979,7 +2999,15 @@ async function desarquivar(id){
     // Até 11/08, desarquivar criava as 15 tarefas do checklist. Com o checklist fora da tela,
     // isso passaria a gravar dado que ninguém vê — e dado invisível é o que um dia alguém acha e
     // não sabe se vale. O que já está gravado continua; novo não se cria.
-    const campos = { arquivado:false };
+    /* E A VOLTA É A DO MOTOR (B34): ela limpa o carimbo — que é o que a `v_atas_vigencia` filtra —
+       e guarda `desarquivado_em`, sem apagar motivo nem autor. Quem desfaz um ato não desfaz o
+       fato de ter feito. Antes daqui, esta volta gravava só `{ arquivado:false }` e deixava o
+       carimbo para trás: o negócio voltava ao funil ainda dizendo, no dado, que estava arquivado. */
+    const E = window.FPMED_ATA_ENTRADA;
+    // Mesma razão do arquivar: sem o motor, a volta deixaria o carimbo para trás — e o negócio
+    // voltaria ao funil ainda afirmando, no dado, que alguém o arquivou.
+    if(!E){ alert('Não consegui carregar a regra de arquivamento — recarregue a página.'); return; }
+    const campos = E.pedidoDesarquivar(new Date().toISOString());
     await gravar(id, campos);
     Object.assign(n, campos);
     pinta(); if(ABERTO===id) abrirDrawer(id);

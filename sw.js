@@ -132,7 +132,7 @@
        desta casa em que o defeito e a boa notícia são graficamente a MESMA coisa: uma tela calma.
        Por isso o bloco vazio de verdade é DESENHADO e escrito (regra 4 da caixa), e nunca um
        espaço em branco — para que a ausência do motor não consiga se passar por ele. */
-const VERSAO = 'limedtec-fpmed-2026-08-20-89';
+const VERSAO = 'limedtec-fpmed-2026-08-21-90';
 const CACHE = 'limedtec-shell-' + VERSAO;
 
 // A CASCA DA FPMED. Lista MONTADA A MAO conferindo `git ls-files` (= o que o Pages serve),
