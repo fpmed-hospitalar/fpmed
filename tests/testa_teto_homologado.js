@@ -143,8 +143,34 @@ ok('*** o próprio item é tirado da conta (`ignorar`) ***',
 
 // ── 6. O QUE NÃO PODE APARECER NA TELA ──────────────────────────────────────────────────────
 console.log('── 6. o CNPJ e o percentual inventado ──');
-ok('*** o motor não devolve CNPJ nenhum para a tela ***', !/cnpj/i.test(MOTOR),
-  (MOTOR.match(/\w*cnpj\w*/ig) || []));
+/* ══ ESTE ASSERT MUDOU DE ALVO NA B35, E ELE ESTAVA COBRANDO UM PROXY ═══════════════════════
+   Ele era `!/cnpj/i.test(MOTOR)` — "a palavra CNPJ não aparece no motor". A promessa de verdade
+   nunca foi essa: é *o CNPJ não vai para a TELA*, e ela é cobrada dois asserts abaixo, tela por
+   tela, no bloco que pinta. Proibir a palavra no motor era uma cerca em volta da cerca.
+   >>> E ELA VIROU CERCA ERRADA quando o dado cresceu. Medido em 21/08 nos 3.475 resultados: 394
+       CNPJs para 406 grafias de nome — 12 empresas aparecem com dois nomes ("APAMED HOSPITALAR
+       EIRELI" / "APAMED HOSPITALAR LTDA- EPP"). O CNPJ é a IDENTIDADE; o nome é o rótulo. Sem o
+       CNPJ no motor, "quem ganhou este produto" partiria doze fornecedores em dois e diria que
+       cada metade ganhou metade das vezes. O assert antigo teria impedido o conserto, não o
+       defeito. */
+ok('*** o motor usa o CNPJ como IDENTIDADE: duas grafias do mesmo CNPJ são UM fornecedor ***',
+  (() => {
+    const i = T.indexa([
+      { descricao: 'CANETA', resultado_valor_unit: 10, resultado_cnpj: '111', numero_controle: 'a',
+        numero_item: '1', resultado_vencedor: 'APAMED HOSPITALAR EIRELI' },
+      { descricao: 'CANETA', resultado_valor_unit: 12, resultado_cnpj: '111', numero_controle: 'b',
+        numero_item: '1', resultado_vencedor: 'APAMED HOSPITALAR LTDA- EPP' },
+    ], {});
+    const g = T.quemGanhou({ descricao: 'CANETA' }, i);
+    return g.fornecedores.length === 1 && g.fornecedores[0].vezes === 2;
+  })());
+ok('...e cada fornecedor sai com `nome`, para a tela nunca PRECISAR do CNPJ para escrever a linha',
+  (() => {
+    const i = T.indexa([{ descricao: 'CANETA', resultado_valor_unit: 10, resultado_cnpj: '111',
+      numero_controle: 'a', numero_item: '1', resultado_vencedor: 'FULANO LTDA' }], {});
+    const f = T.quemGanhou({ descricao: 'CANETA' }, i).fornecedores[0];
+    return f.nome === 'FULANO LTDA';
+  })());
 for (const [nome, txt] of [['Negócios', NEG], ['Proposta', GIO]]) {
   const bloco = (txt.match(/function homologadoDoItem[\s\S]*?\n\}/) || txt.match(/function homolBadgeHTML[\s\S]*?\n\}/) || [''])[0];
   ok(nome + ': o bloco do teto competitivo não imprime `resultado_cnpj`',
@@ -160,8 +186,15 @@ ok('...e ele traz os dois números que a caixa pediu (N de M)',
 
 // ── 7. O ESTADO HONESTO ─────────────────────────────────────────────────────────────────────
 console.log('── 7. o estado vazio, que é o caso comum ──');
-const VAZIO_NEG = (NEG.match(/ainda não temos resultado homologado para este item[^']*/) || [''])[0];
-ok('*** o Negócios diz "ainda não temos resultado homologado para este item" ***', !!VAZIO_NEG, VAZIO_NEG);
+/* A FRASE FICOU MAIS CURTA NA B35 — "ainda não temos resultado para este item", sem o
+   "homologado" — porque o bloco passou a responder DUAS perguntas: por quanto saiu e QUEM levou.
+   Dizer "sem resultado homologado" quando o que falta é também o nome do vencedor deixaria o
+   leitor achar que o nome existe em outro lugar da tela. O que o assert guarda continua sendo o
+   mesmo: que o vazio é uma FRASE, e não um branco. */
+const VAZIO_NEG = (NEG.match(/ainda não temos resultado para este item[^']*/) || [''])[0];
+ok('*** o Negócios diz "ainda não temos resultado para este item" ***', !!VAZIO_NEG, VAZIO_NEG);
+ok('...e diz que falta o preço E quem ganhou (o bloco responde as duas perguntas)',
+  /nem o preço nem quem ganhou/.test(NEG));
 ok('*** e a Proposta diz "ainda sem resultado homologado" ***',
   /ainda sem resultado homologado/.test(GIO));
 /* AS TRÊS MANEIRAS DE O OLHO LER "NÃO HOUVE", e a caixa proíbe as três. O padrão procura o

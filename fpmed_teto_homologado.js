@@ -141,9 +141,23 @@
                   : (l.quantidade != null ? Number(l.quantidade) : null),
         unidade: l.unidade || null,
         situacao: l.resultado_situacao || null,
-        // O VENCEDOR SEM CNPJ. O nome vai porque órgão público publica o vencedor por obrigação
-        // legal; o CNPJ fica no dado, onde o Negócios já o usa para responder "fui eu?".
+        // O VENCEDOR. O nome vai porque órgão público publica o vencedor por obrigação legal.
         vencedor: l.resultado_vencedor || null,
+        /* ══ O CNPJ ENTROU NO ÍNDICE NA B35, E ELE NÃO VAI PARA A TELA ═══════════════════════
+           Até a B34 o índice descartava o CNPJ, e o comentário aqui dizia por quê. A B35 mostrou
+           que descartá-lo estava errado por um motivo que não era o da tela: **ele é a
+           IDENTIDADE do fornecedor, e o nome não é.** Medido nos 3.437 com preço: 392 CNPJs
+           para 404 grafias de nome — 12 CNPJs aparecem com dois nomes diferentes, e nem sempre
+           por erro de digitação ("APAMED HOSPITALAR EIRELI" e "APAMED HOSPITALAR LTDA- EPP" são
+           a mesma empresa depois da conversão de EIRELI; "C A DISTRIBUIDORA DE PRODUTOS
+           HOSPITALARES EIRELI" e "C.A. HOSPITALAR LTDA" também). Agrupar por nome partiria um
+           fornecedor em dois e diria que cada metade ganhou metade das vezes.
+           >>> E o inverso foi medido e NÃO acontece: zero nomes compartilhados por dois CNPJs.
+           >>> O QUE CONTINUA VALENDO É A REGRA DA TELA: sai o NOME, nunca o CNPJ. O CNPJ é a
+               chave de junção e o campo de exportação; nome de concorrente já é público por
+               obrigação legal, e o número que identifica a empresa não precisa estar em
+               destaque numa tela onde alguém está montando preço. */
+        cnpj: l.resultado_cnpj || null,
         numero_controle: l.numero_controle,
         numero_item: String(l.numero_item == null ? '' : l.numero_item),
         orgao: c.orgao || null,
@@ -231,6 +245,148 @@
     };
   }
 
+  /* ── QUEM MAIS ESTÁ GANHANDO (fatia B35, 21/08/2026) ────────────────────────────────────────
+     ══ A PERGUNTA QUE O GESTOR FAZ DEPOIS DE PERDER ═════════════════════════════════════════════
+     *"Quem levou, e por quanto?"* — e ela é DIFERENTE da que o `avaliar` responde. O `avaliar`
+     devolve a faixa de preço; este devolve as PESSOAS: quem ganhou este produto, quantas vezes, em
+     que faixa cada um praticou.
+
+     ══ O QUE ESTA FUNÇÃO SE RECUSA A FAZER, E O NÚMERO QUE SUSTENTA A RECUSA ═══════════════════
+     Ela é POR PRODUTO e nunca global. Não existe aqui "os maiores fornecedores", e não é
+     conservadorismo — é medição. Nos **3.437** resultados COM PREÇO de 288 certames (são 3.475
+     linhas com resultado, e 38 delas trazem preço zero em 8 certames — zero não é preço
+     homologado, é a mesma lei do `valor_unitario_ref`) há **392 fornecedores**, e **344 deles
+     ganharam exatamente UM certame**: 88%. O maior de todos ganhou SEIS. Um ranking construído
+     sobre isso seria uma lista em que quase nove de cada dez linhas valem n=1, publicada com a
+     autoridade de quem mediu o Brasil. Com 288 certames de um país que faz dezenas de milhares
+     por ano, "o maior fornecedor" é uma frase que o dado não pode assinar.
+     >>> E OS NÚMEROS ACIMA NÃO ENVELHECEM CALADOS: a `tools/prova_b35_quem_ganhou.js` os mede de
+         novo contra o banco a cada rodada e diz o de hoje, em vez de repetir o de ontem.
+     >>> POR ISSO TODA RESPOSTA CARREGA `certames`. O denominador não é enfeite do rodapé: ele vai
+         junto com o número, porque é ele que diz se o número quer dizer alguma coisa.
+
+     ══ E ELA DIZ QUANDO A PRÓPRIA FAIXA NÃO MERECE CONFIANÇA ═══════════════════════════════════
+     A pendência 5 do relatório do A (rodada 9) apontava que a chave fica ambígua em descrição
+     curta — "OLEO" junta R$ 8,99 com R$ 45,00 — e sugeria um piso de comprimento. **Medi, e o
+     comprimento é o critério errado.** Dos 150 produtos com dois ou mais resultados, 20 têm chave
+     de 12 caracteres ou menos; num corte de 3x entre o maior e o menor preço, 9 produtos ficam
+     marcados e **só 2 deles são de chave curta**. Os piores são LONGOS:
+       · "FILTRO COMBUSTIVEL TIPO COMBUSTIVEL OLEO DIE…" (44 chars, 8 resultados) R$ 18 a R$ 229
+       · "FILTRO TIPO AGUA PARA ARREFECIMENTO MATERIAL…" (3 resultados) R$ 46 a R$ 389
+     enquanto CEBOLA, CENOURA e MELANCIA — chaves de 6 a 8 letras — variam 1,1x, que é mercado e
+     não confusão. Um piso de comprimento silenciaria treze produtos bem-comportados e deixaria
+     passar os sete que mais enganam.
+     >>> O QUE SEPARA "a chave juntou coisas diferentes" de "o mercado é largo" não está no
+         tamanho do texto: está na DISPERSÃO DOS PREÇOS, que é medida e não suposta. O corte é 3x,
+         e ele marca 6% dos produtos (9 de 150) — a p90 de todos é 1,69x e a p95 é 4,29x.
+     >>> E ELE NÃO ESCONDE NADA. Marcar não tira o produto da lista: faz a tela mostrar os
+         resultados um a um em vez de liderar com uma mediana que ninguém pode defender. Filtrar
+         em silêncio é o que transformaria este número numa opinião. */
+  const LIMITE_DISPERSAO = 3;
+
+  /* Qual nome mostrar quando o mesmo CNPJ aparece com duas grafias: o MAIS RECENTE, porque
+     empresa que trocou de nome deve aparecer pelo nome de agora. Empate por data cai na grafia
+     mais frequente, e empate nisso cai na ordem alfabética — a terceira regra existe só para a
+     resposta ser a MESMA em duas aberturas da tela. Nome que muda a cada repintura faz o usuário
+     achar que são dois fornecedores. */
+  function nomeDoFornecedor(linhas) {
+    const freq = new Map();
+    for (const l of linhas) {
+      if (!l.vencedor) continue;
+      const a = freq.get(l.vencedor) || { n: 0, data: null };
+      a.n++;
+      if (l.data && (!a.data || String(l.data) > String(a.data))) a.data = l.data;
+      freq.set(l.vencedor, a);
+    }
+    const nomes = [...freq.entries()];
+    if (!nomes.length) return null;
+    nomes.sort((x, y) => {
+      const dx = x[1].data || '', dy = y[1].data || '';
+      if (dx !== dy) return dy.localeCompare(dx);
+      if (x[1].n !== y[1].n) return y[1].n - x[1].n;
+      return x[0].localeCompare(y[0]);
+    });
+    return nomes[0][0];
+  }
+
+  function quemGanhou(pedido, idx) {
+    if (!idx || !idx.por) return null;          // não sei — o índice não carregou
+    const p = pedido || {};
+    const k = chave(p.descricao);
+    if (!k) return { n: 0, chave: '', certames: 0, fornecedores: [],
+                     motivo: 'sem descrição para comparar' };
+
+    const ign = p.ignorar || {};
+    const achados = (idx.por.get(k) || []).filter(x =>
+      !(ign.numero_controle && x.numero_controle === ign.numero_controle
+        && String(ign.numero_item) === x.numero_item));
+
+    if (!achados.length) return { n: 0, chave: k, certames: 0, fornecedores: [],
+                                  truncado: !!idx.truncado };
+
+    /* A IDENTIDADE É O CNPJ. Sem CNPJ publicado, a linha vira o seu próprio grupo com a chave
+       `sem-cnpj:<nome>` — juntar todos os "sem CNPJ" num balde só afirmaria que são a mesma
+       empresa, que é exatamente o erro que o CNPJ existe para não cometer. */
+    const grupos = new Map();
+    for (const a of achados) {
+      const id = a.cnpj || ('sem-cnpj:' + (a.vencedor || '?'));
+      if (!grupos.has(id)) grupos.set(id, []);
+      grupos.get(id).push(a);
+    }
+
+    const fornecedores = [...grupos.entries()].map(([id, linhas]) => {
+      const vs = linhas.map(x => x.valor).filter(x => isFinite(x) && x > 0);
+      const certames = new Set(linhas.map(x => x.numero_controle).filter(Boolean)).size;
+      return {
+        // o CNPJ VAI no objeto (é ele que responde "fui eu?" e é o campo de exportação); quem
+        // pinta a tela usa `nome`. A regra de não mostrar está na tela, e não em esconder o dado.
+        cnpj: linhas[0].cnpj || null,
+        nome: nomeDoFornecedor(linhas),
+        vezes: linhas.length,
+        certames,
+        min: vs.length ? Math.min.apply(null, vs) : null,
+        max: vs.length ? Math.max.apply(null, vs) : null,
+        mediana: mediana(vs),
+        /* MESMA REGRA DO `temFaixa` DO `avaliar`: com um resultado só, min e max são o mesmo
+           número, e "de R$ 27 a R$ 27" faz uma medida única parecer uma pesquisa. */
+        temFaixa: vs.length > 1 && Math.min.apply(null, vs) !== Math.max.apply(null, vs),
+      };
+    });
+
+    // mais vezes primeiro; empate pelo nome, para a ordem não mudar entre duas aberturas.
+    fornecedores.sort((a, b) => (b.vezes - a.vezes)
+      || (b.certames - a.certames)
+      || String(a.nome || '').localeCompare(String(b.nome || '')));
+
+    const valores = achados.map(x => x.valor).filter(x => isFinite(x) && x > 0);
+    const min = valores.length ? Math.min.apply(null, valores) : null;
+    const max = valores.length ? Math.max.apply(null, valores) : null;
+    const razao = (min != null && min > 0 && max != null) ? max / min : null;
+
+    const certames = new Set(achados.map(x => x.numero_controle).filter(Boolean)).size;
+    return {
+      n: achados.length,
+      chave: k,
+      certames,
+      fornecedores,
+      /* AS TRÊS BANDEIRAS QUE A TELA USA PARA NÃO EXAGERAR, e as três são fatos, não opiniões:
+         · `umResultado` .. um resultado só não é histórico, é um caso.
+         · `umFornecedor` . ninguém "ganha mais" quando só há um nome nos dados que temos.
+         · `disperso` ..... os preços variam demais para uma mediana só responder pelos dois. */
+      umResultado: achados.length === 1,
+      umFornecedor: fornecedores.length === 1,
+      razao,
+      /* A CONDIÇÃO AQUI É SÓ A RAZÃO, e ela já cobre o caso de um resultado só: com uma linha,
+         `min` e `max` são o mesmo número e a razão é exatamente 1. Havia aqui um
+         `achados.length > 1 &&` que parecia zelo e era CÓDIGO MORTO — a `tools/muta_b35.js`
+         provou apagando-o e nada mudou. Guarda que nunca pode disparar ensina a próxima pessoa
+         que as guardas deste arquivo são decorativas. */
+      disperso: razao != null && razao >= LIMITE_DISPERSAO,
+      min, max,
+      truncado: !!idx.truncado,
+    };
+  }
+
   /* ── A DÍVIDA, DITA COM NÚMERO ──────────────────────────────────────────────────────────────
      O rodapé que a caixa pediu: *"resultado homologado disponível em N de M itens desta
      licitação"*. Ele conta os itens DESTA licitação que têm resultado próprio — que é um
@@ -242,6 +398,7 @@
     return { com, de: lista.length };
   }
 
-  raiz.FPMED_TETO_HOMOLOGADO = { chave, mediana, indexa, avaliar, cobertura };
+  raiz.FPMED_TETO_HOMOLOGADO = { chave, mediana, indexa, avaliar, cobertura,
+                                 quemGanhou, nomeDoFornecedor, LIMITE_DISPERSAO };
   if (typeof module !== 'undefined' && module.exports) module.exports = raiz.FPMED_TETO_HOMOLOGADO;
 })(typeof window !== 'undefined' ? window : globalThis);

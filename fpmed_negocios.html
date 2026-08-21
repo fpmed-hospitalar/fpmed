@@ -3988,7 +3988,14 @@ function dataBR(ymd){
        que leu uma parte diz "não há resultado" com toda a convicção sobre um item que tem. Foi
        exatamente o defeito do `limit=3000` desta mesma tela (o teto não é do pedido, é do
        servidor). Aqui o `count=exact` responde quantos existem, e o rodapé avisa. */
-const HOMOL_TETO = 2000;
+/* >>> ERA 2.000 ATÉ A B35, E O TETO JÁ TINHA SIDO ESTOURADO SEM NINGUÉM REPARAR. A A40 levou os
+       resultados de 192 para **3.475** em uma rodada; a consulta passou a ler 2.000 e o índice
+       nascia truncado todo dia. O aviso funcionou — o rodapé dizia — mas ninguém tinha por que
+       ler o rodapé de um recurso que "estava funcionando". O número subiu para 5.000, que é folga
+       de 44% sobre o dado de hoje, E O MECANISMO DE TRUNCAMENTO FICA: o dia em que ele for
+       estourado de novo é uma questão de quando, e o único jeito de isso não virar mentira é a
+       tela continuar sabendo que leu uma parte. */
+const HOMOL_TETO = 5000;
 async function carregarHomologados(){
   if(ITENS_HOMOL) return ITENS_HOMOL;
   if(_homolCarregando) return _homolCarregando;
@@ -3996,8 +4003,11 @@ async function carregarHomologados(){
     const T = window.FPMED_TETO_HOMOLOGADO;
     if(!T) throw new Error('o motor do teto competitivo não carregou');
     const r = await fetch(`${SB_URL}/rest/v1/licitacao_itens?resultado_valor_unit=not.is.null`
+      /* O `resultado_cnpj` ENTROU NA B35 e não vai para a tela: ele é a IDENTIDADE do fornecedor.
+         Medido nos 3.475 resultados: 394 CNPJs para 406 grafias de nome. Agrupar "quem ganhou"
+         por nome partiria doze fornecedores em dois e diria que cada metade ganhou metade. */
       + '&select=numero_controle,numero_item,descricao,unidade,quantidade,'
-      + 'resultado_valor_unit,resultado_quantidade,resultado_situacao,resultado_vencedor'
+      + 'resultado_valor_unit,resultado_quantidade,resultado_situacao,resultado_vencedor,resultado_cnpj'
       + `&order=resultado_lido_em.desc&limit=${HOMOL_TETO}`,
       {headers: Object.assign({Prefer:'count=exact'}, SB_H)});
     if(!r.ok) throw new Error('o banco respondeu ' + r.status);
@@ -4061,10 +4071,16 @@ function homologadoDoItem(it){
   if(meuResultado != null){
     const q = it.resultado_quantidade != null ? Number(it.resultado_quantidade) : (it.quantidade != null ? Number(it.quantidade) : null);
     partes.push('<b>este item foi homologado por ' + brl(meuResultado) + '</b>'
-      /* >>> O CNPJ DO VENCEDOR NÃO APARECE NA TELA. Ele fica no dado (é ele que responde "fui EU
-             que ganhei?", e a `ganhosDoNegocio` já o usa para isso). Nome de concorrente em
-             destaque numa tela de proposta é convite para o uso errado. */
-      + '<i>' + (it.resultado_vencedor ? 'o vencedor' : 'vencedor não publicado')
+      /* ══ O NOME DO VENCEDOR PASSOU A SAIR NA B35, E ANTES SAÍA A PALAVRA "o vencedor" ═════════
+         Literalmente: `it.resultado_vencedor ? 'o vencedor' : 'vencedor não publicado'`. Quando o
+         órgão TINHA publicado o nome, a tela escrevia a expressão "o vencedor" e não dizia quem.
+         O dado estava lá — 3.475 nomes, zero em branco — e a linha gastava o espaço para informar
+         que existe um vencedor, que é a única coisa que já se sabia.
+         >>> O CNPJ CONTINUA FORA DA TELA. Ele fica no dado (é ele que responde "fui EU que
+             ganhei?", e a `ganhosDoNegocio` já o usa para isso). Nome de empresa vencedora é
+             publicação legal obrigatória do órgão; o número que a identifica não precisa estar em
+             destaque na tela em que alguém está montando preço. */
+      + '<i>' + (it.resultado_vencedor ? esc(it.resultado_vencedor) : 'vencedor não publicado')
       + (q != null ? ' · ' + q.toLocaleString('pt-BR') + (it.unidade ? ' ' + esc(it.unidade) : '') + ' unidade(s)' : '')
       + (it.resultado_situacao ? ' · ' + esc(it.resultado_situacao) : '') + '</i>');
   }
@@ -4091,12 +4107,67 @@ function homologadoDoItem(it){
       + folga + '</i>');
   }
 
+  /* ══ QUEM MAIS ESTÁ GANHANDO ESTE PRODUTO (21/08, fatia B35) ═══════════════════════════════
+     A pergunta que o gestor faz depois de perder é *"quem levou, e por quanto?"* — e ela é
+     diferente da faixa de preço acima. Aqui saem os NOMES.
+     >>> TODA LINHA CARREGA O DENOMINADOR, e não é rodapé: é a mesma frase. "3 vezes" sem "em 288
+         certames" é o número que vira "o maior fornecedor do Brasil" na boca de quem repete.
+     >>> E NÃO EXISTE RANKING GLOBAL nesta casa. Medido nos 3.475 resultados: 394 fornecedores, e
+         346 deles ganharam UM certame. Uma lista de "maiores" em que 88% das linhas valem n=1
+         seria mentira estatística publicada com cara de medida.
+     >>> QUANDO O PREÇO ESTÁ DISPERSO DEMAIS, A TELA DIZ ISSO ANTES de mostrar quem ganhou: uma
+         chave que junta um filtro de R$ 25 com um de R$ 577 não está mostrando concorrência, está
+         mostrando dois produtos diferentes com o mesmo nome. */
+  const g = T.quemGanhou ? T.quemGanhou({
+    descricao: it.descricao,
+    ignorar: { numero_controle: ITENS_DE, numero_item: it.numero_item },
+  }, ITENS_HOMOL) : null;
+
+  if(g && g.n > 0 && g.fornecedores.length){
+    const base = g.n + ' resultado(s) em ' + g.certames + ' certame(s)';
+    if(g.disperso){
+      /* O AVISO VEM NO LUGAR DA LIDERANÇA, e não ao lado dela. Escrever "quem mais ganha: fulano"
+         e embaixo "mas os preços variam 23x" seria pedir que a pessoa desacredite a linha que a
+         tela acabou de afirmar em negrito. */
+      partes.push('<b class="vazio">preços dispersos demais para dizer quem ganha mais</b>'
+        + '<i>' + base + ', de ' + brl(g.min) + ' a ' + brl(g.max) + ' — <b>'
+        + Number(g.razao).toLocaleString('pt-BR', {maximumFractionDigits:1}) + 'x</b> entre o menor e o maior. '
+        + 'Uma descrição como esta costuma juntar produtos diferentes com o mesmo nome; os '
+        + g.fornecedores.length + ' fornecedor(es) estão no dado, mas comparar os preços deles aqui '
+        + 'seria comparar coisas que só se parecem no texto.</i>');
+    } else if(g.umFornecedor){
+      const f = g.fornecedores[0];
+      /* UM FORNECEDOR SÓ NÃO É "QUEM MAIS GANHA": é o único que apareceu nos poucos resultados que
+         temos. A frase diz as duas coisas, porque a segunda é a que impede a primeira de virar
+         conclusão sobre o mercado. */
+      partes.push('<b>quem ganhou: ' + esc(f.nome || 'vencedor não publicado') + '</b>'
+        + '<i>' + (f.temFaixa ? 'de ' + brl(f.min) + ' a ' + brl(f.max) + ' · mediana ' + brl(f.mediana)
+                              : 'por ' + brl(f.mediana))
+        + ' · <b>' + base + '</b> — é o único fornecedor <b>nos resultados que nós temos</b>, '
+        + 'e isso não quer dizer que seja o único que disputa este item.</i>');
+    } else {
+      const linha = f => esc(f.nome || 'vencedor não publicado')
+        + ' <b>' + f.vezes + 'x</b>'
+        + (f.certames !== f.vezes ? ' (' + f.certames + ' certame(s))' : '')
+        + ' · ' + (f.temFaixa ? brl(f.min) + ' a ' + brl(f.max) : brl(f.mediana));
+      /* SÃO NO MÁXIMO CINCO, E O QUE FICOU DE FORA É CONTADO. Cortar em silêncio faria a lista
+         parecer completa — o defeito que esta casa persegue desde o `limit=3000`. */
+      const mostra = g.fornecedores.slice(0, 5);
+      const resto = g.fornecedores.length - mostra.length;
+      partes.push('<b>quem ganhou este produto</b>'
+        + '<i>' + mostra.map(linha).join(' · ')
+        + (resto > 0 ? ' · <b>e mais ' + resto + '</b>' : '')
+        + ' · <b>' + base + '</b>' + (g.umResultado ? ' — um resultado não é histórico, é um caso.' : '')
+        + '</i>');
+    }
+  }
+
   if(!partes.length){
     /* O ESTADO HONESTO, e ele é a fatia inteira. Nunca "R$ 0,00", nunca um traço, nunca branco:
        o que a tela sabe é que NÓS não temos o dado — e não que o produto nunca foi vendido. */
-    return '<span class="it-h"><b class="vazio">ainda não temos resultado homologado para este item</b>'
-      + '<i>o resultado por item chega do PNCP depois da homologação; enquanto não chega, o teto '
-      + 'legal ao lado é a única régua desta linha</i></span>';
+    return '<span class="it-h"><b class="vazio">ainda não temos resultado para este item</b>'
+      + '<i>nem o preço nem quem ganhou: o resultado por item chega do PNCP depois da homologação. '
+      + 'Enquanto não chega, o teto legal ao lado é a única régua desta linha</i></span>';
   }
   return '<span class="it-h">' + partes.join('') + '</span>';
 }
