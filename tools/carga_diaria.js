@@ -39,7 +39,8 @@
      node tools/carga_diaria.js --forcar        (roda mesmo com carga fresca)
      node tools/carga_diaria.js --carimbo       (só mostra o último carimbo, não roda nada)
      node tools/carga_diaria.js --previa        (diz o que faria, não executa nem grava)
-     node tools/carga_diaria.js --minutos 25    (orçamento total, padrão 20)
+     node tools/carga_diaria.js --minutos 25    (ORDEM DO DONO: orçamento total, todas as etapas)
+     node tools/carga_diaria.js --teto-automatico 120   (até onde a REGRA pode ir sozinha; padrão 60)
      node tools/carga_diaria.js --carimbos-pendentes   (reenvia carimbo que a rede não deixou gravar)
 
    ══ E A RODADA NÃO DEPENDE MAIS DE UMA ÚLTIMA CHAMADA (fatia A39, 20/08/2026) ════════════════
@@ -82,7 +83,14 @@ const SO_PENDENTES = tem('--carimbos-pendentes');
    nos dois: a tela chamando de velho o que o condutor chama de fresco é uma contradição visível
    para o operador e invisível para quem lê só um dos dois arquivos. */
 const FRESCOR_HORAS = 12;
-const ORCAMENTO_MIN = parseInt(arg('--minutos'), 10) || 20;
+/* ══ O ORÇAMENTO DEIXOU DE SER UM NÚMERO E VIROU UMA DECISÃO (fatia A44, 21/08/2026) ═════════
+   Era `parseInt(--minutos) || 20`. O 20 não sabia nada sobre a dívida, então quando a dívida
+   ficava grande a única saída era o DONO abrir o Explorador e dar dois cliques num .bat com
+   `--forcar --minutos 213`. A Lei da Autonomia diz que o dono não é operador — a regra abaixo
+   é a tentativa de tirar essa conta da mão dele. Ver `orcamentoDaRodada`. */
+const ORCAMENTO_PADRAO_MIN = 20;
+const TETO_AUTOMATICO_MIN = parseInt(arg('--teto-automatico'), 10) || 60;
+const ORCAMENTO_PEDIDO = parseInt(arg('--minutos'), 10) || null;
 
 /* ══ O RATEIO DO ORÇAMENTO — E ELE FOI MEDIDO, NÃO CHUTADO (1ª rodada, 19/08 16:24) ══════════
      varredura ..  24 s para 1.736 licitações novas (ela tem teto próprio por rodada)
@@ -192,6 +200,108 @@ function textoDoSaldo(saldoVivas, plano) {
   if (!plano || plano.rodadasParaZerar == null) return base + ' — volto na próxima';
   return base + ' — neste orçamento são ' + plano.rodadasParaZerar
     + ' rodadas; para zerar numa só, --minutos ' + plano.minutosParaZerar;
+}
+
+/* ══ O ORÇAMENTO DA RODADA — A CONTA QUE SAIU DA MÃO DO DONO (fatia A44, 21/08/2026) ═════════
+   Entra: a dívida medida, a taxa que a rodada anterior deixou, e o que o dono pediu (ou nada).
+   Sai:   quantos minutos esta rodada vale, QUEM decidiu, e o orçamento de CADA etapa.
+   Não faz: não lê banco, não imprime, não roda nada — é regra, e regra tem que ter catraca.
+
+   ══ A CONTA, COM OS NÚMEROS DE HOJE (21/08/2026, 11:37) ═════════════════════════════════════
+       dívida 3.094 vivas sem item · ritmo MEDIDO 0,755 s por licitação · padrão 20 min
+       zerar de uma vez = 3.094 × 0,755 / (0,45 × 60 × 0,75) = 116 min
+   Com o padrão de 20 min cabem 429 por rodada: são 8 rodadas, e nesse meio-tempo chega mais.
+   Com o teto automático de 60 min cabem 1.609: são 2 rodadas, e ninguém precisa clicar em nada.
+
+   ══ POR QUE OS MINUTOS EXTRAS VÃO SÓ PARA OS ITENS ══════════════════════════════════════════
+   Este é o achado da fatia, e ele é MEDIDO, não teórico. Em 20/08 o dono rodou o
+   ZERAR_DIVIDA_ITENS.bat com `--minutos 213` para pagar a dívida de itens. Só que o orçamento
+   é rateado pelo `FATIA`, então a VARREDURA também ganhou 47 minutos — e ela usou 1.263 s para
+   trazer **7.273 licitações novas**. A dívida que ele estava pagando terminou a rodada MAIOR
+   do que começou (4.456 -> 4.558). Comprar tempo para todas as etapas para pagar a dívida de
+   uma delas é encher o balde pelo mesmo cano que se esvazia.
+   >>> ENTÃO, QUANDO QUEM DECIDE SOU EU, só a etapa de itens cresce. A varredura e os prazos
+       ficam com a fatia do orçamento PADRÃO — o mesmo tempo que teriam numa rodada comum.
+   >>> QUANDO QUEM DECIDE É O DONO (`--minutos`), NADA DISSO SE APLICA: o número dele é o
+       orçamento inteiro e todas as etapas crescem, como sempre foi. Reinterpretar a ordem de
+       quem mandou seria consertar o defeito trocando-o por um pior — uma ferramenta que faz
+       outra coisa com o número que você digitou.
+
+   ══ E A "MÁQUINA OCIOSA" DA CAIXA: EU NÃO SEI MEDIR ISSO, E NÃO VOU FINGIR ══════════════════
+   A caixa A44 pediu para gastar mais "quando a dívida é grande e a máquina está ociosa". A
+   dívida eu meço. A ociosidade não: esta carga roda como PRIMEIRO ATO do ciclo do trabalhador,
+   ou seja, exatamente quando a fábrica está trabalhando — nunca quando está ociosa. Inventar
+   um sensor de ociosidade (hora do dia, carga de CPU) seria trocar um número honesto por um
+   palpite com cara de medida.
+   >>> O QUE ENTROU NO LUGAR É UM TETO DECLARADO: `TETO_AUTOMATICO_MIN`. Sozinho eu vou até
+       ele e não passo. Acima dele, quem decide continua sendo o dono, e a ferramenta DIZ o
+       número que ele teria de passar.
+
+   ══ O QUE SE PERDE ══════════════════════════════════════════════════════════════════════════
+   Previsibilidade do relógio. Hoje a rodada leva 8 min e sempre 8. Com a regra ela leva de 8 a
+   ~29 min (60 × 0,45 = 27 min de itens + a fatia padrão das outras duas), conforme a dívida —
+   e a fábrica só começa a fatia da caixa depois. Medido nos ciclos do trabalhador A
+   (logs/motor_A.log, 14 a 21/08): dos 10 ciclos de trabalho de verdade, a mediana é 57 min e o
+   maior foi 176. Uma carga de 29 min cabe nessa faixa, mas ela come metade de um ciclo mediano.
+   >>> E NÃO SE PERDE REQUISIÇÃO CONTRA O PNCP: pagar 3.094 de dívida custa 3.094 perguntas,
+       sejam elas em 2 rodadas ou em 8. Em 8 rodadas custa AS MESMAS 3.094 mais 6 varreduras e
+       6 sondagens de prazo a mais. A regra pergunta MENOS ao serviço público, não mais. */
+function orcamentoDaRodada(o) {
+  const padrao = (o.padrao != null) ? o.padrao : ORCAMENTO_PADRAO_MIN;
+  const teto = (o.tetoAutomatico != null) ? o.tetoAutomatico : TETO_AUTOMATICO_MIN;
+  /* O rateio: `minutosItens` manda na etapa de itens, `minutosOutros` nas outras duas. Quando
+     os dois são iguais, é o rateio de sempre — e é assim que a ordem do dono continua sendo a
+     ordem do dono. */
+  const reparte = (minutosItens, minutosOutros) => ({
+    varredura: minutosOutros * FATIA.varredura,
+    itens: minutosItens * FATIA.itens,
+    prazos: minutosOutros * FATIA.prazos,
+  });
+  const fecha = (r) => Object.assign(r, {
+    minutosDeRelogio: Math.round((r.etapas.varredura + r.etapas.itens + r.etapas.prazos) * 10) / 10,
+  });
+
+  const pedido = Number(o.pedidoDoDono);
+  if (isFinite(pedido) && pedido > 0) {
+    return fecha({ minutos: pedido, quem: 'dono', querido: null, teto, padrao,
+      etapas: reparte(pedido, pedido),
+      frase: 'orçamento de ' + pedido + ' min — ORDEM DO DONO (--minutos); todas as etapas crescem' });
+  }
+
+  /* A pergunta "quanto custa zerar" é a MESMA regra do teto dos itens, e ela mora no
+     `planoDeItens`. Refazer a conta aqui criaria a segunda régua — e a que discorda calada é a
+     que fica. O `minutosParaZerar` não depende do orçamento; o `zeraHoje` depende, e é por isso
+     que a pergunta é feita contra o PADRÃO: "a dívida cabe numa rodada comum?". */
+  const seco = planoDeItens({ dividaVivas: o.dividaVivas, orcamentoMin: padrao, taxaAnterior: o.taxaAnterior });
+  if (seco.divida == null || seco.zeraHoje || seco.minutosParaZerar == null) {
+    return fecha({ minutos: padrao, quem: 'padrao', querido: null, teto, padrao,
+      etapas: reparte(padrao, padrao),
+      frase: 'orçamento padrão de ' + padrao + ' min — a dívida cabe nele' });
+  }
+
+  const querido = seco.minutosParaZerar;
+  /* ══ A REGRA NUNCA ENCOLHE A RODADA — E O PISO NÃO É CÓDIGO, É UMA INVARIANTE ═══════════════
+     Eu tinha escrito `Math.max(padrao, Math.min(querido, teto))`, com o `Math.max` de cinto de
+     segurança. O `tools/muta_a44.js` tirou o `Math.max` e a catraca NÃO reclamou — então fui
+     ver: ele era inalcançável. Chegar aqui exige `!zeraHoje`, isto é `divida > cabe`; e
+     `cabe = padrao·0,45·60·0,75 / seg` enquanto `querido = divida·seg / (0,45·60·0,75)`. As
+     duas são a MESMA conversão em sentidos opostos, então `divida > cabe` implica
+     `querido > padrao`, para qualquer padrão. O cinto nunca podia apertar.
+     >>> E A CASA JÁ CHAMA ISSO DE DEFEITO, com estas palavras (testa_busca_placeholder, 32):
+         *"um gesto sem efeito, que é a pior categoria de código vivo"*. Então ele saiu.
+     >>> O QUE FICOU NO LUGAR NÃO É NADA: é o assert 63 da catraca, que varre 40 pares de
+         (dívida, ritmo) e exige `minutos >= padrao` em todos. A garantia era da ÁLGEBRA, e
+         álgebra se guarda com prova, não com uma linha que finge trabalhar. Se um dia alguém
+         desacoplar as duas fórmulas, é o 63 que grita — o `Math.max` teria escondido. */
+  const minutos = Math.min(querido, teto);
+  const bateuNoTeto = querido > teto;
+  return fecha({ minutos, quem: bateuNoTeto ? 'teto' : 'divida', querido, teto, padrao,
+    etapas: reparte(minutos, padrao),
+    frase: bateuNoTeto
+      ? 'a dívida pediria ' + querido + ' min e eu paro no teto automático de ' + teto
+        + ' min — acima disso quem decide é o dono: --minutos ' + querido
+      : 'a dívida pede ' + querido + ' min e eu compro os ' + minutos
+        + ' (teto automático: ' + teto + ' min)' });
 }
 
 const agora = () => new Date();
@@ -445,6 +555,16 @@ function mostraCarimbo(c) {
   if (d.rodadas_para_zerar) console.log('  cadência ........ ' + d.rodadas_para_zerar
     + ' rodadas de ' + num(d.orcamento_min) + ' min para zerar (numa só: --minutos '
     + num(d.minutos_para_zerar) + ')');
+  /* QUEM DECIDIU O ORÇAMENTO aparece no carimbo lido (A44): "60 min" sem dono é uma frase
+     ambígua — pode ser a regra tendo comprado tempo ou o dono tendo digitado. */
+  if (d.orcamento_quem) console.log('  orçamento ....... ' + num(d.orcamento_min) + ' min'
+    + '  · decidido por: ' + ({ dono: 'ORDEM DO DONO (--minutos)', padrao: 'o padrão (a dívida cabia nele)',
+                                divida: 'a REGRA, comprando o que a dívida pedia',
+                                teto: 'a REGRA, PARADA no teto automático' }[d.orcamento_quem] || d.orcamento_quem)
+    + (d.orcamento_quem === 'teto' ? '  (a dívida pediria ' + num(d.orcamento_querido) + ' min)' : '')
+    + (d.orcamento_etapas_min ? '  · etapas: varredura ' + d.orcamento_etapas_min.varredura
+        + ' · itens ' + d.orcamento_etapas_min.itens
+        + ' · prazos ' + d.orcamento_etapas_min.prazos : ''));
   if (Array.isArray(d.etapas)) for (const e of d.etapas)
     console.log('   · ' + String(e.nome).padEnd(12) + ' código ' + e.codigo
       + (e.interrompida ? ' (INTERROMPIDA pelo orçamento)' : '') + '  ' + Math.round(e.ms / 1000) + 's');
@@ -457,7 +577,9 @@ function mostraCarimbo(c) {
    Supabase e chamaria o PNCP — um teste que fala com o governo não é um teste, é uma coleta.
    >>> E é o mesmo caminho da `testa_familia_rok`: ela IMPORTA o detector da ferramenta em vez de
        copiá-lo. Duas cópias são duas réguas, e a que discorda calada é a que fica. */
-module.exports = { planoDeItens, textoDoSaldo, FRESCOR_HORAS, FATIA, SEG_POR_LIC_PADRAO,
+module.exports = { planoDeItens, textoDoSaldo, orcamentoDaRodada,
+  ORCAMENTO_PADRAO_MIN, TETO_AUTOMATICO_MIN,
+  FRESCOR_HORAS, FATIA, SEG_POR_LIC_PADRAO,
   /* A A39 também: a teimosia da rede e o carimbo que vai pro disco são regras, e regra sem porta
      de pergunta é regra sem catraca. Nenhuma delas lê a `service_role` ao ser importada. */
   fetchTeimoso, esperaCrescente, ehQuedaDeRede, PLANO_PADRAO, TENTATIVAS_REDE,
@@ -486,11 +608,32 @@ if (require.main !== module) return;
 
   const inicio = agora();
   console.log('=== CARGA DIÁRIA — início ' + inicio.toLocaleString('pt-BR') + ' ===');
-  console.log('orçamento total: ' + ORCAMENTO_MIN + ' min');
 
   const antes = await retrato();
   console.log('ANTES: ' + num(antes.licitacoes) + ' licitações · ' + num(antes.itens) + ' itens · '
     + num(antes.sem_itens) + ' sem itens lidos · ' + num(antes.sem_prazo) + ' sem prazo');
+
+  /* ══ O ORÇAMENTO É DECIDIDO DEPOIS DO RETRATO, e não antes (A44) ═══════════════════════════
+     Ele era uma constante lida da linha de comando na primeira linha do arquivo — ou seja,
+     decidido ANTES de alguém saber o tamanho da dívida. Um orçamento escolhido sem olhar a
+     conta é um orçamento que só pode estar certo por sorte. */
+  const orc = orcamentoDaRodada({
+    dividaVivas: antes.vivas_sem_itens,
+    taxaAnterior: carimboAntes && carimboAntes.detalhe && carimboAntes.detalhe.seg_por_lic,
+    pedidoDoDono: ORCAMENTO_PEDIDO,
+  });
+  const ORCAMENTO_MIN = orc.minutos;
+  console.log('orçamento: ' + orc.frase);
+  console.log('  relógio no pior caso: ' + orc.minutosDeRelogio + ' min'
+    + '   (varredura ' + orc.etapas.varredura.toFixed(1)
+    + ' · itens ' + orc.etapas.itens.toFixed(1)
+    + ' · prazos ' + orc.etapas.prazos.toFixed(1) + ')');
+  /* A frase abaixo é a fatia inteira dita em uma linha: quem lê o log precisa entender por que
+     a varredura não cresceu junto sem ir ler o cabeçalho do arquivo. */
+  if (orc.quem === 'divida' || orc.quem === 'teto')
+    console.log('  >>> só a etapa de ITENS cresceu. A varredura ficou com a fatia do padrão ('
+      + orc.padrao + ' min) de propósito: em 20/08 uma varredura com orçamento grande trouxe '
+      + '7.273 licitações novas e a dívida terminou a rodada MAIOR do que começou.');
 
   /* ══ O TETO DOS ITENS É DIMENSIONADO PELA DÍVIDA, NÃO POR UM NÚMERO FIXO ═════════════════════
      Era 400 por rodada, fixo. Com ~2.740 licitações chegando por dia, 400 por rodada NUNCA
@@ -543,17 +686,23 @@ if (require.main !== module) return;
     { nome: 'prazos', args: ['tools/preenche_prazo.js', '--preencher'], fatia: FATIA.prazos },
   ];
 
+  /* ══ O ORÇAMENTO DE CADA ETAPA VEM DE `orc.etapas`, NÃO DE UMA MULTIPLICAÇÃO AQUI (A44) ═════
+     Enquanto era `ORCAMENTO_MIN * e.fatia`, o rateio estava escrito em DOIS lugares (aqui e na
+     prévia) e a regra que decide quanto cada etapa vale não tinha onde ser perguntada. Agora
+     ela é uma só, e é a mesma que a catraca lê. */
+  const minutosDa = e => orc.etapas[e.nome];
+
   if (PREVIA) {
     console.log('\n--previa: rodaria, nesta ordem —');
     etapas.forEach(e => console.log('   ' + e.nome.padEnd(12) + 'node ' + e.args.join(' ')
-      + '   (' + Math.round(ORCAMENTO_MIN * e.fatia) + ' min)'));
+      + '   (' + minutosDa(e).toFixed(1) + ' min)'));
     console.log('\nnada foi executado e nada foi gravado.');
     return;
   }
 
   const feitas = [];
   for (const e of etapas) {
-    feitas.push(await rodaEtapa(e.nome, e.args, Math.round(ORCAMENTO_MIN * e.fatia * 60000)));
+    feitas.push(await rodaEtapa(e.nome, e.args, Math.round(minutosDa(e) * 60000)));
   }
 
   const depois = await retrato();
@@ -620,6 +769,20 @@ if (require.main !== module) return;
        relatório, o arquiteto) precisa poder ver que a dívida não estava sendo paga NAQUELE dia —
        um número que só existe no console de uma rodada que já rolou não existe. */
     orcamento_min: ORCAMENTO_MIN,
+    /* ══ QUEM DECIDIU O ORÇAMENTO, GRAVADO (A44) ═══════════════════════════════════════════
+       Sem isto, ler `orcamento_min: 60` dias depois não diz se foi a regra que comprou o tempo
+       ou se o dono digitou o número — e são duas histórias diferentes sobre a mesma fábrica.
+       `orcamento_querido` é o que a dívida teria pedido: quando ele é maior que o teto, está
+       registrado que a regra PAROU no teto, e quanto faltou para ela. */
+    orcamento_quem: orc.quem,
+    orcamento_querido: orc.querido,
+    orcamento_teto_automatico: orc.teto,
+    orcamento_relogio_min: orc.minutosDeRelogio,
+    orcamento_etapas_min: {
+      varredura: +orc.etapas.varredura.toFixed(1),
+      itens: +orc.etapas.itens.toFixed(1),
+      prazos: +orc.etapas.prazos.toFixed(1),
+    },
     rodadas_para_zerar: plano.rodadasParaZerar,
     minutos_para_zerar: plano.minutosParaZerar,
     /* A TAXA APRENDIDA NESTA RODADA, para a próxima dimensionar o teto com ela. Se a etapa não

@@ -180,6 +180,134 @@ console.log('SUITE testa_carga_diaria — o teto pela divida, e o saldo com cade
     && /const FRESCOR_HORAS = 12;/.test(fs.readFileSync(path.join(raiz, 'fpmed_licitacoes.html'), 'utf8')));
 }
 
+// ══════════ 6. O ORCAMENTO DEIXOU DE SER UM NUMERO E VIROU UMA DECISAO (A44 · 21/08/2026) ══════════
+// A caixa A44: "a carga vira servico, e o dono para de ser operador". Em 20/08 ele teve de abrir o
+// Explorador e dar dois cliques num .bat com `--forcar --minutos 213` para zerar a divida de itens.
+//
+// == O NUMERO DA REGRA, MEDIDO EM 21/08 11:37 ==================================================
+//     divida 3.094 vivas sem item · ritmo MEDIDO 0,755 s por licitacao · padrao 20 min
+//     zerar de uma vez = 3.094 x 0,755 / (0,45 x 60 x 0,75) = 116 min
+// Com 20 min cabem 429 -> 8 rodadas. Com o teto automatico de 60 cabem 1.609 -> 2 rodadas.
+//
+// == E O ACHADO QUE MUDOU O DESENHO DA REGRA ===================================================
+// O orcamento e rateado pelo FATIA, entao os `--minutos 213` do dono deram 47 minutos a
+// VARREDURA tambem — e ela usou 1.263 s para trazer 7.273 licitacoes NOVAS. A divida que ele
+// estava pagando terminou a rodada MAIOR do que comecou. Comprar tempo para todas as etapas
+// para pagar a divida de UMA delas e encher o balde pelo mesmo cano que se esvazia.
+// >>> ENTAO, NO CAMINHO AUTOMATICO, so a etapa de ITENS cresce.
+// >>> E NO CAMINHO DO DONO, NADA disso se aplica: o numero dele e o orcamento inteiro. Uma
+//     ferramenta que faz outra coisa com o numero que voce digitou e pior que o defeito.
+{
+  const R = (o) => C.orcamentoDaRodada(o);
+  const HOJE = { dividaVivas: 3094, taxaAnterior: 0.755 };
+
+  ok('42. a regra do orcamento pode ser IMPORTADA sem chave-mestra e sem disparar a carga',
+    typeof C.orcamentoDaRodada === 'function' && C.ORCAMENTO_PADRAO_MIN === 20);
+
+  // ── o caminho do dono: a ordem dele nao e reinterpretada ──
+  const dono = R(Object.assign({ pedidoDoDono: 213 }, HOJE));
+  ok('43. *** o `--minutos` do DONO vence a regra, sempre ***',
+    dono.minutos === 213 && dono.quem === 'dono', [dono.minutos, dono.quem]);
+  ok('44. ...e no caminho dele TODAS as etapas crescem (o numero dele e o orcamento inteiro)',
+    Math.round(dono.etapas.varredura) === Math.round(213 * C.FATIA.varredura)
+    && Math.round(dono.etapas.prazos) === Math.round(213 * C.FATIA.prazos),
+    dono.etapas);
+  // Um `--minutos 0` ou `--minutos -5` nao pode desligar a rodada pela porta dos fundos.
+  ok('45. um pedido de 0 ou negativo NAO vale como ordem (a rodada nao morre por digito torto)',
+    R(Object.assign({ pedidoDoDono: 0 }, HOJE)).quem !== 'dono'
+    && R(Object.assign({ pedidoDoDono: -5 }, HOJE)).quem !== 'dono');
+
+  // ── o caminho automatico ──
+  const auto = R(HOJE);
+  ok('46. *** com a divida de hoje a regra compra tempo sozinha: 60 min, sem o dono clicar em nada ***',
+    auto.minutos === 60 && auto.quem === 'teto', [auto.minutos, auto.quem]);
+  ok('47. ...e ela DIZ o que a divida pediria e qual `--minutos` passaria do teto',
+    auto.querido === 116 && /--minutos 116/.test(auto.frase), [auto.querido, auto.frase]);
+  ok('48. *** SO A ETAPA DE ITENS CRESCEU — a varredura ficou com a fatia do PADRAO ***',
+    Math.abs(auto.etapas.varredura - 20 * C.FATIA.varredura) < 1e-9
+    && Math.abs(auto.etapas.prazos - 20 * C.FATIA.prazos) < 1e-9
+    && Math.abs(auto.etapas.itens - 60 * C.FATIA.itens) < 1e-9, auto.etapas);
+  // Se a varredura crescesse junto, o relogio da rodada seria 60; ele e 38 porque ela nao cresceu.
+  ok('49. ...e por isso o relogio no pior caso e 38 min, e nao 60',
+    auto.minutosDeRelogio === 38, auto.minutosDeRelogio);
+
+  ok('50. divida que cabe no padrao NAO faz a regra comprar nada',
+    R({ dividaVivas: 200, taxaAnterior: 0.755 }).quem === 'padrao'
+    && R({ dividaVivas: 200, taxaAnterior: 0.755 }).minutos === 20);
+  ok('51. *** a regra NUNCA encolhe a rodada abaixo do padrao ***',
+    R({ dividaVivas: 5, taxaAnterior: 0.755 }).minutos >= 20
+    && R({ dividaVivas: null, taxaAnterior: 0.755 }).minutos === 20);
+  // Sem teto, uma divida grande pediria 746 min: 12 HORAS de maquina decididas por ninguem.
+  ok('52. *** o teto AUTOMATICO existe e ele PARA: divida de 20.000 nao vira 746 min sozinha ***',
+    R({ dividaVivas: 20000, taxaAnterior: 0.755 }).minutos === 60
+    && R({ dividaVivas: 20000, taxaAnterior: 0.755 }).querido === 746,
+    R({ dividaVivas: 20000, taxaAnterior: 0.755 }));
+  ok('53. ...e o teto e um parametro, entao o dono pode move-lo sem editar codigo',
+    R({ dividaVivas: 20000, taxaAnterior: 0.755, tetoAutomatico: 120 }).minutos === 120
+    && C.TETO_AUTOMATICO_MIN === 60);
+
+  // ── o ritmo E a divida mandam nos dois: a regra tem que responder aos DOIS ──
+  // Se so a divida mandasse, uma maquina lenta pediria os mesmos minutos de uma rapida.
+  const lento = R({ dividaVivas: 1000, taxaAnterior: 2.0 });
+  const rapido2 = R({ dividaVivas: 1000, taxaAnterior: 0.5 });
+  ok('54. *** o RITMO MEDIDO manda junto com a divida: a mesma divida a 2,0 s/lic pede mais ***',
+    lento.querido > rapido2.querido, [lento.querido, rapido2.querido]);
+  // taxa absurda (etapa que morreu em 2 s) cai no valor de partida, e nao num teto astronomico
+  ok('55. taxa absurda da rodada anterior cai no valor de partida, e nao vira orcamento de brinquedo',
+    R({ dividaVivas: 3094, taxaAnterior: 0.001 }).querido
+      === R({ dividaVivas: 3094, taxaAnterior: null }).querido);
+
+  // ── e na FONTE: o rateio nao pode voltar a ser escrito em dois lugares ──
+  ok('56. *** o orcamento e decidido DEPOIS do retrato (antes ninguem sabe o tamanho da divida) ***',
+    src.indexOf('const antes = await retrato()') < src.indexOf('const orc = orcamentoDaRodada('));
+  /* O ASSERT 57 PRECISOU OLHAR SO O CODIGO, e isso e um achado pequeno que vale anotar: na
+     primeira escrita ele reprovou contra o arquivo CERTO, porque o comentario que explica a
+     mudanca CITA a forma antiga (`ORCAMENTO_MIN * e.fatia`) para dizer que ela saiu. Um assert
+     de "isto nao existe mais" que le comentario proibe a ferramenta de EXPLICAR o proprio
+     conserto — e explicar o conserto e metade do valor do comentario nesta casa. */
+  const codigo = src.replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/^\s*\/\/.*$/gm, ' ');
+  ok('57. ...e o orcamento de cada etapa vem de `orc.etapas`, nao de uma multiplicacao solta',
+    /const minutosDa = e => orc\.etapas\[e\.nome\]/.test(codigo)
+    && !/ORCAMENTO_MIN \* e\.fatia/.test(codigo));
+  ok('58. *** QUEM decidiu o orcamento vai pro carimbo (60 min sem dono e frase ambigua) ***',
+    /orcamento_quem: orc\.quem/.test(src) && /orcamento_querido: orc\.querido/.test(src)
+    && /orcamento_teto_automatico: orc\.teto/.test(src));
+  ok('59. ...e o `--carimbo` mostra isso para quem abre o carimbo dias depois',
+    /decidido por: /.test(src) && /ORDEM DO DONO \(--minutos\)/.test(src));
+  // A ociosidade que a caixa pediu NAO foi medida — e o arquivo tem que dizer isso, nao fingir.
+  ok('60. *** o arquivo DECLARA que nao sabe medir "maquina ociosa" em vez de inventar um sensor ***',
+    /EU NÃO SEI MEDIR ISSO, E NÃO VOU FINGIR/.test(src));
+  ok('61. ...e declara O QUE SE PERDE (a previsibilidade do relogio da rodada)',
+    /══ O QUE SE PERDE ══/.test(src) && /mediana é 57 min/.test(src));
+  /* UMA REGRA CEGA DECIDE SEMPRE 20. Os asserts de 46 a 55 chamam a funcao com os numeros na
+     mao, entao eles continuariam verdes se a RODADA parasse de passar a divida e o ritmo para
+     ela — a regra estaria certa e nunca seria consultada de verdade. Este assert e a ligacao
+     entre as duas pontas: o que a rodada MEDE tem que chegar em quem DECIDE. */
+  /* ══ O ASSERT QUE NASCEU DE UMA MUTACAO QUE ESCAPOU ═════════════════════════════════════
+     O `tools/muta_a44.js` tirou o `Math.max(padrao, ...)` do orcamento e esta suite NAO
+     reclamou. Investigado: o `Math.max` era INALCANCAVEL — chegar la exige `divida > cabe`, e
+     como `cabe` e `minutosParaZerar` sao a mesma conversao em sentidos opostos, isso ja
+     implica `querido > padrao`. O cinto de seguranca nunca podia apertar, e a casa chama gesto
+     sem efeito de "a pior categoria de codigo vivo" (testa_busca_placeholder, 32). Ele saiu.
+     >>> MAS A PROPRIEDADE CONTINUA VALENDO, e agora e ELA que e cobrada, em 40 pares de
+         (divida, ritmo) — inclusive os absurdos. A garantia era da algebra; algebra se guarda
+         com prova, nao com uma linha que finge trabalhar. Se alguem desacoplar as formulas
+         (mexer no zeraHoje, por exemplo), este assert grita — o Math.max teria escondido. */
+  {
+    let piorMin = Infinity, piorCaso = null;
+    for (const d of [1, 5, 50, 429, 430, 1000, 3094, 20000, 500000])
+      for (const t of [null, 0.001, 0.05, 0.3, 0.755, 0.944, 2.0, 12.0]) {
+        const r = R({ dividaVivas: d, taxaAnterior: t });
+        if (r.minutos < piorMin) { piorMin = r.minutos; piorCaso = { divida: d, taxa: t, r }; }
+      }
+    ok('63. *** a regra NUNCA compra menos que o padrao, em 72 pares de (divida, ritmo) ***',
+      piorMin >= C.ORCAMENTO_PADRAO_MIN, { piorMin, piorCaso });
+  }
+
+  ok('62. *** e a rodada alimenta a regra com a divida E o ritmo MEDIDOS, nao com o vazio ***',
+    /orcamentoDaRodada\(\{[\s\S]{0,400}?dividaVivas: antes\.vivas_sem_itens[\s\S]{0,400}?taxaAnterior: carimboAntes[\s\S]{0,400}?pedidoDoDono: ORCAMENTO_PEDIDO/.test(codigo));
+}
+
 // ══════════ 5. A REDE QUE PISCA NAO E FIM DE RODADA (fatia A39 · 20/08/2026) ══════════
 // A rodada inteira terminava numa unica chamada — o `POST coleta_status` — sem retentativa, com um
 // `.catch` que devolvia um objeto falso-ok. Um `fetch failed` ali apagava a prestacao de contas de
