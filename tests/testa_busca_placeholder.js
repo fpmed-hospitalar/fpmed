@@ -85,9 +85,22 @@ ok('24. ...e o comentario diz por que ele NAO podia ficar como estava',
 // ══════════ 6. OS FILTROS SAIRAM DA GAVETA (reforma Prime, 11/08) ══════════
 // Eles moravam atras do link "Pesquisa avancada", FECHADOS. Quem nao clicasse nao sabia que UF,
 // modalidade, valor e situacao existiam — e buscava sem saber que dava pra filtrar.
-ok('25. *** os filtros sao uma COLUNA, e nao uma gaveta ***',
-  /#painel-busca\{display:grid;grid-template-columns:262px 1fr/.test(L)
-  && !/#avancada\{display:none/.test(L));
+/* ══ A A27 RECOLHEU A COLUNA, E ESTE ASSERT PRECISOU MUDAR DE ALVO (fatia A28) ═══════════════
+   Ele cobrava "a coluna esta SEMPRE aberta" — o conserto de 11/08 escrito como literal. A A27
+   a fez abrir e fechar (ela comia um terco da tela; e o defeito nº 5 da lista do dono), e o
+   assert ficou vermelho sem que nada tivesse piorado.
+   >>> O QUE A REGRA SEMPRE QUIS DIZER NAO E "aberta": e QUE NINGUEM BUSQUE SEM SABER QUE DA
+       PRA FILTRAR. O defeito de origem era um link chamado "Pesquisa avancada" que nao dizia o
+       que havia atras dele. Recolher com um BOTAO VISIVEL que carrega a conta de criterios e
+       uma LEGENDA que nomeia os campos nao reconstroi aquele defeito — ao contrario: a legenda
+       diz mais do que a coluna aberta dizia.
+   >>> ENTAO O ASSERT PASSA A COBRAR A DESCOBERTA, e ela e cobrada nos dois estados. Se um dia
+       alguem tirar o botao ou a legenda, os filtros voltam a ser gaveta cega e ele reprova. */
+ok('25. *** os filtros sao DESCOBRIVEIS sem clicar: botao visivel + os campos nomeados ***',
+  /id="bt-filtros" aria-expanded="false"/.test(L)
+  && /aria-controls="avancada" onclick="alternaFiltros\(\)"/.test(L)
+  && /UF, modalidade, portal, valor, órgão, situação e registro de preços/.test(L)
+  && /#painel-busca\.com-filtros\{grid-template-columns:262px minmax\(0,1fr\)\}/.test(L));
 ok('26. *** e a coluna tem titulo "Filtros", como no Prime ***', /<h5>Filtros<\/h5>/.test(L));
 ok('27. *** eles ficam FIXOS ao rolar ***', /#avancada\{[\s\S]{0,200}position:sticky/.test(L));
 ok('28. ...com o motivo (subir ate o topo pra trocar a UF e o atrito que faz ninguem filtrar)',
@@ -99,9 +112,19 @@ ok('30. *** NENHUM filtro foi acrescentado nem tirado ***',
     .every(id => new RegExp('id="' + id + '"').test(L)));
 ok('31. ...e o codigo diz isso (mesmos campos, mesmos ids, so deixaram de estar escondidos)',
   /NENHUM FILTRO FOI ACRESCENTADO NEM TIRADO/.test(L));
-ok('32. *** `.open` continua existindo porque codigo antigo ainda o chama ***',
-  /#avancada\.open\{\}/.test(L) && /`soDesertas\(\)` e o Radar abrem a gaveta por/.test(uc(L)));
-ok('33. a coluna vira pilha no celular', /@media\(max-width:900px\)\{#painel-busca\{grid-template-columns:1fr\}\}/.test(L));
+/* Entre 11/08 e a A27, `#avancada.open{}` era uma regra VAZIA: a coluna estava sempre visivel e
+   `soDesertas()` chamava `classList.add('open')` num seletor que nao fazia nada — um gesto sem
+   efeito, que e a pior categoria de codigo vivo. Com a coluna recolhida, abrir voltou a abrir. */
+ok('32. *** `.open` voltou a ter EFEITO, e quem abre por codigo passa pelo alternador ***',
+  /#avancada\.open\{display:block\}/.test(L)
+  && /function alternaFiltros\(forcar\)/.test(L)
+  && /alternaFiltros\(true\);/.test(L)
+  /* Abrir virou DUAS classes (a do painel e a da coluna) — mexer no `#avancada` direto abriria
+     metade e deixaria a grade com uma coluna so. Outros componentes da tela tem `.open` proprio
+     (o jornal, o menu de acoes): o assert olha SO o caminho deste, senao vira proibicao geral. */
+  && !/avancada[^\n]{0,80}classList\.add\('open'\)/.test(L));
+ok('33. a coluna vira pilha no celular',
+  /@media\(max-width:900px\)\{#painel-busca\.com-filtros\{grid-template-columns:1fr\}\}/.test(L));
 
 console.log('\nRESULTADO: ' + p + ' ok, ' + f + ' falha(s)');
 if (f) process.exit(1);
