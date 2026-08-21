@@ -36,7 +36,15 @@ const bloco = (ini, fim) => {
 };
 // `ETAPA_FOCO`/`focoDa` entram porque o stepper passou a imprimir a frase do "o que fazer agora".
 // Extrair menos que isso quebraria a suite por falta de dependencia, e nao por defeito.
+//
+// 14/08 (fatia B19): entrou o ICONE_CERTO pelo MESMO motivo. O stepper marcava a etapa cumprida
+// com o caractere U+2713 e passou a marcar com o <use href="#ic-certo"> do sprite; a constante
+// mora no topo do arquivo, fora do trecho que este extrator recorta.
+// >>> E ELE E LIDO DO ARQUIVO, nao recopiado aqui. Escrever o SVG a mao nesta linha criaria a
+//     SEGUNDA copia do desenho — que e exatamente o defeito que a fatia foi consertar.
+const ICONE_CERTO_REAL = (N.match(/const ICONE_CERTO = '([^']*)'/) || [, ''])[1];
 const ctx = (new Function('esc',
+  'const ICONE_CERTO = ' + JSON.stringify(ICONE_CERTO_REAL) + ';' +
   bloco('const FASES = [', 'const nomeFase') +
   'const nomeFase = k => (FASES.find(f=>f.k===k)||{}).n || k;'
   + 'const corFase  = k => (FASES.find(f=>f.k===k)||{}).c || "#8fa3b8";' +
@@ -66,7 +74,14 @@ FASES.forEach((fase, i) => {
   ok(`6.${i} · ${fase.n}: todas as 5 chamam mudaFase`,
     (h.match(/onclick="mudaFase\(1,'/g) || []).length === FASES.length);
 });
-ok('7. *** a etapa vencida vira ✓ ***', stepper({ id: 1, estagio: 'contrato' }).includes('>✓<'));
+/* 14/08 (fatia B19): a marca de cumprido deixou de ser o caractere U+2713 e virou o desenho do
+   sprite. A PROPRIEDADE guardada aqui e a mesma de sempre — "a etapa vencida mostra a marca de
+   cumprido no lugar do numero" — e o assert continua exigindo que a marca esteja DENTRO da
+   bola, que e onde o numero apareceria. O par com o assert 8 (a atual mostra o NUMERO) e o que
+   torna isto uma prova e nao uma busca de texto solta. */
+ok('7. *** a etapa vencida vira a marca de cumprido, dentro da bola ***',
+  /class="bola"[^>]*><svg[^>]*><use href="#ic-certo"/.test(stepper({ id: 1, estagio: 'contrato' })),
+  (stepper({ id: 1, estagio: 'contrato' }).match(/class="bola"[^>]*>.{0,60}/) || [])[0]);
 ok('8. *** e a atual mostra o NUMERO dela, e nao ✓ ***',
   /class="bola"[^>]*>1</.test(stepper({ id: 1, estagio: 'oportunidade' })));
 ok('9. *** a ultima etapa diz que e a ultima, e nao "falta 0" ***',
