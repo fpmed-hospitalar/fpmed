@@ -4802,7 +4802,19 @@ async function conferirProposta(id){
     pintaConferencia(id);
     await carregarProposta(id);
     carregar().then(pinta);   // o selo do card lê a conferência mais nova
-  }catch(e){ msg.textContent = '<svg class="ic" aria-hidden="true"><use href="#ic-alerta"/></svg> ' + e.message;
+  /* ══ `innerHTML` E NÃO `textContent` — CONSERTADO NA B36, E O DEFEITO ERA VISÍVEL ═══════════
+     `textContent` NÃO interpreta marca-up: ele IMPRIME. Esta linha usava `textContent` com um
+     `<svg>` dentro, então a pessoa lia, no lugar do aviso, o texto cru
+     `<svg class="ic" aria-hidden="true"><use href="#ic-alerta"/></svg> não salvou: HTTP 403`.
+     >>> E O ACHADO É DA PRÓPRIA TELEMETRIA, pelo avesso: este `catch` é um dos quatro pontos da
+         casa que disparam `erro_visto_pelo_usuario`. O evento sai limpo e o painel registra a
+         causa certa — só que a FRASE que a pessoa lê nunca viaja no evento, e por isso o painel
+         não tinha como acusar. Foram três lugares nesta tela, os três em caminho de erro: quem
+         nunca falha nunca vê, e quando vê está com outro problema na cabeça.
+     >>> A `esc()` ENTRA JUNTO. Trocar para `innerHTML` sem escapar a mensagem passaria a
+         interpretar como marca-up o que vier do servidor — trocaria um defeito de aparência por
+         um de segurança. As outras telas da casa já fazem os dois (documentos.html:951). */
+  }catch(e){ msg.innerHTML = '<svg class="ic" aria-hidden="true"><use href="#ic-alerta"/></svg> ' + esc(e.message);
     /* O erro que a pessoa VÊ, com a causa. A `e.message` daqui é escrita por nós (o HTTP do anexo,
        o PDF sem linha de preço, o motor de teto ausente) — é diagnóstico, não dado do cliente. E
        ainda assim ela passa pela `limpa()` do arquivo de telemetria, que corta em 80 caracteres e
@@ -8735,7 +8747,8 @@ async function criarLembrete(id){
     msg.textContent = '';
     await carregarLembretes(id);
     pintaNotif();                       // o sino passa a contar este lembrete na hora
-  }catch(e){ msg.textContent = '<svg class="ic" aria-hidden="true"><use href="#ic-alerta"/></svg> ' + e.message; }
+  // `innerHTML` + `esc`, e não `textContent`: ver o bloco da B36 no `salvarConferencia`.
+  }catch(e){ msg.innerHTML = '<svg class="ic" aria-hidden="true"><use href="#ic-alerta"/></svg> ' + esc(e.message); }
   bt.disabled = false;
 }
 /* ── B12: A MARCAÇÃO DA TAREFA ERA UM CLIQUE MUDO — E, PIOR, UM CLIQUE MENTIROSO ─────────────
@@ -8863,7 +8876,8 @@ async function salvarCampo(id, k){
     // data e continuaria vendo o negócio no dia velho — e concluiria que não salvou.
     pinta(); pintaNotif();
   }catch(e){
-    msg.textContent = '<svg class="ic" aria-hidden="true"><use href="#ic-alerta"/></svg> não salvou: ' + e.message;
+    // `innerHTML` + `esc`, e não `textContent`: ver o bloco da B36 no `salvarConferencia`.
+    msg.innerHTML = '<svg class="ic" aria-hidden="true"><use href="#ic-alerta"/></svg> não salvou: ' + esc(e.message);
     bt.disabled = false;
   }
 }
