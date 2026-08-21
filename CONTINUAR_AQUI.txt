@@ -72,6 +72,11 @@
              divida 3.094 · ritmo MEDIDO 0,755 s/lic · zerar pede 116 min. Com 20 min cabem
              429 (8 rodadas); com o teto automatico de 60, cabem 1.609 (2 rodadas), sem o dono
              clicar em nada. Conferido contra o banco: teto da rodada 429 -> 1.609.
+             >>> E RODOU DE VERDADE as 12:21, nao so na previa: divida 3.094 -> 1.959, as 1.609
+                 do teto processadas em 1.172s (0,73 s/lic, o ritmo confirmou). O saldo caiu
+                 1.135 e nao 1.609 porque a varredura trouxe 785 licitacoes novas no meio — e
+                 e por isso que so o numero do FIM vale. Rodada inteira: 24 min, contra os 38
+                 declarados como pior caso. O saldo agora diz 2 rodadas, nao 8.
              >>> O ACHADO QUE MUDOU O DESENHO: o orcamento e rateado pelo FATIA, entao os
                  `--minutos 213` que o dono rodou em 20/08 para pagar a divida de ITENS deram
                  47 min a VARREDURA tambem — e ela trouxe 7.273 licitacoes NOVAS. A divida que
