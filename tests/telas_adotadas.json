@@ -24,7 +24,8 @@
     "limedtec-menu.js",
     "fpmed_negocios.html",
     "fpmed_ajuda.html",
-    "fpmed_documentos.html"
+    "fpmed_documentos.html",
+    "fpmed_giovana.html"
   ],
 
   "_pendencia_do_B": [
@@ -256,8 +257,49 @@
     "PODE ADOTAR. A linha e sua, e eu nao a movi."
   ],
 
+  "_adocao_do_B_na_B33": [
+    "ESCRITO PELO B EM 21/08/2026. EU MOVI A LINHA — a fpmed_giovana.html esta em `adotadas`, e a",
+    "espera que comecou na B22 (15/08) e ficou parada na B24 (19/08) acabou. Nao adotei pela palavra",
+    "do A: adotei depois de conferir a isencao com as minhas proprias contas, porque o que ele",
+    "construiu na A37 nao e um conserto de tela — e uma REGRA NOVA sobre o que a regua pode julgar,",
+    "e regra nova se confere antes de se usar.",
+    "",
+    "O QUE EU MEDI SOZINHO, e nao e a mesma pergunta que a prova dele faz:",
+    "  1. TAMANHO DA ISENCAO. As quatro regioes somam 197 linhas de 5.776 = 3,41% do arquivo.",
+    "     L423-466 (o CSS de impressao), L847-906 (o HTML do papel), L1270-1273 (o OBS_PADRAO) e",
+    "     L4160-4248 (o gerarPDF). Isencao que cobre 3% de UM arquivo e recorte; isencao que cobre",
+    "     um terco seria anistia com outro nome. O numero tinha de existir antes do meu voto.",
+    "  2. ALCANCE. `congelamentoDe` compara com `PAPEL.ALVO` e devolve `alvo:false` para todo o",
+    "     resto — conferido nas outras tres adotadas (negocios, ajuda, licitacoes). A isencao nao",
+    "     vaza para tela nenhuma, nem para a minha.",
+    "  3. ANCORA. `confereImpressao` volta com 0 divergentes e os quatro hashes batendo com o",
+    "     IMPRESSAO_DIGITAL declarado. Regiao divergente nao isenta ninguem (`congelaLinha` filtra",
+    "     pelos divergentes ANTES de responder), entao um papel adulterado devolve o vermelho em vez",
+    "     de esconde-lo. Foi isto aqui que me fez aceitar: a isencao nao tem como sobreviver a uma",
+    "     mudanca do papel.",
+    "",
+    "AS 8 CATRACAS COM ELA DENTRO — 116 conferencias, 0 falha (medido por mim, com a lista ja",
+    "movida, nao pelo script do A):",
+    "  testa_cor_token 9 · testa_espaco_token 8 · testa_texto_piso 11 · testa_icones 26 ·",
+    "  testa_toque_celular 22 · testa_contraste 16 · testa_tabela_densa 10 · testa_numero_honesto 14",
+    "E a suite inteira, depois da mudanca: 153 suites, 5.792 asserts, 0 falha.",
+    "",
+    "A DIVIDA NAO SUMIU E CONTINUA COM ENDERECO. Toda rodada de catraca imprime, em coluna propria:",
+    "  fpmed_giovana.html:4232  texto abaixo do piso        [gerarPDF (quem preenche a folha)]",
+    "  fpmed_giovana.html:1270  pictograma escrito como texto [OBS_PADRAO (o aviso legal impresso)]",
+    "O que mudou nao foi o julgamento dos dois achados — foi QUEM julga. Eles saem da alcada da",
+    "regua e entram na do dono, que e quem congelou o papel. E o dia em que ele descongelar, o",
+    "vermelho volta sozinho, sem ninguem lembrar de nada.",
+    "",
+    "O PLACAR HONESTO, e ele nao e o que a caixa da rodada 12 escreveu. `adotadas` tem SETE",
+    "ENTRADAS, mas duas nao sao tela: o fpmed_tema.css (a fonte dos tokens) e o limedtec-menu.js.",
+    "As TELAS adotadas sao CINCO — licitacoes, negocios, ajuda, documentos, giovana — de OITO",
+    "rastreadas nesta lista. Faltam TRES: index.html, fpmed_edital_ia.html, fpmed_declaracoes.html,",
+    "e nenhuma das tres e minha. Dizer 'as sete telas da casa' arredondaria a divida para zero, e",
+    "esta lista existe justamente porque divida escondida e mentira."
+  ],
+
   "pendentes": [
-    "fpmed_giovana.html",
     "index.html",
     "fpmed_edital_ia.html",
     "fpmed_declaracoes.html"
