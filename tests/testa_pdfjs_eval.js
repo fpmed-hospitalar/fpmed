@@ -31,14 +31,36 @@ console.log('SUITE testa_pdfjs_eval — nenhum PDF de terceiro executa script aq
 
 // Descoberto no diretório, não escrito à mão: uma tela nova que leia PDF entra nesta conta
 // sozinha. Lista cravada envelheceria do mesmo jeito que a lista de tabelas do backup.
-const telas = fs.readdirSync(raiz).filter(a => a.endsWith('.html'));
+//
+// >>> A50 (01/09/2026) — ESTA CATRACA ERA CEGA DE UM OLHO, E FUI EU QUEM A ESCREVEU ASSIM.
+//     Ela lia `readdirSync(raiz).filter(.html)`: só as telas, só na raiz. Mas o pdf.js também
+//     roda em **Node**, nos coletores (`pdfjs-dist` está no package.json), lendo o MESMO edital
+//     de portal. Ao ampliar a varredura apareceram **3 chamadas com o eval ligado** em
+//     `tools/prova_custo_edital.js`, `tools/prova_itens_edital.js` e `tools/prova_partes_edital.js`.
+//     E em Node é PIOR que no navegador: lá o script preparado fica preso na aba; aqui ele nasce
+//     dentro do processo que abre o edital, na máquina do dono.
+//     A lição não é "faltou um arquivo" — é que **catraca que escolhe a extensão escolhe o que
+//     não quer ver**. Agora ela anda o projeto inteiro, .html e .js.
+const IGNORA = new Set(['node_modules', '.git', 'backups', 'video_narracao', 'logs', 'prints',
+                        '.playwright-mcp', 'icones', 'dados_cmed']);
+function varre(dir, achado = []) {
+  for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+    if (e.name.startsWith('_')) continue;            // `/_*` é o gitignore da casa: medição, não sistema
+    if (e.isDirectory()) { if (!IGNORA.has(e.name)) varre(path.join(dir, e.name), achado); }
+    else if (/\.(html|js|mjs)$/.test(e.name)) achado.push(path.relative(raiz, path.join(dir, e.name)));
+  }
+  return achado;
+}
+// esta própria suíte fica de fora: ela cita `getDocument` no texto e se acusaria sozinha.
+const telas = varre(raiz).filter(a => a !== path.join('tests', 'testa_pdfjs_eval.js'));
 
 const achadas = [];      // toda chamada getDocument( do projeto
 const semGuarda = [];    // as que não desligam o eval
 const versoes = new Set();
 
 for (const arq of telas) {
-  const src = fs.readFileSync(path.join(raiz, arq), 'utf8');
+  let src;
+  try { src = fs.readFileSync(path.join(raiz, arq), 'utf8'); } catch (e) { continue; }
 
   for (const m of src.matchAll(/cdnjs\.cloudflare\.com\/ajax\/libs\/pdf\.js\/([0-9.]+)\//g)) versoes.add(m[1]);
 

@@ -186,19 +186,21 @@ const EDGE = SB_URL + '/functions/v1/ler-edital';
 // >>> E A TELA SEMPRE DIZ QUAL DOS DOIS USOU. Os dois modos custam diferente e falham diferente;
 //     esconder qual foi usado é esconder metade da explicação da conta.
 const MIN_CHARS_TEXTO = 500;   // abaixo disto é PDF de imagem: extrair não adianta
-const PDFJS_CDN = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
-const PDFJS_WORKER = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+/* A50 (01/09/2026): 3.11.174 -> 4.2.67, pela CVE-2024-4367. Esta tela e a que mais importa na
+   troca: o edital vem do PNCP, de portal ou de e-mail - arquivo que ninguem desta casa produziu.
+   O `isEvalSupported:false` continua e nao sai: camada nova nao aposenta camada velha.
+   A 4.x so publica ESM (`pdf.min.js` da HTTP 404, medido), entao nao ha mais `window.pdfjsLib`:
+   o modulo E a biblioteca e chega por import(). Prova: as duas versoes leram o mesmo PDF e
+   devolveram 30 paginas e 108.381 caracteres, texto identico. */
+const PDFJS_CDN = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.2.67/pdf.min.mjs';
+const PDFJS_WORKER = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.2.67/pdf.worker.min.mjs';
 let _pdfjs = null;
 function carregarPdfjs(){
-  if(window.pdfjsLib) return Promise.resolve(window.pdfjsLib);
   if(_pdfjs) return _pdfjs;
-  _pdfjs = new Promise((res, rej) => {
-    const s = document.createElement('script');
-    s.src = PDFJS_CDN;
-    s.onload = () => { window.pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS_WORKER; res(window.pdfjsLib); };
-    s.onerror = () => rej(new Error('não consegui carregar o leitor de PDF'));
-    document.head.appendChild(s);
-  });
+  _pdfjs = import(PDFJS_CDN).then(mod => {
+    mod.GlobalWorkerOptions.workerSrc = PDFJS_WORKER;
+    return mod;
+  }).catch(() => { throw new Error('não consegui carregar o leitor de PDF'); });
   return _pdfjs;
 }
 // Mesma extração do Conferidor e do Atualizar Estoque: agrupa por Y pra preservar a LINHA. Num

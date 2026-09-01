@@ -76,7 +76,10 @@ Se algo nao estiver no documento, NAO invente: ponha o campo em "nao_encontrado"
    edital e justamente a linha que amarra o item ao prazo e ao valor. */
 async function pdfParaTexto(buf) {
   const pdfjs = require('pdfjs-dist/legacy/build/pdf.js');
-  const doc = await pdfjs.getDocument({ data: new Uint8Array(buf), useSystemFonts: false }).promise;
+  // isEvalSupported:false (A50, 01/09/2026) — a mesma catraca das telas, que passava longe daqui
+  // porque `testa_pdfjs_eval` so varria .html. Em Node o estrago e MAIOR que no navegador: la o
+  // script preparado fica preso na aba, aqui ele nasce dentro do processo que le o edital.
+  const doc = await pdfjs.getDocument({ data: new Uint8Array(buf), useSystemFonts: false, isEvalSupported: false }).promise;
   let out = '';
   for (let p = 1; p <= doc.numPages; p++) {
     const tc = await (await doc.getPage(p)).getTextContent();

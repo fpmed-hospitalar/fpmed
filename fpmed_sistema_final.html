@@ -6264,19 +6264,20 @@ function egAvisoEstoqueVelho(){
 // posição Y da página (senão as colunas embaralham). Joga o texto no MESMO parser
 // do colar (egProcessar). Camada B (fallback): PDF escaneado/ilegível -> IA
 // (ler-pedido, Haiku) transcreve as linhas no formato do parser.
-const EG_PDFJS_CDN = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
-const EG_PDFJS_WORKER = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+/* A50 (01/09/2026): 3.11.174 -> 4.2.67, pela CVE-2024-4367 (PDF preparado executa script).
+   O `isEvalSupported:false` la embaixo continua e nao sai: camada nova nao aposenta camada velha.
+   A 4.x so publica ESM - `pdf.min.js` devolve HTTP 404, medido - entao nao ha mais o global
+   `window.pdfjsLib`: o modulo E a biblioteca e chega por import(). Prova antes de trocar: as
+   duas versoes leram o mesmo PDF e devolveram 30 paginas e 108.381 caracteres, texto identico. */
+const EG_PDFJS_CDN = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.2.67/pdf.min.mjs';
+const EG_PDFJS_WORKER = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.2.67/pdf.worker.min.mjs';
 let _egPdfjsPromise = null;
 function egCarregarPdfjs(){
-  if (window.pdfjsLib) return Promise.resolve(window.pdfjsLib);
   if (_egPdfjsPromise) return _egPdfjsPromise;
-  _egPdfjsPromise = new Promise((res, rej) => {
-    const s = document.createElement('script');
-    s.src = EG_PDFJS_CDN;
-    s.onload = () => { window.pdfjsLib.GlobalWorkerOptions.workerSrc = EG_PDFJS_WORKER; res(window.pdfjsLib); };
-    s.onerror = () => rej(new Error('não consegui carregar o pdf.js (CDN)'));
-    document.head.appendChild(s);
-  });
+  _egPdfjsPromise = import(EG_PDFJS_CDN).then(mod => {
+    mod.GlobalWorkerOptions.workerSrc = EG_PDFJS_WORKER;
+    return mod;
+  }).catch(() => { throw new Error('não consegui carregar o pdf.js (CDN)'); });
   return _egPdfjsPromise;
 }
 // extrai texto preservando a ORDEM das linhas: agrupa itens pela posição Y (tolerância

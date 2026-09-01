@@ -163,19 +163,25 @@ let IDX = null, RESULT = [], BASE = null;
    Os nomes continuam os mesmos porque o resto desta tela os usa — o que mudou foi de onde vêm. */
 const { precoDaLinha, itensDoTexto } = T;
 
-const PDFJS_CDN = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
-const PDFJS_WORKER = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+/* A50 (01/09/2026): 3.11.174 -> 4.2.67. A 3.x e atingida pela CVE-2024-4367 (PDF preparado
+   executa script). O `isEvalSupported:false` la embaixo continua e nao sai daqui - camada nova
+   NAO aposenta camada velha; a partir daqui a casa tem duas.
+
+   >>> A TROCA NAO E DE NUMERO, E DE MECANISMO, e isso esta medido: a 4.x nao publica mais o
+       build UMD. `.../4.2.67/pdf.min.js` devolve HTTP 404; so existe `pdf.min.mjs`. Entao nao
+       ha mais `window.pdfjsLib` para esperar - o proprio modulo E a biblioteca, e ele chega
+       por import() dinamico. O worker tambem virou .mjs.
+   Prova antes de trocar: as duas versoes leram o mesmo PDF de 3.113.307 bytes e devolveram
+   30 paginas e 108.381 caracteres, texto IDENTICO caractere a caractere. */
+const PDFJS_CDN = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.2.67/pdf.min.mjs';
+const PDFJS_WORKER = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.2.67/pdf.worker.min.mjs';
 let _pdfjs = null;
 function carregarPdfjs(){
-  if(window.pdfjsLib) return Promise.resolve(window.pdfjsLib);
   if(_pdfjs) return _pdfjs;
-  _pdfjs = new Promise((res, rej) => {
-    const s = document.createElement('script');
-    s.src = PDFJS_CDN;
-    s.onload = () => { window.pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS_WORKER; res(window.pdfjsLib); };
-    s.onerror = () => rej(new Error('não consegui carregar o leitor de PDF (CDN)'));
-    document.head.appendChild(s);
-  });
+  _pdfjs = import(PDFJS_CDN).then(mod => {
+    mod.GlobalWorkerOptions.workerSrc = PDFJS_WORKER;
+    return mod;
+  }).catch(() => { throw new Error('não consegui carregar o leitor de PDF (CDN)'); });
   return _pdfjs;
 }
 // Mesma técnica do "Atualizar Estoque": agrupa por Y pra preservar a LINHA. Sem isso o texto
