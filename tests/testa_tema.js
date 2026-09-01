@@ -82,8 +82,28 @@ const seletores = (foraDaRaiz.match(/(^|\})\s*([^{}@]+)\{/g) || [])
   .filter(Boolean)
   .flatMap(s => s.split(',').map(x => x.trim()))
   .filter(s => s && !/^\d+%$/.test(s) && s !== 'from' && s !== 'to');
-const nus = seletores.filter(s => !/^\./.test(s) && !/^:root/.test(s));
-ok('18. nenhum seletor de elemento nu - carregar o tema nao muda nenhuma tela sozinho',
+/* ══ O 18 MEDIA "COMECA COM PONTO"; A PROMESSA E "NAO AGE SEM A TELA PEDIR" (A53) ══
+   Ele exigia que TODO seletor comecasse com `.` ou `:root`. Isso e um bom proxy e
+   segurou o arquivo por semanas. A A53 trouxe o caso em que o proxy e a promessa se
+   separam:
+
+     html:has(body.fp-imprimivel) #gm-auth-overlay { display:none }   (dentro do @media print)
+
+   O `#gm-auth-overlay` do gm-auth.js e filho direto do <html> - NAO mora dentro do
+   <body>. Nenhum seletor que comece com `.fp-imprimivel` alcanca um irmao do body,
+   entao a regra tinha de comecar em `html`. Mas ela e gatilhada por
+   `:has(body.fp-imprimivel)`: **em tela que nao optou, ela nao existe.** A promessa
+   esta intacta; so a letra nao.
+
+   >>> ENTAO ELE PASSA A MEDIR A PROMESSA: todo seletor tem de CONTER uma classe
+       `.fp-` em algum lugar (ou ser `:root`). Isso continua barrando `button{...}`,
+       que era o ponto - e barra tambem `#alguma-coisa{...}` solto, que a versao
+       antiga tambem barrava. O que ele deixa de barrar e exatamente o caso legitimo:
+       seletor ancorado em elemento mas TRANCADO por uma classe do tema.
+   >>> S8 DE NOVO, e vale nomear: assert que guarda a forma reprova o certo no dia em
+       que aparece um caminho novo. Aqui o caminho novo foi um elemento fora do body. */
+const nus = seletores.filter(s => !/^:root\b/.test(s) && !/\.fp-/.test(s));
+ok('18. todo seletor e trancado por uma classe .fp- - carregar o tema nao muda nenhuma tela sozinho',
   nus.length === 0, nus);
 ok('19. toda classe do tema tem prefixo fp- (nao colide com o CSS que ja existe nas telas)',
   seletores.filter(s => /^\./.test(s)).every(s => /^\.fp-/.test(s)),
@@ -219,7 +239,52 @@ const _degrauBorda = lum(token('branco')) - lum(token('cinza-200'));
 ok('29b. o cartao se separa da pagina - pelo degrau do fundo, ou por uma borda que o desenhe',
   _degrauFundo >= 0.05 || _degrauBorda >= 0.05,
   { degrauDoFundo: Math.round(_degrauFundo * 1e4) / 1e4, degrauDaBorda: Math.round(_degrauBorda * 1e4) / 1e4 });
-ok('30. #000000 nao existe no arquivo', !/#000000|#000\b/i.test(semComentario));
+/* ══ O ASSERT 30 CONFUNDIA DOIS SUPORTES, E A A53 SEPAROU (01/09/2026) ═══════════
+   Escrito assim: "#000000 nao existe no arquivo". A promessa por tras dele e boa e
+   e a do Refactoring UI: NUNCA PRETO PURO SOBRE BRANCO PURO. Mas a razao dessa
+   regra e FISICA e e da TELA - num monitor retroiluminado o preto puro sobre branco
+   puro e contraste duro demais e cansa a vista.
+
+   >>> NO PAPEL essa razao nao existe. Tinta preta sobre papel branco e o contraste
+       para o qual a impressora foi feita, e mandar o --cinza-800 (#0A1526) para o
+       papel so gasta ciano e magenta para produzir um preto pior. Quando a A53
+       trouxe o @media print, o assert reprovou uma coisa CERTA - ele media o
+       arquivo, e a promessa era sobre a tela.
+
+   >>> ENTAO ELE NAO FOI AFROUXADO, FOI APERTADO. Antes: "nao existe preto puro".
+       Agora, tres cobrancas onde havia uma:
+         30a  o preto puro so pode aparecer como valor do token --papel-tinta;
+         30b  nenhum token de TELA e preto puro (a promessa original, agora medida
+              nos tokens em vez de no texto do arquivo);
+         30c  a tinta do papel nao vaza para fora do @media print.
+       A 30c e a que importa mais: sem ela, alguem usa var(--papel-tinta) numa
+       regra de tela um dia e o preto duro volta pela porta dos fundos - com token,
+       que e pior, porque parece legitimo.
+   >>> A LICAO E A S8 OUTRA VEZ: o assert guardava a LETRA ("nao ter #000") e nao a
+       PROMESSA ("a tela nao cansa a vista"). Assert que mede o meio reprova o certo
+       no dia em que aparece um caminho novo - aqui, um suporte novo. */
+{
+  const pretos = (semComentario.match(/#000000\b|#000\b/gi) || []);
+  const soNoTokenDoPapel = /--papel-tinta:\s*#000000\b/.test(semComentario);
+  ok('30a. o preto puro so aparece como valor do token --papel-tinta',
+    pretos.length === 0 || (soNoTokenDoPapel && pretos.length === 1), pretos);
+
+  // A promessa original, agora medida onde ela mora: nos tokens que a TELA usa.
+  const tokensDeTela = ['cinza-800', 'cinza-900', 'cinza-50', 'branco', 'navy'];
+  const pretoNaTela = tokensDeTela.filter(t => {
+    const v = (token(t) || '').toLowerCase();
+    return v === '#000000' || v === '#000';
+  });
+  ok('30b. *** nenhum token de TELA e preto puro (a regra do D4, medida no token) ***',
+    pretoNaTela.length === 0, pretoNaTela);
+
+  // A tinta do papel so vale no papel. Fora do @media print ela nao pode ser usada.
+  const iPrint = semComentario.indexOf('@media print');
+  const foraDoPrint = iPrint === -1 ? semComentario : semComentario.slice(0, iPrint);
+  const vazou = (foraDoPrint.match(/var\(--papel[a-z-]*\)/g) || []);
+  ok('30c. *** a tinta do papel NAO vaza para fora do @media print ***',
+    vazou.length === 0, vazou);
+}
 ok('31. a pagina usa o cinza-50 como fundo (o branco fica pro cartao)',
   /\.fp-pagina\{[^}]*background:\s*var\(--cinza-50\)/.test(semComentario.replace(/\s+/g, ' ').replace(/ \{/g, '{')));
 

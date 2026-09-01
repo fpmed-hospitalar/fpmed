@@ -460,6 +460,31 @@
      monitor de 1920 é ilegível — o olho perde a linha na volta. */
   --largura-leitura: 880px;
 
+  /* ══ A TINTA DO PAPEL — A SEGUNDA PALETA, E ELA É DE OUTRO SUPORTE (A53) ═══
+     O topo deste arquivo diz: "nunca preto puro sobre branco puro". Isso é
+     verdade e continua valendo — PARA A TELA. A razão da regra é física: num
+     monitor retroiluminado o preto puro sobre branco puro é contraste duro
+     demais e cansa a vista.
+     **No papel essa razão não existe.** Tinta preta sobre papel branco é o
+     contraste para o qual a impressora foi feita, e mandar o --cinza-800
+     (#0A1526) para o papel só gasta ciano e magenta para produzir um preto pior.
+
+     >>> ENTÃO O PAPEL GANHA TOKEN PRÓPRIO, em vez de hex solto lá embaixo. É a
+         mesma lei do arquivo aplicada a um suporte novo: se a cor existe, ela
+         mora no :root e tem nome. O que mudou não foi a lei — é que a casa
+         passou a ter DOIS suportes, e antes desta fatia tinha um só.
+     >>> ESTES OITO SÓ APARECEM DENTRO DE @media print, e a suíte cobra isso:
+         tinta de papel vazando para a tela seria o preto duro voltando pela
+         porta dos fundos. */
+  --papel:            #ffffff;   /* a folha */
+  --papel-tinta:      #000000;   /* a tinta — preto puro, e só aqui */
+  --papel-apoio:      #555555;   /* endereço do link impresso, nota de rodapé */
+  --papel-fio-forte:  #666666;   /* fio sob o cabeçalho da tabela */
+  --papel-fio:        #999999;   /* contorno do cartão impresso */
+  --papel-fio-leve:   #cccccc;   /* fio entre linhas da tabela */
+  --papel-cabecalho:  #eeeeee;   /* fundo do cabeçalho da tabela */
+  --papel-zebra:      #f4f4f4;   /* a zebra, que no papel não tem contra */
+
   /* ── ANEL DE FOCO ─────────────────────────────────────────────────────────
      Foco visível é obrigatório (adendo). Anel externo, nunca `outline:none`
      sem substituto — quem navega por teclado precisa saber onde está. */
@@ -693,7 +718,196 @@
 .fp-vazio__titulo{ font-size: var(--txt-3); font-weight: var(--peso-semi); color: var(--cinza-800); }
 .fp-vazio__texto{ font-size: var(--txt-2); max-width: 420px; }
 
+/* ══ TABELA ════════════════════════════════════════════════════════════════
+   A53 (01/09/2026). "Tabela é o que o dono mais olha" — então ela vira
+   componente do sistema, e não CSS reescrito em cada tela.
+   Cabeçalho fixo, linha compacta, número à direita com tabular-nums, hover e
+   o fio de 1px entre linhas.
+
+   ── SOBRE A ZEBRA, E ELA É UMA DIVERGÊNCIA DECLARADA ───────────────────────
+   A caixa pediu "zebra clara". A fpmed_licitacoes.html tinha decidido o
+   contrário, por escrito e com razão: "zebra em tabela interativa briga com o
+   hover" — o olho não separa "esta linha é par" de "o mouse está aqui", e
+   quem informa é o hover.
+   >>> AS DUAS ESTÃO CERTAS, EM TABELAS DIFERENTES. Zebra ajuda a percorrer
+       linha longa numa tabela que ninguém aponta; atrapalha onde o hover
+       carrega informação. Por isso ela NÃO é o padrão: é o modificador
+       .fp-tabela--zebra, para tabela de leitura.
+   >>> E NA IMPRESSÃO ELA LIGA SOZINHA, lá embaixo — no papel não existe hover,
+       então o único argumento contra ela desaparece e sobra só o a favor. É o
+       caso em que as duas ordens cabem juntas.
+
+   Densidade em token porque a régua visual da casa LÊ a altura da linha e
+   cobra o número: altura chumbada aqui seriam duas réguas discordando. */
+:root{
+  --tabela-linha:         36px;   /* compacta — o padrão de tela densa */
+  --tabela-linha-folgada: 44px;   /* confortável */
+}
+
+.fp-tabela{
+  width: 100%;
+  border-collapse: separate;   /* `collapse` mata a borda do cabeçalho fixo */
+  border-spacing: 0;
+  font-size: var(--txt-2);
+  color: var(--cinza-800);
+}
+.fp-tabela th,
+.fp-tabela td{
+  padding: 0 var(--esp-3);
+  height: var(--tabela-linha);
+  text-align: left;
+  vertical-align: middle;
+}
+/* O CABEÇALHO FICA. Numa lista de 300 itens, rolar e perder o nome da coluna
+   obriga a voltar ao topo para saber o que é o número que se está olhando.
+   Ele precisa de fundo OPACO: sem isso a linha passa por baixo e leem-se os dois. */
+.fp-tabela thead th{
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--superficie-sutil);
+  border-bottom: 1px solid var(--cinza-200);
+  font-size: var(--txt-1);
+  font-weight: var(--peso-semi);
+  color: var(--cinza-600);
+  letter-spacing: .02em;
+  white-space: nowrap;
+}
+.fp-tabela tbody td{ border-bottom: 1px solid var(--borda-divisor); }
+.fp-tabela tbody tr:last-child td{ border-bottom: 0; }
+
+/* Os dois estados separados, pelo mesmo motivo dos tokens --linha-hover e
+   --linha-ativa: hover é o mouse, ativa é o teclado. Uma cor só para os dois
+   faz a navegação por teclado sumir no instante em que alguém encosta o mouse. */
+.fp-tabela tbody tr:hover td{ background: var(--linha-hover); }
+.fp-tabela tbody tr[aria-selected="true"] td,
+.fp-tabela tbody tr.fp-linha-ativa td{ background: var(--linha-ativa); }
+
+/* NÚMERO À DIREITA, DÍGITO DE LARGURA IGUAL. Sem tabular-nums a coluna de R$
+   dança a cada linha e o olho não compara de cima a baixo — que é a única
+   coisa que se faz com uma coluna de dinheiro. */
+.fp-tabela .fp-num,
+.fp-tabela th.fp-num,
+.fp-tabela td.fp-num{
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+  white-space: nowrap;
+}
+/* A coluna longa não pode empurrar as outras para fora da tela. */
+.fp-tabela .fp-desc{
+  min-width: 180px;
+  max-width: 340px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.fp-tabela--folgada th, .fp-tabela--folgada td{ height: var(--tabela-linha-folgada); }
+.fp-tabela--zebra tbody tr:nth-child(even) td{ background: var(--cinza-50); }
+.fp-tabela--zebra tbody tr:nth-child(even):hover td{ background: var(--linha-hover); }
+
 @media (prefers-reduced-motion: reduce){
   .fp-skeleton{ animation: none; }
   .fp-cartao--clicavel, .fp-btn, .fp-campo{ transition: none; }
+}
+
+/* ══ IMPRESSÃO ═════════════════════════════════════════════════════════════
+   A53 (01/09/2026). Antes desta fatia NENHUMA tela da casa tinha @media print
+   — medido, zero ocorrências. Imprimir dava o menu de 228px ocupando a lateral
+   de todas as folhas, botões que ninguém clica no papel e fundo cinza gastando
+   tinta.
+
+   >>> ELE É OPT-IN, e isso é a lei que abre este arquivo ("inerte até ser
+       usado"). Nada aqui vale sem .fp-imprimivel no elemento raiz da tela.
+       Regra global de impressão mudaria o papel das QUATRO TELAS DO TRABALHADOR
+       B sem ele saber — e território vale mais que a economia de uma linha.
+       Cada tela adota no dia da fatia dela.
+   >>> [data-fp-nao-imprime] é a saída de emergência: qualquer tela marca o que
+       não deve ir ao papel sem precisar de regra nova aqui. */
+@media print{
+  .fp-imprimivel{
+    background: var(--papel);
+    color: var(--papel-tinta);
+    margin: 0;
+    padding: 0;
+  }
+
+  /* SOME O QUE NÃO É CONTEÚDO: menu, botão, campo, esqueleto, e o que a tela marcar. */
+  .fp-imprimivel #limedtec-menu,
+  .fp-imprimivel .fp-btn,
+  .fp-imprimivel .fp-campo,
+  .fp-imprimivel .fp-skeleton,
+  .fp-imprimivel [data-fp-nao-imprime]{ display: none !important; }
+
+  /* Nada de posição fixa no papel: sticky e fixed na impressão ou repetem o
+     elemento em toda folha, ou o congelam na primeira. */
+  .fp-imprimivel *{ position: static !important; box-shadow: none !important; }
+
+  /* ── O ÚNICO QUE ESCAPOU, E ELE SÓ APARECEU PORQUE FOI MEDIDO ─────────────
+     Emulei `media: print` e contei quantos elementos continuavam `fixed` ou
+     `sticky`. Sobrou UM: o `#gm-auth-overlay` do gm-auth.js — e a razão é que
+     ele **não mora dentro do <body>**, é filho direto do <html>. Nenhum
+     descendente-de-`.fp-imprimivel` alcança um irmão do body, então a regra
+     acima passava por cima dele para sempre.
+     >>> E O ESTRAGO SERIA VISÍVEL: ele é `inset:0` com fundo #0B1220. Mandar
+         imprimir com a sessão expirada sairia uma folha inteira PRETA, e a
+         pessoa não saberia por quê.
+     >>> `html:has(body.fp-imprimivel)` mantém o opt-in: a regra só existe para
+         a tela que pediu a folha de papel; as telas do B seguem intocadas. */
+  html:has(body.fp-imprimivel) #gm-auth-overlay{ display: none !important; }
+
+  /* O cartão vira bloco com fio, não superfície com sombra. */
+  .fp-imprimivel .fp-cartao,
+  .fp-imprimivel .fp-sobreposto{
+    border: 1px solid var(--papel-fio);
+    background: var(--papel);
+    break-inside: avoid;
+  }
+
+  /* ── A TABELA NO PAPEL ────────────────────────────────────────────────────
+     O cabeçalho REPETE em cada folha (display:table-header-group): tabela de
+     três páginas sem cabeçalho repetido obriga a voltar à primeira folha para
+     saber que coluna é qual. E a linha não parte no meio. */
+  .fp-imprimivel .fp-tabela{ width: 100%; font-size: 10pt; }
+  .fp-imprimivel .fp-tabela thead{ display: table-header-group; }
+  .fp-imprimivel .fp-tabela tr{ break-inside: avoid; }
+  .fp-imprimivel .fp-tabela th,
+  .fp-imprimivel .fp-tabela td{
+    height: auto;
+    padding: 3pt 4pt;
+    border-bottom: 1px solid var(--papel-fio-leve);
+    color: var(--papel-tinta);
+  }
+  .fp-imprimivel .fp-tabela thead th{
+    background: var(--papel-cabecalho);
+    color: var(--papel-tinta);
+    border-bottom: 1px solid var(--papel-fio-forte);
+  }
+  .fp-imprimivel .fp-tabela tbody tr:hover td{ background: transparent; }
+
+  /* >>> AQUI A ZEBRA LIGA SOZINHA, e é o único lugar onde ela não tem contra:
+         no papel não existe hover para ela atrapalhar, e percorrer linha longa
+         de tabela impressa é exatamente o que ela resolve. */
+  .fp-imprimivel .fp-tabela tbody tr:nth-child(even) td{ background: var(--papel-zebra); }
+
+  /* ── AS COLUNAS QUE PRECISAM DE COR FORÇAM O FUNDO ───────────────────────
+     O navegador descarta cor de fundo na impressão por padrão. Numa coluna em
+     que a cor É a informação (a folga boa/ruim, o selo de situação), perder o
+     fundo é perder o dado: sobra o número sem o aviso que vinha com ele.
+     print-color-adjust:exact é o que obriga a tinta a sair. */
+  .fp-imprimivel .fp-cor-obrigatoria,
+  .fp-imprimivel .fp-pilula{
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Link no papel não clica: o endereço vai junto, senão a referência some. */
+  .fp-imprimivel a[href^="http"]::after{
+    content: " (" attr(href) ")";
+    font-size: 8pt;
+    color: var(--papel-apoio);
+    word-break: break-all;
+  }
+
+  @page{ margin: 12mm; }
 }

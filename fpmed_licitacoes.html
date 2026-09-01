@@ -1637,9 +1637,61 @@ svg.ic.bom{color:var(--verde-700)}
        porta de saída é beco — o que mudou foi a forma, não a existência);
      · o telefone e o slogan já vivem no rodapé do menu lateral, em toda tela.
    O que sobrava aqui, então, era uma faixa de altura cheia carregando cópia. */
+
+/* ══ A FOLHA DE PAPEL DESTA TELA (A53, 01/09/2026) ═════════════════════════════════════════
+   O grosso da impressão vem do `fpmed_tema.css`, ligado pela classe `fp-imprimivel` no
+   <body>: preto no branco, sem menu, sem posição fixa, tabela com cabeçalho repetindo por
+   folha, zebra no papel. O que sobra aqui é o que só esta tela sabe.
+
+   >>> POR QUE SOBRA ALGUMA COISA, e o achado é esse: o tema esconde `.fp-btn` e `.fp-campo`.
+       Esta tela NÃO usa essas classes — ela tem as dela (`.btn`, `.go`, e `input`/`select`
+       nus). Emulei `media: print` e contei: **7 controles continuavam visíveis** no papel —
+       "Salvar busca", o seletor de período, as duas datas, a busca, "Buscar" e "Filtros".
+       Ou seja, a regra do tema estava certa e simplesmente não alcançava esta tela.
+       É a mesma lição da A50 com a catraca do pdf.js: **regra que escolhe o seletor escolhe
+       o que não vai enxergar.** A diferença é que aqui a correção é local, porque os nomes
+       de classe são locais.
+
+   >>> E O CARTÃO NAVY: `.ind--destaque` tem fundo `--navy`. No papel isso é um retângulo
+       sólido escuro gastando toner para dizer o mesmo que os três cartões brancos ao lado.
+       Ele não some — vira cartão normal, com fio. A informação fica; a tinta, não. */
+@media print{
+  /* Controle não se clica no papel. */
+  .btn, .go, .chip, .filtros-abre,
+  input, select, textarea{ display: none !important; }
+
+  /* O destaque deixa de ser escuro e passa a ser cartão com fio. */
+  .ind.ind--destaque{
+    background: var(--branco) !important;
+    color: var(--cinza-800) !important;
+    border: 1px solid var(--cinza-300) !important;
+  }
+  .ind.ind--destaque *{ color: var(--cinza-800) !important; }
+
+  /* A barra de seleção é ação, e ação não vai para o papel. */
+  .selbar{ display: none !important; }
+
+  /* >>> A SEGUNDA VOLTA DA MESMA MEDIÇÃO. Depois de esconder botão e campo, restavam no
+         papel "Órgãos", "Desertas e republicáveis", "Meus Jornais" e "Encontrar por Nº" —
+         que NÃO são `<button>`: são `<a>` dentro de `.links`, com cara de botão. Esconder
+         por TAG teria deixado esses quatro; esconder por PAPEL pega os quatro.
+         Regra da casa outra vez: medir depois de consertar, senão o conserto é uma
+         opinião. Aqui a segunda medição achou o que a primeira não via.
+     >>> E a `.intervalo` ficava como MOLDURA VAZIA: os dois campos de data sumiram e a
+         caixa em volta deles continuou, um retângulo com um travessão dentro. Cai junto —
+         moldura sem conteúdo é pior que nada, porque parece defeito de impressão. */
+  .links, .campo .intervalo{ display: none !important; }
+}
 </style>
 </head>
-<body>
+<!-- A53 (01/09/2026) — `fp-imprimivel` LIGA A FOLHA DE IMPRESSÃO do fpmed_tema.css.
+     Ela é opt-in de propósito: o tema é "inerte até ser usado", e uma regra global de
+     impressão mudaria o papel das quatro telas do Trabalhador B sem ele saber. Esta tela é
+     a primeira a adotar. O que o papel ganha: sem menu, sem botão, preto no branco,
+     cabeçalho de tabela repetindo em cada folha, linha que não parte no meio, zebra (que só
+     no papel não tem contra, porque lá não existe hover) e fundo forçado nas colunas em que
+     a cor É a informação. Marque com `data-fp-nao-imprime` o que não deve ir ao papel. -->
+<body class="fp-imprimivel">
 <!-- ══ O DICIONÁRIO DE ÍCONES (13/08, item 7d) ═══════════════════════════════════════════════
      Fonte única em fpmed_icones.js, referenciada por <use href="#ic-..."> daqui pra baixo.
      >>> ELE VEM AQUI, COLADO NO <body>, e não no <head>: a injeção usa `document.currentScript`
@@ -1660,7 +1712,7 @@ svg.ic.bom{color:var(--verde-700)}
          não quebra nada, e virou código sem efeito. Quem passa a decidir a visibilidade dessa
          entrada é o menu (que a mostra pra todos) e, de verdade, a edge function, que confere
          o JWT e responde 403. Está registrado como item de fila, não escondido aqui. -->
-<div data-limedtec-menu></div>
+<div data-limedtec-menu data-fp-nao-imprime></div>
 
 <!-- ══ O HEADER STICKY (13/08, passo 3 do molde) ═══════════════════════════════════════════════
      Ele substitui a `topfaixa` cinza E o cabeçalho branco com o H1 solto — duas faixas de altura
@@ -1671,7 +1723,9 @@ svg.ic.bom{color:var(--verde-700)}
          "Instalar aplicativo" do limedtec-pwa.js, e vivia na faixa que morreu. Sem ele, o app
          deixaria de ser instalável em silêncio — a falha mais chata que existe, porque nada
          quebra e ninguém repara. -->
-<div class="topo">
+<!-- data-fp-nao-imprime (A53): o header sticky é navegação e busca. No papel ele não tem o
+     que fazer, e `sticky` na impressão ou repete em toda folha ou congela na primeira. -->
+<div class="topo" data-fp-nao-imprime>
   <!-- O `data-limedtec-instalar` fica na FAIXA INTERNA, e não no `.topo`: o limedtec-pwa.js
        pendura o botão como último filho do elemento marcado, e no `.topo` ele caía FORA da
        régua de 1180px — encostado na borda da tela, 80px à esquerda de todo o resto. Aqui ele
