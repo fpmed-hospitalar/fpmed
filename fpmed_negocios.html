@@ -1280,8 +1280,13 @@ textarea.anot:focus{border-color:var(--azul)}
 .kpi.bt:focus-visible{outline:none;box-shadow:var(--foco)}
 /* A seta continua dizendo "isto abre alguma coisa" — e ela é glifo tipográfico, não emoji:
    fronteira já declarada neste projeto (o sprite carrega os ÍCONES; ‹ › são tipografia). */
+/* B38: era `--cinza-400`, que o PRÓPRIO tema anota como "NUNCA texto (2,89:1)" — e este `›` é
+   texto, ainda que gerado: é a seta que promete "isto abre". Medido a 2,80:1 sobre o fundo
+   desta tela, abaixo até dos 3:1 que a norma pede para componente de interface. `--cinza-500` é
+   o cinza mais claro do tema que ainda passa em AA (4,55:1), e é o que a anotação dele manda
+   usar quando o cinza precisa ser lido. */
 .kpi.bt::after{content:'›';position:absolute;top:var(--esp-2);right:var(--esp-3);
-  color:var(--cinza-400);font-size:var(--txt-3);line-height:1}
+  color:var(--cinza-500);font-size:var(--txt-3);line-height:1}
 .kpi{position:relative}
 /* ── O PAINEL DAS CAIXINHAS ── */
 #painel-kpi{background:var(--painel);border:1px solid var(--linha);border-radius:12px;padding:16px 16px;margin:12px 0}
@@ -1299,6 +1304,27 @@ textarea.anot:focus{border-color:var(--azul)}
 .pk-tab th{position:sticky;top:0;z-index:1;background:var(--painel);text-align:left;padding:8px;border-bottom:1px solid var(--linha);color:var(--muted);font-size:var(--txt-1);text-transform:uppercase}
 .pk-tab td{padding:8px;border-bottom:1px solid var(--cinza-100)}
 .pk-tab tbody tr{cursor:pointer}
+/* ══ A CAIXA DA RODADA 13 PEDIU "ZEBRA CLARA" AQUI, E EU NÃO VOU PÔR. ══════════════════════════
+   Eu pus, medi, e desfiz — e o registro fica porque a próxima pessoa vai ter a mesma ideia.
+
+   >>> O PADRÃO DA CASA DIZ O CONTRÁRIO, POR ESCRITO E COM CATRACA. A BASE_VISUAL 2.5 fecha a
+       tabela densa em quatro regras, e uma delas é **"fio de 1px EM VEZ DE zebra"**. A régua do
+       A (`tools/regua_visual.js`, seção 3.7) reprova `nth-child(even)` com `background` em
+       tabela que tem `:hover`, com o motivo escrito: *"a listra briga com o hover e com a
+       seleção"*. E o fio já está aqui: `.pk-tab td` tem `border-bottom:1px solid var(--cinza-100)`.
+   >>> A MINHA VERSÃO NÃO BRIGAVA — e isso eu medi, não supus: com `:where()` (especificidade
+       zero) a listra pesava (0,1,2), perdia para `tr:hover` e para `.mk-tab tr.on`, e o motor
+       confirmou (a linha marcada continuava `--verde-50` mesmo sendo par). Ou seja, o MOTIVO da
+       regra estava atendido.
+   >>> E MESMO ASSIM ELA SAI. Duas réguas para a mesma pergunta acabam discordando, e a que
+       discorda calada é a que fica — é a mesma lei que me fez usar o `LOTE_CONTROLES = 80` do A
+       na B37 em vez de escolher um número meu. O padrão da casa sobre densidade de tabela é
+       DELE e está escrito; "eu achei um jeito de contornar a catraca" não é o mesmo que "o
+       padrão mudou". Quem muda o padrão é quem escreveu o padrão, e eu deixei o recado.
+   Se o arquiteto quiser a zebra mesmo assim, a receita está aqui, medida e pronta:
+       .pk-tab tbody tr:where(:nth-child(even)){background:var(--cinza-50)}
+       .pk-tab tbody tr:hover{background:var(--cinza-100)}      (o hover PRECISA escurecer um
+       tom: em `--painel2` ele tem exatamente a cor da listra e some nas linhas pares) */
 .pk-tab tbody tr:hover{background:var(--painel2)}
 .pk-tab tfoot td{border-top:2px solid var(--cinza-300);border-bottom:0;padding-top:8px;color:var(--cinza-800)}
 .pk-dif{font-size:var(--txt-1);color:var(--ambar-700);margin-top:4px}

@@ -205,9 +205,14 @@ body{
 .fluxo .cx b{display:block;font-size:var(--txt-2);font-weight:var(--peso-semi);color:var(--cinza-800)}
 .fluxo .cx span{display:block;font-size:var(--txt-1);color:var(--cinza-600);margin-top:var(--esp-1)}
 .fluxo .cx.acende{border-color:var(--azul-200);background:var(--azul-50)}
+/* B38: era `--cinza-400`, e o próprio tema anota esse token como "NUNCA texto (2,89:1)".
+   Medido pintado aqui: 2,80:1 — abaixo dos 3:1 que a norma pede até para texto GRANDE, que é o
+   caso desta seta (20px em negrito). E ela não é enfeite: é ela que diz a DIREÇÃO do fluxo, a
+   única coisa na faixa que ordena os passos. `--cinza-500` é o cinza mais claro do tema que
+   ainda passa (4,55:1) e mantém a seta discreta, que é o papel dela. */
 .fluxo .seta{
   display:flex;align-items:center;flex:none;
-  color:var(--cinza-400);font-size:var(--txt-4);font-weight:var(--peso-forte);
+  color:var(--cinza-500);font-size:var(--txt-4);font-weight:var(--peso-forte);
 }
 @media (max-width:600px){ .fluxo .seta{display:none} }
 
