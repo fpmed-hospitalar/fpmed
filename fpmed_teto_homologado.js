@@ -126,11 +126,52 @@
     const certames = o.certames || {};
     const por = new Map();
     let usadas = 0;
+    /* ══ B39 — O ZERO PARA DE SER DESCARTADO EM SILÊNCIO ═══════════════════════════════════════
+       O `continue` abaixo continua: zero não entra em faixa, em mediana nem em ranking, e essa
+       decisão está mantida inteira (o arquiteto confirmou: zero não é preço homologado).
+       >>> O QUE MUDA É QUE ELE PASSA A SER GUARDADO. Até hoje a linha era descartada e sumia — e
+           na tela "o órgão publicou este item por R$ 0,00" e "ainda não temos resultado para
+           este item" viravam A MESMA TELA VAZIA. São coisas diferentes, e a diferença é a lei
+           desta casa: `null` é "não informado"; `0` é "acabou", e isso é uma AFIRMAÇÃO.
+       >>> E AQUI ELA É MESMO UMA AFIRMAÇÃO DO ÓRGÃO, medido: as 44 linhas a zero têm vencedor
+           NOMEADO e `resultado_situacao` = "Informado". Não é campo que ninguém preencheu; é
+           campo que alguém preencheu com zero.
+       MEDIDO no backup de 01/09 (o arquivo inteiro, 428.658 itens, lido em streaming):
+         · 423.363 com `resultado_valor_unit` NULO ... ninguém publicou resultado
+         ·   5.294 com resultado publicado, em 217 certames
+         ·   5.250 com preço maior que zero
+         ·      44 a ZERO, em 7 certames        <- estes
+         ·       0 negativos
+       >>> A CAIXA DA RODADA 13 DIZIA "38 linhas em 8 certames". São 44 em 7 — e o número vai
+           medido, não repetido. */
+    const zerados = new Map();
+    let zeros = 0;
+    const certamesZero = new Set();
     for (const l of (linhas || [])) {
       const valor = Number(l.resultado_valor_unit);
       // ZERO NÃO É PREÇO HOMOLOGADO. É a mesma lição do `valor_unitario_ref` (7.456 itens com
       // zero, escritos como se fossem preço): zero é um número, e número se acredita.
-      if (!(valor > 0)) continue;
+      if (!(valor > 0)) {
+        // `null` não chega aqui — a consulta da tela filtra `resultado_valor_unit=not.is.null`.
+        // Quem cai neste ramo é quem TEM valor publicado e ele não é positivo.
+        if (l.resultado_valor_unit == null) continue;
+        const kz = chave(l.descricao);
+        zeros++;
+        if (l.numero_controle) certamesZero.add(l.numero_controle);
+        if (kz) {
+          if (!zerados.has(kz)) zerados.set(kz, []);
+          zerados.get(kz).push({
+            numero_controle: l.numero_controle,
+            numero_item: String(l.numero_item == null ? '' : l.numero_item),
+            vencedor: l.resultado_vencedor || null,
+            situacao: l.resultado_situacao || null,
+            valor,
+            orgao: (certames[l.numero_controle] || {}).orgao || null,
+            data: (certames[l.numero_controle] || {}).data || null,
+          });
+        }
+        continue;
+      }
       const k = chave(l.descricao);
       if (!k) continue;
       const c = certames[l.numero_controle] || {};
@@ -179,6 +220,13 @@
       total: o.total == null ? usadas : Number(o.total),
       truncado: !!o.truncado,
       certames,
+      /* B39: as linhas que o órgão publicou COM PREÇO ZERO. Elas não estão em `por` — não entram
+         em faixa, mediana nem ranking, e isso não mudou. Estão aqui para a tela poder DIZER que
+         existem, que é outra coisa. `zerosCertames` viaja junto porque número com recorte
+         publica o critério do recorte: "44 linhas" sem "em 7 certames" é um número solto. */
+      zerados,
+      zeros,
+      zerosCertames: certamesZero.size,
     };
   }
 
@@ -199,11 +247,21 @@
     if (!k) return { n: 0, chave: '', motivo: 'sem descrição para comparar' };
 
     const ign = p.ignorar || {};
-    const achados = (idx.por.get(k) || []).filter(x =>
-      !(ign.numero_controle && x.numero_controle === ign.numero_controle
-        && String(ign.numero_item) === x.numero_item));
+    const foraDele = x => !(ign.numero_controle && x.numero_controle === ign.numero_controle
+      && String(ign.numero_item) === x.numero_item);
+    const achados = (idx.por.get(k) || []).filter(foraDele);
 
-    if (!achados.length) return { n: 0, chave: k, truncado: !!idx.truncado };
+    /* B39: os zeros DESTE produto, em outros certames. Eles saem por fora do `n` de propósito —
+       misturá-los faria "3 resultados" incluir um que não tem preço, e a mediana de três com um
+       zero dentro seria um número errado com cara de medida. A tela conta as duas coisas
+       separadas porque elas dizem coisas diferentes: `n` é "por quanto já foi homologado";
+       `zeros` é "houve homologação e o órgão publicou sem preço". */
+    const zerados = ((idx.zerados && idx.zerados.get(k)) || []).filter(foraDele);
+    const zeroInfo = zerados.length
+      ? { zeros: zerados.length, zerosCertames: new Set(zerados.map(x => x.numero_controle)).size }
+      : { zeros: 0, zerosCertames: 0 };
+
+    if (!achados.length) return Object.assign({ n: 0, chave: k, truncado: !!idx.truncado }, zeroInfo);
 
     const valores = achados.map(x => x.valor);
     const med = mediana(valores);
@@ -242,6 +300,10 @@
       recentes: ordenados,
       ultimo: ordenados[0],
       truncado: !!idx.truncado,
+      // B39: viaja junto do resultado com preço, e por fora do `n`. Um item pode ter as duas
+      // coisas ao mesmo tempo — dois certames que publicaram preço e um que publicou zero.
+      zeros: zeroInfo.zeros,
+      zerosCertames: zeroInfo.zerosCertames,
     };
   }
 

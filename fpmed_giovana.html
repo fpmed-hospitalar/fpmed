@@ -3810,6 +3810,25 @@ function homolBadgeHTML(r){
   if(_homolErro)
     return `<span class="homol-badge vazio" title="Não consegui ler os resultados homologados (${esc(_homolErro)}). Isso não quer dizer que não exista resultado — quer dizer que eu não sei."><svg class="ic" aria-hidden="true"><use href="#ic-alerta"/></svg> histórico indisponível</span>`;
   if(!r) return '';                                  // índice ainda não desceu: nada, nunca um zero
+  /* ══ B39 — "SEM RESULTADO" E "RESULTADO SEM PREÇO" ERAM O MESMO SELO ════════════════════════
+     O `if(!r.n)` abaixo pegava as duas coisas, porque o motor descartava o zero antes de chegar
+     aqui. Agora o `avaliar` devolve `zeros` por fora do `n`, e este selo passa a existir.
+     >>> AS DUAS FRASES MANDAM FAZER COISAS OPOSTAS. "ainda sem resultado" manda ESPERAR — o
+         PNCP publica depois da homologação. "publicaram sem preço" manda ir atrás do ÓRGÃO: a
+         informação já chegou, e o que chegou não serve de régua. Dizer a primeira sobre a
+         segunda é mandar a pessoa esperar por uma coisa que já aconteceu.
+     >>> ELE VEM ANTES do `if(!r.n)` de propósito, e não dentro: um produto pode ter faixa de
+         dois certames e um zero de um terceiro — e nesse caso o `n` é 2, o `if(!r.n)` não
+         dispara, e sem esta linha o zero sumiria de novo, só que mais fundo.
+     >>> NÚMERO COM RECORTE PUBLICA O CRITÉRIO: o título diz em quantos certames. */
+  if(r.zeros > 0 && !r.n)
+    /* >>> A FRASE NÃO ESCREVE O ZERO COM CIFRÃO, e não é preciosismo: esta tela inteira nasceu
+           de "R$ 0,00 numa proposta comercial não é espaço em branco, é uma AFIRMAÇÃO" (B22).
+           Escrever `R$ 0,00` aqui seria formatar como dinheiro justamente o número que a tela
+           está dizendo que não é dinheiro. O zero sai com a palavra. */
+    return '<span class="homol-badge vazio" title="' + esc('O resultado saiu, com vencedor, e o valor unitário publicado foi zero — em '
+      + r.zerosCertames + ' certame(s). Zero não é preço homologado: ele não entra em faixa nem em mediana nesta tela, porque puxaria a conta para baixo com um número que ninguém praticou. Isto não quer dizer que o item ficou sem resultado, nem que saiu de graça: quer dizer que o valor publicado não serve de régua. Para saber por quanto saiu, o caminho é a ata do órgão.') + '">'
+      + 'resultado publicado <b>sem preço</b></span>';
   if(!r.n)
     /* O ESTADO HONESTO, e ele é o caso comum. Ele NÃO diz "nunca foi vendido" — diz que nós ainda
        não temos o dado. A diferença é a mesma de sempre: uma é afirmação sobre o mercado, a outra
@@ -3827,7 +3846,15 @@ function homolBadgeHTML(r){
      proposta é convite para o uso errado; ele fica no dado, onde o Negócios já o usa. */
   const titulo = `Já homologado ${faixa}. ${r.n} resultado(s) do mesmo produto; o mais recente em `
     + `${onde}${u.data ? ' · sessão de ' + u.data.split('-').reverse().join('/') : ''}. `
-    + (r.temFaixa ? 'A mediana, e não a média: um pregão desesperado puxa a média e não move a mediana.' : '');
+    + (r.temFaixa ? 'A mediana, e não a média: um pregão desesperado puxa a média e não move a mediana. ' : '')
+    /* B39: o zero não some porque existe faixa. Um item pode ter as duas coisas — dois certames
+       com preço e um que publicou R$ 0,00 — e é justamente aí que a omissão engana mais: a
+       pessoa lê "2 resultados" e supõe que os 2 são tudo que houve. O número sai por fora do
+       `n`, com o denominador junto, e dizendo por que ele ficou de fora da conta. */
+    + (r.zeros > 0 ? `Além destes, ${r.zeros} vez(es) em ${r.zerosCertames} certame(s) o órgão `
+        + 'publicou o resultado SEM PREÇO — valor unitário zero. Não entram na faixa nem na mediana acima: '
+        + 'zero não é preço homologado, e usá-lo puxaria a conta para baixo com um número que '
+        + 'ninguém praticou.' : '');
   if(r.folgaPct == null)
     return `<span class="homol-badge vazio" title="${esc(titulo)}">já homologado ${faixa}</span>`;
   /* POSITIVO = o nosso preço está ABAIXO do já homologado (há folga para disputar). O sinal é o

@@ -4094,6 +4094,18 @@ function homologadoDoItem(it){
      fato desta compra. Misturá-lo com o histórico de outros certames faria o item se comparar
      consigo mesmo — uma tautologia com cara de pesquisa. */
   const meuResultado = Number(it.resultado_valor_unit) > 0 ? Number(it.resultado_valor_unit) : null;
+  /* ══ B39 — O ZERO DESTE ITEM DEIXA DE CAIR NO MESMO BURACO DO `null` ═══════════════════════
+     A linha acima era a única leitura do campo, e ela devolvia `null` tanto para "o órgão não
+     publicou" quanto para "o órgão publicou R$ 0,00". As duas caíam no estado vazio lá embaixo,
+     e a tela dizia "ainda não temos resultado para este item" sobre um item que TEM resultado.
+     >>> A DIFERENÇA NÃO É SUTIL PARA QUEM USA. "não temos" quer dizer *espere, vai chegar*.
+         "publicaram sem preço" quer dizer *chegou, e a informação que veio não serve* — e a
+         segunda muda o que a pessoa faz agora: ela vai atrás do órgão, não do relógio.
+     >>> `null` é "não informado"; `0` é "acabou", e isso é uma AFIRMAÇÃO — e aqui é mesmo uma
+         afirmação de alguém: medido, as 44 linhas a zero têm vencedor nomeado e situação
+         "Informado". Alguém preencheu com zero; não é campo vazio. */
+  const meuZero = (meuResultado == null && it.resultado_valor_unit != null
+                   && Number(it.resultado_valor_unit) === 0);
 
   const r = T.avaliar({
     descricao: it.descricao,
@@ -4118,6 +4130,31 @@ function homologadoDoItem(it){
       + '<i>' + (it.resultado_vencedor ? esc(it.resultado_vencedor) : 'vencedor não publicado')
       + (q != null ? ' · ' + q.toLocaleString('pt-BR') + (it.unidade ? ' ' + esc(it.unidade) : '') + ' unidade(s)' : '')
       + (it.resultado_situacao ? ' · ' + esc(it.resultado_situacao) : '') + '</i>');
+  }
+
+  /* ══ B39 — O RESULTADO DESTE ITEM PUBLICADO A ZERO, e ele vem ANTES de qualquer faixa ═══════
+     Ele é a primeira parte pelo mesmo motivo que o `meuResultado` é: é o FATO desta compra, não
+     pesquisa de mercado. E ele é uma PARTE, não um estado vazio — a primeira versão desta fatia
+     o pôs só no `if(!partes.length)` lá embaixo, e aí um item que tivesse faixa vinda de outros
+     certames nunca diria que o próprio órgão publicou zero. Seria o mesmo defeito uma camada
+     acima: informação existente que some porque outra existe.
+     >>> E ELE NÃO DIZ "saiu de graça". Dizer isso seria acreditar no zero, que é justamente o
+         que o motor se recusa a fazer. O que a tela afirma é o que ela sabe: o valor publicado
+         foi zero, e zero não serve de régua. */
+  if(meuZero){
+    /* >>> A FRASE NÃO ESCREVE "R$ 0,00", E DUAS CATRACAS DA CASA ME PEGARAM POR TER ESCRITO.
+           Elas estavam certas: `R$ 0,00` FORMATA o zero como dinheiro, e a lei desta tela é que
+           zero nunca sai vestido de preço — foi assim que 7.456 itens já apareceram como se
+           custassem nada. Aqui o zero é o SUJEITO da frase, não o valor: a tela diz que o valor
+           publicado foi zero, com a palavra, e nunca com o cifrão. */
+    partes.push('<b class="vazio">o órgão publicou o resultado deste item <b>sem preço</b></b>'
+      + '<i>'
+      + (it.resultado_vencedor ? 'com vencedor — <b>' + esc(it.resultado_vencedor) + '</b> — e ' : 'e ')
+      + 'valor unitário zero'
+      + (it.resultado_situacao ? ' · situação: ' + esc(it.resultado_situacao) : '')
+      + '. Isso <b>não</b> quer dizer que o item ficou sem resultado, e <b>não</b> quer dizer que '
+      + 'saiu de graça: quer dizer que o valor publicado não serve de régua. Zero não entra em '
+      + 'nenhuma média desta tela. Para saber por quanto saiu, o caminho é a ata do órgão</i>');
   }
 
   if(r && r.n > 0){
@@ -4197,9 +4234,26 @@ function homologadoDoItem(it){
     }
   }
 
+  /* ══ B39 — OS ZEROS DO MESMO PRODUTO, EM OUTROS CERTAMES ═══════════════════════════════════
+     Vem DEPOIS da faixa e do "quem ganhou", e por fora do `n` deles: um item pode ter as duas
+     coisas ao mesmo tempo — dois certames que publicaram preço e um que publicou zero. Somar
+     faria "3 resultados" incluir um que não tem preço, e a mediana de três com um zero dentro
+     seria um número errado com cara de medida.
+     >>> E O NÚMERO SAI COM O DENOMINADOR, sempre: "2 vezes" sem "em 2 certames" é o número que
+         vira conclusão sobre o mercado na boca de quem repete. */
+  if(r && r.zeros > 0){
+    partes.push('<b class="vazio">e ' + r.zeros + ' vez(es) o órgão publicou este produto <b>sem preço</b></b>'
+      + '<i>em ' + r.zerosCertames + ' certame(s) — o resultado saiu, com vencedor, e o valor '
+      + 'unitário publicado foi zero. <b>Estes não entram na faixa nem na mediana acima</b>: zero '
+      + 'não é preço homologado, e usá-lo puxaria a conta para baixo com um número que ninguém '
+      + 'praticou</i>');
+  }
+
   if(!partes.length){
-    /* O ESTADO HONESTO, e ele é a fatia inteira. Nunca "R$ 0,00", nunca um traço, nunca branco:
-       o que a tela sabe é que NÓS não temos o dado — e não que o produto nunca foi vendido. */
+    /* O ESTADO HONESTO, e ele agora é UM dos dois: o zero saiu daqui e virou a primeira parte
+       lá em cima, porque ele pode conviver com uma faixa vinda de outros certames. Nunca
+       "R$ 0,00", nunca um traço, nunca branco: o que a tela sabe é que NÓS não temos o dado —
+       e não que o produto nunca foi vendido. */
     return '<span class="it-h"><b class="vazio">ainda não temos resultado para este item</b>'
       + '<i>nem o preço nem quem ganhou: o resultado por item chega do PNCP depois da homologação. '
       + 'Enquanto não chega, o teto legal ao lado é a única régua desta linha</i></span>';
