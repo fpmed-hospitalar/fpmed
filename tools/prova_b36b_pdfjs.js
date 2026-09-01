@@ -93,11 +93,15 @@ const ok = (n, c, e) => { if (c) { p++; console.log('  ok   ' + n + (e !== undef
     const antesDoImport = await pg.evaluate(() => typeof window.pdfjsLib);
     const medido = await pg.evaluate(async () => {
       const mod = await carregarPdfjsNeg();
+      const g = window.pdfjsLib;
       return {
         versao: mod.version || null, worker: mod.GlobalWorkerOptions.workerSrc || null,
-        globalTipo: typeof window.pdfjsLib,
-        globalVersao: window.pdfjsLib && window.pdfjsLib.version,
-        globalEhOModulo: window.pdfjsLib === mod,
+        globalTipo: typeof g,
+        globalVersao: g && g.version,
+        globalEhOModulo: g === mod,
+        // o miolo é o mesmo, e é isto que corrige a razão que eu tinha escrito
+        globalCompartilhaWorker: !!g && g.GlobalWorkerOptions === mod.GlobalWorkerOptions,
+        globalMesmoGetDocument: !!g && g.getDocument === mod.getDocument,
       };
     });
     ok('2. *** a versão que o NAVEGADOR carregou é a ' + VERSAO_ESPERADA + ' (CVE-2024-4367 corrigida) ***',
@@ -108,16 +112,30 @@ const ok = (n, c, e) => { if (c) { p++; console.log('  ok   ' + n + (e !== undef
           há mais `window.pdfjsLib`". Medido aqui: o global NÃO existe antes do import e PASSA A
           EXISTIR depois — o build ESM da 4.2.67 o cria como efeito colateral, na versão certa.
           O que sumiu foi o global que se pode ESPERAR com `script.onload`; o global em si voltou.
-       >>> E É POR ISSO QUE O ATALHO `if(window.pdfjsLib) return ...` TINHA QUE SAIR, e não por
-           estética: `window.pdfjsLib !== mod` (medido). Com o atalho de pé, a primeira chamada
-           devolvia o módulo e as seguintes devolveriam OUTRO objeto — mesma versão, objeto
-           diferente, e a `GlobalWorkerOptions.workerSrc` que configuramos foi no módulo. Defeito
-           que só aparece na segunda leitura de PDF da sessão. */
+       >>> E EU ESCREVI UMA SEGUNDA FRASE ERRADA EM CIMA DA PRIMEIRA, no mesmo dia. Disse que,
+           com o atalho `if(window.pdfjsLib)` de pé, a segunda leitura da sessão pegaria um
+           objeto SEM o `workerSrc` que configuramos. Não é verdade — o A apontou e eu conferi
+           no Chrome antes de aceitar. O assert 5b mede: `window.pdfjsLib !== mod`, MAS
+           `window.pdfjsLib.GlobalWorkerOptions === mod.GlobalWorkerOptions` e o `getDocument` é
+           a MESMA função. É casca diferente com o mesmo miolo; nada quebraria.
+       >>> O ATALHO SAIU ASSIM MESMO, e agora pela razão certa: ele era dependência calada de um
+           global que não é mais o caminho de carga — existe por efeito colateral do build ESM, e
+           efeito colateral muda de versão sem avisar. E o caso ruim continua de pé: se outra
+           tela injetar a UMD 3.x na mesma aba, ele devolveria a versão VULNERÁVEL. O `_pdfjsNeg`
+           sozinho já faz o cache que ele fazia.
+       >>> A LIÇÃO É SOBRE O COMENTÁRIO, NÃO SOBRE O CÓDIGO: o conserto estava certo e a razão
+           escrita estava errada. Comentário com motivo errado é pior que comentário nenhum — o
+           próximo confia nele e generaliza a regra falsa. */
     ok('4. o global window.pdfjsLib não existe antes do import (quem o cria é o módulo 4.x)',
       antesDoImport === 'undefined', antesDoImport);
     ok('5. e quando ele nasce, nasce na ' + VERSAO_ESPERADA + ' — nenhuma UMD velha injetada na aba',
       medido.globalTipo === 'undefined' || medido.globalVersao === VERSAO_ESPERADA,
       { tipo: medido.globalTipo, versao: medido.globalVersao, ehOModulo: medido.globalEhOModulo });
+    ok('5b. *** o global é casca DIFERENTE com o MESMO miolo (corrige a razão que eu tinha escrito) ***',
+      medido.globalTipo === 'undefined'
+      || (medido.globalEhOModulo === false && medido.globalCompartilhaWorker === true && medido.globalMesmoGetDocument === true),
+      { ehOModulo: medido.globalEhOModulo, compartilhaWorker: medido.globalCompartilhaWorker,
+        mesmoGetDocument: medido.globalMesmoGetDocument });
 
     // 6. a tela ainda LÊ um edital de verdade — troca de mecanismo que quebra a leitura não serve.
     //    O `byteLength` é lido ANTES do getDocument: o pdf.js transfere o ArrayBuffer para o

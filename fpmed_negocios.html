@@ -4922,10 +4922,28 @@ async function conferirProposta(id){
 
    >>> A TROCA NAO E DE NUMERO, E DE MECANISMO (medido pelo A na A50, nao redescoberto aqui):
        a 4.x nao publica mais o build UMD. `.../4.2.67/pdf.min.js` devolve HTTP 404; so existe
-       `pdf.min.mjs`. Logo NAO ha mais `window.pdfjsLib` para esperar nem para reaproveitar —
-       o proprio modulo E a biblioteca, e chega por import() dinamico. O worker tambem virou
-       `.mjs`. Por isso o atalho `if(window.pdfjsLib)` saiu: ele nunca mais seria verdade, e se
-       fosse (outra tela injetando a 3.x na mesma aba) devolveria justamente a versao vulneravel.
+       `pdf.min.mjs`, e o worker idem. Logo nao ha mais global para ESPERAR com `script.onload`:
+       o carregamento e `import()` dinamico, e o modulo E a biblioteca.
+
+   >>> CORRECAO DE UMA FRASE QUE EU MESMO ESCREVI AQUI EM 01/09, E ELA IMPORTA (o A apontou, e
+       eu confiri no Chrome antes de aceitar). Estava escrito neste comentario que "nao ha mais
+       `window.pdfjsLib`" e que o atalho, se ficasse, devolveria um objeto sem o `workerSrc`.
+       As DUAS metades estavam erradas, e o medido e este:
+         · antes do import  -> `typeof window.pdfjsLib` = "undefined"
+         · depois do import -> "object", versao 4.2.67 — o proprio modulo ESM cria o global
+         · `window.pdfjsLib !== mod`  (sao objetos diferentes)
+         · MAS `window.pdfjsLib.GlobalWorkerOptions === mod.GlobalWorkerOptions`  -> TRUE
+         · e `getDocument` e `version` tambem sao os MESMOS
+       Ou seja: o atalho NAO teria quebrado a segunda leitura. Ele teria devolvido uma casca
+       diferente com o mesmo miolo, e o worker configurado continuaria valendo.
+   >>> ENTAO POR QUE ELE SAIU MESMO ASSIM: porque ele era uma dependencia calada de um global
+       que nao e mais o caminho de carga. Ninguem mais o cria de proposito; ele existe por
+       efeito colateral, e efeito colateral muda de versao sem avisar. E o caso ruim continua
+       de pe: se um dia outra tela injetar a UMD 3.x na mesma aba, o atalho devolveria a versao
+       VULNERAVEL — e o `_pdfjsNeg` sozinho ja resolve o cache que ele resolvia.
+   >>> A LICAO QUE FICA E SOBRE O COMENTARIO, NAO SOBRE O CODIGO: o conserto estava certo e a
+       razao escrita estava errada. Comentario que explica com o motivo errado e pior que
+       comentario nenhum — o proximo confia nele e generaliza a regra falsa.
    Prova do A antes de trocar: as duas versoes leram o mesmo PDF de 3.113.307 bytes e devolveram
    30 paginas e 108.381 caracteres, texto IDENTICO caractere a caractere. */
 const PDFJS_CDN_NEG = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.2.67/pdf.min.mjs';
