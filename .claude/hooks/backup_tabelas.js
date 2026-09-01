@@ -54,7 +54,39 @@ async function descobre(){
            derivadas: tabelas.filter(t => DERIVADAS.has(t)) };
 }
 
-async function all(tab){ let out=[],off=0; while(true){ const r=await fetch(`${SB}/rest/v1/${tab}?select=*&limit=1000&offset=${off}`,{headers:H}); if(!r.ok){ if(off===0) throw new Error(r.status+' '+(await r.text()).slice(0,80)); break; } const d=await r.json(); if(!Array.isArray(d)||!d.length)break; out=out.concat(d); if(d.length<1000)break; off+=1000; } return out; }
+// ── A TABELA GRANDE NAO CABE NUMA STRING (A49, 01/09/2026) ──────────────────────────────
+// Ate hoje esta funcao juntava TODAS as paginas num array e o chamador fazia
+// JSON.stringify(rows) de uma vez. Isso funcionou por um ano e parou de funcionar sozinho,
+// sem ninguem mexer em nada: a licitacao_itens passou de 425.437 linhas / 876 MB, e o
+// JSON.stringify de um array desse tamanho estoura o TETO DE STRING DO V8. O erro que ficou
+// registrado no backup de 30/08 foi exatamente "Invalid string length".
+//
+// >>> E O PIOR MODO DE FALHA DE NOVO, pelo mesmo motivo do defeito de 06/08 que criou esta
+//     suite: o backup terminava, gravava 51 de 52, e so a catraca acusou. A tabela que ficava
+//     de fora era a MAIOR do banco - 3 de cada 4 linhas do sistema inteiro.
+//
+// A correcao nao muda o formato do arquivo: continua um JSON array valido. O que muda e que
+// ele e ESCRITO AOS PEDACOS, uma linha por vez, e nenhuma string grande existe em memoria.
+// Cada JSON.stringify agora e de UMA linha, e nao do banco inteiro.
+// Retorna a contagem de linhas gravadas.
+async function baixaPara(tab, destino){
+  const fd = fs.openSync(destino, 'w');
+  let off = 0, n = 0;
+  try {
+    fs.writeSync(fd, '[');
+    while(true){
+      const r = await fetch(`${SB}/rest/v1/${tab}?select=*&limit=1000&offset=${off}`,{headers:H});
+      if(!r.ok){ if(off===0) throw new Error(r.status+' '+(await r.text()).slice(0,80)); break; }
+      const d = await r.json();
+      if(!Array.isArray(d)||!d.length) break;
+      for(const linha of d) fs.writeSync(fd, (n++ ? ',' : '') + JSON.stringify(linha));
+      if(d.length<1000) break;
+      off += 1000;
+    }
+    fs.writeSync(fd, ']');
+  } finally { fs.closeSync(fd); }
+  return n;
+}
 
 (async()=>{
   let achado;
@@ -66,8 +98,12 @@ async function all(tab){ let out=[],off=0; while(true){ const r=await fetch(`${S
   const resumo = {}; const falhas = [];
   console.log(`  (descobertas ${achado.tabelas.length} tabelas no banco; ${achado.views.length} views e ${achado.derivadas.length} derivada(s) ficam de fora)`);
   for(const t of achado.tabelas){
-    try{ const rows=await all(t); fs.writeFileSync(path.join(dir,t+'.json'), JSON.stringify(rows)); resumo[t]=rows.length; console.log(`  ${t.padEnd(24)} ${rows.length} linhas`); }
-    catch(e){ resumo[t]='ERRO: '+e.message; falhas.push(t); console.log(`  ${t.padEnd(24)} FALHOU (${e.message.slice(0,40)})`); }
+    const destino = path.join(dir,t+'.json');
+    try{ const n=await baixaPara(t, destino); resumo[t]=n; console.log(`  ${t.padEnd(24)} ${n} linhas`); }
+    // O arquivo parcial TEM que sumir: como a gravacao agora e em streaming, uma tabela que
+    // falha no meio deixa no disco um .json truncado, sem o ']' final. Um backup com arquivo
+    // pela metade e pior que um backup sem o arquivo - na restauracao ele parece existir.
+    catch(e){ try{ fs.unlinkSync(destino); }catch(_){} resumo[t]='ERRO: '+e.message; falhas.push(t); console.log(`  ${t.padEnd(24)} FALHOU (${e.message.slice(0,40)})`); }
   }
   fs.writeFileSync(path.join(dir,'_resumo.json'), JSON.stringify({
     quando: stamp(), descobertas: achado.tabelas.length, salvas: achado.tabelas.length - falhas.length,
