@@ -139,7 +139,23 @@ create or replace view public.v_portais as
     from public.licitacoes
    group by 1
    order by 2 desc;
+
+-- ⚠ security_invoker NÃO É DETALHE — é o RLS desta view (A49, 01/09/2026).
+-- VIEW NÃO TEM RLS. Sem esta opção a view roda com os direitos do DONO (postgres) e devolve
+-- o agregado passando POR CIMA do RLS da licitacoes. Com a anon key — que é pública por
+-- desenho e está no HTML publicado, num repo público — isso é leitura sem login.
+-- Com a opção ligada, a view roda com os direitos de QUEM CHAMA, e o RLS da licitacoes vale.
+-- Foi assim que esta passou despercebida: a testa_rls_cobertura prova "tem RLS e tem policy",
+-- e view não aparece nessa conta. As outras seis views com GRANT já tinham; só esta não.
+alter view public.v_portais set (security_invoker = on);
+
 grant select on public.v_portais to authenticated;
+-- O revoke é o padrão desta seção (ver linha 129 e a 148 logo abaixo) e faltava só aqui.
+-- Medido em 01/09/2026: o banco tinha dado ao anon SETE privilégios sobre esta view
+-- (select, insert, update, delete, truncate, references, trigger) que NUNCA estiveram neste
+-- arquivo — deriva do banco em relação ao versionado. Escrita já era inerte (is_updatable=NO),
+-- mas privilégio inerte que ninguém revoga volta a morder quando a view muda de forma.
+revoke all on public.v_portais from anon;
 
 -- ── 6. RLS dos sinônimos ────────────────────────────────────────────────────────────────────
 alter table public.busca_sinonimos enable row level security;
