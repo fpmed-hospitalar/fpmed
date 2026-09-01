@@ -166,3 +166,27 @@ relatorios/
 # execucao, como logs/, e nao fonte. Entrou na A32, no mesmo dia em que 11 arquivos de dado
 # colhido estavam a um `git add -A` do repo publico (miudo da A30).
 .playwright-mcp/
+
+# -- A PONTE ENTRE OS DOIS CHATS NAO ENTRA NO REPO PUBLICO (A49, 01/09) --------
+# ponte/ e o unico ponto de contato entre o chat da LIMEDTEC e o da GLOBALMED, e por
+# isso mesmo e a pasta mais sensivel do diretorio. O DE_GLOBALMED_PARA_LIMEDTEC.md de
+# 21/08 carrega, medido: 21.375 linhas de cotacao, 591 itens de catalogo proprio, 334
+# com estoque, e "657 de 2.513 itens sem custo resolvivel" - alem da tabela de preco
+# do LIMEDTEC (R$ 5.000 / R$ 25.000 / R$ 1.600 por mes).
+# Isso e DADO da GlobalMed e margem comercial. A regra master do projeto e que dado
+# nao cruza Global<->FPMED: so codigo cruza. Este repo e PUBLICO (medido na API do
+# GitHub: private=false), entao commitar a ponte publicaria o tamanho da base e a
+# fraqueza operacional da casa para quem quisesse ler.
+# A ponte continua funcionando igual - ela vive no disco do dono, que e o unico chao
+# comum dos dois chats. O que ela nao faz e viajar para a internet.
+ponte/
+
+# -- OS MP4 DO VIDEO NAO SAO FONTE (A49, 01/09) --------------------------------
+# docs/video/ tem 83,08 MB em nove .mp4, contra um repo publicado de 13,6 MB. Video e
+# binario: cada re-render vira uma copia inteira nova no historico, que nunca encolhe.
+# Duas duplicatas ja estao la, byte a byte (MD5 igual): LIMEDTEC_apresentacao_vertical
+# = APRESENTACAO_LIMEDTEC_vertical, e LIMEDTEC_apresentacao_horizontal =
+# APRESENTACAO_LIMEDTEC_horizontal - 15,95 MB de sobra so nelas.
+# O que E fonte esta versionado: o roteiro (docs/ROTEIRO_VIDEO_LIMEDTEC.md), as falas
+# (falas.json) e os 15 mp3 da narracao. O mp4 e saida, e se refaz a partir deles.
+docs/video/
