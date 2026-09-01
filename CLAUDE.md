@@ -34,6 +34,31 @@ O SINAL no topo da caixa manda: `TRABALHE` = executar a caixa inteira; `AGUARDE`
 novo, responder em uma linha. Quem devolve o sinal para `AGUARDE` é o trabalhador, como
 último ato, depois de gravar o relatório.
 
+## CANAL ENTRE OS CHATS — LEIA A SUA CAIXA AO ABRIR
+
+As sessões **não se enxergam**: o único chão comum é este disco. Quando precisar falar com outro
+chat do FPMED (arquiteto ↔ trabalhador A ↔ trabalhador B), é por aqui:
+
+```
+node tools/recado.js caixa <quem>                  o que chegou e você não leu
+node tools/recado.js manda <de> <para> "texto"     deixa um recado
+node tools/recado.js li <quem>                     marca como lido
+node tools/recado.js tudo                          o histórico
+```
+`<quem>` é `A`, `B`, `arquiteto`, `dono` ou `todos`.
+
+**Rode `caixa` no começo da sua sessão e ao fechar cada fatia.** Ele sai com código 2 quando há
+recado esperando, então dá para pendurar em script sem ler a tela.
+
+**Por que ele existe e por que é `.jsonl`:** mensagem direta não existe; o relatório passou de
+200 KB e recado curto lá dentro se perde (foi assim que a fábrica ficou **11 dias parada** com
+`FILA VAZIA` escrito); e arquivo `.md` compartilhado **duas janelas sobrescrevem**. Este é
+**append-only, uma linha por recado** — a única operação que duas janelas fazem ao mesmo tempo
+sem uma apagar a outra. **Nunca edite `caixas/RECADOS.jsonl` à mão**: use a ferramenta.
+
+Isto **não substitui a caixa**. Caixa é ordem (o arquiteto manda, o trabalhador executa); recado é
+conversa curta — um bloqueio, um achado que muda a próxima fila, uma pergunta de território.
+
 ## COMMIT SEMPRE POR CAMINHO
 
 `git add <arquivo>` — **nunca** `git add .` / `git add -A`. As duas janelas dividem este
