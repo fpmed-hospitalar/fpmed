@@ -38,9 +38,20 @@ const ok = (t, c, e) => {
 
 console.log('=== O MOTOR RESPIRA NO AGUARDE (fatia A42) ===\n');
 
+// ⚠ A TROCA ACONTECEU — 01/09/2026, pela mão do dono, com as janelas fechadas (A51).
+// Esta suíte nasceu na A42, quando o motor novo ainda esperava em `.bat.novo` ao lado do
+// `.bat` em uso. Depois da troca os dois nomes andaram um degrau:
+//     motor_A.bat.novo  ->  motor_A.bat          (o novo, agora em uso)
+//     motor_A.bat       ->  motor_A.bat.velho    (o antigo, guardado para desfazer)
+// Só os NOMES mudaram aqui. A suíte continua provando exatamente o mesmo: o texto do motor em
+// uso, o bloco da respiração executado pelo cmd.exe de verdade, e o veredito contra as caixas
+// reais. `novo` = o que está rodando hoje; `velho` = o de antes, que serve de referência para
+// o assert byte a byte do prompt.
+// >>> NÃO renomeie de volta para .bat.novo: se esta suíte voltar a procurar um `.bat.novo`,
+//     ela passa a medir um arquivo que não existe mais e vira 38 falhas de mentira.
 const MOTORES = [
-  { quem: 'A', velho: 'motor_A.bat', novo: 'motor_A.bat.novo', caixa: 'CAIXA_A.md', titulo: 'fpmed (Trabalhador A' },
-  { quem: 'B', velho: 'motor_B.bat', novo: 'motor_B.bat.novo', caixa: 'CAIXA_B.md', titulo: 'fpmed 2 (Trabalhador B' },
+  { quem: 'A', velho: 'motor_A.bat.velho', novo: 'motor_A.bat', caixa: 'CAIXA_A.md', titulo: 'fpmed (Trabalhador A' },
+  { quem: 'B', velho: 'motor_B.bat.velho', novo: 'motor_B.bat', caixa: 'CAIXA_B.md', titulo: 'fpmed 2 (Trabalhador B' },
 ];
 
 // ══ 1. O TEXTO ════════════════════════════════════════════════════════════════════════════
