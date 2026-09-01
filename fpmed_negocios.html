@@ -4826,17 +4826,28 @@ async function conferirProposta(id){
 
 // A MESMA extração de PDF do Conferidor e do leitor de edital: agrupa por Y pra preservar a
 // LINHA. Sem isso a descrição perde o preço de vista e todo item vira "sem preço".
+/* B36b (01/09/2026): 3.11.174 -> 4.2.67. A 3.x e atingida pela CVE-2024-4367 (PDF preparado
+   executa script). Esta tela le edital de ORIGEM EXTERNA (PNCP, portal, e-mail) com a aba
+   logada, entao ela era a mais exposta das quatro. O `isEvalSupported:false` la embaixo
+   CONTINUA e nao sai: camada nova nao aposenta camada velha.
+
+   >>> A TROCA NAO E DE NUMERO, E DE MECANISMO (medido pelo A na A50, nao redescoberto aqui):
+       a 4.x nao publica mais o build UMD. `.../4.2.67/pdf.min.js` devolve HTTP 404; so existe
+       `pdf.min.mjs`. Logo NAO ha mais `window.pdfjsLib` para esperar nem para reaproveitar —
+       o proprio modulo E a biblioteca, e chega por import() dinamico. O worker tambem virou
+       `.mjs`. Por isso o atalho `if(window.pdfjsLib)` saiu: ele nunca mais seria verdade, e se
+       fosse (outra tela injetando a 3.x na mesma aba) devolveria justamente a versao vulneravel.
+   Prova do A antes de trocar: as duas versoes leram o mesmo PDF de 3.113.307 bytes e devolveram
+   30 paginas e 108.381 caracteres, texto IDENTICO caractere a caractere. */
+const PDFJS_CDN_NEG = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.2.67/pdf.min.mjs';
+const PDFJS_WORKER_NEG = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.2.67/pdf.worker.min.mjs';
 let _pdfjsNeg = null;
 function carregarPdfjsNeg(){
-  if(window.pdfjsLib) return Promise.resolve(window.pdfjsLib);
   if(_pdfjsNeg) return _pdfjsNeg;
-  _pdfjsNeg = new Promise((res, rej) => {
-    const s = document.createElement('script');
-    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
-    s.onload = () => { window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'; res(window.pdfjsLib); };
-    s.onerror = () => rej(new Error('não consegui carregar o leitor de PDF (precisa de internet)'));
-    document.head.appendChild(s);
-  });
+  _pdfjsNeg = import(PDFJS_CDN_NEG).then(mod => {
+    mod.GlobalWorkerOptions.workerSrc = PDFJS_WORKER_NEG;
+    return mod;
+  }).catch(() => { throw new Error('não consegui carregar o leitor de PDF (precisa de internet)'); });
   return _pdfjsNeg;
 }
 async function pdfParaTextoNeg(buf){
