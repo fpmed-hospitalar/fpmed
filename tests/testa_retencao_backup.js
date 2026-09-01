@@ -50,7 +50,8 @@ const PADRAO = /^backup_(\d{4})-(\d{2})-(\d{2})_(\d{4})$/;
 //     A decisão que falta é dele, e são três caminhos: (a) pôr teto no "último de cada mês"
 //     (ex.: só os 6 últimos meses); (b) guardar o mensal em forma reduzida em vez da cópia
 //     inteira; (c) aceitar ~1,09 GB/mês por escrito e subir o teto com consciência.
-//     Reprodução: `node _projeta_retencao_a51.js` (arquivo de medição, gitignorado).
+//     Reprodução: `node tools/projeta_retencao.js` — ela IMPORTA a regra daqui e roda volta a
+//     volta, em vez de reimplementá-la, senão a projeção viraria a segunda versão da regra.
 const TETO_MB = 4000;
 const GUARDAR_RECENTES = 3;
 

@@ -153,9 +153,21 @@ const seletores = (fora.match(/(^|\})\s*([^{}@]+)\{/g) || [])
   .map(s => s.replace(/^[\}\s]*/, '').replace(/\s*\{$/, '').trim())
   .flatMap(s => s.split(',').map(x => x.trim()))
   .filter(s => s && !/^\d+%$/.test(s) && s !== 'from' && s !== 'to');
-ok(n + '. o tema e inerte: nenhum seletor de elemento nu, entao carregar nao muda tela nenhuma',
-  seletores.every(s => /^\./.test(s) || /^:root/.test(s)),
-  seletores.filter(s => !/^\./.test(s) && !/^:root/.test(s))); n++;
+/* ══ A A53 (01/09/2026): ELE MEDIA A LETRA; A PROMESSA E "NAO AGE SEM A TELA PEDIR" ═══════
+   Exigia que todo seletor COMECASSE com `.` ou `:root`. A A53 trouxe o caso em que o proxy
+   e a promessa se separam: `html:has(body.fp-imprimivel) #gm-auth-overlay`, dentro do
+   @media print. O #gm-auth-overlay do gm-auth.js e filho direto do <html> - nao mora no
+   <body> -, entao nenhum seletor iniciado em `.fp-imprimivel` alcanca ele. A regra precisa
+   comecar em `html`, mas e TRANCADA por :has(body.fp-imprimivel): em tela que nao optou,
+   ela nao existe. A promessa esta intacta; so a letra nao estava.
+   >>> AGORA COBRA A PROMESSA: todo seletor tem de CONTER uma classe .fp- (ou ser :root).
+       Continua barrando `button{...}` e `#alguma-coisa{...}` soltos, que era o ponto.
+   >>> ESTA MESMA REGRA MORA EM DUAS SUITES (aqui e no testa_tema, assert 18). Alinhei as
+       duas; a divida de ter DUAS VOZES para a mesma regra fica anotada - foi ela que fez
+       este assert reprovar sozinho depois de a irma ja ter sido corrigida. */
+ok(n + '. o tema e inerte: todo seletor e trancado por uma classe .fp-, entao carregar nao muda tela nenhuma',
+  seletores.every(s => /\.fp-/.test(s) || /^:root\b/.test(s)),
+  seletores.filter(s => !/\.fp-/.test(s) && !/^:root\b/.test(s))); n++;
 
 // Estado que nao existe no tema nasce improvisado na tela - e improviso nao se
 // repete igual duas vezes, que e o oposto de P6.

@@ -30,9 +30,29 @@ const regra = ({ arquivo, r, ok, lista }) => {
     ok('a fonte dos tokens é uma só, e é o ' + FONTE_DE_TOKEN,
       lista.adotadas.filter(a => /tema|token/i.test(a)).length === 1,
       'adotadas com cara de tema: ' + lista.adotadas.filter(a => /tema|token/i.test(a)).join(', '));
-    ok('e ela não usa preto puro nem branco puro como tinta de texto (D4)',
-      !/#000000\b|#000\b/i.test(require('./catraca.js').R.semComentario(require('./catraca.js').R.leia(arquivo))),
-      arquivo + ': #000 existe no arquivo');
+    /* ══ A A53 SEPAROU DOIS SUPORTES, E ESTE ASSERT ERA A TERCEIRA VOZ DA MESMA REGRA ═══
+       "não usa preto puro" vale PARA A TELA, e a razão é física: num monitor
+       retroiluminado o preto puro sobre branco puro é contraste duro e cansa a vista.
+       No PAPEL essa razão não existe — tinta preta sobre papel branco é o contraste para
+       o qual a impressora foi feita, e mandar o --cinza-800 para lá só gasta ciano e
+       magenta para fazer um preto pior. Quando a A53 trouxe o @media print, este assert
+       reprovou uma coisa CERTA.
+       >>> E O ACHADO MAIOR: esta MESMA regra estava escrita em TRÊS suítes —
+           testa_tema (assert 30), testa_padrao e aqui. Refinar uma deixou as outras duas
+           discordando da primeira. É a dívida das "três vozes sobre o mesmo prazo" outra
+           vez, agora em assert em vez de em tela: cada uma nasceu numa fatia diferente e
+           ninguém tinha olhado as três juntas. As três estão alinhadas a partir de hoje —
+           e o que resolve de verdade é UMA voz, que fica anotado.
+       >>> NÃO FOI AFROUXADO: o preto só pode aparecer como valor do token --papel-tinta,
+           e o testa_tema (30c) ainda cobra que ele não vaze para fora do @media print. */
+    {
+      const fonte = require('./catraca.js').R.semComentario(require('./catraca.js').R.leia(arquivo));
+      const pretos = (fonte.match(/#000000\b|#000\b/gi) || []);
+      const soComoTintaDoPapel = /--papel-tinta:\s*#000000\b/.test(fonte);
+      ok('e o preto puro só existe como a tinta do PAPEL, nunca como tinta de tela (D4)',
+        pretos.length === 0 || (soComoTintaDoPapel && pretos.length === 1),
+        arquivo + ': preto puro em ' + pretos.length + ' lugar(es) -> ' + JSON.stringify(pretos));
+    }
     return;
   }
   ok('zero cor chumbada em ' + arquivo + ' (' + r.cor.tela.length + ' achada(s))',
