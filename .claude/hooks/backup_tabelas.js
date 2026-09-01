@@ -109,6 +109,32 @@ async function baixaPara(tab, destino){
     quando: stamp(), descobertas: achado.tabelas.length, salvas: achado.tabelas.length - falhas.length,
     falhas, views_fora: achado.views, derivadas_fora: achado.derivadas, tabelas: resumo }, null, 2));
   console.log('\nBACKUP em: '+dir);
+
+  // ── A RETENCAO ANDA JUNTO COM O BACKUP (A51, 01/09/2026) ──────────────────────────────────
+  // A regra existia em tools/retencao_backup.js e a catraca em tests/testa_retencao_backup.js,
+  // mas NINGUEM CHAMAVA A FERRAMENTA. Isso deixava a regra dependendo de alguem lembrar - que e
+  // exatamente o defeito que este arquivo ja levou duas vezes (a lista de tabelas de 06/08 e o
+  // teto de string de 30/08). A catraca ia acusar daqui a duas voltas e cobrar do dono um passo
+  // manual, e "o dono nao e carteiro nem operador".
+  //
+  // >>> SO RODA SE O BACKUP FECHOU COMPLETO. Se faltou tabela, a retencao NAO acontece: seria
+  //     rodar um backup ruim por cima de backups bons. Backup incompleto nao ganha o direito de
+  //     empurrar os antigos para fora.
+  // >>> E ELA NAO APAGA NADA - move para backups/_a_remover/. Quem apaga e o dono, conferindo.
+  // >>> Falha dela NAO derruba o backup: o backup ja esta no disco e e o que importa.
+  if (!falhas.length) {
+    try {
+      const r = require('child_process').spawnSync(process.execPath,
+        [path.join('C:/fpmed/tools/retencao_backup.js'), '--aplicar'], { encoding: 'utf8' });
+      const linhas = String(r.stdout || '').split('\n').filter(l => /move |movida|ficam |total /.test(l));
+      console.log('\n-- retencao (3 mais recentes + o ultimo de cada mes) --');
+      console.log(linhas.length ? linhas.join('\n') : '  (sem saida)');
+      if (r.status !== 0) console.error('  AVISO: a retencao saiu com codigo ' + r.status + ' - o backup esta salvo assim mesmo.');
+    } catch (e) {
+      console.error('  AVISO: a retencao nao rodou (' + e.message + ') - o backup esta salvo assim mesmo.');
+    }
+  }
+
   // >>> SAIDA != 0 QUANDO FALTOU TABELA. Antes, tabela que estourava era so uma linha "PULADA"
   //     no log e a tarefa agendada continuava verde. Backup incompleto tem que ACUSAR.
   if (falhas.length) { console.error(`\n!! BACKUP INCOMPLETO: ${falhas.length} tabela(s) nao salvas -> ${falhas.join(', ')}`); process.exit(2); }
