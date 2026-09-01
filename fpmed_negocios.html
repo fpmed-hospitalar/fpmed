@@ -1240,6 +1240,15 @@ textarea.anot:focus{border-color:var(--azul)}
 .a-item:hover{background:var(--linha-hover)}
 .a-item input{width:14px;height:14px;margin-top:4px;accent-color:var(--azul-claro);cursor:pointer;flex:0 0 auto}
 .a-n{flex:0 0 46px;font-weight:700;color:var(--azul-claro);font-size:var(--txt-1);padding-top:4px}
+/* B37 — A LINHA DO LOTE NÃO É A LINHA DO ITEM, e por isso não herda a `.a-item`. A `.a-item` tem
+   `cursor:pointer` e hover porque ela É clicável: é o `<label>` de uma caixinha. A linha do lote
+   só INFORMA (o que entra, o que já está no funil, o que ficou fora) — reaproveitar a classe
+   colaria cursor de mão em coisa que não faz nada, que é a "afordância mentirosa" que a
+   `tools/varre_cliques.js` existe pra pegar. Ela pegou, na primeira volta desta fatia. */
+.lt-linha{display:flex;gap:8px;align-items:flex-start;padding:8px 12px;font-size:12.5px;
+  border-bottom:1px solid var(--linha);cursor:default}
+.lt-linha:last-child{border-bottom:0}
+.lt-est{flex:0 0 76px;font-weight:700;color:var(--azul-claro);font-size:var(--txt-1);padding-top:4px}
 .a-d{flex:1;color:var(--texto)}
 .a-d i{display:block;font-style:normal;font-size:var(--txt-1);color:var(--muted);margin-top:4px}
 .a-rodape{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:12px}
@@ -5720,20 +5729,284 @@ async function enviarDoAssistente(){
   }
 }
 
-/* ── A CHEGADA PELA URL (contrato A5, seção 2) ────────────────────────────────────────────────
-   `?adicionar=<numero_controle>&itens=<n,n,n>`. Consumido de uma vez e apagado do endereço:
-   recarregar a página não pode reabrir um assistente que a pessoa já fechou, e não pode criar
-   o mesmo negócio duas vezes porque alguém apertou F5.
+/* ══════════════════════════════════════════════════════════════════════════════════════════════
+   B37 — O `?adicionar=` PASSOU A ACEITAR VÁRIAS (01/09/2026)
+
+   A dívida era minha e eu mesmo a declarei na B36: o rodapé da Encontrar diz o número exato que
+   a pessoa marcou ("12 licitações marcadas"), e esta porta aceitava UMA. O dono marcava doze e
+   adicionava uma — sem erro, sem aviso, e sem jeito de perceber, porque a tela que abria estava
+   certa: ela só estava certa sobre a primeira.
+
+   ── POR QUE NÃO É O ASSISTENTE DE 3 PASSOS DOZE VEZES ────────────────────────────────────────
+   O assistente é por licitação: ele pergunta o órgão, o número, a abertura e QUAIS ITENS. Pedir
+   isso doze vezes não é uma tela, é uma penitência — e quem chega aqui vindo de uma seleção não
+   quer preencher formulário, quer que os doze entrem. Então o lote é outra tela, com as três
+   únicas escolhas que são realmente da pessoa e não do índice: EMPRESA, FASE e KIT. O resto vem
+   do índice, que é de onde a seleção veio.
+
+   ── O TETO É 80, E O NÚMERO NÃO É MEU ────────────────────────────────────────────────────────
+   Eu não inventei um segundo. A Encontrar já lê licitações por lista de número de controle com
+   `LOTE_CONTROLES = 80` (fpmed_licitacoes.html), e o porquê está escrito lá: 80 < 1000, o teto
+   de linhas do PostgREST, então a resposta NÃO PODE ser cortada em silêncio. Duas réguas para a
+   mesma pergunta acabam discordando, e a que discorda calada é a que fica. Uso a mesma.
+   >>> ACIMA DE 80 NÃO SE PERDE NADA EM SILÊNCIO: entram as 80 primeiras e a tela DIZ quantas
+       ficaram de fora e por quê. Sumir com a 81ª seria o defeito que esta fatia veio consertar.
+
+   ── A VÍRGULA COMO SEPARADOR É MEDIDA, NÃO SUPOSTA ───────────────────────────────────────────
+   Medido no backup de 01/09 (35.613 licitações, o arquivo inteiro, lido em streaming porque
+   125 MB não cabem em string do V8): `numero_controle` tem 28 caracteres em TODAS as 35.613,
+   zero nulos, zero vírgulas, e os únicos caracteres não alfanuméricos são `-` e `/`. Então
+   `?adicionar=a,b,c` é um formato que o dado sustenta. 80 × 29 = 2.320 caracteres de endereço.
+   >>> O `replace` defensivo continua na consulta assim mesmo: a medição vale para o dado de
+       hoje, e o dia em que a origem mudar de formato não vem avisando.
+
+   ── O QUE ELE RECUSA, E DIZ QUE RECUSOU ──────────────────────────────────────────────────────
+   · Já está no funil  -> não cria de novo, e NOMEIA quais. "9 de 12" sem os três números é uma
+                          conta que ninguém pode conferir.
+   · Fora do índice    -> não cria. Sem órgão e sem número o card nasce sem título e ninguém acha
+                          aquilo de novo — é o mesmo mínimo que o assistente e o formulário manual
+                          já exigem. A tela oferece o caminho de uma em uma, onde dá pra preencher.
+   · `&itens=` com várias -> IGNORADO, e dito na cara. Item pertence a UM edital; o parâmetro não
+                          tem como dizer de qual, e inventar uma sintaxe nova aqui seria escrever
+                          o contrato da Encontrar sozinho — ela é território do A.
+   ══════════════════════════════════════════════════════════════════════════════════════════════ */
+const LOTE_ADICIONAR = 80;
+let ASSLOTE = null;
+
+function fecharLoteAdicionar(){
+  ASSLOTE = null;
+  const el = document.getElementById('form-manual');
+  if(el){ el.style.display = 'none'; el.innerHTML = ''; }
+}
+
+function abrirLoteAdicionar(ncs, sobraram, itensIgnorados){
+  const el = document.getElementById('form-manual'); if(!el) return;
+  fecharFormManual(); ASS = null;
+  // A MESMA regra de permissão do assistente e da ficha — `ehGestor()`, e não uma quarta cópia.
+  if(!ehGestor()){
+    el.style.display = 'block';
+    el.innerHTML = '<div class="pk-topo"><b>Adicionar aos meus negócios</b>'
+      + '<button class="btn-ed sec" style="margin-left:auto" onclick="fecharLoteAdicionar()">fechar</button></div>'
+      + '<div class="salvo">Só quem grava negócio pode adicionar licitação ao funil — é a mesma regra da ficha.</div>';
+    return;
+  }
+  ASSLOTE = {
+    ncs: ncs.slice(), sobraram: sobraram || 0, itensIgnorados: !!itensIgnorados,
+    lics: null, licsErro: null,
+    form: { empresa: (EMPRESAS[0] && EMPRESAS[0].id) || '', estagio: 'oportunidade', kit: true },
+    enviando: false, andamento: '', resultado: null,
+  };
+  el.style.display = 'block';
+  el.scrollIntoView({behavior:'smooth', block:'nearest'});
+  pintaLoteAdicionar();
+  carregarLoteDoIndice();
+}
+
+/* UMA consulta só, e isso é de construção e não de sorte: são no máximo LOTE_ADICIONAR números
+   de controle, `numero_controle` é único em `licitacoes`, e LOTE_ADICIONAR < PAG_NEG. A resposta
+   tem no máximo 80 linhas — o teto de 1000 do PostgREST não tem como cortá-la. É a mesma
+   demonstração que a Encontrar escreveu para a consulta irmã dela, e de propósito com as mesmas
+   constantes nomeadas: comentário não prova desigualdade, constante prova. */
+async function carregarLoteDoIndice(){
+  const lista = ASSLOTE.ncs.map(c => '"' + String(c).replace(/["(),]/g,'') + '"').join(',');
+  try{
+    const r = await fetch(`${SB_URL}/rest/v1/licitacoes?numero_controle=in.(${lista})`
+      + '&select=id,numero_controle,portal,numero_compra,modalidade,orgao,municipio,uf,objeto,data_abertura,valor_estimado'
+      + `&limit=${LOTE_ADICIONAR}`, {headers:SB_H});
+    if(!r.ok) throw new Error('o banco respondeu ' + r.status);
+    if(ASSLOTE) ASSLOTE.lics = await r.json();
+  }catch(e){
+    /* Erro de leitura NÃO vira "não estão no índice": são coisas diferentes, e a segunda é uma
+       afirmação sobre 12 editais que eu não posso fazer se nem consegui perguntar. */
+    if(ASSLOTE) ASSLOTE.licsErro = e.message;
+  }
+  if(ASSLOTE) pintaLoteAdicionar();
+}
+
+// O estado de cada número de controle pedido, na ordem em que a pessoa pediu. Uma função só,
+// porque a tela, a contagem do botão e o envio precisam concordar — três leituras diferentes do
+// mesmo "quais entram" é como o rodapé diz 12 e o banco recebe 1.
+function loteSituacoes(){
+  const porNc = new Map((ASSLOTE.lics||[]).map(l => [String(l.numero_controle), l]));
+  return ASSLOTE.ncs.map(nc => {
+    const lic = porNc.get(String(nc)) || null;
+    const jaNc = NEG.find(x => x.numero_controle && String(x.numero_controle) === String(nc)) || null;
+    const jaTrio = (!jaNc && lic) ? achaDuplicata(lic.portal, lic.numero_compra, lic.orgao) : null;
+    const ja = jaNc || jaTrio;
+    return { nc: String(nc), lic, ja,
+      estado: ja ? 'ja' : (ASSLOTE.lics === null ? 'lendo' : (lic ? 'entra' : 'fora')) };
+  });
+}
+
+function pintaLoteAdicionar(){
+  const el = document.getElementById('form-manual'); if(!el || !ASSLOTE) return;
+  const S = loteSituacoes();
+  const entra = S.filter(s => s.estado === 'entra'), ja = S.filter(s => s.estado === 'ja'),
+        fora = S.filter(s => s.estado === 'fora'), lendo = S.filter(s => s.estado === 'lendo');
+
+  const topo = `<div class="pk-topo"><b>Adicionar ${ASSLOTE.ncs.length} aos meus negócios</b>
+      <span class="salvo">vieram da tela Encontrar</span>
+      <button class="btn-ed sec" style="margin-left:auto" onclick="fecharLoteAdicionar()">fechar</button></div>`;
+
+  // ── OS AVISOS DE RECORTE. Cada um publica o critério do próprio recorte. ──────────────────
+  const avisos =
+    (ASSLOTE.sobraram ? `<div class="a-alerta"><b>Vieram ${ASSLOTE.ncs.length + ASSLOTE.sobraram},
+        e eu trouxe ${ASSLOTE.ncs.length}.</b> O teto é ${LOTE_ADICIONAR} por vez — acima disso a
+        leitura do banco poderia voltar cortada sem avisar, e um lote que mente sobre o próprio
+        tamanho é pior do que um lote pequeno. As ${ASSLOTE.sobraram} de fora não se perderam:
+        volte à Encontrar e mande o resto.</div>` : '')
+  + (ASSLOTE.itensIgnorados ? `<div class="a-alerta">Você mandou também uma lista de
+        <b>itens</b>. Com várias licitações eu <b>ignorei</b> essa lista: item pertence a um
+        edital, e o endereço não tem como dizer de qual. Os negócios entram valendo pelo
+        <b>pregão inteiro</b> — dá pra escolher os itens depois, na aba Itens de cada um, ou
+        adicionar aquele edital sozinho pelo assistente.</div>` : '')
+  + (ASSLOTE.licsErro ? `<div class="a-alerta">Não consegui ler estes editais no índice
+        (${esc(ASSLOTE.licsErro)}). Isso não quer dizer que eles não existam — quer dizer que eu
+        não sei. Tente de novo, ou adicione um a um pelo assistente.</div>` : '');
+
+  const rotulo = { entra: 'entra', ja: 'já está no funil', fora: 'fora do índice', lendo: 'lendo…' };
+  const linhas = S.map(s => {
+    const l = s.lic;
+    const nome = l ? ([l.portal, l.modalidade, l.numero_compra].filter(Boolean).join(' · ')
+                      + (l.orgao ? ' — ' + l.orgao : '')) : '';
+    const ab = l && l.data_abertura ? fmtDtH(l.data_abertura) : '';
+    const vl = l && Number(l.valor_estimado) > 0 ? brl(l.valor_estimado) : '';
+    return `<div class="lt-linha">
+      <span class="lt-est">${rotulo[s.estado]}</span>
+      <span class="a-d">${esc(nome || s.nc)}
+        <i>${esc(s.nc)}${ab ? ' · abre ' + esc(ab) : ''}${vl ? ' · ' + esc(vl) : ''}</i></span>
+      ${s.ja ? `<button class="btn-ed sec" onclick="fecharLoteAdicionar();abrirDrawer(${s.ja.id})">abrir</button>` : ''}
+    </div>`;
+  }).join('');
+
+  // ── A CONTA, COM OS NÚMEROS NA CARA. "9 de 12" sozinho não deixa ninguém conferir nada. ──
+  const conta = `<b>${entra.length}</b> de ${ASSLOTE.ncs.length} vão ser criadas`
+    + (ja.length ? ` · <b>${ja.length}</b> já ${ja.length===1?'está':'estão'} no funil (${esc(ja.map(s=>s.nc).join(', '))})` : '')
+    + (fora.length ? ` · <b>${fora.length}</b> fora do índice (${esc(fora.map(s=>s.nc).join(', '))})` : '')
+    + (lendo.length ? ` · ${lendo.length} ainda lendo…` : '');
+
+  const escolhas = `<div class="fm-grid" style="margin-top:12px">
+      <div class="fm-c"><label>Empresa (vale para todas)</label>
+        <select id="lt-empresa" onchange="ASSLOTE.form.empresa=this.value">${EMPRESAS.map(e =>
+          `<option value="${e.id}"${String(ASSLOTE.form.empresa)===String(e.id)?' selected':''}>${esc(e.razao_social)}</option>`).join('')}</select></div>
+      <div class="fm-c"><label>Entram no funil em</label>
+        <select id="lt-estagio" onchange="ASSLOTE.form.estagio=this.value">${FASES.map(f =>
+          `<option value="${f.k}"${ASSLOTE.form.estagio===f.k?' selected':''}>${esc(f.n)}</option>`).join('')}</select></div>
+    </div>
+    <div class="fm-c" style="margin-top:8px">
+      <label><input type="checkbox" id="lt-kit"${ASSLOTE.form.kit?' checked':''} onchange="ASSLOTE.form.kit=this.checked"
+        style="accent-color:var(--azul);width:14px;height:14px">
+        Criar cada uma com o kit <b>Padrão</b> — as ${KIT_TOTAL} tarefas, ${Object.keys(KIT_ANCORAS).length} delas com prazo</label>
+    </div>`;
+
+  const rodape = ASSLOTE.resultado ? loteResultado() : `<div class="a-rodape">
+      <span class="salvo" id="lt-conta">${conta}</span>
+      <button class="btn-ed" id="lt-bt" onclick="enviarLoteAdicionar()"${entra.length && !ASSLOTE.enviando ? '' : ' disabled'}>
+        ${ASSLOTE.enviando ? esc(ASSLOTE.andamento || 'criando…') : 'Criar ' + entra.length + (entra.length===1?' negócio':' negócios')}</button>
+    </div>
+    <div class="salvo">Nada é gravado até você clicar. Cada uma entra valendo pelo <b>pregão
+      inteiro</b> — é o que quem manda um edital pro funil quer dizer, e é o que está no contrato
+      da ponte.</div>`;
+
+  el.innerHTML = topo + avisos + `<div class="a-lista">${linhas}</div>` + escolhas + rodape;
+}
+
+function loteResultado(){
+  const r = ASSLOTE.resultado;
+  return `<div class="a-ok"><b>${r.criadas.length}</b> de ${ASSLOTE.ncs.length}
+      ${r.criadas.length===1?'entrou':'entraram'} no funil, na fase ${esc(nomeFase(ASSLOTE.form.estagio))}.
+      ${r.jaEstavam.length ? '<br><b>' + r.jaEstavam.length + '</b> não ' + (r.jaEstavam.length===1?'entrou porque já estava':'entraram porque já estavam')
+        + ' lá: ' + esc(r.jaEstavam.join(', ')) + '.' : ''}
+      ${r.fora.length ? '<br><b>' + r.fora.length + '</b> não ' + (r.fora.length===1?'entrou':'entraram')
+        + ' porque não ' + (r.fora.length===1?'está':'estão') + ' no índice: ' + esc(r.fora.join(', '))
+        + '. Sem órgão e sem número o negócio nasce sem título e ninguém acha aquilo de novo — '
+        + 'adicione ' + (r.fora.length===1?'esse':'esses') + ' pelo assistente, um a um, onde dá pra preencher os campos.' : ''}
+      ${r.falharam.length ? '<br><b>' + r.falharam.length + '</b> não ' + (r.falharam.length===1?'gravou':'gravaram')
+        + ': ' + esc(r.falharam.map(x => x.nc + ' (' + x.erro + ')').join(' · ')) + '.' : ''}</div>
+    <div class="a-rodape">
+      <button class="btn-ed sec" onclick="location.href='fpmed_licitacoes.html'">← voltar às oportunidades</button>
+      <button class="btn-ed" onclick="fecharLoteAdicionar()">ver o funil</button>
+    </div>`;
+}
+
+async function enviarLoteAdicionar(){
+  if(!ASSLOTE || ASSLOTE.enviando) return;
+  const S = loteSituacoes();
+  const entra = S.filter(s => s.estado === 'entra');
+  if(!entra.length) return;
+  ASSLOTE.enviando = true;
+  const criadas = [], falharam = [];
+  for(let i = 0; i < entra.length; i++){
+    ASSLOTE.andamento = 'criando… ' + (i+1) + ' de ' + entra.length;
+    pintaLoteAdicionar();
+    const l = entra[i].lic;
+    try{
+      const novo = await criarNegocio({
+        empresa_id: Number(ASSLOTE.form.empresa) || null,
+        estagio: ASSLOTE.form.estagio, situacao: 'normal',
+        titulo: ([l.portal, l.modalidade, l.numero_compra].filter(Boolean).join(' · ')
+                 + (l.orgao ? ' — ' + l.orgao : '')) || null,
+        portal: l.portal || null,
+        numero: l.numero_compra || null,
+        orgao: l.orgao || null,
+        municipio: l.municipio || null,
+        uf: l.uf ? String(l.uf).toUpperCase().slice(0,2) : null,
+        modalidade: l.modalidade || null,
+        objeto: l.objeto || null,
+        /* A DATA VAI DE VOLTA COMO VEIO. As duas colunas são timestamptz e o valor acabou de sair
+           desta mesma instância: devolvê-lo verbatim é ida e volta sem conversão nenhuma. Passar
+           por `new Date(...)` aqui só abriria a porta do fuso, que neste projeto já arquivou uma
+           licitação por engano uma vez. */
+        abertura: l.data_abertura || null,
+        valor_estimado: Number(l.valor_estimado) > 0 ? Number(l.valor_estimado) : null,
+        numero_controle: l.numero_controle || null,
+        licitacao_id: l.id || null,
+        // `null` é O PREGÃO INTEIRO (contrato A5, seção 2), e não "nenhum item".
+        itens_participo: null,
+        tarefas: ASSLOTE.form.kit ? novasTarefas() : null,
+        origem: 'licitacoes',
+        criado_por: (window.gmAuth && gmAuth.user && gmAuth.user.email) || null,
+        arquivado: false,
+      });
+      criadas.push(novo);
+    }catch(e){
+      /* Uma que falha NÃO derruba as outras, e ela é NOMEADA. Um lote que para no meio deixa a
+         pessoa sem saber quais entraram — e o remédio dela seria mandar tudo de novo, criando
+         em dobro as que já tinham entrado. */
+      falharam.push({ nc: entra[i].nc, erro: e.message });
+    }
+  }
+  ASSLOTE.enviando = false; ASSLOTE.andamento = '';
+  ASSLOTE.resultado = { criadas,
+    jaEstavam: S.filter(s => s.estado === 'ja').map(s => s.nc),
+    fora: S.filter(s => s.estado === 'fora').map(s => s.nc),
+    falharam };
+  await carregar(); pinta();
+  pintaLoteAdicionar();
+}
+
+/* ── A CHEGADA PELA URL (contrato A5, seção 2 · lista de várias na B37) ───────────────────────
+   `?adicionar=<numero_controle>[,<numero_controle>…]&itens=<n,n,n>`. Consumido de uma vez e
+   apagado do endereço: recarregar a página não pode reabrir um assistente que a pessoa já
+   fechou, e não pode criar o mesmo negócio duas vezes porque alguém apertou F5.
    >>> `history.replaceState` e não `location.replace`: trocar o endereço sem recarregar mantém
-       o assistente aberto com o estado que ele acabou de montar. */
+       o assistente aberto com o estado que ele acabou de montar.
+   >>> UMA CONTINUA CAINDO NO ASSISTENTE DE 3 PASSOS, e isso é o ponto: o link antigo, o
+       `?adicionar=123` por id e o `&itens=` seguem funcionando exatamente como funcionavam. O
+       lote é caminho novo para um caso que não existia, não um caminho novo para todos. */
 function assistenteDaUrl(){
   let p;
   try{ p = new URLSearchParams(location.search); }catch(e){ return; }
-  const nc = (p.get('adicionar') || '').trim();
-  if(!nc) return;
+  const cru = (p.get('adicionar') || '').trim();
+  if(!cru) return;
   const itens = (p.get('itens') || '').split(',').map(s => s.trim()).filter(Boolean);
   try{ history.replaceState(null, '', location.pathname + location.hash); }catch(e){}
-  abrirAssistente(nc, itens);
+
+  // Repetido no endereço é engano de quem montou o link, não pedido de criar duas vezes.
+  const ncs = [...new Set(cru.split(',').map(s => s.trim()).filter(Boolean))];
+  if(!ncs.length) return;
+  if(ncs.length === 1){ abrirAssistente(ncs[0], itens); return; }
+  abrirLoteAdicionar(ncs.slice(0, LOTE_ADICIONAR), Math.max(0, ncs.length - LOTE_ADICIONAR), itens.length > 0);
 }
 
 function numerosDoTopo(){

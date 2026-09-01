@@ -43,9 +43,28 @@ const ok = (n, c, e) => { if (c) { p++; console.log('  ok   ' + n + (e !== undef
     path.join(process.env.LOCALAPPDATA || '', 'Google\\Chrome\\Application\\chrome.exe')].find(a => fs.existsSync(a));
   if (!CHROME) { console.log('\n  SEM Chrome instalado no caminho conhecido. Não vou supor.'); process.exit(2); }
 
+  // Sobe o próprio servidor se não houver um — ver o cabeçalho do tools/servidor_estatico.js.
+  const srv = await require('./servidor_estatico').sobeSePreciso(BASE);
+  console.log('  servidor: ' + BASE + (srv.proprio ? ' (subi eu)' : ' (já estava de pé)'));
+
   const perfil = fs.mkdtempSync(path.join(os.tmpdir(), 'fpmed-b36b-'));
+  /* SERVICE WORKER BLOQUEADO, e a razão foi medida e não adivinhada: em perfil novo o
+     `limedtec-pwa.js` registra o SW, ele assume o controle, dispara `controllerchange` e chama
+     `location.reload()` — cronometrado, aos 2.624 ms. A recarga destrói o contexto de execução
+     no meio da medição e devolve "Execution context was destroyed", que é um vermelho que não
+     fala nada sobre pdf.js. Nada do que se mede aqui passa pelo SW. */
   const ctx = await chromium.launchPersistentContext(perfil, {
     executablePath: CHROME, headless: !process.argv.includes('--visivel'), viewport: { width: 1366, height: 900 },
+    serviceWorkers: 'block',
+  });
+
+  /* O CRACHÁ É FORJADO, E SÓ PARA A TELA FICAR PARADA. Sem sessão, o `gm-auth` acaba mandando a
+     aba para a tela de entrada — e aí a medição morre com "Execution context was destroyed",
+     que é um vermelho que não fala do pdf.js. Nada do que se mede aqui depende de quem está
+     logado: o carregador do PDF é o mesmo para qualquer um. */
+  await ctx.addInitScript(() => {
+    Object.defineProperty(window, 'gmAuth', { configurable: false, writable: false,
+      value: { isGestor: () => true, user: { email: 'prova-b36b@fpmed.local' }, pronto: Promise.resolve(true) } });
   });
 
   // A REDE É A TESTEMUNHA: o HTML pode dizer qualquer coisa; o que o navegador PEDIU, não.
@@ -140,6 +159,7 @@ const ok = (n, c, e) => { if (c) { p++; console.log('  ok   ' + n + (e !== undef
     f++; console.log('  FALHA (exceção): ' + e.message);
   } finally {
     await ctx.close();
+    await srv.fecha();
     try { fs.rmSync(perfil, { recursive: true, force: true }); } catch {}
   }
 

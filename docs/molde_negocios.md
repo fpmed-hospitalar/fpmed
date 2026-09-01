@@ -1,3 +1,82 @@
+# CONTRATO DA PORTA `?adicionar=` — B37, 01/09/2026
+
+> **Para o trabalhador A (dono da tela Encontrar).** Este é o contrato do MEU lado. A Encontrar
+> **não precisa mudar** para nada continuar funcionando: o formato antigo está intacto. O que
+> mudou é que agora existe um formato que aceita a seleção inteira, e ele está aqui esperando.
+
+## O que a porta aceita
+
+```
+fpmed_negocios.html?adicionar=<numero_controle>                     (como sempre foi)
+fpmed_negocios.html?adicionar=<numero_controle>&itens=<n,n,n>       (como sempre foi)
+fpmed_negocios.html?adicionar=<nc1>,<nc2>,…,<ncN>                   (NOVO — B37)
+```
+
+**Uma só continua caindo no assistente de 3 passos, com `&itens=` valendo.** Nada do que existia
+mudou de comportamento — está medido (`node tools/prova_b37_lote.js`, asserts 1 e 20).
+
+**Várias abrem a tela de LOTE**, que é outra tela: ela não pergunta órgão, número nem item, porque
+pedir isso doze vezes não é uma tela, é uma penitência. Ela pergunta as três únicas coisas que são
+da pessoa e não do índice — **empresa, fase e kit** — e o resto vem do índice, que é de onde a
+seleção veio.
+
+## O teto é 80, e o número não é meu
+
+É o mesmo `LOTE_CONTROLES = 80` que a **sua** Encontrar já usa para ler licitações por lista de
+número de controle, pelo motivo que você mesmo escreveu lá: **80 < 1000**, o teto de linhas do
+PostgREST, então a resposta não pode ser cortada em silêncio. Duas réguas para a mesma pergunta
+acabam discordando, e a que discorda calada é a que fica — então eu usei a sua.
+
+**Acima de 80 nada some em silêncio:** entram as 80 primeiras e a tela DIZ quantas ficaram de fora
+e por quê. Se você quiser cortar antes e avisar lá também, as duas pontas avisando é melhor do que
+nenhuma.
+
+## A vírgula como separador está MEDIDA, não suposta
+
+Backup de 01/09, `licitacoes.json` inteiro (125 MB, lido em streaming porque não cabe em string do
+V8): **35.613 linhas, `numero_controle` com 28 caracteres em TODAS, zero nulos, zero vírgulas**, e
+os únicos caracteres não alfanuméricos são `-` e `/`. Logo `a,b,c` é um formato que o dado
+sustenta. 80 × 29 = 2.320 caracteres de endereço; medi 100 controles (2.910 caracteres) chegando
+inteiros no navegador, e a consulta ao banco saiu com os 80 numa vez só.
+
+> O `replace(/["(),]/g,'')` defensivo continua na consulta assim mesmo: a medição vale para o dado
+> de hoje, e o dia em que a origem mudar de formato não vem avisando.
+
+## `&itens=` com várias é IGNORADO, e a tela diz que ignorou
+
+Item pertence a UM edital e o parâmetro não tem como dizer de qual. **Eu não inventei sintaxe
+nova** — inventar o formato do link sozinho seria escrever o contrato da sua tela por você. Se um
+dia isso for preciso, o desenho é seu e eu implemento o meu lado no dia seguinte.
+
+## Os estados honestos que a tela publica
+
+| caso | o que ela faz | o que ela diz |
+|---|---|---|
+| já está no funil | não cria de novo | **nomeia os números de controle**, um a um |
+| fora do índice | não cria | nomeia, e manda pelo assistente um a um — sem órgão e sem número o card nasce sem título e ninguém acha aquilo de novo |
+| o POST falhou | segue as outras | nomeia qual, e o erro dela |
+| acima do teto | leva 80 | diz que vieram N e por que só 80 |
+
+**"9 de 12" sem os três números é uma conta que ninguém pode conferir** — por isso os números vão
+na tela, não só o saldo.
+
+## O que ainda é seu, se você quiser
+
+O rodapé da Encontrar tem o botão `Cruzar as N com o estoque` e um comentário seu
+(`fpmed_licitacoes.html:2593`) dizendo que o verbo do molde — **"Adicionar as N aos meus
+negócios"** — não está lá porque *"o funil recebe uma licitação por vez e mandar N exigiria um
+contrato com ele, e inventá-lo sozinho seria escrever na porta da casa do vizinho"*.
+
+**A porta está aberta agora.** O link é:
+
+```js
+location.href = 'fpmed_negocios.html?adicionar=' + [...ESCOLHIDAS].join(',');
+```
+
+Não mexi na sua tela. O gesto é seu.
+
+---
+
 # O MOLDE NO NEGÓCIOS — item 7b
 
 ---

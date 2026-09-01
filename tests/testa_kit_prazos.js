@@ -290,13 +290,39 @@ ok('62. ...e ele mora em `criarNegocio`, que as duas entradas chamam',
    criado por precaucao e o registro que aparece no funil sem ninguem saber de onde veio.
    A prova e por RECORTE: dentro do bloco inteiro do assistente, a unica escrita e a de
    `enviarDoAssistente`. Procurar no arquivo todo acharia a do formulario manual, que e outra. */
-const ASSIST = LIMPO.slice(LIMPO.indexOf('let ASS = null;'), LIMPO.indexOf('function numerosDoTopo'));
+/* >>> O RECORTE FOI PARTIDO EM DOIS NA B37, E ISSO APERTA A CATRACA EM VEZ DE AFROUXA-LA.
+       Ate 01/09 o recorte ia de `let ASS = null;` ate `numerosDoTopo` e cobrava UMA escrita.
+       A B37 pos uma segunda porta la dentro — o LOTE, que cria varias de uma vez — e a catraca
+       reprovou, certissima: ela nao tinha como saber se a escrita nova era a do passo 3 ou uma
+       gravacao precoce escondida num passo 1. A resposta NAO e alargar a conta para 2, que
+       aceitaria qualquer segunda escrita em qualquer lugar. E cobrar de CADA porta,
+       separadamente, a mesma coisa que se cobrava de uma: escreve uma vez, e no fim. */
+const ASSIST = LIMPO.slice(LIMPO.indexOf('let ASS = null;'), LIMPO.indexOf('const LOTE_ADICIONAR'));
+const LOTE = LIMPO.slice(LIMPO.indexOf('const LOTE_ADICIONAR'), LIMPO.indexOf('function numerosDoTopo'));
+ok('63pre. os dois recortes existem e nao sao vazios (ancora quebrada nao pode virar verde)',
+  ASSIST.length > 2000 && LOTE.length > 2000, { assist: ASSIST.length, lote: LOTE.length });
+
 const escritas = (ASSIST.match(/criarNegocio\(|method:'POST'|method:'PATCH'/g) || []);
 ok('63. o assistente escreve UMA vez so, e dentro de `enviarDoAssistente`',
   escritas.length === 1 && ASSIST.indexOf('criarNegocio(corpo)') > ASSIST.indexOf('async function enviarDoAssistente'),
   escritas);
 ok('63b. ...e os passos 1 e 2 nao escrevem nada',
   ASSIST.slice(0, ASSIST.indexOf('async function enviarDoAssistente')).indexOf('criarNegocio(') < 0);
+
+/* O LOTE DA B37 responde a mesma pergunta. Ele grava N vezes em UM laco, e o laco tem que morar
+   no envio — uma gravacao em qualquer outro ponto do bloco seria negocio criado antes de a
+   pessoa clicar, so que agora doze de uma vez. */
+const escritasLote = (LOTE.match(/criarNegocio\(|method:'POST'|method:'PATCH'/g) || []);
+ok('63c. o LOTE tambem escreve num lugar so, e dentro de `enviarLoteAdicionar`',
+  escritasLote.length === 1 && LOTE.indexOf('criarNegocio(') > LOTE.indexOf('async function enviarLoteAdicionar'),
+  escritasLote);
+ok('63d. ...e nada do lote grava antes do clique (pintar e ler o indice nao escrevem)',
+  LOTE.slice(0, LOTE.indexOf('async function enviarLoteAdicionar')).indexOf('criarNegocio(') < 0);
+/* E ele passa pelo MESMO `criarNegocio`, que e o unico POST da tela (assert 61). Uma porta nova
+   com um POST proprio seria o defeito que a `criarNegocio` foi criada para impedir: dois
+   criadores com regras diferentes, e o mesmo pregao entrando duas vezes no funil. */
+ok('63e. ...e ele usa o `criarNegocio` da casa, nao um POST proprio',
+  /criarNegocio\(\{/.test(LOTE) && !/rest\/v1\/negocios`, \{method:'POST'/.test(LOTE));
 
 // ══════════════════════════════════════════════════════════════════════════════════════════
 // 9. O HISTORICO DA REMARCACAO (fatia B2) — ele e ADITIVO e se le como data
